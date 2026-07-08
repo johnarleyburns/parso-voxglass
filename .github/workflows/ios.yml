@@ -1,0 +1,204 @@
+name: iOS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guarded-tests:
+    name: Guarded Tests
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Guard runtime network endpoints
+        run: |
+          set -euo pipefail
+          matches="$(find Voxglass -name '*.swift' -print0 | xargs -0 grep -nE 'https?://' || true)"
+          if [ -z "$matches" ]; then
+            exit 0
+          fi
+
+          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org' || true)"
+          if [ -n "$disallowed" ]; then
+            echo "::error title=Network endpoint guard::Only Internet Archive and LibriVox runtime URLs are allowed."
+            printf '%s\n' "$disallowed"
+            exit 1
+          fi
+
+      - name: Select iPhone simulator
+        id: simulator
+        run: |
+          set -euo pipefail
+          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]{36}$/ { print $2; exit }')"
+          if [ -z "$simulator_id" ]; then
+            echo "::error title=Simulator unavailable::No available iPhone simulator was found on this runner."
+            exit 1
+          fi
+          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
+
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+          xcrun simctl boot "${{ steps.simulator.outputs.id }}" || true
+          xcodebuild \
+            -project Voxglass.xcodeproj \
+            -scheme Voxglass \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}" \
+            -enableCodeCoverage YES \
+            test
+
+  testflight:
+    name: TestFlight Build
+    runs-on: macos-latest
+    needs: guarded-tests
+    timeout-minutes: 45
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+      BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+      DEVELOPMENT_TEAM_ID: ${{ secrets.DEVELOPMENT_TEAM_ID }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check TestFlight secrets
+        id: preflight
+        run: |
+          set -euo pipefail
+          required=(
+            APP_STORE_CONNECT_KEY_ID
+            APP_STORE_CONNECT_ISSUER_ID
+            APP_STORE_CONNECT_API_KEY_P8_BASE64
+            BUILD_CERTIFICATE_BASE64
+            BUILD_PROVISION_PROFILE_BASE64
+            DEVELOPMENT_TEAM_ID
+            KEYCHAIN_PASSWORD
+            P12_PASSWORD
+          )
+
+          missing=0
+          for name in "${required[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "::notice title=TestFlight skipped::$name is not configured."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install signing material
+        if: steps.preflight.outputs.ready == 'true'
+        id: signing
+        run: |
+          set -euo pipefail
+          certificate_path="$RUNNER_TEMP/build_certificate.p12"
+          profile_path="$RUNNER_TEMP/build_profile.mobileprovision"
+          profile_plist_path="$RUNNER_TEMP/build_profile.plist"
+          keychain_path="$RUNNER_TEMP/app-signing.keychain-db"
+
+          printf '%s' "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$profile_path"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security import "$certificate_path" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
+          security list-keychain -d user -s "$keychain_path"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          security cms -D -i "$profile_path" > "$profile_plist_path"
+          profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist_path")"
+          profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$profile_plist_path")"
+          cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
+          echo "profile_name=$profile_name" >> "$GITHUB_OUTPUT"
+
+      - name: Write App Store Connect API key
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/appstore"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/appstore/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+
+      - name: Archive app
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Voxglass.xcodeproj \
+            -scheme Voxglass \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/Voxglass.xcarchive" \
+            DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="${{ steps.signing.outputs.profile_name }}" \
+            archive
+
+      - name: Upload to TestFlight
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          export_options="$RUNNER_TEMP/ExportOptions.plist"
+          cat > "$export_options" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key>
+            <string>upload</string>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>org.voxglass.app</key>
+              <string>${{ steps.signing.outputs.profile_name }}</string>
+            </dict>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>${DEVELOPMENT_TEAM_ID}</string>
+            <key>testFlightInternalTestingOnly</key>
+            <true/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$RUNNER_TEMP/Voxglass.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$export_options" \
+            -authenticationKeyPath "$RUNNER_TEMP/appstore/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8" \
+            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Report skipped TestFlight build
+        if: steps.preflight.outputs.ready != 'true'
+        run: |
+          echo "TestFlight build skipped because signing/App Store Connect secrets are not configured."
