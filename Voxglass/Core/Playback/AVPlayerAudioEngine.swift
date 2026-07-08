@@ -27,10 +27,15 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
+            #if compiler(>=6.3)
+            let bluetoothHandsFreeOption: AVAudioSession.CategoryOptions = .allowBluetoothHFP
+            #else
+            let bluetoothHandsFreeOption: AVAudioSession.CategoryOptions = .allowBluetooth
+            #endif
             try session.setCategory(
                 .playback,
                 mode: .spokenAudio,
-                options: [.allowAirPlay, .allowBluetoothHFP, .allowBluetoothA2DP]
+                options: [.allowAirPlay, bluetoothHandsFreeOption, .allowBluetoothA2DP]
             )
             try session.setActive(true)
         } catch {
