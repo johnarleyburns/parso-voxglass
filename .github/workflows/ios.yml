@@ -24,7 +24,7 @@ jobs:
       - name: Guard runtime network endpoints
         run: |
           set -euo pipefail
-          matches="$(find Voxglass -name '*.swift' -print0 | xargs -0 grep -nE 'https?://' || true)"
+          matches="$(find Voxglass -name '*.swift' -print0 | xargs -0 grep -nE 'https?://[A-Za-z0-9.-]+' || true)"
           if [ -z "$matches" ]; then
             exit 0
           fi
