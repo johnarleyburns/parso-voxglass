@@ -1,6 +1,6 @@
 name: Voxglass
 options:
-  bundleIdPrefix: org.voxglass
+  bundleIdPrefix: guru.parso
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -29,7 +29,7 @@ targets:
       path: Voxglass/Resources/Info.plist
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: org.voxglass.app
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
         PRODUCT_NAME: Voxglass
         INFOPLIST_FILE: Voxglass/Resources/Info.plist
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -44,7 +44,7 @@ targets:
       - target: Voxglass
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: org.voxglass.tests
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.tests
         INFOPLIST_FILE: VoxglassTests/Info.plist
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Voxglass"
         BUNDLE_LOADER: "$(TEST_HOST)"
@@ -58,4 +58,3 @@ schemes:
       gatherCoverageData: true
       targets:
         - VoxglassTests
-

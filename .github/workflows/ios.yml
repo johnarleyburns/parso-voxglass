@@ -73,6 +73,7 @@ jobs:
       DEVELOPMENT_TEAM_ID: ${{ secrets.DEVELOPMENT_TEAM_ID }}
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+      APP_BUNDLE_ID: guru.parso.voxglass
 
     steps:
       - name: Check out repository
@@ -107,8 +108,64 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install signing material
+      - name: Write App Store Connect API key
         if: steps.preflight.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/appstore"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/appstore/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+
+      - name: Check App Store app record
+        if: steps.preflight.outputs.ready == 'true'
+        id: app_record
+        run: |
+          set -euo pipefail
+          ruby <<'RUBY'
+          require "base64"
+          require "json"
+          require "net/http"
+          require "openssl"
+          require "uri"
+
+          def base64url(data)
+            Base64.urlsafe_encode64(data).delete("=")
+          end
+
+          def raw_ecdsa_signature(der_signature)
+            sequence = OpenSSL::ASN1.decode(der_signature)
+            r, s = sequence.value.map { |integer| integer.value.to_s(2) }
+            "#{r.rjust(32, "\0")[-32, 32]}#{s.rjust(32, "\0")[-32, 32]}"
+          end
+
+          key_id = ENV.fetch("APP_STORE_CONNECT_KEY_ID")
+          issuer_id = ENV.fetch("APP_STORE_CONNECT_ISSUER_ID")
+          bundle_id = ENV.fetch("APP_BUNDLE_ID")
+          private_key = OpenSSL::PKey.read(File.read(File.join(ENV.fetch("RUNNER_TEMP"), "appstore", "AuthKey_#{key_id}.p8")))
+          header = { alg: "ES256", kid: key_id, typ: "JWT" }
+          payload = { iss: issuer_id, exp: Time.now.to_i + 20 * 60, aud: "appstoreconnect-v1" }
+          signing_input = "#{base64url(JSON.generate(header))}.#{base64url(JSON.generate(payload))}"
+          signature = raw_ecdsa_signature(private_key.sign(OpenSSL::Digest::SHA256.new, signing_input))
+          token = "#{signing_input}.#{base64url(signature)}"
+
+          uri = URI("https://api.appstoreconnect.apple.com/v1/apps")
+          uri.query = URI.encode_www_form("filter[bundleId]" => bundle_id, "limit" => "1")
+          request = Net::HTTP::Get.new(uri)
+          request["Authorization"] = "Bearer #{token}"
+          response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |http| http.request(request) }
+          unless response.code.to_i == 200
+            warn "::error title=App Store Connect lookup failed::#{response.code} #{response.body}"
+            exit 1
+          end
+
+          has_record = !JSON.parse(response.body).fetch("data").empty?
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("ready=#{has_record}") }
+          unless has_record
+            puts "::notice title=TestFlight skipped::Create the App Store Connect app record for #{bundle_id}, then rerun this workflow."
+          end
+          RUBY
+
+      - name: Install signing material
+        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         id: signing
         run: |
           set -euo pipefail
@@ -133,15 +190,8 @@ jobs:
           cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
           echo "profile_name=$profile_name" >> "$GITHUB_OUTPUT"
 
-      - name: Write App Store Connect API key
-        if: steps.preflight.outputs.ready == 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/appstore"
-          printf '%s' "$APP_STORE_CONNECT_API_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/appstore/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
-
       - name: Archive app
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
           xcodebuild \
@@ -157,7 +207,7 @@ jobs:
             archive
 
       - name: Upload to TestFlight
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
           export_options="$RUNNER_TEMP/ExportOptions.plist"
@@ -172,7 +222,7 @@ jobs:
             <string>app-store-connect</string>
             <key>provisioningProfiles</key>
             <dict>
-              <key>org.voxglass.app</key>
+              <key>${APP_BUNDLE_ID}</key>
               <string>${{ steps.signing.outputs.profile_name }}</string>
             </dict>
             <key>signingCertificate</key>
@@ -199,6 +249,6 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Report skipped TestFlight build
-        if: steps.preflight.outputs.ready != 'true'
+        if: steps.preflight.outputs.ready != 'true' || steps.app_record.outputs.ready != 'true'
         run: |
-          echo "TestFlight build skipped because signing/App Store Connect secrets are not configured."
+          echo "TestFlight build skipped because signing secrets or the App Store Connect app record are not ready."

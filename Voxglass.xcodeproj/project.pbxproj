@@ -460,7 +460,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.voxglass.app;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass;
 				PRODUCT_NAME = Voxglass;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -478,7 +478,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.voxglass.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Voxglass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Voxglass";
@@ -564,7 +564,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.voxglass.app;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass;
 				PRODUCT_NAME = Voxglass;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -582,7 +582,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.voxglass.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Voxglass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Voxglass";

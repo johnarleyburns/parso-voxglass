@@ -1,7 +1,7 @@
 import Foundation
 
 struct LastPlaybackSnapshotStore {
-    private static let key = "org.voxglass.lastPlaybackSnapshot"
+    private static let key = "guru.parso.voxglass.lastPlaybackSnapshot"
 
     func save(_ position: PlaybackPosition) {
         guard let data = try? JSONEncoder().encode(position) else { return }
@@ -13,4 +13,3 @@ struct LastPlaybackSnapshotStore {
         return try? JSONDecoder().decode(PlaybackPosition.self, from: data)
     }
 }
-
