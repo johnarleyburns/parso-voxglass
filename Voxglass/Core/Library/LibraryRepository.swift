@@ -62,6 +62,59 @@ final class LibraryRepository {
         return importedBooks
     }
 
+    func importInternetArchiveItem(
+        _ metadata: InternetArchiveMetadata,
+        sourceKind: SourceKind
+    ) async throws -> BookWithChapters {
+        let identifier = metadata.identifier
+        guard !identifier.isEmpty else {
+            throw InternetArchiveError.missingIdentifier
+        }
+
+        let selectedFiles = metadata.selectedAudioFiles
+        guard !selectedFiles.isEmpty else {
+            throw InternetArchiveError.noPlayableAudio(identifier)
+        }
+
+        let source = try await ensureInternetArchiveSource(
+            identifier: identifier,
+            title: metadata.title,
+            sourceKind: sourceKind
+        )
+        if let existing = try await bookWithChapters(forSourceID: source.id) {
+            return existing
+        }
+
+        let now = Date()
+        let book = Book(
+            title: metadata.title,
+            authors: metadata.creators.isEmpty ? ["Internet Archive"] : metadata.creators,
+            summary: metadata.summary,
+            sourceID: source.id,
+            coverURL: InternetArchiveMetadata.coverURL(for: identifier),
+            createdAt: now,
+            updatedAt: now
+        )
+        let chapters = selectedFiles.enumerated().compactMap { index, file -> Chapter? in
+            guard let remoteURL = metadata.fileURL(for: file) else { return nil }
+            return Chapter(
+                bookID: book.id,
+                title: InternetArchiveAudioSelector.chapterTitle(for: file),
+                sortKey: file.track ?? file.name,
+                index: index,
+                duration: file.duration,
+                remoteURL: remoteURL
+            )
+        }
+
+        guard !chapters.isEmpty else {
+            throw InternetArchiveError.noPlayableAudio(identifier)
+        }
+
+        try await insert(book: book, chapters: chapters)
+        return BookWithChapters(book: book, chapters: chapters)
+    }
+
     private func ensureLocalFilesSource() async throws -> Source {
         let existing = try await database.query(
             "SELECT id, kind, title, url, created_at FROM sources WHERE kind = ? LIMIT 1",
@@ -83,6 +136,57 @@ final class LibraryRepository {
             ModelMapping.databaseValue(source.createdAt)
         ])
         return source
+    }
+
+    private func ensureInternetArchiveSource(
+        identifier: String,
+        title: String,
+        sourceKind: SourceKind
+    ) async throws -> Source {
+        let detailsURL = InternetArchiveMetadata.detailsURL(for: identifier)
+        let existing = try await database.query(
+            "SELECT id, kind, title, url, created_at FROM sources WHERE url = ? LIMIT 1",
+            [ModelMapping.databaseValue(detailsURL)]
+        )
+        if let row = existing.first {
+            return try Self.source(from: row)
+        }
+
+        let source = Source(
+            kind: sourceKind,
+            title: title,
+            url: detailsURL
+        )
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            ModelMapping.databaseValue(source.id),
+            .string(source.kind.rawValue),
+            .string(source.title),
+            ModelMapping.databaseValue(source.url),
+            ModelMapping.databaseValue(source.createdAt)
+        ])
+        return source
+    }
+
+    private func bookWithChapters(forSourceID sourceID: UUID) async throws -> BookWithChapters? {
+        let bookRows = try await database.query("""
+        SELECT id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        FROM books
+        WHERE source_id = ?
+        LIMIT 1
+        """, [ModelMapping.databaseValue(sourceID)])
+        guard let bookRow = bookRows.first else { return nil }
+
+        let book = try Self.book(from: bookRow)
+        let chapterRows = try await database.query("""
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url
+        FROM chapters
+        WHERE book_id = ?
+        ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
+        """, [ModelMapping.databaseValue(book.id)])
+        return BookWithChapters(book: book, chapters: try chapterRows.map(Self.chapter(from:)).naturallySorted())
     }
 
     private func insert(book: Book, chapters: [Chapter]) async throws {
@@ -155,4 +259,3 @@ final class LibraryRepository {
         )
     }
 }
-

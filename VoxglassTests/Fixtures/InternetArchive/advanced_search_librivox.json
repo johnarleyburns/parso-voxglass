@@ -1,0 +1,39 @@
+{
+  "responseHeader": {
+    "status": 0,
+    "QTime": 7,
+    "params": {
+      "q": "collection:(librivoxaudio) AND mediatype:(audio) AND title:(\"pride\")",
+      "output": "json"
+    }
+  },
+  "response": {
+    "numFound": 2,
+    "start": 0,
+    "docs": [
+      {
+        "identifier": "pride_and_prejudice_librivox",
+        "title": "Pride and Prejudice",
+        "creator": [
+          "Jane Austen"
+        ],
+        "description": "LibriVox recording of Pride and Prejudice.",
+        "collection": [
+          "librivoxaudio",
+          "audio_bookspoetry"
+        ],
+        "downloads": 12345,
+        "date": "2007"
+      },
+      {
+        "identifier": "short_story_collection_librivox",
+        "title": "Short Story Collection",
+        "creator": "Various",
+        "description": "Public-domain short fiction.",
+        "collection": "librivoxaudio",
+        "downloads": "678",
+        "date": "2011"
+      }
+    ]
+  }
+}

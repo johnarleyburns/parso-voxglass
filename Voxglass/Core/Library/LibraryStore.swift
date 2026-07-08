@@ -34,10 +34,26 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    func importInternetArchiveItem(
+        _ metadata: InternetArchiveMetadata,
+        sourceKind: SourceKind
+    ) async -> BookWithChapters? {
+        isImporting = true
+        defer { isImporting = false }
+
+        do {
+            let imported = try await repository.importInternetArchiveItem(metadata, sourceKind: sourceKind)
+            await refresh()
+            return imported
+        } catch {
+            importError = error.localizedDescription
+            return nil
+        }
+    }
+
     func book(containing chapterID: UUID) -> BookWithChapters? {
         books.first { book in
             book.chapters.contains { $0.id == chapterID }
         }
     }
 }
-

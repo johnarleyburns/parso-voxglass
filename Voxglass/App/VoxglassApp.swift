@@ -9,6 +9,7 @@ struct VoxglassApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(services.libraryStore)
+                .environmentObject(services.catalogStore)
                 .environmentObject(services.playbackCoordinator)
                 .task {
                     await services.bootstrap()
@@ -19,4 +20,3 @@ struct VoxglassApp: App {
         }
     }
 }
-

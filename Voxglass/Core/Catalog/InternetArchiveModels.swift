@@ -1,0 +1,263 @@
+import Foundation
+
+struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
+    var identifier: String
+    var title: String
+    var creators: [String]
+    var description: String?
+    var collections: [String]
+    var downloads: Int?
+    var date: String?
+
+    var id: String { identifier }
+
+    var authorLine: String {
+        creators.isEmpty ? "Unknown author" : creators.joined(separator: ", ")
+    }
+
+    var sourceKind: SourceKind {
+        collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
+            ? .librivox
+            : .internetArchive
+    }
+
+    var detailsURL: URL {
+        InternetArchiveMetadata.detailsURL(for: identifier)
+    }
+
+    var coverURL: URL {
+        InternetArchiveMetadata.coverURL(for: identifier)
+    }
+}
+
+struct InternetArchiveSearchResponse: Decodable, Equatable, Sendable {
+    var response: Response
+
+    var results: [InternetArchiveSearchResult] {
+        response.docs.map(\.searchResult)
+    }
+
+    struct Response: Decodable, Equatable, Sendable {
+        var docs: [InternetArchiveSearchDocument]
+    }
+}
+
+struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
+    var identifier: String
+    var title: String
+    var creators: [String]
+    var description: String?
+    var collections: [String]
+    var downloads: Int?
+    var date: String?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        identifier = try container.decode(String.self, forKey: .identifier)
+        title = try container.decodeFlexibleStringIfPresent(forKey: .title) ?? identifier
+        creators = try container.decodeStringListIfPresent(forKey: .creator)
+        description = try container.decodeFlexibleStringIfPresent(forKey: .description)
+        collections = try container.decodeStringListIfPresent(forKey: .collection)
+        downloads = try container.decodeFlexibleIntIfPresent(forKey: .downloads)
+        date = try container.decodeFlexibleStringIfPresent(forKey: .date)
+    }
+
+    var searchResult: InternetArchiveSearchResult {
+        InternetArchiveSearchResult(
+            identifier: identifier,
+            title: title,
+            creators: creators,
+            description: description?.cleanedInternetArchiveText,
+            collections: collections,
+            downloads: downloads,
+            date: date
+        )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case identifier
+        case title
+        case creator
+        case description
+        case collection
+        case downloads
+        case date
+    }
+}
+
+struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
+    var metadata: InternetArchiveItemMetadata
+    var files: [InternetArchiveFile]
+    var server: String?
+    var dir: String?
+
+    var identifier: String {
+        metadata.identifier ?? ""
+    }
+
+    var isCollection: Bool {
+        metadata.mediatype == "collection"
+    }
+
+    var sourceKind: SourceKind {
+        metadata.collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
+            ? .librivox
+            : .internetArchive
+    }
+
+    var selectedAudioFiles: [InternetArchiveFile] {
+        InternetArchiveAudioSelector.selectedAudioFiles(from: files)
+    }
+
+    var title: String {
+        metadata.title ?? identifier
+    }
+
+    var creators: [String] {
+        metadata.creators
+    }
+
+    var summary: String? {
+        metadata.description?.cleanedInternetArchiveText
+    }
+
+    func fileURL(for file: InternetArchiveFile) -> URL? {
+        guard !identifier.isEmpty else { return nil }
+        let encodedIdentifier = identifier.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? identifier
+        let encodedName = file.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? file.name
+        return URL(string: "https://archive.org/download/\(encodedIdentifier)/\(encodedName)")
+    }
+
+    static func detailsURL(for identifier: String) -> URL {
+        URL(string: "https://archive.org/details/\(identifier)")!
+    }
+
+    static func coverURL(for identifier: String) -> URL {
+        URL(string: "https://archive.org/services/img/\(identifier)")!
+    }
+}
+
+struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
+    var identifier: String?
+    var title: String?
+    var creators: [String]
+    var description: String?
+    var mediatype: String?
+    var collections: [String]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        identifier = try container.decodeFlexibleStringIfPresent(forKey: .identifier)
+        title = try container.decodeFlexibleStringIfPresent(forKey: .title)
+        creators = try container.decodeStringListIfPresent(forKey: .creator)
+        description = try container.decodeFlexibleStringIfPresent(forKey: .description)
+        mediatype = try container.decodeFlexibleStringIfPresent(forKey: .mediatype)
+        collections = try container.decodeStringListIfPresent(forKey: .collection)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case identifier
+        case title
+        case creator
+        case description
+        case mediatype
+        case collection
+    }
+}
+
+struct InternetArchiveFile: Decodable, Equatable, Sendable, Identifiable {
+    var name: String
+    var source: String?
+    var format: String?
+    var title: String?
+    var length: String?
+    var track: String?
+    var size: String?
+
+    var id: String { name }
+
+    var duration: TimeInterval? {
+        guard let length else { return nil }
+        return Self.duration(from: length)
+    }
+
+    private static func duration(from value: String) -> TimeInterval? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let seconds = Double(trimmed), seconds.isFinite {
+            return seconds
+        }
+
+        let parts = trimmed.split(separator: ":").compactMap { Double($0) }
+        guard parts.count >= 2, parts.allSatisfy(\.isFinite) else { return nil }
+        return parts.reversed().enumerated().reduce(0) { total, part in
+            total + part.element * pow(60, Double(part.offset))
+        }
+    }
+}
+
+extension String {
+    var cleanedInternetArchiveText: String {
+        let noTags = replacingOccurrences(
+            of: "<[^>]+>",
+            with: " ",
+            options: .regularExpression
+        )
+        let decoded = noTags
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+        return decoded
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+}
+
+extension KeyedDecodingContainer {
+    func decodeFlexibleStringIfPresent(forKey key: Key) throws -> String? {
+        if let value = try? decodeIfPresent(String.self, forKey: key) {
+            return value
+        }
+        if let value = try? decodeIfPresent(Int.self, forKey: key) {
+            return String(value)
+        }
+        if let value = try? decodeIfPresent(Double.self, forKey: key) {
+            return String(value)
+        }
+        if let values = try? decodeIfPresent([String].self, forKey: key) {
+            return values.first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        }
+        return nil
+    }
+
+    func decodeStringListIfPresent(forKey key: Key) throws -> [String] {
+        if let values = try? decodeIfPresent([String].self, forKey: key) {
+            return values.map(Self.cleanListValue).filter { !$0.isEmpty }
+        }
+        if let value = try? decodeIfPresent(String.self, forKey: key) {
+            let cleaned = Self.cleanListValue(value)
+            return cleaned.isEmpty ? [] : [cleaned]
+        }
+        if let value = try? decodeIfPresent(Int.self, forKey: key) {
+            return [String(value)]
+        }
+        return []
+    }
+
+    func decodeFlexibleIntIfPresent(forKey key: Key) throws -> Int? {
+        if let value = try? decodeIfPresent(Int.self, forKey: key) {
+            return value
+        }
+        if let value = try? decodeIfPresent(String.self, forKey: key) {
+            return Int(value)
+        }
+        return nil
+    }
+
+    private static func cleanListValue(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}

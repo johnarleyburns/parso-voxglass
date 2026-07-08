@@ -19,10 +19,10 @@ struct DiscoverView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Internet Archive and LibriVox search")
+                    Text("Internet Archive")
                         .font(.headline)
                         .foregroundStyle(VoxglassTheme.ink)
-                    Text("Queued for the next phase.")
+                    Text("LibriVox audiobooks and archive.org URLs")
                         .font(.subheadline)
                         .foregroundStyle(VoxglassTheme.secondaryInk)
                 }
@@ -55,4 +55,3 @@ private struct DiscoverTile: View {
         .glassPanel()
     }
 }
-

@@ -4,6 +4,7 @@ import Foundation
 final class AppServices: ObservableObject {
     let database: AppDatabase
     let libraryStore: LibraryStore
+    let catalogStore: CatalogStore
     let playbackCoordinator: PlaybackCoordinator
 
     init() {
@@ -14,6 +15,7 @@ final class AppServices: ObservableObject {
 
         self.database = database
         self.libraryStore = LibraryStore(repository: libraryRepository)
+        self.catalogStore = CatalogStore()
         self.playbackCoordinator = PlaybackCoordinator(
             engine: audioEngine,
             positionStore: positionStore
@@ -25,4 +27,3 @@ final class AppServices: ObservableObject {
         await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
     }
 }
-
