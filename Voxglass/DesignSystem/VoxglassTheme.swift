@@ -22,19 +22,13 @@ enum VoxglassTheme {
 }
 
 struct VoxglassScreen<Content: View>: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     let title: String
     @ViewBuilder var content: Content
 
     var body: some View {
         NavigationStack {
             ZStack {
-                if reduceTransparency {
-                    VoxglassTheme.paper.ignoresSafeArea()
-                } else {
-                    VoxglassTheme.backgroundGradient.ignoresSafeArea()
-                }
-
+                VoxglassBackground()
                 ScrollView {
                     content
                         .padding(.horizontal, 18)
@@ -43,6 +37,18 @@ struct VoxglassScreen<Content: View>: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
+        }
+    }
+}
+
+struct VoxglassBackground: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        if reduceTransparency {
+            VoxglassTheme.paper.ignoresSafeArea()
+        } else {
+            VoxglassTheme.backgroundGradient.ignoresSafeArea()
         }
     }
 }
@@ -89,4 +95,3 @@ private struct MotionAwareAnimation<V: Equatable>: ViewModifier {
         content.animation(reduceMotion ? nil : animation, value: value)
     }
 }
-

@@ -5,6 +5,7 @@ struct NowPlayingView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var scrubPosition: Double = 0
     @State private var isScrubbing = false
+    @State private var showingChapters = false
 
     var body: some View {
         ZStack {
@@ -18,6 +19,7 @@ struct NowPlayingView: View {
                     metadata(session)
                     scrubber(session)
                     controls(session)
+                    actionBar(session)
                     chapterList(session)
                     Spacer(minLength: 0)
                 }
@@ -35,6 +37,17 @@ struct NowPlayingView: View {
             } else {
                 ContentUnavailableView("Nothing Playing", systemImage: "headphones")
                     .foregroundStyle(.white)
+            }
+        }
+        .sheet(isPresented: $showingChapters) {
+            if let session = playback.currentSession {
+                NavigationStack {
+                    ChaptersView(
+                        book: BookWithChapters(book: session.book, chapters: session.chapters),
+                        showingNowPlaying: .constant(true)
+                    )
+                }
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -156,6 +169,34 @@ struct NowPlayingView: View {
         .buttonStyle(.plain)
     }
 
+    private func actionBar(_ session: PlaybackSession) -> some View {
+        HStack(spacing: 10) {
+            PlayerActionButton(title: "Chapters", systemImage: "list.bullet", isEnabled: true) {
+                showingChapters = true
+            }
+            PlayerActionButton(title: "1x", systemImage: "speedometer", isEnabled: false) {}
+            PlayerActionButton(title: "Sleep", systemImage: "timer", isEnabled: false) {}
+            PlayerActionButton(title: "Mark", systemImage: "bookmark", isEnabled: false) {}
+            ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
+                VStack(spacing: 5) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.headline)
+                    Text("Share")
+                        .font(.caption2.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .foregroundStyle(.white)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.white.opacity(0.08))
+                }
+            }
+        }
+    }
+
     private func chapterList(_ session: PlaybackSession) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Chapters")
@@ -190,5 +231,34 @@ struct NowPlayingView: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(.white.opacity(0.08))
         }
+    }
+}
+
+private struct PlayerActionButton: View {
+    var title: String
+    var systemImage: String
+    var isEnabled: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.headline)
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.42))
+            .background {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(.white.opacity(isEnabled ? 0.08 : 0.04))
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
     }
 }

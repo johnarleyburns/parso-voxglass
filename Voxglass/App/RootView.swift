@@ -3,30 +3,34 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var playback: PlaybackCoordinator
-    @State private var selectedTab: VoxglassTab = .listen
+    @State private var selectedTab: VoxglassTab = .home
     @State private var showingNowPlaying = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            ListenView(showingNowPlaying: $showingNowPlaying)
-                .tabItem { Label("Listen", systemImage: "house.fill") }
-                .tag(VoxglassTab.listen)
+            ListenView(
+                showingNowPlaying: $showingNowPlaying,
+                selectLibrary: { selectedTab = .library },
+                selectSearch: { selectedTab = .search }
+            )
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(VoxglassTab.home)
 
             LibraryView(showingNowPlaying: $showingNowPlaying)
                 .tabItem { Label("Library", systemImage: "books.vertical.fill") }
                 .tag(VoxglassTab.library)
 
-            DiscoverView()
-                .tabItem { Label("Discover", systemImage: "safari.fill") }
-                .tag(VoxglassTab.discover)
+            BrowseView(showingNowPlaying: $showingNowPlaying)
+                .tabItem { Label("Browse", systemImage: "square.grid.2x2.fill") }
+                .tag(VoxglassTab.browse)
 
-            SearchView()
+            SearchView(showingNowPlaying: $showingNowPlaying)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(VoxglassTab.search)
 
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
-                .tag(VoxglassTab.settings)
+            SettingsView(showingNowPlaying: $showingNowPlaying)
+                .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
+                .tag(VoxglassTab.more)
         }
         .tint(VoxglassTheme.accent)
         .safeAreaInset(edge: .bottom) {
@@ -51,10 +55,9 @@ struct RootView: View {
 }
 
 private enum VoxglassTab: Hashable {
-    case listen
+    case home
     case library
-    case discover
+    case browse
     case search
-    case settings
+    case more
 }
-

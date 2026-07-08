@@ -4,21 +4,27 @@ struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
+    var selectLibrary: () -> Void
+    var selectSearch: () -> Void
 
     var body: some View {
-        VoxglassScreen(title: "Listen") {
+        VoxglassScreen(title: "Home") {
             VStack(alignment: .leading, spacing: 22) {
                 hero
                 continueListening
                 recentlyAdded
+                recommended
             }
             .padding(.top, 12)
+        }
+        .task {
+            await libraryStore.refreshRecentlyPlayed()
         }
     }
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("voxglass")
+            Text("Good listening")
                 .font(.system(.largeTitle, design: .serif, weight: .bold))
                 .foregroundStyle(VoxglassTheme.ink)
             Text("Public-domain audiobooks, private by default.")
@@ -31,7 +37,7 @@ struct ListenView: View {
     @ViewBuilder
     private var continueListening: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Continue Listening")
+            SectionTitle(title: "Continue Listening")
             if let session = playback.currentSession {
                 Button {
                     showingNowPlaying = true
@@ -62,12 +68,22 @@ struct ListenView: View {
                     .glassPanel()
                 }
                 .buttonStyle(.plain)
-            } else if let firstBook = libraryStore.books.first {
-                BookRowView(book: firstBook) {
-                    Task { await playback.play(firstBook) }
+            } else if let recent = libraryStore.recentlyPlayed.first ?? libraryStore.books.first {
+                NavigationLink {
+                    BookDetailView(book: recent, showingNowPlaying: $showingNowPlaying)
+                } label: {
+                    CompactBookRowView(
+                        book: recent,
+                        sourceTitle: libraryStore.source(for: recent.book)?.title
+                    )
                 }
+                .buttonStyle(.plain)
             } else {
-                emptyPanel("Import local audio from Library to start listening.")
+                EmptyStatePanel(
+                    title: "Nothing Queued",
+                    message: "Import audio or search LibriVox to start listening.",
+                    systemImage: "headphones"
+                )
             }
         }
     }
@@ -75,35 +91,55 @@ struct ListenView: View {
     @ViewBuilder
     private var recentlyAdded: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Recently Added")
+            SectionTitle(title: "Recently Added", actionTitle: "See All", action: selectLibrary)
             if libraryStore.books.isEmpty {
-                emptyPanel("Local audiobooks will appear here.")
+                EmptyStatePanel(
+                    title: "No Audiobooks Yet",
+                    message: "Local and archive imports will appear here.",
+                    systemImage: "books.vertical"
+                )
             } else {
                 ForEach(libraryStore.books.prefix(5)) { book in
-                    BookRowView(
-                        book: book,
-                        isCurrent: playback.currentSession?.book.id == book.book.id
-                    ) {
-                        Task { await playback.play(book) }
+                    NavigationLink {
+                        BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                    } label: {
+                        CompactBookRowView(
+                            book: book,
+                            sourceTitle: libraryStore.source(for: book.book)?.title
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(VoxglassTheme.ink)
-    }
+    @ViewBuilder
+    private var recommended: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Recommended for You", actionTitle: "Search", action: selectSearch)
 
-    private func emptyPanel(_ text: String) -> some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(VoxglassTheme.secondaryInk)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .glassPanel()
+            if libraryStore.books.isEmpty {
+                EmptyStatePanel(
+                    title: "Build Your Shelf",
+                    message: "Recommendations use local books in this phase.",
+                    systemImage: "sparkles"
+                )
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(Array(libraryStore.books.prefix(8))) { book in
+                            NavigationLink {
+                                BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                            } label: {
+                                HorizontalBookCard(book: book)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
     }
 }
-

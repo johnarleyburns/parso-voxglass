@@ -1,5 +1,12 @@
 import Foundation
 
+enum LibraryBookFilter: Equatable, Sendable {
+    case all
+    case favorites
+    case source(UUID)
+    case downloaded
+}
+
 final class LibraryRepository {
     private let database: AppDatabase
     private let importer: LocalAudioImporter
@@ -28,6 +35,64 @@ final class LibraryRepository {
             let book = try Self.book(from: row)
             return BookWithChapters(book: book, chapters: (chaptersByBook[book.id] ?? []).naturallySorted())
         }
+    }
+
+    func fetchBooks(filteredBy filter: LibraryBookFilter) async throws -> [BookWithChapters] {
+        let library = try await fetchLibrary()
+
+        switch filter {
+        case .all:
+            return library
+        case .favorites:
+            return library.filter(\.book.isFavorite)
+        case .source(let sourceID):
+            return library.filter { $0.book.sourceID == sourceID }
+        case .downloaded:
+            let downloadedIDs = try await downloadedBookIDs()
+            return library.filter { downloadedIDs.contains($0.book.id) }
+        }
+    }
+
+    func fetchSources() async throws -> [Source] {
+        try await database.prepare()
+
+        let rows = try await database.query("""
+        SELECT id, kind, title, url, created_at
+        FROM sources
+        ORDER BY created_at DESC, title COLLATE NOCASE ASC
+        """)
+        return try rows.map(Self.source(from:))
+    }
+
+    func fetchRecentlyPlayed(limit: Int = 50) async throws -> [BookWithChapters] {
+        try await database.prepare()
+
+        let rows = try await database.query("""
+        SELECT book_id, MAX(updated_at) AS latest_position_at
+        FROM playback_positions
+        GROUP BY book_id
+        ORDER BY latest_position_at DESC
+        LIMIT ?
+        """, [
+            .int(Int64(max(0, limit)))
+        ])
+        let orderedIDs = try rows.map { try ModelMapping.uuid($0, "book_id") }
+        let libraryByID = Dictionary(uniqueKeysWithValues: try await fetchLibrary().map { ($0.book.id, $0) })
+        return orderedIDs.compactMap { libraryByID[$0] }
+    }
+
+    func setFavorite(_ isFavorite: Bool, for bookID: UUID) async throws -> BookWithChapters? {
+        try await database.prepare()
+
+        try await database.execute("""
+        UPDATE books
+        SET is_favorite = ?
+        WHERE id = ?
+        """, [
+            .bool(isFavorite),
+            ModelMapping.databaseValue(bookID)
+        ])
+        return try await bookWithChapters(forBookID: bookID)
     }
 
     func importLocalAudio(from urls: [URL]) async throws -> [BookWithChapters] {
@@ -187,6 +252,34 @@ final class LibraryRepository {
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
         """, [ModelMapping.databaseValue(book.id)])
         return BookWithChapters(book: book, chapters: try chapterRows.map(Self.chapter(from:)).naturallySorted())
+    }
+
+    private func bookWithChapters(forBookID bookID: UUID) async throws -> BookWithChapters? {
+        let bookRows = try await database.query("""
+        SELECT id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        FROM books
+        WHERE id = ?
+        LIMIT 1
+        """, [ModelMapping.databaseValue(bookID)])
+        guard let bookRow = bookRows.first else { return nil }
+
+        let book = try Self.book(from: bookRow)
+        let chapterRows = try await database.query("""
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url
+        FROM chapters
+        WHERE book_id = ?
+        ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
+        """, [ModelMapping.databaseValue(book.id)])
+        return BookWithChapters(book: book, chapters: try chapterRows.map(Self.chapter(from:)).naturallySorted())
+    }
+
+    private func downloadedBookIDs() async throws -> Set<UUID> {
+        let rows = try await database.query("""
+        SELECT DISTINCT book_id
+        FROM download_records
+        WHERE state IN ('downloaded', 'complete', 'completed') OR local_url IS NOT NULL
+        """)
+        return Set(try rows.map { try ModelMapping.uuid($0, "book_id") })
     }
 
     private func insert(book: Book, chapters: [Chapter]) async throws {

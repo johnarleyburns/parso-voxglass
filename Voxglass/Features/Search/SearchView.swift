@@ -4,17 +4,27 @@ struct SearchView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @EnvironmentObject private var playback: PlaybackCoordinator
+    @Binding var showingNowPlaying: Bool
     @State private var query = ""
     @State private var archiveURL = ""
+    @State private var scope: SearchScope = .all
     @State private var importingIdentifier: String?
 
     var body: some View {
         VoxglassScreen(title: "Search") {
             VStack(alignment: .leading, spacing: 18) {
                 searchPanel
+                scopeChips
                 archiveURLPanel
-                localResults
-                archiveResults
+                if scope.showsLocal {
+                    localResults
+                }
+                if scope.showsAuthors {
+                    authorResults
+                }
+                if scope.showsArchive {
+                    archiveResults
+                }
             }
             .padding(.top, 12)
         }
@@ -30,15 +40,15 @@ struct SearchView: View {
 
     private var searchPanel: some View {
         HStack(spacing: 10) {
-            TextField("Title or author", text: $query)
+            TextField("Title, author, or subject", text: $query)
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.search)
                 .onSubmit {
-                    Task { await catalogStore.searchLibriVox(query) }
+                    Task { await runSearch() }
                 }
 
             Button {
-                Task { await catalogStore.searchLibriVox(query) }
+                Task { await runSearch() }
             } label: {
                 if catalogStore.isSearching {
                     ProgressView()
@@ -50,8 +60,25 @@ struct SearchView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(VoxglassTheme.accent)
-            .accessibilityLabel("Search LibriVox")
+            .accessibilityLabel("Search")
             .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isSearching)
+        }
+    }
+
+    private var scopeChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SearchScope.allCases) { searchScope in
+                    FilterChip(
+                        title: searchScope.title,
+                        systemImage: searchScope.icon,
+                        isSelected: scope == searchScope
+                    ) {
+                        scope = searchScope
+                    }
+                }
+            }
+            .padding(.vertical, 2)
         }
     }
 
@@ -94,23 +121,68 @@ struct SearchView: View {
     @ViewBuilder
     private var localResults: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("On This Device")
-                .font(.headline)
-                .foregroundStyle(VoxglassTheme.ink)
+            SectionTitle(title: "On This Device")
 
-            if results.isEmpty {
-                ContentUnavailableView("No Local Results", systemImage: "books.vertical")
-                    .padding()
-                    .glassPanel()
+            if localMatches.isEmpty {
+                EmptyStatePanel(
+                    title: "No Local Results",
+                    message: "Imported books matching this search will appear here.",
+                    systemImage: "books.vertical"
+                )
             } else {
-                ForEach(results) { book in
-                    BookRowView(
-                        book: book,
-                        isCurrent: playback.currentSession?.book.id == book.book.id
-                    ) {
-                        Task { await playback.play(book) }
+                ForEach(localMatches.prefix(8)) { book in
+                    NavigationLink {
+                        BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                    } label: {
+                        CompactBookRowView(
+                            book: book,
+                            sourceTitle: libraryStore.source(for: book.book)?.title
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var authorResults: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Authors")
+
+            if localAuthorMatches.isEmpty && archiveAuthorMatches.isEmpty {
+                EmptyStatePanel(
+                    title: "No Authors",
+                    message: "Author matches use local metadata and current archive results.",
+                    systemImage: "person.2"
+                )
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(localAuthorMatches, id: \.self) { author in
+                        NavigationLink {
+                            AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
+                        } label: {
+                            DisclosureListRow(
+                                icon: "person.fill",
+                                title: author,
+                                detail: "Local author",
+                                count: libraryStore.books(byAuthor: author).count
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    ForEach(archiveAuthorMatches, id: \.self) { author in
+                        DisclosureListRow(
+                            icon: "person.crop.circle.badge.plus",
+                            title: author,
+                            detail: "Archive result author",
+                            count: nil,
+                            isEnabled: false
+                        )
                     }
                 }
+                .glassPanel()
             }
         }
     }
@@ -118,12 +190,10 @@ struct SearchView: View {
     @ViewBuilder
     private var archiveResults: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("LibriVox")
-                .font(.headline)
-                .foregroundStyle(VoxglassTheme.ink)
+            SectionTitle(title: "LibriVox and Archive")
 
             if catalogStore.isSearching {
-                HStack {
+                HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching")
                         .font(.subheadline)
@@ -133,9 +203,11 @@ struct SearchView: View {
                 .padding()
                 .glassPanel()
             } else if catalogStore.results.isEmpty {
-                ContentUnavailableView("No Archive Results", systemImage: "globe")
-                    .padding()
-                    .glassPanel()
+                EmptyStatePanel(
+                    title: "No Archive Results",
+                    message: "Search by title, author, or subject to import public-domain audiobooks.",
+                    systemImage: "globe"
+                )
             } else {
                 ForEach(catalogStore.results) { result in
                     InternetArchiveResultRow(
@@ -149,13 +221,33 @@ struct SearchView: View {
         }
     }
 
-    private var results: [BookWithChapters] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var localMatches: [BookWithChapters] {
+        let trimmed = normalizedQuery
         guard !trimmed.isEmpty else { return libraryStore.books }
         return libraryStore.books.filter { book in
             book.book.title.localizedCaseInsensitiveContains(trimmed)
                 || book.book.authorLine.localizedCaseInsensitiveContains(trimmed)
         }
+    }
+
+    private var localAuthorMatches: [String] {
+        let trimmed = normalizedQuery
+        guard !trimmed.isEmpty else { return libraryStore.authorNames }
+        return libraryStore.authorNames.filter { $0.localizedCaseInsensitiveContains(trimmed) }
+    }
+
+    private var archiveAuthorMatches: [String] {
+        let trimmed = normalizedQuery
+        let authors = Set(catalogStore.results.flatMap(\.creators))
+        return authors
+            .filter { author in
+                !author.isEmpty && (trimmed.isEmpty || author.localizedCaseInsensitiveContains(trimmed))
+            }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    private var normalizedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var errorBinding: Binding<Bool> {
@@ -169,12 +261,20 @@ struct SearchView: View {
         }
     }
 
+    private func runSearch() async {
+        guard !normalizedQuery.isEmpty else { return }
+        if scope.showsArchive {
+            await catalogStore.searchLibriVox(normalizedQuery)
+        }
+    }
+
     private func importResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
             await playback.play(imported)
+            showingNowPlaying = true
         }
     }
 
@@ -182,11 +282,12 @@ struct SearchView: View {
         if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
             archiveURL = ""
             await playback.play(imported)
+            showingNowPlaying = true
         }
     }
 }
 
-private struct InternetArchiveResultRow: View {
+struct InternetArchiveResultRow: View {
     var result: InternetArchiveSearchResult
     var isImporting: Bool
     var importAction: () -> Void
@@ -238,6 +339,56 @@ private struct InternetArchiveResultRow: View {
         if let downloads = result.downloads {
             parts.append("\(downloads) downloads")
         }
-        return parts.isEmpty ? result.identifier : parts.joined(separator: " · ")
+        if parts.isEmpty {
+            parts.append(result.sourceKind.displayName)
+        }
+        return parts.joined(separator: " - ")
+    }
+}
+
+private enum SearchScope: String, CaseIterable, Identifiable {
+    case all
+    case local
+    case librivox
+    case authors
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:
+            return "All"
+        case .local:
+            return "Local"
+        case .librivox:
+            return "LibriVox"
+        case .authors:
+            return "Authors"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .all:
+            return "rectangle.stack"
+        case .local:
+            return "iphone"
+        case .librivox:
+            return "waveform"
+        case .authors:
+            return "person.2"
+        }
+    }
+
+    var showsLocal: Bool {
+        self == .all || self == .local
+    }
+
+    var showsArchive: Bool {
+        self == .all || self == .librivox
+    }
+
+    var showsAuthors: Bool {
+        self == .all || self == .authors
     }
 }
