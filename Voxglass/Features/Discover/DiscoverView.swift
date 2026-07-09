@@ -5,7 +5,7 @@ struct BrowseView: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
-    @State private var selectedSubject: BrowseSubject?
+    @State private var selectedCategory: LibriVoxBrowseCategory?
     @State private var importingIdentifier: String?
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
@@ -33,19 +33,28 @@ struct BrowseView: View {
     private var subjectGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Genres & Subjects")
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(BrowseSubject.allCases) { subject in
-                    Button {
-                        selectedSubject = subject
-                        Task { await catalogStore.searchLibriVox(subject.query) }
-                    } label: {
-                        BrowseTile(
-                            title: subject.title,
-                            systemImage: subject.icon,
-                            isSelected: selectedSubject == subject
-                        )
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(LibriVoxBrowseGroup.all) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(group.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(VoxglassTheme.secondaryInk)
+                            .textCase(.uppercase)
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(group.categories) { category in
+                                Button {
+                                    search(category)
+                                } label: {
+                                    BrowseTile(
+                                        title: category.title,
+                                        systemImage: category.systemImage,
+                                        isSelected: selectedCategory == category
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -56,26 +65,24 @@ struct BrowseView: View {
             SectionTitle(title: "Sources")
             VStack(spacing: 0) {
                 Button {
-                    selectedSubject = .fiction
-                    Task { await catalogStore.searchLibriVox("fiction") }
+                    search(.popular)
                 } label: {
                     DisclosureListRow(
                         icon: "waveform",
                         title: "LibriVox",
-                        detail: "Public-domain narrated audiobooks",
+                        detail: "Popular public-domain audiobooks",
                         count: nil
                     )
                 }
                 .buttonStyle(.plain)
 
                 Button {
-                    selectedSubject = .history
-                    Task { await catalogStore.searchLibriVox("history") }
+                    search(.generalFiction)
                 } label: {
                     DisclosureListRow(
                         icon: "building.columns.fill",
                         title: "Internet Archive",
-                        detail: "Archive items through IA metadata",
+                        detail: "Curated IA subject search",
                         count: nil
                     )
                 }
@@ -120,7 +127,7 @@ struct BrowseView: View {
     @ViewBuilder
     private var catalogResults: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: selectedSubject?.title ?? "Browse Results")
+            SectionTitle(title: selectedCategory?.title ?? "Browse Results")
 
             if catalogStore.isSearching {
                 HStack(spacing: 12) {
@@ -135,7 +142,7 @@ struct BrowseView: View {
             } else if catalogStore.results.isEmpty {
                 EmptyStatePanel(
                     title: "Choose a Subject",
-                    message: "Subject shortcuts search LibriVox through Internet Archive.",
+                    message: "Semantic LibriVox subjects search Internet Archive public-domain audiobooks.",
                     systemImage: "square.grid.2x2"
                 )
             } else {
@@ -171,6 +178,11 @@ struct BrowseView: View {
             showingNowPlaying = true
         }
     }
+
+    private func search(_ category: LibriVoxBrowseCategory) {
+        selectedCategory = category
+        Task { await catalogStore.searchAdvanced(category.archiveQuery) }
+    }
 }
 
 private struct BrowseTile: View {
@@ -199,55 +211,6 @@ private struct BrowseTile: View {
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(VoxglassTheme.softLine, lineWidth: 1)
-        }
-    }
-}
-
-private enum BrowseSubject: String, CaseIterable, Identifiable {
-    case fiction
-    case mystery
-    case poetry
-    case history
-    case science
-    case philosophy
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .fiction:
-            return "Fiction"
-        case .mystery:
-            return "Mystery"
-        case .poetry:
-            return "Poetry"
-        case .history:
-            return "History"
-        case .science:
-            return "Science"
-        case .philosophy:
-            return "Philosophy"
-        }
-    }
-
-    var query: String {
-        title
-    }
-
-    var icon: String {
-        switch self {
-        case .fiction:
-            return "book.closed"
-        case .mystery:
-            return "key.fill"
-        case .poetry:
-            return "quote.bubble.fill"
-        case .history:
-            return "building.columns.fill"
-        case .science:
-            return "atom"
-        case .philosophy:
-            return "brain.head.profile"
         }
     }
 }

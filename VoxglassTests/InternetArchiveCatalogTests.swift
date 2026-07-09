@@ -66,6 +66,19 @@ final class InternetArchiveCatalogTests: XCTestCase {
         )
     }
 
+    func testLibriVoxBrowseCategoriesUseSemanticArchiveQueries() {
+        let categories = LibriVoxBrowseGroup.categories
+        let ids = Set(categories.map(\.id))
+
+        XCTAssertEqual(categories.count, 21)
+        XCTAssertEqual(ids.count, categories.count)
+        XCTAssertEqual(LibriVoxBrowseGroup.all.map(\.title), ["Fiction", "Forms", "Ideas & Nonfiction"])
+        XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains("collection:librivoxaudio") })
+        XCTAssertTrue(categories.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
+        XCTAssertTrue(LibriVoxBrowseCategory.scienceFiction.archiveQuery.contains("subject:\"Science Fiction\""))
+        XCTAssertTrue(LibriVoxBrowseCategory.philosophyMind.archiveQuery.contains("AND NOT"))
+    }
+
     func testInternetArchiveImportRoundTripsAndDeduplicatesInDatabase() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "internet-archive-import")
         let repository = LibraryRepository(database: database)

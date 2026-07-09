@@ -20,6 +20,12 @@ final class CatalogStore: ObservableObject {
         }
     }
 
+    func searchAdvanced(_ query: String) async {
+        await runSearch {
+            try await client.searchAdvanced(query: query)
+        }
+    }
+
     func importResult(
         _ result: InternetArchiveSearchResult,
         into libraryStore: LibraryStore
