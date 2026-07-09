@@ -78,6 +78,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Check TestFlight secrets
         id: preflight
@@ -107,6 +109,14 @@ jobs:
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Compute build number
+        id: build_number
+        run: |
+          set -euo pipefail
+          build_number="$(git rev-list --count HEAD)"
+          echo "value=$build_number" >> "$GITHUB_OUTPUT"
+          echo "Using build number $build_number"
 
       - name: Select App Store Xcode
         if: steps.preflight.outputs.ready == 'true'
@@ -234,6 +244,7 @@ jobs:
             CODE_SIGNING_ALLOWED=YES \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             CODE_SIGN_STYLE=Manual \
+            CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ steps.signing.outputs.profile_name }}" \
             archive
 
