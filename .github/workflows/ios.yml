@@ -262,6 +262,8 @@ jobs:
             <string>upload</string>
             <key>method</key>
             <string>app-store-connect</string>
+            <key>manageAppVersionAndBuildNumber</key>
+            <false/>
             <key>provisioningProfiles</key>
             <dict>
               <key>${APP_BUNDLE_ID}</key>
