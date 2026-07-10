@@ -33,7 +33,7 @@ struct AudioFormatSelection {
 
     private static let acceptedExtensions: [AudioCodec: Set<String>] = [
         .flac: ["flac"],
-        .opus: ["opus", "ogg"],
+        .opus: ["opus"],
         .vorbis: ["ogg"],
         .mp3: ["mp3"]
     ]

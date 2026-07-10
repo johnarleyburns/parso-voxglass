@@ -155,13 +155,14 @@ private enum OggTestData {
                     remaining = 0
                 }
             }
-            if isLastPacket && segments.last == 255 {
+            // If the last segment of a non-last packet is 255, we need a 0-length segment
+            // to terminate the packet before the next one begins.
+            if !isLastPacket, segments.last == 255 {
                 segments.append(0)
-            } else if !isLastPacket && segments.last != 255 {
-                segments[segments.count - 1] = 255
-                if packet.count % 255 == 0 {
-                    segments.append(0)
-                }
+            }
+            // If the last packet ended with a 255 segment, add a 0 to terminate
+            if isLastPacket, segments.last == 255 {
+                segments.append(0)
             }
         }
 
