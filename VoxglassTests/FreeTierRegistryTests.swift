@@ -49,20 +49,17 @@ final class FreeTierRegistryTests: XCTestCase {
         XCTAssertNotNil(chapter.playableURL)
     }
 
-    func testNearGaplessIsFree() {
-        // AVPlayerAudioEngine.load handles transitions without Pro
+    @MainActor func testNearGaplessIsFree() {
         let engine = AVPlayerAudioEngine()
         XCTAssertNotNil(engine)
     }
 
     func testDerivativePolicyIsAvailableWithoutPro() {
-        // DerivativePolicy can be created and used without Pro
         let policy = DerivativePolicy(networkCondition: .wifi)
         XCTAssertEqual(policy.rankedCodecs, [.flac, .mp3])
     }
 
-    func testPlaybackCoordinatorOperatesWithoutPro() {
-        // PlaybackCoordinator init does not require Pro entitlement
+    @MainActor func testPlaybackCoordinatorOperatesWithoutPro() {
         let database = AppDatabase.makeTemporaryDatabase(named: "free-tier-test")
         let positionStore = SQLitePositionStore(database: database)
         let engine = AVPlayerAudioEngine()
