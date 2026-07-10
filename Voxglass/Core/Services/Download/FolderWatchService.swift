@@ -21,7 +21,7 @@ final class FolderWatchService: NSObject, NSFilePresenter, @unchecked Sendable {
         var isStale = false
         let url = try? URL(
             resolvingBookmarkData: data,
-            options: .withSecurityScope,
+            options: [],
             relativeTo: nil,
             bookmarkDataIsStale: &isStale
         )
@@ -40,7 +40,7 @@ final class FolderWatchService: NSObject, NSFilePresenter, @unchecked Sendable {
         defer { if didStart { folderURL.stopAccessingSecurityScopedResource() } }
 
         guard let bookmarkData = try? folderURL.bookmarkData(
-            options: .withSecurityScope,
+            options: [],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         ) else { return }
