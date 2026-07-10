@@ -37,22 +37,17 @@ final class EQAudioProcessor {
                 tapStorageOut.pointee = Unmanaged.passRetained(processor).toOpaque()
             },
             finalize: { tap in
-                let storage = MTAudioProcessingTapGetStorage(tap)
-                if let raw = storage {
-                    Unmanaged<EQAudioProcessor>.fromOpaque(raw).release()
-                }
+                let raw = MTAudioProcessingTapGetStorage(tap)
+                Unmanaged<EQAudioProcessor>.fromOpaque(raw).release()
             },
             prepare: { tap, maxFrames, processingFormat in
-                let storage = MTAudioProcessingTapGetStorage(tap)
-                if let raw = storage {
-                    let processor = Unmanaged<EQAudioProcessor>.fromOpaque(raw).takeUnretainedValue()
-                    processor.engine.reset()
-                }
+                let raw = MTAudioProcessingTapGetStorage(tap)
+                let processor = Unmanaged<EQAudioProcessor>.fromOpaque(raw).takeUnretainedValue()
+                processor.engine.reset()
             },
             unprepare: { _ in },
             process: { tap, numberFrames, flags, bufferListInOut, numberFramesOut, flagsOut in
-                let storage = MTAudioProcessingTapGetStorage(tap)
-                guard let raw = storage else { return }
+                let raw = MTAudioProcessingTapGetStorage(tap)
                 let processor = Unmanaged<EQAudioProcessor>.fromOpaque(raw).takeUnretainedValue()
 
                 let status = MTAudioProcessingTapGetSourceAudio(tap, numberFrames, bufferListInOut, flagsOut, nil, numberFramesOut)
