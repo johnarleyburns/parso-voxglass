@@ -77,10 +77,11 @@ final class EQAudioProcessor {
 
         tap = tapRef
         isActive = true
+        let processor = tapRef.takeUnretainedValue()
 
         let audioTrack = playerItem.asset.tracks.first { $0.mediaType == .audio }
         let inputParams = AVMutableAudioMixInputParameters(track: audioTrack)
-        inputParams.setValue(tapRef.takeUnretainedValue(), forKey: "audioTapProcessor")
+        inputParams.setValue(processor, forKey: "audioTapProcessor")
 
         let audioMix = AVMutableAudioMix()
         audioMix.inputParameters = [inputParams]
