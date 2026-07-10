@@ -8,13 +8,13 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.headline)
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Palette.ink)
             Spacer()
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.accent)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.brass)
             }
         }
     }
@@ -31,22 +31,24 @@ struct FilterChip: View {
             HStack(spacing: 6) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 11, weight: .semibold))
                 }
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 12.5, weight: .semibold))
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .frame(height: 36)
-            .foregroundStyle(isSelected ? VoxglassTheme.deepGlass : VoxglassTheme.ink)
+            .padding(.horizontal, 14)
+            .frame(height: 34)
+            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink)
             .background {
                 Capsule()
-                    .fill(isSelected ? VoxglassTheme.accent : VoxglassTheme.paperRaised)
+                    .fill(isSelected ? Palette.brass : Color.white.opacity(0.08))
             }
             .overlay {
-                Capsule()
-                    .stroke(VoxglassTheme.softLine, lineWidth: 1)
+                if !isSelected {
+                    Capsule()
+                        .stroke(Palette.hairline, lineWidth: 1)
+                }
             }
         }
         .buttonStyle(.plain)
@@ -63,24 +65,24 @@ struct DisclosureListRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isEnabled ? VoxglassTheme.accent : VoxglassTheme.secondaryInk.opacity(0.55))
+                .font(.system(size: 14))
+                .foregroundStyle(isEnabled ? Palette.brass : Palette.ink3.opacity(0.55))
                 .frame(width: 32, height: 32)
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.paperRaised)
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.white.opacity(0.07))
                 }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isEnabled ? VoxglassTheme.ink : VoxglassTheme.secondaryInk)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(isEnabled ? Palette.ink : Palette.ink2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                 if let detail {
                     Text(detail)
-                        .font(.caption)
-                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
             }
@@ -89,19 +91,19 @@ struct DisclosureListRow: View {
 
             if let count {
                 Text("\(count)")
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
+                    .font(.system(size: 11).monospacedDigit().weight(.semibold))
+                    .foregroundStyle(Palette.ink3)
                     .padding(.horizontal, 8)
                     .frame(height: 24)
                     .background {
                         Capsule()
-                            .fill(VoxglassTheme.paperRaised)
+                            .fill(Color.white.opacity(0.07))
                     }
             }
 
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(VoxglassTheme.secondaryInk.opacity(isEnabled ? 0.7 : 0.25))
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Palette.ink3.opacity(isEnabled ? 0.7 : 0.25))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -118,13 +120,15 @@ struct PrimaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.bold))
+                .font(.system(size: 15.5, weight: .bold))
                 .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .foregroundStyle(VoxglassTheme.deepGlass)
+                .frame(height: 50)
+                .foregroundStyle(Color(hex: 0x221503))
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.accent)
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                            startPoint: .top, endPoint: .bottom))
                 }
         }
         .buttonStyle(.plain)
@@ -140,18 +144,11 @@ struct SecondaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
-                .foregroundStyle(isEnabled ? VoxglassTheme.ink : VoxglassTheme.secondaryInk)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.paperRaised)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(VoxglassTheme.softLine, lineWidth: 1)
-                }
+                .foregroundStyle(isEnabled ? Palette.ink : Palette.ink3)
+                .glassSurface(cornerRadius: 18)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -165,28 +162,28 @@ struct CompactBookRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             BookArtworkView(title: book.book.title, size: 46, coverURL: book.book.coverURL)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(book.book.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.ink)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                 Text(book.book.authorLine)
-                    .font(.caption)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 Text(book.libraryDetailLine(sourceTitle: sourceTitle))
-                    .font(.caption2)
-                    .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.78))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.7))
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Palette.ink3.opacity(0.7))
         }
         .padding(12)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
     }
 }
 
@@ -197,19 +194,19 @@ struct HorizontalBookCard: View {
         VStack(alignment: .leading, spacing: 8) {
             BookArtworkView(title: book.book.title, size: 78, coverURL: book.book.coverURL)
             Text(book.book.title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Palette.ink)
                 .lineLimit(2)
                 .frame(width: 98, alignment: .leading)
             Text(book.book.authorLine)
-                .font(.caption2)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 10.5))
+                .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .frame(width: 98, alignment: .leading)
         }
         .frame(width: 112, alignment: .topLeading)
         .padding(10)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
     }
 }
 
@@ -222,18 +219,45 @@ struct EmptyStatePanel: View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.title2)
-                .foregroundStyle(VoxglassTheme.accent)
+                .foregroundStyle(Palette.brass)
             Text(title)
-                .font(.headline)
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Palette.ink)
             Text(message)
-                .font(.subheadline)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 14))
+                .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(18)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
+    }
+}
+
+struct ProvenanceChip: View {
+    let sourceKind: SourceKind?
+    var body: some View {
+        let (icon, text) = badge
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 8))
+            Text(text)
+        }
+        .font(.system(size: 8.5, weight: .bold))
+        .kerning(0.5)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 7).padding(.vertical, 3)
+        .background(Color.black.opacity(0.45), in: Capsule())
+    }
+
+    private var badge: (String, String) {
+        switch sourceKind {
+        case .librivox:
+            return ("waveform", "LIBRIVOX")
+        case .internetArchive, .internetArchiveURL:
+            return ("cloud", "ARCHIVE.ORG")
+        case .localFiles, .none:
+            return ("iphone", "ON DEVICE")
+        }
     }
 }
 

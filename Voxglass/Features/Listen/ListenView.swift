@@ -46,11 +46,12 @@ struct ListenView: View {
     private var hero: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Good listening")
-                .font(.system(.largeTitle, design: .serif, weight: .bold))
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 31, weight: .heavy))
+                .kerning(-0.5)
+                .foregroundStyle(Palette.ink)
             Text("Public-domain audiobooks, private by default.")
-                .font(.subheadline)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 14))
+                .foregroundStyle(Palette.ink2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -88,7 +89,7 @@ struct ListenView: View {
                     if recommendations.isRefreshing {
                         ProgressView()
                             .padding(8)
-                            .background(.thinMaterial, in: Circle())
+                            .glassSurface(cornerRadius: 18)
                             .padding(4)
                     }
                 }
@@ -126,26 +127,26 @@ struct ListenView: View {
                 BookArtworkView(title: session.book.title, size: 70, coverURL: session.book.coverURL)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(session.book.title)
-                        .font(.headline)
-                        .foregroundStyle(VoxglassTheme.ink)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Palette.ink)
                         .lineLimit(2)
                     Text(session.chapter.title)
-                        .font(.subheadline)
-                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.ink2)
                         .lineLimit(1)
                     ProgressView(value: session.progress)
-                        .tint(VoxglassTheme.accent)
+                        .tint(Palette.brass)
                     Text("\(TimeFormatting.clock(session.position)) of \(TimeFormatting.clock(session.duration))")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .font(.system(size: 11.5).monospacedDigit())
+                        .foregroundStyle(Palette.ink3)
                 }
                 Spacer()
                 Image(systemName: session.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: 36))
-                    .foregroundStyle(VoxglassTheme.accent)
+                    .foregroundStyle(Palette.brass)
             }
             .padding(14)
-            .glassPanel()
+            .glassSurface(cornerRadius: 14)
         }
         .buttonStyle(.plain)
     }

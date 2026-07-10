@@ -38,8 +38,10 @@
 		6D1F2947C9F08205C5A4C991 /* ArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75882B51F22C8D3A3EEAAD /* ArtworkService.swift */; };
 		713811C821F808FF77A38F59 /* VoxglassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */; };
 		737B89964C17EDDFC294E82D /* PlaybackCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E00E34BB8E21391962EFE1 /* PlaybackCoordinator.swift */; };
+		7D9C2E22E6DF8072E4EA774F /* AdaptiveGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */; };
 		7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */; };
 		87F429A2A56181EF2798D1B8 /* AudioFormatSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F83970BE913FA182709D2E /* AudioFormatSelection.swift */; };
+		8A1CD38DD828054566ABEF1C /* GlassDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420E11400AB1535B94D3D0B5 /* GlassDock.swift */; };
 		8C6B21C9D4DCE4D3AAFB642E /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49FA6D58EC651570824B18FE /* AudioToolbox.framework */; };
 		8E0DC1B2A7EBCE981FAC5710 /* LibraryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E251AB7BD44B822DF78B97 /* LibraryRepositoryTests.swift */; };
 		8EF429B58A6E7381076CC947 /* OggPageReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4CCC26DE01AFD377B0A360 /* OggPageReaderTests.swift */; };
@@ -121,6 +123,7 @@
 		3A2CE8BA17550D0B0C83422C /* ProEntitlement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProEntitlement.swift; sourceTree = "<group>"; };
 		4008972DE2117B1781A316A6 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		401A6A7A2EAF21C7B1B57B98 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
+		420E11400AB1535B94D3D0B5 /* GlassDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDock.swift; sourceTree = "<group>"; };
 		437EA198DF6BD31FC98AAF8A /* InternetArchiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveClient.swift; sourceTree = "<group>"; };
 		46BECBB89F17D12CFB910BC9 /* BookRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookRowView.swift; sourceTree = "<group>"; };
 		49FA6D58EC651570824B18FE /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -177,6 +180,7 @@
 		EBFDDE9DC3DB057D7F68E899 /* advanced_search_librivox.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = advanced_search_librivox.json; sourceTree = "<group>"; };
 		EFA4E9B17CAB1FFA31DB10F8 /* VoxglassTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F17A1A10380661E1380EBCF2 /* AppPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferencesStore.swift; sourceTree = "<group>"; };
+		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F75BEC14A135E3D926160BA1 /* DatabaseMigrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseMigrations.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -298,6 +302,14 @@
 			path = Library;
 			sourceTree = "<group>";
 		};
+		558B88315E87649350BF1F1A /* Chrome */ = {
+			isa = PBXGroup;
+			children = (
+				420E11400AB1535B94D3D0B5 /* GlassDock.swift */,
+			);
+			path = Chrome;
+			sourceTree = "<group>";
+		};
 		5B7931E9F13221B79BA0FBA4 /* Player */ = {
 			isa = PBXGroup;
 			children = (
@@ -310,6 +322,7 @@
 		64C3F8F8FCD8175BB6BA6CB7 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */,
 				1F75882B51F22C8D3A3EEAAD /* ArtworkService.swift */,
 				CB2DBA8A509FFB154473301D /* BookArtworkView.swift */,
 				1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */,
@@ -496,6 +509,7 @@
 		FF3D079D61486F8A56FD39FF /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				558B88315E87649350BF1F1A /* Chrome */,
 				97D8E1CF44DA8E5536673DBB /* Discover */,
 				4FF87AFE93B4D9DF1F64B844 /* Library */,
 				2FD1F66FADFA63C33D73FE19 /* Listen */,
@@ -617,6 +631,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3382A26BA23175201F4C5F60 /* AVPlayerAudioEngine.swift in Sources */,
+				7D9C2E22E6DF8072E4EA774F /* AdaptiveGlass.swift in Sources */,
 				BE9B082F6ED79555AA19836F /* AppDatabase.swift in Sources */,
 				0580D2DDAA107B2D8766D7AA /* AppPreferencesStore.swift in Sources */,
 				F6D05FC8D3665660DD1D83B2 /* AppServices.swift in Sources */,
@@ -636,6 +651,7 @@
 				D1DB078A196600B28D4BD877 /* DiscoverView.swift in Sources */,
 				5C6CECF4CF0B88CEF7D16462 /* EQAudioProcessor.swift in Sources */,
 				EC2B70277C487A5A07362808 /* FolderWatchService.swift in Sources */,
+				8A1CD38DD828054566ABEF1C /* GlassDock.swift in Sources */,
 				C302DA4298F8F83EAF79EEB2 /* HomeRecommendationStore.swift in Sources */,
 				E7BA389ACEF2463AC7C2031B /* IACollection.swift in Sources */,
 				3C0DE431CC692B27F1033D61 /* InternetArchiveAudioSelector.swift in Sources */,
@@ -776,7 +792,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 31;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -796,7 +812,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -880,7 +896,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 31;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -894,7 +910,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

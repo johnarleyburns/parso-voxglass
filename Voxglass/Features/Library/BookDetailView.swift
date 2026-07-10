@@ -41,21 +41,30 @@ struct BookDetailView: View {
     private var detailHeader: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 16) {
-                BookArtworkView(title: currentBook.book.title, size: 112, coverURL: currentBook.book.coverURL)
-                    .shadow(color: .black.opacity(0.22), radius: 18, y: 12)
+                ZStack(alignment: .bottomLeading) {
+                    BookArtworkView(title: currentBook.book.title, size: 112, coverURL: currentBook.book.coverURL)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .shadow(color: .black.opacity(0.35), radius: 18, y: 12)
+
+                    if let source = libraryStore.source(for: currentBook.book) {
+                        ProvenanceChip(sourceKind: source.kind)
+                            .padding(6)
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(currentBook.book.title)
-                        .font(.system(.title2, design: .serif, weight: .bold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 20, weight: .heavy))
+                        .kerning(-0.5)
+                        .foregroundStyle(Palette.ink)
                         .lineLimit(4)
                         .minimumScaleFactor(0.72)
 
                     authorLinks
 
                     Text(currentBook.libraryDetailLine(sourceTitle: libraryStore.source(for: currentBook.book)?.kind.displayName))
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.66))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Palette.ink3)
                         .lineLimit(2)
                 }
             }
@@ -68,10 +77,7 @@ struct BookDetailView: View {
             }
         }
         .padding(16)
-        .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(VoxglassTheme.deepGlass)
-        }
+        .glassSurface(cornerRadius: 18)
     }
 
     private var authorLinks: some View {
@@ -79,15 +85,15 @@ struct BookDetailView: View {
             ForEach(currentBook.book.authors.isEmpty ? ["Unknown author"] : currentBook.book.authors, id: \.self) { author in
                 if author == "Unknown author" {
                     Text(author)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.72))
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.ink2)
                 } else {
                     NavigationLink {
                         AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
                     } label: {
                         Label(author, systemImage: "person.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(VoxglassTheme.accent)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Palette.brass)
                             .lineLimit(1)
                     }
                     .buttonStyle(.plain)
@@ -114,18 +120,11 @@ struct BookDetailView: View {
 
             ShareLink(item: shareText) {
                 Label("Share", systemImage: "square.and.arrow.up")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
-                    .foregroundStyle(VoxglassTheme.ink)
-                    .background {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(VoxglassTheme.paperRaised)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(VoxglassTheme.softLine, lineWidth: 1)
-                    }
+                    .foregroundStyle(Palette.ink)
+                    .glassSurface(cornerRadius: 18)
             }
         }
     }
@@ -134,12 +133,12 @@ struct BookDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Summary")
             Text(currentBook.book.summary?.isEmpty == false ? currentBook.book.summary! : "No summary is available for this audiobook yet.")
-                .font(.subheadline)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 14))
+                .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .glassPanel()
+                .glassSurface(cornerRadius: 14)
         }
     }
 
@@ -150,18 +149,11 @@ struct BookDetailView: View {
                 HStack(spacing: 8) {
                     ForEach(tags, id: \.self) { tag in
                         Text(tag)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(VoxglassTheme.ink)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Palette.ink)
                             .padding(.horizontal, 10)
                             .frame(height: 30)
-                            .background {
-                                Capsule()
-                                    .fill(VoxglassTheme.paperRaised)
-                            }
-                            .overlay {
-                                Capsule()
-                                    .stroke(VoxglassTheme.softLine, lineWidth: 1)
-                            }
+                            .glassSurface(cornerRadius: 15)
                     }
                 }
                 .padding(.vertical, 2)
@@ -195,7 +187,7 @@ struct BookDetailView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .glassPanel()
+            .glassSurface(cornerRadius: 14)
         }
     }
 
@@ -231,8 +223,9 @@ struct ChaptersView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(currentBook.book.title)
-                        .font(.system(.title3, design: .serif, weight: .bold))
-                        .foregroundStyle(VoxglassTheme.ink)
+                        .font(.system(size: 20, weight: .heavy))
+                        .kerning(-0.5)
+                        .foregroundStyle(Palette.ink)
                         .lineLimit(2)
 
                     VStack(spacing: 0) {
@@ -245,7 +238,7 @@ struct ChaptersView: View {
                             }
                         }
                     }
-                    .glassPanel()
+                    .glassSurface(cornerRadius: 14)
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
@@ -273,13 +266,14 @@ struct AuthorDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(authorName)
-                            .font(.system(.largeTitle, design: .serif, weight: .bold))
-                            .foregroundStyle(VoxglassTheme.ink)
+                            .font(.system(size: 31, weight: .heavy))
+                            .kerning(-0.5)
+                            .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
                         Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
-                            .font(.subheadline)
-                            .foregroundStyle(VoxglassTheme.secondaryInk)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Palette.ink2)
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -314,7 +308,7 @@ struct AuthorDetailView: View {
                             count: nil,
                             isEnabled: false
                         )
-                        .glassPanel()
+                        .glassSurface(cornerRadius: 14)
                     }
                 }
                 .padding(.horizontal, 18)
@@ -336,18 +330,18 @@ private struct ChapterRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: isCurrent ? "waveform.circle.fill" : "play.circle")
-                    .font(.title3)
-                    .foregroundStyle(isCurrent ? VoxglassTheme.accent : VoxglassTheme.secondaryInk)
+                    .font(.system(size: 18))
+                    .foregroundStyle(isCurrent ? Palette.brass : Palette.ink3)
                     .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(chapter.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(VoxglassTheme.ink)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Palette.ink)
                         .lineLimit(2)
                     Text(TimeFormatting.clock(chapter.duration))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .font(.system(size: 11.5).monospacedDigit())
+                        .foregroundStyle(Palette.ink3)
                 }
 
                 Spacer(minLength: 10)

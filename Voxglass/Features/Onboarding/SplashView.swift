@@ -5,17 +5,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            VoxglassTheme.deepGlass.ignoresSafeArea()
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.05),
-                    VoxglassTheme.accent.opacity(0.18),
-                    Color.clear
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            VoxglassTheme.libraryBackground.ignoresSafeArea()
 
             VStack(spacing: 28) {
                 Spacer(minLength: 24)
@@ -24,11 +14,12 @@ struct SplashView: View {
 
                 VStack(spacing: 10) {
                     Text("Voxglass")
-                        .font(.system(.largeTitle, design: .serif, weight: .bold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 31, weight: .heavy, design: .default))
+                        .kerning(-0.5)
+                        .foregroundStyle(Palette.ink)
                     Text("Public-domain audiobooks with a private, local-first shelf.")
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.72))
+                        .font(.system(size: 15))
+                        .foregroundStyle(Palette.ink2)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -37,13 +28,15 @@ struct SplashView: View {
 
                 Button(action: continueAction) {
                     Label("Get Started", systemImage: "sparkles")
-                        .font(.headline.weight(.bold))
+                        .font(.system(size: 15.5, weight: .bold))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .foregroundStyle(VoxglassTheme.deepGlass)
+                        .frame(height: 50)
+                        .foregroundStyle(Color(hex: 0x221503))
                         .background {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(VoxglassTheme.accent)
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                                    startPoint: .top, endPoint: .bottom))
                         }
                 }
                 .buttonStyle(.plain)

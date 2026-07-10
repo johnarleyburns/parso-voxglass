@@ -42,30 +42,37 @@ struct SearchView: View {
     }
 
     private var searchPanel: some View {
-        HStack(spacing: 10) {
-            TextField("Title, author, or subject", text: $query)
-                .textFieldStyle(.roundedBorder)
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Palette.ink3)
+
+            TextField("", text: $query, prompt: Text("Title, author, or subject").foregroundStyle(Palette.ink3))
+                .foregroundStyle(Palette.ink)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
                 .submitLabel(.search)
                 .onSubmit {
                     Task { await runSearch() }
                 }
 
-            Button {
-                Task { await runSearch() }
-            } label: {
-                if catalogStore.isSearching {
-                    ProgressView()
-                        .frame(width: 28, height: 28)
-                } else {
-                    Image(systemName: "magnifyingglass.circle.fill")
-                        .font(.system(size: 28, weight: .semibold))
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Palette.ink3)
                 }
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(VoxglassTheme.accent)
-            .accessibilityLabel("Search")
-            .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isSearching)
+
+            if catalogStore.isSearching {
+                ProgressView()
+                    .frame(width: 20, height: 20)
+            }
         }
+        .font(.system(size: 15))
+        .padding(.horizontal, 14)
+        .frame(height: 40)
+        .glassSurface(cornerRadius: 20)
     }
 
     private var scopeChips: some View {
@@ -88,14 +95,13 @@ struct SearchView: View {
     private var archiveURLPanel: some View {
         HStack(spacing: 10) {
             Image(systemName: "link")
-                .font(.headline)
-                .foregroundStyle(VoxglassTheme.accent)
+                .font(.system(size: 15))
+                .foregroundStyle(Palette.brass)
                 .frame(width: 28)
 
-            TextField("archive.org URL", text: $archiveURL)
+            TextField("", text: $archiveURL, prompt: Text("archive.org URL").foregroundStyle(Palette.ink3))
                 .textInputAutocapitalization(.never)
                 .keyboardType(.URL)
-                .textFieldStyle(.roundedBorder)
                 .submitLabel(.done)
                 .onSubmit {
                     Task { await addArchiveURL() }
@@ -113,12 +119,14 @@ struct SearchView: View {
                 }
             }
             .buttonStyle(.plain)
-            .foregroundStyle(VoxglassTheme.accent)
+            .foregroundStyle(Palette.brass)
             .accessibilityLabel("Add archive URL")
             .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
         }
-        .padding(12)
-        .glassPanel()
+        .font(.system(size: 15))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .glassSurface(cornerRadius: 14)
     }
 
     @ViewBuilder
@@ -185,7 +193,7 @@ struct SearchView: View {
                         )
                     }
                 }
-                .glassPanel()
+                .glassSurface(cornerRadius: 14)
             }
         }
     }
@@ -199,12 +207,12 @@ struct SearchView: View {
                 HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching")
-                        .font(.subheadline)
-                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .glassPanel()
+                .glassSurface(cornerRadius: 14)
             } else if catalogStore.results.isEmpty {
                 EmptyStatePanel(
                     title: "No Archive Results",
@@ -299,19 +307,19 @@ struct InternetArchiveResultRow: View {
         HStack(spacing: 12) {
             BookArtworkView(title: result.title, size: 48, coverURL: result.coverURL)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(result.title)
-                    .font(.headline)
-                    .foregroundStyle(VoxglassTheme.ink)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
                 Text(result.authorLine)
-                    .font(.subheadline)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 Text(detailLine)
-                    .font(.caption)
-                    .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.78))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
 
@@ -327,11 +335,11 @@ struct InternetArchiveResultRow: View {
                 }
             }
             .buttonStyle(.plain)
-            .foregroundStyle(VoxglassTheme.accent)
+            .foregroundStyle(Palette.brass)
             .accessibilityLabel("Import \(result.title)")
         }
         .padding(12)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
     }
 
     private var detailLine: String {

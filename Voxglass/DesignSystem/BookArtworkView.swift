@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct ArtworkImageView<Placeholder: View>: View {
     var url: URL?
@@ -46,7 +45,7 @@ struct ArtworkImageView<Placeholder: View>: View {
 struct BookCoverView: View {
     var title: String
     var coverURL: URL?
-    var cornerRadius: CGFloat = 8
+    var cornerRadius: CGFloat = 14
 
     var body: some View {
         ArtworkImageView(url: coverURL) {
@@ -87,10 +86,10 @@ struct CollectionArtworkView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(VoxglassTheme.softLine, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Palette.hairline, lineWidth: 1)
             }
         }
         .accessibilityHidden(true)
@@ -120,10 +119,10 @@ struct CollectionArtworkView: View {
     private var fallbackColors: [Color] {
         let seed = abs(title.hashValue)
         let palettes: [[Color]] = [
-            [Color(red: 0.10, green: 0.15, blue: 0.14), Color(red: 0.78, green: 0.52, blue: 0.28)],
-            [Color(red: 0.12, green: 0.12, blue: 0.18), Color(red: 0.54, green: 0.34, blue: 0.65)],
-            [Color(red: 0.08, green: 0.18, blue: 0.22), Color(red: 0.42, green: 0.66, blue: 0.72)],
-            [Color(red: 0.18, green: 0.10, blue: 0.12), Color(red: 0.74, green: 0.30, blue: 0.36)]
+            [Color(hex: 0x7A4B1E), Color(hex: 0x3D2410)],
+            [Color(hex: 0x4A5F8A), Color(hex: 0x22304E)],
+            [Color(hex: 0x5A3D78), Color(hex: 0x2A1C3E)],
+            [Color(hex: 0x6E2F2F), Color(hex: 0x361616)]
         ]
         return palettes[seed % palettes.count]
     }
@@ -144,29 +143,29 @@ struct VisualSummaryRow: View {
                 BookArtworkView(title: fallbackTitle, size: 48, coverURL: artworkURL)
             } else {
                 Image(systemName: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.accent)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
                     .background {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(VoxglassTheme.paperRaised)
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
                     }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.ink)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 if let metadata, !metadata.isEmpty {
                     Text(metadata)
-                        .font(.caption2)
-                        .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.78))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
             }
@@ -175,8 +174,8 @@ struct VisualSummaryRow: View {
 
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.7))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Palette.ink3.opacity(0.7))
             }
         }
         .padding(12)
@@ -193,17 +192,17 @@ struct HorizontalCatalogCard: View {
         VStack(alignment: .leading, spacing: 8) {
             BookCoverView(title: result.title, coverURL: result.coverURL)
                 .frame(width: 104, height: 136)
-                .shadow(color: .black.opacity(0.16), radius: 10, y: 6)
+                .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
 
             Text(result.title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Palette.ink)
                 .lineLimit(2)
                 .frame(width: 112, alignment: .leading)
 
             Text(result.authorLine)
-                .font(.caption2)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 10.5))
+                .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .frame(width: 112, alignment: .leading)
 
@@ -218,13 +217,13 @@ struct HorizontalCatalogCard: View {
                     Text("Import")
                         .lineLimit(1)
                 }
-                .font(.caption.weight(.bold))
+                .font(.system(size: 12, weight: .bold))
                 .frame(maxWidth: .infinity)
                 .frame(height: 30)
-                .foregroundStyle(VoxglassTheme.deepGlass)
+                .foregroundStyle(Color(hex: 0x221503))
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.accent)
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Palette.brass)
                 }
             }
             .buttonStyle(.plain)
@@ -232,7 +231,7 @@ struct HorizontalCatalogCard: View {
         }
         .frame(width: 128, alignment: .topLeading)
         .padding(10)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
         .onAppear {
             ArtworkService.shared.prefetch(urls: [result.coverURL], limit: 1)
         }
@@ -247,10 +246,11 @@ private struct GeneratedBookCover: View {
         ZStack {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(
-                    LinearGradient(
+                    RadialGradient(
                         colors: palette,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: 180
                     )
                 )
 
@@ -258,7 +258,7 @@ private struct GeneratedBookCover: View {
                 Image(systemName: "book.closed.fill")
                     .font(.system(size: 24, weight: .semibold))
                 Text(initials)
-                    .font(.system(size: 15, weight: .bold, design: .serif))
+                    .font(.system(size: 15, weight: .bold))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.65)
@@ -287,10 +287,10 @@ private struct GeneratedBookCover: View {
     private var palette: [Color] {
         let seed = abs(title.hashValue)
         let palettes: [[Color]] = [
-            [Color(red: 0.06, green: 0.09, blue: 0.08), Color(red: 0.50, green: 0.32, blue: 0.19), VoxglassTheme.accent],
-            [Color(red: 0.08, green: 0.08, blue: 0.14), Color(red: 0.32, green: 0.28, blue: 0.55), Color(red: 0.78, green: 0.52, blue: 0.80)],
-            [Color(red: 0.09, green: 0.14, blue: 0.17), Color(red: 0.25, green: 0.52, blue: 0.58), Color(red: 0.86, green: 0.68, blue: 0.40)],
-            [Color(red: 0.16, green: 0.06, blue: 0.08), Color(red: 0.48, green: 0.20, blue: 0.24), Color(red: 0.87, green: 0.50, blue: 0.36)]
+            [Color(hex: 0x7A4B1E), Color(hex: 0x3D2410), Color(hex: 0x1C1108)],
+            [Color(hex: 0x4A5F8A), Color(hex: 0x22304E), Color(hex: 0x0F1522)],
+            [Color(hex: 0x5A3D78), Color(hex: 0x2A1C3E), Color(hex: 0x181028)],
+            [Color(hex: 0x6E2F2F), Color(hex: 0x361616), Color(hex: 0x1C0A0A)]
         ]
         return palettes[seed % palettes.count]
     }

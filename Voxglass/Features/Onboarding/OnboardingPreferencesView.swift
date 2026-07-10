@@ -42,22 +42,20 @@ struct OnboardingPreferencesView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: "sparkles")
-                .font(.title2)
-                .foregroundStyle(VoxglassTheme.accent)
+                .font(.system(size: 20))
+                .foregroundStyle(Palette.brass)
                 .frame(width: 44, height: 44)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.paperRaised)
-                }
+                .glassSurface(cornerRadius: 14)
 
             Text("Choose a few interests")
-                .font(.system(.largeTitle, design: .serif, weight: .bold))
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 31, weight: .heavy))
+                .kerning(-0.5)
+                .foregroundStyle(Palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("Voxglass will start with popular LibriVox picks and refresh the shelf around your selections.")
-                .font(.subheadline)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 14))
+                .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -81,13 +79,15 @@ struct OnboardingPreferencesView: View {
                 finishAction(selectedTasteIDs)
             } label: {
                 Label("Continue", systemImage: "arrow.right")
-                    .font(.headline.weight(.bold))
+                    .font(.system(size: 15.5, weight: .bold))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .foregroundStyle(VoxglassTheme.deepGlass)
+                    .frame(height: 50)
+                    .foregroundStyle(Color(hex: 0x221503))
                     .background {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(VoxglassTheme.accent)
+                        Capsule()
+                            .fill(LinearGradient(
+                                colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                                startPoint: .top, endPoint: .bottom))
                     }
             }
             .buttonStyle(.plain)
@@ -95,8 +95,8 @@ struct OnboardingPreferencesView: View {
             Button("Skip") {
                 skipAction()
             }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(VoxglassTheme.secondaryInk)
+            .font(.system(size: 12.5))
+            .foregroundStyle(Palette.ink3)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
         }
@@ -120,29 +120,31 @@ private struct TasteSelectionChip: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: taste.systemImage)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .frame(width: 28, height: 28)
                 Text(taste.title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 Spacer(minLength: 0)
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.subheadline.weight(.bold))
+                        .font(.system(size: 14, weight: .bold))
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 50)
             .padding(.horizontal, 12)
-            .foregroundStyle(isSelected ? VoxglassTheme.deepGlass : VoxglassTheme.ink)
+            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink)
             .background {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? VoxglassTheme.accent : VoxglassTheme.paperRaised)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? Palette.brass : Color.white.opacity(0.08))
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(isSelected ? VoxglassTheme.warmLine : VoxglassTheme.softLine, lineWidth: 1)
+                if !isSelected {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Palette.hairline, lineWidth: 1)
+                }
             }
         }
         .buttonStyle(.plain)

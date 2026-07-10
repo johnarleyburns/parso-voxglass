@@ -5,22 +5,15 @@ struct AppPreferencesStore: DynamicProperty {
         static let hasCompletedSplash = "voxglass.hasCompletedSplash"
         static let hasCompletedOnboarding = "voxglass.hasCompletedOnboarding"
         static let selectedTasteIDs = "voxglass.selectedTasteIDs"
-        static let appearanceMode = "voxglass.appearanceMode"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false
     @AppStorage(Keys.hasCompletedOnboarding) var hasCompletedOnboarding = false
     @AppStorage(Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
-    @AppStorage(Keys.appearanceMode) private var appearanceModeRaw = AppAppearanceMode.system.rawValue
 
     var selectedTasteIDs: Set<String> {
         get { Self.decodeTasteIDs(selectedTasteIDsRaw) }
         nonmutating set { selectedTasteIDsRaw = Self.encodeTasteIDs(newValue) }
-    }
-
-    var appearanceMode: AppAppearanceMode {
-        get { AppAppearanceMode(rawValue: appearanceModeRaw) ?? .system }
-        nonmutating set { appearanceModeRaw = newValue.rawValue }
     }
 
     static func encodeTasteIDs(_ ids: Set<String>) -> String {
@@ -34,47 +27,6 @@ struct AppPreferencesStore: DynamicProperty {
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
         )
-    }
-}
-
-enum AppAppearanceMode: String, CaseIterable, Identifiable {
-    case system
-    case dark
-    case light
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .system:
-            return "System"
-        case .dark:
-            return "Dark"
-        case .light:
-            return "Light"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .system:
-            return "circle.lefthalf.filled"
-        case .dark:
-            return "moon.fill"
-        case .light:
-            return "sun.max.fill"
-        }
-    }
-
-    var preferredColorScheme: ColorScheme? {
-        switch self {
-        case .system:
-            return nil
-        case .dark:
-            return .dark
-        case .light:
-            return .light
-        }
     }
 }
 

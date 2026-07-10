@@ -4,7 +4,6 @@ import SwiftUI
 struct VoxglassApp: App {
     @StateObject private var services = AppServices()
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(AppPreferencesStore.Keys.appearanceMode) private var appearanceModeRaw = AppAppearanceMode.system.rawValue
 
     var body: some Scene {
         WindowGroup {
@@ -12,7 +11,7 @@ struct VoxglassApp: App {
                 .environmentObject(services.libraryStore)
                 .environmentObject(services.catalogStore)
                 .environmentObject(services.playbackCoordinator)
-                .preferredColorScheme(AppAppearanceMode(rawValue: appearanceModeRaw)?.preferredColorScheme)
+                .preferredColorScheme(.dark)
                 .task {
                     await services.bootstrap()
                 }

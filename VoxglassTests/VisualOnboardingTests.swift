@@ -3,12 +3,6 @@ import XCTest
 @testable import Voxglass
 
 final class VisualOnboardingTests: XCTestCase {
-    func testAppearanceModeMapsToExpectedColorScheme() {
-        XCTAssertNil(AppAppearanceMode.system.preferredColorScheme)
-        XCTAssertEqual(AppAppearanceMode.dark.preferredColorScheme, .dark)
-        XCTAssertEqual(AppAppearanceMode.light.preferredColorScheme, .light)
-    }
-
     func testOnboardingChipsAreUniqueAndHaveArchiveQueries() {
         let tastes = LibriVoxTaste.all
         let ids = Set(tastes.map(\.id))

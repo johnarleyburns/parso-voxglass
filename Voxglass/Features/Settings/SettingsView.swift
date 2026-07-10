@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
-    @AppStorage(AppPreferencesStore.Keys.appearanceMode) private var appearanceModeRaw = AppAppearanceMode.system.rawValue
 
     var body: some View {
         VoxglassScreen(title: "More") {
@@ -26,11 +25,6 @@ struct SettingsView: View {
                     MoreInfoRow(icon: "airplayaudio", title: "AirPlay", detail: "System controls")
                     MoreInfoRow(icon: "timer", title: "Sleep Timer", detail: "Coming later", isEnabled: false)
                     MoreInfoRow(icon: "speedometer", title: "Playback Speed", detail: "1x", isEnabled: false)
-                }
-
-                settingsGroup("Appearance") {
-                    AppearanceModeRow(selection: $appearanceModeRaw)
-                    MoreInfoRow(icon: "accessibility", title: "Accessibility", detail: "System settings")
                 }
 
                 settingsGroup("Downloads & Cache") {
@@ -69,42 +63,6 @@ struct SettingsView: View {
             }
             .glassPanel()
         }
-    }
-}
-
-private struct AppearanceModeRow: View {
-    @Binding var selection: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                Image(systemName: mode.systemImage)
-                    .font(.subheadline)
-                    .foregroundStyle(VoxglassTheme.accent)
-                    .frame(width: 28, height: 28)
-                Text("Theme")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(VoxglassTheme.ink)
-                Spacer()
-                Text(mode.title)
-                    .font(.caption)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
-            }
-
-            Picker("Theme", selection: $selection) {
-                ForEach(AppAppearanceMode.allCases) { mode in
-                    Text(mode.title).tag(mode.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Theme")
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-
-    private var mode: AppAppearanceMode {
-        AppAppearanceMode(rawValue: selection) ?? .system
     }
 }
 

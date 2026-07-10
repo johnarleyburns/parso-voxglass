@@ -64,8 +64,8 @@ struct BrowseView: View {
                 ForEach(LibriVoxBrowseGroup.all) { group in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(group.title)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(VoxglassTheme.secondaryInk)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Palette.ink3)
                             .textCase(.uppercase)
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(group.categories) { category in
@@ -97,8 +97,8 @@ struct BrowseView: View {
                     if !books.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(source.title)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(VoxglassTheme.ink)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Palette.ink)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
                                     ForEach(books.prefix(8)) { book in
@@ -128,12 +128,12 @@ struct BrowseView: View {
                 HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching LibriVox")
-                        .font(.subheadline)
-                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
-                .glassPanel()
+                .glassSurface(cornerRadius: 14)
             } else if catalogStore.results.isEmpty {
                 EmptyStatePanel(
                     title: "Choose a Subject",
@@ -213,12 +213,12 @@ private struct BrowseTile: View {
 
             HStack(alignment: .bottom, spacing: 8) {
                 Image(systemName: systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.accent)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Palette.brass)
                     .frame(width: 28, height: 28)
-                    .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 Text(title)
-                    .font(.subheadline.weight(.bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .minimumScaleFactor(0.78)
@@ -228,10 +228,10 @@ private struct BrowseTile: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 118)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(isSelected ? VoxglassTheme.accent : VoxglassTheme.softLine, lineWidth: isSelected ? 2 : 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(isSelected ? Palette.brass : Palette.hairline, lineWidth: isSelected ? 2 : 1)
         }
     }
 }
@@ -251,28 +251,23 @@ private struct ExploreCollectionCard: View {
             .frame(width: 190, height: 132)
 
             Text(collection.title)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(VoxglassTheme.ink)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .frame(width: 190, alignment: .leading)
 
             Text(collection.subtitle)
-                .font(.caption)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Palette.ink3)
                 .lineLimit(2)
                 .frame(width: 190, alignment: .leading)
         }
         .frame(width: 210, alignment: .topLeading)
         .padding(10)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
         .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(isSelected ? VoxglassTheme.accent : .clear, lineWidth: 2)
-        }
-        .onAppear {
-            if let remoteImageURL = collection.remoteImageURL {
-                ArtworkService.shared.prefetch(urls: [remoteImageURL], limit: 1)
-            }
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
         }
     }
 }

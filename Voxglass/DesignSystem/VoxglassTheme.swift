@@ -1,58 +1,53 @@
 import SwiftUI
-import UIKit
 
 enum VoxglassTheme {
-    static let paper = adaptiveColor(
-        light: UIColor(red: 0.965, green: 0.941, blue: 0.902, alpha: 1),
-        dark: UIColor(red: 0.035, green: 0.043, blue: 0.042, alpha: 1)
-    )
-    static let paperRaised = adaptiveColor(
-        light: UIColor(red: 0.992, green: 0.976, blue: 0.948, alpha: 1),
-        dark: UIColor(red: 0.075, green: 0.083, blue: 0.080, alpha: 1)
-    )
-    static let ink = adaptiveColor(
-        light: UIColor(red: 0.082, green: 0.074, blue: 0.066, alpha: 1),
-        dark: UIColor(red: 0.965, green: 0.936, blue: 0.875, alpha: 1)
-    )
-    static let secondaryInk = adaptiveColor(
-        light: UIColor(red: 0.388, green: 0.341, blue: 0.292, alpha: 1),
-        dark: UIColor(red: 0.695, green: 0.660, blue: 0.590, alpha: 1)
-    )
-    static let accent = Color(red: 0.886, green: 0.635, blue: 0.361)
-    static let deepGlass = Color(red: 0.030, green: 0.035, blue: 0.034)
-    static let softLine = adaptiveColor(
-        light: UIColor.black.withAlphaComponent(0.08),
-        dark: UIColor.white.withAlphaComponent(0.11)
-    )
-    static let warmLine = Color(red: 0.886, green: 0.635, blue: 0.361).opacity(0.30)
+    static let paper = Color(hex: 0x0A0B0D)
+    static let paperRaised = Color(hex: 0x1B1D22)
+    static let ink = Color(hex: 0xF2F4F6)
+    static let secondaryInk = Palette.ink2
+    static let accent = Palette.brass
+    static let deepGlass = Color(hex: 0x1B1D22)
+    static let softLine = Palette.hairline
+    static let warmLine = Palette.brass.opacity(0.30)
 
-    static func backgroundGradient(for colorScheme: ColorScheme) -> LinearGradient {
-        if colorScheme == .dark {
-            return LinearGradient(
-                colors: [
-                    Color(red: 0.030, green: 0.037, blue: 0.036),
-                    Color(red: 0.055, green: 0.065, blue: 0.061),
-                    Color(red: 0.145, green: 0.105, blue: 0.070)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+    static let brass = Palette.brass
+    static let brassDeep = Palette.brassDeep
+    static let ink3 = Palette.ink3
+    static let ok = Palette.ok
+    static let danger = Palette.danger
 
-        return LinearGradient(
-            colors: [
-                Color(red: 0.992, green: 0.977, blue: 0.950),
-                Color(red: 0.930, green: 0.902, blue: 0.858)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+    static var libraryBackground: LinearGradient {
+        LinearGradient(colors: [Color(hex: 0x101216), Color(hex: 0x0B0C0F)],
+                       startPoint: .top, endPoint: .bottom)
     }
 
-    private static func adaptiveColor(light: UIColor, dark: UIColor) -> Color {
-        Color(uiColor: UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? dark : light
-        })
+    static var warmBackground: LinearGradient {
+        LinearGradient(stops: [
+            .init(color: Color(hex: 0x241A10), location: 0),
+            .init(color: Color(hex: 0x12100C), location: 0.34),
+            .init(color: Color(hex: 0x0B0C0F), location: 0.70)
+        ], startPoint: .top, endPoint: .bottom)
+    }
+}
+
+enum Palette {
+    static let bg = Color(hex: 0x0A0B0D)
+    static let ink = Color(hex: 0xF2F4F6)
+    static let ink2 = Color(white: 0.92).opacity(0.58)
+    static let ink3 = Color(white: 0.92).opacity(0.34)
+    static let brass = Color(hex: 0xE3A44B)
+    static let brassDeep = Color(hex: 0xB97F2E)
+    static let ok = Color(hex: 0x4CD471)
+    static let danger = Color(hex: 0xFF6B5E)
+    static let hairline = Color.white.opacity(0.10)
+}
+
+extension Color {
+    init(hex: UInt32) {
+        let r = Double((hex >> 16) & 0xFF) / 255
+        let g = Double((hex >> 8) & 0xFF) / 255
+        let b = Double(hex & 0xFF) / 255
+        self.init(.sRGB, red: r, green: g, blue: b, opacity: 1)
     }
 }
 
@@ -65,69 +60,73 @@ struct VoxglassScreen<Content: View>: View {
             ZStack {
                 VoxglassBackground()
                 ScrollView {
-                    content
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 110)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text(title)
+                                .font(.system(size: 31, weight: .heavy, design: .default))
+                                .kerning(-0.5)
+                                .foregroundStyle(Palette.ink)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 2)
+                        .padding(.top, 8)
+
+                        content
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 160)
                 }
             }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
 
 struct VoxglassBackground: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         if reduceTransparency {
             VoxglassTheme.paper.ignoresSafeArea()
         } else {
-            VoxglassTheme.backgroundGradient(for: colorScheme).ignoresSafeArea()
+            VoxglassTheme.libraryBackground.ignoresSafeArea()
         }
     }
 }
 
-struct GlassPanel: ViewModifier {
+struct GlassSurface: ViewModifier {
+    var cornerRadius: CGFloat = 18
+    var strokeOpacity: Double = 0.13
+    var fill: Color = Color.white.opacity(0.085)
+
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
         content
             .background {
-                if reduceTransparency {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.paperRaised)
-                } else {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                }
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(reduceTransparency ? AnyShapeStyle(Color(hex: 0x1B1D22)) : AnyShapeStyle(.ultraThinMaterial))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(fill)
+                    )
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(VoxglassTheme.softLine, lineWidth: 1)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.white.opacity(strokeOpacity), lineWidth: 1)
             }
-            .shadow(color: .black.opacity(reduceTransparency ? 0 : 0.08), radius: 16, y: 8)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 
 extension View {
+    func glassSurface(cornerRadius: CGFloat = 18,
+                      strokeOpacity: Double = 0.13,
+                      fill: Color = Color.white.opacity(0.085)) -> some View {
+        modifier(GlassSurface(cornerRadius: cornerRadius, strokeOpacity: strokeOpacity, fill: fill))
+    }
+
     func glassPanel() -> some View {
-        modifier(GlassPanel())
-    }
-
-    @ViewBuilder
-    func motionAwareAnimation<V: Equatable>(_ animation: Animation?, value: V) -> some View {
-        modifier(MotionAwareAnimation(animation: animation, value: value))
-    }
-}
-
-private struct MotionAwareAnimation<V: Equatable>: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let animation: Animation?
-    let value: V
-
-    func body(content: Content) -> some View {
-        content.animation(reduceMotion ? nil : animation, value: value)
+        modifier(GlassSurface())
     }
 }

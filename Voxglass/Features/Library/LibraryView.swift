@@ -16,16 +16,6 @@ struct LibraryView: View {
             }
             .padding(.top, 12)
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingImporter = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .accessibilityLabel("Import audio")
-            }
-        }
         .fileImporter(
             isPresented: $showingImporter,
             allowedContentTypes: UTType.voxglassImportTypes,
@@ -48,16 +38,16 @@ struct LibraryView: View {
     private var importPanel: some View {
         HStack(spacing: 12) {
             Image(systemName: "tray.and.arrow.down.fill")
-                .font(.title2)
-                .foregroundStyle(VoxglassTheme.accent)
+                .font(.system(size: 18))
+                .foregroundStyle(Palette.brass)
                 .frame(width: 38, height: 38)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Local Audio")
-                    .font(.headline)
-                    .foregroundStyle(VoxglassTheme.ink)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
                 Text("MP3, M4A, M4B, and folders")
-                    .font(.caption)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
             }
             Spacer()
             Button {
@@ -68,15 +58,15 @@ struct LibraryView: View {
                         .frame(width: 32, height: 32)
                 } else {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                        .font(.system(size: 22))
                 }
             }
             .buttonStyle(.plain)
-            .foregroundStyle(VoxglassTheme.accent)
+            .foregroundStyle(Palette.brass)
             .accessibilityLabel("Import local audio")
         }
         .padding(14)
-        .glassPanel()
+        .glassSurface(cornerRadius: 14)
     }
 
     private var categoryHub: some View {
@@ -101,7 +91,7 @@ struct LibraryView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .glassPanel()
+            .glassSurface(cornerRadius: 14)
         }
     }
 
@@ -277,7 +267,7 @@ struct LibraryCategoryDetailView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .glassPanel()
+            .glassSurface(cornerRadius: 14)
         }
     }
 

@@ -33,38 +33,33 @@ struct RootView: View {
     }
 
     private var tabs: some View {
-        TabView(selection: $selectedTab) {
-            ListenView(
-                showingNowPlaying: $showingNowPlaying,
-                selectLibrary: { selectedTab = .library },
-                selectSearch: { selectedTab = .search }
-            )
-            .tabItem { Label("Listen", systemImage: "headphones") }
-            .tag(VoxglassTab.home)
+        ZStack(alignment: .bottom) {
+            VoxglassBackground()
 
-            LibraryView(showingNowPlaying: $showingNowPlaying)
-                .tabItem { Label("Library", systemImage: "books.vertical.fill") }
-                .tag(VoxglassTab.library)
-
-            BrowseView(showingNowPlaying: $showingNowPlaying)
-                .tabItem { Label("Explore", systemImage: "square.grid.2x2.fill") }
-                .tag(VoxglassTab.browse)
-
-            SearchView(showingNowPlaying: $showingNowPlaying)
-                .tabItem { Label("Search", systemImage: "magnifyingglass") }
-                .tag(VoxglassTab.search)
-
-            SettingsView(showingNowPlaying: $showingNowPlaying)
-                .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
-                .tag(VoxglassTab.more)
-        }
-        .safeAreaInset(edge: .bottom) {
-            if playback.currentSession != nil {
-                MiniPlayerView(showingNowPlaying: $showingNowPlaying)
-                    .environmentObject(playback)
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 8)
+            Group {
+                switch selectedTab {
+                case .home:
+                    ListenView(
+                        showingNowPlaying: $showingNowPlaying,
+                        selectLibrary: { selectedTab = .library },
+                        selectSearch: { selectedTab = .search }
+                    )
+                case .library:
+                    LibraryView(showingNowPlaying: $showingNowPlaying)
+                case .browse:
+                    BrowseView(showingNowPlaying: $showingNowPlaying)
+                case .search:
+                    SearchView(showingNowPlaying: $showingNowPlaying)
+                case .more:
+                    SettingsView(showingNowPlaying: $showingNowPlaying)
+                }
             }
+
+            GlassDock(
+                selectedTab: $selectedTab,
+                showingNowPlaying: $showingNowPlaying
+            )
+            .environmentObject(playback)
         }
         .sheet(isPresented: $showingNowPlaying) {
             NowPlayingView()
@@ -79,7 +74,7 @@ struct RootView: View {
     }
 }
 
-private enum VoxglassTab: Hashable {
+enum VoxglassTab: Hashable {
     case home
     case library
     case browse
