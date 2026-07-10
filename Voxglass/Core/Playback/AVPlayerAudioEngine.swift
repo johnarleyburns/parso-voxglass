@@ -166,18 +166,20 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         }
     }
 
-    nonisolated private func removeObservers() {
+    private func removeObservers() {
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
+            self.endObserver = nil
         }
         currentItemObserver?.invalidate()
+        currentItemObserver = nil
     }
 
     deinit {
-        if let endObserver {
-            NotificationCenter.default.removeObserver(endObserver)
+        // Inline cleanup: deinit is nonisolated but these operations are safe
+        if let observer = endObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
         currentItemObserver?.invalidate()
-        preloadedItem = nil
     }
 }

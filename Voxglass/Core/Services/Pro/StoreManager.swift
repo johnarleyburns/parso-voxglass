@@ -71,11 +71,16 @@ final class StoreManager: ObservableObject {
         var foundEntitlement = false
 
         for await verification in Transaction.currentEntitlements {
-            if let entitlement = ProEntitlement.from(verification) {
-                foundEntitlement = true
-                EntitlementCache.shared.cacheEntitlement(true, productID: entitlement.productID)
+            switch verification {
+            case .verified(let transaction):
+                if let entitlement = ProEntitlement.from(transaction) {
+                    foundEntitlement = true
+                    EntitlementCache.shared.cacheEntitlement(true, productID: entitlement.productID)
+                }
+            case .unverified:
                 break
             }
+            if foundEntitlement { break }
         }
 
         if !foundEntitlement {

@@ -58,7 +58,9 @@ actor PrefetchController {
     func cancelAll() {
         for (key, task) in activeTasks {
             task.cancel()
-            OpusCacheService.shared.cancelFetch(for: URL(string: key) ?? URL(fileURLWithPath: "/"))
+            if let url = URL(string: key) {
+                Task { await OpusCacheService.shared.cancelFetch(for: url) }
+            }
         }
         activeTasks.removeAll()
     }
@@ -67,6 +69,6 @@ actor PrefetchController {
         let key = opusURL.absoluteString
         activeTasks[key]?.cancel()
         activeTasks[key] = nil
-        OpusCacheService.shared.cancelFetch(for: opusURL)
+        Task { await OpusCacheService.shared.cancelFetch(for: opusURL) }
     }
 }
