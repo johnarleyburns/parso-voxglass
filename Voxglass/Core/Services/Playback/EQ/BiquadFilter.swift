@@ -117,7 +117,7 @@ final class EQEngine {
         filters.allSatisfy { $0.isBypassed }
     }
 
-    mutating func setGain(_ gain: Float, at band: Int) {
+    func setGain(_ gain: Float, at band: Int) {
         guard band >= 0, band < gains.count else { return }
         gains[band] = gain
         filters[band].configurePeakingEQ(
@@ -128,7 +128,7 @@ final class EQEngine {
         )
     }
 
-    mutating func reconfigure() {
+    func reconfigure() {
         for (i, gain) in gains.enumerated() {
             filters[i].configurePeakingEQ(
                 frequency: Self.isoBands[i],
@@ -139,7 +139,7 @@ final class EQEngine {
         }
     }
 
-    mutating func process(_ input: Float) -> Float {
+    func process(_ input: Float) -> Float {
         var sample = input
         for i in 0..<filters.count {
             sample = filters[i].process(sample)
@@ -147,15 +147,14 @@ final class EQEngine {
         return sample
     }
 
-    mutating func reset() {
+    func reset() {
         for i in 0..<filters.count {
             filters[i].reset()
         }
     }
 
     func copy() -> EQEngine {
-        var copy = self
-        copy.filters = filters
+        let copy = EQEngine(gains: gains)
         return copy
     }
 }

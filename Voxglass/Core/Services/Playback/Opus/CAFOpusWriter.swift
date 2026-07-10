@@ -17,7 +17,8 @@ final class CAFOpusWriter {
         self.opusHead = opusHead
     }
 
-    func writeOpusPacket(_ packet: Data, validFrames: Int64 = Self.opusFrameLength) {
+    func writeOpusPacket(_ packet: Data) {
+        let validFrames = Self.opusFrameLength
         packets.append((size: packet.count, validFrames: validFrames))
         totalFrameCount += validFrames
     }
