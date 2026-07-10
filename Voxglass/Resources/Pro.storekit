@@ -1,0 +1,35 @@
+{
+  "identifier": "E1B2C3D4",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "$9.99",
+      "familyShareable": false,
+      "internalID": "E1B2C3D4",
+      "localizations": [
+        {
+          "description": "Unlock cache presets, Folder Watch, EQ, prefetch depth, and future CarPlay support. One-time purchase. No subscription, no account required.",
+          "displayName": "Voxglass Pro",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "guru.parso.voxglass.pro",
+      "referenceName": "Voxglass Pro",
+      "type": "nonConsumable"
+    }
+  ],
+  "settings": {
+    "_appStoreTestingShowDebugInfo": true,
+    "_developerTeamID": "",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_localValidation": true,
+    "_storefront": "USA",
+    "_timeRate": 1
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

@@ -29,6 +29,13 @@ final class PlaybackCoordinator: ObservableObject {
                 await self?.advanceAfterChapterEnd()
             }
         }
+        if let avEngine = engine as? AVPlayerAudioEngine {
+            avEngine.onItemChanged = { [weak self] in
+                Task { @MainActor in
+                    await self?.handleItemChanged()
+                }
+            }
+        }
         self.engine.configureAudioSession()
         configureRemoteCommands()
         configureNotifications()
@@ -45,7 +52,7 @@ final class PlaybackCoordinator: ObservableObject {
             guard let latest,
                   let book = books.first(where: { $0.book.id == latest.bookID }),
                   let chapter = book.chapters.first(where: { $0.id == latest.chapterID }),
-                  let url = chapter.playableURL else {
+                  let url = chapter.resolvedPlayableURL() else {
                 return
             }
 
@@ -67,7 +74,7 @@ final class PlaybackCoordinator: ObservableObject {
     func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
         let chapter = requestedChapter ?? book.chapters.first
         guard let chapter else { return }
-        guard let playableURL = chapter.playableURL else {
+        guard let playableURL = chapter.resolvedPlayableURL() else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
             return
         }
@@ -88,9 +95,24 @@ final class PlaybackCoordinator: ObservableObject {
             )
             startProgressLoop()
             updateNowPlayingInfo()
+
+            // Prefetch Opus for the next chapter in the background
+            prefetchNextChapterOpus(from: book, currentChapter: chapter)
+
+            // Preload the next chapter for near-gapless
+            let nextIndex = chapterIndex(in: book, for: chapter) + 1
+            if book.chapters.indices.contains(nextIndex),
+               let nextURL = book.chapters[nextIndex].resolvedPlayableURL(),
+               let avEngine = engine as? AVPlayerAudioEngine {
+                avEngine.preloadNext(url: nextURL)
+            }
         } catch {
             playbackError = error.localizedDescription
         }
+    }
+
+    private func chapterIndex(in book: BookWithChapters, for chapter: Chapter) -> Int {
+        book.chapters.firstIndex { $0.id == chapter.id } ?? 0
     }
 
     func togglePlayPause() {
@@ -139,7 +161,20 @@ final class PlaybackCoordinator: ObservableObject {
 
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else { return }
+
+        if let avEngine = engine as? AVPlayerAudioEngine {
+            avEngine.cancelPreload()
+        }
+
         await loadChapter(session.chapters[nextIndex], in: session, startTime: 0, shouldPlay: engine.isPlaying)
+
+        // Set up preload for the chapter after next
+        let afterNextIndex = nextIndex + 1
+        if session.chapters.indices.contains(afterNextIndex),
+           let afterNextURL = session.chapters[afterNextIndex].resolvedPlayableURL(),
+           let avEngine = engine as? AVPlayerAudioEngine {
+            avEngine.preloadNext(url: afterNextURL)
+        }
     }
 
     func skipToPreviousChapter() async {
@@ -161,8 +196,21 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
+    private func prefetchNextChapterOpus(from book: BookWithChapters, currentChapter: Chapter) {
+        guard let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
+        let nextIndex = currentIndex + 1
+        guard book.chapters.indices.contains(nextIndex) else { return }
+        let nextChapter = book.chapters[nextIndex]
+
+        if let opusURL = nextChapter.opusURL {
+            Task.detached(priority: .background) {
+                _ = await OpusCacheService.shared.fetchAndRemux(opusURL: opusURL, chapterID: nextChapter.id.uuidString)
+            }
+        }
+    }
+
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
-        guard let url = chapter.playableURL else { return }
+        guard let url = chapter.resolvedPlayableURL() else { return }
         do {
             try await engine.load(url: url, startTime: startTime)
             if shouldPlay {
@@ -178,9 +226,56 @@ final class PlaybackCoordinator: ObservableObject {
             )
             await persistCurrentPosition(reason: .chapterChange)
             updateNowPlayingInfo()
+
+            let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
+            if session.chapters.indices.contains(nextIndex),
+               let nextURL = session.chapters[nextIndex].resolvedPlayableURL(),
+               let avEngine = engine as? AVPlayerAudioEngine {
+                avEngine.preloadNext(url: nextURL)
+            }
         } catch {
             playbackError = error.localizedDescription
         }
+    }
+
+    private func handleItemChanged() async {
+        guard let session = currentSession else { return }
+        let nextIndex = session.chapterIndex + 1
+        guard session.chapters.indices.contains(nextIndex) else {
+            updateNowPlayingInfo()
+            return
+        }
+        let nextChapter = session.chapters[nextIndex]
+
+        // Save position for previous chapter as finished
+        await persistCurrentPosition(reason: .chapterChange, finished: true)
+
+        // Update session to the new chapter
+        currentSession = PlaybackSession(
+            book: session.book,
+            chapters: session.chapters,
+            chapter: nextChapter,
+            position: 0,
+            duration: nextChapter.duration ?? engine.duration,
+            isPlaying: engine.isPlaying
+        )
+        startProgressLoop()
+        updateNowPlayingInfo()
+
+        // Prefetch Opus for the chapter after next
+        prefetchNextChapterOpus(from: BookWithChapters(book: session.book, chapters: session.chapters),
+                                currentChapter: nextChapter)
+        // Preload the chapter after next for near-gapless
+        preloadChapterAfter(nextChapter, in: session)
+    }
+
+    private func preloadChapterAfter(_ chapter: Chapter, in session: PlaybackSession) {
+        guard let avEngine = engine as? AVPlayerAudioEngine else { return }
+        let nextIndex = session.chapterIndex + 2
+        guard session.chapters.indices.contains(nextIndex) else { return }
+        let afterNext = session.chapters[nextIndex]
+        guard let url = afterNext.resolvedPlayableURL() else { return }
+        avEngine.preloadNext(url: url)
     }
 
     private func advanceAfterChapterEnd() async {
@@ -189,14 +284,30 @@ final class PlaybackCoordinator: ObservableObject {
             $0.position = $0.duration ?? engine.currentTime
             $0.isPlaying = false
         }
-        await persistCurrentPosition(reason: .chapterChange, finished: true)
 
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else {
+            await persistCurrentPosition(reason: .chapterChange, finished: true)
             updateNowPlayingInfo()
             return
         }
-        await loadChapter(session.chapters[nextIndex], in: session, startTime: 0, shouldPlay: true)
+
+        // If the next item is already preloaded in AVQueuePlayer, it will auto-advance.
+        // The handleItemChanged callback will update the session. Just persist position.
+        await persistCurrentPosition(reason: .chapterChange, finished: true)
+
+        // Fallback: if preloading didn't happen, do a manual load
+        let nextChapter = session.chapters[nextIndex]
+        guard let url = nextChapter.resolvedPlayableURL() else {
+            updateNowPlayingInfo()
+            return
+        }
+
+        // Check if engine has already moved to the next item
+        if engine.duration == nil || engine.duration == session.duration {
+            // Engine hasn't advanced - manually load
+            await loadChapter(nextChapter, in: session, startTime: 0, shouldPlay: true)
+        }
     }
 
     private func startProgressLoop() {

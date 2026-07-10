@@ -1,16 +1,48 @@
 import Foundation
 
 enum InternetArchiveAudioSelector {
-    static let playableAudioExtensions = Set(["aac", "aif", "aiff", "caf", "m4a", "m4b", "mp3", "wav"])
+    static let playableAudioExtensions = AudioFormatSelection.allPlayableExtensions
 
-    static func selectedAudioFiles(from files: [InternetArchiveFile]) -> [InternetArchiveFile] {
+    static func selectedAudioFiles(
+        from files: [InternetArchiveFile],
+        policy: DerivativePolicy? = nil
+    ) -> [InternetArchiveFile] {
         let candidates = files.filter(isPlayableAudio)
+        guard !candidates.isEmpty else { return [] }
+
+        // Determine the single codec family to use for this item.
+        // Without a policy, fall back to picking the highest-ranked codec
+        // that has at least one candidate file (Wi-Fi default).
+        let chosenCodec: AudioCodec?
+        if let policy {
+            chosenCodec = policy.bestCodec(for: candidates)?.codec
+        } else {
+            chosenCodec = bestAvailableCodec(from: candidates)
+        }
+
+        // Filter to the chosen codec family, keeping legacy formats
+        // (WAV, AAC, M4A, etc.) that don't map to any codec.
+        let familyFiles: [InternetArchiveFile]
+        if let chosenCodec {
+            familyFiles = candidates.filter { file in
+                AudioFormatSelection.codec(for: file.format, filename: file.name) == chosenCodec
+            }
+        } else {
+            familyFiles = candidates
+        }
+
+        // If the chosen codec has no files, fall back to all candidates.
+        let pool = familyFiles.isEmpty ? candidates : familyFiles
+
         var bestByChapter: [String: InternetArchiveFile] = [:]
 
-        for file in candidates {
+        for file in pool {
             let key = canonicalChapterKey(for: file)
             if let current = bestByChapter[key] {
-                if qualityScore(for: file) > qualityScore(for: current) {
+                let currentCodec = AudioFormatSelection.codec(for: current.format, filename: current.name) ?? .mp3
+                let fileCodec = AudioFormatSelection.codec(for: file.format, filename: file.name) ?? .mp3
+                if AudioFormatSelection.qualityRank(for: file, codec: fileCodec)
+                    > AudioFormatSelection.qualityRank(for: current, codec: currentCodec) {
                     bestByChapter[key] = file
                 }
             } else {
@@ -19,6 +51,15 @@ enum InternetArchiveAudioSelector {
         }
 
         return bestByChapter.values.sorted(by: audioOrder)
+    }
+
+    private static func bestAvailableCodec(from files: [InternetArchiveFile]) -> AudioCodec? {
+        for codec in AudioCodec.allCases.sorted(by: >) {
+            if files.contains(where: { AudioFormatSelection.codec(for: $0.format, filename: $0.name) == codec }) {
+                return codec
+            }
+        }
+        return nil
     }
 
     static func isPlayableAudio(_ file: InternetArchiveFile) -> Bool {
@@ -62,39 +103,8 @@ enum InternetArchiveAudioSelector {
     }
 
     private static func qualityScore(for file: InternetArchiveFile) -> Int {
-        let sourceScore = file.source?.localizedCaseInsensitiveCompare("original") == .orderedSame ? 10_000 : 0
-        let format = file.format?.lowercased() ?? ""
-        let name = file.name.lowercased()
-        let extensionScore: Int
-
-        if name.hasSuffix(".m4b") {
-            extensionScore = 700
-        } else if name.hasSuffix(".m4a") || name.hasSuffix(".aac") {
-            extensionScore = 650
-        } else if name.hasSuffix(".mp3") {
-            extensionScore = 600
-        } else {
-            extensionScore = 300
-        }
-
-        let formatScore: Int
-        if format.contains("256") {
-            formatScore = 560
-        } else if format.contains("192") {
-            formatScore = 520
-        } else if format.contains("vbr") {
-            formatScore = 500
-        } else if format.contains("160") {
-            formatScore = 460
-        } else if format.contains("128") {
-            formatScore = 420
-        } else if format.contains("64") {
-            formatScore = 260
-        } else {
-            formatScore = 320
-        }
-
-        return sourceScore + extensionScore + formatScore
+        let codec = AudioFormatSelection.codec(for: file.format, filename: file.name) ?? .mp3
+        return AudioFormatSelection.qualityRank(for: file, codec: codec)
     }
 
     private static func audioOrder(_ lhs: InternetArchiveFile, _ rhs: InternetArchiveFile) -> Bool {

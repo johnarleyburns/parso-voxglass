@@ -3,10 +3,36 @@ import Foundation
 
 @MainActor
 final class AVPlayerAudioEngine: NSObject, AudioEngine {
-    private let player = AVPlayer()
+    private let player = AVQueuePlayer()
     private var endObserver: NSObjectProtocol?
+    private var currentItemObserver: NSKeyValueObservation?
+    private var preloadedItem: AVPlayerItem?
+    private let eqProcessor = EQAudioProcessor()
 
     var onPlaybackEnded: (@MainActor () -> Void)?
+    var onItemChanged: (@MainActor () -> Void)?
+
+    var isEQEngaged: Bool { eqProcessor.isEngaged }
+
+    func engageEQ() {
+        if let item = player.currentItem {
+            eqProcessor.attach(to: item)
+        }
+    }
+
+    func disengageEQ() {
+        if let item = player.currentItem {
+            eqProcessor.detach(from: item)
+        }
+    }
+
+    func setEQGain(_ gain: Float, at band: Int) {
+        eqProcessor.setGain(gain, at: band)
+    }
+
+    func applyEQPreset(_ preset: EQPreset) {
+        eqProcessor.applyPreset(preset)
+    }
 
     var currentTime: TimeInterval {
         let seconds = player.currentTime().seconds
@@ -45,21 +71,50 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
 
     func load(url: URL, startTime: TimeInterval) async throws {
         configureAudioSession()
-        removeEndObserver()
+        tearDownCurrentItem()
+        preloadedItem = nil
 
         let item = AVPlayerItem(url: url)
-        player.replaceCurrentItem(with: item)
-        endObserver = NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: item,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.onPlaybackEnded?()
-            }
+        player.removeAllItems()
+        player.insert(item, after: nil)
+        observe(item: item, isPreloaded: false)
+
+        if eqProcessor.isEngaged {
+            eqProcessor.attach(to: item)
         }
 
         await seek(to: startTime)
+    }
+
+    func preloadNext(url: URL) {
+        guard preloadedItem == nil else { return }
+
+        let item = AVPlayerItem(url: url)
+        preloadedItem = item
+
+        if player.canInsert(item, after: player.currentItem) {
+            player.insert(item, after: player.currentItem)
+            observe(item: item, isPreloaded: true)
+
+            if eqProcessor.isEngaged {
+                eqProcessor.attach(to: item)
+            }
+        }
+    }
+
+    private func tearDownCurrentItem() {
+        if let currentItem = player.currentItem {
+            eqProcessor.detach(from: currentItem)
+        }
+        removeObservers()
+    }
+
+    func cancelPreload() {
+        if let item = preloadedItem {
+            eqProcessor.detach(from: item)
+            player.remove(item)
+            preloadedItem = nil
+        }
     }
 
     func play() {
@@ -80,16 +135,48 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         }
     }
 
-    private func removeEndObserver() {
+    private func observe(item: AVPlayerItem, isPreloaded: Bool) {
+        let center = NotificationCenter.default
+
+        endObserver = center.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if let endedItem = notification.object as? AVPlayerItem,
+                   endedItem == self.preloadedItem {
+                    self.preloadedItem = nil
+                }
+                self.onPlaybackEnded?()
+            }
+        }
+
+        if isPreloaded {
+            currentItemObserver = player.observe(\.currentItem, options: [.new]) { [weak self] player, _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if player.currentItem == item {
+                        self.preloadedItem = nil
+                        self.onItemChanged?()
+                    }
+                }
+            }
+        }
+    }
+
+    private func removeObservers() {
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
             self.endObserver = nil
         }
+        currentItemObserver?.invalidate()
+        currentItemObserver = nil
     }
 
     deinit {
-        if let endObserver {
-            NotificationCenter.default.removeObserver(endObserver)
-        }
+        removeObservers()
+        preloadedItem = nil
     }
 }

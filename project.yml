@@ -21,8 +21,10 @@ targets:
         excludes:
           - Resources/Info.plist
     dependencies:
+      - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
       - sdk: MediaPlayer.framework
+      - sdk: StoreKit.framework
       - sdk: UniformTypeIdentifiers.framework
       - sdk: libsqlite3.tbd
     info:

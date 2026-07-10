@@ -53,6 +53,13 @@ private struct DatabaseMigration {
 
     static let all: [DatabaseMigration] = [
         DatabaseMigration(
+            id: 2,
+            name: "add_chapters_opus_url",
+            statements: [
+                "ALTER TABLE chapters ADD COLUMN opus_url TEXT"
+            ]
+        ),
+        DatabaseMigration(
             id: 1,
             name: "initial_library_and_playback",
             statements: [

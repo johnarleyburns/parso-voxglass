@@ -5,6 +5,7 @@ struct BookDetailView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     var book: BookWithChapters
     @Binding var showingNowPlaying: Bool
+    @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
 
     private var currentBook: BookWithChapters {
         libraryStore.book(withID: book.book.id) ?? book
@@ -29,12 +30,18 @@ struct BookDetailView: View {
         }
         .navigationTitle("Book")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            recentlyViewedRaw = RecentlyViewedBooksStore.recording(
+                bookID: currentBook.book.id,
+                in: recentlyViewedRaw
+            )
+        }
     }
 
     private var detailHeader: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 16) {
-                BookArtworkView(title: currentBook.book.title, size: 112)
+                BookArtworkView(title: currentBook.book.title, size: 112, coverURL: currentBook.book.coverURL)
                     .shadow(color: .black.opacity(0.22), radius: 18, y: 12)
 
                 VStack(alignment: .leading, spacing: 8) {

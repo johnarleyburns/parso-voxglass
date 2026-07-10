@@ -36,6 +36,9 @@ struct SearchView: View {
         } message: {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
         }
+        .onChange(of: catalogStore.results) { _, results in
+            ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
+        }
     }
 
     private var searchPanel: some View {
@@ -294,7 +297,7 @@ struct InternetArchiveResultRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookArtworkView(title: result.title, size: 48)
+            BookArtworkView(title: result.title, size: 48, coverURL: result.coverURL)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.title)

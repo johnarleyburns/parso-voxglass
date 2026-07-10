@@ -6,27 +6,54 @@ struct BrowseView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
     @State private var selectedCategory: LibriVoxBrowseCategory?
+    @State private var selectedCollection: IACollection?
     @State private var importingIdentifier: String?
+    @AppStorage(AppPreferencesStore.Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
     var body: some View {
-        VoxglassScreen(title: "Browse") {
+        VoxglassScreen(title: "Explore") {
             VStack(alignment: .leading, spacing: 18) {
+                collectionShelves
                 subjectGrid
-                sourceEntryPoints
                 localSourceSections
                 catalogResults
             }
             .padding(.top, 12)
         }
-        .alert("Browse Failed", isPresented: errorBinding) {
+        .alert("Explore Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
                 catalogStore.catalogError = nil
                 libraryStore.importError = nil
             }
         } message: {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
+        }
+        .onChange(of: catalogStore.results) { _, results in
+            ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
+        }
+    }
+
+    private var collectionShelves: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Featured Collections")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(IACollectionStore.collections(for: selectedTasteIDs)) { collection in
+                        Button {
+                            search(collection)
+                        } label: {
+                            ExploreCollectionCard(
+                                collection: collection,
+                                isSelected: selectedCollection?.id == collection.id
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
         }
     }
 
@@ -57,38 +84,6 @@ struct BrowseView: View {
                     }
                 }
             }
-        }
-    }
-
-    private var sourceEntryPoints: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Sources")
-            VStack(spacing: 0) {
-                Button {
-                    search(.popular)
-                } label: {
-                    DisclosureListRow(
-                        icon: "waveform",
-                        title: "LibriVox",
-                        detail: "Popular public-domain audiobooks",
-                        count: nil
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    search(.generalFiction)
-                } label: {
-                    DisclosureListRow(
-                        icon: "building.columns.fill",
-                        title: "Internet Archive",
-                        detail: "Curated IA subject search",
-                        count: nil
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            .glassPanel()
         }
     }
 
@@ -127,7 +122,7 @@ struct BrowseView: View {
     @ViewBuilder
     private var catalogResults: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: selectedCategory?.title ?? "Browse Results")
+            SectionTitle(title: selectedCategory?.title ?? selectedCollection?.title ?? "Explore Results")
 
             if catalogStore.isSearching {
                 HStack(spacing: 12) {
@@ -181,7 +176,18 @@ struct BrowseView: View {
 
     private func search(_ category: LibriVoxBrowseCategory) {
         selectedCategory = category
+        selectedCollection = nil
         Task { await catalogStore.searchAdvanced(category.archiveQuery) }
+    }
+
+    private func search(_ collection: IACollection) {
+        selectedCollection = collection
+        selectedCategory = nil
+        Task { await catalogStore.searchAdvanced(collection.archiveQuery) }
+    }
+
+    private var selectedTasteIDs: Set<String> {
+        AppPreferencesStore.decodeTasteIDs(selectedTasteIDsRaw)
     }
 }
 
@@ -191,26 +197,82 @@ private struct BrowseTile: View {
     var isSelected: Bool
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.title2)
-                .foregroundStyle(isSelected ? .white : VoxglassTheme.accent)
-                .frame(width: 42, height: 42)
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? .white : VoxglassTheme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+        ZStack(alignment: .bottomLeading) {
+            CollectionArtworkView(
+                title: title,
+                systemImage: systemImage,
+                assetName: "lv-\(title.lowercased().replacingOccurrences(of: " ", with: "-"))",
+                remoteImageURL: nil
+            )
+
+            LinearGradient(
+                colors: [.clear, Color.black.opacity(0.62)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            HStack(alignment: .bottom, spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(VoxglassTheme.accent)
+                    .frame(width: 28, height: 28)
+                    .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Text(title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+                Spacer(minLength: 0)
+            }
+            .padding(10)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 112)
-        .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? VoxglassTheme.ink : VoxglassTheme.paperRaised)
-        }
+        .frame(height: 118)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(VoxglassTheme.softLine, lineWidth: 1)
+                .stroke(isSelected ? VoxglassTheme.accent : VoxglassTheme.softLine, lineWidth: isSelected ? 2 : 1)
+        }
+    }
+}
+
+private struct ExploreCollectionCard: View {
+    var collection: IACollection
+    var isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            CollectionArtworkView(
+                title: collection.title,
+                systemImage: collection.systemImage,
+                assetName: collection.assetName,
+                remoteImageURL: collection.remoteImageURL
+            )
+            .frame(width: 190, height: 132)
+
+            Text(collection.title)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(VoxglassTheme.ink)
+                .lineLimit(1)
+                .frame(width: 190, alignment: .leading)
+
+            Text(collection.subtitle)
+                .font(.caption)
+                .foregroundStyle(VoxglassTheme.secondaryInk)
+                .lineLimit(2)
+                .frame(width: 190, alignment: .leading)
+        }
+        .frame(width: 210, alignment: .topLeading)
+        .padding(10)
+        .glassPanel()
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(isSelected ? VoxglassTheme.accent : .clear, lineWidth: 2)
+        }
+        .onAppear {
+            if let remoteImageURL = collection.remoteImageURL {
+                ArtworkService.shared.prefetch(urls: [remoteImageURL], limit: 1)
+            }
         }
     }
 }

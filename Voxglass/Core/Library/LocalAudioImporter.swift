@@ -90,8 +90,7 @@ struct LocalAudioImporter {
     }
 
     static func isSupportedAudioURL(_ url: URL) -> Bool {
-        let supportedExtensions = Set(["mp3", "m4a", "m4b", "aac", "wav", "aiff", "caf"])
-        return supportedExtensions.contains(url.pathExtension.lowercased())
+        return AudioFormatSelection.allPlayableExtensions.contains(url.pathExtension.lowercased())
     }
 }
 

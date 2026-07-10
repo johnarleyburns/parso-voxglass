@@ -46,6 +46,7 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
     var index: Int
     var duration: TimeInterval?
     var remoteURL: URL?
+    var opusURL: URL?
     var localURL: URL?
 
     init(
@@ -56,6 +57,7 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
         index: Int,
         duration: TimeInterval? = nil,
         remoteURL: URL? = nil,
+        opusURL: URL? = nil,
         localURL: URL? = nil
     ) {
         self.id = id
@@ -65,11 +67,22 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
         self.index = index
         self.duration = duration
         self.remoteURL = remoteURL
+        self.opusURL = opusURL
         self.localURL = localURL
     }
 
     var playableURL: URL? {
-        localURL ?? remoteURL
+        if let opusURL, let cachedCAF = OpusCacheService.cachedCAFURLSync(for: opusURL) {
+            return cachedCAF
+        }
+        return localURL ?? remoteURL
+    }
+
+    func resolvedPlayableURL(preferOpusCAF: Bool = true) -> URL? {
+        if preferOpusCAF, let opusURL, let cachedCAF = OpusCacheService.cachedCAFURLSync(for: opusURL) {
+            return cachedCAF
+        }
+        return localURL ?? remoteURL
     }
 }
 

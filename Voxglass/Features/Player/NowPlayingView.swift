@@ -14,7 +14,7 @@ struct NowPlayingView: View {
                 VStack(spacing: 22) {
                     header
                     Spacer(minLength: 0)
-                    BookArtworkView(title: session.book.title, size: 220)
+                    BookArtworkView(title: session.book.title, size: 220, coverURL: session.book.coverURL)
                         .shadow(color: .black.opacity(0.35), radius: 28, y: 20)
                     metadata(session)
                     scrubber(session)

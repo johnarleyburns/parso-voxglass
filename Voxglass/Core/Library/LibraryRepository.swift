@@ -25,7 +25,7 @@ final class LibraryRepository {
         ORDER BY updated_at DESC, title COLLATE NOCASE ASC
         """)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url
         FROM chapters
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
         """)
@@ -160,15 +160,39 @@ final class LibraryRepository {
             createdAt: now,
             updatedAt: now
         )
+        // Build lookup of Opus files by chapter key so we can attach opusURL to each chapter
+        let opusFilesByChapter: [String: InternetArchiveFile] = {
+            let opusFiles = metadata.files.filter {
+                AudioFormatSelection.codec(for: $0.format, filename: $0.name) == .opus
+            }
+            var dict: [String: InternetArchiveFile] = [:]
+            for file in opusFiles {
+                let key = InternetArchiveAudioSelector.chapterTitle(for: file)
+                    .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+                    .replacingOccurrences(of: #"[^a-z0-9]+"#, with: "", options: .regularExpression)
+                if dict[key] == nil {
+                    dict[key] = file
+                }
+            }
+            return dict
+        }()
+
         let chapters = selectedFiles.enumerated().compactMap { index, file -> Chapter? in
             guard let remoteURL = metadata.fileURL(for: file) else { return nil }
+            let chapterTitle = InternetArchiveAudioSelector.chapterTitle(for: file)
+            let key = chapterTitle
+                .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+                .replacingOccurrences(of: #"[^a-z0-9]+"#, with: "", options: .regularExpression)
+            let opusFile = opusFilesByChapter[key]
+            let opusURL = opusFile.flatMap { metadata.fileURL(for: $0) }
             return Chapter(
                 bookID: book.id,
-                title: InternetArchiveAudioSelector.chapterTitle(for: file),
+                title: chapterTitle,
                 sortKey: file.track ?? file.name,
                 index: index,
                 duration: file.duration,
-                remoteURL: remoteURL
+                remoteURL: remoteURL,
+                opusURL: opusURL
             )
         }
 
@@ -246,7 +270,7 @@ final class LibraryRepository {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -265,11 +289,11 @@ final class LibraryRepository {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
-        """, [ModelMapping.databaseValue(book.id)])
+        """, [ModelMapping.databaseValue(bookID)])
         return BookWithChapters(book: book, chapters: try chapterRows.map(Self.chapter(from:)).naturallySorted())
     }
 
@@ -300,8 +324,8 @@ final class LibraryRepository {
 
         for chapter in chapters {
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -310,6 +334,7 @@ final class LibraryRepository {
                 .int(Int64(chapter.index)),
                 ModelMapping.databaseValue(chapter.duration),
                 ModelMapping.databaseValue(chapter.remoteURL),
+                ModelMapping.databaseValue(chapter.opusURL),
                 ModelMapping.databaseValue(chapter.localURL)
             ])
         }
@@ -348,6 +373,7 @@ final class LibraryRepository {
             index: Int(row.int("chapter_index") ?? 0),
             duration: row.double("duration_seconds"),
             remoteURL: ModelMapping.url(row, "remote_url"),
+            opusURL: ModelMapping.url(row, "opus_url"),
             localURL: ModelMapping.url(row, "local_url")
         )
     }

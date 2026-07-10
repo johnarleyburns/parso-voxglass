@@ -39,10 +39,10 @@ struct FilterChip: View {
             }
             .padding(.horizontal, 12)
             .frame(height: 36)
-            .foregroundStyle(isSelected ? Color.white : VoxglassTheme.ink)
+            .foregroundStyle(isSelected ? VoxglassTheme.deepGlass : VoxglassTheme.ink)
             .background {
                 Capsule()
-                    .fill(isSelected ? VoxglassTheme.ink : VoxglassTheme.paperRaised)
+                    .fill(isSelected ? VoxglassTheme.accent : VoxglassTheme.paperRaised)
             }
             .overlay {
                 Capsule()
@@ -121,10 +121,10 @@ struct PrimaryActionButton: View {
                 .font(.subheadline.weight(.bold))
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
-                .foregroundStyle(.white)
+                .foregroundStyle(VoxglassTheme.deepGlass)
                 .background {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.ink)
+                        .fill(VoxglassTheme.accent)
                 }
         }
         .buttonStyle(.plain)
@@ -164,7 +164,7 @@ struct CompactBookRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookArtworkView(title: book.book.title, size: 46)
+            BookArtworkView(title: book.book.title, size: 46, coverURL: book.book.coverURL)
             VStack(alignment: .leading, spacing: 4) {
                 Text(book.book.title)
                     .font(.subheadline.weight(.semibold))
@@ -195,7 +195,7 @@ struct HorizontalBookCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            BookArtworkView(title: book.book.title, size: 78)
+            BookArtworkView(title: book.book.title, size: 78, coverURL: book.book.coverURL)
             Text(book.book.title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(VoxglassTheme.ink)

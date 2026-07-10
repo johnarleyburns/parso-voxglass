@@ -7,7 +7,7 @@ struct BookRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookArtworkView(title: book.book.title, size: 48)
+            BookArtworkView(title: book.book.title, size: 48, coverURL: book.book.coverURL)
             VStack(alignment: .leading, spacing: 4) {
                 Text(book.book.title)
                     .font(.headline)
@@ -36,4 +36,3 @@ struct BookRowView: View {
         .glassPanel()
     }
 }
-

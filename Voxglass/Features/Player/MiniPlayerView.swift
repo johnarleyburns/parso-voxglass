@@ -10,7 +10,7 @@ struct MiniPlayerView: View {
                 showingNowPlaying = true
             } label: {
                 HStack(spacing: 12) {
-                    BookArtworkView(title: session.book.title, size: 38)
+                    BookArtworkView(title: session.book.title, size: 38, coverURL: session.book.coverURL)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(session.book.title)
                             .font(.subheadline.weight(.semibold))
@@ -42,4 +42,3 @@ struct MiniPlayerView: View {
         }
     }
 }
-
