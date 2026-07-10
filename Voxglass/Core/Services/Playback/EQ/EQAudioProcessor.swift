@@ -65,23 +65,22 @@ final class EQAudioProcessor {
             }
         )
 
-        var tapRef: Unmanaged<MTAudioProcessingTap>?
+        var rawTap: MTAudioProcessingTap?
         let status = MTAudioProcessingTapCreate(
             kCFAllocatorDefault,
             &callbacks,
             kMTAudioProcessingTapCreationFlag_PreEffects,
-            &tapRef
+            &rawTap
         )
 
-        guard status == noErr, let tapRef else { return }
+        guard status == noErr, let retainedTap = rawTap else { return }
 
-        tap = tapRef
+        tap = Unmanaged.passUnretained(retainedTap)
         isActive = true
-        let processor = tapRef.takeUnretainedValue()
 
         let audioTrack = playerItem.asset.tracks.first { $0.mediaType == .audio }
         let inputParams = AVMutableAudioMixInputParameters(track: audioTrack)
-        inputParams.setValue(processor, forKey: "audioTapProcessor")
+        inputParams.setValue(retainedTap, forKey: "audioTapProcessor")
 
         let audioMix = AVMutableAudioMix()
         audioMix.inputParameters = [inputParams]
