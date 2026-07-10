@@ -58,11 +58,10 @@ final class EQAudioProcessor {
                 let status = MTAudioProcessingTapGetSourceAudio(tap, numberFrames, bufferListInOut, flagsOut, nil, numberFramesOut)
                 guard status == noErr, processor.isActive else { return }
 
-                let bufferList = bufferListInOut.pointee
-                for i in 0..<Int(bufferList.mNumberBuffers) {
-                    let bufPtr = UnsafeMutableRawPointer(bufferList.mBuffers.advanced(by: i).pointee.mData)
-                    guard let data = bufPtr else { continue }
-                    let count = Int(numberFrames) * Int(bufferList.mBuffers.advanced(by: i).pointee.mNumberChannels)
+                let abl = UnsafeMutableAudioBufferListPointer(bufferListInOut)
+                for buffer in abl {
+                    guard let data = buffer.mData else { continue }
+                    let count = Int(numberFrames) * Int(buffer.mNumberChannels)
                     let samples = data.bindMemory(to: Float.self, capacity: count)
                     for j in 0..<count {
                         samples[j] = processor.engine.process(samples[j])
