@@ -44,24 +44,24 @@ actor CacheManager {
         }
     }
 
-    func setPreset(_ preset: CachePreset) {
+    func setPreset(_ preset: CachePreset) async {
         guard !preset.isProOnly || ProFeature.isEnabled(.cachePresets) else { return }
         defaults.set(Int(preset.rawValue), forKey: presetKey)
 
-        if currentCacheBytes() > preset.rawValue {
+        if await currentCacheBytes() > preset.rawValue {
             Task.detached(priority: .utility) {
                 await self.evictToBudget(preset.rawValue)
             }
         }
     }
 
-    func currentCacheBytes() -> Int64 {
-        OpusCacheService.shared.cacheBytes()
+    func currentCacheBytes() async -> Int64 {
+        await OpusCacheService.shared.cacheBytes()
     }
 
     func evictIfNeeded() async {
         let budget = currentBudget
-        let used = currentCacheBytes()
+        let used = await currentCacheBytes()
         if used > budget {
             await evictToBudget(budget)
         }
