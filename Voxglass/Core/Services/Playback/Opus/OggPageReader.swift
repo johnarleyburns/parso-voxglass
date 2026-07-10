@@ -48,6 +48,7 @@ final class OggPageReader {
     private var cursor: Int = 0
     private var seenBOS = false
     private var streamSerial: UInt32?
+    private var partialPacket: Data?
 
     init(data: Data) {
         self.data = data
@@ -126,6 +127,13 @@ final class OggPageReader {
     func readPacketsInPage(_ header: OggPageHeader, payload: Data) -> [Data] {
         var packets: [Data] = []
         var offset = 0
+        var isContinuingPacket = header.isContinuation
+
+        // If continuing from previous page, start with the partial packet
+        if isContinuingPacket, let existing = partialPacket {
+            packets.append(existing)
+            partialPacket = nil
+        }
 
         for segmentSize in header.segmentTable {
             let size = Int(segmentSize)
@@ -133,22 +141,24 @@ final class OggPageReader {
             let segment = payload.subdata(in: offset..<(offset + size))
             offset += size
 
-            let isLastInPacket = segmentSize < 255
-
-            if !header.isContinuation && packets.isEmpty {
-                packets.append(segment)
-            } else {
+            if isContinuingPacket {
+                // Append to the last (incomplete) packet
                 if var last = packets.popLast() {
                     last.append(segment)
                     packets.append(last)
                 } else {
                     packets.append(segment)
                 }
+            } else {
+                packets.append(segment)
             }
 
-            if isLastInPacket {
-                // packet complete — next segment starts a new packet
-            }
+            isContinuingPacket = (segmentSize == 255)
+        }
+
+        // If the last packet is incomplete (last segment was 255), save it for next page
+        if isContinuingPacket, let incomplete = packets.popLast() {
+            partialPacket = incomplete
         }
 
         return packets
