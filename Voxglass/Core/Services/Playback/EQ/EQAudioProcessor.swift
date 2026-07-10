@@ -65,7 +65,7 @@ final class EQAudioProcessor {
             }
         )
 
-        #if compiler(>=6.0)
+        #if compiler(>=6.3)
         var rawTap: MTAudioProcessingTap?
         let status = MTAudioProcessingTapCreate(
             kCFAllocatorDefault,
