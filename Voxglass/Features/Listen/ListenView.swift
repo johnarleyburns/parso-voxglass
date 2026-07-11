@@ -18,7 +18,6 @@ struct ListenView: View {
                 hero
                 jumpBackIn
                 recentlyAdded
-                favorites
                 recommended
             }
             .padding(.top, 12)
@@ -80,14 +79,19 @@ struct ListenView: View {
         }
     }
 
+    private var recentlyAddedBooks: [BookWithChapters] {
+        let jumpedBackIDs = Set(libraryStore.recentlyPlayed.map(\.book.id))
+        return libraryStore.books.prefix(10).filter { !jumpedBackIDs.contains($0.book.id) }
+    }
+
     @ViewBuilder
     private var recentlyAdded: some View {
-        if !libraryStore.books.isEmpty {
+        if !recentlyAddedBooks.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(title: "Recently Added", actionTitle: "See All", action: selectLibrary)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(libraryStore.books.prefix(10)) { book in
+                        ForEach(recentlyAddedBooks) { book in
                             NavigationLink {
                                 BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
                             } label: {
@@ -100,36 +104,6 @@ struct ListenView: View {
                         }
                     }
                     .padding(.horizontal, 2)
-                }
-            }
-        }
-    }
-
-    private var favorites: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            SectionTitle(title: "Favorites")
-            if libraryStore.favoriteBooks.isEmpty {
-                Text("Favorite a book and it will display here")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Palette.ink3)
-                    .padding(.vertical, 18)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(libraryStore.favoriteBooks) { book in
-                            NavigationLink {
-                                BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
-                            } label: {
-                                ListenBookCard(
-                                    book: book,
-                                    sourceTitle: libraryStore.source(for: book.book)?.title
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                    .padding(.top, 10)
                 }
             }
         }
@@ -163,7 +137,7 @@ struct ListenView: View {
                             .disabled(importingIdentifier == result.identifier)
                         }
                     }
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 2)
                 }
                 .overlay(alignment: .topTrailing) {
                     if recommendations.isRefreshing {
@@ -209,7 +183,7 @@ struct ListenBookCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            BookCoverView(title: book.book.title, coverURL: book.book.coverURL)
+            BookCoverView(title: book.book.title, coverURL: book.book.coverURL, showBorder: false)
                 .frame(width: 132, height: 132)
             Text(book.book.title)
                 .font(.system(size: 12.5, weight: .semibold))

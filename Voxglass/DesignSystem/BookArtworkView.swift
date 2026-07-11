@@ -46,6 +46,7 @@ struct BookCoverView: View {
     var title: String
     var coverURL: URL?
     var cornerRadius: CGFloat = 14
+    var showBorder: Bool = true
 
     var body: some View {
         ArtworkImageView(url: coverURL) {
@@ -54,8 +55,10 @@ struct BookCoverView: View {
         .aspectRatio(1, contentMode: .fill)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            if showBorder {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            }
         }
         .accessibilityLabel(title)
     }
@@ -189,9 +192,8 @@ struct HorizontalCatalogCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            BookCoverView(title: result.title, coverURL: result.coverURL)
+            BookCoverView(title: result.title, coverURL: result.coverURL, showBorder: false)
                 .frame(width: 132, height: 132)
-                .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
 
             Text(result.title)
                 .font(.system(size: 12.5, weight: .semibold))
@@ -205,7 +207,7 @@ struct HorizontalCatalogCard: View {
                 .lineLimit(1)
                 .padding(.top, 1)
         }
-        .frame(width: 132, alignment: .leading)
+        .frame(width: 132)
         .onAppear {
             ArtworkService.shared.prefetch(urls: [result.coverURL], limit: 1)
         }
