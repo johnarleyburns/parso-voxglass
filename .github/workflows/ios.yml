@@ -50,9 +50,9 @@ jobs:
             exit 0
           fi
 
-          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org' || true)"
-          if [ -n "$disallowed" ]; then
-            echo "::error title=Network endpoint guard::Only Internet Archive and LibriVox runtime URLs are allowed."
+            disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru' || true)"
+            if [ -n "$disallowed" ]; then
+              echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, and parso.guru URLs are allowed."
             printf '%s\n' "$disallowed"
             exit 1
           fi
