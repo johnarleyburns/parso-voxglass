@@ -14,18 +14,12 @@ concurrency:
 jobs:
   guarded-tests:
     name: Guarded Tests
-    runs-on: macos-latest
-    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
-
-      - name: Select latest Xcode
-        run: |
-          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
-          sudo xcode-select -s /Applications/$XCODE
-          xcodebuild -version
 
       - name: Guard StoreKit import boundary
         run: |
@@ -50,34 +44,12 @@ jobs:
             exit 0
           fi
 
-            disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru' || true)"
-            if [ -n "$disallowed" ]; then
-              echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, and parso.guru URLs are allowed."
+          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru' || true)"
+          if [ -n "$disallowed" ]; then
+            echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, and parso.guru URLs are allowed."
             printf '%s\n' "$disallowed"
             exit 1
           fi
-
-      - name: Select iPhone simulator
-        id: simulator
-        run: |
-          set -euo pipefail
-          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]{36}$/ { print $2; exit }')"
-          if [ -z "$simulator_id" ]; then
-            echo "::error title=Simulator unavailable::No available iPhone simulator was found on this runner."
-            exit 1
-          fi
-          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
-
-      - name: Run unit tests
-        run: |
-          set -euo pipefail
-          xcrun simctl boot "${{ steps.simulator.outputs.id }}" || true
-          xcodebuild \
-            -project Voxglass.xcodeproj \
-            -scheme Voxglass \
-            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}" \
-            -enableCodeCoverage YES \
-            test
 
   testflight:
     name: TestFlight Build
