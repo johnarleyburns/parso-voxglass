@@ -14,12 +14,18 @@ concurrency:
 jobs:
   guarded-tests:
     name: Guarded Tests
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 30
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
+      - name: Select latest Xcode
+        run: |
+          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
+          sudo xcode-select -s /Applications/$XCODE
+          xcodebuild -version
 
       - name: Guard StoreKit import boundary
         run: |
@@ -75,7 +81,7 @@ jobs:
 
   testflight:
     name: TestFlight Build
-    runs-on: macos-15
+    runs-on: macos-latest
     needs: guarded-tests
     timeout-minutes: 45
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
@@ -133,35 +139,11 @@ jobs:
           echo "value=$build_number" >> "$GITHUB_OUTPUT"
           echo "Using build number $build_number"
 
-      - name: Select App Store Xcode
-        if: steps.preflight.outputs.ready == 'true'
-        id: xcode
+      - name: Select latest Xcode
         run: |
-          set -euo pipefail
-          selected=""
-          for candidate in /Applications/Xcode*.app; do
-            [ -d "$candidate" ] || continue
-            version="$("$candidate/Contents/Developer/usr/bin/xcodebuild" -version | awk 'NR == 1 { print $2 }')"
-            major="${version%%.*}"
-            case "$major" in
-              ''|*[!0-9]*) continue ;;
-            esac
-            if [ "$major" -ge 26 ]; then
-              selected="$candidate"
-              break
-            fi
-          done
-
-          if [ -z "$selected" ]; then
-            echo "::notice title=TestFlight upload skipped::Xcode 26 or later is required for current App Store upload validation. The job will still archive the signed app."
-            xcodebuild -version
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          sudo xcode-select -s "$selected/Contents/Developer"
+          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
+          sudo xcode-select -s /Applications/$XCODE
           xcodebuild -version
-          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Write App Store Connect API key
         if: steps.preflight.outputs.ready == 'true'
@@ -264,7 +246,7 @@ jobs:
             archive
 
       - name: Upload to TestFlight
-        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true' && steps.xcode.outputs.ready == 'true'
+        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
           export_options="$RUNNER_TEMP/ExportOptions.plist"
@@ -308,6 +290,6 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Report skipped TestFlight build
-        if: steps.preflight.outputs.ready != 'true' || steps.app_record.outputs.ready != 'true' || steps.xcode.outputs.ready != 'true'
+        if: steps.preflight.outputs.ready != 'true' || steps.app_record.outputs.ready != 'true'
         run: |
           echo "TestFlight upload skipped because signing secrets, the App Store Connect app record, or Xcode 26+ are not ready."
