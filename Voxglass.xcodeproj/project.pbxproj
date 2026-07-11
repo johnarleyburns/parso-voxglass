@@ -69,6 +69,7 @@
 		DEA28DA035E919802F2494A2 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B65C61660EB3946B337D332 /* CacheManager.swift */; };
 		DF3D0923DF3DD5A7465F7EF8 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBAB9AA5DFEAD67485D8C81 /* SplashView.swift */; };
 		DF6106903BF99273FF49A92B /* BookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7FA06FAF043F5404168367 /* BookDetailView.swift */; };
+		E5A037C7BE52117C724C20A0 /* HomeViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF241C86613512CDBF1ECA3 /* HomeViewTests.swift */; };
 		E6806258CC88E6D192E5D0D6 /* PlaybackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781FE9474675E666D936545F /* PlaybackModels.swift */; };
 		E7BA389ACEF2463AC7C2031B /* IACollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10412605E1021E75FBF43A82 /* IACollection.swift */; };
 		E9377FC490F1E5406F211C28 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
@@ -109,6 +110,7 @@
 		25390F059CBB36A777F3A45F /* HomeRecommendationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRecommendationStore.swift; sourceTree = "<group>"; };
 		26E3467C25D19F186E979A8A /* LibriVoxBrowseCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibriVoxBrowseCategory.swift; sourceTree = "<group>"; };
 		29E251AB7BD44B822DF78B97 /* LibraryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRepositoryTests.swift; sourceTree = "<group>"; };
+		2AF241C86613512CDBF1ECA3 /* HomeViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewTests.swift; sourceTree = "<group>"; };
 		2EC83371BA85A0967FDC5E2D /* PositionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionStore.swift; sourceTree = "<group>"; };
 		2F1723E9FFAA47E9FFF1B60C /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 		311EDE67BD1D551B959781C9 /* AudioFormatSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFormatSelectionTests.swift; sourceTree = "<group>"; };
@@ -467,6 +469,7 @@
 			children = (
 				311EDE67BD1D551B959781C9 /* AudioFormatSelectionTests.swift */,
 				D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */,
+				2AF241C86613512CDBF1ECA3 /* HomeViewTests.swift */,
 				ADE04706A1E9CC281DFCD089 /* Info.plist */,
 				E5515C1592CC2C95E1740040 /* InternetArchiveCatalogTests.swift */,
 				29E251AB7BD44B822DF78B97 /* LibraryRepositoryTests.swift */,
@@ -681,6 +684,7 @@
 			files = (
 				531FA1BD2AF6DFE1318A0833 /* AudioFormatSelectionTests.swift in Sources */,
 				EE5EC4960D5EA319D4ED30C3 /* FreeTierRegistryTests.swift in Sources */,
+				E5A037C7BE52117C724C20A0 /* HomeViewTests.swift in Sources */,
 				AB1D74DDE13765E68B2823F3 /* InternetArchiveCatalogTests.swift in Sources */,
 				8E0DC1B2A7EBCE981FAC5710 /* LibraryRepositoryTests.swift in Sources */,
 				C838EFD49FC8DB229DE0D627 /* ModelBehaviorTests.swift in Sources */,
