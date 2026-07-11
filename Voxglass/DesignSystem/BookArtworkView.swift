@@ -51,7 +51,7 @@ struct BookCoverView: View {
         ArtworkImageView(url: coverURL) {
             GeneratedBookCover(title: title, cornerRadius: cornerRadius)
         }
-        .aspectRatio(0.72, contentMode: .fit)
+        .aspectRatio(1, contentMode: .fill)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -65,10 +65,11 @@ struct BookArtworkView: View {
     var title: String
     var size: CGFloat = 68
     var coverURL: URL?
+    var cornerRadius: CGFloat = 12
 
     var body: some View {
-        BookCoverView(title: title, coverURL: coverURL)
-            .frame(width: size, height: size * 1.28)
+        BookCoverView(title: title, coverURL: coverURL, cornerRadius: cornerRadius)
+            .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
 }
@@ -185,53 +186,26 @@ struct VisualSummaryRow: View {
 
 struct HorizontalCatalogCard: View {
     var result: InternetArchiveSearchResult
-    var isImporting: Bool
-    var importAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             BookCoverView(title: result.title, coverURL: result.coverURL)
-                .frame(width: 104, height: 136)
+                .frame(width: 132, height: 132)
                 .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
 
             Text(result.title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(Palette.ink)
-                .lineLimit(2)
-                .frame(width: 112, alignment: .leading)
+                .lineLimit(1)
+                .padding(.top, 7)
 
             Text(result.authorLine)
-                .font(.system(size: 10.5))
+                .font(.system(size: 11))
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
-                .frame(width: 112, alignment: .leading)
-
-            Button(action: importAction) {
-                HStack(spacing: 6) {
-                    if isImporting {
-                        ProgressView()
-                            .controlSize(.mini)
-                    } else {
-                        Image(systemName: "arrow.down.circle.fill")
-                    }
-                    Text("Import")
-                        .lineLimit(1)
-                }
-                .font(.system(size: 12, weight: .bold))
-                .frame(maxWidth: .infinity)
-                .frame(height: 30)
-                .foregroundStyle(Color(hex: 0x221503))
-                .background {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Palette.brass)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Import \(result.title)")
+                .padding(.top, 1)
         }
-        .frame(width: 128, alignment: .topLeading)
-        .padding(10)
-        .glassSurface(cornerRadius: 14)
+        .frame(width: 132, alignment: .leading)
         .onAppear {
             ArtworkService.shared.prefetch(urls: [result.coverURL], limit: 1)
         }

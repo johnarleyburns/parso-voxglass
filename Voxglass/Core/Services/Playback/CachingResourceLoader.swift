@@ -1,0 +1,255 @@
+import Foundation
+import AVFoundation
+import UniformTypeIdentifiers
+
+/// Intercepts AVPlayer byte-range requests via a custom URL scheme, streams data
+/// from the network, writes it to a sparse on-disk cache, and serves cached bytes
+/// on subsequent plays without re-downloading.
+final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
+    static let scheme = "voxglass-cache"
+
+    private let originalURL: URL
+    private let cacheKey: String
+    private let session: URLSession
+    private var resolvedURL: URL?
+    private let stateLock = NSLock()
+    private var inFlight: [Task<Void, Never>] = []
+    private var didShutdown = false
+    private var fileHandle: FileHandle?
+
+    init(originalURL: URL) {
+        self.originalURL = originalURL
+        self.cacheKey = CachingResourceLoader.key(for: originalURL)
+        let cfg = URLSessionConfiguration.default
+        cfg.timeoutIntervalForRequest = 30
+        cfg.timeoutIntervalForResource = 3600
+        self.session = URLSession(configuration: cfg)
+        super.init()
+    }
+
+    deinit {
+        if let h = fileHandle { try? h.close() }
+        session.invalidateAndCancel()
+    }
+
+    func shutdown() {
+        stateLock.lock()
+        didShutdown = true
+        let tasks = inFlight
+        inFlight.removeAll()
+        stateLock.unlock()
+        tasks.forEach { $0.cancel() }
+        if let h = fileHandle { try? h.close(); fileHandle = nil }
+    }
+
+    static func key(for url: URL) -> String {
+        var hasher = Hasher()
+        hasher.combine(url.absoluteString)
+        let h = UInt64(bitPattern: Int64(hasher.finalize()))
+        return String(h, radix: 16) + "-" + (url.lastPathComponent as NSString).pathExtension.lowercased()
+    }
+
+    /// Returns true if this URL scheme should be routed through the cache.
+    static func isRemoteCacheable(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
+    static func cacheURL(for remote: URL) -> URL {
+        var comps = URLComponents(url: remote, resolvingAgainstBaseURL: false)!
+        comps.scheme = scheme
+        return comps.url ?? remote
+    }
+
+    private var networkURL: URL {
+        var comps = URLComponents(url: originalURL, resolvingAgainstBaseURL: false)!
+        if comps.scheme == Self.scheme { comps.scheme = "https" }
+        return comps.url ?? originalURL
+    }
+
+    func resourceLoader(_ resourceLoader: AVAssetResourceLoader,
+                        shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
+        stateLock.lock()
+        guard !didShutdown else { stateLock.unlock(); return false }
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.handle(loadingRequest)
+        }
+        inFlight.append(task)
+        stateLock.unlock()
+        return true
+    }
+
+    func resourceLoader(_ resourceLoader: AVAssetResourceLoader,
+                        didCancel loadingRequest: AVAssetResourceLoadingRequest) { }
+
+    private func handle(_ request: AVAssetResourceLoadingRequest) async {
+        do {
+            let total = try await ensureResolvedLength()
+            if let info = request.contentInformationRequest {
+                info.contentLength = total
+                info.isByteRangeAccessSupported = true
+                info.contentType = contentType()
+            }
+            if let dataRequest = request.dataRequest {
+                try await serve(dataRequest, total: total)
+            }
+            request.finishLoading()
+        } catch is CancellationError { }
+        catch {
+            request.finishLoading(with: error)
+        }
+    }
+
+    private func contentType() -> String {
+        let ext = (originalURL.lastPathComponent as NSString).pathExtension.lowercased()
+        switch ext {
+        case "flac": return "org.xiph.flac"
+        case "mp3": return UTType.mp3.identifier
+        case "m4a", "m4b", "aac": return UTType.mpeg4Audio.identifier
+        case "wav": return UTType.wav.identifier
+        case "aif", "aiff": return UTType.aiff.identifier
+        default: return UTType.audio.identifier
+        }
+    }
+
+    // MARK: - Content-length probe
+
+    private func ensureResolvedLength() async throws -> Int64 {
+        if let cached = await StreamCacheStore.shared.totalBytes(for: cacheKey), cached > 0 {
+            return cached
+        }
+        var request = URLRequest(url: networkURL)
+        request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        guard (200..<300).contains(http.statusCode) else { throw URLError(.badServerResponse) }
+        self.resolvedURL = http.url ?? networkURL
+        let total = Self.totalLength(from: http)
+        if total > 0 { await StreamCacheStore.shared.setContentLength(total, for: cacheKey) }
+        return total
+    }
+
+    private static func totalLength(from http: HTTPURLResponse) -> Int64 {
+        if let contentRange = http.value(forHTTPHeaderField: "Content-Range"),
+           let slash = contentRange.split(separator: "/").last, let total = Int64(slash) {
+            return total
+        }
+        if http.expectedContentLength > 0 { return http.expectedContentLength }
+        return 0
+    }
+
+    // MARK: - Progressive streaming serve
+
+    private func serve(_ dr: AVAssetResourceLoadingDataRequest, total: Int64) async throws {
+        let start = dr.currentOffset
+        let requestedLength = Int64(dr.requestedLength)
+        var endRequested: Int64
+        if dr.requestsAllDataToEndOfResource {
+            endRequested = total > 0 ? total : Int64.max
+        } else {
+            endRequested = start + requestedLength
+        }
+        if total > 0 { endRequested = min(endRequested, total) }
+        guard endRequested > start else { return }
+
+        let fileURL = await StreamCacheStore.shared.fileURL(for: cacheKey)
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: fileURL.path) {
+            fm.createFile(atPath: fileURL.path, contents: nil)
+        }
+
+        var cursor = start
+
+        while cursor < endRequested {
+            try Task.checkCancellation()
+
+            let map = await StreamCacheStore.shared.rangeMap(for: cacheKey)
+            let cachedContiguous = map.contiguousBytes(from: cursor)
+
+            if cachedContiguous > 0 {
+                let chunkEnd = min(cursor + cachedContiguous, endRequested)
+                if let data = readFile(fileURL, offset: cursor, length: chunkEnd - cursor) {
+                    dr.respond(with: data)
+                }
+                cursor = chunkEnd
+                continue
+            }
+
+            let rangeHeader: String
+            if endRequested < Int64.max && total > 0 {
+                rangeHeader = "bytes=\(cursor)-\(endRequested - 1)"
+            } else if total > 0, cursor < total {
+                rangeHeader = "bytes=\(cursor)-\(total - 1)"
+            } else {
+                rangeHeader = "bytes=\(cursor)-"
+            }
+
+            let url = resolvedURL ?? networkURL
+            var req = URLRequest(url: url)
+            req.setValue(rangeHeader, forHTTPHeaderField: "Range")
+            let (bytes, response) = try await session.bytes(for: req)
+            if let http = response as? HTTPURLResponse,
+               !(200..<300).contains(http.statusCode) {
+                throw URLError(.badServerResponse)
+            }
+
+            let chunkSize = 32 * 1024
+            var buf: [UInt8] = []
+            buf.reserveCapacity(chunkSize)
+            var chunkRanges: [Range<Int64>] = []
+
+            for try await byte in bytes {
+                buf.append(byte)
+                if buf.count >= chunkSize {
+                    try Task.checkCancellation()
+                    let chunk = Data(buf)
+                    writeFile(fileURL, offset: cursor, data: chunk)
+                    chunkRanges.append(cursor..<(cursor + Int64(chunk.count)))
+                    if cursor < endRequested {
+                        let usable = min(Int64(chunk.count), endRequested - cursor)
+                        if usable > 0 { dr.respond(with: chunk.prefix(Int(usable))) }
+                    }
+                    cursor += Int64(chunk.count)
+                    buf.removeAll(keepingCapacity: true)
+                }
+            }
+
+            if !buf.isEmpty {
+                let chunk = Data(buf)
+                writeFile(fileURL, offset: cursor, data: chunk)
+                chunkRanges.append(cursor..<(cursor + Int64(chunk.count)))
+                if cursor < endRequested {
+                    let usable = min(Int64(chunk.count), endRequested - cursor)
+                    if usable > 0 { dr.respond(with: chunk.prefix(Int(usable))) }
+                }
+                cursor += Int64(chunk.count)
+            }
+
+            for range in chunkRanges.reversed() {
+                await StreamCacheStore.shared.recordWrite(range: range, for: cacheKey)
+            }
+
+            if cursor >= endRequested { break }
+        }
+    }
+
+    // MARK: - Sparse file IO
+
+    private func readFile(_ url: URL, offset: Int64, length: Int64) -> Data? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        try? handle.seek(toOffset: UInt64(offset))
+        return try? handle.read(upToCount: Int(length))
+    }
+
+    private func writeFile(_ url: URL, offset: Int64, data: Data) {
+        guard !data.isEmpty else { return }
+        if fileHandle == nil {
+            fileHandle = try? FileHandle(forWritingTo: url)
+        }
+        guard let handle = fileHandle else { return }
+        try? handle.seek(toOffset: UInt64(offset))
+        try? handle.write(contentsOf: data)
+    }
+}

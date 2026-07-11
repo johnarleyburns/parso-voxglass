@@ -96,6 +96,34 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertEqual(library[0].book.summary, "LibriVox recording & public-domain audiobook.")
     }
 
+    func testLibriVoxQueryBuilderScopesToLibriVoxWithBoostsAndAnchor() {
+        let query = InternetArchiveClient.libriVoxQuery(for: "sherlock holmes")
+
+        XCTAssertTrue(query.hasPrefix("mediatype:audio"))
+        XCTAssertTrue(query.contains("title:\"sherlock\"^4"))
+        XCTAssertTrue(query.contains("creator:\"sherlock\"^3"))
+        XCTAssertTrue(query.contains("subject:\"holmes\"^1"))
+        XCTAssertTrue(query.contains("collection:(librivoxaudio OR audio_bookspoetry)"))
+        XCTAssertTrue(query.contains(" AND "))
+    }
+
+    func testLibriVoxQueryBuilderHandlesEmptyInput() {
+        let query = InternetArchiveClient.libriVoxQuery(for: "   ")
+        XCTAssertEqual(query, "mediatype:audio AND collection:(librivoxaudio OR audio_bookspoetry)")
+    }
+
+    func testCuratedCollectionsUseBroadCreatorQueries() {
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books"))
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("greater-books"))
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("ancient-greece"))
+
+        XCTAssertTrue(CuratedQueries.greatBooks.contains("collection:librivoxaudio"))
+        XCTAssertTrue(CuratedQueries.greatBooks.contains("creator:\"Homer\""))
+        XCTAssertTrue(CuratedQueries.greatBooks.contains("AND NOT creator:\"William John Locke\""))
+        XCTAssertTrue(CuratedQueries.ancientGreece.contains("creator:\"Plato\""))
+        XCTAssertTrue(CuratedQueries.greaterBooks.contains("creator:\"Jane Austen\""))
+    }
+
     private func metadataFixture() throws -> InternetArchiveMetadata {
         let data = try fixtureData("metadata_librivox_item")
         return try decoder.decode(InternetArchiveMetadata.self, from: data)

@@ -54,7 +54,9 @@ enum InternetArchiveAudioSelector {
     }
 
     private static func bestAvailableCodec(from files: [InternetArchiveFile]) -> AudioCodec? {
-        for codec in AudioCodec.allCases.sorted(by: >) {
+        // Only prefer codecs AVPlayer can play natively (FLAC, MP3). Opus and
+        // Vorbis are excluded from default selection since they require remuxing.
+        for codec in [AudioCodec.flac, .mp3] {
             if files.contains(where: { AudioFormatSelection.codec(for: $0.format, filename: $0.name) == codec }) {
                 return codec
             }

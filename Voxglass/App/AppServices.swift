@@ -23,6 +23,8 @@ final class AppServices: ObservableObject {
     }
 
     func bootstrap() async {
+        await CacheManager.shared.evictIfNeeded()
+        await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
         await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
     }

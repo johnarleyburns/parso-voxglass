@@ -3,16 +3,18 @@ import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var catalogStore: CatalogStore
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
     @State private var showingImporter = false
+    @State private var archiveURL = ""
 
     var body: some View {
-        VoxglassScreen(title: "Library") {
+        VoxglassScreen(title: "My Books") {
             VStack(alignment: .leading, spacing: 18) {
+                addArchiveURLPanel
                 importPanel
-                categoryHub
-                allAudiobooksPreview
+                bookList
             }
             .padding(.top, 12)
         }
@@ -23,15 +25,73 @@ struct LibraryView: View {
         ) { result in
             Task { await handleImportResult(result) }
         }
-        .alert("Import Failed", isPresented: importErrorBinding) {
+        .alert("Something Went Wrong", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
                 libraryStore.importError = nil
+                catalogStore.catalogError = nil
             }
         } message: {
-            Text(libraryStore.importError ?? "")
+            Text(libraryStore.importError ?? catalogStore.catalogError ?? "")
         }
         .task {
+            await libraryStore.refresh()
             await libraryStore.refreshRecentlyPlayed()
+        }
+    }
+
+    private var addArchiveURLPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Add from Internet Archive")
+            HStack(spacing: 10) {
+                Image(systemName: "link")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 28)
+
+                TextField("", text: $archiveURL, prompt: Text("archive.org book, list, or collection URL").foregroundStyle(Palette.ink3))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+                    .submitLabel(.done)
+                    .foregroundStyle(Palette.ink)
+                    .onSubmit {
+                        Task { await addArchiveURL() }
+                    }
+
+                Button {
+                    Task { await addArchiveURL() }
+                } label: {
+                    if catalogStore.isResolvingURL {
+                        ProgressView()
+                            .frame(width: 28, height: 28)
+                    } else {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 28, weight: .semibold))
+                    }
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Palette.brass)
+                .accessibilityLabel("Add archive URL")
+                .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
+            }
+            .font(.system(size: 15))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .glassSurface(cornerRadius: 14)
+
+            if !catalogStore.results.isEmpty {
+                Text("\(catalogStore.results.count) items found — tap to add to your library")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
+                ForEach(catalogStore.results) { result in
+                    Button {
+                        Task { await playResult(result) }
+                    } label: {
+                        InternetArchiveResultRow(result: result, isPlaying: false)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
@@ -42,7 +102,7 @@ struct LibraryView: View {
                 .foregroundStyle(Palette.brass)
                 .frame(width: 38, height: 38)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Local Audio")
+                Text("Add Local Audio")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Palette.ink)
                 Text("MP3, M4A, M4B, and folders")
@@ -69,45 +129,19 @@ struct LibraryView: View {
         .glassSurface(cornerRadius: 14)
     }
 
-    private var categoryHub: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Library")
-            VStack(spacing: 0) {
-                ForEach(LibraryCategory.allCases) { category in
-                    NavigationLink {
-                        LibraryCategoryDetailView(
-                            category: category,
-                            showingNowPlaying: $showingNowPlaying
-                        )
-                    } label: {
-                        DisclosureListRow(
-                            icon: category.icon,
-                            title: category.title,
-                            detail: category.detail,
-                            count: count(for: category),
-                            isEnabled: true
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .glassSurface(cornerRadius: 14)
-        }
-    }
-
     @ViewBuilder
-    private var allAudiobooksPreview: some View {
+    private var bookList: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "All Audiobooks")
+            SectionTitle(title: "My Audiobooks")
 
             if libraryStore.books.isEmpty {
                 EmptyStatePanel(
-                    title: "No Audiobooks",
-                    message: "Import files or add an Internet Archive URL to build your library.",
+                    title: "No Audiobooks Yet",
+                    message: "Search LibriVox or add an Internet Archive URL to build your shelf. Everything you play is cached here automatically.",
                     systemImage: "books.vertical"
                 )
             } else {
-                ForEach(libraryStore.books.prefix(6)) { book in
+                ForEach(libraryStore.books) { book in
                     NavigationLink {
                         BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
                     } label: {
@@ -122,32 +156,30 @@ struct LibraryView: View {
         }
     }
 
-    private var importErrorBinding: Binding<Bool> {
+    private var errorBinding: Binding<Bool> {
         Binding {
-            libraryStore.importError != nil
+            libraryStore.importError != nil || catalogStore.catalogError != nil
         } set: { isPresented in
             if !isPresented {
                 libraryStore.importError = nil
+                catalogStore.catalogError = nil
             }
         }
     }
 
-    private func count(for category: LibraryCategory) -> Int {
-        switch category {
-        case .allAudiobooks:
-            return libraryStore.books.count
-        case .downloaded:
-            return 0
-        case .favorites:
-            return libraryStore.favoriteBooks.count
-        case .authors:
-            return libraryStore.authorNames.count
-        case .genres:
-            return 0
-        case .recentlyPlayed:
-            return libraryStore.recentlyPlayed.count
-        case .playlists:
-            return 0
+    private func addArchiveURL() async {
+        if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
+            archiveURL = ""
+            await playback.play(imported)
+            showingNowPlaying = true
+        }
+        await libraryStore.refresh()
+    }
+
+    private func playResult(_ result: InternetArchiveSearchResult) async {
+        if let imported = await catalogStore.importResult(result, into: libraryStore) {
+            await playback.play(imported)
+            showingNowPlaying = true
         }
     }
 
@@ -161,192 +193,6 @@ struct LibraryView: View {
             }
         case .failure(let error):
             libraryStore.importError = error.localizedDescription
-        }
-    }
-}
-
-struct LibraryCategoryDetailView: View {
-    @EnvironmentObject private var libraryStore: LibraryStore
-    var category: LibraryCategory
-    @Binding var showingNowPlaying: Bool
-
-    var body: some View {
-        ZStack {
-            VoxglassBackground()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    content
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 12)
-                .padding(.bottom, 28)
-            }
-        }
-        .navigationTitle(category.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            if category == .recentlyPlayed {
-                await libraryStore.refreshRecentlyPlayed()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch category {
-        case .allAudiobooks:
-            bookList(libraryStore.books, emptyTitle: "No Audiobooks", emptyMessage: "Your imported books will appear here.")
-        case .downloaded:
-            EmptyStatePanel(
-                title: "No Downloads",
-                message: "Offline download controls are visible in book detail, but the download manager is a later phase.",
-                systemImage: "arrow.down.circle"
-            )
-        case .favorites:
-            bookList(libraryStore.favoriteBooks, emptyTitle: "No Favorites", emptyMessage: "Tap Favorite on a book detail screen to keep it here.")
-        case .authors:
-            authorList
-        case .genres:
-            genreList
-        case .recentlyPlayed:
-            bookList(libraryStore.recentlyPlayed, emptyTitle: "No Recent Plays", emptyMessage: "Started audiobooks will appear here after playback is saved.")
-        case .playlists:
-            EmptyStatePanel(
-                title: "No Playlists",
-                message: "Playlist editing is reserved for a later phase.",
-                systemImage: "text.badge.plus"
-            )
-        }
-    }
-
-    private func bookList(
-        _ books: [BookWithChapters],
-        emptyTitle: String,
-        emptyMessage: String
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if books.isEmpty {
-                EmptyStatePanel(title: emptyTitle, message: emptyMessage, systemImage: category.icon)
-            } else {
-                ForEach(books) { book in
-                    NavigationLink {
-                        BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
-                    } label: {
-                        CompactBookRowView(
-                            book: book,
-                            sourceTitle: libraryStore.source(for: book.book)?.title
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var authorList: some View {
-        if libraryStore.authorNames.isEmpty {
-            EmptyStatePanel(
-                title: "No Authors",
-                message: "Authors are indexed from local book metadata.",
-                systemImage: "person.2"
-            )
-        } else {
-            VStack(spacing: 0) {
-                ForEach(libraryStore.authorNames, id: \.self) { author in
-                    NavigationLink {
-                        AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
-                    } label: {
-                        DisclosureListRow(
-                            icon: "person.fill",
-                            title: author,
-                            detail: "Local works",
-                            count: libraryStore.books(byAuthor: author).count
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .glassSurface(cornerRadius: 14)
-        }
-    }
-
-    private var genreList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            EmptyStatePanel(
-                title: "No Subject Index",
-                message: "Subject counts need richer catalog metadata and remain a later phase.",
-                systemImage: "tag"
-            )
-        }
-    }
-}
-
-enum LibraryCategory: String, CaseIterable, Identifiable {
-    case allAudiobooks
-    case downloaded
-    case favorites
-    case authors
-    case genres
-    case recentlyPlayed
-    case playlists
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .allAudiobooks:
-            return "All Audiobooks"
-        case .downloaded:
-            return "Downloaded"
-        case .favorites:
-            return "Favorites"
-        case .authors:
-            return "Authors"
-        case .genres:
-            return "Genres & Subjects"
-        case .recentlyPlayed:
-            return "Recently Played"
-        case .playlists:
-            return "My Playlists"
-        }
-    }
-
-    var detail: String {
-        switch self {
-        case .allAudiobooks:
-            return "Everything on this device"
-        case .downloaded:
-            return "Offline items"
-        case .favorites:
-            return "Saved titles"
-        case .authors:
-            return "Local author index"
-        case .genres:
-            return "Subject collections"
-        case .recentlyPlayed:
-            return "Playback history"
-        case .playlists:
-            return "Custom lists"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .allAudiobooks:
-            return "books.vertical.fill"
-        case .downloaded:
-            return "arrow.down.circle.fill"
-        case .favorites:
-            return "heart.fill"
-        case .authors:
-            return "person.2.fill"
-        case .genres:
-            return "tag.fill"
-        case .recentlyPlayed:
-            return "clock.arrow.circlepath"
-        case .playlists:
-            return "music.note.list"
         }
     }
 }

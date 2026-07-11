@@ -161,7 +161,7 @@ struct CompactBookRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookArtworkView(title: book.book.title, size: 46, coverURL: book.book.coverURL)
+            BookArtworkView(title: book.book.title, size: 46, coverURL: book.book.coverURL, cornerRadius: 9)
             VStack(alignment: .leading, spacing: 2) {
                 Text(book.book.title)
                     .font(.system(size: 14, weight: .medium))
@@ -191,22 +191,21 @@ struct HorizontalBookCard: View {
     var book: BookWithChapters
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            BookArtworkView(title: book.book.title, size: 78, coverURL: book.book.coverURL)
+        VStack(alignment: .leading, spacing: 0) {
+            BookCoverView(title: book.book.title, coverURL: book.book.coverURL)
+                .frame(width: 132, height: 132)
             Text(book.book.title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(Palette.ink)
-                .lineLimit(2)
-                .frame(width: 98, alignment: .leading)
+                .lineLimit(1)
+                .padding(.top, 7)
             Text(book.book.authorLine)
-                .font(.system(size: 10.5))
+                .font(.system(size: 11))
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
-                .frame(width: 98, alignment: .leading)
+                .padding(.top, 1)
         }
-        .frame(width: 112, alignment: .topLeading)
-        .padding(10)
-        .glassSurface(cornerRadius: 14)
+        .frame(width: 132, alignment: .leading)
     }
 }
 

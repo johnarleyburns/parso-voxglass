@@ -28,14 +28,8 @@ struct SettingsView: View {
                 }
 
                 settingsGroup("Downloads & Cache") {
-                    MoreInfoRow(icon: "arrow.down.circle.fill", title: "Offline Downloads", detail: "Coming later", isEnabled: false)
-                    MoreInfoRow(icon: "internaldrive.fill", title: "Storage", detail: "On-device only")
-                }
-
-                settingsGroup("Data & Privacy") {
-                    MoreInfoRow(icon: "person.crop.circle.badge.xmark", title: "Accounts", detail: "None")
-                    MoreInfoRow(icon: "chart.bar.xaxis", title: "Analytics", detail: "None")
-                    MoreInfoRow(icon: "network.slash", title: "Network", detail: "Archive sources only")
+                    MoreInfoRow(icon: "internaldrive.fill", title: "Cached Audio", detail: "Plays cache locally, evicted oldest-first")
+                    MoreInfoRow(icon: "arrow.down.circle.fill", title: "Offline", detail: "Everything on your shelf is cached")
                 }
 
                 settingsGroup("Tips & Support") {
@@ -44,8 +38,19 @@ struct SettingsView: View {
                 }
 
                 settingsGroup("About") {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        DisclosureListRow(
+                            icon: "info.circle.fill",
+                            title: "About Voxglass",
+                            detail: "How it works and your privacy",
+                            count: nil
+                        )
+                    }
+                    .buttonStyle(.plain)
                     MoreInfoRow(icon: "doc.text.fill", title: "License", detail: "GPLv3")
-                    MoreInfoRow(icon: "info.circle.fill", title: "Version", detail: "0.1.0")
+                    MoreInfoRow(icon: "number", title: "Version", detail: "1.1")
                 }
             }
             .padding(.top, 12)
@@ -293,5 +298,85 @@ private struct MoreInfoRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .opacity(isEnabled ? 1 : 0.62)
+    }
+}
+
+struct AboutView: View {
+    private let privacyURL = URL(string: "https://parso.guru/voxglass-privacy.html")!
+
+    var body: some View {
+        ZStack {
+            VoxglassBackground()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    aboutSection
+                    privacySection
+                    Link(destination: privacyURL) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "hand.raised.fill")
+                                .foregroundStyle(Palette.brass)
+                            Text("Read the Privacy Policy")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Palette.ink)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Palette.ink3)
+                        }
+                        .padding(14)
+                        .glassSurface(cornerRadius: 14)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
+            }
+        }
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Voxglass")
+                .font(.system(size: 26, weight: .heavy))
+                .kerning(-0.5)
+                .foregroundStyle(Palette.ink)
+            Text("Public-domain audiobooks with a private, local-first shelf.")
+                .font(.system(size: 14))
+                .foregroundStyle(Palette.ink2)
+        }
+    }
+
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "How It Works")
+            Text("""
+            Voxglass streams free, public-domain audiobooks from the Internet Archive's LibriVox collection. Search by title, author, or subject, or browse curated Featured Collections, then tap any book to start listening.
+
+            There is no import step. When you play a book it is cached to your device automatically, so it keeps working offline. The cache is managed for you — the oldest, least-used audio is evicted first when space is needed.
+            """)
+                .font(.system(size: 13.5))
+                .foregroundStyle(Palette.ink2)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 14)
+        }
+    }
+
+    private var privacySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Privacy")
+            Text("""
+            Voxglass has no accounts, no tracking, and no analytics. Nothing you listen to leaves your device. The only network requests are to the Internet Archive to fetch audio and cover art you ask for. Your library, playback history, and cache live only on your device.
+            """)
+                .font(.system(size: 13.5))
+                .foregroundStyle(Palette.ink2)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 14)
+        }
     }
 }

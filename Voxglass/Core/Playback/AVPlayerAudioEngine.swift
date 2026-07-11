@@ -8,9 +8,42 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private var currentItemObserver: NSKeyValueObservation?
     private var preloadedItem: AVPlayerItem?
     private let eqProcessor = EQAudioProcessor()
+    private let loaderQueue = DispatchQueue(label: "guru.parso.voxglass.loaders")
+    private var loaders: [CachingResourceLoader] = []
+    private var prefetchLoaders: [CachingResourceLoader] = []
+    private var prefetchItems: [AVPlayerItem] = []
 
     var onPlaybackEnded: (@MainActor () -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
+
+    /// Builds an AVPlayerItem that routes remote URLs through the streaming cache.
+    private func makePlayerItem(for url: URL) -> AVPlayerItem {
+        guard CachingResourceLoader.isRemoteCacheable(url) else {
+            return AVPlayerItem(url: url)
+        }
+        let cacheURL = CachingResourceLoader.cacheURL(for: url)
+        let loader = CachingResourceLoader(originalURL: url)
+        loaders.append(loader)
+        let asset = AVURLAsset(url: cacheURL)
+        asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
+        return AVPlayerItem(asset: asset)
+    }
+
+    /// Warms the streaming cache for an upcoming chapter without affecting playback.
+    func prefetchIntoCache(url: URL) {
+        guard CachingResourceLoader.isRemoteCacheable(url) else { return }
+        guard prefetchItems.count < 2 else { return }
+        let cacheURL = CachingResourceLoader.cacheURL(for: url)
+        let loader = CachingResourceLoader(originalURL: url)
+        prefetchLoaders.append(loader)
+        let asset = AVURLAsset(url: cacheURL)
+        asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
+        let item = AVPlayerItem(asset: asset)
+        prefetchItems.append(item)
+        // Referencing the item's asset keys triggers the resource loader to begin
+        // filling the cache in the background.
+        asset.loadValuesAsynchronously(forKeys: ["playable"]) { }
+    }
 
     var isEQEngaged: Bool { eqProcessor.isEngaged }
 
@@ -73,8 +106,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         configureAudioSession()
         tearDownCurrentItem()
         preloadedItem = nil
+        shutdownPrefetch()
 
-        let item = AVPlayerItem(url: url)
+        let item = makePlayerItem(for: url)
         player.removeAllItems()
         player.insert(item, after: nil)
         observe(item: item, isPreloaded: false)
@@ -89,7 +123,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     func preloadNext(url: URL) {
         guard preloadedItem == nil else { return }
 
-        let item = AVPlayerItem(url: url)
+        let item = makePlayerItem(for: url)
         preloadedItem = item
 
         if player.canInsert(item, after: player.currentItem) {
@@ -100,6 +134,12 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
                 eqProcessor.attach(to: item)
             }
         }
+    }
+
+    private func shutdownPrefetch() {
+        prefetchLoaders.forEach { $0.shutdown() }
+        prefetchLoaders.removeAll()
+        prefetchItems.removeAll()
     }
 
     private func tearDownCurrentItem() {

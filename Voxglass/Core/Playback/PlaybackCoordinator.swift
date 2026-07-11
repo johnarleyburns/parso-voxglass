@@ -96,8 +96,8 @@ final class PlaybackCoordinator: ObservableObject {
             startProgressLoop()
             updateNowPlayingInfo()
 
-            // Prefetch Opus for the next chapter in the background
-            prefetchNextChapterOpus(from: book, currentChapter: chapter)
+            // Warm the streaming cache for the next chapter in the background
+            prefetchNextChapter(from: book, currentChapter: chapter)
 
             // Preload the next chapter for near-gapless
             let nextIndex = chapterIndex(in: book, for: chapter) + 1
@@ -196,17 +196,16 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    private func prefetchNextChapterOpus(from book: BookWithChapters, currentChapter: Chapter) {
+    private func prefetchNextChapter(from book: BookWithChapters, currentChapter: Chapter) {
         guard let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
         let nextIndex = currentIndex + 1
         guard book.chapters.indices.contains(nextIndex) else { return }
         let nextChapter = book.chapters[nextIndex]
 
-        if let opusURL = nextChapter.opusURL {
-            Task.detached(priority: .background) {
-                _ = await OpusCacheService.shared.fetchAndRemux(opusURL: opusURL, chapterID: nextChapter.id.uuidString)
-            }
-        }
+        guard let url = nextChapter.remoteURL, nextChapter.localURL == nil,
+              CachingResourceLoader.isRemoteCacheable(url),
+              let avEngine = engine as? AVPlayerAudioEngine else { return }
+        avEngine.prefetchIntoCache(url: url)
     }
 
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
@@ -262,9 +261,9 @@ final class PlaybackCoordinator: ObservableObject {
         startProgressLoop()
         updateNowPlayingInfo()
 
-        // Prefetch Opus for the chapter after next
-        prefetchNextChapterOpus(from: BookWithChapters(book: session.book, chapters: session.chapters),
-                                currentChapter: nextChapter)
+        // Warm the streaming cache for the chapter after next
+        prefetchNextChapter(from: BookWithChapters(book: session.book, chapters: session.chapters),
+                            currentChapter: nextChapter)
         // Preload the chapter after next for near-gapless
         preloadChapterAfter(nextChapter, in: session)
     }

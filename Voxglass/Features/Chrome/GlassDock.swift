@@ -69,7 +69,7 @@ struct GlassTabBar: View {
 
     private let items: [(VoxglassTab, String, String)] = [
         (.home, "headphones", "Listen"),
-        (.library, "books.vertical.fill", "Library"),
+        (.library, "books.vertical.fill", "My Books"),
         (.browse, "square.grid.2x2.fill", "Explore"),
         (.search, "magnifyingglass", "Search"),
         (.more, "ellipsis.circle.fill", "More")

@@ -107,7 +107,7 @@ struct ProPaywallView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Palette.ink)
 
-            Text("FLAC, Opus, MP3 playback · Near-gapless · Internet Archive & LibriVox sources · Local file import · No telemetry, no accounts")
+            Text("FLAC, MP3 playback · Near-gapless · Internet Archive & LibriVox sources · Local file import · No telemetry, no accounts")
                 .font(.system(size: 11.5))
                 .foregroundStyle(Palette.ink3)
                 .multilineTextAlignment(.center)

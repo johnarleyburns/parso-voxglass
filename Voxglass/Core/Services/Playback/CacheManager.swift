@@ -47,65 +47,23 @@ actor CacheManager {
     func setPreset(_ preset: CachePreset) async {
         guard !preset.isProOnly || ProFeature.isEnabled(.cachePresets) else { return }
         defaults.set(Int(preset.rawValue), forKey: presetKey)
-
-        if await currentCacheBytes() > preset.rawValue {
-            Task.detached(priority: .utility) {
-                await self.evictToBudget(preset.rawValue)
-            }
-        }
+        await StreamCacheStore.shared.setLimit(preset.rawValue)
     }
 
     func currentCacheBytes() async -> Int64 {
-        await OpusCacheService.shared.cacheBytes()
+        await StreamCacheStore.shared.totalCachedBytes()
     }
 
     func evictIfNeeded() async {
-        let budget = currentBudget
-        let used = await currentCacheBytes()
-        if used > budget {
-            await evictToBudget(budget)
-        }
+        await StreamCacheStore.shared.setLimit(currentBudget)
     }
 
-    private func evictToBudget(_ budget: Int64) async {
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let opusDir = caches.appendingPathComponent("OpusCache", isDirectory: true)
-        guard let enumerator = FileManager.default.enumerator(
-            at: opusDir,
-            includingPropertiesForKeys: [.contentAccessDateKey, .fileSizeKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
-
-        var files: [(url: URL, accessDate: Date, size: Int64)] = []
-        var total: Int64 = 0
-
-        for case let url as URL in enumerator {
-            guard let resourceValues = try? url.resourceValues(forKeys: [.contentAccessDateKey, .fileSizeKey]),
-                  let accessDate = resourceValues.contentAccessDate,
-                  let size = resourceValues.fileSize else { continue }
-            files.append((url, accessDate, Int64(size)))
-            total += Int64(size)
-        }
-
-        files.sort { $0.accessDate < $1.accessDate }
-
-        var removed: Int64 = 0
-        for file in files {
-            guard total - removed > budget else { break }
-            do {
-                try FileManager.default.removeItem(at: file.url)
-                removed += file.size
-            } catch {
-                // Continue with next file
-            }
-        }
+    func clearCache() async {
+        await StreamCacheStore.shared.clearAll()
     }
 
-    func accountCAF(at url: URL) {
-        // Update the access date so it doesn't get evicted immediately
-        try? FileManager.default.setAttributes(
-            [.modificationDate: Date()],
-            ofItemAtPath: url.path
-        )
+    func garbageCollectStalePartials() async {
+        await StreamCacheStore.shared.garbageCollectStalePartials()
     }
 }
+

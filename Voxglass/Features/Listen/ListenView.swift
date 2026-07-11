@@ -23,7 +23,7 @@ struct ListenView: View {
             }
             .padding(.top, 12)
         }
-        .alert("Import Failed", isPresented: errorBinding) {
+        .alert("Playback Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
                 catalogStore.catalogError = nil
                 libraryStore.importError = nil
@@ -154,12 +154,13 @@ struct ListenView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(recommendations.recommendations) { result in
-                            HorizontalCatalogCard(
-                                result: result,
-                                isImporting: importingIdentifier == result.identifier
-                            ) {
-                                Task { await importResult(result) }
+                            Button {
+                                Task { await playResult(result) }
+                            } label: {
+                                HorizontalCatalogCard(result: result)
                             }
+                            .buttonStyle(.plain)
+                            .disabled(importingIdentifier == result.identifier)
                         }
                     }
                     .padding(.vertical, 2)
@@ -191,7 +192,7 @@ struct ListenView: View {
         }
     }
 
-    private func importResult(_ result: InternetArchiveSearchResult) async {
+    private func playResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
 
@@ -209,7 +210,7 @@ struct ListenBookCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             BookCoverView(title: book.book.title, coverURL: book.book.coverURL)
-                .frame(width: 132, height: 182)
+                .frame(width: 132, height: 132)
             Text(book.book.title)
                 .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(Palette.ink)

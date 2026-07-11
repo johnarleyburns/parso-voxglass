@@ -72,17 +72,11 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
     }
 
     var playableURL: URL? {
-        if let opusURL, let cachedCAF = OpusCacheService.cachedCAFURLSync(for: opusURL) {
-            return cachedCAF
-        }
-        return localURL ?? remoteURL
+        localURL ?? remoteURL
     }
 
-    func resolvedPlayableURL(preferOpusCAF: Bool = true) -> URL? {
-        if preferOpusCAF, let opusURL, let cachedCAF = OpusCacheService.cachedCAFURLSync(for: opusURL) {
-            return cachedCAF
-        }
-        return localURL ?? remoteURL
+    func resolvedPlayableURL() -> URL? {
+        localURL ?? remoteURL
     }
 }
 

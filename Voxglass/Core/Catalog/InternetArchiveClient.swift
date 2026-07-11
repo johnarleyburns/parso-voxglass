@@ -34,11 +34,28 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
 
-        let phrase = Self.lucenePhrase(trimmed)
-        let archiveQuery = """
-        collection:(librivoxaudio) AND mediatype:(audio) AND (title:(\(phrase)) OR creator:(\(phrase)) OR description:(\(phrase)))
-        """
-        return try await searchAdvanced(query: archiveQuery, rows: rows)
+        return try await searchAdvanced(query: Self.libriVoxQuery(for: trimmed), rows: rows)
+    }
+
+    /// Builds a relevance-tuned LibriVox query. Each keyword must match somewhere
+    /// (title^4 / creator^3 / subject^1), and at least one keyword must anchor to
+    /// the title or creator so keyword-stuffed items don't dominate. Restricted to
+    /// the LibriVox audiobook collections.
+    static func libriVoxQuery(for rawInput: String) -> String {
+        let scopeClause = " AND collection:(librivoxaudio OR audio_bookspoetry)"
+        let tokens = rawInput
+            .split { !$0.isLetter && !$0.isNumber }
+            .map { $0.replacingOccurrences(of: "\"", with: "") }
+            .filter { !$0.isEmpty }
+        guard !tokens.isEmpty else { return "mediatype:audio" + scopeClause }
+
+        let perToken = tokens.map {
+            "(title:\"\($0)\"^4 OR creator:\"\($0)\"^3 OR subject:\"\($0)\"^1)"
+        }.joined(separator: " AND ")
+        let anchor = tokens.map {
+            "title:\"\($0)\" OR creator:\"\($0)\""
+        }.joined(separator: " OR ")
+        return "mediatype:audio AND \(perToken) AND (\(anchor))" + scopeClause
     }
 
     func searchCollection(identifier: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
@@ -114,10 +131,6 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
             URLQueryItem(name: "fl[]", value: "date")
         ]
         return components.url
-    }
-
-    private static func lucenePhrase(_ value: String) -> String {
-        "\"\(value.replacingOccurrences(of: "\"", with: "\\\""))\""
     }
 
     private static func luceneToken(_ value: String) -> String {
