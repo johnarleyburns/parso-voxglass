@@ -2,14 +2,22 @@ import SwiftUI
 
 struct SectionTitle: View {
     var title: String
+    var subtitle: String?
     var actionTitle: String?
     var action: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Palette.ink)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.ink3)
+                }
+            }
             Spacer()
             if let actionTitle, let action {
                 Button(actionTitle, action: action)

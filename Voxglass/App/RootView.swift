@@ -41,8 +41,7 @@ struct RootView: View {
                 case .home:
                     ListenView(
                         showingNowPlaying: $showingNowPlaying,
-                        selectLibrary: { selectedTab = .library },
-                        selectSearch: { selectedTab = .search }
+                        selectLibrary: { selectedTab = .library }
                     )
                 case .library:
                     LibraryView(showingNowPlaying: $showingNowPlaying)

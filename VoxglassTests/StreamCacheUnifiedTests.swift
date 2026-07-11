@@ -1,0 +1,100 @@
+import XCTest
+@testable import Voxglass
+
+final class StreamCacheUnifiedTests: XCTestCase {
+    private var directory: URL!
+    private var store: StreamCacheStore!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("voxglass-cache-tests-\(UUID().uuidString)", isDirectory: true)
+        store = StreamCacheStore(directory: directory)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: directory)
+        store = nil
+        directory = nil
+    }
+
+    func testRegisterArtworkCountsIntoBytesButNotTrackCount() async {
+        await store.registerArtwork(key: "art_a", bytes: 400)
+        await store.registerArtwork(key: "art_b", bytes: 600)
+
+        let bytes = await store.totalCachedBytes()
+        let count = await store.cachedTrackCount()
+
+        XCTAssertEqual(bytes, 1000)
+        XCTAssertEqual(count, 0, "Artwork must not be counted as cached tracks")
+    }
+
+    func testCompletedAudioCountsAsTrackAlongsideArtworkBytes() async {
+        await store.setContentLength(100, for: "audio1")
+        await store.recordWrite(range: 0..<100, for: "audio1")
+        await store.registerArtwork(key: "art_a", bytes: 250)
+
+        let bytes = await store.totalCachedBytes()
+        let count = await store.cachedTrackCount()
+
+        XCTAssertEqual(bytes, 350)
+        XCTAssertEqual(count, 1)
+    }
+
+    func testLRUEvictsAcrossKindsByLastAccess() async throws {
+        await store.setLimit(250)
+
+        await store.registerArtwork(key: "art_old", bytes: 100)
+        try await Task.sleep(nanoseconds: 15_000_000)
+        await store.setContentLength(100, for: "audio_mid")
+        await store.recordWrite(range: 0..<100, for: "audio_mid")
+        try await Task.sleep(nanoseconds: 15_000_000)
+
+        // Touch the artwork so the audio entry becomes the oldest.
+        await store.touch("art_old")
+        try await Task.sleep(nanoseconds: 15_000_000)
+
+        // Overflow the budget; oldest untouched entry (the audio) must be evicted.
+        await store.registerArtwork(key: "art_new", bytes: 100)
+
+        let hasArtOld = await store.contains("art_old")
+        let hasAudioMid = await store.contains("audio_mid")
+        let hasArtNew = await store.contains("art_new")
+
+        XCTAssertTrue(hasArtOld)
+        XCTAssertFalse(hasAudioMid, "Oldest untouched entry should be evicted regardless of kind")
+        XCTAssertTrue(hasArtNew)
+    }
+
+    func testClearAllWipesBothDirectories() async throws {
+        await store.setContentLength(10, for: "audio1")
+        await store.recordWrite(range: 0..<10, for: "audio1")
+        await store.registerArtwork(key: "art_a", bytes: 20)
+
+        let audioURL = await store.fileURL(for: "audio1")
+        let artURL = await store.artworkFileURL(for: "art_a")
+        try Data(repeating: 1, count: 10).write(to: audioURL)
+        try Data(repeating: 2, count: 20).write(to: artURL)
+
+        let audioDir = audioURL.deletingLastPathComponent()
+        let artDir = artURL.deletingLastPathComponent()
+
+        await store.clearAll()
+
+        let bytes = await store.totalCachedBytes()
+        XCTAssertEqual(bytes, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: audioURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: artURL.path))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: audioDir.path).count, 0)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: artDir.path).count, 0)
+    }
+
+    func testLegacyMetaWithoutKindDecodesAsAudio() throws {
+        let json = """
+        {"cachedBytes":123,"complete":true,"lastAccessedAt":0,"createdAt":0,"rangeMap":{"ranges":[]}}
+        """
+        let meta = try JSONDecoder().decode(StreamCacheStore.Meta.self, from: Data(json.utf8))
+
+        XCTAssertNil(meta.kind)
+        XCTAssertEqual(meta.effectiveKind, .audio)
+    }
+}

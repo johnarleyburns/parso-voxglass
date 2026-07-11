@@ -6,6 +6,8 @@ import Foundation
 actor StreamCacheStore {
     static let shared = StreamCacheStore()
 
+    enum EntryKind: String, Codable { case audio, artwork }
+
     struct Meta: Codable {
         var totalBytes: Int64?
         var cachedBytes: Int64
@@ -13,22 +15,49 @@ actor StreamCacheStore {
         var lastAccessedAt: Date
         var createdAt: Date
         var rangeMap: ByteRangeMap
+        var kind: EntryKind?          // nil == .audio for back-compat with legacy JSON
+
+        var effectiveKind: EntryKind { kind ?? .audio }
     }
 
     private let dir: URL
+    private let artDir: URL
     private let metaDir: URL
     private var metas: [String: Meta] = [:]   // key = cacheKey
     private var limitBytes: Int64
 
     static let defaultLimit: Int64 = 500 * 1024 * 1024
 
-    init() {
-        let base = (try? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask,
-                                                 appropriateFor: nil, create: true))
+    static func cacheBaseDirectory() -> URL {
+        (try? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask,
+                                      appropriateFor: nil, create: true))
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
+    }
+
+    /// Sibling artwork blob directory shared with `ArtworkService`'s disk tier.
+    static var defaultArtworkDirectory: URL {
+        cacheBaseDirectory().appendingPathComponent("Voxglass/StreamCacheArt", isDirectory: true)
+    }
+
+    init() {
+        let base = Self.cacheBaseDirectory()
         dir = base.appendingPathComponent("Voxglass/StreamCache", isDirectory: true)
+        artDir = base.appendingPathComponent("Voxglass/StreamCacheArt", isDirectory: true)
         metaDir = base.appendingPathComponent("Voxglass/StreamCacheMeta", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: artDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
+        limitBytes = Self.defaultLimit
+        metas = Self.loadMetas(from: metaDir)
+    }
+
+    /// Testable init that isolates all state under a caller-supplied directory.
+    init(directory: URL) {
+        dir = directory.appendingPathComponent("StreamCache", isDirectory: true)
+        artDir = directory.appendingPathComponent("StreamCacheArt", isDirectory: true)
+        metaDir = directory.appendingPathComponent("StreamCacheMeta", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: artDir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
         limitBytes = Self.defaultLimit
         metas = Self.loadMetas(from: metaDir)
@@ -47,12 +76,38 @@ actor StreamCacheStore {
         metas.values.reduce(0) { $0 + $1.cachedBytes }
     }
 
+    /// Audio tracks only — cover images are excluded from the "N tracks cached" count.
     func cachedTrackCount() -> Int {
-        metas.values.filter { $0.complete }.count
+        metas.values.filter { $0.complete && $0.effectiveKind == .audio }.count
+    }
+
+    func contains(_ key: String) -> Bool {
+        metas[key] != nil
     }
 
     func fileURL(for key: String) -> URL {
-        dir.appendingPathComponent(key)
+        let base = (metas[key]?.effectiveKind == .artwork) ? artDir : dir
+        return base.appendingPathComponent(key)
+    }
+
+    func artworkFileURL(for key: String) -> URL {
+        artDir.appendingPathComponent(key)
+    }
+
+    /// Upsert a complete artwork entry, then evict across the unified budget.
+    func registerArtwork(key: String, bytes: Int64) async {
+        let now = Date()
+        var m = metas[key] ?? Meta(totalBytes: bytes, cachedBytes: bytes, complete: true,
+                                   lastAccessedAt: now, createdAt: now, rangeMap: ByteRangeMap(),
+                                   kind: .artwork)
+        m.kind = .artwork
+        m.complete = true
+        m.cachedBytes = bytes
+        m.totalBytes = bytes
+        m.lastAccessedAt = now
+        metas[key] = m
+        persistMeta(key)
+        await evictToFit(protecting: nil)
     }
 
     func rangeMap(for key: String) -> ByteRangeMap {
@@ -100,6 +155,11 @@ actor StreamCacheStore {
             try? FileManager.default.removeItem(at: metaURL(key))
         }
         metas.removeAll()
+        for blobDir in [dir, artDir] {
+            if let files = try? FileManager.default.contentsOfDirectory(at: blobDir, includingPropertiesForKeys: nil) {
+                for file in files { try? FileManager.default.removeItem(at: file) }
+            }
+        }
     }
 
     /// GC partial segments older than 7 days.

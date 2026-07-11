@@ -11,6 +11,7 @@
 		089C22BB4A3D9F9B62E7ADC7 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */; };
 		10A6A4A2FD59778AC73503B0 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54A19CE35BAFC21D027EED34 /* RootView.swift */; };
 		137F7894CD8FFB97A42ED26E /* LibriVoxTaste.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5594FA62EFB2988C230BB3A3 /* LibriVoxTaste.swift */; };
+		1402A1277A603F1BBB2D7A4A /* StreamCacheUnifiedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165895C5F9B4D9CC4CB8DEBE /* StreamCacheUnifiedTests.swift */; };
 		146A11873D483EDE4293F89F /* VoxglassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6AA015D08BC5D3D56CA570C /* VoxglassApp.swift */; };
 		19C9A2D1FAEB6534975F4850 /* LastPlaybackSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625CF2D580D87272EEBDE947 /* LastPlaybackSnapshotStore.swift */; };
 		1BB3402E40BE25E5AE494E58 /* LocalAudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02A866C80A1AC953D2FF5F6 /* LocalAudioImporter.swift */; };
@@ -19,9 +20,12 @@
 		3382A26BA23175201F4C5F60 /* AVPlayerAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6A38C40AB8319675AFAA1C2 /* AVPlayerAudioEngine.swift */; };
 		3C0DE431CC692B27F1033D61 /* InternetArchiveAudioSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DF1394BDF3593C56E35B9DC /* InternetArchiveAudioSelector.swift */; };
 		3D1FDC4720D46F3585E91D38 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1BBA5A2E92771EE1379D897D /* Assets.xcassets */; };
+		3F33DA2E97223B25B08EA054 /* CacheSettingsModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45C874B881FBBCD4057C0F64 /* CacheSettingsModelTests.swift */; };
 		433A4DBD71894CA5974DB2E7 /* InternetArchiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 437EA198DF6BD31FC98AAF8A /* InternetArchiveClient.swift */; };
+		436F8A568B8881A26C20C752 /* ResultRowDetailLineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47601209536B30FE1382B547 /* ResultRowDetailLineTests.swift */; };
 		440C99473B5F61443D4B756E /* PlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 385B29245096DA5C30CACEBC /* PlaybackSession.swift */; };
 		44909C568B50C6B53E64ABCE /* ProEntitlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A2CE8BA17550D0B0C83422C /* ProEntitlement.swift */; };
+		47455BBFA799E35FCCEC3DE9 /* ArtworkServiceUnifiedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */; };
 		47AA8052D987CE8A6FABD5D7 /* ProFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3683818DB9958D3AE591BCEA /* ProFeature.swift */; };
 		4E17B88927AF8BB4666FBBE3 /* StreamCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D31866CCDBBD795481D35D /* StreamCacheStore.swift */; };
 		531FA1BD2AF6DFE1318A0833 /* AudioFormatSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311EDE67BD1D551B959781C9 /* AudioFormatSelectionTests.swift */; };
@@ -43,6 +47,8 @@
 		8E0DC1B2A7EBCE981FAC5710 /* LibraryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E251AB7BD44B822DF78B97 /* LibraryRepositoryTests.swift */; };
 		97900263A97F90023C1A86F2 /* ModelMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 946AF7AFDF51892640050E23 /* ModelMapping.swift */; };
 		98CDCB1A5DA9E88729B1C08B /* InternetArchiveURLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 334D79A138E41BE3692FE059 /* InternetArchiveURLParser.swift */; };
+		9A64C2D2E69FD9609615B505 /* VoxglassUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */; };
+		9DDDD022A48D14CDE1A25369 /* IADateFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28A58431311F120BDAF4F1E /* IADateFormattingTests.swift */; };
 		A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739CF70CFD45FD09DC69EB64 /* ListenView.swift */; };
 		A332DD2B8CEEE911054A1E2F /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A231D6F71366A0CB091D43B /* NetworkMonitor.swift */; };
 		A72053D04B89DFAA4A96914F /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1723E9FFAA47E9FFF1B60C /* LibraryStore.swift */; };
@@ -88,6 +94,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		01B09C050391F366D5A68F49 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 66284DBA90AC39B124263951;
+			remoteInfo = Voxglass;
+		};
 		47B65887C0E5E15430969F94 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
@@ -102,6 +115,7 @@
 		0AEEA84F0A20681E031EC755 /* DatabaseValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseValue.swift; sourceTree = "<group>"; };
 		0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassComponents.swift; sourceTree = "<group>"; };
 		10412605E1021E75FBF43A82 /* IACollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IACollection.swift; sourceTree = "<group>"; };
+		165895C5F9B4D9CC4CB8DEBE /* StreamCacheUnifiedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamCacheUnifiedTests.swift; sourceTree = "<group>"; };
 		16D5DD63112BA7D489FDC31C /* metadata_librivox_item.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = metadata_librivox_item.json; sourceTree = "<group>"; };
 		1B65C61660EB3946B337D332 /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 		1BBA5A2E92771EE1379D897D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -123,10 +137,13 @@
 		401A6A7A2EAF21C7B1B57B98 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 		420E11400AB1535B94D3D0B5 /* GlassDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDock.swift; sourceTree = "<group>"; };
 		437EA198DF6BD31FC98AAF8A /* InternetArchiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveClient.swift; sourceTree = "<group>"; };
+		45C874B881FBBCD4057C0F64 /* CacheSettingsModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheSettingsModelTests.swift; sourceTree = "<group>"; };
 		46BECBB89F17D12CFB910BC9 /* BookRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookRowView.swift; sourceTree = "<group>"; };
+		47601209536B30FE1382B547 /* ResultRowDetailLineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultRowDetailLineTests.swift; sourceTree = "<group>"; };
 		49FA6D58EC651570824B18FE /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		4A231D6F71366A0CB091D43B /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		4DF1394BDF3593C56E35B9DC /* InternetArchiveAudioSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveAudioSelector.swift; sourceTree = "<group>"; };
+		502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		50D1C32869E453FD6ED93AFC /* CatalogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogStore.swift; sourceTree = "<group>"; };
 		54A19CE35BAFC21D027EED34 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		5594FA62EFB2988C230BB3A3 /* LibriVoxTaste.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibriVoxTaste.swift; sourceTree = "<group>"; };
@@ -159,6 +176,7 @@
 		AD30019A34C9E1F714333796 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
 		ADE04706A1E9CC281DFCD089 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AFF3B0DCD481B0A6FE412E3E /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
+		B28A58431311F120BDAF4F1E /* IADateFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IADateFormattingTests.swift; sourceTree = "<group>"; };
 		B5D32B1ADBD5E2A825589454 /* Voxglass.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Voxglass.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC61497C672A246E4A913E3F /* PositionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionStoreTests.swift; sourceTree = "<group>"; };
 		BF296A86B135507051DFBBD2 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -166,9 +184,11 @@
 		C0F83970BE913FA182709D2E /* AudioFormatSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFormatSelection.swift; sourceTree = "<group>"; };
 		CB2DBA8A509FFB154473301D /* BookArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookArtworkView.swift; sourceTree = "<group>"; };
 		CEC318EB68E5165403477C6D /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassUITests.swift; sourceTree = "<group>"; };
 		D187D7F0D06AAA1D3E05A0EB /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		D1F526973EBB17A744B728F6 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTierRegistryTests.swift; sourceTree = "<group>"; };
+		DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkServiceUnifiedTests.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		E02A866C80A1AC953D2FF5F6 /* LocalAudioImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAudioImporter.swift; sourceTree = "<group>"; };
 		E5515C1592CC2C95E1740040 /* InternetArchiveCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveCatalogTests.swift; sourceTree = "<group>"; };
@@ -353,6 +373,7 @@
 			children = (
 				B5D32B1ADBD5E2A825589454 /* Voxglass.app */,
 				EFA4E9B17CAB1FFA31DB10F8 /* VoxglassTests.xctest */,
+				502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -405,6 +426,7 @@
 			children = (
 				F7EF5EDAB0E5DBEA3523BBFE /* Voxglass */,
 				ED4982468693FA0EDA9C26ED /* VoxglassTests */,
+				F1BE95C159C6821B95663D5C /* VoxglassUITests */,
 				14120B8711EC104FE616E7D7 /* Frameworks */,
 				796B34DD940E8756362344DD /* Products */,
 			);
@@ -467,14 +489,19 @@
 		ED4982468693FA0EDA9C26ED /* VoxglassTests */ = {
 			isa = PBXGroup;
 			children = (
+				DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */,
 				311EDE67BD1D551B959781C9 /* AudioFormatSelectionTests.swift */,
+				45C874B881FBBCD4057C0F64 /* CacheSettingsModelTests.swift */,
 				D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */,
 				2AF241C86613512CDBF1ECA3 /* HomeViewTests.swift */,
+				B28A58431311F120BDAF4F1E /* IADateFormattingTests.swift */,
 				ADE04706A1E9CC281DFCD089 /* Info.plist */,
 				E5515C1592CC2C95E1740040 /* InternetArchiveCatalogTests.swift */,
 				29E251AB7BD44B822DF78B97 /* LibraryRepositoryTests.swift */,
 				6D2BA4E5373D5B09F5FA1922 /* ModelBehaviorTests.swift */,
 				BC61497C672A246E4A913E3F /* PositionStoreTests.swift */,
+				47601209536B30FE1382B547 /* ResultRowDetailLineTests.swift */,
+				165895C5F9B4D9CC4CB8DEBE /* StreamCacheUnifiedTests.swift */,
 				6D0789D8083F86F84540255D /* VisualOnboardingTests.swift */,
 				337D65C25ED2154536B8E821 /* Fixtures */,
 			);
@@ -488,6 +515,14 @@
 				F701EDCDE2BB625656606A03 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		F1BE95C159C6821B95663D5C /* VoxglassUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */,
+			);
+			path = VoxglassUITests;
 			sourceTree = "<group>";
 		};
 		F7EF5EDAB0E5DBEA3523BBFE /* Voxglass */ = {
@@ -539,6 +574,24 @@
 			productReference = EFA4E9B17CAB1FFA31DB10F8 /* VoxglassTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		3B8880C71EB76B457C2934CE /* VoxglassUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07ADB34AF3B7FBF0A72A444D /* Build configuration list for PBXNativeTarget "VoxglassUITests" */;
+			buildPhases = (
+				ACADA05FCB1AEFA97EAF768F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2BDEA0011411BB37D715B79C /* PBXTargetDependency */,
+			);
+			name = VoxglassUITests;
+			packageProductDependencies = (
+			);
+			productName = VoxglassUITests;
+			productReference = 502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		66284DBA90AC39B124263951 /* Voxglass */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2E32793A1CF978D956C91D25 /* Build configuration list for PBXNativeTarget "Voxglass" */;
@@ -567,6 +620,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					3B8880C71EB76B457C2934CE = {
+						TestTargetID = 66284DBA90AC39B124263951;
+					};
 				};
 			};
 			buildConfigurationList = 3BC5B986E96CBEC15B924BDA /* Build configuration list for PBXProject "Voxglass" */;
@@ -585,6 +641,7 @@
 			targets = (
 				66284DBA90AC39B124263951 /* Voxglass */,
 				08B68FEA2D31598ABDA70D1E /* VoxglassTests */,
+				3B8880C71EB76B457C2934CE /* VoxglassUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -612,6 +669,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		ACADA05FCB1AEFA97EAF768F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A64C2D2E69FD9609615B505 /* VoxglassUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AE89C599189D2D3B17C840A7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -682,13 +747,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47455BBFA799E35FCCEC3DE9 /* ArtworkServiceUnifiedTests.swift in Sources */,
 				531FA1BD2AF6DFE1318A0833 /* AudioFormatSelectionTests.swift in Sources */,
+				3F33DA2E97223B25B08EA054 /* CacheSettingsModelTests.swift in Sources */,
 				EE5EC4960D5EA319D4ED30C3 /* FreeTierRegistryTests.swift in Sources */,
 				E5A037C7BE52117C724C20A0 /* HomeViewTests.swift in Sources */,
+				9DDDD022A48D14CDE1A25369 /* IADateFormattingTests.swift in Sources */,
 				AB1D74DDE13765E68B2823F3 /* InternetArchiveCatalogTests.swift in Sources */,
 				8E0DC1B2A7EBCE981FAC5710 /* LibraryRepositoryTests.swift in Sources */,
 				C838EFD49FC8DB229DE0D627 /* ModelBehaviorTests.swift in Sources */,
 				55A6274484CDE8FCD124D2E7 /* PositionStoreTests.swift in Sources */,
+				436F8A568B8881A26C20C752 /* ResultRowDetailLineTests.swift in Sources */,
+				1402A1277A603F1BBB2D7A4A /* StreamCacheUnifiedTests.swift in Sources */,
 				EFD58001536BFA7C97DCDABD /* VisualOnboardingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -696,6 +766,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		2BDEA0011411BB37D715B79C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 66284DBA90AC39B124263951 /* Voxglass */;
+			targetProxy = 01B09C050391F366D5A68F49 /* PBXContainerItemProxy */;
+		};
 		5940A616230DC085B5B195D8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 66284DBA90AC39B124263951 /* Voxglass */;
@@ -808,6 +883,23 @@
 			};
 			name = Debug;
 		};
+		7C67789B8FE29E30DBBF5FCC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Voxglass;
+			};
+			name = Release;
+		};
 		CDAF9B2B198BB85ACE26E23F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -843,6 +935,23 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Voxglass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Voxglass";
+			};
+			name = Debug;
+		};
+		DD9F8B5614D40897FE0A47B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Voxglass;
 			};
 			name = Debug;
 		};
@@ -909,6 +1018,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		07ADB34AF3B7FBF0A72A444D /* Build configuration list for PBXNativeTarget "VoxglassUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD9F8B5614D40897FE0A47B5 /* Debug */,
+				7C67789B8FE29E30DBBF5FCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		1866874965BCC7CDDE77EDE2 /* Build configuration list for PBXNativeTarget "VoxglassTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

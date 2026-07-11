@@ -195,6 +195,63 @@ struct InternetArchiveFile: Decodable, Equatable, Sendable, Identifiable {
     }
 }
 
+enum IADateFormatting {
+    /// "2005-08-01T00:00:00Z" -> "Aug 2005"; "2005-08-01" -> "Aug 2005";
+    /// "2005-08" -> "Aug 2005"; "2005" -> "2005"; nil/"" -> nil.
+    static func humanReadable(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if let date = isoFormatter.date(from: trimmed) {
+            return monthYearFormatter.string(from: date)
+        }
+
+        for (format, isYearOnly) in Self.parseFormats {
+            parseFormatter.dateFormat = format
+            if let date = parseFormatter.date(from: trimmed) {
+                return isYearOnly
+                    ? yearFormatter.string(from: date)
+                    : monthYearFormatter.string(from: date)
+            }
+        }
+
+        return trimmed
+    }
+
+    private static let parseFormats: [(String, Bool)] = [
+        ("yyyy-MM-dd", false),
+        ("yyyy-MM", false),
+        ("yyyy", true)
+    ]
+
+    private static let isoFormatter = ISO8601DateFormatter()
+
+    private static let parseFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.isLenient = false
+        return formatter
+    }()
+
+    private static let monthYearFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "MMM yyyy"
+        return formatter
+    }()
+
+    private static let yearFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy"
+        return formatter
+    }()
+}
+
 extension String {
     var cleanedInternetArchiveText: String {
         let noTags = replacingOccurrences(

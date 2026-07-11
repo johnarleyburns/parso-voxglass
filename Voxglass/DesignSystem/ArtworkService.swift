@@ -11,6 +11,8 @@ enum ArtworkServiceError: Error, Equatable {
 
 final class ArtworkService: @unchecked Sendable {
     typealias Fetcher = @Sendable (URL) async throws -> (Data, URLResponse?)
+    typealias RegisterHook = @Sendable (String, Int64) -> Void
+    typealias TouchHook = @Sendable (String) -> Void
 
     static let shared = ArtworkService()
 
@@ -19,13 +21,17 @@ final class ArtworkService: @unchecked Sendable {
     private let timeToLive: TimeInterval
     private let fetcher: Fetcher
     private let fileManager: FileManager
+    private let registerBytes: RegisterHook
+    private let touchKey: TouchHook
     private let ioQueue = DispatchQueue(label: "guru.parso.voxglass.artwork-cache")
 
     init(
         cacheDirectory: URL? = nil,
         timeToLive: TimeInterval = 60 * 60 * 24 * 14,
         fileManager: FileManager = .default,
-        fetcher: Fetcher? = nil
+        fetcher: Fetcher? = nil,
+        registerBytes: RegisterHook? = nil,
+        touchKey: TouchHook? = nil
     ) {
         self.fileManager = fileManager
         self.timeToLive = timeToLive
@@ -33,13 +39,17 @@ final class ArtworkService: @unchecked Sendable {
             let (data, response) = try await URLSession.shared.data(from: url)
             return (data, response)
         }
+        self.registerBytes = registerBytes ?? { key, bytes in
+            Task { await StreamCacheStore.shared.registerArtwork(key: key, bytes: bytes) }
+        }
+        self.touchKey = touchKey ?? { key in
+            Task { await StreamCacheStore.shared.touch(key) }
+        }
 
         if let cacheDirectory {
             self.cacheDirectory = cacheDirectory
         } else {
-            self.cacheDirectory = fileManager
-                .urls(for: .cachesDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("VoxglassArtwork", isDirectory: true)
+            self.cacheDirectory = StreamCacheStore.defaultArtworkDirectory
         }
 
         ioQueue.sync {
@@ -56,11 +66,13 @@ final class ArtworkService: @unchecked Sendable {
         let nsURL = url as NSURL
 
         if let image = memoryCache.object(forKey: nsURL) {
+            touchKey(cacheKey(url))
             return image
         }
 
         if let image = diskImage(at: cacheURL) {
             memoryCache.setObject(image, forKey: nsURL)
+            touchKey(cacheKey(url))
             return image
         }
 
@@ -68,6 +80,7 @@ final class ArtworkService: @unchecked Sendable {
         let image = try Self.validatedImage(from: data, response: response)
         memoryCache.setObject(image, forKey: nsURL)
         write(data, to: cacheURL)
+        registerBytes(cacheKey(url), Int64(data.count))
         return image
     }
 
@@ -84,9 +97,20 @@ final class ArtworkService: @unchecked Sendable {
 
     func cachedImage(for url: URL) -> UIImage? {
         if let image = memoryCache.object(forKey: url as NSURL) {
+            touchKey(cacheKey(url))
             return image
         }
-        return diskImage(at: cacheFileURL(for: url))
+        if let image = diskImage(at: cacheFileURL(for: url)) {
+            touchKey(cacheKey(url))
+            return image
+        }
+        return nil
+    }
+
+    /// Empties the in-memory tier for the Settings "Clear Cache" path.
+    /// Disk artwork is wiped by `StreamCacheStore.clearAll()`.
+    func clearMemory() {
+        memoryCache.removeAllObjects()
     }
 
     static func validatedImage(from data: Data, response: URLResponse?) throws -> UIImage {
@@ -114,8 +138,18 @@ final class ArtworkService: @unchecked Sendable {
     }
 
     static func cacheFileName(for url: URL) -> String {
+        cacheKey(for: url)
+    }
+
+    /// Stable store key for `url`. The `art_` prefix avoids collisions with audio
+    /// cache keys produced by `CachingResourceLoader.key(for:)`.
+    static func cacheKey(for url: URL) -> String {
         let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
-        return digest.map { String(format: "%02x", $0) }.joined() + ".img"
+        return "art_" + digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func cacheKey(_ url: URL) -> String {
+        Self.cacheKey(for: url)
     }
 
     private func cacheFileURL(for url: URL) -> URL {

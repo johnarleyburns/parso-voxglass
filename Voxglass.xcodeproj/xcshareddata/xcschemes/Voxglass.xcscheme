@@ -51,6 +51,17 @@
                ReferencedContainer = "container:Voxglass.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3B8880C71EB76B457C2934CE"
+               BuildableName = "VoxglassUITests.xctest"
+               BlueprintName = "VoxglassUITests"
+               ReferencedContainer = "container:Voxglass.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

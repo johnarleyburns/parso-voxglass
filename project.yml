@@ -77,6 +77,18 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Voxglass"
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGNING_ALLOWED: NO
+  VoxglassUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - VoxglassUITests
+    dependencies:
+      - target: Voxglass
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.uitests
+        TEST_TARGET_NAME: Voxglass
+        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
@@ -86,3 +98,4 @@ schemes:
       gatherCoverageData: true
       targets:
         - VoxglassTests
+        - VoxglassUITests

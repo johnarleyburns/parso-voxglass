@@ -28,3 +28,16 @@ enum TimeFormatting {
     }
 }
 
+enum ByteFormatting {
+    private static let formatter: ByteCountFormatter = {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .binary
+        return formatter
+    }()
+
+    static func string(_ bytes: Int64) -> String {
+        formatter.string(fromByteCount: max(0, bytes))
+    }
+}
+

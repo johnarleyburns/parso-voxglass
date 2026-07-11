@@ -60,6 +60,7 @@ actor CacheManager {
 
     func clearCache() async {
         await StreamCacheStore.shared.clearAll()
+        ArtworkService.shared.clearMemory()
     }
 
     func garbageCollectStalePartials() async {

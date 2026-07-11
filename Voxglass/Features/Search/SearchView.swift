@@ -142,8 +142,7 @@ struct InternetArchiveResultRow: View {
                 Text(result.title)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
+                    .lineLimit(2, reservesSpace: true)
                 Text(result.authorLine)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Palette.ink3)
@@ -153,6 +152,7 @@ struct InternetArchiveResultRow: View {
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 8)
 
@@ -165,15 +165,16 @@ struct InternetArchiveResultRow: View {
                     .foregroundStyle(Palette.brass)
             }
         }
+        .frame(minHeight: 84)
         .padding(12)
         .glassSurface(cornerRadius: 14)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Play \(result.title)")
     }
 
-    private var detailLine: String {
+    var detailLine: String {
         var parts: [String] = []
-        if let date = result.date, !date.isEmpty {
+        if let date = IADateFormatting.humanReadable(result.date) {
             parts.append(date)
         }
         if let downloads = result.downloads {

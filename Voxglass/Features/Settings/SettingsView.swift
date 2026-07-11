@@ -27,9 +27,9 @@ struct SettingsView: View {
                     MoreInfoRow(icon: "speedometer", title: "Playback Speed", detail: "1x", isEnabled: false)
                 }
 
-                settingsGroup("Downloads & Cache") {
-                    MoreInfoRow(icon: "internaldrive.fill", title: "Cached Audio", detail: "Plays cache locally, evicted oldest-first")
-                    MoreInfoRow(icon: "arrow.down.circle.fill", title: "Offline", detail: "Everything on your shelf is cached")
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionTitle(title: "Downloads & Cache")
+                    CacheSettingsCard()
                 }
 
                 settingsGroup("Tips & Support") {
@@ -68,6 +68,147 @@ struct SettingsView: View {
             }
             .glassPanel()
         }
+    }
+}
+
+private struct CacheSettingsCard: View {
+    @State private var cacheUsed: Int64 = 0
+    @State private var cacheLimit: Int64 = StreamCacheStore.defaultLimit
+    @State private var cachedCount: Int = 0
+    @State private var showClearConfirm = false
+    @State private var showPaywall = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            usageCard
+            clearCard
+        }
+        .task { await refresh() }
+        .confirmationDialog(
+            "Clear \(ByteFormatting.string(cacheUsed)) of cached audio and artwork?",
+            isPresented: $showClearConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Clear Cache", role: .destructive) {
+                Task {
+                    await CacheManager.shared.clearCache()
+                    await refresh()
+                }
+            }
+        }
+        .sheet(isPresented: $showPaywall) {
+            NavigationStack {
+                ProPaywallView()
+            }
+        }
+    }
+
+    private var usageCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Streaming Cache")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+                Text("\(ByteFormatting.string(cacheUsed)) of \(ByteFormatting.string(cacheLimit))")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(.bottom, 11)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.1))
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                            startPoint: .leading, endPoint: .trailing))
+                        .frame(width: geo.size.width * fillFraction)
+                }
+            }
+            .frame(height: 10)
+
+            HStack {
+                Text("\(cachedCount) tracks cached")
+                    .font(.system(size: 10.5))
+                Spacer()
+                Text("oldest evicted first")
+                    .font(.system(size: 10.5))
+            }
+            .foregroundStyle(Palette.ink3)
+            .padding(.top, 8)
+
+            HStack(spacing: 6) {
+                ForEach(CacheManager.CachePreset.allCases, id: \.rawValue) { preset in
+                    presetButton(preset)
+                }
+            }
+            .padding(.top, 12)
+        }
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
+    }
+
+    private func presetButton(_ preset: CacheManager.CachePreset) -> some View {
+        let selected = preset.rawValue == cacheLimit
+        let locked = preset.isProOnly && !ProFeature.isEnabled(.cachePresets)
+        return Button {
+            if locked {
+                showPaywall = true
+            } else {
+                Task {
+                    await CacheManager.shared.setPreset(preset)
+                    await refresh()
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(preset.displayName)
+                if locked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9, weight: .semibold))
+                }
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(selected ? .white : Palette.ink2)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(
+                selected ? Palette.brassDeep : Color.white.opacity(0.07),
+                in: RoundedRectangle(cornerRadius: 11)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var clearCard: some View {
+        Button {
+            showClearConfirm = true
+        } label: {
+            HStack {
+                Text("Clear Cache")
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(Palette.danger)
+                Spacer()
+                Text(ByteFormatting.string(cacheUsed))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(15)
+            .glassSurface(cornerRadius: 18)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var fillFraction: Double {
+        guard cacheLimit > 0 else { return 0 }
+        return min(1, Double(cacheUsed) / Double(cacheLimit))
+    }
+
+    private func refresh() async {
+        cacheUsed = await CacheManager.shared.currentCacheBytes()
+        cacheLimit = await CacheManager.shared.currentBudget
+        cachedCount = await StreamCacheStore.shared.cachedTrackCount()
     }
 }
 

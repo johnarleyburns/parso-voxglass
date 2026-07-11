@@ -6,7 +6,6 @@ struct ListenView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
     var selectLibrary: () -> Void
-    var selectSearch: () -> Void
 
     @StateObject private var recommendations = HomeRecommendationStore()
     @State private var importingIdentifier: String?
@@ -112,11 +111,7 @@ struct ListenView: View {
     @ViewBuilder
     private var recommended: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(
-                title: "Recommended for You",
-                actionTitle: recommendations.isRefreshing ? nil : "Search",
-                action: recommendations.isRefreshing ? nil : selectSearch
-            )
+            SectionTitle(title: "Recommended for You")
 
             if recommendations.recommendations.isEmpty {
                 EmptyStatePanel(
