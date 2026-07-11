@@ -137,7 +137,8 @@ jobs:
           set -euo pipefail
           build_number="$(git rev-list --count HEAD)"
           echo "value=$build_number" >> "$GITHUB_OUTPUT"
-          echo "Using build number $build_number"
+          echo "version=1.1.$build_number" >> "$GITHUB_OUTPUT"
+          echo "Using build number $build_number (marketing version 1.1.$build_number)"
 
       - name: Select latest Xcode
         run: |
@@ -241,6 +242,7 @@ jobs:
             CODE_SIGNING_ALLOWED=YES \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             CODE_SIGN_STYLE=Manual \
+            MARKETING_VERSION="${{ steps.build_number.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ steps.signing.outputs.profile_name }}" \
             archive

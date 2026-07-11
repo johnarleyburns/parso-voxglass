@@ -30,6 +30,7 @@ struct OnboardingPreferencesView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     header
                     tasteGrid
+                    featuredCollections
                     footerActions
                 }
                 .padding(.horizontal, 22)
@@ -73,6 +74,31 @@ struct OnboardingPreferencesView: View {
         }
     }
 
+    private var featuredCollections: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Or browse our collections")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Palette.ink2)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(LibriVoxTaste.all) { taste in
+                        Button {
+                            toggle(taste)
+                        } label: {
+                            OnboardingCollectionCard(
+                                collection: IACollectionStore.collection(for: taste, subtitle: taste.title),
+                                isSelected: selectedTasteIDs.contains(taste.id)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
     private var footerActions: some View {
         VStack(spacing: 10) {
             Button {
@@ -107,6 +133,45 @@ struct OnboardingPreferencesView: View {
             selectedTasteIDs.remove(taste.id)
         } else {
             selectedTasteIDs.insert(taste.id)
+        }
+    }
+}
+
+private struct OnboardingCollectionCard: View {
+    var collection: IACollection
+    var isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            CollectionArtworkView(
+                title: collection.title,
+                systemImage: collection.systemImage,
+                assetName: collection.assetName,
+                remoteImageURL: collection.remoteImageURL
+            )
+            .frame(width: 170, height: 118)
+
+            Text(collection.title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Palette.ink)
+                .lineLimit(1)
+                .frame(width: 170, alignment: .leading)
+        }
+        .frame(width: 190, alignment: .topLeading)
+        .padding(10)
+        .glassSurface(cornerRadius: 14)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
+        }
+        .overlay(alignment: .topTrailing) {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Palette.brass)
+                    .background(Circle().fill(Color(hex: 0x221503)))
+                    .padding(6)
+            }
         }
     }
 }
