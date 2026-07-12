@@ -53,20 +53,6 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func importLocalAudio(from urls: [URL]) async -> [BookWithChapters] {
-        isImporting = true
-        defer { isImporting = false }
-
-        do {
-            let imported = try await repository.importLocalAudio(from: urls)
-            await refresh()
-            return imported
-        } catch {
-            importError = error.localizedDescription
-            return []
-        }
-    }
-
     func importInternetArchiveItem(
         _ metadata: InternetArchiveMetadata,
         sourceKind: SourceKind

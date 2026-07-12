@@ -9,11 +9,9 @@ enum LibraryBookFilter: Equatable, Sendable {
 
 final class LibraryRepository {
     private let database: AppDatabase
-    private let importer: LocalAudioImporter
 
-    init(database: AppDatabase, importer: LocalAudioImporter = LocalAudioImporter()) {
+    init(database: AppDatabase) {
         self.database = database
-        self.importer = importer
     }
 
     func fetchLibrary() async throws -> [BookWithChapters] {
@@ -95,38 +93,6 @@ final class LibraryRepository {
         return try await bookWithChapters(forBookID: bookID)
     }
 
-    func importLocalAudio(from urls: [URL]) async throws -> [BookWithChapters] {
-        let importedFiles = try await importer.importAudio(from: urls)
-        guard !importedFiles.isEmpty else { return [] }
-
-        let source = try await ensureLocalFilesSource()
-        var importedBooks: [BookWithChapters] = []
-
-        for imported in importedFiles {
-            let now = Date()
-            let book = Book(
-                title: imported.title,
-                authors: ["Local File"],
-                summary: "Imported from this device. Voxglass keeps this file and its listening state on device.",
-                sourceID: source.id,
-                createdAt: now,
-                updatedAt: now
-            )
-            let chapter = Chapter(
-                bookID: book.id,
-                title: imported.title,
-                sortKey: imported.title,
-                index: 0,
-                duration: imported.duration,
-                localURL: imported.localURL
-            )
-            try await insert(book: book, chapters: [chapter])
-            importedBooks.append(BookWithChapters(book: book, chapters: [chapter]))
-        }
-
-        return importedBooks
-    }
-
     func importInternetArchiveItem(
         _ metadata: InternetArchiveMetadata,
         sourceKind: SourceKind
@@ -202,29 +168,6 @@ final class LibraryRepository {
 
         try await insert(book: book, chapters: chapters)
         return BookWithChapters(book: book, chapters: chapters)
-    }
-
-    private func ensureLocalFilesSource() async throws -> Source {
-        let existing = try await database.query(
-            "SELECT id, kind, title, url, created_at FROM sources WHERE kind = ? LIMIT 1",
-            [.string(SourceKind.localFiles.rawValue)]
-        )
-        if let row = existing.first {
-            return try Self.source(from: row)
-        }
-
-        let source = Source(kind: .localFiles, title: "Local Files")
-        try await database.execute("""
-        INSERT INTO sources (id, kind, title, url, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        """, [
-            ModelMapping.databaseValue(source.id),
-            .string(source.kind.rawValue),
-            .string(source.title),
-            ModelMapping.databaseValue(source.url),
-            ModelMapping.databaseValue(source.createdAt)
-        ])
-        return source
     }
 
     private func ensureInternetArchiveSource(

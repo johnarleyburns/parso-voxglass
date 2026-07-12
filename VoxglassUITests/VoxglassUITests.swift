@@ -26,12 +26,12 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Add Local Audiobooks"].exists)
     }
 
-    func testExploreShowsAddPanelsAndNoOnThisDevice() {
+    func testExploreShowsFeaturedCollectionsWithoutAddPanels() {
         let app = launchApp(initialTab: "explore")
 
         XCTAssertTrue(app.staticTexts["Featured Collections"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["Add from Internet Archive"].exists)
-        XCTAssertTrue(app.staticTexts["Add Local Audiobooks"].exists)
+        XCTAssertFalse(app.staticTexts["Add from Internet Archive"].exists)
+        XCTAssertFalse(app.staticTexts["Add Local Audiobooks"].exists)
         XCTAssertFalse(app.staticTexts["On This Device"].exists)
     }
 

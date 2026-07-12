@@ -169,12 +169,12 @@ struct CompactBookRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookArtworkView(title: book.book.title, size: 46, coverURL: book.book.coverURL, cornerRadius: 9)
+            BookArtworkView(title: book.book.title, size: 56, coverURL: book.book.coverURL, cornerRadius: 12)
             VStack(alignment: .leading, spacing: 2) {
                 Text(book.book.title)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(2)
+                    .lineLimit(2, reservesSpace: true)
                     .minimumScaleFactor(0.82)
                 Text(book.book.authorLine)
                     .font(.system(size: 11.5))
@@ -190,8 +190,11 @@ struct CompactBookRowView: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Palette.ink3.opacity(0.7))
         }
+        .frame(minHeight: 80)
         .padding(12)
         .glassSurface(cornerRadius: 14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(book.book.title) by \(book.book.authorLine)")
     }
 }
 

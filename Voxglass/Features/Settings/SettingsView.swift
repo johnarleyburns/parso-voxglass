@@ -6,6 +6,11 @@ struct SettingsView: View {
     var body: some View {
         VoxglassScreen(title: "More") {
             VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionTitle(title: "Downloads & Cache")
+                    CacheSettingsCard()
+                }
+
                 settingsGroup("Library") {
                     NavigationLink {
                         SourcesView(showingNowPlaying: $showingNowPlaying)
@@ -13,28 +18,11 @@ struct SettingsView: View {
                         DisclosureListRow(
                             icon: "externaldrive.fill",
                             title: "Sources",
-                            detail: "Local files, LibriVox, and archive URLs",
+                            detail: "Add books from Internet Archive URLs",
                             count: nil
                         )
                     }
                     .buttonStyle(.plain)
-                }
-
-                settingsGroup("Playback") {
-                    MoreInfoRow(icon: "speaker.wave.2.fill", title: "Background Audio", detail: "Enabled")
-                    MoreInfoRow(icon: "airplayaudio", title: "AirPlay", detail: "System controls")
-                    MoreInfoRow(icon: "timer", title: "Sleep Timer", detail: "Coming later", isEnabled: false)
-                    MoreInfoRow(icon: "speedometer", title: "Playback Speed", detail: "1x", isEnabled: false)
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    SectionTitle(title: "Downloads & Cache")
-                    CacheSettingsCard()
-                }
-
-                settingsGroup("Tips & Support") {
-                    MoreInfoRow(icon: "heart.fill", title: "Tip Jar", detail: "StoreKit later", isEnabled: false)
-                    MoreInfoRow(icon: "questionmark.circle.fill", title: "Support", detail: "Not configured", isEnabled: false)
                 }
 
                 settingsGroup("About") {
@@ -49,8 +37,6 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    MoreInfoRow(icon: "doc.text.fill", title: "License", detail: "GPLv3")
-                    MoreInfoRow(icon: "number", title: "Version", detail: "1.1")
                 }
             }
             .padding(.top, 12)
@@ -225,8 +211,6 @@ struct SourcesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     addArchiveURLPanel
-                    sourceList
-                    placeholders
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
@@ -242,9 +226,6 @@ struct SourcesView: View {
             }
         } message: {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
-        }
-        .task {
-            await libraryStore.refresh()
         }
     }
 
@@ -283,48 +264,13 @@ struct SourcesView: View {
         }
     }
 
-    @ViewBuilder
-    private var sourceList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Connected Sources")
-            if libraryStore.sources.isEmpty {
-                EmptyStatePanel(
-                    title: "No Sources Yet",
-                    message: "Imported local files and archive items will create source records.",
-                    systemImage: "externaldrive"
-                )
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(libraryStore.sources) { source in
-                        SourceRow(source: source, bookCount: bookCount(for: source))
-                    }
-                }
-                .glassPanel()
-            }
+    private func addArchiveURL() async {
+        if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
+            archiveURL = ""
+            await playback.play(imported)
+            showingNowPlaying = true
         }
-    }
-
-    private var placeholders: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Available Later")
-            VStack(spacing: 0) {
-                DisclosureListRow(
-                    icon: "folder.fill",
-                    title: "Local Files",
-                    detail: "Use Library import for now",
-                    count: nil,
-                    isEnabled: false
-                )
-                DisclosureListRow(
-                    icon: "icloud.fill",
-                    title: "iCloud Drive",
-                    detail: "Folder sync is not implemented",
-                    count: nil,
-                    isEnabled: false
-                )
-            }
-            .glassPanel()
-        }
+        await libraryStore.refresh()
     }
 
     private var errorBinding: Binding<Bool> {
@@ -336,109 +282,6 @@ struct SourcesView: View {
                 libraryStore.importError = nil
             }
         }
-    }
-
-    private func bookCount(for source: Source) -> Int {
-        libraryStore.books.filter { $0.book.sourceID == source.id }.count
-    }
-
-    private func addArchiveURL() async {
-        if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
-            archiveURL = ""
-            await playback.play(imported)
-            showingNowPlaying = true
-        }
-        await libraryStore.refresh()
-    }
-}
-
-private struct SourceRow: View {
-    var source: Source
-    var bookCount: Int
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(VoxglassTheme.accent)
-                .frame(width: 32, height: 32)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(VoxglassTheme.paperRaised)
-                }
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(source.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(VoxglassTheme.ink)
-                    .lineLimit(1)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
-                    .lineLimit(1)
-            }
-
-            Spacer()
-
-            Text("\(bookCount)")
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .foregroundStyle(VoxglassTheme.secondaryInk)
-                .padding(.horizontal, 8)
-                .frame(height: 24)
-                .background {
-                    Capsule()
-                        .fill(VoxglassTheme.paperRaised)
-                }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-
-    private var icon: String {
-        switch source.kind {
-        case .librivox:
-            return "waveform"
-        case .internetArchive, .internetArchiveURL:
-            return "building.columns.fill"
-        case .localFiles:
-            return "folder.fill"
-        }
-    }
-
-    private var detail: String {
-        if let url = source.url {
-            return url.host() ?? source.kind.displayName
-        }
-        return source.kind.displayName
-    }
-}
-
-private struct MoreInfoRow: View {
-    var icon: String
-    var title: String
-    var detail: String
-    var isEnabled: Bool = true
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.subheadline)
-                .foregroundStyle(isEnabled ? VoxglassTheme.accent : VoxglassTheme.secondaryInk.opacity(0.55))
-                .frame(width: 28, height: 28)
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(isEnabled ? VoxglassTheme.ink : VoxglassTheme.secondaryInk)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-            Spacer()
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(VoxglassTheme.secondaryInk)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .opacity(isEnabled ? 1 : 0.62)
     }
 }
 
@@ -453,6 +296,7 @@ struct AboutView: View {
                     header
                     aboutSection
                     privacySection
+                    detailsList
                     Link(destination: privacyURL) {
                         HStack(spacing: 10) {
                             Image(systemName: "hand.raised.fill")
@@ -519,5 +363,48 @@ struct AboutView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .glassSurface(cornerRadius: 14)
         }
+    }
+
+    private var detailsList: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.text.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 28, height: 28)
+                Text("License")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+                Text("GPLv3")
+                    .font(.caption)
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+
+            HStack(spacing: 12) {
+                Image(systemName: "number")
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 28, height: 28)
+                Text("Version")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+                Text(appVersion)
+                    .font(.caption)
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+        }
+        .glassPanel()
+    }
+
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
     }
 }

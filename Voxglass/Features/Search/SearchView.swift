@@ -60,6 +60,7 @@ struct SearchView: View {
         .font(.system(size: 15))
         .padding(.horizontal, 14)
         .frame(height: 40)
+        .contentShape(Rectangle())
         .glassSurface(cornerRadius: 20)
     }
 
@@ -136,13 +137,14 @@ struct InternetArchiveResultRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookArtworkView(title: result.title, size: 48, coverURL: result.coverURL, cornerRadius: 9)
+            BookArtworkView(title: result.title, size: 56, coverURL: result.coverURL, cornerRadius: 12)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(result.title)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2, reservesSpace: true)
+                    .minimumScaleFactor(0.82)
                 Text(result.authorLine)
                     .font(.system(size: 11.5))
                     .foregroundStyle(Palette.ink3)
@@ -152,7 +154,6 @@ struct InternetArchiveResultRow: View {
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 8)
 
@@ -165,7 +166,7 @@ struct InternetArchiveResultRow: View {
                     .foregroundStyle(Palette.brass)
             }
         }
-        .frame(minHeight: 84)
+        .frame(minHeight: 80)
         .padding(12)
         .glassSurface(cornerRadius: 14)
         .accessibilityElement(children: .combine)

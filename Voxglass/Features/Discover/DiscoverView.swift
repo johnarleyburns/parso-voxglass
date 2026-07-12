@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
@@ -8,26 +7,15 @@ struct BrowseView: View {
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
     @State private var playingIdentifier: String?
-    @State private var showingImporter = false
-    @State private var archiveURL = ""
     @AppStorage(AppPreferencesStore.Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
             VStack(alignment: .leading, spacing: 18) {
                 collectionShelves
-                addArchiveURLPanel
-                importPanel
                 catalogResults
             }
             .padding(.top, 12)
-        }
-        .fileImporter(
-            isPresented: $showingImporter,
-            allowedContentTypes: UTType.voxglassImportTypes,
-            allowsMultipleSelection: true
-        ) { result in
-            Task { await handleImportResult(result) }
         }
         .alert("Explore Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -62,82 +50,6 @@ struct BrowseView: View {
                 .padding(.vertical, 2)
             }
         }
-    }
-
-    private var addArchiveURLPanel: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Add from Internet Archive")
-            HStack(spacing: 10) {
-                Image(systemName: "link")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Palette.brass)
-                    .frame(width: 28)
-
-                TextField("", text: $archiveURL, prompt: Text("archive.org book, list, or collection URL").foregroundStyle(Palette.ink3))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
-                    .submitLabel(.done)
-                    .foregroundStyle(Palette.ink)
-                    .onSubmit {
-                        Task { await addArchiveURL() }
-                    }
-
-                Button {
-                    Task { await addArchiveURL() }
-                } label: {
-                    if catalogStore.isResolvingURL {
-                        ProgressView()
-                            .frame(width: 28, height: 28)
-                    } else {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 28, weight: .semibold))
-                    }
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Palette.brass)
-                .accessibilityLabel("Add archive URL")
-                .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
-            }
-            .font(.system(size: 15))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .glassSurface(cornerRadius: 14)
-        }
-    }
-
-    private var importPanel: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "tray.and.arrow.down.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(Palette.brass)
-                .frame(width: 38, height: 38)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Add Local Audiobooks")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Palette.ink)
-                Text("MP3, M4A, M4B, and folders")
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Palette.ink3)
-            }
-            Spacer()
-            Button {
-                showingImporter = true
-            } label: {
-                if libraryStore.isImporting {
-                    ProgressView()
-                        .frame(width: 32, height: 32)
-                } else {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 22))
-                }
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Palette.brass)
-            .accessibilityLabel("Import local audio")
-        }
-        .padding(14)
-        .glassSurface(cornerRadius: 14)
     }
 
     @ViewBuilder
@@ -202,28 +114,6 @@ struct BrowseView: View {
     private func search(_ collection: IACollection) {
         selectedCollection = collection
         Task { await catalogStore.searchAdvanced(collection.archiveQuery) }
-    }
-
-    private func addArchiveURL() async {
-        if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
-            archiveURL = ""
-            await playback.play(imported)
-            showingNowPlaying = true
-        }
-        await libraryStore.refresh()
-    }
-
-    private func handleImportResult(_ result: Result<[URL], Error>) async {
-        switch result {
-        case .success(let urls):
-            let imported = await libraryStore.importLocalAudio(from: urls)
-            if let first = imported.first {
-                await playback.play(first)
-                showingNowPlaying = true
-            }
-        case .failure(let error):
-            libraryStore.importError = error.localizedDescription
-        }
     }
 
     private var selectedTasteIDs: Set<String> {

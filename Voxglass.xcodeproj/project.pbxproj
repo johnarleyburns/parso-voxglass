@@ -14,7 +14,6 @@
 		1402A1277A603F1BBB2D7A4A /* StreamCacheUnifiedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165895C5F9B4D9CC4CB8DEBE /* StreamCacheUnifiedTests.swift */; };
 		146A11873D483EDE4293F89F /* VoxglassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6AA015D08BC5D3D56CA570C /* VoxglassApp.swift */; };
 		19C9A2D1FAEB6534975F4850 /* LastPlaybackSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625CF2D580D87272EEBDE947 /* LastPlaybackSnapshotStore.swift */; };
-		1BB3402E40BE25E5AE494E58 /* LocalAudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02A866C80A1AC953D2FF5F6 /* LocalAudioImporter.swift */; };
 		293A63007EB15E38F0842E29 /* BookArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2DBA8A509FFB154473301D /* BookArtworkView.swift */; };
 		2CEA8FD9B9F6A505E01BF939 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D187D7F0D06AAA1D3E05A0EB /* StoreManager.swift */; };
 		3382A26BA23175201F4C5F60 /* AVPlayerAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6A38C40AB8319675AFAA1C2 /* AVPlayerAudioEngine.swift */; };
@@ -81,7 +80,6 @@
 		E9377FC490F1E5406F211C28 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
 		EA7CE32CD945C2D288EE6EE9 /* advanced_search_librivox.json in Resources */ = {isa = PBXBuildFile; fileRef = EBFDDE9DC3DB057D7F68E899 /* advanced_search_librivox.json */; };
 		EB0B67315264618BF0D58C09 /* PositionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EC83371BA85A0967FDC5E2D /* PositionStore.swift */; };
-		EC2B70277C487A5A07362808 /* FolderWatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78FDD3844C1AB75919FF879C /* FolderWatchService.swift */; };
 		EE5EC4960D5EA319D4ED30C3 /* FreeTierRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */; };
 		EFD58001536BFA7C97DCDABD /* VisualOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0789D8083F86F84540255D /* VisualOnboardingTests.swift */; };
 		EFF52894E7D8920360E5F5F9 /* VoxglassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */; };
@@ -158,7 +156,6 @@
 		739CF70CFD45FD09DC69EB64 /* ListenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenView.swift; sourceTree = "<group>"; };
 		76F2D68CDD51A3EDFFAC819C /* BiquadFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiquadFilter.swift; sourceTree = "<group>"; };
 		781FE9474675E666D936545F /* PlaybackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackModels.swift; sourceTree = "<group>"; };
-		78FDD3844C1AB75919FF879C /* FolderWatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatchService.swift; sourceTree = "<group>"; };
 		79F5976941C1FEC963784983 /* EQAudioProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQAudioProcessor.swift; sourceTree = "<group>"; };
 		80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		841534B2BAC23D46DACCD5B1 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
@@ -190,7 +187,6 @@
 		D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTierRegistryTests.swift; sourceTree = "<group>"; };
 		DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkServiceUnifiedTests.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
-		E02A866C80A1AC953D2FF5F6 /* LocalAudioImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAudioImporter.swift; sourceTree = "<group>"; };
 		E5515C1592CC2C95E1740040 /* InternetArchiveCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveCatalogTests.swift; sourceTree = "<group>"; };
 		E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassTheme.swift; sourceTree = "<group>"; };
 		EBFDDE9DC3DB057D7F68E899 /* advanced_search_librivox.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = advanced_search_librivox.json; sourceTree = "<group>"; };
@@ -223,7 +219,6 @@
 			children = (
 				5BC5D2456F2BE5E45C32FB38 /* LibraryRepository.swift */,
 				2F1723E9FFAA47E9FFF1B60C /* LibraryStore.swift */,
-				E02A866C80A1AC953D2FF5F6 /* LocalAudioImporter.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -287,7 +282,6 @@
 		24672F48C2906D362BF0CA10 /* Download */ = {
 			isa = PBXGroup;
 			children = (
-				78FDD3844C1AB75919FF879C /* FolderWatchService.swift */,
 			);
 			path = Download;
 			sourceTree = "<group>";
@@ -702,7 +696,6 @@
 				5F1A208BDFF964AD3392B694 /* DatabaseValue.swift in Sources */,
 				D1DB078A196600B28D4BD877 /* DiscoverView.swift in Sources */,
 				5C6CECF4CF0B88CEF7D16462 /* EQAudioProcessor.swift in Sources */,
-				EC2B70277C487A5A07362808 /* FolderWatchService.swift in Sources */,
 				8A1CD38DD828054566ABEF1C /* GlassDock.swift in Sources */,
 				C302DA4298F8F83EAF79EEB2 /* HomeRecommendationStore.swift in Sources */,
 				E7BA389ACEF2463AC7C2031B /* IACollection.swift in Sources */,
@@ -717,7 +710,6 @@
 				B9A1B3887F341A38CABD5F58 /* LibriVoxBrowseCategory.swift in Sources */,
 				137F7894CD8FFB97A42ED26E /* LibriVoxTaste.swift in Sources */,
 				A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */,
-				1BB3402E40BE25E5AE494E58 /* LocalAudioImporter.swift in Sources */,
 				68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */,
 				97900263A97F90023C1A86F2 /* ModelMapping.swift in Sources */,
 				A332DD2B8CEEE911054A1E2F /* NetworkMonitor.swift in Sources */,
