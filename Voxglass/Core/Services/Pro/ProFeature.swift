@@ -9,6 +9,7 @@ enum ProFeature: String, CaseIterable {
     case icloudSync
     case listeningStats
     case appleWatch
+    case offlineDownloads
 
     static func isEnabled(_ feature: ProFeature) -> Bool {
         EntitlementCache.shared.isEntitled

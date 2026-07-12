@@ -54,6 +54,7 @@ struct BookCoverView: View {
         }
         .aspectRatio(1, contentMode: .fill)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .clipped()
         .overlay {
             if showBorder {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

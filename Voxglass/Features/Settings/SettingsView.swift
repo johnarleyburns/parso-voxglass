@@ -12,7 +12,7 @@ struct SettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    SectionTitle(title: "Downloads & Cache")
+                    SectionTitle(title: "Storage & Cache")
                     CacheSettingsCard()
                 }
 
@@ -138,10 +138,12 @@ private struct CacheSettingsCard: View {
     @State private var cachedCount: Int = 0
     @State private var showClearConfirm = false
     @State private var showPaywall = false
+    @AppStorage(AppPreferencesStore.Keys.cacheFullBooksOnCellular) private var cacheFullBooksOnCellular = false
 
     var body: some View {
         VStack(spacing: 12) {
             usageCard
+            cellularCard
             clearCard
         }
         .task { await refresh() }
@@ -240,6 +242,23 @@ private struct CacheSettingsCard: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var cellularCard: some View {
+        Toggle(isOn: $cacheFullBooksOnCellular) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Cache full books on cellular data")
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
+                Text("Streaming and next-chapter prefetch always use cellular. This only controls caching whole books offline.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Palette.ink3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .tint(Palette.brass)
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
     }
 
     private var clearCard: some View {

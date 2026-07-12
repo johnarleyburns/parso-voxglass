@@ -119,6 +119,16 @@ final class ArtworkService: @unchecked Sendable {
             throw ArtworkServiceError.invalidHTTPStatus(httpResponse.statusCode)
         }
 
+        // Reject the Internet Archive not-found placeholder (the classical
+        // "temple facade" logo). For coverless items IA 302-redirects
+        // services/img/<id> to /images/notfound.png (160x110) or
+        // /images/notfound2x.png (320x220); the final URL after redirects is the
+        // most reliable signal since the 2x asset is larger than the size
+        // heuristics below catch.
+        if let finalURL = response?.url, Self.isInternetArchiveNotFoundAsset(finalURL) {
+            throw ArtworkServiceError.notFoundImage
+        }
+
         // Reject non-image Content-Type (text/html is a common IA error page)
         if let mime = (response as? HTTPURLResponse)?.mimeType?.lowercased(),
            !mime.hasPrefix("image/") {
@@ -165,11 +175,28 @@ final class ArtworkService: @unchecked Sendable {
         if px <= 200 && py <= 200 && dataCount < 8_000 {
             return true
         }
-        // Also reject placeholder pattern: exact 180x180 or 120x120 squares
-        if (px == 180 && py == 180) || (px == 120 && py == 120) {
+        // The Internet Archive "temple facade" not-found logo served at 2x
+        // (/images/notfound2x.png) is 320x220 and ~3.8 KB — larger than the
+        // rule above, but its distinctive non-square dimensions plus tiny byte
+        // size never match a real cover (which comes back square from
+        // services/img).
+        if px == 320 && py == 220 && dataCount < 8_000 {
+            return true
+        }
+        // Reject the 120x120 placeholder square. Real covers are returned at
+        // 180x180 by services/img, so we must NOT reject that size here.
+        if px == 120 && py == 120 {
             return true
         }
         return false
+    }
+
+    /// True when `url` points at an Internet Archive not-found asset
+    /// (`/images/notfound.png` or `/images/notfound2x.png`) — the destination of
+    /// a services/img redirect for a coverless item.
+    private static func isInternetArchiveNotFoundAsset(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased(), host.hasSuffix("archive.org") else { return false }
+        return url.lastPathComponent.lowercased().hasPrefix("notfound")
     }
 
     static func cacheFileName(for url: URL) -> String {

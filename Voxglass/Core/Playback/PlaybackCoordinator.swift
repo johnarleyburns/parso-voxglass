@@ -201,6 +201,18 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
+    /// Stops and tears down the current session when its book is deleted (§6),
+    /// and clears the restore snapshot so it can't resurface on next launch.
+    func stopPlayback(forDeletedBook bookID: UUID) {
+        guard currentSession?.book.id == bookID else { return }
+        engine.pause()
+        progressTask?.cancel()
+        progressTask = nil
+        currentSession = nil
+        snapshotStore.clear()
+        updateNowPlayingInfo()
+    }
+
     private func prefetchNextChapter(from book: BookWithChapters, currentChapter: Chapter) {
         guard let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
         let nextIndex = currentIndex + 1

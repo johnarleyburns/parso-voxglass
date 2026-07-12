@@ -6,6 +6,7 @@ struct AppPreferencesStore: DynamicProperty {
         static let hasCompletedOnboarding = "voxglass.hasCompletedOnboarding"
         static let selectedCollectionIDs = "voxglass.selectedCollectionIDs"
         static let selectedLanguages = "voxglass.selectedLanguages"
+        static let cacheFullBooksOnCellular = "voxglass.cacheFullBooksOnCellular"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false
@@ -68,6 +69,10 @@ enum RecentlyViewedBooksStore {
         var ids = ids(from: rawValue).filter { $0 != bookID }
         ids.insert(bookID, at: 0)
         return encode(Array(ids.prefix(limit)))
+    }
+
+    static func removing(bookID: UUID, in rawValue: String) -> String {
+        encode(ids(from: rawValue).filter { $0 != bookID })
     }
 
     static func books(from library: [BookWithChapters], rawValue: String) -> [BookWithChapters] {

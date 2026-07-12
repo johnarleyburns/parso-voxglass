@@ -5,7 +5,6 @@ struct SearchView: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
-    @State private var query = ""
     @State private var playingIdentifier: String?
 
     var body: some View {
@@ -34,7 +33,7 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Palette.ink3)
 
-            TextField("", text: $query, prompt: Text("Search LibriVox audiobooks").foregroundStyle(Palette.ink3))
+            TextField("", text: $catalogStore.query, prompt: Text("Search LibriVox audiobooks").foregroundStyle(Palette.ink3))
                 .foregroundStyle(Palette.ink)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
@@ -43,9 +42,9 @@ struct SearchView: View {
                     Task { await runSearch() }
                 }
 
-            if !query.isEmpty {
+            if !catalogStore.query.isEmpty {
                 Button {
-                    query = ""
+                    catalogStore.query = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Palette.ink3)
@@ -107,7 +106,7 @@ struct SearchView: View {
     }
 
     private var normalizedQuery: String {
-        query.trimmingCharacters(in: .whitespacesAndNewlines)
+        catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var errorBinding: Binding<Bool> {

@@ -29,12 +29,16 @@ struct BrowseView: View {
         }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
-            await coverStore.resolveCovers(for: IACollectionStore.collections(for: selectedCollectionIDs), languages: selectedLanguages)
+            let collections = IACollectionStore.collections(for: selectedCollectionIDs)
+            await coverStore.resolveCovers(for: collections, languages: selectedLanguages)
+            await coverStore.resolveCounts(for: collections, languages: selectedLanguages)
         }
         .onChange(of: selectedLanguagesRaw) { _, _ in
             catalogStore.selectedLanguages = selectedLanguages
             Task {
-                await coverStore.resolveCovers(for: IACollectionStore.collections(for: selectedCollectionIDs), languages: selectedLanguages, force: true)
+                let collections = IACollectionStore.collections(for: selectedCollectionIDs)
+                await coverStore.resolveCovers(for: collections, languages: selectedLanguages, force: true)
+                await coverStore.resolveCounts(for: collections, languages: selectedLanguages, force: true)
             }
         }
         .onChange(of: catalogStore.results) { _, results in
@@ -54,6 +58,7 @@ struct BrowseView: View {
                             ExploreCollectionCard(
                                 collection: collection,
                                 resolvedCoverURL: coverStore.coverURL(for: collection),
+                                approximateCount: coverStore.count(for: collection),
                                 isSelected: selectedCollection?.id == collection.id
                             )
                         }
@@ -173,6 +178,7 @@ struct BrowseView: View {
 private struct ExploreCollectionCard: View {
     var collection: IACollection
     var resolvedCoverURL: URL?
+    var approximateCount: Int?
     var isSelected: Bool
 
     var body: some View {
@@ -196,13 +202,42 @@ private struct ExploreCollectionCard: View {
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(2)
                 .frame(width: 190, alignment: .leading)
+
+            if let caption = approximateCountCaption {
+                Text(caption)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 190, alignment: .leading)
+            }
         }
-        .frame(width: 210, alignment: .topLeading)
+        .frame(width: 190, alignment: .topLeading)
         .padding(10)
         .glassSurface(cornerRadius: 14)
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
         }
+    }
+
+    /// "~N books", rounded to ~2 significant figures so it reads as approximate.
+    private var approximateCountCaption: String? {
+        guard let count = approximateCount, count > 0 else { return nil }
+        let rounded = Self.roundedToTwoSignificantFigures(count)
+        let formatted = Self.formatter.string(from: NSNumber(value: rounded)) ?? "\(rounded)"
+        return "~\(formatted) book\(rounded == 1 ? "" : "s")"
+    }
+
+    private static let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter
+    }()
+
+    private static func roundedToTwoSignificantFigures(_ value: Int) -> Int {
+        guard value >= 100 else { return value }
+        let digits = Int(floor(log10(Double(value)))) + 1
+        let factor = Int(pow(10.0, Double(digits - 2)))
+        return Int((Double(value) / Double(factor)).rounded()) * factor
     }
 }

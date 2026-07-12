@@ -10,6 +10,10 @@ final class CatalogStore: ObservableObject {
     @Published private(set) var hasMore = false
     @Published var catalogError: String?
 
+    /// The user's search text, promoted to the store so it survives `SearchView`
+    /// being recreated on tab changes (§3). `SearchView` binds its field to this.
+    @Published var query: String = ""
+
     /// Languages the user has selected (see §1). Kept in sync from
     /// `AppPreferencesStore`; injected centrally into every catalog query so
     /// language filtering is applied in exactly one place.
@@ -37,6 +41,7 @@ final class CatalogStore: ObservableObject {
 
     func searchLibriVox(_ query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.query = trimmed
         guard !trimmed.isEmpty else {
             resetResults()
             return
@@ -147,6 +152,7 @@ final class CatalogStore: ObservableObject {
 
     private func resetResults() {
         results = []
+        query = ""
         resetPaging()
     }
 

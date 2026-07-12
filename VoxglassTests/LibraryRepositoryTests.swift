@@ -40,6 +40,105 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertEqual(sources.first?.url?.absoluteString, "https://archive.org/details/newer")
     }
 
+    func testDeleteBookCascadesAndRemovesOrphanSource() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "delete-cascade")
+        let repository = LibraryRepository(database: database)
+        let seeded = try await seedBook(in: database, title: "Doomed Book")
+        let positionStore = SQLitePositionStore(database: database)
+
+        try await positionStore.save(PlaybackPosition(
+            bookID: seeded.bookID,
+            chapterID: seeded.chapterID,
+            position: 5,
+            duration: 120
+        ))
+        try await repository.replaceDownloadRecords([
+            DownloadRecord(
+                id: UUID(),
+                bookID: seeded.bookID,
+                chapterID: seeded.chapterID,
+                state: .complete,
+                localURL: nil,
+                bytesDownloaded: 10,
+                bytesExpected: 10,
+                updatedAt: Date()
+            )
+        ], forBookID: seeded.bookID)
+
+        try await repository.deleteBook(seeded.bookID)
+
+        let library = try await repository.fetchLibrary()
+        XCTAssertTrue(library.isEmpty)
+
+        let sources = try await repository.fetchSources()
+        XCTAssertTrue(sources.isEmpty, "Orphaned source should be removed")
+
+        let chapters = try await database.query("SELECT id FROM chapters WHERE book_id = ?", [.string(seeded.bookID.uuidString)])
+        XCTAssertTrue(chapters.isEmpty, "Chapters should cascade-delete")
+
+        let positions = try await database.query("SELECT id FROM playback_positions WHERE book_id = ?", [.string(seeded.bookID.uuidString)])
+        XCTAssertTrue(positions.isEmpty, "Playback positions should cascade-delete")
+
+        let downloads = try await repository.fetchDownloadRecords(forBookID: seeded.bookID)
+        XCTAssertTrue(downloads.isEmpty, "Download records should cascade-delete")
+    }
+
+    func testDownloadRecordsDriveDownloadedFilter() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "downloaded-filter")
+        let repository = LibraryRepository(database: database)
+        let downloaded = try await seedBook(in: database, title: "Cached Book")
+        _ = try await seedBook(in: database, title: "Streamed Book")
+
+        try await repository.replaceDownloadRecords([
+            DownloadRecord(
+                id: UUID(),
+                bookID: downloaded.bookID,
+                chapterID: downloaded.chapterID,
+                state: .complete,
+                localURL: nil,
+                bytesDownloaded: 100,
+                bytesExpected: 100,
+                updatedAt: Date()
+            )
+        ], forBookID: downloaded.bookID)
+
+        let filtered = try await repository.fetchBooks(filteredBy: .downloaded)
+        XCTAssertEqual(filtered.map(\.book.id), [downloaded.bookID])
+
+        try await repository.deleteDownloadRecords(forBookID: downloaded.bookID)
+        let afterDelete = try await repository.fetchBooks(filteredBy: .downloaded)
+        XCTAssertTrue(afterDelete.isEmpty)
+    }
+
+    func testUpdateDownloadRecordChangesState() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "download-update")
+        let repository = LibraryRepository(database: database)
+        let seeded = try await seedBook(in: database, title: "Progressing Book")
+
+        try await repository.replaceDownloadRecords([
+            DownloadRecord(
+                id: UUID(),
+                bookID: seeded.bookID,
+                chapterID: seeded.chapterID,
+                state: .downloading,
+                localURL: nil,
+                bytesDownloaded: 0,
+                bytesExpected: nil,
+                updatedAt: Date()
+            )
+        ], forBookID: seeded.bookID)
+
+        try await repository.updateDownloadRecord(
+            bookID: seeded.bookID,
+            chapterID: seeded.chapterID,
+            state: .complete
+        )
+
+        let records = try await repository.fetchDownloadRecords(forBookID: seeded.bookID)
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.state, .complete)
+    }
+
     func testFetchRecentlyPlayedOrdersByLatestPlaybackPosition() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "recently-played")
         let repository = LibraryRepository(database: database)

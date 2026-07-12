@@ -79,6 +79,44 @@ final class LibraryRepository {
         return orderedIDs.compactMap { libraryByID[$0] }
     }
 
+    /// Deletes a book and everything that cascades from it (chapters, playback
+    /// positions, bookmarks, playlist links, taste terms, download records).
+    /// Also removes the book's now-orphaned `Source`, since each Internet Archive
+    /// import creates its own source row.
+    func deleteBook(_ bookID: UUID) async throws {
+        try await database.prepare()
+
+        let rows = try await database.query(
+            "SELECT source_id FROM books WHERE id = ? LIMIT 1",
+            [ModelMapping.databaseValue(bookID)]
+        )
+        var sourceID: UUID?
+        if let row = rows.first {
+            sourceID = try ModelMapping.uuid(row, "source_id")
+        }
+
+        // download_records cascade via FK ON DELETE CASCADE, along with chapters,
+        // playback_positions, bookmarks, playlist_books, and book_taste.
+        try await database.execute(
+            "DELETE FROM books WHERE id = ?",
+            [ModelMapping.databaseValue(bookID)]
+        )
+
+        if let sourceID {
+            let remaining = try await database.query(
+                "SELECT COUNT(*) AS count FROM books WHERE source_id = ?",
+                [ModelMapping.databaseValue(sourceID)]
+            )
+            let count = remaining.first?.int("count") ?? 0
+            if count == 0 {
+                try await database.execute(
+                    "DELETE FROM sources WHERE id = ?",
+                    [ModelMapping.databaseValue(sourceID)]
+                )
+            }
+        }
+    }
+
     func setFavorite(_ isFavorite: Bool, for bookID: UUID) async throws -> BookWithChapters? {
         try await database.prepare()
 
@@ -289,6 +327,84 @@ final class LibraryRepository {
         return Set(try rows.map { try ModelMapping.uuid($0, "book_id") })
     }
 
+    // MARK: - Download records (offline downloads, §7)
+
+    /// Replaces all download records for a book with a fresh set (used when a
+    /// new offline download is enqueued).
+    func replaceDownloadRecords(_ records: [DownloadRecord], forBookID bookID: UUID) async throws {
+        try await database.prepare()
+        try await database.execute(
+            "DELETE FROM download_records WHERE book_id = ?",
+            [ModelMapping.databaseValue(bookID)]
+        )
+        for record in records {
+            try await database.execute("""
+            INSERT INTO download_records
+                (id, book_id, chapter_id, state, local_url, bytes_downloaded, bytes_expected, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, [
+                ModelMapping.databaseValue(record.id),
+                ModelMapping.databaseValue(record.bookID),
+                record.chapterID.map { ModelMapping.databaseValue($0) } ?? .null,
+                .string(record.state.rawValue),
+                ModelMapping.databaseValue(record.localURL),
+                .int(record.bytesDownloaded),
+                ModelMapping.databaseValue(record.bytesExpected),
+                ModelMapping.databaseValue(record.updatedAt)
+            ])
+        }
+    }
+
+    func updateDownloadRecord(
+        bookID: UUID,
+        chapterID: UUID,
+        state: DownloadState,
+        localURL: URL? = nil,
+        bytesDownloaded: Int64? = nil
+    ) async throws {
+        try await database.prepare()
+        try await database.execute("""
+        UPDATE download_records
+        SET state = ?, local_url = COALESCE(?, local_url),
+            bytes_downloaded = COALESCE(?, bytes_downloaded), updated_at = ?
+        WHERE book_id = ? AND chapter_id = ?
+        """, [
+            .string(state.rawValue),
+            ModelMapping.databaseValue(localURL),
+            ModelMapping.databaseValue(bytesDownloaded),
+            ModelMapping.databaseValue(Date()),
+            ModelMapping.databaseValue(bookID),
+            ModelMapping.databaseValue(chapterID)
+        ])
+    }
+
+    func deleteDownloadRecords(forBookID bookID: UUID) async throws {
+        try await database.prepare()
+        try await database.execute(
+            "DELETE FROM download_records WHERE book_id = ?",
+            [ModelMapping.databaseValue(bookID)]
+        )
+    }
+
+    func fetchDownloadRecords(forBookID bookID: UUID) async throws -> [DownloadRecord] {
+        try await database.prepare()
+        let rows = try await database.query("""
+        SELECT id, book_id, chapter_id, state, local_url, bytes_downloaded, bytes_expected, updated_at
+        FROM download_records
+        WHERE book_id = ?
+        """, [ModelMapping.databaseValue(bookID)])
+        return try rows.map(Self.downloadRecord(from:))
+    }
+
+    func fetchAllDownloadRecords() async throws -> [DownloadRecord] {
+        try await database.prepare()
+        let rows = try await database.query("""
+        SELECT id, book_id, chapter_id, state, local_url, bytes_downloaded, bytes_expected, updated_at
+        FROM download_records
+        """)
+        return try rows.map(Self.downloadRecord(from:))
+    }
+
     private func insert(book: Book, chapters: [Chapter]) async throws {
         try await database.execute("""
         INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
@@ -358,6 +474,19 @@ final class LibraryRepository {
             remoteURL: ModelMapping.url(row, "remote_url"),
             opusURL: ModelMapping.url(row, "opus_url"),
             localURL: ModelMapping.url(row, "local_url")
+        )
+    }
+
+    private static func downloadRecord(from row: DatabaseRow) throws -> DownloadRecord {
+        DownloadRecord(
+            id: try ModelMapping.uuid(row, "id"),
+            bookID: try ModelMapping.uuid(row, "book_id"),
+            chapterID: row.string("chapter_id").flatMap(UUID.init(uuidString:)),
+            state: DownloadState(rawValue: try row.requiredString("state")) ?? .queued,
+            localURL: ModelMapping.url(row, "local_url"),
+            bytesDownloaded: row.int("bytes_downloaded") ?? 0,
+            bytesExpected: row.int("bytes_expected"),
+            updatedAt: ModelMapping.date(row, "updated_at")
         )
     }
 }

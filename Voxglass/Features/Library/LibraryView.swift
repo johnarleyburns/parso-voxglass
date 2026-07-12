@@ -2,7 +2,9 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @Binding var showingNowPlaying: Bool
+    @State private var pendingDeletion: BookWithChapters?
 
     var body: some View {
         VoxglassScreen(title: "My Books") {
@@ -17,6 +19,23 @@ struct LibraryView: View {
             }
         } message: {
             Text(libraryStore.importError ?? "")
+        }
+        .confirmationDialog(
+            pendingDeletion.map { "Remove \"\($0.book.title)\" from My Books?" } ?? "",
+            isPresented: deletionBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Remove from My Books", role: .destructive) {
+                if let book = pendingDeletion {
+                    Task { await libraryStore.delete(book: book) }
+                }
+                pendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                pendingDeletion = nil
+            }
+        } message: {
+            Text("This deletes the book and its cached audio from this device.")
         }
         .task {
             await libraryStore.refresh()
@@ -45,10 +64,33 @@ struct LibraryView: View {
                                 book: book,
                                 sourceTitle: libraryStore.source(for: book.book)?.title
                             )
+                            .overlay(alignment: .topTrailing) {
+                                if offlineManager.state(for: book.book.id) == .cached {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(Palette.brass)
+                                        .padding(6)
+                                }
+                            }
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Remove from My Books", role: .destructive) {
+                                pendingDeletion = book
+                            }
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    private var deletionBinding: Binding<Bool> {
+        Binding {
+            pendingDeletion != nil
+        } set: { isPresented in
+            if !isPresented {
+                pendingDeletion = nil
             }
         }
     }

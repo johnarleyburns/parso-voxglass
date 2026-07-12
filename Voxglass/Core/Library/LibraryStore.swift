@@ -9,9 +9,19 @@ final class LibraryStore: ObservableObject {
     @Published var importError: String?
 
     private let repository: LibraryRepository
+    private let snapshotStore = LastPlaybackSnapshotStore()
+    private weak var playback: PlaybackCoordinator?
+    private weak var offlineManager: OfflineDownloadManager?
 
     init(repository: LibraryRepository) {
         self.repository = repository
+    }
+
+    /// Wires up collaborators used by `delete(book:)`. Called by `AppServices`
+    /// after all stores are constructed.
+    func configure(playback: PlaybackCoordinator, offlineManager: OfflineDownloadManager) {
+        self.playback = playback
+        self.offlineManager = offlineManager
     }
 
     func refresh() async {
@@ -68,6 +78,60 @@ final class LibraryStore: ObservableObject {
             importError = error.localizedDescription
             return nil
         }
+    }
+
+    /// Removes a book from the library and purges everything associated with it:
+    /// in-flight offline downloads, pinned/passive cached audio + cover art,
+    /// database rows (cascade), recently-viewed entry, and — if it is the current
+    /// or last session — the active playback and its restore snapshot.
+    func delete(book: BookWithChapters) async {
+        let bookID = book.book.id
+
+        // 1. Cancel any in-flight offline downloads, unpin + drop their records.
+        await offlineManager?.removeOffline(book: book)
+
+        // 2. Purge cache: every chapter's audio (remote + opus) and the cover art.
+        var keys: [String] = []
+        for chapter in book.chapters {
+            if let remoteURL = chapter.remoteURL {
+                keys.append(CachingResourceLoader.key(for: remoteURL))
+            }
+            if let opusURL = chapter.opusURL {
+                keys.append(CachingResourceLoader.key(for: opusURL))
+            }
+        }
+        if let coverURL = book.book.coverURL {
+            keys.append(ArtworkService.cacheKey(for: coverURL))
+        }
+        if !keys.isEmpty {
+            await StreamCacheStore.shared.remove(keys: keys)
+        }
+
+        // 3. Delete the book (cascades chapters, positions, bookmarks, etc.) and
+        //    its orphaned source.
+        do {
+            try await repository.deleteBook(bookID)
+        } catch {
+            importError = error.localizedDescription
+            return
+        }
+
+        // 4. Update in-memory collections.
+        books.removeAll { $0.book.id == bookID }
+        recentlyPlayed.removeAll { $0.book.id == bookID }
+        sources = (try? await repository.fetchSources()) ?? sources
+
+        // 5. Drop the recently-viewed entry.
+        let key = RecentlyViewedBooksStore.key
+        let raw = UserDefaults.standard.string(forKey: key) ?? ""
+        UserDefaults.standard.set(RecentlyViewedBooksStore.removing(bookID: bookID, in: raw), forKey: key)
+
+        // 6. Stop playback / clear the restore snapshot if this was the live or
+        //    last session.
+        if snapshotStore.load()?.bookID == bookID {
+            snapshotStore.clear()
+        }
+        playback?.stopPlayback(forDeletedBook: bookID)
     }
 
     func book(containing chapterID: UUID) -> BookWithChapters? {

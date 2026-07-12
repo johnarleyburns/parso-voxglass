@@ -219,7 +219,7 @@ private struct OnboardingCollectionCard: View {
                 .lineLimit(1)
                 .frame(width: 170, alignment: .leading)
         }
-        .frame(width: 190, alignment: .topLeading)
+        .frame(width: 170, alignment: .topLeading)
         .padding(10)
         .glassSurface(cornerRadius: 14)
         .overlay {

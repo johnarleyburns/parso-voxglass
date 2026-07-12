@@ -29,6 +29,37 @@ final class ArtworkServiceUnifiedTests: XCTestCase {
         XCTAssertTrue(spy.registered.isEmpty, "Cache hits must not re-register bytes")
     }
 
+    // MARK: - §4 IA "temple facade" placeholder rejection
+
+    func testRejectsInternetArchiveNotFoundRedirectByFinalURL() throws {
+        let finalURL = URL(string: "https://archive.org/images/notfound2x.png")!
+        let response = HTTPURLResponse(url: finalURL, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "image/png"])!
+        let data = try exactPixelPNG(width: 320, height: 220)
+
+        XCTAssertThrowsError(try ArtworkService.validatedImage(from: data, response: response)) { error in
+            XCTAssertEqual(error as? ArtworkServiceError, .notFoundImage)
+        }
+    }
+
+    func testRejectsTempleFacadePlaceholderBySignature() throws {
+        let servedURL = URL(string: "https://archive.org/services/img/coverless_item")!
+        let response = HTTPURLResponse(url: servedURL, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "image/png"])!
+        let data = try exactPixelPNG(width: 320, height: 220)
+
+        XCTAssertThrowsError(try ArtworkService.validatedImage(from: data, response: response)) { error in
+            XCTAssertEqual(error as? ArtworkServiceError, .notFoundImage)
+        }
+    }
+
+    func testAcceptsRealSquareCoverFromServicesImg() throws {
+        let servedURL = URL(string: "https://archive.org/services/img/prideandprejudice_1005_librivox")!
+        let response = HTTPURLResponse(url: servedURL, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "image/png"])!
+        let data = try noisyImageData(width: 180, height: 180)
+        XCTAssertGreaterThanOrEqual(data.count, 8_000, "Test cover must exceed the placeholder byte threshold")
+
+        XCTAssertNoThrow(try ArtworkService.validatedImage(from: data, response: response))
+    }
+
     private func makeService() throws -> (ArtworkService, HookSpy, URL, Data) {
         let tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-artwork-unified-\(UUID().uuidString)", isDirectory: true)
@@ -52,6 +83,42 @@ final class ArtworkServiceUnifiedTests: XCTestCase {
         let image = renderer.image { context in
             UIColor.systemOrange.setFill()
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        return try XCTUnwrap(image.pngData())
+    }
+
+    /// A solid image whose *encoded* pixel dimensions equal `width` x `height`
+    /// (scale locked to 1), so placeholder-signature checks can be exercised.
+    private func exactPixelPNG(width: Int, height: Int) throws -> Data {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format)
+        let image = renderer.image { context in
+            UIColor.systemOrange.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        return try XCTUnwrap(image.pngData())
+    }
+
+    /// A high-entropy image whose PNG encoding comfortably exceeds the 8 KB
+    /// placeholder threshold, standing in for a real cover.
+    private func noisyImageData(width: Int, height: Int) throws -> Data {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format)
+        var generator = SystemRandomNumberGenerator()
+        let image = renderer.image { context in
+            for y in 0..<height {
+                for x in 0..<width {
+                    UIColor(
+                        red: CGFloat(UInt8.random(in: 0...255, using: &generator)) / 255,
+                        green: CGFloat(UInt8.random(in: 0...255, using: &generator)) / 255,
+                        blue: CGFloat(UInt8.random(in: 0...255, using: &generator)) / 255,
+                        alpha: 1
+                    ).setFill()
+                    context.fill(CGRect(x: x, y: y, width: 1, height: 1))
+                }
+            }
         }
         return try XCTUnwrap(image.pngData())
     }

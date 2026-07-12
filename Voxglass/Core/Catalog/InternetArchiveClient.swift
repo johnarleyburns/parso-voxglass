@@ -42,10 +42,16 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         return try await searchAdvanced(query: Self.libriVoxQuery(for: trimmed), rows: rows)
     }
 
-    /// Builds a relevance-tuned LibriVox query. Each keyword must match somewhere
-    /// (title^4 / creator^3 / subject^1), and at least one keyword must anchor to
-    /// the title or creator so keyword-stuffed items don't dominate. Restricted to
-    /// the LibriVox audiobook collections.
+    /// Builds a relevance-tuned LibriVox query. Thematic/subject searches
+    /// ("greek plays") collapsed under the old title/creator-only anchor, so the
+    /// query now:
+    ///   - boosts the whole phrase across title/subject/description, and
+    ///   - requires every token to match, but lets *any* of title, creator,
+    ///     subject, or description satisfy each token (no mandatory
+    ///     title/creator anchor).
+    /// Keeping token-AND preserves precision; the broadened fields let
+    /// subject/description carry thematic queries. Restricted to the LibriVox
+    /// audiobook collections.
     static func libriVoxQuery(for rawInput: String) -> String {
         let scopeClause = " AND collection:(librivoxaudio OR audio_bookspoetry)"
         let tokens = rawInput
@@ -54,13 +60,14 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
             .filter { !$0.isEmpty }
         guard !tokens.isEmpty else { return "mediatype:audio" + scopeClause }
 
+        // The phrase is rebuilt from sanitized tokens, so it carries no
+        // Lucene-reserved characters.
+        let phrase = tokens.joined(separator: " ")
+        let phraseClause = "title:\"\(phrase)\"^8 OR subject:\"\(phrase)\"^6 OR description:\"\(phrase)\"^4"
         let perToken = tokens.map {
-            "(title:\"\($0)\"^4 OR creator:\"\($0)\"^3 OR subject:\"\($0)\"^1)"
+            "(title:\"\($0)\"^4 OR creator:\"\($0)\"^3 OR subject:\"\($0)\"^2 OR description:\"\($0)\"^1)"
         }.joined(separator: " AND ")
-        let anchor = tokens.map {
-            "title:\"\($0)\" OR creator:\"\($0)\""
-        }.joined(separator: " OR ")
-        return "mediatype:audio AND \(perToken) AND (\(anchor))" + scopeClause
+        return "mediatype:audio AND ((\(phraseClause)) OR (\(perToken)))" + scopeClause
     }
 
     func searchCollection(identifier: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
