@@ -7,7 +7,9 @@ struct BrowseView: View {
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
     @State private var playingIdentifier: String?
+    @StateObject private var coverStore = CollectionCoverStore()
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
@@ -25,6 +27,16 @@ struct BrowseView: View {
         } message: {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
         }
+        .task {
+            catalogStore.selectedLanguages = selectedLanguages
+            await coverStore.resolveCovers(for: IACollectionStore.collections(for: selectedCollectionIDs), languages: selectedLanguages)
+        }
+        .onChange(of: selectedLanguagesRaw) { _, _ in
+            catalogStore.selectedLanguages = selectedLanguages
+            Task {
+                await coverStore.resolveCovers(for: IACollectionStore.collections(for: selectedCollectionIDs), languages: selectedLanguages, force: true)
+            }
+        }
         .onChange(of: catalogStore.results) { _, results in
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
         }
@@ -41,6 +53,7 @@ struct BrowseView: View {
                         } label: {
                             ExploreCollectionCard(
                                 collection: collection,
+                                resolvedCoverURL: coverStore.coverURL(for: collection),
                                 isSelected: selectedCollection?.id == collection.id
                             )
                         }
@@ -86,7 +99,38 @@ struct BrowseView: View {
                     .buttonStyle(.plain)
                     .disabled(playingIdentifier == result.identifier)
                 }
+
+                if catalogStore.hasMore {
+                    loadMoreButton
+                }
             }
+        }
+    }
+
+    private var loadMoreButton: some View {
+        Button {
+            Task { await catalogStore.loadMore() }
+        } label: {
+            HStack(spacing: 10) {
+                if catalogStore.isLoadingMore {
+                    ProgressView()
+                    Text("Loading")
+                } else {
+                    Text("See More")
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .bold))
+                }
+            }
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(Palette.ink2)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .glassSurface(cornerRadius: 14)
+        }
+        .buttonStyle(.plain)
+        .disabled(catalogStore.isLoadingMore)
+        .onAppear {
+            Task { await catalogStore.loadMore() }
         }
     }
 
@@ -119,10 +163,15 @@ struct BrowseView: View {
     private var selectedCollectionIDs: Set<String> {
         AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
     }
+
+    private var selectedLanguages: Set<String> {
+        AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
+    }
 }
 
 private struct ExploreCollectionCard: View {
     var collection: IACollection
+    var resolvedCoverURL: URL?
     var isSelected: Bool
 
     var body: some View {
@@ -131,7 +180,7 @@ private struct ExploreCollectionCard: View {
                 title: collection.title,
                 systemImage: collection.systemImage,
                 assetName: collection.assetName,
-                remoteImageURL: collection.remoteImageURL
+                remoteImageURL: resolvedCoverURL ?? collection.remoteImageURL
             )
             .frame(width: 190, height: 132)
 

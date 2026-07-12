@@ -13,7 +13,7 @@ final class HomeRecommendationStore: ObservableObject {
         self.recommendations = Self.coldStartRecommendations(for: [])
     }
 
-    func load(selectedCollectionIDs: Set<String>) async {
+    func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
         recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
 
         let queries = LibriVoxRecommendationQueryBuilder.queries(for: selectedCollectionIDs)
@@ -22,10 +22,11 @@ final class HomeRecommendationStore: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
         var refreshed: [InternetArchiveSearchResult] = []
         for query in queries.prefix(4) {
             do {
-                let results = try await client.searchAdvanced(query: query, rows: 10)
+                let results = try await client.searchAdvanced(query: query + languageClause, rows: 10)
                 refreshed.append(contentsOf: results)
             } catch {
                 continue

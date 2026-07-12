@@ -4,6 +4,7 @@ protocol InternetArchiveCatalogClient {
     func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
+    func searchAdvancedPage(query: String, rows: Int, page: Int) async throws -> InternetArchivePage
     func metadata(for identifier: String) async throws -> InternetArchiveMetadata
 }
 
@@ -18,6 +19,10 @@ extension InternetArchiveCatalogClient {
 
     func searchAdvanced(query: String) async throws -> [InternetArchiveSearchResult] {
         try await searchAdvanced(query: query, rows: 25)
+    }
+
+    func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] {
+        try await searchAdvancedPage(query: query, rows: rows, page: 1).results
     }
 }
 
@@ -67,13 +72,17 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
     }
 
     func searchAdvanced(query: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
-        guard let url = Self.advancedSearchURL(query: query, rows: rows) else {
+        try await searchAdvancedPage(query: query, rows: rows, page: 1).results
+    }
+
+    func searchAdvancedPage(query: String, rows: Int = 25, page: Int = 1) async throws -> InternetArchivePage {
+        guard let url = Self.advancedSearchURL(query: query, rows: rows, page: page) else {
             throw InternetArchiveError.invalidURL
         }
 
         let data = try await fetch(url)
         let response = try decoder.decode(InternetArchiveSearchResponse.self, from: data)
-        return response.results
+        return InternetArchivePage(results: response.results, numFound: response.numFound, page: page)
     }
 
     func metadata(for identifier: String) async throws -> InternetArchiveMetadata {
@@ -111,7 +120,7 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         return data
     }
 
-    private static func advancedSearchURL(query: String, rows: Int) -> URL? {
+    private static func advancedSearchURL(query: String, rows: Int, page: Int) -> URL? {
         var components = URLComponents()
         components.scheme = "https"
         components.host = "archive.org"
@@ -120,7 +129,7 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "output", value: "json"),
             URLQueryItem(name: "rows", value: String(rows)),
-            URLQueryItem(name: "page", value: "1"),
+            URLQueryItem(name: "page", value: String(max(1, page))),
             URLQueryItem(name: "sort[]", value: "downloads desc"),
             URLQueryItem(name: "fl[]", value: "identifier"),
             URLQueryItem(name: "fl[]", value: "title"),
@@ -128,7 +137,8 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
             URLQueryItem(name: "fl[]", value: "description"),
             URLQueryItem(name: "fl[]", value: "collection"),
             URLQueryItem(name: "fl[]", value: "downloads"),
-            URLQueryItem(name: "fl[]", value: "date")
+            URLQueryItem(name: "fl[]", value: "date"),
+            URLQueryItem(name: "fl[]", value: "language")
         ]
         return components.url
     }

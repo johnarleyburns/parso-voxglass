@@ -28,8 +28,8 @@ final class VisualOnboardingTests: XCTestCase {
         let queries = LibriVoxRecommendationQueryBuilder.queries(for: ["lv-mystery-crime", "lv-science-fiction"])
 
         XCTAssertEqual(queries.count, 2)
-        XCTAssertTrue(queries[0].contains("Crime & Mystery Fiction"))
-        XCTAssertTrue(queries[1].contains("Science Fiction"))
+        XCTAssertTrue(queries.contains { $0.contains("Crime & Mystery Fiction") })
+        XCTAssertTrue(queries.contains { $0.contains("Science Fiction") })
         XCTAssertEqual(
             LibriVoxRecommendationQueryBuilder.queries(for: []),
             [LibriVoxBrowseCategory.popular.archiveQuery]
