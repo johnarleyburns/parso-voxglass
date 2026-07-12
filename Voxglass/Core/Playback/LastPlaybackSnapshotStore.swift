@@ -12,4 +12,8 @@ struct LastPlaybackSnapshotStore {
         guard let data = UserDefaults.standard.data(forKey: Self.key) else { return nil }
         return try? JSONDecoder().decode(PlaybackPosition.self, from: data)
     }
+
+    func clear() {
+        UserDefaults.standard.removeObject(forKey: Self.key)
+    }
 }

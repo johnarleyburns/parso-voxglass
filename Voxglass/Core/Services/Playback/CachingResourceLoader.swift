@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import CryptoKit
 import UniformTypeIdentifiers
 
 /// Intercepts AVPlayer byte-range requests via a custom URL scheme, streams data
@@ -42,11 +43,16 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
         if let h = fileHandle { try? h.close(); fileHandle = nil }
     }
 
+    /// Stable cache key for `url`, derived from a SHA256 of its absolute string
+    /// (mirroring `ArtworkService.cacheKey`). This must be deterministic across
+    /// launches so key-based deletion (§6) and offline-completeness checks (§7)
+    /// are reliable — a per-process seeded `Hasher` is not. The trailing
+    /// extension is kept only as a debugging aid.
     static func key(for url: URL) -> String {
-        var hasher = Hasher()
-        hasher.combine(url.absoluteString)
-        let h = UInt64(bitPattern: Int64(hasher.finalize()))
-        return String(h, radix: 16) + "-" + (url.lastPathComponent as NSString).pathExtension.lowercased()
+        let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined()
+        let ext = (url.lastPathComponent as NSString).pathExtension.lowercased()
+        return ext.isEmpty ? hex : hex + "-" + ext
     }
 
     /// Returns true if this URL scheme should be routed through the cache.

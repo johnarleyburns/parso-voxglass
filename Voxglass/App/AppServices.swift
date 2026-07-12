@@ -10,6 +10,7 @@ final class AppServices: ObservableObject {
     let libraryRepository: LibraryRepository
     let cloudSync: VoxglassCloudSync
     let homeRecommendationStore: HomeRecommendationStore
+    let offlineDownloadManager: OfflineDownloadManager
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()
@@ -30,7 +31,9 @@ final class AppServices: ObservableObject {
         self.tasteProfileStore = tasteProfileStore
         self.cloudSync = cloudSync
         self.homeRecommendationStore = HomeRecommendationStore()
+        self.offlineDownloadManager = OfflineDownloadManager(repository: libraryRepository)
         homeRecommendationStore.configure(profileStore: tasteProfileStore, libraryStore: libraryStore)
+        libraryStore.configure(playback: playbackCoordinator, offlineManager: offlineDownloadManager)
 
         // Wire signal capture: when a position is saved, seed taste profile
         playbackCoordinator.onPositionSaved = { [weak self] bookID, isFavorite in
@@ -45,6 +48,7 @@ final class AppServices: ObservableObject {
         await CacheManager.shared.evictIfNeeded()
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
+        await offlineDownloadManager.refreshState(for: libraryStore.books)
         await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
         await cloudSync.sync()
     }

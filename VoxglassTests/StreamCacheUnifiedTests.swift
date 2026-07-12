@@ -88,6 +88,68 @@ final class StreamCacheUnifiedTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: artDir.path).count, 0)
     }
 
+    // MARK: - §6/§7 remove, pin, ingest
+
+    func testRemoveKeysTargetsOnlyGivenKeys() async {
+        await store.setContentLength(100, for: "audio_keep")
+        await store.recordWrite(range: 0..<100, for: "audio_keep")
+        await store.setContentLength(100, for: "audio_drop")
+        await store.recordWrite(range: 0..<100, for: "audio_drop")
+
+        await store.remove(keys: ["audio_drop"])
+
+        let keep = await store.contains("audio_keep")
+        let drop = await store.contains("audio_drop")
+        XCTAssertTrue(keep)
+        XCTAssertFalse(drop)
+    }
+
+    func testIngestCompleteFileMarksCompleteAndPins() async throws {
+        let source = directory.appendingPathComponent("ingest-source-\(UUID().uuidString).bin")
+        try Data(repeating: 7, count: 100).write(to: source)
+
+        await store.ingestCompleteFile(at: source, key: "audio_offline", totalBytes: 100)
+
+        let complete = await store.isComplete("audio_offline")
+        let pinned = await store.isPinned("audio_offline")
+        let url = await store.fileURL(for: "audio_offline")
+        XCTAssertTrue(complete)
+        XCTAssertTrue(pinned)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertEqual(try Data(contentsOf: url).count, 100)
+    }
+
+    func testPinnedKeysAreExcludedFromEviction() async throws {
+        let source = directory.appendingPathComponent("pin-source-\(UUID().uuidString).bin")
+        try Data(repeating: 1, count: 100).write(to: source)
+        await store.ingestCompleteFile(at: source, key: "pinned_audio", totalBytes: 100)
+
+        await store.setContentLength(100, for: "unpinned_audio")
+        await store.recordWrite(range: 0..<100, for: "unpinned_audio")
+
+        // Non-pinned bytes (100) now exceed the limit; the pinned entry's bytes
+        // are excluded from the budget and it must never be evicted.
+        await store.setLimit(50)
+
+        let pinned = await store.contains("pinned_audio")
+        let unpinned = await store.contains("unpinned_audio")
+        XCTAssertTrue(pinned, "Pinned offline content must survive eviction")
+        XCTAssertFalse(unpinned, "Unpinned streaming content is evicted to fit budget")
+    }
+
+    func testRemoveUnpinsKeys() async throws {
+        let source = directory.appendingPathComponent("unpin-source-\(UUID().uuidString).bin")
+        try Data(repeating: 2, count: 50).write(to: source)
+        await store.ingestCompleteFile(at: source, key: "to_unpin", totalBytes: 50)
+
+        await store.remove(keys: ["to_unpin"])
+
+        let pinned = await store.isPinned("to_unpin")
+        let contains = await store.contains("to_unpin")
+        XCTAssertFalse(pinned)
+        XCTAssertFalse(contains)
+    }
+
     func testLegacyMetaWithoutKindDecodesAsAudio() throws {
         let json = """
         {"cachedBytes":123,"complete":true,"lastAccessedAt":0,"createdAt":0,"rangeMap":{"ranges":[]}}

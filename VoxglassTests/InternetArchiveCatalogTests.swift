@@ -96,20 +96,39 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertEqual(library[0].book.summary, "LibriVox recording & public-domain audiobook.")
     }
 
-    func testLibriVoxQueryBuilderScopesToLibriVoxWithBoostsAndAnchor() {
+    func testLibriVoxQueryBuilderScopesToLibriVoxWithBoostsAndPhraseClause() {
         let query = InternetArchiveClient.libriVoxQuery(for: "sherlock holmes")
 
         XCTAssertTrue(query.hasPrefix("mediatype:audio"))
+        // Whole-phrase boost clause across title/subject/description.
+        XCTAssertTrue(query.contains("title:\"sherlock holmes\"^8"))
+        XCTAssertTrue(query.contains("subject:\"sherlock holmes\"^6"))
+        XCTAssertTrue(query.contains("description:\"sherlock holmes\"^4"))
+        // Per-token clause now includes subject + description fields.
         XCTAssertTrue(query.contains("title:\"sherlock\"^4"))
         XCTAssertTrue(query.contains("creator:\"sherlock\"^3"))
-        XCTAssertTrue(query.contains("subject:\"holmes\"^1"))
+        XCTAssertTrue(query.contains("subject:\"holmes\"^2"))
+        XCTAssertTrue(query.contains("description:\"holmes\"^1"))
         XCTAssertTrue(query.contains("collection:(librivoxaudio OR audio_bookspoetry)"))
-        XCTAssertTrue(query.contains(" AND "))
+        XCTAssertTrue(query.contains(") OR ("))
     }
 
     func testLibriVoxQueryBuilderHandlesEmptyInput() {
         let query = InternetArchiveClient.libriVoxQuery(for: "   ")
         XCTAssertEqual(query, "mediatype:audio AND collection:(librivoxaudio OR audio_bookspoetry)")
+    }
+
+    func testLibriVoxQueryBuilderAllowsSubjectAnchoredThematicSearch() {
+        // Regression for §8: "greek plays" must be satisfiable via subject/
+        // description (no mandatory title/creator-only anchor).
+        let query = InternetArchiveClient.libriVoxQuery(for: "greek plays")
+
+        XCTAssertTrue(query.contains("subject:\"greek\"^2"))
+        XCTAssertTrue(query.contains("subject:\"plays\"^2"))
+        XCTAssertTrue(query.contains("title:\"greek plays\"^8"))
+        // No bare (unboosted) title/creator-only mandatory clause remains.
+        XCTAssertFalse(query.contains("title:\"greek\" OR creator:\"greek\""))
+        XCTAssertFalse(query.contains("title:\"plays\" OR creator:\"plays\""))
     }
 
     func testCuratedCollectionsUseBroadCreatorQueries() {

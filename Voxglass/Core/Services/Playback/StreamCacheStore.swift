@@ -24,6 +24,7 @@ actor StreamCacheStore {
     private let artDir: URL
     private let metaDir: URL
     private var metas: [String: Meta] = [:]   // key = cacheKey
+    private var pinnedKeys: Set<String> = []   // never evicted (offline downloads, §7)
     private var limitBytes: Int64
 
     static let defaultLimit: Int64 = 500 * 1024 * 1024
@@ -49,6 +50,7 @@ actor StreamCacheStore {
         try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
         limitBytes = Self.defaultLimit
         metas = Self.loadMetas(from: metaDir)
+        pinnedKeys = Self.loadPinnedKeys(from: metaDir)
     }
 
     /// Testable init that isolates all state under a caller-supplied directory.
@@ -61,6 +63,7 @@ actor StreamCacheStore {
         try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
         limitBytes = Self.defaultLimit
         metas = Self.loadMetas(from: metaDir)
+        pinnedKeys = Self.loadPinnedKeys(from: metaDir)
     }
 
     // MARK: - Public accounting
@@ -83,6 +86,75 @@ actor StreamCacheStore {
 
     func contains(_ key: String) -> Bool {
         metas[key] != nil
+    }
+
+    /// True when the full audio file for `key` is present.
+    func isComplete(_ key: String) -> Bool {
+        metas[key]?.complete ?? false
+    }
+
+    func isPinned(_ key: String) -> Bool {
+        pinnedKeys.contains(key)
+    }
+
+    // MARK: - Pinning (offline downloads, §7)
+
+    /// Marks keys as pinned so they are never evicted or GC'd. Pinned bytes are
+    /// also excluded from the streaming-budget eviction total.
+    func pin(_ keys: [String]) {
+        pinnedKeys.formUnion(keys)
+        persistPinnedKeys()
+    }
+
+    func unpin(_ keys: [String]) {
+        pinnedKeys.subtract(keys)
+        persistPinnedKeys()
+    }
+
+    /// Removes the given keys' blobs + metadata, and unpins them. Public entry
+    /// point used when purging a book's cache (§6) or removing an offline copy (§7).
+    func remove(keys: [String]) {
+        for key in keys {
+            remove(key)
+        }
+        let removed = Set(keys)
+        if !pinnedKeys.isDisjoint(with: removed) {
+            pinnedKeys.subtract(removed)
+            persistPinnedKeys()
+        }
+    }
+
+    /// Ingests a fully-downloaded file (delivered complete by a background
+    /// `URLSession` download task, not streamed in ranges): moves it into place,
+    /// records the full range, marks it complete, and pins it for offline use.
+    func ingestCompleteFile(at tempURL: URL, key: String, totalBytes: Int64) async {
+        let destination = fileURL(for: key)
+        let fm = FileManager.default
+        try? fm.removeItem(at: destination)
+        do {
+            try fm.moveItem(at: tempURL, to: destination)
+        } catch {
+            // Fall back to a copy if the temp file lives on another volume.
+            try? fm.copyItem(at: tempURL, to: destination)
+        }
+
+        let resolvedTotal = totalBytes > 0
+            ? totalBytes
+            : (Int64((try? fm.attributesOfItem(atPath: destination.path)[.size] as? Int) ?? 0))
+        let now = Date()
+        var map = ByteRangeMap()
+        if resolvedTotal > 0 { map.insert(0..<resolvedTotal) }
+        metas[key] = Meta(
+            totalBytes: resolvedTotal,
+            cachedBytes: resolvedTotal,
+            complete: true,
+            lastAccessedAt: now,
+            createdAt: metas[key]?.createdAt ?? now,
+            rangeMap: map,
+            kind: .audio
+        )
+        persistMeta(key)
+        pin([key])
     }
 
     func fileURL(for key: String) -> URL {
@@ -155,6 +227,8 @@ actor StreamCacheStore {
             try? FileManager.default.removeItem(at: metaURL(key))
         }
         metas.removeAll()
+        pinnedKeys.removeAll()
+        persistPinnedKeys()
         for blobDir in [dir, artDir] {
             if let files = try? FileManager.default.contentsOfDirectory(at: blobDir, includingPropertiesForKeys: nil) {
                 for file in files { try? FileManager.default.removeItem(at: file) }
@@ -162,10 +236,10 @@ actor StreamCacheStore {
         }
     }
 
-    /// GC partial segments older than 7 days.
+    /// GC partial segments older than 7 days (pinned keys are always kept).
     func garbageCollectStalePartials() {
         let cutoff = Date().addingTimeInterval(-7 * 24 * 3600)
-        for (key, m) in metas where !m.complete && m.lastAccessedAt < cutoff {
+        for (key, m) in metas where !m.complete && m.lastAccessedAt < cutoff && !pinnedKeys.contains(key) {
             remove(key)
         }
     }
@@ -174,10 +248,13 @@ actor StreamCacheStore {
 
     private func evictToFit(protecting protectedKey: String?) async {
         guard limitBytes > 0 else { return }
-        var total = totalCachedBytes()
+        // Pinned (offline) bytes are excluded from the streaming budget.
+        var total = metas
+            .filter { !pinnedKeys.contains($0.key) }
+            .values.reduce(0) { $0 + $1.cachedBytes }
         guard total > limitBytes else { return }
         let candidates = metas
-            .filter { $0.key != protectedKey }
+            .filter { $0.key != protectedKey && !pinnedKeys.contains($0.key) }
             .sorted { $0.value.lastAccessedAt < $1.value.lastAccessedAt }
         for (key, m) in candidates {
             if total <= limitBytes { break }
@@ -217,5 +294,30 @@ actor StreamCacheStore {
             }
         }
         return result
+    }
+
+    // MARK: - Pinned-key persistence
+
+    /// Stored outside `metaDir` so it isn't mistaken for a per-key meta blob.
+    private var pinnedKeysURL: URL {
+        Self.pinnedKeysURL(for: metaDir)
+    }
+
+    private static func pinnedKeysURL(for metaDir: URL) -> URL {
+        metaDir.deletingLastPathComponent().appendingPathComponent("StreamCachePins.json")
+    }
+
+    private func persistPinnedKeys() {
+        guard let data = try? JSONEncoder().encode(Array(pinnedKeys)) else { return }
+        try? data.write(to: pinnedKeysURL)
+    }
+
+    private static func loadPinnedKeys(from metaDir: URL) -> Set<String> {
+        let url = pinnedKeysURL(for: metaDir)
+        guard let data = try? Data(contentsOf: url),
+              let keys = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+        return Set(keys)
     }
 }

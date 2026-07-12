@@ -3,12 +3,22 @@ import SwiftUI
 struct BookDetailView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var playback: PlaybackCoordinator
+    @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @Environment(\.dismiss) private var dismiss
     var book: BookWithChapters
     @Binding var showingNowPlaying: Bool
     @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
+    @State private var showPaywall = false
+    @State private var showCellularPrompt = false
+    @State private var showRemoveConfirm = false
+    @State private var showRemoveOfflineConfirm = false
 
     private var currentBook: BookWithChapters {
         libraryStore.book(withID: book.book.id) ?? book
+    }
+
+    private var offlineState: OfflineState {
+        offlineManager.state(for: book.book.id)
     }
 
     var body: some View {
@@ -30,11 +40,67 @@ struct BookDetailView: View {
         }
         .navigationTitle("Book")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button("Remove from My Books", role: .destructive) {
+                        showRemoveConfirm = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+        }
         .onAppear {
             recentlyViewedRaw = RecentlyViewedBooksStore.recording(
                 bookID: currentBook.book.id,
                 in: recentlyViewedRaw
             )
+        }
+        .sheet(isPresented: $showPaywall) {
+            NavigationStack {
+                ProPaywallView()
+            }
+        }
+        .confirmationDialog(
+            "You're on cellular data",
+            isPresented: $showCellularPrompt,
+            titleVisibility: .visible
+        ) {
+            Button("Cache now on cellular") {
+                UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cacheFullBooksOnCellular)
+                Task { await startOffline(allowCellular: true) }
+            }
+            Button("Wait for Wi-Fi", role: .cancel) {}
+        } message: {
+            Text("Caching a whole book can use significant cellular data.")
+        }
+        .confirmationDialog(
+            "Remove \"\(currentBook.book.title)\" from My Books?",
+            isPresented: $showRemoveConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Remove from My Books", role: .destructive) {
+                Task {
+                    await libraryStore.delete(book: currentBook)
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This deletes the book and its cached audio from this device.")
+        }
+        .confirmationDialog(
+            "Remove the offline copy?",
+            isPresented: $showRemoveOfflineConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Remove offline copy", role: .destructive) {
+                Task { await offlineManager.removeOffline(book: currentBook) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The book stays in My Books; only the downloaded audio is freed.")
         }
     }
 
@@ -115,7 +181,7 @@ struct BookDetailView: View {
                 }
             }
 
-            SecondaryActionButton(title: "Download", systemImage: "arrow.down.circle", isEnabled: false) {}
+            offlineControl
             SecondaryActionButton(title: "Playlist", systemImage: "text.badge.plus", isEnabled: false) {}
 
             ShareLink(item: shareText) {
@@ -126,6 +192,64 @@ struct BookDetailView: View {
                     .foregroundStyle(Palette.ink)
                     .glassSurface(cornerRadius: 18)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var offlineControl: some View {
+        switch offlineState {
+        case .notCached:
+            SecondaryActionButton(title: "Make available offline", systemImage: "arrow.down.circle") {
+                Task { await requestOffline() }
+            }
+        case .downloading(let progress):
+            VStack(spacing: 4) {
+                ProgressView(value: progress)
+                    .tint(Palette.brass)
+                Text("Caching… \(Int((progress * 100).rounded()))%")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Palette.ink2)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .padding(.horizontal, 12)
+            .glassSurface(cornerRadius: 18)
+        case .cached:
+            Label("Cached for offline use", systemImage: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .foregroundStyle(Palette.brass)
+                .glassSurface(cornerRadius: 18)
+                .contextMenu {
+                    Button("Remove offline copy", role: .destructive) {
+                        showRemoveOfflineConfirm = true
+                    }
+                }
+        case .failed:
+            SecondaryActionButton(title: "Retry offline", systemImage: "exclamationmark.arrow.circlepath") {
+                Task { await requestOffline() }
+            }
+        }
+    }
+
+    private func requestOffline() async {
+        await startOffline(allowCellular: false)
+    }
+
+    private func startOffline(allowCellular: Bool) async {
+        let decision = await offlineManager.makeAvailableOffline(
+            book: currentBook,
+            isCellular: NetworkMonitor.shared.isCellular,
+            allowCellularOverride: allowCellular
+        )
+        switch decision {
+        case .needsPro:
+            showPaywall = true
+        case .needsCellularConfirmation:
+            showCellularPrompt = true
+        case .start:
+            break
         }
     }
 

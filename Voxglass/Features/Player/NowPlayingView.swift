@@ -125,6 +125,10 @@ struct NowPlayingView: View {
             HStack {
                 Text(TimeFormatting.clock(isScrubbing ? scrubPosition : session.position))
                 Spacer()
+                if let bookRemaining = session.bookRemaining {
+                    Text("\(TimeFormatting.compactDuration(bookRemaining)) left in book")
+                    Spacer()
+                }
                 Text("-\(TimeFormatting.clock(max((session.duration ?? 0) - (isScrubbing ? scrubPosition : session.position), 0)))")
             }
             .font(.system(size: 11).monospacedDigit())
