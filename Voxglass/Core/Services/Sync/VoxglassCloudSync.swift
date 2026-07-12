@@ -40,8 +40,17 @@ final class VoxglassCloudSync: ObservableObject {
     }
 
     var isAvailable: Bool {
-        FileManager.default.ubiquityIdentityToken != nil
+        #if DEBUG
+        if let testForceAvailable { return testForceAvailable }
+        #endif
+        return FileManager.default.ubiquityIdentityToken != nil
     }
+
+    #if DEBUG
+    /// Test seam: forces iCloud availability without a signed-in account so the
+    /// push/pull round-trip can be exercised against the local KVS backing store.
+    var testForceAvailable: Bool?
+    #endif
 
     // MARK: - Push (device → iCloud)
 

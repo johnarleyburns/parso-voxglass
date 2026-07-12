@@ -13,9 +13,17 @@ final class PlaybackCoordinator: ObservableObject {
     /// Used by the recommendation engine for taste signal capture.
     var onPositionSaved: ((UUID, Bool) -> Void)?
 
+    /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
+    /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
+    var listeningStatsStore: ListeningStatsStore?
+    private var listenedAccumulator: TimeInterval = 0
+    private var lastListenTick: Date?
+
     private let engine: AudioEngine
     private let positionStore: PositionStore
     private let snapshotStore: LastPlaybackSnapshotStore
+    private let eqSettings = EQSettingsStore()
+    let eqPresets = EQPresetStore()
     private var progressTask: Task<Void, Never>?
     private var lastPeriodicSave = Date.distantPast
     private var notificationObservers: [NSObjectProtocol] = []
@@ -44,6 +52,7 @@ final class PlaybackCoordinator: ObservableObject {
         self.engine.configureAudioSession()
         configureRemoteCommands()
         configureNotifications()
+        restoreEQ()
     }
 
     func restoreLatestSession(from books: [BookWithChapters]) async {
@@ -134,6 +143,10 @@ final class PlaybackCoordinator: ObservableObject {
 
     func pause() {
         guard currentSession != nil else { return }
+        if let bookID = currentSession?.book.id {
+            flushListening(bookID: bookID)
+        }
+        lastListenTick = nil
         engine.pause()
         mutateSession {
             $0.position = engine.currentTime
@@ -197,6 +210,10 @@ final class PlaybackCoordinator: ObservableObject {
 
     func handleScenePhase(_ phase: ScenePhase) {
         if phase == .background {
+            if let bookID = currentSession?.book.id {
+                flushListening(bookID: bookID)
+            }
+            lastListenTick = nil
             Task { await persistCurrentPosition(reason: .background) }
         }
     }
@@ -205,6 +222,8 @@ final class PlaybackCoordinator: ObservableObject {
     /// and clears the restore snapshot so it can't resurface on next launch.
     func stopPlayback(forDeletedBook bookID: UUID) {
         guard currentSession?.book.id == bookID else { return }
+        flushListening(bookID: bookID)
+        lastListenTick = nil
         engine.pause()
         progressTask?.cancel()
         progressTask = nil
@@ -213,16 +232,100 @@ final class PlaybackCoordinator: ObservableObject {
         updateNowPlayingInfo()
     }
 
-    private func prefetchNextChapter(from book: BookWithChapters, currentChapter: Chapter) {
-        guard let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
-        let nextIndex = currentIndex + 1
-        guard book.chapters.indices.contains(nextIndex) else { return }
-        let nextChapter = book.chapters[nextIndex]
+    // MARK: - Equalizer (Pro, §2)
 
-        guard let url = nextChapter.remoteURL, nextChapter.localURL == nil,
-              CachingResourceLoader.isRemoteCacheable(url),
-              let avEngine = engine as? AVPlayerAudioEngine else { return }
-        avEngine.prefetchIntoCache(url: url)
+    var isEQEngaged: Bool {
+        (engine as? AVPlayerAudioEngine)?.isEQEngaged ?? false
+    }
+
+    var eqGains: [Float] {
+        eqSettings.gains
+    }
+
+    func setEQEngaged(_ engaged: Bool) {
+        guard ProFeature.isEnabled(.eq) else { return }
+        (engine as? AVPlayerAudioEngine)?.setEQEngaged(engaged)
+        eqSettings.isEngaged = engaged
+    }
+
+    func applyEQPreset(_ preset: EQPreset) {
+        guard ProFeature.isEnabled(.eq) else { return }
+        (engine as? AVPlayerAudioEngine)?.applyEQPreset(preset)
+        eqSettings.gains = preset.gains
+    }
+
+    func setEQGain(_ gain: Float, at band: Int) {
+        guard ProFeature.isEnabled(.eq) else { return }
+        (engine as? AVPlayerAudioEngine)?.setEQGain(gain, at: band)
+        var gains = eqSettings.gains
+        guard band >= 0, band < gains.count else { return }
+        gains[band] = gain
+        eqSettings.gains = gains
+    }
+
+    /// Re-applies persisted gains + engaged-state on launch so the equalizer
+    /// survives relaunch. The engine's desired-engaged flag is set now (before any
+    /// track loads) so `load(...)` re-attaches the tap automatically.
+    private func restoreEQ() {
+        guard ProFeature.isEnabled(.eq) else { return }
+        guard let avEngine = engine as? AVPlayerAudioEngine else { return }
+        avEngine.setEQGains(eqSettings.gains)
+        if eqSettings.isEngaged {
+            avEngine.setEQEngaged(true)
+        }
+    }
+
+    private func prefetchNextChapter(from book: BookWithChapters, currentChapter: Chapter) {
+        prefetchUpcomingChapters(from: book, currentChapter: currentChapter)
+    }
+
+    /// Sentinel depth meaning "the rest of the book".
+    static let wholeBookPrefetchDepth = 999
+
+    /// Pure resolution of prefetch depth (§3, decision D7): free tier and cellular
+    /// (when Wi-Fi-only is on) clamp to 1 so near-gapless is never broken; Pro on
+    /// Wi-Fi honors the stored depth.
+    static func resolvedPrefetchDepth(isPro: Bool, stored: Int, isCellular: Bool, wifiOnly: Bool) -> Int {
+        guard isPro else { return 1 }
+        if wifiOnly && isCellular { return 1 }
+        return max(1, stored)
+    }
+
+    private var storedPrefetchDepth: Int {
+        let raw = UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.prefetchDepth)
+        return raw <= 0 ? 1 : raw
+    }
+
+    private var prefetchWifiOnly: Bool {
+        UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.prefetchWifiOnly) == nil
+            ? true
+            : UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.prefetchWifiOnly)
+    }
+
+    private func prefetchUpcomingChapters(from book: BookWithChapters, currentChapter: Chapter) {
+        guard let avEngine = engine as? AVPlayerAudioEngine,
+              let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
+
+        let depth = Self.resolvedPrefetchDepth(
+            isPro: ProFeature.isEnabled(.prefetchDepth),
+            stored: storedPrefetchDepth,
+            isCellular: NetworkMonitor.shared.isCellular,
+            wifiOnly: prefetchWifiOnly
+        )
+
+        var urls: [URL] = []
+        var index = currentIndex + 1
+        while urls.count < depth && book.chapters.indices.contains(index) {
+            let chapter = book.chapters[index]
+            if let url = chapter.remoteURL,
+               chapter.localURL == nil,
+               CachingResourceLoader.isRemoteCacheable(url) {
+                urls.append(url)
+            }
+            index += 1
+        }
+        guard !urls.isEmpty else { return }
+        avEngine.prefetchIntoCache(urls: urls)
     }
 
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
@@ -338,6 +441,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     private func tickProgress() async {
         guard currentSession != nil else { return }
+        accumulateListening()
         mutateSession {
             $0.position = engine.currentTime
             $0.duration = engine.duration ?? $0.duration
@@ -349,6 +453,34 @@ final class PlaybackCoordinator: ObservableObject {
             await persistCurrentPosition(reason: .periodic)
         }
         updateNowPlayingInfo()
+    }
+
+    private func accumulateListening() {
+        guard engine.isPlaying, let session = currentSession else {
+            lastListenTick = nil
+            return
+        }
+        let now = Date()
+        if let last = lastListenTick {
+            let elapsed = min(now.timeIntervalSince(last), 2)
+            if elapsed > 0 {
+                listenedAccumulator += elapsed
+            }
+        }
+        lastListenTick = now
+
+        if listenedAccumulator >= 30 {
+            flushListening(bookID: session.book.id)
+        }
+    }
+
+    private func flushListening(bookID: UUID) {
+        let seconds = listenedAccumulator
+        listenedAccumulator = 0
+        guard seconds > 0, let store = listeningStatsStore else { return }
+        Task {
+            await store.record(bookID: bookID, seconds: seconds)
+        }
     }
 
     private func persistCurrentPosition(reason: PositionPersistReason, finished: Bool = false) async {

@@ -1,28 +1,62 @@
 import StoreKit
 import SwiftUI
 
+/// A single advertised Pro feature, tied to its `ProFeature` gate so the paywall
+/// copy, the entitlement enum, and the free-tier registry stay in lockstep
+/// (enforced by `ProPaywallContentTests`).
+struct ProFeatureAdvertisement: Identifiable {
+    let feature: ProFeature
+    let icon: String
+    let title: String
+    let description: String
+
+    var id: String { feature.rawValue }
+}
+
 struct ProPaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var storeManager = StoreManager.shared
 
-    private let features: [(icon: String, title: String, description: String)] = [
-        ("square.split.2x2.fill", "Cache Presets",
-         "Choose 500 MB, 2 GB, or 10 GB streaming cache to keep more music available offline."),
-        ("arrow.triangle.branch", "Prefetch Depth",
-         "Prefetch the next N tracks or your whole queue over Wi-Fi so playback never waits."),
-        ("folder.fill.badge.plus", "Folder Watch",
-         "Point Voxglass at a folder of audio files — new files appear automatically."),
-        ("waveform.path.ecg", "10-Band EQ",
-         "MTAudioProcessingTap with biquad filters. Presets for Concert Hall, Spoken Word, 78 rpm, and your own."),
-        ("car.fill", "CarPlay",
-         "Control playback through your vehicle's built-in screen and controls."),
-        ("icloud.fill", "iCloud Sync",
-         "Sync playback positions, bookmarks, and favorites across your devices via your private iCloud account."),
-        ("chart.bar.fill", "Listening Stats",
-         "Track your listening habits — total time, genres, authors, and daily streaks."),
-        ("applewatch", "Apple Watch",
-         "Control playback, browse your library, and pick up where you left off from your wrist.")
+    /// Ordered high-value first. Every `ProFeature` must appear exactly once.
+    static let advertised: [ProFeatureAdvertisement] = [
+        ProFeatureAdvertisement(
+            feature: .offlineDownloads,
+            icon: "arrow.down.circle.fill",
+            title: "Offline Downloads",
+            description: "Download whole books for gap-free listening with no connection — pinned so they're never evicted."),
+        ProFeatureAdvertisement(
+            feature: .cachePresets,
+            icon: "square.split.2x2.fill",
+            title: "Cache Presets",
+            description: "Choose 500 MB, 2 GB, or 10 GB streaming cache to keep more audio available offline."),
+        ProFeatureAdvertisement(
+            feature: .eq,
+            icon: "waveform.path.ecg",
+            title: "10-Band EQ",
+            description: "A 10-band equalizer with presets for Concert Hall, Spoken Word, 78 rpm — and your own."),
+        ProFeatureAdvertisement(
+            feature: .prefetchDepth,
+            icon: "arrow.triangle.branch",
+            title: "Prefetch Depth",
+            description: "Prefetch the next few chapters or your whole book over Wi-Fi so playback never waits."),
+        ProFeatureAdvertisement(
+            feature: .folderWatch,
+            icon: "folder.fill.badge.plus",
+            title: "Folder Watch",
+            description: "Point Voxglass at a folder of audio files — new files appear automatically."),
+        ProFeatureAdvertisement(
+            feature: .icloudSync,
+            icon: "icloud.fill",
+            title: "iCloud Sync",
+            description: "Sync playback positions, bookmarks, and favorites across your devices via your private iCloud account."),
+        ProFeatureAdvertisement(
+            feature: .listeningStats,
+            icon: "chart.bar.fill",
+            title: "Listening Stats",
+            description: "Track your listening habits — total time, genres, authors, and daily streaks.")
     ]
+
+    private var features: [ProFeatureAdvertisement] { Self.advertised }
 
     var body: some View {
         ZStack {

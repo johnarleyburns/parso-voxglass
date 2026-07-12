@@ -11,6 +11,8 @@ final class AppServices: ObservableObject {
     let cloudSync: VoxglassCloudSync
     let homeRecommendationStore: HomeRecommendationStore
     let offlineDownloadManager: OfflineDownloadManager
+    let listeningStatsStore: ListeningStatsStore
+    let folderWatchService: FolderWatchService
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()
@@ -19,6 +21,7 @@ final class AppServices: ObservableObject {
         let audioEngine = AVPlayerAudioEngine()
         let tasteProfileStore = TasteProfileStore(database: database)
         let cloudSync = VoxglassCloudSync(database: database)
+        let listeningStatsStore = ListeningStatsStore(database: database)
 
         self.database = database
         self.libraryRepository = libraryRepository
@@ -32,8 +35,12 @@ final class AppServices: ObservableObject {
         self.cloudSync = cloudSync
         self.homeRecommendationStore = HomeRecommendationStore()
         self.offlineDownloadManager = OfflineDownloadManager(repository: libraryRepository)
+        self.listeningStatsStore = listeningStatsStore
+        self.folderWatchService = FolderWatchService(repository: libraryRepository)
         homeRecommendationStore.configure(profileStore: tasteProfileStore, libraryStore: libraryStore)
         libraryStore.configure(playback: playbackCoordinator, offlineManager: offlineDownloadManager)
+        playbackCoordinator.listeningStatsStore = listeningStatsStore
+        folderWatchService.configure(libraryStore: libraryStore)
 
         // Wire signal capture: when a position is saved, seed taste profile
         playbackCoordinator.onPositionSaved = { [weak self] bookID, isFavorite in
@@ -51,6 +58,7 @@ final class AppServices: ObservableObject {
         await offlineDownloadManager.refreshState(for: libraryStore.books)
         await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
         await cloudSync.sync()
+        await folderWatchService.rescanAll()
     }
 
     private func captureTasteSignal(bookID: UUID, isFavorite: Bool) async {

@@ -284,6 +284,64 @@ extension BookWithChapters {
     }
 }
 
+struct ProLockBadge: View {
+    var body: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(Color(hex: 0x221503))
+            .padding(5)
+            .background(Palette.brass, in: Circle())
+            .accessibilityHidden(true)
+    }
+}
+
+private struct ProLockedModifier: ViewModifier {
+    let feature: ProFeature
+    let identifier: String
+    let onTapLocked: () -> Void
+
+    func body(content: Content) -> some View {
+        if ProFeature.isEnabled(feature) {
+            content
+        } else {
+            Button(action: onTapLocked) {
+                content
+                    .allowsHitTesting(false)
+                    .overlay(alignment: .topTrailing) {
+                        ProLockBadge()
+                            .padding(6)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(identifier)
+            .accessibilityAddTraits(.isButton)
+        }
+    }
+}
+
+extension View {
+    /// Standardized Pro gate: when `feature` is not entitled, the content renders
+    /// with a `lock.fill` badge, gains a stable `accessibilityIdentifier`, and any
+    /// tap invokes `onTapLocked` (present the paywall) instead of the content's own
+    /// interaction. When entitled, the content is returned untouched.
+    func proLocked(
+        _ feature: ProFeature,
+        id: String,
+        onTapLocked: @escaping () -> Void
+    ) -> some View {
+        modifier(ProLockedModifier(feature: feature, identifier: id, onTapLocked: onTapLocked))
+    }
+
+    /// Uniform paywall presentation used by every gated touchpoint.
+    func paywallSheet(isPresented: Binding<Bool>) -> some View {
+        sheet(isPresented: isPresented) {
+            NavigationStack {
+                ProPaywallView()
+            }
+        }
+    }
+}
+
 extension SourceKind {
     var displayName: String {
         switch self {

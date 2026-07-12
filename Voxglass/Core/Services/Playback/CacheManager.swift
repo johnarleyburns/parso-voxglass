@@ -22,6 +22,14 @@ actor CacheManager {
             case .pro2GB, .pro10GB: return true
             }
         }
+
+        var accessibilitySuffix: String {
+            switch self {
+            case .free500MB: return "500mb"
+            case .pro2GB: return "2gb"
+            case .pro10GB: return "10gb"
+            }
+        }
     }
 
     private let defaults = UserDefaults.standard

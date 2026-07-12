@@ -181,6 +181,21 @@ private struct DatabaseMigration {
                 """,
                 "CREATE INDEX reco_surfaced_ts ON reco_surfaced(ts DESC)"
             ]
+        ),
+        DatabaseMigration(
+            id: 4,
+            name: "listening_events",
+            statements: [
+                """
+                CREATE TABLE listening_events (
+                    id TEXT PRIMARY KEY,
+                    book_id TEXT REFERENCES books(id) ON DELETE SET NULL,
+                    seconds REAL NOT NULL,
+                    occurred_at REAL NOT NULL
+                )
+                """,
+                "CREATE INDEX listening_events_occurred_at ON listening_events(occurred_at DESC)"
+            ]
         )
     ]
 }

@@ -7,6 +7,8 @@ struct AppPreferencesStore: DynamicProperty {
         static let selectedCollectionIDs = "voxglass.selectedCollectionIDs"
         static let selectedLanguages = "voxglass.selectedLanguages"
         static let cacheFullBooksOnCellular = "voxglass.cacheFullBooksOnCellular"
+        static let prefetchDepth = "voxglass.prefetchDepth"
+        static let prefetchWifiOnly = "voxglass.prefetchWifiOnly"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false

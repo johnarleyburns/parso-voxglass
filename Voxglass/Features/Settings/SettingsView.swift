@@ -21,6 +21,22 @@ struct SettingsView: View {
                     SyncSettingsCard()
                 }
 
+                settingsGroup("Audio") {
+                    EQSettingsRow()
+                }
+
+                settingsGroup("Playback") {
+                    PrefetchDepthRow()
+                }
+
+                settingsGroup("Insights") {
+                    ListeningStatsRow()
+                }
+
+                settingsGroup("Local Files") {
+                    FolderWatchRow()
+                }
+
                 settingsGroup("Library") {
                     NavigationLink {
                         SourcesView(showingNowPlaying: $showingNowPlaying)
@@ -242,6 +258,7 @@ private struct CacheSettingsCard: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(locked ? "pro.lock.cache.\(preset.accessibilitySuffix)" : "cache.preset.\(preset.accessibilitySuffix)")
     }
 
     private var cellularCard: some View {
@@ -504,70 +521,283 @@ struct AboutView: View {
 }
 
 private struct SyncSettingsCard: View {
-    @State private var isSyncing = false
-    @State private var lastSync: Date?
+    @EnvironmentObject private var cloudSync: VoxglassCloudSync
     @State private var showPaywall = false
 
     var body: some View {
+        Group {
+            if ProFeature.isEnabled(.icloudSync) {
+                entitledCard
+            } else {
+                lockedCard
+            }
+        }
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
+        .paywallSheet(isPresented: $showPaywall)
+    }
+
+    private var entitledCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "icloud.fill")
-                    .foregroundStyle(ProFeature.isEnabled(.icloudSync) ? Palette.brass : Palette.ink3)
+                    .foregroundStyle(Palette.brass)
                 Text("iCloud Sync")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Palette.ink)
                 Spacer()
-                if isSyncing {
+                if cloudSync.isSyncing {
                     ProgressView()
                         .scaleEffect(0.8)
                 }
             }
 
-            if ProFeature.isEnabled(.icloudSync) {
-                Text("Playback positions, bookmarks, and favorites sync across your devices using your private iCloud account. No app account required.")
-                    .font(.system(size: 11.5))
+            Text("Playback positions, bookmarks, and favorites sync across your devices using your private iCloud account. No app account required.")
+                .font(.system(size: 11.5))
+                .foregroundStyle(Palette.ink3)
+
+            if let lastSync = cloudSync.lastSyncDate {
+                Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.system(size: 11))
                     .foregroundStyle(Palette.ink3)
+            }
 
-                if let lastSync {
-                    Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Palette.ink3)
-                }
-
-                Button {
-                    Task {
-                        isSyncing = true
-                        defer { isSyncing = false }
-                        lastSync = Date()
-                    }
-                } label: {
-                    Text(isSyncing ? "Syncing…" : "Sync Now")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Palette.brass)
-                }
-                .disabled(isSyncing)
-            } else {
-                HStack(spacing: 6) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 10))
-                    Text("iCloud Sync is a Pro feature")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Palette.ink3)
-                    Spacer()
-                    Button("Unlock") {
-                        showPaywall = true
-                    }
-                    .font(.system(size: 12, weight: .semibold))
+            if !cloudSync.isAvailable {
+                Text("Sign in to iCloud to sync")
+                    .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(Palette.brass)
+            } else if let error = cloudSync.syncError {
+                Text(error)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.danger)
+            }
+
+            Button {
+                Task { await cloudSync.sync() }
+            } label: {
+                Text(cloudSync.isSyncing ? "Syncing…" : "Sync Now")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(cloudSync.isAvailable ? Palette.brass : Palette.ink3)
+            }
+            .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
+            .accessibilityIdentifier("sync.now")
+        }
+    }
+
+    private var lockedCard: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "icloud.fill")
+                    .foregroundStyle(Palette.ink3)
+                Text("iCloud Sync")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+                ProLockBadge()
+                Text("Pro")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Palette.ink3)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("pro.lock.icloudSync")
+    }
+}
+
+private struct EQSettingsRow: View {
+    @EnvironmentObject private var playback: PlaybackCoordinator
+    @State private var showEQ = false
+    @State private var showPaywall = false
+
+    var body: some View {
+        Button {
+            if ProFeature.isEnabled(.eq) {
+                showEQ = true
+            } else {
+                showPaywall = true
+            }
+        } label: {
+            DisclosureListRow(
+                icon: "waveform.path.ecg",
+                title: "Equalizer",
+                detail: ProFeature.isEnabled(.eq) ? "10-band EQ with presets" : "10-band EQ — a Pro feature",
+                count: nil,
+                isEnabled: ProFeature.isEnabled(.eq)
+            )
+            .overlay(alignment: .trailing) {
+                if !ProFeature.isEnabled(.eq) {
+                    ProLockBadge().padding(.trailing, 34)
                 }
             }
         }
-        .padding(15)
-        .glassSurface(cornerRadius: 18)
-        .sheet(isPresented: $showPaywall) {
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(ProFeature.isEnabled(.eq) ? "settings.eq" : "pro.lock.eq")
+        .sheet(isPresented: $showEQ) {
             NavigationStack {
-                ProPaywallView()
+                EQView().environmentObject(playback)
             }
+            .presentationDragIndicator(.visible)
+        }
+        .paywallSheet(isPresented: $showPaywall)
+    }
+}
+
+private struct PrefetchDepthRow: View {
+    @AppStorage(AppPreferencesStore.Keys.prefetchDepth) private var depth = 1
+    @AppStorage(AppPreferencesStore.Keys.prefetchWifiOnly) private var wifiOnly = true
+    @State private var showPaywall = false
+
+    private let whole = PlaybackCoordinator.wholeBookPrefetchDepth
+
+    var body: some View {
+        if ProFeature.isEnabled(.prefetchDepth) {
+            entitled
+        } else {
+            locked
+        }
+    }
+
+    private var entitled: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 32, height: 32)
+                    .background {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
+                    }
+                Text("Prefetch Depth")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+            }
+
+            Picker("Prefetch Depth", selection: $depth) {
+                Text("Next (1)").tag(1)
+                Text("Next 3").tag(3)
+                Text("Whole book").tag(whole)
+            }
+            .pickerStyle(.segmented)
+
+            Toggle(isOn: $wifiOnly) {
+                Text("Prefetch only on Wi-Fi")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Palette.ink2)
+            }
+            .tint(Palette.brass)
+
+            Text("Warms upcoming chapters so playback never waits. The next chapter is always prefetched for gapless playback.")
+                .font(.system(size: 11))
+                .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+    }
+
+    private var locked: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            DisclosureListRow(
+                icon: "arrow.triangle.branch",
+                title: "Prefetch Depth",
+                detail: "Next chapter (1) — Pro prefetches more",
+                count: nil,
+                isEnabled: false
+            )
+            .overlay(alignment: .trailing) {
+                ProLockBadge().padding(.trailing, 34)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("pro.lock.prefetchDepth")
+        .paywallSheet(isPresented: $showPaywall)
+    }
+}
+
+private struct ListeningStatsRow: View {
+    @EnvironmentObject private var stats: ListeningStatsStore
+    @State private var showStats = false
+    @State private var showPaywall = false
+
+    var body: some View {
+        Button {
+            if ProFeature.isEnabled(.listeningStats) {
+                showStats = true
+            } else {
+                showPaywall = true
+            }
+        } label: {
+            DisclosureListRow(
+                icon: "chart.bar.fill",
+                title: "Listening Stats",
+                detail: ProFeature.isEnabled(.listeningStats) ? "Total time, streaks, and top authors" : "Total time, streaks — a Pro feature",
+                count: nil,
+                isEnabled: ProFeature.isEnabled(.listeningStats)
+            )
+            .overlay(alignment: .trailing) {
+                if !ProFeature.isEnabled(.listeningStats) {
+                    ProLockBadge().padding(.trailing, 34)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(ProFeature.isEnabled(.listeningStats) ? "settings.listeningStats" : "pro.lock.listeningStats")
+        .sheet(isPresented: $showStats) {
+            NavigationStack {
+                ListeningStatsView().environmentObject(stats)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .paywallSheet(isPresented: $showPaywall)
+    }
+}
+
+private struct FolderWatchRow: View {
+    @EnvironmentObject private var folderWatch: FolderWatchService
+    @State private var showPaywall = false
+
+    var body: some View {
+        if ProFeature.isEnabled(.folderWatch) {
+            NavigationLink {
+                FolderWatchView().environmentObject(folderWatch)
+            } label: {
+                DisclosureListRow(
+                    icon: "folder.fill.badge.plus",
+                    title: "Watch a Folder",
+                    detail: folderWatch.folders.isEmpty ? "Import audio files from a folder" : "\(folderWatch.folders.count) watched",
+                    count: nil
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.folderWatch")
+        } else {
+            Button {
+                showPaywall = true
+            } label: {
+                DisclosureListRow(
+                    icon: "folder.fill.badge.plus",
+                    title: "Watch a Folder",
+                    detail: "Import from a folder — a Pro feature",
+                    count: nil,
+                    isEnabled: false
+                )
+                .overlay(alignment: .trailing) {
+                    ProLockBadge().padding(.trailing, 34)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("pro.lock.folderWatch")
+            .paywallSheet(isPresented: $showPaywall)
         }
     }
 }
+
+
+
+

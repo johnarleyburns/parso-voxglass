@@ -20,6 +20,7 @@ targets:
       - path: Voxglass
         excludes:
           - Resources/Info.plist
+          - Resources/Voxglass.entitlements
     dependencies:
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
@@ -54,6 +55,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
         PRODUCT_NAME: Voxglass
         INFOPLIST_FILE: Voxglass/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Voxglass/Resources/Voxglass.entitlements
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1,2"
       configs:

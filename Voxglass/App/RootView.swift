@@ -63,6 +63,7 @@ struct RootView: View {
         .sheet(isPresented: $showingNowPlaying) {
             NowPlayingView()
                 .environmentObject(playback)
+                .environmentObject(libraryStore)
                 .presentationDragIndicator(.visible)
         }
         .task {
