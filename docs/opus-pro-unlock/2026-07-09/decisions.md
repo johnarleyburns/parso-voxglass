@@ -108,7 +108,13 @@ after a book is removed.
 `Voxglass/Resources/Voxglass.entitlements` (ubiquity-kvstore identifier) is
 committed and wired via `project.yml`. On-device KVS still requires a real
 signing team; simulator/CI tests use the `EntitlementCache` test seam plus a
-file-presence check rather than live iCloud.
+file-presence check rather than live iCloud. The entitlement is scoped to the
+**Debug** configuration only: the existing App Store provisioning profile does
+not yet include the iCloud capability, so attaching it to the **Release**
+archive fails Manual signing (verified in CI). Shipping iCloud sync in
+production requires enabling iCloud KVS on the App ID, regenerating the App
+Store profile + updating the CI secret, then moving `CODE_SIGN_ENTITLEMENTS`
+to `settings.base` (documented in the README).
 
 **DEV10 — Standardized Pro lock affordance.**
 `ProLockBadge` + the `.proLocked(_:id:onTapLocked:)` view modifier in

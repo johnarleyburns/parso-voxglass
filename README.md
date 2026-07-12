@@ -96,8 +96,16 @@ GPLv3 — see `LICENSE`.
 
 Cross-device sync via iCloud (requires Voxglass Pro) uses `NSUbiquitousKeyValueStore`. The required
 **iCloud key-value-store** capability is committed as `Voxglass/Resources/Voxglass.entitlements` and wired
-through `project.yml` (`CODE_SIGN_ENTITLEMENTS`), so no manual capability toggling is needed — just build
-with a signing team whose provisioning enables iCloud for `guru.parso.voxglass`.
+through `project.yml` for the **Debug** configuration, so simulator/development builds (and unit tests)
+carry the entitlement with no manual capability toggling.
+
+For **Release / TestFlight**, the entitlement is intentionally *not* attached yet because the App Store
+provisioning profile (`Parso Voxglass App Store`) does not currently include the iCloud capability —
+attaching it would fail Manual signing during archive. To ship iCloud sync in production:
+
+1. Enable **iCloud → Key-value storage** for the `guru.parso.voxglass` App ID in the Apple Developer portal.
+2. Regenerate the App Store provisioning profile and update the `BUILD_PROVISION_PROFILE_BASE64` CI secret.
+3. Move `CODE_SIGN_ENTITLEMENTS` from the `Debug` config to `settings.base` in `project.yml`.
 
 Without the entitlement, `NSUbiquitousKeyValueStore.synchronize()` is a no-op and sync will not function
 even if Pro is unlocked.
