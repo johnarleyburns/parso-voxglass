@@ -8,6 +8,11 @@ final class PlaybackCoordinator: ObservableObject {
     @Published private(set) var currentSession: PlaybackSession?
     @Published var playbackError: String?
 
+    /// Called when a playback position is persisted (e.g. periodic save, chapter end,
+    /// finished). Receives the book's UUID and whether it was set as favorite.
+    /// Used by the recommendation engine for taste signal capture.
+    var onPositionSaved: ((UUID, Bool) -> Void)?
+
     private let engine: AudioEngine
     private let positionStore: PositionStore
     private let snapshotStore: LastPlaybackSnapshotStore
@@ -349,6 +354,9 @@ final class PlaybackCoordinator: ObservableObject {
             try await positionStore.save(position)
             if reason == .periodic {
                 lastPeriodicSave = Date()
+            }
+            if reason == .periodic || finished {
+                onPositionSaved?(session.book.id, session.book.isFavorite)
             }
         } catch {
             playbackError = error.localizedDescription

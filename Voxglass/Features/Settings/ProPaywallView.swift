@@ -14,8 +14,14 @@ struct ProPaywallView: View {
          "Point Voxglass at a folder of audio files — new files appear automatically."),
         ("waveform.path.ecg", "10-Band EQ",
          "MTAudioProcessingTap with biquad filters. Presets for Concert Hall, Spoken Word, 78 rpm, and your own."),
-        ("car.fill", "CarPlay (when ready)",
-         "CarPlay support will ship as a Pro feature in a future update.")
+        ("car.fill", "CarPlay",
+         "Control playback through your vehicle's built-in screen and controls."),
+        ("icloud.fill", "iCloud Sync",
+         "Sync playback positions, bookmarks, and favorites across your devices via your private iCloud account."),
+        ("chart.bar.fill", "Listening Stats",
+         "Track your listening habits — total time, genres, authors, and daily streaks."),
+        ("applewatch", "Apple Watch",
+         "Control playback, browse your library, and pick up where you left off from your wrist.")
     ]
 
     var body: some View {

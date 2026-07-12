@@ -150,6 +150,37 @@ private struct DatabaseMigration {
             statements: [
                 "ALTER TABLE chapters ADD COLUMN opus_url TEXT"
             ]
+        ),
+        DatabaseMigration(
+            id: 3,
+            name: "taste_profile_and_book_metadata",
+            statements: [
+                """
+                CREATE TABLE book_taste (
+                    book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                    axis TEXT NOT NULL,
+                    term TEXT NOT NULL,
+                    PRIMARY KEY (book_id, axis, term)
+                )
+                """,
+                """
+                CREATE TABLE taste_profile_terms (
+                    axis TEXT NOT NULL,
+                    term TEXT NOT NULL,
+                    weight REAL NOT NULL DEFAULT 0,
+                    last_ts REAL NOT NULL DEFAULT 0,
+                    PRIMARY KEY (axis, term)
+                )
+                """,
+                "CREATE INDEX taste_profile_terms_weight ON taste_profile_terms(axis, weight DESC)",
+                """
+                CREATE TABLE reco_surfaced (
+                    identifier TEXT PRIMARY KEY,
+                    ts REAL NOT NULL DEFAULT 0
+                )
+                """,
+                "CREATE INDEX reco_surfaced_ts ON reco_surfaced(ts DESC)"
+            ]
         )
     ]
 }

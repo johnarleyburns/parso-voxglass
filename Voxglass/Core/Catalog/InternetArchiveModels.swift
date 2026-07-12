@@ -193,6 +193,8 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
     var description: String?
     var mediatype: String?
     var collections: [String]
+    var subjects: [String]
+    var language: String?
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -202,6 +204,8 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
         description = try container.decodeFlexibleStringIfPresent(forKey: .description)
         mediatype = try container.decodeFlexibleStringIfPresent(forKey: .mediatype)
         collections = try container.decodeStringListIfPresent(forKey: .collection)
+        subjects = try container.decodeStringListIfPresent(forKey: .subject)
+        language = try container.decodeFlexibleStringIfPresent(forKey: .language)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -211,6 +215,8 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
         case description
         case mediatype
         case collection
+        case subject
+        case language
     }
 }
 

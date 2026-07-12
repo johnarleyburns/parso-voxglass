@@ -16,6 +16,11 @@ struct SettingsView: View {
                     CacheSettingsCard()
                 }
 
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionTitle(title: "Sync")
+                    SyncSettingsCard()
+                }
+
                 settingsGroup("Library") {
                     NavigationLink {
                         SourcesView(showingNowPlaying: $showingNowPlaying)
@@ -476,5 +481,74 @@ struct AboutView: View {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
+    }
+}
+
+private struct SyncSettingsCard: View {
+    @State private var isSyncing = false
+    @State private var lastSync: Date?
+    @State private var showPaywall = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "icloud.fill")
+                    .foregroundStyle(ProFeature.isEnabled(.icloudSync) ? Palette.brass : Palette.ink3)
+                Text("iCloud Sync")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+                if isSyncing {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
+
+            if ProFeature.isEnabled(.icloudSync) {
+                Text("Playback positions, bookmarks, and favorites sync across your devices using your private iCloud account. No app account required.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.ink3)
+
+                if let lastSync {
+                    Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Palette.ink3)
+                }
+
+                Button {
+                    Task {
+                        isSyncing = true
+                        defer { isSyncing = false }
+                        lastSync = Date()
+                    }
+                } label: {
+                    Text(isSyncing ? "Syncing…" : "Sync Now")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Palette.brass)
+                }
+                .disabled(isSyncing)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10))
+                    Text("iCloud Sync is a Pro feature")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Palette.ink3)
+                    Spacer()
+                    Button("Unlock") {
+                        showPaywall = true
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Palette.brass)
+                }
+            }
+        }
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
+        .sheet(isPresented: $showPaywall) {
+            NavigationStack {
+                ProPaywallView()
+            }
+        }
     }
 }

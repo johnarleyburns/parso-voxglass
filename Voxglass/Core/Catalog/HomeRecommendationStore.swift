@@ -7,13 +7,36 @@ final class HomeRecommendationStore: ObservableObject {
     @Published private(set) var isRefreshing = false
 
     private let client: InternetArchiveCatalogClient
+    private var engine: RecommendationEngine?
 
     init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
         self.recommendations = Self.coldStartRecommendations(for: [])
     }
 
+    func configure(profileStore: TasteProfileStore, libraryStore: LibraryStore) {
+        engine = RecommendationEngine(
+            client: client,
+            profileStore: profileStore,
+            libraryStore: libraryStore
+        )
+    }
+
     func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
+        if let engine {
+            isRefreshing = true
+            defer { isRefreshing = false }
+
+            let recs = await engine.fetchRecommendations(
+                selectedCollectionIDs: selectedCollectionIDs,
+                selectedLanguages: selectedLanguages
+            )
+            if !recs.isEmpty {
+                recommendations = recs
+            }
+            return
+        }
+
         recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
 
         let queries = LibriVoxRecommendationQueryBuilder.queries(for: selectedCollectionIDs)

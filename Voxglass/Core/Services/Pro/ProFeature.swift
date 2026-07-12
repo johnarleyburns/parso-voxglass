@@ -6,6 +6,9 @@ enum ProFeature: String, CaseIterable {
     case folderWatch
     case eq
     case carplay
+    case icloudSync
+    case listeningStats
+    case appleWatch
 
     static func isEnabled(_ feature: ProFeature) -> Bool {
         EntitlementCache.shared.isEntitled

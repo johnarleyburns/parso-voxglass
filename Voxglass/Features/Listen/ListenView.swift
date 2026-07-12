@@ -7,7 +7,7 @@ struct ListenView: View {
     @Binding var showingNowPlaying: Bool
     var selectLibrary: () -> Void
 
-    @StateObject private var recommendations = HomeRecommendationStore()
+    @EnvironmentObject private var recommendations: HomeRecommendationStore
     @State private var importingIdentifier: String?
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"

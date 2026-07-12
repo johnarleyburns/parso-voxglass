@@ -93,6 +93,20 @@ final class LibraryRepository {
         return try await bookWithChapters(forBookID: bookID)
     }
 
+    /// Returns all taste terms (axis, term) for a given book, for seeding
+    /// the taste profile when the book is listened to.
+    func fetchBookTasteTerms(for bookID: UUID) async throws -> [(axis: String, term: String)] {
+        try await database.prepare()
+        let rows = try await database.query(
+            "SELECT axis, term FROM book_taste WHERE book_id = ?",
+            [ModelMapping.databaseValue(bookID)]
+        )
+        return rows.compactMap { row in
+            guard let axis = row.string("axis"), let term = row.string("term") else { return nil }
+            return (axis, term)
+        }
+    }
+
     func importInternetArchiveItem(
         _ metadata: InternetArchiveMetadata,
         sourceKind: SourceKind
@@ -167,6 +181,32 @@ final class LibraryRepository {
         }
 
         try await insert(book: book, chapters: chapters)
+
+        // Capture taste metadata for the recommendation engine
+        let bookIDString = book.id.uuidString
+        for author in metadata.creators {
+            let trimmed = author.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty, trimmed != "Unknown", trimmed != "Various" else { continue }
+            try? await database.execute(
+                "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'author', ?)",
+                [.string(bookIDString), .string(trimmed.lowercased())]
+            )
+        }
+        for subject in metadata.metadata.subjects {
+            let trimmed = subject.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+            try? await database.execute(
+                "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
+                [.string(bookIDString), .string(trimmed.lowercased())]
+            )
+        }
+        if let language = metadata.metadata.language?.trimmingCharacters(in: .whitespaces), !language.isEmpty {
+            try? await database.execute(
+                "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'language', ?)",
+                [.string(bookIDString), .string(language.lowercased())]
+            )
+        }
+
         return BookWithChapters(book: book, chapters: chapters)
     }
 
