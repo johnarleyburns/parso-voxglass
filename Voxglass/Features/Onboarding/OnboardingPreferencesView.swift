@@ -6,6 +6,7 @@ struct OnboardingPreferencesView: View {
     var skipAction: () -> Void
 
     @State private var selectedCollectionIDs: Set<String>
+    @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
     init(
         initialSelection: Set<String>,
@@ -22,6 +23,14 @@ struct OnboardingPreferencesView: View {
         GridItem(.adaptive(minimum: 142), spacing: 10)
     ]
 
+    private let languageColumns = [
+        GridItem(.adaptive(minimum: 104), spacing: 8)
+    ]
+
+    private var selectedLanguages: Set<String> {
+        AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
+    }
+
     var body: some View {
         ZStack {
             VoxglassBackground()
@@ -29,6 +38,7 @@ struct OnboardingPreferencesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     header
+                    languagesSection
                     tasteGrid
                     featuredCollections
                     footerActions
@@ -59,6 +69,58 @@ struct OnboardingPreferencesView: View {
                 .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var languagesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Languages")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Palette.ink2)
+
+            LazyVGrid(columns: languageColumns, spacing: 8) {
+                ForEach(LibriVoxLanguage.all) { language in
+                    languageChip(language)
+                }
+            }
+        }
+    }
+
+    private func languageChip(_ language: LibriVoxLanguage) -> some View {
+        let isSelected = selectedLanguages.contains(language.id)
+        return Button {
+            toggleLanguage(language.id)
+        } label: {
+            HStack(spacing: 6) {
+                Text(language.displayName)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                }
+            }
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(
+                isSelected ? Palette.brass : Color.white.opacity(0.07),
+                in: RoundedRectangle(cornerRadius: 11)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(language.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func toggleLanguage(_ id: String) {
+        var codes = selectedLanguages
+        if codes.contains(id) {
+            codes.remove(id)
+        } else {
+            codes.insert(id)
+        }
+        selectedLanguagesRaw = AppPreferencesStore.encodeLanguages(codes)
     }
 
     private var tasteGrid: some View {

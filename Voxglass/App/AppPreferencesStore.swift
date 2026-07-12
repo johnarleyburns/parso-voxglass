@@ -5,15 +5,22 @@ struct AppPreferencesStore: DynamicProperty {
         static let hasCompletedSplash = "voxglass.hasCompletedSplash"
         static let hasCompletedOnboarding = "voxglass.hasCompletedOnboarding"
         static let selectedCollectionIDs = "voxglass.selectedCollectionIDs"
+        static let selectedLanguages = "voxglass.selectedLanguages"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false
     @AppStorage(Keys.hasCompletedOnboarding) var hasCompletedOnboarding = false
     @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
+    @AppStorage(Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
     var selectedCollectionIDs: Set<String> {
         get { Self.decodeCollectionIDs(selectedCollectionIDsRaw) }
         nonmutating set { selectedCollectionIDsRaw = Self.encodeCollectionIDs(newValue) }
+    }
+
+    var selectedLanguages: Set<String> {
+        get { Self.decodeLanguages(selectedLanguagesRaw) }
+        nonmutating set { selectedLanguagesRaw = Self.encodeLanguages(newValue) }
     }
 
     static func encodeCollectionIDs(_ ids: Set<String>) -> String {
@@ -21,6 +28,19 @@ struct AppPreferencesStore: DynamicProperty {
     }
 
     static func decodeCollectionIDs(_ rawValue: String) -> Set<String> {
+        Set(
+            rawValue
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        )
+    }
+
+    static func encodeLanguages(_ codes: Set<String>) -> String {
+        codes.sorted().joined(separator: ",")
+    }
+
+    static func decodeLanguages(_ rawValue: String) -> Set<String> {
         Set(
             rawValue
                 .split(separator: ",")

@@ -93,10 +93,9 @@ enum IACollectionStore {
 
     static func collections(for selectedIDs: Set<String>) -> [IACollection] {
         let all = [popular] + browseCollections + curated
-        guard !selectedIDs.isEmpty else { return all }
-        let selected = all.filter { selectedIDs.contains($0.id) }
-        let unselected = all.filter { !selectedIDs.contains($0.id) }
-        return selected + unselected
+        return all.sorted {
+            $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }
     }
 
     private static func browseCollection(for category: LibriVoxBrowseCategory) -> IACollection {
@@ -166,11 +165,11 @@ enum IACollectionStore {
         case "lv-literary-fiction":
             return InternetArchiveMetadata.coverURL(for: "great_expectations_mfs_0812_librivox")
         case "lv-science-fiction":
-            return InternetArchiveMetadata.coverURL(for: "time_machine_librivox")
+            return InternetArchiveMetadata.coverURL(for: "invisible_man_librivox")
         case "lv-horror-gothic":
             return InternetArchiveMetadata.coverURL(for: "dracula_librivox")
         case "lv-mystery-crime":
-            return InternetArchiveMetadata.coverURL(for: "adventuresofsherlockholmes_1110_librivox")
+            return InternetArchiveMetadata.coverURL(for: "american_rivals_sherlock_holmes_1301_librivox")
         case "lv-adventure":
             return InternetArchiveMetadata.coverURL(for: "treasure_island_ap_librivox")
         case "lv-fantasy-mythology":
@@ -266,10 +265,10 @@ enum CuratedQueries {
     }
 
     static let greatBooks: String =
-        "collection:librivoxaudio AND language:eng AND (\(creatorClause(greatBooksCreators))) \(exclusionClause())"
+        "collection:librivoxaudio AND (\(creatorClause(greatBooksCreators))) \(exclusionClause())"
 
     static let greaterBooks: String =
-        "collection:librivoxaudio AND language:eng AND (\(creatorClause(greaterBooksCreators))) \(exclusionClause())"
+        "collection:librivoxaudio AND (\(creatorClause(greaterBooksCreators))) \(exclusionClause())"
 
     static let ancientGreece: String =
         "collection:librivoxaudio AND (\(creatorClause(ancientGreeceCreators))) \(exclusionClause())"

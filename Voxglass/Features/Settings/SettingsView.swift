@@ -7,6 +7,11 @@ struct SettingsView: View {
         VoxglassScreen(title: "More") {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 10) {
+                    SectionTitle(title: "Languages")
+                    LanguagesCard()
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Downloads & Cache")
                     CacheSettingsCard()
                 }
@@ -54,6 +59,71 @@ struct SettingsView: View {
             }
             .glassPanel()
         }
+    }
+}
+
+private struct LanguagesCard: View {
+    @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
+
+    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 8)]
+
+    private var selected: Set<String> {
+        AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Search, browse, and recommendations are limited to the languages you pick. Leave all off to include every language.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(LibriVoxLanguage.all) { language in
+                    languageChip(language)
+                }
+            }
+        }
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
+    }
+
+    private func languageChip(_ language: LibriVoxLanguage) -> some View {
+        let isSelected = selected.contains(language.id)
+        return Button {
+            toggle(language.id)
+        } label: {
+            HStack(spacing: 6) {
+                Text(language.displayName)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                }
+            }
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(
+                isSelected ? Palette.brass : Color.white.opacity(0.07),
+                in: RoundedRectangle(cornerRadius: 11)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(language.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func toggle(_ id: String) {
+        var codes = selected
+        if codes.contains(id) {
+            codes.remove(id)
+        } else {
+            codes.insert(id)
+        }
+        selectedLanguagesRaw = AppPreferencesStore.encodeLanguages(codes)
     }
 }
 

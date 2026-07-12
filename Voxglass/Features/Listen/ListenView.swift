@@ -10,6 +10,7 @@ struct ListenView: View {
     @StateObject private var recommendations = HomeRecommendationStore()
     @State private var importingIdentifier: String?
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
     var body: some View {
         VoxglassScreen(title: "Voxglass") {
@@ -31,11 +32,16 @@ struct ListenView: View {
         }
         .task {
             await libraryStore.refreshRecentlyPlayed()
-            await recommendations.load(selectedCollectionIDs: selectedCollectionIDs)
+            await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
         }
         .onChange(of: selectedCollectionIDsRaw) { _, _ in
             Task {
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs)
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+            }
+        }
+        .onChange(of: selectedLanguagesRaw) { _, _ in
+            Task {
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
             }
         }
     }
@@ -148,6 +154,10 @@ struct ListenView: View {
 
     private var selectedCollectionIDs: Set<String> {
         AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
+    }
+
+    private var selectedLanguages: Set<String> {
+        AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
     }
 
     private var errorBinding: Binding<Bool> {

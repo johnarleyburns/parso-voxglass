@@ -8,8 +8,29 @@ struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
     var collections: [String]
     var downloads: Int?
     var date: String?
+    var languages: [String]
 
     var id: String { identifier }
+
+    init(
+        identifier: String,
+        title: String,
+        creators: [String],
+        description: String?,
+        collections: [String],
+        downloads: Int?,
+        date: String?,
+        languages: [String] = []
+    ) {
+        self.identifier = identifier
+        self.title = title
+        self.creators = creators
+        self.description = description
+        self.collections = collections
+        self.downloads = downloads
+        self.date = date
+        self.languages = languages
+    }
 
     var authorLine: String {
         creators.isEmpty ? "Unknown author" : creators.joined(separator: ", ")
@@ -30,6 +51,14 @@ struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
     }
 }
 
+/// A single page of advanced-search results plus the total match count,
+/// enabling paginated "See More" loading in Explore.
+struct InternetArchivePage: Equatable, Sendable {
+    var results: [InternetArchiveSearchResult]
+    var numFound: Int
+    var page: Int
+}
+
 struct InternetArchiveSearchResponse: Decodable, Equatable, Sendable {
     var response: Response
 
@@ -37,8 +66,24 @@ struct InternetArchiveSearchResponse: Decodable, Equatable, Sendable {
         response.docs.map(\.searchResult)
     }
 
+    var numFound: Int {
+        response.numFound
+    }
+
     struct Response: Decodable, Equatable, Sendable {
         var docs: [InternetArchiveSearchDocument]
+        var numFound: Int
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            docs = try container.decode([InternetArchiveSearchDocument].self, forKey: .docs)
+            numFound = try container.decodeIfPresent(Int.self, forKey: .numFound) ?? docs.count
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case docs
+            case numFound
+        }
     }
 }
 
@@ -50,6 +95,7 @@ struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
     var collections: [String]
     var downloads: Int?
     var date: String?
+    var languages: [String]
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -60,6 +106,7 @@ struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
         collections = try container.decodeStringListIfPresent(forKey: .collection)
         downloads = try container.decodeFlexibleIntIfPresent(forKey: .downloads)
         date = try container.decodeFlexibleStringIfPresent(forKey: .date)
+        languages = try container.decodeStringListIfPresent(forKey: .language)
     }
 
     var searchResult: InternetArchiveSearchResult {
@@ -70,7 +117,8 @@ struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
             description: description?.cleanedInternetArchiveText,
             collections: collections,
             downloads: downloads,
-            date: date
+            date: date,
+            languages: languages
         )
     }
 
@@ -82,6 +130,7 @@ struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
         case collection
         case downloads
         case date
+        case language
     }
 }
 
