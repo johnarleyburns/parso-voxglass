@@ -68,24 +68,28 @@ final class FreeTierRegistryTests: XCTestCase {
     }
 
     func testAllProFeaturesDeclared() {
-        let features = ProFeature.allCases
-        XCTAssertTrue(features.contains(.cachePresets))
-        XCTAssertTrue(features.contains(.prefetchDepth))
-        XCTAssertTrue(features.contains(.folderWatch))
-        XCTAssertTrue(features.contains(.eq))
-        XCTAssertTrue(features.contains(.carplay))
-        XCTAssertTrue(features.contains(.icloudSync))
-        XCTAssertTrue(features.contains(.listeningStats))
-        XCTAssertTrue(features.contains(.appleWatch))
+        let features = Set(ProFeature.allCases)
+        let expected: Set<ProFeature> = [
+            .cachePresets, .prefetchDepth, .folderWatch, .eq,
+            .icloudSync, .listeningStats, .offlineDownloads
+        ]
+        XCTAssertEqual(features, expected)
+        XCTAssertEqual(ProFeature.allCases.count, 7)
     }
 
     func testProFeaturesAreGatedWhenNotEntitled() {
-        // Verify that non-entitled state disables Pro features
-        // This test validates the gating mechanism, not the actual state
-        let features: [ProFeature] = [.icloudSync, .listeningStats, .appleWatch,
-                                       .carplay, .prefetchDepth, .folderWatch]
-        for feature in features {
-            _ = ProFeature.isEnabled(feature)
+        EntitlementCache.shared.setTestEntitlement(false)
+        defer { EntitlementCache.shared.setTestEntitlement(nil) }
+        for feature in ProFeature.allCases {
+            XCTAssertFalse(ProFeature.isEnabled(feature), "\(feature) must be gated when not entitled")
+        }
+    }
+
+    func testProFeaturesAreEnabledWhenEntitled() {
+        EntitlementCache.shared.setTestEntitlement(true)
+        defer { EntitlementCache.shared.setTestEntitlement(nil) }
+        for feature in ProFeature.allCases {
+            XCTAssertTrue(ProFeature.isEnabled(feature), "\(feature) must unlock when entitled")
         }
     }
 

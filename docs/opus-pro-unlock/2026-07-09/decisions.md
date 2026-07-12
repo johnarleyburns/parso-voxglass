@@ -78,3 +78,42 @@ All new components live under `Voxglass/Core/Services/` instead of
 EQEngine uses a fixed 44100 Hz sample rate for biquad coefficient
 calculation. This matches typical audio content but may need per-format
 adjustment if 48000 Hz FLAC or Opus content is common.
+
+## Deviations (2026-07-12 — Pro features completion)
+
+**DEV6 — CarPlay and Apple Watch removed from the Pro set.**
+D5 listed `carplay` (and the paywall listed Apple Watch) as gates, but neither
+has any implementation. `ProFeature.carplay` and `ProFeature.appleWatch` are
+removed from the enum and the paywall; both are now documented in the README
+as **Planned (not yet available)** roadmap items rather than shipped Pro
+features. The Pro set is now: `cachePresets, prefetchDepth, folderWatch, eq,
+icloudSync, listeningStats, offlineDownloads`.
+
+**DEV7 — Offline Downloads is advertised.**
+`OfflineDownloadManager` was fully implemented but absent from the paywall.
+It is now the top advertised Pro feature. A registry-drift test
+(`ProPaywallContentTests`) ties the paywall catalog, the `ProFeature` enum, and
+the free-tier registry together so any future feature add/remove must update
+all three.
+
+**DEV8 — Listening events are logged for all users; only viewing is gated.**
+`PlaybackCoordinator` records wall-clock listened seconds into a local
+`listening_events` table regardless of entitlement (migration id 4). This is
+strictly on-device, no telemetry, and keeps lifetime totals/continuity intact
+if a user upgrades later. The *viewing* of Listening Stats is gated behind
+`ProFeature.listeningStats`. `ON DELETE SET NULL` on `book_id` preserves totals
+after a book is removed.
+
+**DEV9 — iCloud entitlement is committed, not toggled by hand.**
+`Voxglass/Resources/Voxglass.entitlements` (ubiquity-kvstore identifier) is
+committed and wired via `project.yml`. On-device KVS still requires a real
+signing team; simulator/CI tests use the `EntitlementCache` test seam plus a
+file-presence check rather than live iCloud.
+
+**DEV10 — Standardized Pro lock affordance.**
+`ProLockBadge` + the `.proLocked(_:id:onTapLocked:)` view modifier in
+`VoxglassComponents.swift` render a uniform `lock.fill` badge, attach a stable
+`accessibilityIdentifier` (`pro.lock.*`), and present the paywall on tap for
+every gated touchpoint. `EntitlementCache` gains `#if DEBUG` seams
+(`setTestEntitlement`, and `-VoxglassForcePro` / `-VoxglassForceFreeTier`
+launch arguments) for deterministic unit and UI tests.

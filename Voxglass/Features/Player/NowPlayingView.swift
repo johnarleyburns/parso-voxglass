@@ -2,10 +2,23 @@ import SwiftUI
 
 struct NowPlayingView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
+    @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.dismiss) private var dismiss
     @State private var scrubPosition: Double = 0
     @State private var isScrubbing = false
     @State private var showingChapters = false
+    @State private var showingEQ = false
+    @State private var showPaywall = false
+
+    /// Favorite state derived from the live library store (source of truth),
+    /// falling back to the session's snapshot captured at play time.
+    static func resolveFavorite(storeBook: BookWithChapters?, session: PlaybackSession) -> Bool {
+        storeBook?.book.isFavorite ?? session.book.isFavorite
+    }
+
+    private func isFavorite(_ session: PlaybackSession) -> Bool {
+        Self.resolveFavorite(storeBook: libraryStore.book(withID: session.book.id), session: session)
+    }
 
     var body: some View {
         ZStack {
@@ -63,6 +76,14 @@ struct NowPlayingView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+        .sheet(isPresented: $showingEQ) {
+            NavigationStack {
+                EQView()
+                    .environmentObject(playback)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .paywallSheet(isPresented: $showPaywall)
     }
 
     private var grabber: some View {
@@ -200,28 +221,25 @@ struct NowPlayingView: View {
     }
 
     private func actionBar(_ session: PlaybackSession) -> some View {
-        HStack(spacing: 34) {
+        HStack(spacing: 30) {
             Button {
                 showingChapters = true
             } label: {
                 Image(systemName: "list.bullet")
                     .font(.system(size: 16))
             }
-            Button {} label: {
-                Image(systemName: "speedometer")
-                    .font(.system(size: 16))
-            }
-            .disabled(true)
+            .accessibilityLabel("Chapters")
+
+            favoriteButton(session)
+
+            equalizerButton
+
             Button {} label: {
                 Image(systemName: "timer")
                     .font(.system(size: 16))
             }
             .disabled(true)
-            Button {} label: {
-                Image(systemName: "bookmark")
-                    .font(.system(size: 16))
-            }
-            .disabled(true)
+
             ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 16))
@@ -229,6 +247,48 @@ struct NowPlayingView: View {
         }
         .foregroundStyle(Color.white.opacity(0.6))
         .padding(.top, 16)
+    }
+
+    private func favoriteButton(_ session: PlaybackSession) -> some View {
+        let favorited = isFavorite(session)
+        return Button {
+            Task { await libraryStore.setFavorite(!favorited, for: session.book.id) }
+        } label: {
+            Image(systemName: favorited ? "heart.fill" : "heart")
+                .font(.system(size: 16))
+                .foregroundStyle(favorited ? Palette.brass : Color.white.opacity(0.6))
+        }
+        .accessibilityLabel(favorited ? "Unfavorite" : "Favorite")
+        .accessibilityIdentifier("nowplaying.favorite")
+        .accessibilityAddTraits(favorited ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var equalizerButton: some View {
+        if ProFeature.isEnabled(.eq) {
+            Button {
+                showingEQ = true
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 16))
+            }
+            .accessibilityLabel("Equalizer")
+            .accessibilityIdentifier("nowplaying.eq")
+        } else {
+            Button {
+                showPaywall = true
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 16))
+                    .overlay(alignment: .topTrailing) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .offset(x: 6, y: -6)
+                    }
+            }
+            .accessibilityLabel("Equalizer (Pro)")
+            .accessibilityIdentifier("pro.lock.eq")
+        }
     }
 
     private func chapterList(_ session: PlaybackSession) -> some View {

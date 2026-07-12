@@ -7,6 +7,14 @@ enum LibraryBookFilter: Equatable, Sendable {
     case downloaded
 }
 
+/// A playable audio file discovered inside a watched folder (§4).
+struct LocalAudioImport: Equatable, Sendable {
+    let url: URL
+    let title: String
+    let sortKey: String
+    let duration: TimeInterval?
+}
+
 final class LibraryRepository {
     private let database: AppDatabase
 
@@ -246,6 +254,96 @@ final class LibraryRepository {
         }
 
         return BookWithChapters(book: book, chapters: chapters)
+    }
+
+    // MARK: - Local folder import (Folder Watch, §4)
+
+    /// Imports (or re-syncs) a watched folder: one `localFiles` source + one book
+    /// per folder, one chapter per audio file. Idempotent — re-scanning only
+    /// appends chapters for files not already present, so no duplicates.
+    @discardableResult
+    func importLocalFolder(
+        folderURL: URL,
+        folderName: String,
+        files: [LocalAudioImport]
+    ) async throws -> BookWithChapters {
+        try await database.prepare()
+        let source = try await ensureLocalSource(folderURL: folderURL, title: folderName)
+
+        let existing = try await bookWithChapters(forSourceID: source.id)
+        let book: Book
+        if let existing {
+            book = existing.book
+        } else {
+            let now = Date()
+            book = Book(
+                title: folderName,
+                authors: ["Local Files"],
+                summary: nil,
+                sourceID: source.id,
+                coverURL: nil,
+                createdAt: now,
+                updatedAt: now
+            )
+            try await insert(book: book, chapters: [])
+        }
+
+        let knownURLs = Set((existing?.chapters ?? []).compactMap { $0.localURL?.absoluteString })
+        let startIndex = existing?.chapters.count ?? 0
+        let newFiles = files.filter { !knownURLs.contains($0.url.absoluteString) }
+
+        for (offset, file) in newFiles.enumerated() {
+            let chapter = Chapter(
+                bookID: book.id,
+                title: file.title,
+                sortKey: file.sortKey,
+                index: startIndex + offset,
+                duration: file.duration,
+                remoteURL: nil,
+                opusURL: nil,
+                localURL: file.url
+            )
+            try await database.execute("""
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, [
+                ModelMapping.databaseValue(chapter.id),
+                ModelMapping.databaseValue(chapter.bookID),
+                .string(chapter.title),
+                .string(chapter.sortKey),
+                .int(Int64(chapter.index)),
+                ModelMapping.databaseValue(chapter.duration),
+                .null,
+                .null,
+                ModelMapping.databaseValue(chapter.localURL)
+            ])
+        }
+
+        return try await bookWithChapters(forSourceID: source.id)
+            ?? BookWithChapters(book: book, chapters: [])
+    }
+
+    private func ensureLocalSource(folderURL: URL, title: String) async throws -> Source {
+        let existing = try await database.query(
+            "SELECT id, kind, title, url, created_at FROM sources WHERE url = ? AND kind = ? LIMIT 1",
+            [ModelMapping.databaseValue(folderURL), .string(SourceKind.localFiles.rawValue)]
+        )
+        if let row = existing.first {
+            return try Self.source(from: row)
+        }
+
+        let source = Source(kind: .localFiles, title: title, url: folderURL)
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            ModelMapping.databaseValue(source.id),
+            .string(source.kind.rawValue),
+            .string(source.title),
+            ModelMapping.databaseValue(source.url),
+            ModelMapping.databaseValue(source.createdAt)
+        ])
+        return source
     }
 
     private func ensureInternetArchiveSource(

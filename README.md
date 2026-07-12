@@ -54,7 +54,14 @@ Explore, guaranteed collection artwork, alphabetical collection sorting, an inte
 
 Beyond the current plan, a competitive review of modern audiobook apps (Audible, Libby, Prologue,
 BookPlayer, Smart AudioBook Player, Pocket Casts/Overcast, and LibriVox-specific apps) surfaced the
-following prioritized backlog. **CarPlay** is already planned separately and omitted here.
+following prioritized backlog.
+
+### Planned (not yet available)
+
+- **CarPlay** — control playback through your vehicle's built-in screen. Not shipped; on the roadmap.
+- **Apple Watch app** — browse your library and control playback from your wrist. Not shipped; on the roadmap.
+
+Neither is part of Voxglass Pro today; both were removed from the Pro feature set until they ship.
 
 Legend: **[TS]** table-stakes · **[D]** differentiator · **[$]** premium / monetizable.
 
@@ -87,11 +94,10 @@ GPLv3 — see `LICENSE`.
 
 ## iCloud Sync setup (for developers)
 
-To enable cross-device sync via iCloud (requires Voxglass Pro):
-1. In Xcode, select the **Voxglass** target → **Signing & Capabilities**.
-2. Click **+ Capability** → **iCloud**.
-3. Check **Key-value storage**.
-4. Ensure the iCloud container identifier matches your bundle ID (`guru.parso.voxglass`).
+Cross-device sync via iCloud (requires Voxglass Pro) uses `NSUbiquitousKeyValueStore`. The required
+**iCloud key-value-store** capability is committed as `Voxglass/Resources/Voxglass.entitlements` and wired
+through `project.yml` (`CODE_SIGN_ENTITLEMENTS`), so no manual capability toggling is needed — just build
+with a signing team whose provisioning enables iCloud for `guru.parso.voxglass`.
 
-Without this capability, `NSUbiquitousKeyValueStore.synchronize()` is a no-op
-and sync will not function even if Pro is unlocked.
+Without the entitlement, `NSUbiquitousKeyValueStore.synchronize()` is a no-op and sync will not function
+even if Pro is unlocked.

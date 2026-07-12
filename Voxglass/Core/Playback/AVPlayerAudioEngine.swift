@@ -12,6 +12,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private var loaders: [CachingResourceLoader] = []
     private var prefetchLoaders: [CachingResourceLoader] = []
     private var prefetchItems: [AVPlayerItem] = []
+    private var eqEngagedDesired = false
 
     var onPlaybackEnded: (@MainActor () -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
@@ -29,43 +30,71 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         return AVPlayerItem(asset: asset)
     }
 
-    /// Warms the streaming cache for an upcoming chapter without affecting playback.
+    /// Warms the streaming cache for one upcoming chapter without affecting playback.
     func prefetchIntoCache(url: URL) {
-        guard CachingResourceLoader.isRemoteCacheable(url) else { return }
-        guard prefetchItems.count < 2 else { return }
-        let cacheURL = CachingResourceLoader.cacheURL(for: url)
-        let loader = CachingResourceLoader(originalURL: url)
-        prefetchLoaders.append(loader)
-        let asset = AVURLAsset(url: cacheURL)
-        asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
-        let item = AVPlayerItem(asset: asset)
-        prefetchItems.append(item)
-        // Referencing the item's asset keys triggers the resource loader to begin
-        // filling the cache in the background.
-        asset.loadValuesAsynchronously(forKeys: ["playable"]) { }
+        prefetchIntoCache(urls: [url])
     }
 
-    var isEQEngaged: Bool { eqProcessor.isEngaged }
+    /// Warms the streaming cache for up to `urls.count` upcoming chapters. The
+    /// depth is decided by `PlaybackCoordinator.resolvedPrefetchDepth` (free tier
+    /// stays at 1, which powers near-gapless); here we just honor the list.
+    func prefetchIntoCache(urls: [URL]) {
+        let cacheable = urls.filter { CachingResourceLoader.isRemoteCacheable($0) }
+        guard !cacheable.isEmpty else { return }
+        let cap = max(cacheable.count, 1)
+        for url in cacheable {
+            guard prefetchItems.count < cap else { break }
+            let cacheURL = CachingResourceLoader.cacheURL(for: url)
+            let loader = CachingResourceLoader(originalURL: url)
+            prefetchLoaders.append(loader)
+            let asset = AVURLAsset(url: cacheURL)
+            asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
+            let item = AVPlayerItem(asset: asset)
+            prefetchItems.append(item)
+            // Referencing the item's asset keys triggers the resource loader to begin
+            // filling the cache in the background.
+            asset.loadValuesAsynchronously(forKeys: ["playable"]) { }
+        }
+    }
+
+    var isEQEngaged: Bool { eqEngagedDesired }
+
+    /// Sets the desired engaged state and attaches/detaches the tap on the current
+    /// item immediately. The desired flag also drives re-attachment in `load` and
+    /// `preloadNext` so EQ survives track changes and relaunch.
+    func setEQEngaged(_ engaged: Bool) {
+        eqEngagedDesired = engaged
+        guard let item = player.currentItem else { return }
+        if engaged {
+            eqProcessor.attach(to: item)
+        } else {
+            eqProcessor.detach(from: item)
+        }
+    }
 
     func engageEQ() {
-        if let item = player.currentItem {
-            eqProcessor.attach(to: item)
-        }
+        setEQEngaged(true)
     }
 
     func disengageEQ() {
-        if let item = player.currentItem {
-            eqProcessor.detach(from: item)
-        }
+        setEQEngaged(false)
     }
 
     func setEQGain(_ gain: Float, at band: Int) {
         eqProcessor.setGain(gain, at: band)
     }
 
+    func setEQGains(_ gains: [Float]) {
+        for (band, gain) in gains.enumerated() {
+            eqProcessor.setGain(gain, at: band)
+        }
+    }
+
     func applyEQPreset(_ preset: EQPreset) {
         eqProcessor.applyPreset(preset)
     }
+
+    var eqGains: [Float] { eqProcessor.currentGains }
 
     var currentTime: TimeInterval {
         let seconds = player.currentTime().seconds
@@ -113,7 +142,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         player.insert(item, after: nil)
         observe(item: item, isPreloaded: false)
 
-        if eqProcessor.isEngaged {
+        if eqEngagedDesired {
             eqProcessor.attach(to: item)
         }
 
@@ -130,7 +159,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             player.insert(item, after: player.currentItem)
             observe(item: item, isPreloaded: true)
 
-            if eqProcessor.isEngaged {
+            if eqEngagedDesired {
                 eqProcessor.attach(to: item)
             }
         }

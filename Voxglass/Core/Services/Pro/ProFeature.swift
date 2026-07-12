@@ -5,10 +5,8 @@ enum ProFeature: String, CaseIterable {
     case prefetchDepth
     case folderWatch
     case eq
-    case carplay
     case icloudSync
     case listeningStats
-    case appleWatch
     case offlineDownloads
 
     static func isEnabled(_ feature: ProFeature) -> Bool {
@@ -24,15 +22,41 @@ final class EntitlementCache: @unchecked Sendable {
     private let entitlementKey = "voxglass.pro.entitlement"
     private let productIDKey = "voxglass.pro.productID"
 
+    #if DEBUG
+    private var testOverride: Bool?
+    #endif
+
     private(set) var isEntitled: Bool {
-        get { lock.lock(); defer { lock.unlock() }; return _isEntitled }
+        get {
+            lock.lock(); defer { lock.unlock() }
+            #if DEBUG
+            if let testOverride { return testOverride }
+            #endif
+            return _isEntitled
+        }
         set { lock.lock(); _isEntitled = newValue; lock.unlock() }
     }
     private var _isEntitled: Bool
 
     private init() {
         _isEntitled = Self.loadCached(defaults: defaults, entitlementKey: entitlementKey)
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-VoxglassForcePro") {
+            testOverride = true
+        } else if arguments.contains("-VoxglassForceFreeTier") {
+            testOverride = false
+        }
+        #endif
     }
+
+    #if DEBUG
+    /// Test seam: forces entitlement on/off deterministically without StoreKit.
+    /// Pass `nil` to fall back to the cached/real value.
+    func setTestEntitlement(_ value: Bool?) {
+        lock.lock(); testOverride = value; lock.unlock()
+    }
+    #endif
 
     func cacheEntitlement(_ entitled: Bool, productID: String? = nil) {
         isEntitled = entitled

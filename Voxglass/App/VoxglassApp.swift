@@ -14,6 +14,9 @@ struct VoxglassApp: App {
                 .environmentObject(services.playbackCoordinator)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
+                .environmentObject(services.cloudSync)
+                .environmentObject(services.listeningStatsStore)
+                .environmentObject(services.folderWatchService)
                 .preferredColorScheme(.dark)
                 .task {
                     await services.bootstrap()
