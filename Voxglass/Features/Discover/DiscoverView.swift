@@ -7,7 +7,7 @@ struct BrowseView: View {
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
     @State private var playingIdentifier: String?
-    @AppStorage(AppPreferencesStore.Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
@@ -35,7 +35,7 @@ struct BrowseView: View {
             SectionTitle(title: "Featured Collections")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(IACollectionStore.collections(for: selectedTasteIDs)) { collection in
+                    ForEach(IACollectionStore.collections(for: selectedCollectionIDs)) { collection in
                         Button {
                             search(collection)
                         } label: {
@@ -54,7 +54,7 @@ struct BrowseView: View {
 
     @ViewBuilder
     private var catalogResults: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             SectionTitle(title: selectedCollection?.title ?? "Explore Results")
 
             if catalogStore.isSearching {
@@ -116,8 +116,8 @@ struct BrowseView: View {
         Task { await catalogStore.searchAdvanced(collection.archiveQuery) }
     }
 
-    private var selectedTasteIDs: Set<String> {
-        AppPreferencesStore.decodeTasteIDs(selectedTasteIDsRaw)
+    private var selectedCollectionIDs: Set<String> {
+        AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
     }
 }
 

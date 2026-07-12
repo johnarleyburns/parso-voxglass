@@ -79,8 +79,22 @@ struct LibriVoxTaste: Identifiable, Equatable, Sendable {
 }
 
 enum LibriVoxRecommendationQueryBuilder {
-    static func queries(for selectedTasteIDs: Set<String>) -> [String] {
-        let selectedQueries = LibriVoxTaste.selected(from: selectedTasteIDs).map(\.archiveQuery)
-        return selectedQueries.isEmpty ? [LibriVoxBrowseCategory.popular.archiveQuery] : selectedQueries
+    static func queries(for selectedIDs: Set<String>) -> [String] {
+        let browseQueryMap = Dictionary(uniqueKeysWithValues:
+            LibriVoxBrowseGroup.categories.map { ($0.id, $0.archiveQuery) })
+        let curatedQueryMap: [String: String] = [
+            "great-books": CuratedQueries.greatBooks,
+            "greater-books": CuratedQueries.greaterBooks,
+            "ancient-greece": CuratedQueries.ancientGreece
+        ]
+        let tasteQueryMap = Dictionary(uniqueKeysWithValues:
+            LibriVoxTaste.all.map { ($0.id, $0.archiveQuery) })
+
+        let all = browseQueryMap
+            .merging(curatedQueryMap) { $1 }
+            .merging(tasteQueryMap) { $1 }
+
+        let selected = selectedIDs.compactMap { all[$0] }
+        return selected.isEmpty ? [LibriVoxBrowseCategory.popular.archiveQuery] : selected
     }
 }

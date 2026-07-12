@@ -9,7 +9,7 @@ struct ListenView: View {
 
     @StateObject private var recommendations = HomeRecommendationStore()
     @State private var importingIdentifier: String?
-    @AppStorage(AppPreferencesStore.Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
 
     var body: some View {
         VoxglassScreen(title: "Voxglass") {
@@ -31,11 +31,11 @@ struct ListenView: View {
         }
         .task {
             await libraryStore.refreshRecentlyPlayed()
-            await recommendations.load(selectedTasteIDs: selectedTasteIDs)
+            await recommendations.load(selectedCollectionIDs: selectedCollectionIDs)
         }
-        .onChange(of: selectedTasteIDsRaw) { _, _ in
+        .onChange(of: selectedCollectionIDsRaw) { _, _ in
             Task {
-                await recommendations.load(selectedTasteIDs: selectedTasteIDs)
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs)
             }
         }
     }
@@ -146,8 +146,8 @@ struct ListenView: View {
         }
     }
 
-    private var selectedTasteIDs: Set<String> {
-        AppPreferencesStore.decodeTasteIDs(selectedTasteIDsRaw)
+    private var selectedCollectionIDs: Set<String> {
+        AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
     }
 
     private var errorBinding: Binding<Bool> {

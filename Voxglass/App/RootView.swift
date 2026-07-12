@@ -7,7 +7,7 @@ struct RootView: View {
     @State private var showingNowPlaying = false
     @AppStorage(AppPreferencesStore.Keys.hasCompletedSplash) private var hasCompletedSplash = false
     @AppStorage(AppPreferencesStore.Keys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
-    @AppStorage(AppPreferencesStore.Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
 
     var body: some View {
         Group {
@@ -17,12 +17,12 @@ struct RootView: View {
                 }
             } else if !hasCompletedOnboarding {
                 OnboardingPreferencesView(
-                    initialSelection: AppPreferencesStore.decodeTasteIDs(selectedTasteIDsRaw)
-                ) { selectedTasteIDs in
-                    selectedTasteIDsRaw = AppPreferencesStore.encodeTasteIDs(selectedTasteIDs)
+                    initialSelection: AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
+                ) { selectedCollectionIDs in
+                    selectedCollectionIDsRaw = AppPreferencesStore.encodeCollectionIDs(selectedCollectionIDs)
                     hasCompletedOnboarding = true
                 } skipAction: {
-                    selectedTasteIDsRaw = ""
+                    selectedCollectionIDsRaw = ""
                     hasCompletedOnboarding = true
                 }
             } else {

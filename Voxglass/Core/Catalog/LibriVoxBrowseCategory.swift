@@ -124,14 +124,14 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     static let satireHumor = LibriVoxBrowseCategory(
         id: "lv-satire-humor",
         title: "Satire & Humor",
-        systemImage: "theatermasks.fill",
+        systemImage: "face.smiling",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Humorous Fiction\" OR subject:Satire OR subject:Humor)"
     )
 
     static let warMilitary = LibriVoxBrowseCategory(
         id: "lv-war-military",
         title: "War & Military",
-        systemImage: "shield.lefthalf.filled",
+        systemImage: "shield.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:\"War & Military Fiction\" OR subject:War OR subject:\"World War\" OR subject:Military OR subject:\"World War I\" OR subject:\"World War, 1914-1918\" OR subject:Espionage OR subject:Thrillers)"
     )
 
@@ -145,14 +145,14 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     static let dramaPlays = LibriVoxBrowseCategory(
         id: "lv-drama-plays",
         title: "Drama & Plays",
-        systemImage: "theatermasks",
+        systemImage: "theatermasks.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:Plays OR subject:\"Dramatic Readings\")"
     )
 
     static let travel = LibriVoxBrowseCategory(
         id: "lv-travel",
-        title: "Travel",
-        systemImage: "globe",
+        title: "Travel & Exploration",
+        systemImage: "airplane",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Travel & Geography\" OR subject:Travel OR subject:\"Voyages and travels\" OR subject:Geography OR subject:Exploration OR subject:\"Travel Fiction\")"
     )
 
@@ -166,7 +166,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     static let poetry = LibriVoxBrowseCategory(
         id: "lv-poetry",
         title: "Poetry",
-        systemImage: "quote.bubble.fill",
+        systemImage: "text.quote",
         archiveQuery: "collection:librivoxaudio AND (subject:Poetry)"
     )
 
@@ -182,7 +182,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     static let history = LibriVoxBrowseCategory(
         id: "lv-history",
         title: "History",
-        systemImage: "clock.arrow.circlepath",
+        systemImage: "scroll",
         archiveQuery: "collection:librivoxaudio AND (subject:History OR subject:\"Middle Ages/Middle History\")"
     )
 
@@ -202,7 +202,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
 
     static let religion = LibriVoxBrowseCategory(
         id: "lv-religion",
-        title: "Religion",
+        title: "Religion & Scripture",
         systemImage: "book.closed.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:Religion OR subject:Bibles OR subject:\"Religious Fiction\")"
     )
@@ -210,7 +210,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     static let essaysIdeas = LibriVoxBrowseCategory(
         id: "lv-essays-ideas",
         title: "Essays & Ideas",
-        systemImage: "lightbulb.fill",
+        systemImage: "lightbulb",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Essays & Short Works\" OR subject:\"Literary Criticism\" OR subject:\"Political Science\")"
     )
 }

@@ -4,23 +4,23 @@ struct AppPreferencesStore: DynamicProperty {
     enum Keys {
         static let hasCompletedSplash = "voxglass.hasCompletedSplash"
         static let hasCompletedOnboarding = "voxglass.hasCompletedOnboarding"
-        static let selectedTasteIDs = "voxglass.selectedTasteIDs"
+        static let selectedCollectionIDs = "voxglass.selectedCollectionIDs"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false
     @AppStorage(Keys.hasCompletedOnboarding) var hasCompletedOnboarding = false
-    @AppStorage(Keys.selectedTasteIDs) private var selectedTasteIDsRaw = ""
+    @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
 
-    var selectedTasteIDs: Set<String> {
-        get { Self.decodeTasteIDs(selectedTasteIDsRaw) }
-        nonmutating set { selectedTasteIDsRaw = Self.encodeTasteIDs(newValue) }
+    var selectedCollectionIDs: Set<String> {
+        get { Self.decodeCollectionIDs(selectedCollectionIDsRaw) }
+        nonmutating set { selectedCollectionIDsRaw = Self.encodeCollectionIDs(newValue) }
     }
 
-    static func encodeTasteIDs(_ ids: Set<String>) -> String {
+    static func encodeCollectionIDs(_ ids: Set<String>) -> String {
         ids.sorted().joined(separator: ",")
     }
 
-    static func decodeTasteIDs(_ rawValue: String) -> Set<String> {
+    static func decodeCollectionIDs(_ rawValue: String) -> Set<String> {
         Set(
             rawValue
                 .split(separator: ",")

@@ -4,27 +4,15 @@ import XCTest
 
 final class VisualOnboardingTests: XCTestCase {
     func testOnboardingChipsAreUniqueAndHaveArchiveQueries() {
-        let tastes = LibriVoxTaste.all
-        let ids = Set(tastes.map(\.id))
-        let titles = Set(tastes.map(\.title))
+        let collections = IACollectionStore.allSelectableCollections
+        let ids = Set(collections.map(\.id))
+        let titles = Set(collections.map(\.title))
 
-        XCTAssertEqual(tastes.count, 10)
-        XCTAssertEqual(ids.count, tastes.count)
-        XCTAssertEqual(titles.count, tastes.count)
-        XCTAssertEqual(titles, Set([
-            "Classics",
-            "Mystery",
-            "Sci-Fi",
-            "Horror",
-            "Romance",
-            "History",
-            "Philosophy",
-            "Poetry",
-            "Short Stories",
-            "Biography"
-        ]))
-        XCTAssertTrue(tastes.allSatisfy { $0.archiveQuery.contains("collection:librivoxaudio") })
-        XCTAssertTrue(tastes.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
+        XCTAssertEqual(collections.count, 24, "Expected 21 browse categories + 3 curated collections")
+        XCTAssertEqual(ids.count, collections.count)
+        XCTAssertEqual(titles.count, collections.count)
+        XCTAssertTrue(collections.allSatisfy { $0.archiveQuery.contains("collection:librivoxaudio") })
+        XCTAssertTrue(collections.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
     }
 
     func testColdStartRecommendationsReturnBundledPopularTitles() {
@@ -37,7 +25,7 @@ final class VisualOnboardingTests: XCTestCase {
     }
 
     func testSelectedChipsBuildExpectedLibriVoxArchiveQueries() {
-        let queries = LibriVoxRecommendationQueryBuilder.queries(for: ["mystery", "sci-fi"])
+        let queries = LibriVoxRecommendationQueryBuilder.queries(for: ["lv-mystery-crime", "lv-science-fiction"])
 
         XCTAssertEqual(queries.count, 2)
         XCTAssertTrue(queries[0].contains("Crime & Mystery Fiction"))

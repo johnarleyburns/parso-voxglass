@@ -5,7 +5,7 @@ struct OnboardingPreferencesView: View {
     var finishAction: (Set<String>) -> Void
     var skipAction: () -> Void
 
-    @State private var selectedTasteIDs: Set<String>
+    @State private var selectedCollectionIDs: Set<String>
 
     init(
         initialSelection: Set<String>,
@@ -15,7 +15,7 @@ struct OnboardingPreferencesView: View {
         self.initialSelection = initialSelection
         self.finishAction = finishAction
         self.skipAction = skipAction
-        _selectedTasteIDs = State(initialValue: initialSelection)
+        _selectedCollectionIDs = State(initialValue: initialSelection)
     }
 
     private let columns = [
@@ -63,12 +63,12 @@ struct OnboardingPreferencesView: View {
 
     private var tasteGrid: some View {
         LazyVGrid(columns: columns, spacing: 10) {
-            ForEach(LibriVoxTaste.all) { taste in
-                TasteSelectionChip(
-                    taste: taste,
-                    isSelected: selectedTasteIDs.contains(taste.id)
+            ForEach(IACollectionStore.allSelectableCollections) { collection in
+                CollectionSelectionChip(
+                    collection: collection,
+                    isSelected: selectedCollectionIDs.contains(collection.id)
                 ) {
-                    toggle(taste)
+                    toggle(collection)
                 }
             }
         }
@@ -82,13 +82,13 @@ struct OnboardingPreferencesView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(LibriVoxTaste.all) { taste in
+                    ForEach(IACollectionStore.allSelectableCollections) { collection in
                         Button {
-                            toggle(taste)
+                            toggle(collection)
                         } label: {
                             OnboardingCollectionCard(
-                                collection: IACollectionStore.collection(for: taste, subtitle: taste.title),
-                                isSelected: selectedTasteIDs.contains(taste.id)
+                                collection: collection,
+                                isSelected: selectedCollectionIDs.contains(collection.id)
                             )
                         }
                         .buttonStyle(.plain)
@@ -102,7 +102,7 @@ struct OnboardingPreferencesView: View {
     private var footerActions: some View {
         VStack(spacing: 10) {
             Button {
-                finishAction(selectedTasteIDs)
+                finishAction(selectedCollectionIDs)
             } label: {
                 Label("Continue", systemImage: "arrow.right")
                     .font(.system(size: 15.5, weight: .bold))
@@ -128,11 +128,11 @@ struct OnboardingPreferencesView: View {
         }
     }
 
-    private func toggle(_ taste: LibriVoxTaste) {
-        if selectedTasteIDs.contains(taste.id) {
-            selectedTasteIDs.remove(taste.id)
+    private func toggle(_ collection: IACollection) {
+        if selectedCollectionIDs.contains(collection.id) {
+            selectedCollectionIDs.remove(collection.id)
         } else {
-            selectedTasteIDs.insert(taste.id)
+            selectedCollectionIDs.insert(collection.id)
         }
     }
 }
@@ -176,18 +176,18 @@ private struct OnboardingCollectionCard: View {
     }
 }
 
-private struct TasteSelectionChip: View {
-    var taste: LibriVoxTaste
+private struct CollectionSelectionChip: View {
+    var collection: IACollection
     var isSelected: Bool
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: taste.systemImage)
+                Image(systemName: collection.systemImage)
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 28, height: 28)
-                Text(taste.title)
+                Text(collection.title)
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
@@ -213,7 +213,7 @@ private struct TasteSelectionChip: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(taste.title)
+        .accessibilityLabel(collection.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

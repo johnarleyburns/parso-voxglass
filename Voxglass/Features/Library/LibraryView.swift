@@ -36,16 +36,18 @@ struct LibraryView: View {
                     systemImage: "books.vertical"
                 )
             } else {
-                ForEach(libraryStore.books) { book in
-                    NavigationLink {
-                        BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
-                    } label: {
-                        CompactBookRowView(
-                            book: book,
-                            sourceTitle: libraryStore.source(for: book.book)?.title
-                        )
+                VStack(spacing: 6) {
+                    ForEach(libraryStore.books) { book in
+                        NavigationLink {
+                            BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                        } label: {
+                            CompactBookRowView(
+                                book: book,
+                                sourceTitle: libraryStore.source(for: book.book)?.title
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }

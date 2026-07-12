@@ -190,8 +190,8 @@ struct CompactBookRowView: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Palette.ink3.opacity(0.7))
         }
-        .frame(minHeight: 80)
-        .padding(12)
+        .frame(minHeight: 72)
+        .padding(.horizontal, 12).padding(.vertical, 8)
         .glassSurface(cornerRadius: 14)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(book.book.title) by \(book.book.authorLine)")

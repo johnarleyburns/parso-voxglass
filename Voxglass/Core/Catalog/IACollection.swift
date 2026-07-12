@@ -47,13 +47,15 @@ enum IACollectionStore {
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "librivoxaudio")
     )
 
-    static let featured: [IACollection] = [
-        popular,
-        collection(for: LibriVoxTaste.all[0], subtitle: "Canonical fiction, drama, and ancient works", assetName: "lv-classics"),
-        collection(for: LibriVoxTaste.all[1], subtitle: "Detectives, clues, and crimes", assetName: "lv-mystery"),
-        collection(for: LibriVoxTaste.all[2], subtitle: "Speculative fiction from early audio catalogs", assetName: "lv-sci-fi"),
-        collection(for: LibriVoxTaste.all[3], subtitle: "Gothic and supernatural shelves", assetName: "lv-horror")
-    ]
+    static let featured: [IACollection] = [popular] + browseCollections
+
+    static var browseCollections: [IACollection] {
+        LibriVoxBrowseGroup.categories.map { browseCollection(for: $0) }
+    }
+
+    static var allSelectableCollections: [IACollection] {
+        browseCollections + curated
+    }
 
     /// Hand-curated canon collections ported from the Parso Radio catalog.
     /// These use broad creator-based Internet Archive queries against LibriVox.
@@ -89,56 +91,118 @@ enum IACollectionStore {
 
     static let curated: [IACollection] = [greatBooks, greaterBooks, ancientGreece]
 
-    static func collections(for selectedTasteIDs: Set<String>) -> [IACollection] {
-        let selected = LibriVoxTaste.selected(from: selectedTasteIDs)
-        guard !selected.isEmpty else {
-            return [popular] + curated + Array(featured.dropFirst())
-        }
-
-        let preferenceCollections = selected.map { taste in
-            collection(for: taste, subtitle: "Based on your \(taste.title.lowercased()) preference")
-        }
-        return [popular] + curated + preferenceCollections
+    static func collections(for selectedIDs: Set<String>) -> [IACollection] {
+        let all = [popular] + browseCollections + curated
+        guard !selectedIDs.isEmpty else { return all }
+        let selected = all.filter { selectedIDs.contains($0.id) }
+        let unselected = all.filter { !selectedIDs.contains($0.id) }
+        return selected + unselected
     }
 
-    static func collection(
-        for taste: LibriVoxTaste,
-        subtitle: String,
-        assetName: String? = nil
-    ) -> IACollection {
+    private static func browseCollection(for category: LibriVoxBrowseCategory) -> IACollection {
         IACollection(
-            id: "taste-\(taste.id)",
-            title: taste.title,
-            subtitle: subtitle,
-            archiveQuery: taste.archiveQuery,
-            systemImage: taste.systemImage,
-            assetName: assetName ?? "lv-\(taste.id)",
-            remoteImageURL: representativeCoverURL(for: taste.id)
+            id: category.id,
+            title: category.title,
+            subtitle: authorSubtitle(for: category.id),
+            archiveQuery: category.archiveQuery,
+            systemImage: category.systemImage,
+            remoteImageURL: coverURL(for: category.id)
         )
     }
 
-    private static func representativeCoverURL(for tasteID: String) -> URL? {
-        switch tasteID {
-        case "classics":
-            return InternetArchiveMetadata.coverURL(for: "iliad_librivox")
-        case "mystery":
-            return InternetArchiveMetadata.coverURL(for: "adventuresofsherlockholmes_1110_librivox")
-        case "sci-fi":
+    private static func authorSubtitle(for categoryID: String) -> String {
+        switch categoryID {
+        case "lv-general-fiction":
+            return "Pansy, Mary Elizabeth Braddon, Hugh Walpole, D. H. Lawrence, Charles Dickens"
+        case "lv-literary-fiction":
+            return "Jane Austen, Mark Twain, Arthur Conan Doyle, Charles Dickens, Oscar Wilde"
+        case "lv-science-fiction":
+            return "H. G. Wells, Edgar Rice Burroughs, Murray Leinster, H. Beam Piper, Andre Norton"
+        case "lv-horror-gothic":
+            return "Edgar Allan Poe, H. P. Lovecraft, Bram Stoker, Mary Shelley, Robert Louis Stevenson"
+        case "lv-mystery-crime":
+            return "Edgar Wallace, Arthur Conan Doyle, R. Austin Freeman, Freeman Wills Crofts, G. K. Chesterton"
+        case "lv-adventure":
+            return "G. A. Henty, Max Brand, Zane Grey, Alexandre Dumas, Mark Twain"
+        case "lv-fantasy-mythology":
+            return "Lewis Carroll, George MacDonald, L. Frank Baum, Oscar Wilde, Edgar Rice Burroughs"
+        case "lv-romance":
+            return "Jane Austen, Victor Hugo, Alexandre Dumas, P. G. Wodehouse, Charlotte Brontë"
+        case "lv-satire-humor":
+            return "Mark Twain, P. G. Wodehouse, Jane Austen, Jerome K. Jerome, Jonathan Swift"
+        case "lv-war-military":
+            return "Sun Tzu, John Buchan, Theodore Roosevelt, Homer, Stephen Crane"
+        case "lv-short-stories":
+            return "Luigi Pirandello, Edgar Allan Poe, Arthur Conan Doyle, O. Henry, Mark Twain"
+        case "lv-drama-plays":
+            return "William Shakespeare, Lynn Riggs, Rudyard Kipling, Goethe, George Bernard Shaw"
+        case "lv-travel":
+            return "Jules Verne, Mark Twain, Isabella L. Bird, John Muir, Anthony Trollope"
+        case "lv-ancient-world":
+            return "Aristotle, Homer, Aristophanes, Xenophon, Plato"
+        case "lv-poetry":
+            return "Dante Alighieri, Edgar Allan Poe, Homer, Edmund Spenser, Walt Whitman"
+        case "lv-philosophy-mind":
+            return "Friedrich Nietzsche, Plato, Aristotle, Immanuel Kant, Arthur Schopenhauer"
+        case "lv-history":
+            return "Jacob Abbott, Henrietta Elizabeth Marshall, Edward Gibbon, John H. Haaren, Thucydides"
+        case "lv-biography":
+            return "Jacob Abbott, Helen Keller, Mark Twain, Benjamin Franklin, Frederick Douglass"
+        case "lv-science-nature":
+            return "Edgar Rice Burroughs, H. G. Wells, Charles Darwin, Andre Norton, Jules Verne"
+        case "lv-religion":
+            return "Andrew Murray, Leo Tolstoy, Dante Alighieri, Augustine of Hippo, Charles H. Spurgeon"
+        case "lv-essays-ideas":
+            return "Edmund Burke, G. K. Chesterton, William Hazlitt, Hugh Walpole, George Bernard Shaw"
+        default:
+            return "LibriVox public-domain audiobooks"
+        }
+    }
+
+    private static func coverURL(for categoryID: String) -> URL? {
+        switch categoryID {
+        case "lv-general-fiction":
+            return InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox")
+        case "lv-literary-fiction":
+            return InternetArchiveMetadata.coverURL(for: "great_expectations_mfs_0812_librivox")
+        case "lv-science-fiction":
             return InternetArchiveMetadata.coverURL(for: "time_machine_librivox")
-        case "horror":
+        case "lv-horror-gothic":
             return InternetArchiveMetadata.coverURL(for: "dracula_librivox")
-        case "romance":
+        case "lv-mystery-crime":
+            return InternetArchiveMetadata.coverURL(for: "adventuresofsherlockholmes_1110_librivox")
+        case "lv-adventure":
+            return InternetArchiveMetadata.coverURL(for: "treasure_island_ap_librivox")
+        case "lv-fantasy-mythology":
+            return InternetArchiveMetadata.coverURL(for: "grimms_english_librivox")
+        case "lv-romance":
             return InternetArchiveMetadata.coverURL(for: "pride_and_prejudice_librivox")
-        case "history":
-            return InternetArchiveMetadata.coverURL(for: "history_of_the_decline_and_fall_01_librivox")
-        case "philosophy":
-            return InternetArchiveMetadata.coverURL(for: "republic_librivox")
-        case "poetry":
-            return InternetArchiveMetadata.coverURL(for: "poems_every_child_should_know_librivox")
-        case "short-stories":
+        case "lv-satire-humor":
+            return InternetArchiveMetadata.coverURL(for: "bequest_jg_librivox")
+        case "lv-war-military":
+            return InternetArchiveMetadata.coverURL(for: "art_of_war_librivox")
+        case "lv-short-stories":
             return InternetArchiveMetadata.coverURL(for: "shortstorycollection001_librivox")
-        case "biography":
+        case "lv-drama-plays":
+            return InternetArchiveMetadata.coverURL(for: "romeo_and_juliet_librivox")
+        case "lv-travel":
+            return InternetArchiveMetadata.coverURL(for: "swiss_family_robinson_librivox")
+        case "lv-ancient-world":
+            return InternetArchiveMetadata.coverURL(for: "iliad_librivox")
+        case "lv-poetry":
+            return InternetArchiveMetadata.coverURL(for: "poems_every_child_should_know_librivox")
+        case "lv-philosophy-mind":
+            return InternetArchiveMetadata.coverURL(for: "beyond_good_and_evil_librivox")
+        case "lv-history":
+            return InternetArchiveMetadata.coverURL(for: "history_of_the_decline_and_fall_01_librivox")
+        case "lv-biography":
             return InternetArchiveMetadata.coverURL(for: "autobiography_benjamin_franklin_librivox")
+        case "lv-science-nature":
+            return InternetArchiveMetadata.coverURL(for: "origin_of_species_librivox")
+        case "lv-religion":
+            return InternetArchiveMetadata.coverURL(for: "divine_comedy_librivox")
+        case "lv-essays-ideas":
+            return InternetArchiveMetadata.coverURL(for: "walden_librivox")
         default:
             return nil
         }

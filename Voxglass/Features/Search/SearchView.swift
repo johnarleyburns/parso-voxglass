@@ -159,15 +159,15 @@ struct InternetArchiveResultRow: View {
 
             if isPlaying {
                 ProgressView()
-                    .frame(width: 34, height: 34)
+                    .frame(width: 20, height: 20)
             } else {
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(Palette.brass)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Palette.ink3.opacity(0.7))
             }
         }
-        .frame(minHeight: 80)
-        .padding(12)
+        .frame(minHeight: 72)
+        .padding(.horizontal, 12).padding(.vertical, 8)
         .glassSurface(cornerRadius: 14)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Play \(result.title)")
