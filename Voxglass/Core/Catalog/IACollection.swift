@@ -84,7 +84,7 @@ enum IACollectionStore {
         title: "Ancient Greece",
         subtitle: "Homer, Plato, the tragedians, and more from the Greek world",
         archiveQuery: CuratedQueries.ancientGreece,
-        systemImage: "building.columns",
+        systemImage: "scroll.fill",
         assetName: "lv-ancient-greece",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey_pope_librivox")
     )
@@ -92,10 +92,12 @@ enum IACollectionStore {
     static let curated: [IACollection] = [greatBooks, greaterBooks, ancientGreece]
 
     static func collections(for selectedIDs: Set<String>) -> [IACollection] {
-        let all = [popular] + browseCollections + curated
-        return all.sorted {
+        // Popular LibriVox always first, then the three curated collections,
+        // then the remaining 21 browse categories sorted alphabetically.
+        let sortedBrowse = browseCollections.sorted {
             $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
         }
+        return [popular] + curated + sortedBrowse
     }
 
     private static func browseCollection(for category: LibriVoxBrowseCategory) -> IACollection {

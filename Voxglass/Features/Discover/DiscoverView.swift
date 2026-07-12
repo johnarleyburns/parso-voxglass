@@ -60,6 +60,7 @@ struct BrowseView: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal, 2)
                 .padding(.vertical, 2)
             }
         }

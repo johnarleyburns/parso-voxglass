@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ArtworkImageView<Placeholder: View>: View {
     var url: URL?
-    var contentMode: ContentMode = .fill
     @ViewBuilder var placeholder: Placeholder
 
     @State private var image: UIImage?
@@ -15,10 +14,11 @@ struct ArtworkImageView<Placeholder: View>: View {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                    .scaledToFill()
                     .transition(.opacity)
             }
         }
+        .clipped()
         .task(id: url) {
             await load()
         }

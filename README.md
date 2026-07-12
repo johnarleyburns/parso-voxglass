@@ -84,3 +84,14 @@ iCloud-sync anchor — the premium bundle grows in value without compromising th
 ## License
 
 GPLv3 — see `LICENSE`.
+
+## iCloud Sync setup (for developers)
+
+To enable cross-device sync via iCloud (requires Voxglass Pro):
+1. In Xcode, select the **Voxglass** target → **Signing & Capabilities**.
+2. Click **+ Capability** → **iCloud**.
+3. Check **Key-value storage**.
+4. Ensure the iCloud container identifier matches your bundle ID (`guru.parso.voxglass`).
+
+Without this capability, `NSUbiquitousKeyValueStore.synchronize()` is a no-op
+and sync will not function even if Pro is unlocked.

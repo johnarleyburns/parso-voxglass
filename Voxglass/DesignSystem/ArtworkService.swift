@@ -119,8 +119,19 @@ final class ArtworkService: @unchecked Sendable {
             throw ArtworkServiceError.invalidHTTPStatus(httpResponse.statusCode)
         }
 
+        // Reject non-image Content-Type (text/html is a common IA error page)
+        if let mime = (response as? HTTPURLResponse)?.mimeType?.lowercased(),
+           !mime.hasPrefix("image/") {
+            throw ArtworkServiceError.notFoundImage
+        }
+
         let prefix = String(data: data.prefix(2048), encoding: .utf8)?.lowercased() ?? ""
         if prefix.contains("notfound") || prefix.contains("not found") {
+            throw ArtworkServiceError.notFoundImage
+        }
+
+        // Check for HTML error pages before trying to decode as image
+        if prefix.contains("<!doctype") || prefix.contains("<html") {
             throw ArtworkServiceError.notFoundImage
         }
 
@@ -134,7 +145,31 @@ final class ArtworkService: @unchecked Sendable {
             throw ArtworkServiceError.tinyImage
         }
 
+        // Reject known Internet Archive placeholder images — these are generic
+        // "no cover" images served when an item has no real cover. They are
+        // typically small square images with specific dimensions.
+        if isIAUnwantedPlaceholder(image: image, dataCount: data.count) {
+            throw ArtworkServiceError.notFoundImage
+        }
+
         return image
+    }
+
+    private static func isIAUnwantedPlaceholder(image: UIImage, dataCount: Int) -> Bool {
+        let px = Int(image.size.width * image.scale)
+        let py = Int(image.size.height * image.scale)
+        // IA serves several generic placeholders: the "open book" icon (~180x180),
+        // the "microphone" icon, and a few others. Real LibriVox covers are
+        // almost always ~300-800px and 20+ KB. A small, low-detail image is a
+        // strong signal that it's a placeholder.
+        if px <= 200 && py <= 200 && dataCount < 8_000 {
+            return true
+        }
+        // Also reject placeholder pattern: exact 180x180 or 120x120 squares
+        if (px == 180 && py == 180) || (px == 120 && py == 120) {
+            return true
+        }
+        return false
     }
 
     static func cacheFileName(for url: URL) -> String {

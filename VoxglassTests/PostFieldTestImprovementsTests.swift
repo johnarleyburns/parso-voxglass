@@ -6,10 +6,20 @@ final class PostFieldTestImprovementsTests: XCTestCase {
 
     // MARK: - §4 Alphabetical sort
 
-    func testFeaturedCollectionsAreSortedAlphabetically() {
+    func testFeaturedCollectionsAreSortedPopularCuratedThenAlphabetical() {
         let titles = IACollectionStore.collections(for: []).map(\.title)
-        let expected = titles.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-        XCTAssertEqual(titles, expected)
+
+        // Popular is always first
+        XCTAssertEqual(titles.first, "Popular LibriVox")
+
+        // Curated collections come right after popular (in fixed order)
+        let curatedStart = titles.dropFirst().prefix(3)
+        XCTAssertEqual(Array(curatedStart), ["Great Books", "Greater Books", "Ancient Greece"])
+
+        // Remaining browse collections are sorted alphabetically
+        let browse = Array(titles.dropFirst(4))
+        let expectedBrowse = browse.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+        XCTAssertEqual(browse, expectedBrowse)
     }
 
     func testFeaturedCollectionSortIgnoresSelection() {

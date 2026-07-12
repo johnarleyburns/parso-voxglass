@@ -67,7 +67,13 @@ struct SearchView: View {
     @ViewBuilder
     private var archiveResults: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if catalogStore.isSearching {
+            if normalizedQuery.isEmpty {
+                EmptyStatePanel(
+                    title: "Search LibriVox",
+                    message: "Find public-domain audiobooks by title, author, or subject. Tap any result to start listening — it caches as it plays.",
+                    systemImage: "waveform"
+                )
+            } else if catalogStore.isSearching {
                 HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching LibriVox")
@@ -79,9 +85,9 @@ struct SearchView: View {
                 .glassSurface(cornerRadius: 14)
             } else if catalogStore.results.isEmpty {
                 EmptyStatePanel(
-                    title: "Search LibriVox",
-                    message: "Find public-domain audiobooks by title, author, or subject. Tap any result to start listening — it caches as it plays.",
-                    systemImage: "waveform"
+                    title: "No Results",
+                    message: "Try a different author, title, or subject. LibriVox has thousands of public-domain recordings.",
+                    systemImage: "magnifyingglass"
                 )
             } else {
                 ForEach(catalogStore.results) { result in
