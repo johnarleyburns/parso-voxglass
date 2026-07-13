@@ -11,6 +11,10 @@ final class PlaybackCoordinator: ObservableObject {
     /// Current playback rate (P0-1). Published so the speed menu tracks it.
     @Published private(set) var playbackRate: Float = PlaybackRate.normal
 
+    /// Sleep timer state (P0-2), mirrored from `sleepTimer` so the UI updates.
+    @Published private(set) var sleepMode: SleepTimer.Mode = .off
+    @Published private(set) var sleepRemaining: TimeInterval?
+
     /// Called when a playback position is persisted (e.g. periodic save, chapter end,
     /// finished). Receives the book's UUID and whether it was set as favorite.
     /// Used by the recommendation engine for taste signal capture.
@@ -26,6 +30,10 @@ final class PlaybackCoordinator: ObservableObject {
     private let positionStore: PositionStore
     private let snapshotStore: LastPlaybackSnapshotStore
     private let rateStore: PlaybackRateStore
+    private let sleepTimer: SleepTimer
+    private var sleepTask: Task<Void, Never>?
+    /// Duration of the sleep-timer fade-out; small in tests.
+    var fadeOutDuration: TimeInterval = 5
     private let eqSettings = EQSettingsStore()
     let eqPresets = EQPresetStore()
     private var progressTask: Task<Void, Never>?
@@ -44,12 +52,14 @@ final class PlaybackCoordinator: ObservableObject {
         engine: AudioEngine,
         positionStore: PositionStore,
         snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
-        rateStore: PlaybackRateStore = PlaybackRateStore()
+        rateStore: PlaybackRateStore = PlaybackRateStore(),
+        sleepTimer: SleepTimer = SleepTimer()
     ) {
         self.engine = engine
         self.positionStore = positionStore
         self.snapshotStore = snapshotStore
         self.rateStore = rateStore
+        self.sleepTimer = sleepTimer
         self.engine.onPlaybackEnded = { [weak self] in
             Task { @MainActor in
                 await self?.advanceAfterChapterEnd()
@@ -59,6 +69,9 @@ final class PlaybackCoordinator: ObservableObject {
             Task { @MainActor in
                 await self?.handleItemChanged()
             }
+        }
+        sleepTimer.onFire = { [weak self] in
+            self?.handleSleepTimerFired()
         }
         self.engine.configureAudioSession()
         configureRemoteCommands()
@@ -305,6 +318,75 @@ final class PlaybackCoordinator: ObservableObject {
         return MPMediaItemArtwork(boundsSize: size) { _ in image }
     }()
 
+    // MARK: - Sleep timer (P0-2, FREE)
+
+    /// Arms/cancels the sleep timer. End-of-chapter immediately cancels the
+    /// gapless preload so `AVQueuePlayer` cannot advance past the current chapter;
+    /// cancelling end-of-chapter re-arms the preload.
+    func setSleepTimer(_ mode: SleepTimer.Mode) {
+        let wasEndOfChapter = sleepTimer.mode == .endOfChapter
+        sleepTimer.arm(mode)
+        sleepMode = mode
+        sleepRemaining = sleepTimer.remaining
+
+        switch mode {
+        case .endOfChapter:
+            engine.cancelPreload()
+            stopSleepTask()
+        case .duration:
+            startSleepTask()
+        case .off:
+            stopSleepTask()
+            if wasEndOfChapter, let session = currentSession {
+                preloadImmediateNextChapter(in: session)
+            }
+        }
+    }
+
+    private func startSleepTask() {
+        sleepTask?.cancel()
+        sleepTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.5))
+                guard let self else { return }
+                self.sleepTimer.tick()
+                self.sleepRemaining = self.sleepTimer.remaining
+            }
+        }
+    }
+
+    private func stopSleepTask() {
+        sleepTask?.cancel()
+        sleepTask = nil
+    }
+
+    private func handleSleepTimerFired() {
+        sleepMode = .off
+        sleepRemaining = nil
+        stopSleepTask()
+        Task { @MainActor in await fadeOutAndPause() }
+    }
+
+    /// Ramps volume to 0, pauses, then restores volume to 1.0 (or the next play
+    /// is silent). Internal so the effectful shell is directly testable.
+    func fadeOutAndPause() async {
+        let steps = 10
+        let startVolume = engine.volume
+        for step in 1...steps {
+            engine.volume = startVolume * Float(steps - step) / Float(steps)
+            try? await Task.sleep(for: .seconds(fadeOutDuration / Double(steps)))
+        }
+        pause()
+        engine.volume = 1.0
+    }
+
+    private func preloadImmediateNextChapter(in session: PlaybackSession) {
+        let nextIndex = session.chapterIndex + 1
+        guard session.chapters.indices.contains(nextIndex),
+              let url = session.chapters[nextIndex].resolvedPlayableURL() else { return }
+        engine.preloadNext(url: url)
+    }
+
     // MARK: - Equalizer (Pro, §2)
 
     var isEQEngaged: Bool {
@@ -475,6 +557,18 @@ final class PlaybackCoordinator: ObservableObject {
         mutateSession {
             $0.position = $0.duration ?? engine.currentTime
             $0.isPlaying = false
+        }
+
+        // Sleep timer set to "end of chapter": stop here — do not roll into the
+        // next chapter. The preload was already cancelled when it was armed.
+        if sleepTimer.mode == .endOfChapter {
+            engine.pause()
+            await persistCurrentPosition(reason: .chapterChange, finished: true)
+            sleepTimer.cancel()
+            sleepMode = .off
+            sleepRemaining = nil
+            updateNowPlayingInfo()
+            return
         }
 
         let nextIndex = session.chapterIndex + 1
@@ -796,6 +890,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     deinit {
         progressTask?.cancel()
+        sleepTask?.cancel()
         for observer in notificationObservers {
             NotificationCenter.default.removeObserver(observer)
         }

@@ -27,6 +27,7 @@ struct SettingsView: View {
 
                 settingsGroup("Playback") {
                     PrefetchDepthRow()
+                    SleepTimerDefaultRow()
                 }
 
                 settingsGroup("Insights") {
@@ -717,6 +718,43 @@ private struct PrefetchDepthRow: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("pro.lock.prefetchDepth")
         .paywallSheet(isPresented: $showPaywall)
+    }
+}
+
+private struct SleepTimerDefaultRow: View {
+    @AppStorage(AppPreferencesStore.Keys.sleepTimerDefaultMinutes) private var minutes = 30
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: "moon.zzz.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 32, height: 32)
+                    .background {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
+                    }
+                Text("Default Sleep Timer")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+            }
+
+            Picker("Default Sleep Timer", selection: $minutes) {
+                Text("15 min").tag(15)
+                Text("30 min").tag(30)
+                Text("45 min").tag(45)
+                Text("60 min").tag(60)
+            }
+            .pickerStyle(.segmented)
+
+            Text("Your preferred sleep-timer length. Pick any duration — or “End of chapter” — from the moon icon while a book is playing.")
+                .font(.system(size: 11))
+                .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
     }
 }
 

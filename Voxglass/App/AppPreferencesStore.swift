@@ -9,6 +9,9 @@ struct AppPreferencesStore: DynamicProperty {
         static let cacheFullBooksOnCellular = "voxglass.cacheFullBooksOnCellular"
         static let prefetchDepth = "voxglass.prefetchDepth"
         static let prefetchWifiOnly = "voxglass.prefetchWifiOnly"
+        static let sleepTimerDefaultMinutes = "voxglass.sleepTimerDefaultMinutes"
+        static let skipForwardInterval = "voxglass.skipForwardInterval"
+        static let skipBackInterval = "voxglass.skipBackInterval"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false

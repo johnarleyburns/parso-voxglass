@@ -236,11 +236,7 @@ struct NowPlayingView: View {
 
             equalizerButton
 
-            Button {} label: {
-                Image(systemName: "timer")
-                    .font(.system(size: 16))
-            }
-            .disabled(true)
+            sleepTimerMenu
 
             ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
                 Image(systemName: "square.and.arrow.up")
@@ -249,6 +245,68 @@ struct NowPlayingView: View {
         }
         .foregroundStyle(Color.white.opacity(0.6))
         .padding(.top, 16)
+    }
+
+    private var sleepTimerMenu: some View {
+        Menu {
+            Button {
+                playback.setSleepTimer(.off)
+            } label: {
+                sleepMenuLabel("Off", active: playback.sleepMode == .off)
+            }
+            ForEach([5, 10, 15, 30, 45, 60], id: \.self) { minutes in
+                Button {
+                    playback.setSleepTimer(.duration(TimeInterval(minutes * 60)))
+                } label: {
+                    sleepMenuLabel("\(minutes) minutes", active: playback.sleepMode == .duration(TimeInterval(minutes * 60)))
+                }
+            }
+            Button {
+                playback.setSleepTimer(.endOfChapter)
+            } label: {
+                sleepMenuLabel("End of chapter", active: playback.sleepMode == .endOfChapter)
+            }
+        } label: {
+            sleepTimerIcon
+        }
+        .accessibilityLabel("Sleep timer")
+        .accessibilityIdentifier("nowplaying.sleepTimer")
+    }
+
+    @ViewBuilder
+    private func sleepMenuLabel(_ title: String, active: Bool) -> some View {
+        if active {
+            Label(title, systemImage: "checkmark")
+        } else {
+            Text(title)
+        }
+    }
+
+    @ViewBuilder
+    private var sleepTimerIcon: some View {
+        switch playback.sleepMode {
+        case .off:
+            Image(systemName: "moon.zzz")
+                .font(.system(size: 16))
+        case .endOfChapter:
+            Image(systemName: "moon.zzz.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(Palette.brass)
+        case .duration:
+            HStack(spacing: 3) {
+                Image(systemName: "moon.zzz.fill")
+                if let remaining = playback.sleepRemaining {
+                    Text(sleepCountdown(remaining))
+                        .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                }
+            }
+            .foregroundStyle(Palette.brass)
+        }
+    }
+
+    private func sleepCountdown(_ remaining: TimeInterval) -> String {
+        let totalMinutes = Int((remaining / 60).rounded(.up))
+        return "\(max(totalMinutes, 0))m"
     }
 
     private var speedMenu: some View {
