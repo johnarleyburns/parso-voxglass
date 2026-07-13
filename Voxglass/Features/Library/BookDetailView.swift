@@ -34,6 +34,7 @@ struct BookDetailView: View {
                     actionGrid
                     summarySection
                     tagSection
+                    narratorSection
                     chapterPreview
                 }
                 .padding(.horizontal, 18)
@@ -304,6 +305,22 @@ struct BookDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private var narratorSection: some View {
+        if let narratorLine = currentBook.book.narratorLine {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionTitle(title: "Narrators")
+                DisclosureListRow(
+                    icon: "mic.fill",
+                    title: narratorLine,
+                    detail: "\(currentBook.chapters.count) chapter\(currentBook.chapters.count == 1 ? "" : "s")",
+                    count: nil
+                )
+                .glassSurface(cornerRadius: 14)
+            }
+        }
+    }
+
     private var chapterPreview: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Chapters")
@@ -455,19 +472,6 @@ struct AuthorDetailView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                        }
-                    }
-
-                    if let narratorLine = currentBook.book.narratorLine {
-                        VStack(alignment: .leading, spacing: 10) {
-                            SectionTitle(title: "Narrators")
-                            DisclosureListRow(
-                                icon: "mic.fill",
-                                title: narratorLine,
-                                detail: "\(currentBook.chapters.count) chapter\(currentBook.chapters.count == 1 ? "" : "s")",
-                                count: nil
-                            )
-                            .glassSurface(cornerRadius: 14)
                         }
                     }
                 }

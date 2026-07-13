@@ -908,7 +908,6 @@ final class PlaybackCoordinator: ObservableObject {
         }
 
         commandCenter.skipForwardCommand.isEnabled = true
-        commandCenter.skipForwardCommand.preferredIntervals = [30]
         commandCenter.skipForwardCommand.addTarget { [weak self] _ in
             Task { @MainActor in
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
@@ -921,7 +920,6 @@ final class PlaybackCoordinator: ObservableObject {
         }
 
         commandCenter.skipBackwardCommand.isEnabled = true
-        commandCenter.skipBackwardCommand.preferredIntervals = [15]
         commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
             Task { @MainActor in
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
@@ -968,6 +966,8 @@ final class PlaybackCoordinator: ObservableObject {
             }
             return .success
         }
+
+        reconfigureSkipIntervals()
     }
 
     private func updateNowPlayingInfo() {
