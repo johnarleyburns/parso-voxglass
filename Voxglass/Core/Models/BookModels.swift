@@ -4,6 +4,7 @@ struct Book: Identifiable, Codable, Equatable, Sendable {
     var id: UUID
     var title: String
     var authors: [String]
+    var narrators: [String]
     var summary: String?
     var sourceID: UUID
     var coverURL: URL?
@@ -15,6 +16,7 @@ struct Book: Identifiable, Codable, Equatable, Sendable {
         id: UUID = UUID(),
         title: String,
         authors: [String],
+        narrators: [String] = [],
         summary: String? = nil,
         sourceID: UUID,
         coverURL: URL? = nil,
@@ -25,6 +27,7 @@ struct Book: Identifiable, Codable, Equatable, Sendable {
         self.id = id
         self.title = title
         self.authors = authors
+        self.narrators = narrators
         self.summary = summary
         self.sourceID = sourceID
         self.coverURL = coverURL
@@ -35,6 +38,10 @@ struct Book: Identifiable, Codable, Equatable, Sendable {
 
     var authorLine: String {
         authors.isEmpty ? "Unknown author" : authors.joined(separator: ", ")
+    }
+
+    var narratorLine: String? {
+        narrators.isEmpty ? nil : "Read by \(narrators.joined(separator: ", "))"
     }
 }
 
@@ -48,6 +55,7 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
     var remoteURL: URL?
     var opusURL: URL?
     var localURL: URL?
+    var narrators: [String]
 
     init(
         id: UUID = UUID(),
@@ -58,7 +66,8 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
         duration: TimeInterval? = nil,
         remoteURL: URL? = nil,
         opusURL: URL? = nil,
-        localURL: URL? = nil
+        localURL: URL? = nil,
+        narrators: [String] = []
     ) {
         self.id = id
         self.bookID = bookID
@@ -69,6 +78,7 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
         self.remoteURL = remoteURL
         self.opusURL = opusURL
         self.localURL = localURL
+        self.narrators = narrators
     }
 
     var playableURL: URL? {

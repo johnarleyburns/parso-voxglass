@@ -195,6 +195,7 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
     var collections: [String]
     var subjects: [String]
     var language: String?
+    var callNumber: String?
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -206,6 +207,7 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
         collections = try container.decodeStringListIfPresent(forKey: .collection)
         subjects = try container.decodeStringListIfPresent(forKey: .subject)
         language = try container.decodeFlexibleStringIfPresent(forKey: .language)
+        callNumber = try container.decodeFlexibleStringIfPresent(forKey: .call_number)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -217,6 +219,7 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
         case collection
         case subject
         case language
+        case call_number
     }
 }
 

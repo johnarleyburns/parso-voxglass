@@ -54,21 +54,23 @@ struct LocalAudioImport: Equatable, Sendable {
 
 final class LibraryRepository {
     private let database: AppDatabase
+    private let librivoxClient: LibriVoxCatalogClient?
 
-    init(database: AppDatabase) {
+    init(database: AppDatabase, librivoxClient: LibriVoxCatalogClient? = nil) {
         self.database = database
+        self.librivoxClient = librivoxClient
     }
 
     func fetchLibrary() async throws -> [BookWithChapters] {
         try await database.prepare()
 
         let bookRows = try await database.query("""
-        SELECT id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
         FROM books
         ORDER BY updated_at DESC, title COLLATE NOCASE ASC
         """)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json
         FROM chapters
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
         """)
@@ -272,6 +274,13 @@ final class LibraryRepository {
             throw InternetArchiveError.noPlayableAudio(identifier)
         }
 
+        try await enrichNarrators(
+            book: &book,
+            chapters: &chapters,
+            metadata: metadata,
+            sourceKind: sourceKind
+        )
+
         try await insert(book: book, chapters: chapters)
 
         // Capture taste metadata for the recommendation engine
@@ -350,8 +359,8 @@ final class LibraryRepository {
                 localURL: file.url
             )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -361,7 +370,8 @@ final class LibraryRepository {
                 ModelMapping.databaseValue(chapter.duration),
                 .null,
                 .null,
-                ModelMapping.databaseValue(chapter.localURL)
+                ModelMapping.databaseValue(chapter.localURL),
+                .string(ModelMapping.narratorsJSON(chapter.narrators))
             ])
         }
 
@@ -426,7 +436,7 @@ final class LibraryRepository {
 
     private func bookWithChapters(forSourceID sourceID: UUID) async throws -> BookWithChapters? {
         let bookRows = try await database.query("""
-        SELECT id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
         FROM books
         WHERE source_id = ?
         LIMIT 1
@@ -435,7 +445,7 @@ final class LibraryRepository {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -445,7 +455,7 @@ final class LibraryRepository {
 
     private func bookWithChapters(forBookID bookID: UUID) async throws -> BookWithChapters? {
         let bookRows = try await database.query("""
-        SELECT id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
         FROM books
         WHERE id = ?
         LIMIT 1
@@ -454,7 +464,7 @@ final class LibraryRepository {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url
+        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -570,14 +580,65 @@ final class LibraryRepository {
         return try rows.map(Self.downloadRecord(from:))
     }
 
+    // MARK: - Narrator enrichment (Phase 4C)
+
+    private func enrichNarrators(
+        book: inout Book,
+        chapters: inout [Chapter],
+        metadata: InternetArchiveMetadata,
+        sourceKind: SourceKind
+    ) async throws {
+        guard sourceKind == .librivox,
+              let callNumberRaw = metadata.metadata.callNumber,
+              let librivoxBookID = Int(callNumberRaw) else { return }
+
+        let client = librivoxClient ?? LibriVoxClient()
+
+        let sections: [LibriVoxSection]
+        do {
+            sections = try await client.fetchSections(bookID: librivoxBookID)
+        } catch {
+            return
+        }
+        guard !sections.isEmpty else { return }
+
+        let chapterNarrators = NarratorMatcher.match(
+            chapters: chapters,
+            sections: sections,
+            archiveIdentifier: metadata.identifier
+        )
+
+        if chapterNarrators.isEmpty {
+            let bookNarrators = NarratorMatcher.bookLevelNarrators(from: sections)
+            if !bookNarrators.isEmpty {
+                book.narrators = bookNarrators
+            }
+        } else {
+            for i in chapters.indices {
+                chapters[i].narrators = chapterNarrators[chapters[i].id] ?? []
+            }
+            var seen: Set<String> = []
+            var ordered: [String] = []
+            for chapter in chapters {
+                for name in chapter.narrators {
+                    if seen.insert(name).inserted {
+                        ordered.append(name)
+                    }
+                }
+            }
+            book.narrators = ordered
+        }
+    }
+
     private func insert(book: Book, chapters: [Chapter]) async throws {
         try await database.execute("""
-        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, [
             ModelMapping.databaseValue(book.id),
             .string(book.title),
             .string(ModelMapping.authorsJSON(book.authors)),
+            .string(ModelMapping.narratorsJSON(book.narrators)),
             ModelMapping.databaseValue(book.summary),
             ModelMapping.databaseValue(book.sourceID),
             ModelMapping.databaseValue(book.coverURL),
@@ -588,8 +649,8 @@ final class LibraryRepository {
 
         for chapter in chapters {
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -599,7 +660,8 @@ final class LibraryRepository {
                 ModelMapping.databaseValue(chapter.duration),
                 ModelMapping.databaseValue(chapter.remoteURL),
                 ModelMapping.databaseValue(chapter.opusURL),
-                ModelMapping.databaseValue(chapter.localURL)
+                ModelMapping.databaseValue(chapter.localURL),
+                .string(ModelMapping.narratorsJSON(chapter.narrators))
             ])
         }
     }
@@ -619,6 +681,7 @@ final class LibraryRepository {
             id: try ModelMapping.uuid(row, "id"),
             title: try row.requiredString("title"),
             authors: ModelMapping.authors(from: row),
+            narrators: ModelMapping.narrators(from: row),
             summary: row.string("summary"),
             sourceID: try ModelMapping.uuid(row, "source_id"),
             coverURL: ModelMapping.url(row, "cover_url"),
@@ -638,7 +701,8 @@ final class LibraryRepository {
             duration: row.double("duration_seconds"),
             remoteURL: ModelMapping.url(row, "remote_url"),
             opusURL: ModelMapping.url(row, "opus_url"),
-            localURL: ModelMapping.url(row, "local_url")
+            localURL: ModelMapping.url(row, "local_url"),
+            narrators: ModelMapping.narrators(from: row)
         )
     }
 

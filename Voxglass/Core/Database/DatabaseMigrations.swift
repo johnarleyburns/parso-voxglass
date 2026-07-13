@@ -206,6 +206,14 @@ private struct DatabaseMigration {
                 "UPDATE bookmarks SET updated_at = created_at",
                 "CREATE INDEX bookmarks_book_created ON bookmarks(book_id, created_at DESC)"
             ]
+        ),
+        DatabaseMigration(
+            id: 6,
+            name: "narrators_json",
+            statements: [
+                "ALTER TABLE chapters ADD COLUMN narrators_json TEXT NOT NULL DEFAULT '[]'",
+                "ALTER TABLE books ADD COLUMN narrators_json TEXT NOT NULL DEFAULT '[]'"
+            ]
         )
     ]
 }

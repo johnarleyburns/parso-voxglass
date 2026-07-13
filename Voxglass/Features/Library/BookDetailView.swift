@@ -310,7 +310,7 @@ struct BookDetailView: View {
 
             VStack(spacing: 0) {
                 ForEach(currentBook.chapters.prefix(6)) { chapter in
-                    ChapterRow(chapter: chapter, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
+                    ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
                         Task {
                             await playback.play(currentBook, chapter: chapter)
                             showingNowPlaying = true
@@ -389,7 +389,7 @@ struct ChaptersView: View {
 
                     VStack(spacing: 0) {
                         ForEach(currentBook.chapters) { chapter in
-                            ChapterRow(chapter: chapter, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
+                            ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
                                 Task {
                                     await playback.play(currentBook, chapter: chapter)
                                     showingNowPlaying = true
@@ -458,16 +458,17 @@ struct AuthorDetailView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        SectionTitle(title: "Author Metadata")
-                        DisclosureListRow(
-                            icon: "link",
-                            title: "External Link",
-                            detail: "Bundled metadata is not available yet",
-                            count: nil,
-                            isEnabled: false
-                        )
-                        .glassSurface(cornerRadius: 14)
+                    if let narratorLine = currentBook.book.narratorLine {
+                        VStack(alignment: .leading, spacing: 10) {
+                            SectionTitle(title: "Narrators")
+                            DisclosureListRow(
+                                icon: "mic.fill",
+                                title: narratorLine,
+                                detail: "\(currentBook.chapters.count) chapter\(currentBook.chapters.count == 1 ? "" : "s")",
+                                count: nil
+                            )
+                            .glassSurface(cornerRadius: 14)
+                        }
                     }
                 }
                 .padding(.horizontal, 18)
@@ -482,6 +483,7 @@ struct AuthorDetailView: View {
 
 private struct ChapterRow: View {
     var chapter: Chapter
+    var bookNarrators: [String]
     var isCurrent: Bool
     var action: () -> Void
 
@@ -498,9 +500,19 @@ private struct ChapterRow: View {
                         .scaledFont(size: 14, weight: .medium)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
-                    Text(TimeFormatting.clock(chapter.duration))
-                        .scaledFont(size: 11.5, design: .monospaced)
-                        .foregroundStyle(Palette.ink3)
+                    HStack(spacing: 6) {
+                        Text(TimeFormatting.clock(chapter.duration))
+                            .scaledFont(size: 11.5, design: .monospaced)
+                            .foregroundStyle(Palette.ink3)
+                        if let narrator = NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: bookNarrators) {
+                            Text("·")
+                                .foregroundStyle(Palette.ink3)
+                            Text(narrator)
+                                .scaledFont(size: 11.5)
+                                .foregroundStyle(Palette.ink3)
+                                .lineLimit(1)
+                        }
+                    }
                 }
 
                 Spacer(minLength: 10)

@@ -64,9 +64,30 @@ enum ModelMapping {
         return authors
     }
 
+    static func narrators(from row: DatabaseRow) -> [String] {
+        guard
+            let json = row.string("narrators_json"),
+            let data = json.data(using: .utf8),
+            let narrators = try? decoder.decode([String].self, from: data)
+        else {
+            return []
+        }
+        return narrators
+    }
+
     static func authorsJSON(_ authors: [String]) -> String {
         guard
             let data = try? encoder.encode(authors),
+            let json = String(data: data, encoding: .utf8)
+        else {
+            return "[]"
+        }
+        return json
+    }
+
+    static func narratorsJSON(_ narrators: [String]) -> String {
+        guard
+            let data = try? encoder.encode(narrators),
             let json = String(data: data, encoding: .utf8)
         else {
             return "[]"

@@ -1,0 +1,76 @@
+{
+  "books": [
+    {
+      "id": "4489",
+      "title": "Short Science Fiction Collection 045",
+      "sections": [
+        {
+          "id": "50001",
+          "section_number": "01",
+          "listen_url": "http://www.archive.org/download/short_scifi_045_1411_librivox/shortsf045_01_various_128kb.mp3",
+          "file_name": "shortsf045_01_various_128kb.mp3",
+          "url_iarchive": "https://archive.org/details/test_identifier_4489",
+          "readers": [
+            {
+              "reader_id": "1",
+              "display_name": "Mike Harris",
+              "first_name": "Mike",
+              "last_name": "Harris"
+            }
+          ]
+        },
+        {
+          "id": "50002",
+          "section_number": "02",
+          "listen_url": "http://www.archive.org/download/short_scifi_045_1411_librivox/shortsf045_02_various_128kb.mp3",
+          "file_name": "shortsf045_02_various_128kb.mp3",
+          "url_iarchive": "https://archive.org/details/test_identifier_4489",
+          "readers": [
+            {
+              "reader_id": "2",
+              "display_name": "Don W. Jenkins",
+              "first_name": "Don",
+              "last_name": "Jenkins"
+            }
+          ]
+        },
+        {
+          "id": "50003",
+          "section_number": "03",
+          "listen_url": "http://www.archive.org/download/short_scifi_045_1411_librivox/shortsf045_03_various_128kb.mp3",
+          "file_name": "shortsf045_03_various_128kb.mp3",
+          "url_iarchive": "https://archive.org/details/test_identifier_4489",
+          "readers": [
+            {
+              "reader_id": "3",
+              "display_name": "Gregg Margarite",
+              "first_name": "Gregg",
+              "last_name": "Margarite"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9999",
+      "title": "Wrong archive identifier",
+      "sections": [
+        {
+          "id": "88888",
+          "section_number": "1",
+          "listen_url": "http://www.archive.org/download/some_other_book/chapter1.mp3",
+          "file_name": "chapter1.mp3",
+          "url_iarchive": "https://archive.org/details/wrong_identifier",
+          "readers": [
+            {
+              "reader_id": "10",
+              "display_name": "Wrong Narrator",
+              "first_name": "Wrong",
+              "last_name": "Narrator"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
