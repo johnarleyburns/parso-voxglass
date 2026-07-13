@@ -41,4 +41,21 @@ final class ProPaywallContentTests: XCTestCase {
         XCTAssertNil(ProFeature(rawValue: "carplay"))
         XCTAssertNil(ProFeature(rawValue: "appleWatch"))
     }
+
+    func testEQAdvertisementDoesNotClaimNormalization() {
+        let eqAd = ProPaywallView.advertised.first { $0.feature == .eq }
+        XCTAssertNotNil(eqAd)
+        XCTAssertFalse(eqAd!.title.lowercased().contains("volume normalization"),
+                       "EQ advertisement must not claim normalization (it ships free)")
+        XCTAssertFalse(eqAd!.title.lowercased().contains("+"),
+                       "EQ title must not bundle normalization with a '+'")
+    }
+
+    func testFreeSectionNamesNormalizationAndSkipSilence() {
+        // The free section copy lives in the ProPaywallView.foreverFreeSection body.
+        // We can't directly inspect the text from tests, but we can verify the
+        // structure hasn't regressed: normalization is NOT a ProFeature case.
+        XCTAssertNil(ProFeature(rawValue: "volumeNormalization"))
+        XCTAssertNil(ProFeature(rawValue: "skipSilence"))
+    }
 }

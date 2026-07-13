@@ -76,17 +76,12 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
 
     var isEQEngaged: Bool { eqEngagedDesired }
 
-    /// Sets the desired engaged state and attaches/detaches the tap on the current
-    /// item immediately. The desired flag also drives re-attachment in `load` and
-    /// `preloadNext` so EQ survives track changes and relaunch.
+    /// Sets the desired engaged state and toggles EQ stages on all live taps
+    /// (free users get the tap for normalization + silence detection but with
+    /// stages bypassed). The tap stays attached unconditionally.
     func setEQEngaged(_ engaged: Bool) {
         eqEngagedDesired = engaged
-        if engaged {
-            if let item = player.currentItem { eqProcessor.attach(to: item) }
-            if let preloaded = preloadedItem { eqProcessor.attach(to: preloaded) }
-        } else {
-            eqProcessor.detachAll()
-        }
+        eqProcessor.setEQStagesEnabled(engaged)
     }
 
     func engageEQ() {
@@ -175,9 +170,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         player.insert(item, after: nil)
         observe(item: item, isPreloaded: false)
 
-        if eqEngagedDesired {
-            eqProcessor.attach(to: item)
-        }
+        eqProcessor.attach(to: item)
+        eqProcessor.setEQStagesEnabled(eqEngagedDesired)
 
         await seek(to: startTime)
     }
@@ -192,9 +186,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             player.insert(item, after: player.currentItem)
             observe(item: item, isPreloaded: true)
 
-            if eqEngagedDesired {
-                eqProcessor.attach(to: item)
-            }
+            eqProcessor.attach(to: item)
+            eqProcessor.setEQStagesEnabled(eqEngagedDesired)
         }
     }
 

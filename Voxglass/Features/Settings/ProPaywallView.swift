@@ -22,8 +22,8 @@ struct ProPaywallView: View {
         ProFeatureAdvertisement(
             feature: .eq,
             icon: "waveform.path.ecg",
-            title: "10-Band EQ + Volume Normalization",
-            description: "Shape playback with custom or preset EQs; automatic volume leveling keeps uneven LibriVox recordings comfortable."),
+            title: "10-Band EQ",
+            description: "Shape playback with custom or preset EQs."),
         ProFeatureAdvertisement(
             feature: .folderWatch,
             icon: "folder.fill.badge.plus",
@@ -147,7 +147,7 @@ struct ProPaywallView: View {
                 .scaledFont(size: 16, weight: .semibold)
                 .foregroundStyle(Palette.ink)
 
-            Text("FLAC, MP3 playback · Near-gapless · Internet Archive & LibriVox sources · Local file import · No telemetry, no accounts")
+            Text("Speed 0.5–3.5× · Sleep timer · Bookmarks · Lock-screen artwork · Per-chapter narrators · Volume normalization · Skip silence · FLAC & MP3 playback · No ads · No telemetry · No accounts")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
                 .multilineTextAlignment(.center)

@@ -29,6 +29,7 @@ struct SettingsView: View {
                     PrefetchDepthRow()
                     SkipIntervalRow()
                     SkipSilenceRow()
+                    VolumeNormalizationRow()
                     SleepTimerDefaultRow()
                 }
 
@@ -817,6 +818,47 @@ private struct SkipSilenceRow: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
+    }
+}
+
+private struct VolumeNormalizationRow: View {
+    @EnvironmentObject private var playback: PlaybackCoordinator
+    @AppStorage(AppPreferencesStore.Keys.volumeNormalizationEnabled) private var volumeNormalizationEnabled = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: "speaker.wave.1.fill")
+                    .scaledFont(size: 14)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 32, height: 32)
+                    .background {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
+                    }
+                Text("Volume Normalization")
+                    .scaledFont(size: 14, weight: .medium)
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+            }
+
+            Toggle(isOn: $volumeNormalizationEnabled) {
+                Text("Level quiet recordings")
+                    .scaledFont(size: 12.5)
+                    .foregroundStyle(Palette.ink2)
+            }
+            .tint(Palette.brass)
+            .accessibilityIdentifier("settings.volumeNormalization")
+
+            Text("Automatically boosts quiet recordings so everything stays at a comfortable volume. Especially helpful for older LibriVox audiobooks.")
+                .scaledFont(size: 11)
+                .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .onChange(of: volumeNormalizationEnabled) { _, newValue in
+            playback.setVolumeNormalizationEnabled(newValue)
+        }
     }
 }
 

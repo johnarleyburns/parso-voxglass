@@ -102,17 +102,13 @@ final class EQEngine {
 
     private var filters: [BiquadFilter]
     var gains: [Float]
+    let normalizer = VolumeNormalizer()
+    var eqStagesEnabled = true
 
-    /// P2-1: running-RMS–based gain (target –16 dBFS). –Silence below this RMS
-    /// freezes gain so it never winds up to infinity on a pure-silence buffer.
-    private var normGain: Float = 1.0
-    private let targetRMS: Float = 0.158   // ~–16 dBFS
-    private let normSpeed: Float = 0.001    // smoothing per sample
-    private let silenceThreshold: Float = 0.0001
-
-    init(gains: [Float] = Array(repeating: 0, count: 10)) {
+    init(gains: [Float] = Array(repeating: 0, count: 10), eqStagesEnabled: Bool = true) {
         self.gains = gains
         self.filters = Array(repeating: BiquadFilter(), count: 10)
+        self.eqStagesEnabled = eqStagesEnabled
         reconfigure()
     }
 
@@ -147,33 +143,21 @@ final class EQEngine {
     }
 
     func process(_ input: Float) -> Float {
-        // EQ (10 bands in series)
         var sample = input
-        for i in 0..<filters.count {
-            sample = filters[i].process(sample)
+        if eqStagesEnabled {
+            for i in 0..<filters.count {
+                sample = filters[i].process(sample)
+            }
         }
 
-        // P2-1: running-RMS volume normalization + safety limiter. Gain converges
-        // toward targetRMS; freezes at silenceThreshold to avoid the classic AGC
-        // infinity-wind-up bug on a pure-zero buffer.
-        let energy = sample * sample
-        let rms = sqrt(energy)
-        if rms > silenceThreshold {
-            normGain += normSpeed * (targetRMS / rms - normGain)
-        }
-        sample = Float(normGain * sample)
-
-        // Hard limiter: output stays in [-1, 1]; catches any clipping.
-        if sample > 1.0 { sample = 1.0 }
-        if sample < -1.0 { sample = -1.0 }
-
-        return sample
+        return normalizer.process(sample)
     }
 
     func reset() {
         for i in 0..<filters.count {
             filters[i].reset()
         }
+        normalizer.reset()
     }
 
     func copy() -> EQEngine {

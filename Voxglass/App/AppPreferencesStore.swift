@@ -13,6 +13,7 @@ struct AppPreferencesStore: DynamicProperty {
         static let skipForwardInterval = "voxglass.skipForwardInterval"
         static let skipBackInterval = "voxglass.skipBackInterval"
         static let skipSilenceEnabled = "voxglass.skipSilence.enabled"
+        static let volumeNormalizationEnabled = "voxglass.volumeNormalization.enabled"
     }
 
     @AppStorage(Keys.hasCompletedSplash) var hasCompletedSplash = false

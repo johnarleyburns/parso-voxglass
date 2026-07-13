@@ -53,7 +53,6 @@ final class PlaybackCoordinator: ObservableObject {
     private var isHandlingInterruption = false
 
     private var silenceBoosted = false
-    private let skipSilenceBoost: Float = 3.0
     private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
 
     /// Cached lock-screen artwork for the current book (P0-4). Built once per
@@ -258,11 +257,22 @@ final class PlaybackCoordinator: ObservableObject {
         UserDefaults.standard.bool(forKey: isSkipSilenceEnabledKey)
     }
 
+    private var isVolumeNormalizationEnabled: Bool {
+        UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled) != nil
+            ? UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
+            : true
+    }
+
+    func setVolumeNormalizationEnabled(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
+    }
+
     private func handleSilenceChanged(_ isSilent: Bool) {
         guard isSkipSilenceEnabled else { return }
         if isSilent && !silenceBoosted {
             silenceBoosted = true
-            engine.setRate(skipSilenceBoost)
+            let boost = min(playbackRate * 1.5, PlaybackRate.maximum)
+            engine.setRate(boost)
         } else if !isSilent && silenceBoosted {
             silenceBoosted = false
             engine.setRate(playbackRate)

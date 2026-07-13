@@ -12,7 +12,7 @@ final class EQAudioProcessor {
     private var contexts: [ObjectIdentifier: TapContext] = [:]
     private var gains: [Float] = Array(repeating: 0, count: EQEngine.isoBands.count)
     private var engaged = false
-    private let silenceDetector = SilenceDetector()
+    private let silenceDetector: SilenceDetector
     private var previousSilenceState: SilenceDetector.State = .speech
 
     var onEngaged: (() -> Void)?
@@ -21,6 +21,10 @@ final class EQAudioProcessor {
 
     var isEngaged: Bool { engaged }
     var currentGains: [Float] { gains }
+
+    init(silenceDetector: SilenceDetector = SilenceDetector()) {
+        self.silenceDetector = silenceDetector
+    }
 
     /// Number of items with a live tap — lets tests prove two taps coexist across
     /// a gapless preload.
@@ -35,7 +39,7 @@ final class EQAudioProcessor {
         var tap: Unmanaged<MTAudioProcessingTap>?
 
         init(gains: [Float], item: AVPlayerItem, processor: EQAudioProcessor) {
-            self.engine = EQEngine(gains: gains)
+            self.engine = EQEngine(gains: gains, eqStagesEnabled: ProFeature.isEnabled(.eq))
             self.item = item
             self.processor = processor
         }
@@ -60,7 +64,6 @@ final class EQAudioProcessor {
     }
 
     func attach(to playerItem: AVPlayerItem) {
-        guard ProFeature.isEnabled(.eq) else { return }
         engaged = true
         let key = ObjectIdentifier(playerItem)
         guard contexts[key] == nil else { return }   // already tapped
@@ -118,6 +121,12 @@ final class EQAudioProcessor {
         guard engaged else { return }
         engaged = false
         onDisengaged?()
+    }
+
+    func setEQStagesEnabled(_ enabled: Bool) {
+        for context in contexts.values {
+            context.engine.eqStagesEnabled = enabled
+        }
     }
 
     func resetSilenceDetector() {

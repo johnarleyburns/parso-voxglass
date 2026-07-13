@@ -10,7 +10,7 @@ final class SilenceDetector {
     private let consecutiveFramesRequired: Int
     private var silentCount = 0
 
-    init(threshold: Float = 0.001, consecutiveFramesRequired: Int = 5) {
+    init(threshold: Float = 0.02, consecutiveFramesRequired: Int = 5) {
         self.threshold = threshold
         self.consecutiveFramesRequired = consecutiveFramesRequired
     }
