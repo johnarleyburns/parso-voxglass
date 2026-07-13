@@ -29,6 +29,13 @@ final class PlaybackCoordinator: ObservableObject {
     private var notificationObservers: [NSObjectProtocol] = []
     private var isHandlingInterruption = false
 
+    /// Cached lock-screen artwork for the current book (P0-4). Built once per
+    /// session load — never per 1s tick — keyed by book id.
+    private var currentArtwork: MPMediaItemArtwork?
+    private var currentArtworkBookID: UUID?
+    /// Fetches cover art; injectable so tests can count fetches without network.
+    var artworkProvider: (@MainActor (URL) async -> UIImage?)?
+
     init(
         engine: AudioEngine,
         positionStore: PositionStore,
@@ -657,19 +664,44 @@ final class PlaybackCoordinator: ObservableObject {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
         }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = Self.nowPlayingInfo(
+            session: session,
+            currentTime: engine.currentTime,
+            duration: engine.duration ?? session.duration,
+            rate: engine.rate,
+            isPlaying: engine.isPlaying,
+            artwork: currentArtwork
+        )
+    }
 
-        var info: [String: Any] = [
+    /// Pure builder for the Now Playing dictionary (Step 0b). Extracting it makes
+    /// the lock-screen payload — including the playback-rate fields that would
+    /// otherwise make the scrubber drift at non-1.0x speed, and the artwork — a
+    /// plain assertable dictionary. Sets both `PlaybackRate` (0 when paused so the
+    /// system stops advancing the scrubber) and `DefaultPlaybackRate`.
+    nonisolated static func nowPlayingInfo(
+        session: PlaybackSession,
+        currentTime: TimeInterval,
+        duration: TimeInterval?,
+        rate: Float,
+        isPlaying: Bool,
+        artwork: MPMediaItemArtwork?
+    ) -> [String: Any] {        var info: [String: Any] = [
             MPMediaItemPropertyTitle: session.chapter.title,
             MPMediaItemPropertyAlbumTitle: session.book.title,
             MPMediaItemPropertyArtist: session.book.authorLine,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: engine.currentTime,
-            MPNowPlayingInfoPropertyPlaybackRate: engine.isPlaying ? 1.0 : 0.0,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
+            MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? Double(rate) : 0.0,
+            MPNowPlayingInfoPropertyDefaultPlaybackRate: Double(rate),
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
         ]
-        if let duration = engine.duration ?? session.duration {
+        if let duration {
             info[MPMediaItemPropertyPlaybackDuration] = duration
         }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        if let artwork {
+            info[MPMediaItemPropertyArtwork] = artwork
+        }
+        return info
     }
 
     deinit {

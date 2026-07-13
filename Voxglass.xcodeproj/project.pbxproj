@@ -22,6 +22,7 @@
 		293A63007EB15E38F0842E29 /* BookArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2DBA8A509FFB154473301D /* BookArtworkView.swift */; };
 		2CEA8FD9B9F6A505E01BF939 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D187D7F0D06AAA1D3E05A0EB /* StoreManager.swift */; };
 		2E7BF2E9F7E273558975649B /* VoxglassCloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347365A9C059125422ECF73C /* VoxglassCloudSync.swift */; };
+		2FCB102D2A03F7AA66D8F85E /* NowPlayingInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD02CBC504D69124A0A5F62 /* NowPlayingInfoTests.swift */; };
 		3382A26BA23175201F4C5F60 /* AVPlayerAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6A38C40AB8319675AFAA1C2 /* AVPlayerAudioEngine.swift */; };
 		34D3CE5D42987D6865FBE40C /* FolderWatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC600DD91080CB79868FC53B /* FolderWatchService.swift */; };
 		38B98A7320CF0CBCFF8A20F0 /* OfflineDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E3AB6937D3F4AEB836FFA6 /* OfflineDownloadManager.swift */; };
@@ -46,6 +47,7 @@
 		5EFA717BF37BD2CD19AB1855 /* LibriVoxLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAFA7AF1A9E010902265B76 /* LibriVoxLanguage.swift */; };
 		5F0DF26D3A418D5EA6C2BEB9 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4008972DE2117B1781A316A6 /* SearchView.swift */; };
 		5F1A208BDFF964AD3392B694 /* DatabaseValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEEA84F0A20681E031EC755 /* DatabaseValue.swift */; };
+		5FF59C961199E01DD120F70D /* EQTapRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB117C56B5EC5D05FD06F09E /* EQTapRegistry.swift */; };
 		64813E4564BA6C747F52851E /* WorkKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190C546C05588B5AA2BFDE2B /* WorkKey.swift */; };
 		68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E0138B81F7532946A478D9 /* MiniPlayerView.swift */; };
 		69472E4C15429C0482CF1283 /* metadata_librivox_item.json in Resources */ = {isa = PBXBuildFile; fileRef = 16D5DD63112BA7D489FDC31C /* metadata_librivox_item.json */; };
@@ -108,6 +110,7 @@
 		EE5EC4960D5EA319D4ED30C3 /* FreeTierRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */; };
 		EFD58001536BFA7C97DCDABD /* VisualOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0789D8083F86F84540255D /* VisualOnboardingTests.swift */; };
 		EFF52894E7D8920360E5F5F9 /* VoxglassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */; };
+		F4029D15CB7ED7FA2CDB4F5C /* EQTapRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19F88A17F5CEBAA3D08C8BC /* EQTapRegistryTests.swift */; };
 		F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841534B2BAC23D46DACCD5B1 /* LibraryView.swift */; };
 		F58C6B635FE4217352ADCECA /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D1F526973EBB17A744B728F6 /* StoreKit.framework */; };
 		F66B80BCBEC0D79F86DF8253 /* EQSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99EA17458DB32D1CFA660196 /* EQSettingsStore.swift */; };
@@ -209,6 +212,7 @@
 		95899A251D2052F3A0594746 /* BookModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookModels.swift; sourceTree = "<group>"; };
 		97D31866CCDBBD795481D35D /* StreamCacheStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamCacheStore.swift; sourceTree = "<group>"; };
 		99EA17458DB32D1CFA660196 /* EQSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQSettingsStore.swift; sourceTree = "<group>"; };
+		9AD02CBC504D69124A0A5F62 /* NowPlayingInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingInfoTests.swift; sourceTree = "<group>"; };
 		9C7281A4BB54139B5008C6D6 /* ListeningStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsView.swift; sourceTree = "<group>"; };
 		9D332E6309846362FD6D4EDA /* Pro.storekit */ = {isa = PBXFileReference; path = Pro.storekit; sourceTree = "<group>"; };
 		A1F033D743401A65BD090238 /* FolderWatchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatchServiceTests.swift; sourceTree = "<group>"; };
@@ -235,6 +239,7 @@
 		D1F526973EBB17A744B728F6 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTierRegistryTests.swift; sourceTree = "<group>"; };
 		DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkServiceUnifiedTests.swift; sourceTree = "<group>"; };
+		DB117C56B5EC5D05FD06F09E /* EQTapRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQTapRegistry.swift; sourceTree = "<group>"; };
 		DB571585E7A69A5930CD8B3B /* FakeAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeAudioEngine.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		E1D5AF1567883A6899759263 /* OfflineDownloadManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadManagerTests.swift; sourceTree = "<group>"; };
@@ -244,6 +249,7 @@
 		EC600DD91080CB79868FC53B /* FolderWatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatchService.swift; sourceTree = "<group>"; };
 		EFA4E9B17CAB1FFA31DB10F8 /* VoxglassTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F17A1A10380661E1380EBCF2 /* AppPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferencesStore.swift; sourceTree = "<group>"; };
+		F19F88A17F5CEBAA3D08C8BC /* EQTapRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQTapRegistryTests.swift; sourceTree = "<group>"; };
 		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F75BEC14A135E3D926160BA1 /* DatabaseMigrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseMigrations.swift; sourceTree = "<group>"; };
@@ -464,6 +470,7 @@
 				79F5976941C1FEC963784983 /* EQAudioProcessor.swift */,
 				B2D0A16F726342F54CF99976 /* EQPresetStore.swift */,
 				99EA17458DB32D1CFA660196 /* EQSettingsStore.swift */,
+				DB117C56B5EC5D05FD06F09E /* EQTapRegistry.swift */,
 			);
 			path = EQ;
 			sourceTree = "<group>";
@@ -587,6 +594,7 @@
 				45C874B881FBBCD4057C0F64 /* CacheSettingsModelTests.swift */,
 				3F175FD0D4781DE23BBC3210 /* CloudSyncEntitlementTests.swift */,
 				3535BBB6F973F1CE1D00D8C5 /* EQStoreTests.swift */,
+				F19F88A17F5CEBAA3D08C8BC /* EQTapRegistryTests.swift */,
 				A1F033D743401A65BD090238 /* FolderWatchServiceTests.swift */,
 				D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */,
 				2AF241C86613512CDBF1ECA3 /* HomeViewTests.swift */,
@@ -597,6 +605,7 @@
 				71D8802E6430761632352177 /* ListeningStatsStoreTests.swift */,
 				6D2BA4E5373D5B09F5FA1922 /* ModelBehaviorTests.swift */,
 				B3972D9C6B8328A16A3B334F /* NowPlayingFavoriteTests.swift */,
+				9AD02CBC504D69124A0A5F62 /* NowPlayingInfoTests.swift */,
 				E1D5AF1567883A6899759263 /* OfflineDownloadManagerTests.swift */,
 				BC61497C672A246E4A913E3F /* PositionStoreTests.swift */,
 				6EEFF9DFD16A10C54A2C4516 /* PostFieldTestImprovementsTests.swift */,
@@ -809,6 +818,7 @@
 				5C6CECF4CF0B88CEF7D16462 /* EQAudioProcessor.swift in Sources */,
 				176475D771063920F7EA00E7 /* EQPresetStore.swift in Sources */,
 				F66B80BCBEC0D79F86DF8253 /* EQSettingsStore.swift in Sources */,
+				5FF59C961199E01DD120F70D /* EQTapRegistry.swift in Sources */,
 				6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */,
 				34D3CE5D42987D6865FBE40C /* FolderWatchService.swift in Sources */,
 				754A7A41F77C785EFA367369 /* FolderWatchView.swift in Sources */,
@@ -870,6 +880,7 @@
 				3F33DA2E97223B25B08EA054 /* CacheSettingsModelTests.swift in Sources */,
 				AC96E09B3288A092F986ED72 /* CloudSyncEntitlementTests.swift in Sources */,
 				ED999E3749C8FF3445258661 /* EQStoreTests.swift in Sources */,
+				F4029D15CB7ED7FA2CDB4F5C /* EQTapRegistryTests.swift in Sources */,
 				71B2EEFD267A57954A1EAC4A /* FakeAudioEngine.swift in Sources */,
 				BD488F4C00E640AE1C0FB2B2 /* FolderWatchServiceTests.swift in Sources */,
 				EE5EC4960D5EA319D4ED30C3 /* FreeTierRegistryTests.swift in Sources */,
@@ -880,6 +891,7 @@
 				08A88151110B039E8867D579 /* ListeningStatsStoreTests.swift in Sources */,
 				C838EFD49FC8DB229DE0D627 /* ModelBehaviorTests.swift in Sources */,
 				76D8F9D852E7652D1E1089B1 /* NowPlayingFavoriteTests.swift in Sources */,
+				2FCB102D2A03F7AA66D8F85E /* NowPlayingInfoTests.swift in Sources */,
 				4D73FB394FC32F05A4546692 /* OfflineDownloadManagerTests.swift in Sources */,
 				55A6274484CDE8FCD124D2E7 /* PositionStoreTests.swift in Sources */,
 				578A00F9B0B172DDDF1D9302 /* PostFieldTestImprovementsTests.swift in Sources */,

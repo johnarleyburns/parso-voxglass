@@ -77,11 +77,11 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// `preloadNext` so EQ survives track changes and relaunch.
     func setEQEngaged(_ engaged: Bool) {
         eqEngagedDesired = engaged
-        guard let item = player.currentItem else { return }
         if engaged {
-            eqProcessor.attach(to: item)
+            if let item = player.currentItem { eqProcessor.attach(to: item) }
+            if let preloaded = preloadedItem { eqProcessor.attach(to: preloaded) }
         } else {
-            eqProcessor.detach(from: item)
+            eqProcessor.detachAll()
         }
     }
 
@@ -201,9 +201,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     }
 
     private func tearDownCurrentItem() {
-        if let currentItem = player.currentItem {
-            eqProcessor.detach(from: currentItem)
-        }
+        eqProcessor.detachAll()
         removeObservers()
     }
 
@@ -257,6 +255,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
                     guard let self else { return }
                     if player.currentItem == item {
                         self.preloadedItem = nil
+                        // The previous chapter's item has left the queue; drop its
+                        // now-orphaned EQ tap so only live items keep taps.
+                        self.eqProcessor.pruneTaps(keeping: player.items())
                         self.onItemChanged?()
                     }
                 }

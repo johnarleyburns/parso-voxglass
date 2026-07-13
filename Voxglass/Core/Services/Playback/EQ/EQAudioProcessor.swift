@@ -2,56 +2,145 @@ import AudioToolbox
 import AVFoundation
 import Foundation
 
+/// Applies a 10-band EQ to playback via one `MTAudioProcessingTap` per player
+/// item. One-tap-per-item (tracked by `EQTapRegistry`, keyed by object identity)
+/// is the fix for EQ silently dying on every gapless auto-advance: the preloaded
+/// item receives its own tap while the current item keeps playing through its
+/// own, so `AVQueuePlayer` advancing no longer drops the `audioMix`.
 final class EQAudioProcessor {
-    private var tap: Unmanaged<MTAudioProcessingTap>?
-    private var engine = EQEngine()
-    private var isActive = false
+    private let registry = EQTapRegistry()
+    private var contexts: [ObjectIdentifier: TapContext] = [:]
+    private var gains: [Float] = Array(repeating: 0, count: EQEngine.isoBands.count)
+    private var engaged = false
 
     var onEngaged: (() -> Void)?
     var onDisengaged: (() -> Void)?
 
-    var isEngaged: Bool { isActive }
-    var currentGains: [Float] { engine.gains }
+    var isEngaged: Bool { engaged }
+    var currentGains: [Float] { gains }
+
+    /// Number of items with a live tap — lets tests prove two taps coexist across
+    /// a gapless preload.
+    var activeTapCount: Int { registry.count }
+
+    /// Per-item tap state. Retained by the tap's storage so each item's `EQEngine`
+    /// (and thus its biquad filter history) is independent.
+    final class TapContext {
+        let engine: EQEngine
+        weak var item: AVPlayerItem?
+        var tap: Unmanaged<MTAudioProcessingTap>?
+
+        init(gains: [Float], item: AVPlayerItem) {
+            self.engine = EQEngine(gains: gains)
+            self.item = item
+        }
+    }
 
     func applyPreset(_ preset: EQPreset) {
         guard ProFeature.isEnabled(.eq) else { return }
-        engine = EQEngine(gains: preset.gains)
+        gains = preset.gains
+        for context in contexts.values {
+            context.engine.gains = preset.gains
+            context.engine.reconfigure()
+        }
     }
 
     func setGain(_ gain: Float, at band: Int) {
         guard ProFeature.isEnabled(.eq) else { return }
-        engine.setGain(gain, at: band)
+        guard band >= 0, band < gains.count else { return }
+        gains[band] = gain
+        for context in contexts.values {
+            context.engine.setGain(gain, at: band)
+        }
     }
 
     func attach(to playerItem: AVPlayerItem) {
         guard ProFeature.isEnabled(.eq) else { return }
-        guard !isActive else { return }
+        engaged = true
+        let key = ObjectIdentifier(playerItem)
+        guard contexts[key] == nil else { return }   // already tapped
 
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        let context = TapContext(gains: gains, item: playerItem)
+        guard let tap = makeTap(for: context) else { return }
+        context.tap = Unmanaged.passUnretained(tap)
+        contexts[key] = context
+        registry.attach(playerItem)
+        applyMix(tap: tap, to: playerItem)
+        onEngaged?()
+    }
+
+    func detach(from playerItem: AVPlayerItem) {
+        let key = ObjectIdentifier(playerItem)
+        guard let context = contexts[key] else { return }
+        playerItem.audioMix = nil
+        context.tap?.release()
+        contexts[key] = nil
+        registry.evict(playerItem)
+        if contexts.isEmpty {
+            didDisengage()
+        }
+    }
+
+    /// Removes taps from every item and clears state (used when disengaging EQ).
+    func detachAll() {
+        for context in contexts.values {
+            context.item?.audioMix = nil
+            context.tap?.release()
+        }
+        contexts.removeAll()
+        registry.evictAll()
+        didDisengage()
+    }
+
+    /// Evicts taps for items no longer present in `items` (e.g. after a gapless
+    /// auto-advance leaves the previous chapter's item behind).
+    func pruneTaps(keeping items: [AVPlayerItem]) {
+        let live = Set(items.map(ObjectIdentifier.init))
+        for (key, context) in contexts where !live.contains(key) {
+            context.item?.audioMix = nil
+            context.tap?.release()
+            contexts[key] = nil
+            registry.evict(identifier: key)
+        }
+        if contexts.isEmpty {
+            didDisengage()
+        }
+    }
+
+    private func didDisengage() {
+        guard engaged else { return }
+        engaged = false
+        onDisengaged?()
+    }
+
+    // MARK: - Tap plumbing
+
+    private func makeTap(for context: TapContext) -> MTAudioProcessingTap? {
+        let contextPtr = Unmanaged.passUnretained(context).toOpaque()
 
         var callbacks = MTAudioProcessingTapCallbacks(
             version: kMTAudioProcessingTapCallbacksVersion_0,
-            clientInfo: selfPtr,
-            init: { tap, clientInfo, tapStorageOut in
-                let processor = Unmanaged<EQAudioProcessor>.fromOpaque(clientInfo!).takeUnretainedValue()
-                tapStorageOut.pointee = Unmanaged.passRetained(processor).toOpaque()
+            clientInfo: contextPtr,
+            init: { _, clientInfo, tapStorageOut in
+                let ctx = Unmanaged<TapContext>.fromOpaque(clientInfo!).takeUnretainedValue()
+                tapStorageOut.pointee = Unmanaged.passRetained(ctx).toOpaque()
             },
             finalize: { tap in
                 let raw = MTAudioProcessingTapGetStorage(tap)
-                Unmanaged<EQAudioProcessor>.fromOpaque(raw).release()
+                Unmanaged<TapContext>.fromOpaque(raw).release()
             },
-            prepare: { tap, maxFrames, processingFormat in
+            prepare: { tap, _, _ in
                 let raw = MTAudioProcessingTapGetStorage(tap)
-                let processor = Unmanaged<EQAudioProcessor>.fromOpaque(raw).takeUnretainedValue()
-                processor.engine.reset()
+                let ctx = Unmanaged<TapContext>.fromOpaque(raw).takeUnretainedValue()
+                ctx.engine.reset()
             },
             unprepare: { _ in },
-            process: { tap, numberFrames, flags, bufferListInOut, numberFramesOut, flagsOut in
+            process: { tap, numberFrames, _, bufferListInOut, numberFramesOut, flagsOut in
                 let raw = MTAudioProcessingTapGetStorage(tap)
-                let processor = Unmanaged<EQAudioProcessor>.fromOpaque(raw).takeUnretainedValue()
+                let ctx = Unmanaged<TapContext>.fromOpaque(raw).takeUnretainedValue()
 
                 let status = MTAudioProcessingTapGetSourceAudio(tap, numberFrames, bufferListInOut, flagsOut, nil, numberFramesOut)
-                guard status == noErr, processor.isActive else { return }
+                guard status == noErr else { return }
 
                 let abl = UnsafeMutableAudioBufferListPointer(bufferListInOut)
                 for buffer in abl {
@@ -59,7 +148,7 @@ final class EQAudioProcessor {
                     let count = Int(numberFrames) * Int(buffer.mNumberChannels)
                     let samples = data.bindMemory(to: Float.self, capacity: count)
                     for j in 0..<count {
-                        samples[j] = processor.engine.process(samples[j])
+                        samples[j] = ctx.engine.process(samples[j])
                     }
                 }
             }
@@ -72,31 +161,33 @@ final class EQAudioProcessor {
             kMTAudioProcessingTapCreationFlag_PreEffects,
             &rawTap
         )
-        guard status == noErr, let rawTap else { return }
-        tap = Unmanaged.passUnretained(rawTap)
-        isActive = true
-        let retainedTap = rawTap
+        guard status == noErr, let rawTap else { return nil }
+        return rawTap
+    }
 
-        let audioTrack = playerItem.asset.tracks.first { $0.mediaType == .audio }
-        let inputParams = AVMutableAudioMixInputParameters(track: audioTrack)
-        inputParams.setValue(retainedTap, forKey: "audioTapProcessor")
+    /// Attaches `tap` to `playerItem`'s audio track. For a remote `AVURLAsset` the
+    /// tracks are often not loaded synchronously (the tap would attach to nothing),
+    /// so fall back to async track loading and set the mix once tracks are ready.
+    private func applyMix(tap: MTAudioProcessingTap, to playerItem: AVPlayerItem) {
+        let asset = playerItem.asset
+        if let track = asset.tracks.first(where: { $0.mediaType == .audio }) {
+            setMix(tap: tap, track: track, on: playerItem)
+            return
+        }
+        asset.loadValuesAsynchronously(forKeys: ["tracks"]) { [weak self, weak playerItem] in
+            DispatchQueue.main.async {
+                guard let self, let playerItem, self.contexts[ObjectIdentifier(playerItem)] != nil else { return }
+                let track = asset.tracks.first { $0.mediaType == .audio }
+                self.setMix(tap: tap, track: track, on: playerItem)
+            }
+        }
+    }
 
+    private func setMix(tap: MTAudioProcessingTap, track: AVAssetTrack?, on playerItem: AVPlayerItem) {
+        let inputParams = AVMutableAudioMixInputParameters(track: track)
+        inputParams.setValue(tap, forKey: "audioTapProcessor")
         let audioMix = AVMutableAudioMix()
         audioMix.inputParameters = [inputParams]
         playerItem.audioMix = audioMix
-
-        onEngaged?()
-    }
-
-    func detach(from playerItem: AVPlayerItem) {
-        guard isActive else { return }
-        isActive = false
-
-        playerItem.audioMix = nil
-        tap?.release()
-        tap = nil
-        engine.reset()
-
-        onDisengaged?()
     }
 }
