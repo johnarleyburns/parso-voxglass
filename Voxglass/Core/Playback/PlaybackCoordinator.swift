@@ -290,6 +290,40 @@ final class PlaybackCoordinator: ObservableObject {
         updateNowPlayingInfo()
     }
 
+    // MARK: - Skip intervals (P1-1, FREE)
+
+    /// Symbol-backed skip values and their SF Symbols (back/forward).
+    static let allowedSkipBackValues: [Int] = [10, 15, 30, 45, 60]
+    static let allowedSkipForwardValues: [Int] = [15, 30, 45, 60, 90]
+
+    static func skipBackSymbol(_ seconds: Int) -> String {
+        UIImage(systemName: "gobackward.\(seconds)") != nil
+            ? "gobackward.\(seconds)"
+            : "gobackward.15"
+    }
+
+    static func skipForwardSymbol(_ seconds: Int) -> String {
+        UIImage(systemName: "goforward.\(seconds)") != nil
+            ? "goforward.\(seconds)"
+            : "goforward.30"
+    }
+
+    /// Re-reads the stored skip values and updates `preferredIntervals` on the
+    /// remote-command center so they change immediately without re-registration.
+    func reconfigureSkipIntervals() {
+        let defaults = UserDefaults.standard
+        let skipBack = defaults.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
+            ? defaults.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
+            : 15
+        let skipForward = defaults.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
+            ? defaults.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
+            : 30
+
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.skipBackwardCommand.preferredIntervals = [NSNumber(value: skipBack)]
+        commandCenter.skipForwardCommand.preferredIntervals = [NSNumber(value: skipForward)]
+    }
+
     // MARK: - Lock-screen artwork (P0-4, FREE)
 
     /// Populates `currentArtwork` once per book. Sets a bundled fallback
@@ -842,7 +876,11 @@ final class PlaybackCoordinator: ObservableObject {
         commandCenter.skipForwardCommand.preferredIntervals = [30]
         commandCenter.skipForwardCommand.addTarget { [weak self] _ in
             Task { @MainActor in
-                await self?.skip(by: 30)
+                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
+                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
+                    : 30
+                let resolved = configured > 0 ? configured : 30
+                await self?.skip(by: TimeInterval(resolved))
             }
             return .success
         }
@@ -851,7 +889,11 @@ final class PlaybackCoordinator: ObservableObject {
         commandCenter.skipBackwardCommand.preferredIntervals = [15]
         commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
             Task { @MainActor in
-                await self?.skip(by: -15)
+                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
+                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
+                    : 15
+                let resolved = configured > 0 ? configured : 15
+                await self?.skip(by: -TimeInterval(resolved))
             }
             return .success
         }

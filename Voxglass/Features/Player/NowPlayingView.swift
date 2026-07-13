@@ -182,15 +182,19 @@ struct NowPlayingView: View {
             .accessibilityLabel("Previous chapter")
 
             Button {
-                Task { await playback.skip(by: -15) }
+                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
+                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15
+                Task { await playback.skip(by: -TimeInterval(configured)) }
             } label: {
-                Image(systemName: "gobackward.15")
+                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
+                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15
+                Image(systemName: PlaybackCoordinator.skipBackSymbol(configured))
                     .font(.system(size: 20))
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
-            .accessibilityLabel("Back 15 seconds")
+            .accessibilityLabel("Back \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15) seconds")
 
             Button {
                 playback.togglePlayPause()
@@ -204,15 +208,20 @@ struct NowPlayingView: View {
             .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
 
             Button {
-                Task { await playback.skip(by: 30) }
+                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
+                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30
+                Task { await playback.skip(by: TimeInterval(configured)) }
             } label: {
-                Image(systemName: "goforward.30")
+                Image(systemName: PlaybackCoordinator.skipForwardSymbol(
+                    UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
+                        ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30)
+                )
                     .font(.system(size: 20))
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
-            .accessibilityLabel("Forward 30 seconds")
+            .accessibilityLabel("Forward \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30) seconds")
 
             Button {
                 Task { await playback.skipToNextChapter() }

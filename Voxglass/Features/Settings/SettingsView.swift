@@ -27,6 +27,7 @@ struct SettingsView: View {
 
                 settingsGroup("Playback") {
                     PrefetchDepthRow()
+                    SkipIntervalRow()
                     SleepTimerDefaultRow()
                 }
 
@@ -718,6 +719,51 @@ private struct PrefetchDepthRow: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("pro.lock.prefetchDepth")
         .paywallSheet(isPresented: $showPaywall)
+    }
+}
+
+private struct SkipIntervalRow: View {
+    @AppStorage(AppPreferencesStore.Keys.skipForwardInterval) private var forward = 30
+    @AppStorage(AppPreferencesStore.Keys.skipBackInterval) private var back = 15
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: "forward.frame.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 32, height: 32)
+                    .background {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
+                    }
+                Text("Skip Intervals")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Forward").font(.system(size: 11.5)).foregroundStyle(Palette.ink3)
+                Picker("Forward", selection: $forward) {
+                    ForEach(PlaybackCoordinator.allowedSkipForwardValues, id: \.self) { s in
+                        Text("\(s)s").tag(s)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Back").font(.system(size: 11.5)).foregroundStyle(Palette.ink3)
+                Picker("Back", selection: $back) {
+                    ForEach(PlaybackCoordinator.allowedSkipBackValues, id: \.self) { s in
+                        Text("\(s)s").tag(s)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .padding(14)
     }
 }
 
