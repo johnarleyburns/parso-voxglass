@@ -19,11 +19,10 @@ final class ProPaywallContentTests: XCTestCase {
         XCTAssertEqual(advertised.count, ProFeature.allCases.count)
     }
 
-    func testOfflineDownloadsIsAdvertisedNearTheTop() {
+    func testOfflineDownloadsIsAdvertised() {
         let features = ProPaywallView.advertised.map(\.feature)
         let index = features.firstIndex(of: .offlineDownloads)
-        XCTAssertNotNil(index)
-        XCTAssertLessThanOrEqual(index ?? .max, 1, "Offline Downloads should be a high-value top entry.")
+        XCTAssertNotNil(index, "Offline Downloads must be advertised — but no longer needs to be at the top (P4 paywall refit)")
     }
 
     func testEveryAdvertisementHasCopyAndIcon() {

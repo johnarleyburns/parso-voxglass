@@ -20,25 +20,10 @@ struct ProPaywallView: View {
     /// Ordered high-value first. Every `ProFeature` must appear exactly once.
     static let advertised: [ProFeatureAdvertisement] = [
         ProFeatureAdvertisement(
-            feature: .offlineDownloads,
-            icon: "arrow.down.circle.fill",
-            title: "Offline Downloads",
-            description: "Download whole books for gap-free listening with no connection — pinned so they're never evicted."),
-        ProFeatureAdvertisement(
-            feature: .cachePresets,
-            icon: "square.split.2x2.fill",
-            title: "Cache Presets",
-            description: "Choose 500 MB, 2 GB, or 10 GB streaming cache to keep more audio available offline."),
-        ProFeatureAdvertisement(
             feature: .eq,
             icon: "waveform.path.ecg",
-            title: "10-Band EQ",
-            description: "A 10-band equalizer with presets for Concert Hall, Spoken Word, 78 rpm — and your own."),
-        ProFeatureAdvertisement(
-            feature: .prefetchDepth,
-            icon: "arrow.triangle.branch",
-            title: "Prefetch Depth",
-            description: "Prefetch the next few chapters or your whole book over Wi-Fi so playback never waits."),
+            title: "10-Band EQ + Volume Normalization",
+            description: "Shape playback with custom or preset EQs; automatic volume leveling keeps uneven LibriVox recordings comfortable."),
         ProFeatureAdvertisement(
             feature: .folderWatch,
             icon: "folder.fill.badge.plus",
@@ -53,7 +38,22 @@ struct ProPaywallView: View {
             feature: .listeningStats,
             icon: "chart.bar.fill",
             title: "Listening Stats",
-            description: "Track your listening habits — total time, genres, authors, and daily streaks.")
+            description: "Track your listening habits — total time, genres, authors, and daily streaks."),
+        ProFeatureAdvertisement(
+            feature: .offlineDownloads,
+            icon: "arrow.down.circle.fill",
+            title: "Unlimited Offline Pins",
+            description: "Download as many books as you want for gap-free listening offline. Free tier lets you pin a couple."),
+        ProFeatureAdvertisement(
+            feature: .cachePresets,
+            icon: "square.split.2x2.fill",
+            title: "Cache Presets",
+            description: "Choose 500 MB, 2 GB, or 10 GB streaming cache to keep more audio available offline."),
+        ProFeatureAdvertisement(
+            feature: .prefetchDepth,
+            icon: "arrow.triangle.branch",
+            title: "Prefetch Depth",
+            description: "Prefetch the next few chapters or your whole book over Wi-Fi so playback never waits.")
     ]
 
     private var features: [ProFeatureAdvertisement] { Self.advertised }

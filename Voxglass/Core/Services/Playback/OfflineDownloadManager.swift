@@ -67,9 +67,13 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
         isPro: Bool,
         isCellular: Bool,
         cacheOnCellular: Bool,
-        allowCellularOverride: Bool
+        allowCellularOverride: Bool,
+        freePinCount: Int = 0,
+        freePinLimit: Int = 2
     ) -> OfflineStartDecision {
-        guard isPro else { return .needsPro }
+        if !isPro && freePinCount >= freePinLimit {
+            return .needsPro
+        }
         if isCellular && !cacheOnCellular && !allowCellularOverride {
             return .needsCellularConfirmation
         }
@@ -138,11 +142,16 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
         isCellular: Bool,
         allowCellularOverride: Bool = false
     ) async -> OfflineStartDecision {
+        let isPro = ProFeature.isEnabled(.offlineDownloads)
+        // Count books that already have cached- or in-flight offline state so the
+        // free tier gets a taste limit (2 pins) rather than a hard wall.
+        let freePinCount = isPro ? Int.max : state.filter { $0.value == .cached }.count
         let decision = Self.startDecision(
-            isPro: ProFeature.isEnabled(.offlineDownloads),
+            isPro: isPro,
             isCellular: isCellular,
             cacheOnCellular: defaults.bool(forKey: AppPreferencesStore.Keys.cacheFullBooksOnCellular),
-            allowCellularOverride: allowCellularOverride
+            allowCellularOverride: allowCellularOverride,
+            freePinCount: freePinCount
         )
         guard decision == .start else { return decision }
         await startDownload(book: book)
