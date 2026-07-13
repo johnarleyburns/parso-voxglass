@@ -17,17 +17,29 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     var onPlaybackEnded: (@MainActor () -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
 
+    /// The desired playback rate. Applied via `player.defaultRate` so every
+    /// resume path (remote play, interruption resume, chapter change) inherits it
+    /// for free. Default 1.0.
+    private(set) var rate: Float = 1.0
+
     /// Builds an AVPlayerItem that routes remote URLs through the streaming cache.
+    /// `audioTimePitchAlgorithm` is set to `.spectral` on every item so variable
+    /// speed (0.5–3.5x) keeps pitch correct and the gapless preloaded item carries
+    /// the same algorithm across the auto-advance.
     private func makePlayerItem(for url: URL) -> AVPlayerItem {
-        guard CachingResourceLoader.isRemoteCacheable(url) else {
-            return AVPlayerItem(url: url)
+        let item: AVPlayerItem
+        if CachingResourceLoader.isRemoteCacheable(url) {
+            let cacheURL = CachingResourceLoader.cacheURL(for: url)
+            let loader = CachingResourceLoader(originalURL: url)
+            loaders.append(loader)
+            let asset = AVURLAsset(url: cacheURL)
+            asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
+            item = AVPlayerItem(asset: asset)
+        } else {
+            item = AVPlayerItem(url: url)
         }
-        let cacheURL = CachingResourceLoader.cacheURL(for: url)
-        let loader = CachingResourceLoader(originalURL: url)
-        loaders.append(loader)
-        let asset = AVURLAsset(url: cacheURL)
-        asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
-        return AVPlayerItem(asset: asset)
+        item.audioTimePitchAlgorithm = .spectral
+        return item
     }
 
     /// Warms the streaming cache for one upcoming chapter without affecting playback.
@@ -50,6 +62,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             let asset = AVURLAsset(url: cacheURL)
             asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
             let item = AVPlayerItem(asset: asset)
+            item.audioTimePitchAlgorithm = .spectral
             prefetchItems.append(item)
             // Referencing the item's asset keys triggers the resource loader to begin
             // filling the cache in the background.
@@ -110,6 +123,22 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
 
     var isPlaying: Bool {
         player.timeControlStatus == .playing
+    }
+
+    var volume: Float {
+        get { player.volume }
+        set { player.volume = newValue }
+    }
+
+    /// Sets the playback rate via `player.defaultRate` (iOS 16+) so every future
+    /// `play()` resumes at this rate. Only nudges the live `player.rate` when
+    /// already playing — assigning `rate` to a paused player would start playback.
+    func setRate(_ rate: Float) {
+        self.rate = rate
+        player.defaultRate = rate
+        if player.timeControlStatus == .playing {
+            player.rate = rate
+        }
     }
 
     func configureAudioSession() {

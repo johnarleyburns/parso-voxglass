@@ -53,6 +53,7 @@
 		6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F8ACEE07BAD813F34C6DBE /* EQView.swift */; };
 		6D1F2947C9F08205C5A4C991 /* ArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75882B51F22C8D3A3EEAAD /* ArtworkService.swift */; };
 		713811C821F808FF77A38F59 /* VoxglassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */; };
+		71B2EEFD267A57954A1EAC4A /* FakeAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB571585E7A69A5930CD8B3B /* FakeAudioEngine.swift */; };
 		737B89964C17EDDFC294E82D /* PlaybackCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E00E34BB8E21391962EFE1 /* PlaybackCoordinator.swift */; };
 		754A7A41F77C785EFA367369 /* FolderWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE9C1DD357179B18F33DD7C /* FolderWatchView.swift */; };
 		76D8F9D852E7652D1E1089B1 /* NowPlayingFavoriteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3972D9C6B8328A16A3B334F /* NowPlayingFavoriteTests.swift */; };
@@ -234,6 +235,7 @@
 		D1F526973EBB17A744B728F6 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		D8A5F2369B3F5A5051E55BD5 /* FreeTierRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTierRegistryTests.swift; sourceTree = "<group>"; };
 		DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkServiceUnifiedTests.swift; sourceTree = "<group>"; };
+		DB571585E7A69A5930CD8B3B /* FakeAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeAudioEngine.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		E1D5AF1567883A6899759263 /* OfflineDownloadManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadManagerTests.swift; sourceTree = "<group>"; };
 		E5515C1592CC2C95E1740040 /* InternetArchiveCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveCatalogTests.swift; sourceTree = "<group>"; };
@@ -362,6 +364,7 @@
 		337D65C25ED2154536B8E821 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				DB571585E7A69A5930CD8B3B /* FakeAudioEngine.swift */,
 				BB6D4A6751ADEDEE7F4C0D55 /* InternetArchive */,
 			);
 			path = Fixtures;
@@ -867,6 +870,7 @@
 				3F33DA2E97223B25B08EA054 /* CacheSettingsModelTests.swift in Sources */,
 				AC96E09B3288A092F986ED72 /* CloudSyncEntitlementTests.swift in Sources */,
 				ED999E3749C8FF3445258661 /* EQStoreTests.swift in Sources */,
+				71B2EEFD267A57954A1EAC4A /* FakeAudioEngine.swift in Sources */,
 				BD488F4C00E640AE1C0FB2B2 /* FolderWatchServiceTests.swift in Sources */,
 				EE5EC4960D5EA319D4ED30C3 /* FreeTierRegistryTests.swift in Sources */,
 				E5A037C7BE52117C724C20A0 /* HomeViewTests.swift in Sources */,

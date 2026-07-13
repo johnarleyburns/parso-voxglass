@@ -42,11 +42,9 @@ final class PlaybackCoordinator: ObservableObject {
                 await self?.advanceAfterChapterEnd()
             }
         }
-        if let avEngine = engine as? AVPlayerAudioEngine {
-            avEngine.onItemChanged = { [weak self] in
-                Task { @MainActor in
-                    await self?.handleItemChanged()
-                }
+        self.engine.onItemChanged = { [weak self] in
+            Task { @MainActor in
+                await self?.handleItemChanged()
             }
         }
         self.engine.configureAudioSession()
@@ -116,9 +114,8 @@ final class PlaybackCoordinator: ObservableObject {
             // Preload the next chapter for near-gapless
             let nextIndex = chapterIndex(in: book, for: chapter) + 1
             if book.chapters.indices.contains(nextIndex),
-               let nextURL = book.chapters[nextIndex].resolvedPlayableURL(),
-               let avEngine = engine as? AVPlayerAudioEngine {
-                avEngine.preloadNext(url: nextURL)
+               let nextURL = book.chapters[nextIndex].resolvedPlayableURL() {
+                engine.preloadNext(url: nextURL)
             }
         } catch {
             playbackError = error.localizedDescription
@@ -180,18 +177,15 @@ final class PlaybackCoordinator: ObservableObject {
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else { return }
 
-        if let avEngine = engine as? AVPlayerAudioEngine {
-            avEngine.cancelPreload()
-        }
+        engine.cancelPreload()
 
         await loadChapter(session.chapters[nextIndex], in: session, startTime: 0, shouldPlay: engine.isPlaying)
 
         // Set up preload for the chapter after next
         let afterNextIndex = nextIndex + 1
         if session.chapters.indices.contains(afterNextIndex),
-           let afterNextURL = session.chapters[afterNextIndex].resolvedPlayableURL(),
-           let avEngine = engine as? AVPlayerAudioEngine {
-            avEngine.preloadNext(url: afterNextURL)
+           let afterNextURL = session.chapters[afterNextIndex].resolvedPlayableURL() {
+            engine.preloadNext(url: afterNextURL)
         }
     }
 
@@ -235,7 +229,7 @@ final class PlaybackCoordinator: ObservableObject {
     // MARK: - Equalizer (Pro, §2)
 
     var isEQEngaged: Bool {
-        (engine as? AVPlayerAudioEngine)?.isEQEngaged ?? false
+        engine.isEQEngaged
     }
 
     var eqGains: [Float] {
@@ -244,19 +238,19 @@ final class PlaybackCoordinator: ObservableObject {
 
     func setEQEngaged(_ engaged: Bool) {
         guard ProFeature.isEnabled(.eq) else { return }
-        (engine as? AVPlayerAudioEngine)?.setEQEngaged(engaged)
+        engine.setEQEngaged(engaged)
         eqSettings.isEngaged = engaged
     }
 
     func applyEQPreset(_ preset: EQPreset) {
         guard ProFeature.isEnabled(.eq) else { return }
-        (engine as? AVPlayerAudioEngine)?.applyEQPreset(preset)
+        engine.applyEQPreset(preset)
         eqSettings.gains = preset.gains
     }
 
     func setEQGain(_ gain: Float, at band: Int) {
         guard ProFeature.isEnabled(.eq) else { return }
-        (engine as? AVPlayerAudioEngine)?.setEQGain(gain, at: band)
+        engine.setEQGain(gain, at: band)
         var gains = eqSettings.gains
         guard band >= 0, band < gains.count else { return }
         gains[band] = gain
@@ -268,10 +262,9 @@ final class PlaybackCoordinator: ObservableObject {
     /// track loads) so `load(...)` re-attaches the tap automatically.
     private func restoreEQ() {
         guard ProFeature.isEnabled(.eq) else { return }
-        guard let avEngine = engine as? AVPlayerAudioEngine else { return }
-        avEngine.setEQGains(eqSettings.gains)
+        engine.setEQGains(eqSettings.gains)
         if eqSettings.isEngaged {
-            avEngine.setEQEngaged(true)
+            engine.setEQEngaged(true)
         }
     }
 
@@ -303,8 +296,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     private func prefetchUpcomingChapters(from book: BookWithChapters, currentChapter: Chapter) {
-        guard let avEngine = engine as? AVPlayerAudioEngine,
-              let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
+        guard let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
 
         let depth = Self.resolvedPrefetchDepth(
             isPro: ProFeature.isEnabled(.prefetchDepth),
@@ -325,7 +317,7 @@ final class PlaybackCoordinator: ObservableObject {
             index += 1
         }
         guard !urls.isEmpty else { return }
-        avEngine.prefetchIntoCache(urls: urls)
+        engine.prefetchIntoCache(urls: urls)
     }
 
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
@@ -348,9 +340,8 @@ final class PlaybackCoordinator: ObservableObject {
 
             let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
             if session.chapters.indices.contains(nextIndex),
-               let nextURL = session.chapters[nextIndex].resolvedPlayableURL(),
-               let avEngine = engine as? AVPlayerAudioEngine {
-                avEngine.preloadNext(url: nextURL)
+               let nextURL = session.chapters[nextIndex].resolvedPlayableURL() {
+                engine.preloadNext(url: nextURL)
             }
         } catch {
             playbackError = error.localizedDescription
@@ -389,12 +380,11 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     private func preloadChapterAfter(_ chapter: Chapter, in session: PlaybackSession) {
-        guard let avEngine = engine as? AVPlayerAudioEngine else { return }
         let nextIndex = session.chapterIndex + 2
         guard session.chapters.indices.contains(nextIndex) else { return }
         let afterNext = session.chapters[nextIndex]
         guard let url = afterNext.resolvedPlayableURL() else { return }
-        avEngine.preloadNext(url: url)
+        engine.preloadNext(url: url)
     }
 
     private func advanceAfterChapterEnd() async {

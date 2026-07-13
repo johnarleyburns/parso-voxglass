@@ -44,49 +44,78 @@ Requirements: iOS 17+, Swift 5, no third-party dependencies (Apple frameworks on
 - `plan.md` — the current active implementation plan.
 - `docs/` — design notes and HTML mockups.
 
+## Competitive position
+
+The LibriVox catalog on iOS is effectively owned by one competitor: **LibriVox Audiobooks** (BookDesign
+LLC, 4.8★ / 32K ratings), free with ads or $4.99 one-time ad-free. It ships playback speed, a sleep timer,
+bookmarks, CarPlay, and collections. The other LibriVox apps on the store are ad-supported catalog
+browsers with weaker players.
+
+Voxglass today has the better catalog, cache, and privacy story — and is missing basic player table
+stakes: **no playback speed, no sleep timer, no bookmarks, no lock-screen artwork.** That is the gap the
+roadmap below closes, and all of it ships free.
+
+The opening is real. BookDesign's recent reviews are dominated by a UI redesign users can't navigate,
+speed control regressed to an unlabeled slider, narrator names dropped from chapters, and ads with volume
+spikes that wake people mid-chapter. There is clear demand for *the same catalog in a player that respects
+you* — which is precisely what Voxglass is for.
+
+Full analysis, rationale, and per-task implementation detail: **[`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md)**.
+
+## Roadmap
+
+Everything below ships **free** — no new Pro gates. Pro remains a one-time unlock for power features
+(EQ, folder watch, iCloud sync, listening stats, bulk offline pinning, cache presets).
+
+**Step 0 — testability groundwork**
+- [ ] Widen the `AudioEngine` protocol to absorb the 13 concrete downcasts in `PlaybackCoordinator`; add a
+      `FakeAudioEngine` test double. This is what makes the rest unit-testable.
+- [ ] Extract a pure `nowPlayingInfo` builder; fix two real bugs found en route — EQ silently dies on every
+      gapless chapter auto-advance, and the lock-screen playback rate is hardcoded to 1.0.
+
+**P0 — table stakes**
+- [ ] **Variable playback speed** (0.5×–3.5×, per-book memory, survives gapless auto-advance).
+- [ ] **Sleep timer** (fixed durations + end-of-chapter + fade-out).
+- [ ] **Bookmarks** (create / list / jump / delete, with notes). Bookmark *sync* rides the existing Pro
+      iCloud gate — which also makes the paywall's already-shipped bookmark-sync claim true.
+- [ ] **Lock-screen / Control Center artwork.**
+
+**P1 — parity**
+- [ ] Customizable skip intervals.
+- [ ] Library sort / filter / finished / in-progress states.
+- [ ] Playlists (as shelves; cross-book continuous playback is a separate epic).
+
+**P2 — differentiation**
+- [ ] **Volume normalization** — directly fixes LibriVox's uneven volunteer-recording levels. BookDesign
+      does not have this.
+- [ ] **Skip silence** (via rate boost — an `MTAudioProcessingTap` cannot drop frames).
+- [ ] Dynamic Type support.
+
+**Paywall refit** — soften the offline hard-wall to a taste limit (a couple of free pinned books), and lead
+with what the competition can't match: EQ, volume normalization, folder watch, private iCloud sync,
+listening stats, FLAC, and no ads ever. Monetization stays a **one-time lifetime unlock** — no
+subscriptions, no ads.
+
+### Future (not yet planned)
+
+- **CarPlay** — planned, and the single biggest remaining gap versus BookDesign. **Blocked on Apple
+  granting the `com.apple.developer.carplay-audio` entitlement**; until it is granted the feature cannot be
+  built or even run in the CarPlay simulator. The good news is that P0 is its prerequisite anyway —
+  `CPNowPlayingTemplate` is driven entirely by `MPNowPlayingInfoCenter` + `MPRemoteCommandCenter`, so
+  shipping speed, artwork, and the remote commands first turns CarPlay into a small job once the
+  entitlement lands. Not part of Voxglass Pro.
+- **Apple Watch app** — browse your library and control playback from your wrist. Not part of Voxglass Pro.
+- **Widgets, Siri & App Shortcuts** — needs an app-group entitlement and relocating the SQLite database out
+  of Application Support before a widget can read it.
+- **Localization** — the UI is English-only today (the *catalog* already supports 15 languages).
+- **Narrator-centric discovery, ratings, backup/restore, Project Gutenberg read-along** — longer-term
+  differentiators unique to public-domain content.
+
 ## Current focus
 
 See `plan.md` for the active post-field-test plan: multi-language search/browse, "see more" pagination in
 Explore, guaranteed collection artwork, alphabetical collection sorting, an intelligent on-device
 "Recommended for You" engine, and a monetization refresh.
-
-## Roadmap
-
-Beyond the current plan, a competitive review of modern audiobook apps (Audible, Libby, Prologue,
-BookPlayer, Smart AudioBook Player, Pocket Casts/Overcast, and LibriVox-specific apps) surfaced the
-following prioritized backlog.
-
-### Planned (not yet available)
-
-- **CarPlay** — control playback through your vehicle's built-in screen. Not shipped; on the roadmap.
-- **Apple Watch app** — browse your library and control playback from your wrist. Not shipped; on the roadmap.
-
-Neither is part of Voxglass Pro today; both were removed from the Pro feature set until they ship.
-
-Legend: **[TS]** table-stakes · **[D]** differentiator · **[$]** premium / monetizable.
-
-1. **iCloud/CloudKit cross-device sync** of playback position, bookmarks, and favorites — [$][TS].
-   The single biggest quality bar; competitors frequently fail here. (Kicked off in `plan.md` §6.)
-2. **Bookmarks with notes + shareable audio clips** — [D]. Cheap, high-delight.
-3. **Volume normalization + silence trimming** ("Smart Speed"-style) — [D]. Directly fixes LibriVox's
-   uneven volunteer-recording quality.
-4. **Home / Lock-Screen / Control-Center widgets, Siri & App Shortcuts, Apple Watch app** — [TS]/[D].
-   Expected modern-iOS polish; Watch app is a common premium line.
-5. **Collections / tags + finished / archive / in-progress states** — [D]. Beyond the flat favorites list.
-6. **Listening stats + streaks + year-in-review** — [D]. Strong 2025-era engagement/retention.
-7. **Narrator-centric discovery, curated lists, and in-app ratings/reviews** — [D]. Adds the discovery
-   layer LibriVox's raw catalog lacks; narrators have followings.
-8. **Backup / restore / export of library + DRM-free file import (M4B/MP3/FLAC)** — [D]. Turns Voxglass
-   into a universal player.
-9. **Link to Project Gutenberg source text / read-along** — [D]. A defensible signature feature unique to
-   public-domain content.
-
-Additional playback table-stakes to confirm/round out along the way: fine-grained variable speed with
-per-book memory, sleep timer (fixed + end-of-chapter), skip-silence, chapter/table-of-contents
-navigation, customizable skip intervals, and smart rewind-on-resume.
-
-Monetization stays a **one-time lifetime unlock** (no subscriptions, no ads) with an optional future
-iCloud-sync anchor — the premium bundle grows in value without compromising the privacy stance.
 
 ## License
 
@@ -96,16 +125,10 @@ GPLv3 — see `LICENSE`.
 
 Cross-device sync via iCloud (requires Voxglass Pro) uses `NSUbiquitousKeyValueStore`. The required
 **iCloud key-value-store** capability is committed as `Voxglass/Resources/Voxglass.entitlements` and wired
-through `project.yml` for the **Debug** configuration, so simulator/development builds (and unit tests)
-carry the entitlement with no manual capability toggling.
-
-For **Release / TestFlight**, the entitlement is intentionally *not* attached yet because the App Store
-provisioning profile (`Parso Voxglass App Store`) does not currently include the iCloud capability —
-attaching it would fail Manual signing during archive. To ship iCloud sync in production:
-
-1. Enable **iCloud → Key-value storage** for the `guru.parso.voxglass` App ID in the Apple Developer portal.
-2. Regenerate the App Store provisioning profile and update the `BUILD_PROVISION_PROFILE_BASE64` CI secret.
-3. Move `CODE_SIGN_ENTITLEMENTS` from the `Debug` config to `settings.base` in `project.yml`.
+through `project.yml` under `settings.base` — so it is attached in **all** configurations, Release and
+TestFlight included. The App Store provisioning profile now carries the iCloud capability; no manual
+capability toggling is needed for development, simulator, unit-test, or archive builds.
 
 Without the entitlement, `NSUbiquitousKeyValueStore.synchronize()` is a no-op and sync will not function
-even if Pro is unlocked.
+even if Pro is unlocked — so if you fork this project under a different App ID, enable **iCloud →
+Key-value storage** for your App ID in the Apple Developer portal and regenerate your provisioning profile.
