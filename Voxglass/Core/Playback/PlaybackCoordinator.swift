@@ -296,13 +296,13 @@ final class PlaybackCoordinator: ObservableObject {
     static let allowedSkipBackValues: [Int] = [10, 15, 30, 45, 60]
     static let allowedSkipForwardValues: [Int] = [15, 30, 45, 60, 90]
 
-    static func skipBackSymbol(_ seconds: Int) -> String {
+    nonisolated static func skipBackSymbol(_ seconds: Int) -> String {
         UIImage(systemName: "gobackward.\(seconds)") != nil
             ? "gobackward.\(seconds)"
             : "gobackward.15"
     }
 
-    static func skipForwardSymbol(_ seconds: Int) -> String {
+    nonisolated static func skipForwardSymbol(_ seconds: Int) -> String {
         UIImage(systemName: "goforward.\(seconds)") != nil
             ? "goforward.\(seconds)"
             : "goforward.30"

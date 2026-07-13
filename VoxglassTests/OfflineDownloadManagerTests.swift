@@ -6,11 +6,21 @@ final class OfflineDownloadManagerTests: XCTestCase {
 
     // MARK: - §7 cellular / Pro gate decision
 
-    func testStartDecisionRequiresPro() {
+    func testStartDecisionAllowsFreeTasteLimit() {
+        // Free tier with 0 pins → starts (taste limit: 2 free pins).
         let decision = OfflineDownloadManager.startDecision(
-            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false
+            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
+            freePinCount: 0
         )
-        XCTAssertEqual(decision, .needsPro)
+        XCTAssertEqual(decision, .start, "Free tier gets 2 pin slots before Pro is required")
+    }
+
+    func testStartDecisionRequiresProWhenTasteLimitReached() {
+        let decision = OfflineDownloadManager.startDecision(
+            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
+            freePinCount: 2
+        )
+        XCTAssertEqual(decision, .needsPro, "After 2 free pins, Pro is required")
     }
 
     func testStartDecisionPromptsOnCellularWhenToggleOff() {

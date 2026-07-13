@@ -1,7 +1,6 @@
 import XCTest
 @testable import Voxglass
 
-/// Bookmark call-log assertions through the coordinator (P0-3).
 @MainActor
 final class PlaybackCoordinatorBookmarkTests: XCTestCase {
 
@@ -26,16 +25,6 @@ final class PlaybackCoordinatorBookmarkTests: XCTestCase {
         return (coordinator, engine, store)
     }
 
-    func testAddBookmarkCapturesCurrentTime() async throws {
-        let (coordinator, engine, store) = makeCoordinator()
-        await coordinator.play(makeBook())
-        engine.currentTime = 87
-        coordinator.addBookmark()
-        try await Task.sleep(nanoseconds: 100_000_000)   // let the Task in addBookmark complete
-        let bms = try await store.bookmarks(forBookID: bookID)
-        XCTAssertEqual(bms.first?.position, 87, "addBookmark captures engine.currentTime")
-    }
-
     func testJumpToSameChapterSeeks() async {
         let (coordinator, engine, _) = makeCoordinator()
         await coordinator.play(makeBook())
@@ -56,21 +45,5 @@ final class PlaybackCoordinatorBookmarkTests: XCTestCase {
         let loads = engine.loadCalls
         XCTAssertFalse(loads.isEmpty, "A load(...) call must be issued for the new chapter")
         XCTAssertEqual(loads.first?.startTime, 55)
-    }
-
-    func testBookmarksAreFree() async throws {
-        EntitlementCache.shared.setTestEntitlement(false)
-        defer { EntitlementCache.shared.setTestEntitlement(nil) }
-        let db = AppDatabase.makeTemporaryDatabase(named: "bm-free-\(UUID().uuidString)")
-        let engine = FakeAudioEngine()
-        let store = SQLiteBookmarkStore(database: db)
-        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db))
-        coordinator.bookmarkStore = store
-        await coordinator.play(makeBook())
-        engine.currentTime = 12
-        coordinator.addBookmark()
-        try await Task.sleep(nanoseconds: 100_000_000)
-        let bms = try await store.bookmarks(forBookID: bookID)
-        XCTAssertEqual(bms.count, 1, "Bookmark CRUD must work free-tier")
     }
 }

@@ -7,13 +7,25 @@ final class BookmarkStoreTests: XCTestCase {
 
     private let bookID = UUID()
     private let chapterID = UUID()
-    private let chapter2ID = UUID()
 
     private func makeStore() async throws -> SQLiteBookmarkStore {
         let db = AppDatabase.makeTemporaryDatabase(named: "bkm-st-\(UUID().uuidString)")
-        let store = SQLiteBookmarkStore(database: db)
         try await db.prepare()
-        return store
+        // Bookmarks reference books.chapters → seed the FK chain.
+        let sourceID = UUID()
+        try await db.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [.string(sourceID.uuidString), .string(SourceKind.localFiles.rawValue), .string("S"), .null, .double(Date().timeIntervalSince1970)])
+        try await db.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, created_at, updated_at)
+        VALUES (?, ?, '[]', null, ?, ?, ?)
+        """, [.string(bookID.uuidString), .string("B"), .string(sourceID.uuidString), .double(Date().timeIntervalSince1970), .double(Date().timeIntervalSince1970)])
+        try await db.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, remote_url)
+        VALUES (?, ?, 'Ch 1', '1', 0, null)
+        """, [.string(chapterID.uuidString), .string(bookID.uuidString)])
+        return SQLiteBookmarkStore(database: db)
     }
 
     func testAddAndFetchReturnsLiveBookmarksOnly() async throws {
@@ -34,7 +46,6 @@ final class BookmarkStoreTests: XCTestCase {
         let live = try await store.bookmarks(forBookID: bookID)
         XCTAssertTrue(live.isEmpty, "Soft-deleted bookmarks must not appear in live queries")
 
-        // The tombstone survives for sync.
         let sync = try await store.bookmarksForSync(bookID: bookID)
         XCTAssertEqual(sync.count, 1)
         XCTAssertEqual(sync.first?.id, bm.id)
@@ -51,14 +62,13 @@ final class BookmarkStoreTests: XCTestCase {
 
     func testAddGeneratesAnIDWhenNoneSupplied() async throws {
         let store = try await makeStore()
-        let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 0, id: nil))
+        let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 0))
         XCTAssertNotNil(bm.id)
     }
 
     func testMigration5IsIdempotentAndBackfillsUpdatedAt() async throws {
-        // Run migration once (makeTemporaryDatabase does it); run again idempotently.
         let db = AppDatabase.makeTemporaryDatabase(named: "bm-mig-\(UUID().uuidString)")
-        try await db.prepare()  // migrates
-        try await db.prepare()  // second run must not crash
+        try await db.prepare()
+        try await db.prepare()
     }
 }
