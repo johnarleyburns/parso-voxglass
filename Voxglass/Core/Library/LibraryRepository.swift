@@ -225,7 +225,7 @@ final class LibraryRepository {
         }
 
         let now = Date()
-        let book = Book(
+        var book = Book(
             title: metadata.title,
             authors: metadata.creators.isEmpty ? ["Internet Archive"] : metadata.creators,
             summary: metadata.summary,
@@ -251,7 +251,7 @@ final class LibraryRepository {
             return dict
         }()
 
-        let chapters = selectedFiles.enumerated().compactMap { index, file -> Chapter? in
+        var chapters = selectedFiles.enumerated().compactMap { index, file -> Chapter? in
             guard let remoteURL = metadata.fileURL(for: file) else { return nil }
             let chapterTitle = InternetArchiveAudioSelector.chapterTitle(for: file)
             let key = chapterTitle

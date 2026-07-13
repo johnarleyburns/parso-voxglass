@@ -28,6 +28,7 @@ struct SettingsView: View {
                 settingsGroup("Playback") {
                     PrefetchDepthRow()
                     SkipIntervalRow()
+                    SkipSilenceRow()
                     SleepTimerDefaultRow()
                 }
 
@@ -735,6 +736,7 @@ private struct PrefetchDepthRow: View {
 }
 
 private struct SkipIntervalRow: View {
+    @EnvironmentObject private var playback: PlaybackCoordinator
     @AppStorage(AppPreferencesStore.Keys.skipForwardInterval) private var forward = 30
     @AppStorage(AppPreferencesStore.Keys.skipBackInterval) private var back = 15
 
@@ -774,6 +776,45 @@ private struct SkipIntervalRow: View {
                 }
                 .pickerStyle(.segmented)
             }
+        }
+        .padding(14)
+        .onChange(of: forward) { _, _ in playback.reconfigureSkipIntervals() }
+        .onChange(of: back) { _, _ in playback.reconfigureSkipIntervals() }
+    }
+}
+
+private struct SkipSilenceRow: View {
+    @AppStorage(AppPreferencesStore.Keys.skipSilenceEnabled) private var skipSilenceEnabled = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: "waveform.slash")
+                    .scaledFont(size: 14)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 32, height: 32)
+                    .background {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
+                    }
+                Text("Skip Silence")
+                    .scaledFont(size: 14, weight: .medium)
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+            }
+
+            Toggle(isOn: $skipSilenceEnabled) {
+                Text("Speed up silent gaps")
+                    .scaledFont(size: 12.5)
+                    .foregroundStyle(Palette.ink2)
+            }
+            .tint(Palette.brass)
+            .accessibilityIdentifier("settings.skipSilence")
+
+            Text("Long pauses between sentences play back faster, then drop to your chosen speed the moment the narrator resumes.")
+                .scaledFont(size: 11)
+                .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
     }

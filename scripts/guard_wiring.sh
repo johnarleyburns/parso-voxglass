@@ -184,16 +184,41 @@ check_dynamic_type() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# Rule 6 — xcodeproj drift guard
-# If xcodegen is available, regenerate and diff. Otherwise, assert
-# that project.yml and Voxglass.xcodeproj were touched in the same
-# commit.
+# Rule 6 — target-membership guard
+# Every .swift file on disk is a member of the xcodeproj. Catches the
+# "added a source file, never regenerated the project" bug, which the
+# compiler only reports as `cannot find type X in scope` — and which
+# the ubuntu job cannot see any other way, because it has no Swift
+# toolchain. Pure grep, so it runs everywhere.
+# ──────────────────────────────────────────────────────────────
+check_xcodeproj_membership() {
+  local pbxproj="Voxglass.xcodeproj/project.pbxproj"
+  local had_failure=0
+
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    if ! grep -q "$(basename "$file")" "$pbxproj"; then
+      echo "::error title=Target-membership guard::$file is on disk but is not a member of any xcodeproj target. Run 'xcodegen generate' and commit the result."
+      had_failure=1
+    fi
+  done < <(find Voxglass VoxglassTests -name '*.swift' 2>/dev/null)
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 7 — xcodeproj drift guard
+# If xcodegen is available, regenerate and diff. Note: `--project`
+# takes the *output directory*, not the project path — passing
+# `--project Voxglass.xcodeproj` writes a nested
+# Voxglass.xcodeproj/Voxglass.xcodeproj and silently diffs nothing.
+# Otherwise, assert project.yml and the xcodeproj moved together.
 # ──────────────────────────────────────────────────────────────
 check_xcodeproj_drift() {
   local had_failure=0
 
   if command -v xcodegen &>/dev/null; then
-    xcodegen generate --spec project.yml --project Voxglass.xcodeproj --quiet 2>/dev/null || true
+    xcodegen generate --spec project.yml --quiet 2>/dev/null || true
     if ! git diff --exit-code -- Voxglass.xcodeproj >/dev/null 2>&1; then
       echo "::error title=Xcodeproj drift guard::project.yml and Voxglass.xcodeproj are out of sync. Run 'xcodegen generate' and commit the result."
       git diff --stat -- Voxglass.xcodeproj
@@ -244,6 +269,7 @@ run_check "coordinator callers"     check_coordinator_callers
 run_check "dead placeholder rows"   check_dead_placeholders
 run_check "pro-feature enforcement" check_pro_feature_enforcement
 run_check "Dynamic Type"            check_dynamic_type
+run_check "target membership"       check_xcodeproj_membership
 run_check "xcodeproj drift"         check_xcodeproj_drift
 
 echo ""
