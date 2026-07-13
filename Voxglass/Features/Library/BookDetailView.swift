@@ -13,6 +13,7 @@ struct BookDetailView: View {
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
     @State private var showingBookmarks = false
+    @State private var showingPlaylistPicker = false
     @State private var bookmarkCount: Int?
 
     private var currentBook: BookWithChapters {
@@ -69,6 +70,12 @@ struct BookDetailView: View {
                 BookmarksView()
                     .environmentObject(playback)
                     .environmentObject(libraryStore)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingPlaylistPicker) {
+            NavigationStack {
+                AddToPlaylistSheet(bookID: currentBook.book.id)
             }
             .presentationDragIndicator(.visible)
         }
@@ -192,7 +199,9 @@ struct BookDetailView: View {
             }
 
             offlineControl
-            SecondaryActionButton(title: "Playlist", systemImage: "text.badge.plus", isEnabled: false) {}
+            SecondaryActionButton(title: "Playlist", systemImage: "text.badge.plus") {
+                showingPlaylistPicker = true
+            }
 
             ShareLink(item: shareText) {
                 Label("Share", systemImage: "square.and.arrow.up")
@@ -500,5 +509,60 @@ private struct ChapterRow: View {
             .padding(.vertical, 11)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct AddToPlaylistSheet: View {
+    @EnvironmentObject private var playlistStore: PlaylistStore
+    @Environment(\.dismiss) private var dismiss
+    let bookID: UUID
+    @State private var newTitle = ""
+
+    var body: some View {
+        ZStack {
+            VoxglassBackground()
+            VStack(spacing: 0) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(Color.white.opacity(0.35))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 6)
+                List {
+                    Section("Create New") {
+                        TextField("Playlist name", text: $newTitle)
+                        Button("Create & Add") {
+                            Task {
+                                if let p = await playlistStore.create(title: newTitle) {
+                                    await playlistStore.addBook(bookID, to: p.id)
+                                }
+                                newTitle = ""
+                                dismiss()
+                            }
+                        }
+                        .disabled(newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    Section("Add to Existing") {
+                        if playlistStore.playlists.isEmpty {
+                            Text("No playlists yet")
+                                .foregroundStyle(Palette.ink3)
+                        }
+                        ForEach(playlistStore.playlists) { playlist in
+                            Button {
+                                Task {
+                                    await playlistStore.addBook(bookID, to: playlist.id)
+                                    dismiss()
+                                }
+                            } label: {
+                                Label(playlist.title, systemImage: "text.badge.plus")
+                                    .foregroundStyle(Palette.ink)
+                            }
+                        }
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+        }
+        .navigationTitle("Add to Playlist")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await playlistStore.refresh() }
     }
 }

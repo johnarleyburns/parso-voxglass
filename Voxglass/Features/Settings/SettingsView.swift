@@ -51,6 +51,18 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    NavigationLink {
+                        PlaylistsView(repository: PlaylistRepository(database: AppDatabase.makeApplicationDatabase()))
+                    } label: {
+                        DisclosureListRow(
+                            icon: "text.badge.plus",
+                            title: "Playlists",
+                            detail: "Group books into shelves",
+                            count: nil
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 settingsGroup("About") {

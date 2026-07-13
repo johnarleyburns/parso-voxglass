@@ -13,10 +13,12 @@ final class AppServices: ObservableObject {
     let offlineDownloadManager: OfflineDownloadManager
     let listeningStatsStore: ListeningStatsStore
     let folderWatchService: FolderWatchService
+    let playlistStore: PlaylistStore
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()
         let libraryRepository = LibraryRepository(database: database)
+        let playlistRepository = PlaylistRepository(database: database)
         let positionStore = SQLitePositionStore(database: database)
         let bookmarkStore = SQLiteBookmarkStore(database: database)
         let audioEngine = AVPlayerAudioEngine()
@@ -32,6 +34,8 @@ final class AppServices: ObservableObject {
             engine: audioEngine,
             positionStore: positionStore
         )
+        let playlistStore = PlaylistStore(repository: playlistRepository)
+        self.playlistStore = playlistStore
         self.tasteProfileStore = tasteProfileStore
         self.cloudSync = cloudSync
         self.homeRecommendationStore = HomeRecommendationStore()
