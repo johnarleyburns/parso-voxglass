@@ -35,7 +35,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// Cached lock-screen artwork for the current book (P0-4). Built once per
     /// session load — never per 1s tick — keyed by book id.
-    private var currentArtwork: MPMediaItemArtwork?
+    private(set) var currentArtwork: MPMediaItemArtwork?
     private var currentArtworkBookID: UUID?
     /// Fetches cover art; injectable so tests can count fetches without network.
     var artworkProvider: (@MainActor (URL) async -> UIImage?)?
@@ -83,6 +83,7 @@ final class PlaybackCoordinator: ObservableObject {
 
             try await engine.load(url: url, startTime: latest.position)
             applyStoredRate(forBookID: book.book.id)
+            updateArtwork(for: book.book)
             currentSession = PlaybackSession(
                 book: book.book,
                 chapters: book.chapters,
@@ -110,6 +111,7 @@ final class PlaybackCoordinator: ObservableObject {
             let startTime = savedPosition?.position ?? 0
             try await engine.load(url: playableURL, startTime: startTime)
             applyStoredRate(forBookID: book.book.id)
+            updateArtwork(for: book.book)
             engine.play()
 
             currentSession = PlaybackSession(
@@ -237,6 +239,8 @@ final class PlaybackCoordinator: ObservableObject {
         progressTask?.cancel()
         progressTask = nil
         currentSession = nil
+        currentArtwork = nil
+        currentArtworkBookID = nil
         snapshotStore.clear()
         updateNowPlayingInfo()
     }
@@ -261,6 +265,45 @@ final class PlaybackCoordinator: ObservableObject {
         }
         updateNowPlayingInfo()
     }
+
+    // MARK: - Lock-screen artwork (P0-4, FREE)
+
+    /// Populates `currentArtwork` once per book. Sets a bundled fallback
+    /// immediately (so the lock screen is never blank), then, if the book has a
+    /// cover URL, fetches the real cover once and re-emits the Now Playing dict.
+    /// Never fetches per tick — `updateNowPlayingInfo()` only reads the cache.
+    private func updateArtwork(for book: Book) {
+        guard currentArtworkBookID != book.id else { return }
+        currentArtworkBookID = book.id
+        currentArtwork = Self.fallbackArtwork
+
+        guard let coverURL = book.coverURL else { return }
+        let provider = artworkProvider ?? { url in await ArtworkService.shared.image(for: url) }
+        Task { [weak self] in
+            let image = await provider(coverURL)
+            guard let self, let image, self.currentArtworkBookID == book.id else { return }
+            self.currentArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            self.updateNowPlayingInfo()
+        }
+    }
+
+    /// A static, procedurally-rendered cover used for books without art (or where
+    /// the IA placeholder was rejected). Built once, never per tick.
+    private static let fallbackArtwork: MPMediaItemArtwork = {
+        let size = CGSize(width: 512, height: 512)
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor(red: 0.16, green: 0.11, blue: 0.03, alpha: 1).setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 220, weight: .regular)
+            if let symbol = UIImage(systemName: "headphones", withConfiguration: symbolConfig)?
+                .withTintColor(UIColor(red: 0.93, green: 0.70, blue: 0.36, alpha: 1), renderingMode: .alwaysOriginal) {
+                let origin = CGPoint(x: (size.width - symbol.size.width) / 2,
+                                     y: (size.height - symbol.size.height) / 2)
+                symbol.draw(at: origin)
+            }
+        }
+        return MPMediaItemArtwork(boundsSize: size) { _ in image }
+    }()
 
     // MARK: - Equalizer (Pro, §2)
 
