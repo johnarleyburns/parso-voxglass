@@ -8,6 +8,7 @@ final class VoxglassCloudSync: ObservableObject {
 
     private let store = NSUbiquitousKeyValueStore.default
     private let database: AppDatabase
+    private var bookmarkStore: (any BookmarkStore)?
     private var observer: NSObjectProtocol?
 
     private enum Key {
@@ -18,8 +19,9 @@ final class VoxglassCloudSync: ObservableObject {
         static let versionSuffix = ".v"
     }
 
-    init(database: AppDatabase) {
+    init(database: AppDatabase, bookmarkStore: (any BookmarkStore)? = nil) {
         self.database = database
+        self.bookmarkStore = bookmarkStore
         self.lastSyncDate = store.object(forKey: Key.lastSync) as? Date
         observer = NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
@@ -119,6 +121,97 @@ final class VoxglassCloudSync: ObservableObject {
         }
     }
 
+    // MARK: - Bookmarks (P0-3, PRO iCloudSync gate)
+
+    /// Pushes bookmarks, packed per book (`voxglass.cloudsync.bm.<bookID>`) and
+    /// versioned on `MAX(updated_at)` so a single timestamp guards N bookmarks.
+    /// Includes tombstones (`is_deleted = 1`) so pulls on other devices apply
+    /// the soft-delete rather than resurrecting it.
+    func pushBookmarks() async {
+        guard isAvailable, ProFeature.isEnabled(.icloudSync), let bmStore = bookmarkStore else { return }
+        do {
+            try await database.prepare()
+            let books = try await database.query("SELECT id FROM books")
+            let kvs = self.store
+            for bookRow in books {
+                guard let bookID = bookRow.string("id") else { continue }
+                let all = try await (bmStore as! SQLiteBookmarkStore).bookmarksForSync(bookID: UUID(uuidString: bookID)!)
+                guard !all.isEmpty else { continue }
+                let maxUpdated = all.map(\.updatedAt.timeIntervalSince1970).max() ?? 0
+                let key = Key.bookmarksPrefix + bookID
+                let storedVersion = kvs.longLong(forKey: key + Key.versionSuffix)
+                if Int64(maxUpdated) <= storedVersion { continue }
+
+                let payload = all.map { b -> [String: Any] in
+                    [
+                        "id": b.id?.uuidString ?? "",
+                        "chapter_id": b.chapterID.uuidString,
+                        "position": b.position,
+                        "note": b.note ?? "",
+                        "created_at": b.createdAt.timeIntervalSince1970,
+                        "updated_at": b.updatedAt.timeIntervalSince1970,
+                        "is_deleted": b.isDeleted
+                    ]
+                }
+                if let data = try? JSONSerialization.data(withJSONObject: payload) {
+                    kvs.set(data, forKey: key)
+                    kvs.set(Int64(maxUpdated), forKey: key + Key.versionSuffix)
+                    kvs.set(Date(), forKey: Key.lastSync)
+                    lastSyncDate = Date()
+                    kvs.synchronize()
+                }
+            }
+        } catch {
+            syncError = error.localizedDescription
+        }
+    }
+
+    /// Pulls bookmark updates from iCloud, applying tombstones from the remote
+    /// payload so deletions aren't resurrected by another device's push.
+    func pullBookmarks() async {
+        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
+        guard let bmStore = bookmarkStore as? SQLiteBookmarkStore else { return }
+        do {
+            try await database.prepare()
+            let kvs = self.store
+            let allKeys = kvs.dictionaryRepresentation.keys.filter {
+                $0.hasPrefix(Key.bookmarksPrefix) && !$0.hasSuffix(Key.versionSuffix)
+            }
+            for key in allKeys {
+                let bookIDStr = String(key.dropFirst(Key.bookmarksPrefix.count))
+                guard let bookID = UUID(uuidString: bookIDStr) else { continue }
+                guard let data = kvs.data(forKey: key),
+                      let payload = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { continue }
+                let maxCloudUpdated = Int64(payload.compactMap { $0["updated_at"] as? Double }.max() ?? 0)
+                let localRows = try await database.query(
+                    "SELECT MAX(updated_at) AS max_updated FROM bookmarks WHERE book_id = ?",
+                    [.string(bookIDStr)]
+                )
+                let localMax = Int64(localRows.first?.double("max_updated") ?? 0)
+                if maxCloudUpdated <= localMax { continue }
+
+                let bookmarks: [Bookmark] = payload.compactMap { dict in
+                    guard let id = UUID(uuidString: dict["id"] as? String ?? ""),
+                          let chapterID = UUID(uuidString: dict["chapter_id"] as? String ?? "") else { return nil }
+                    return Bookmark(
+                        id: id, bookID: bookID, chapterID: chapterID,
+                        position: dict["position"] as? Double ?? 0,
+                        note: dict["note"] as? String,
+                        createdAt: Date(timeIntervalSince1970: dict["created_at"] as? Double ?? 0),
+                        updatedAt: Date(timeIntervalSince1970: dict["updated_at"] as? Double ?? 0),
+                        isDeleted: dict["is_deleted"] as? Bool ?? false
+                    )
+                }
+                try await bmStore.upsertFromSync(bookmarks, forBookID: bookID)
+                // Avoid dirty reads on the next push.
+                kvs.set(maxCloudUpdated, forKey: key + Key.versionSuffix)
+            }
+            kvs.synchronize()
+        } catch {
+            syncError = error.localizedDescription
+        }
+    }
+
     // MARK: - Pull (iCloud → device)
 
     func pullPlaybackPositions() async {
@@ -200,6 +293,8 @@ final class VoxglassCloudSync: ObservableObject {
 
         await pullPlaybackPositions()
         await pushPlaybackPositions()
+        await pullBookmarks()
+        await pushBookmarks()
         await pushFavorites()
     }
 
@@ -214,6 +309,7 @@ final class VoxglassCloudSync: ObservableObject {
             if !favs.isEmpty {
                 await applyCloudFavorites(favs)
             }
+            await pullBookmarks()
         }
     }
 

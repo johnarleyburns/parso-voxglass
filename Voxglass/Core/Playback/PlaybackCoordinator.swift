@@ -19,6 +19,17 @@ final class PlaybackCoordinator: ObservableObject {
     /// finished). Receives the book's UUID and whether it was set as favorite.
     /// Used by the recommendation engine for taste signal capture.
     var onPositionSaved: ((UUID, Bool) -> Void)?
+    /// Called when a bookmark is added, so the cloud sync layer can push it.
+    var onBookmarkAdded: ((Bookmark) -> Void)?
+
+    var bookmarkStore: BookmarkStore?
+
+    /// Returns the count of live bookmarks for the current book, or nil when no
+    /// store is present. Published so the UI can update instantly after an add.
+    @Published private(set) var bookmarkCount: Int?
+
+    /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
+    /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
 
     /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
     /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
@@ -385,6 +396,45 @@ final class PlaybackCoordinator: ObservableObject {
         guard session.chapters.indices.contains(nextIndex),
               let url = session.chapters[nextIndex].resolvedPlayableURL() else { return }
         engine.preloadNext(url: url)
+    }
+
+    // MARK: - Bookmarks (P0-3, FREE; bookmark sync = Pro iCloud gate)
+
+    /// The chapter id of the current session, or `nil`.
+    var currentChapterID: UUID? { currentSession?.chapter.id }
+
+    /// Adds a bookmark at the current position and published the count.
+    func addBookmark(note: String? = nil) {
+        guard let store = bookmarkStore, let session = currentSession else { return }
+        let pos = engine.currentTime
+        let bookmark = Bookmark(
+            bookID: session.book.id, chapterID: session.chapter.id,
+            position: pos, note: note, createdAt: Date(), updatedAt: Date()
+        )
+        Task {
+            let saved = try? await store.add(bookmark)
+            if let saved {
+                await refreshBookmarkCount(for: session.book.id)
+                onBookmarkAdded?(saved)
+            }
+        }
+    }
+
+    /// Jumps to a bookmark's position, loading a different chapter if needed.
+    func jump(to bookmark: Bookmark) async {
+        guard let session = currentSession, session.book.id == bookmark.bookID else { return }
+        if bookmark.chapterID == session.chapter.id {
+            await seek(to: bookmark.position)
+        } else if let chapter = session.chapters.first(where: { $0.id == bookmark.chapterID }) {
+            let bwc = BookWithChapters(book: session.book, chapters: session.chapters)
+            await loadChapter(chapter, in: session, startTime: bookmark.position, shouldPlay: engine.isPlaying)
+        }
+    }
+
+    func refreshBookmarkCount(for bookID: UUID) async {
+        guard let store = bookmarkStore else { return }
+        let all = (try? await store.bookmarks(forBookID: bookID)) ?? []
+        bookmarkCount = all.isEmpty ? nil : all.count
     }
 
     // MARK: - Equalizer (Pro, §2)

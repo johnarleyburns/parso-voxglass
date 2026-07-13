@@ -8,6 +8,7 @@ struct NowPlayingView: View {
     @State private var isScrubbing = false
     @State private var showingChapters = false
     @State private var showingEQ = false
+    @State private var showingBookmarks = false
     @State private var showPaywall = false
 
     /// Favorite state derived from the live library store (source of truth),
@@ -80,6 +81,14 @@ struct NowPlayingView: View {
             NavigationStack {
                 EQView()
                     .environmentObject(playback)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingBookmarks) {
+            NavigationStack {
+                BookmarksView()
+                    .environmentObject(playback)
+                    .environmentObject(libraryStore)
             }
             .presentationDragIndicator(.visible)
         }
@@ -224,6 +233,8 @@ struct NowPlayingView: View {
         HStack(spacing: 26) {
             speedMenu
 
+            bookmarkButton
+
             Button {
                 showingChapters = true
             } label: {
@@ -307,6 +318,20 @@ struct NowPlayingView: View {
     private func sleepCountdown(_ remaining: TimeInterval) -> String {
         let totalMinutes = Int((remaining / 60).rounded(.up))
         return "\(max(totalMinutes, 0))m"
+    }
+
+    private var bookmarkButton: some View {
+        Button {
+            let impact = UIImpactFeedbackGenerator(style: .medium)
+            impact.impactOccurred()
+            playback.addBookmark()
+            showingBookmarks = true
+        } label: {
+            Image(systemName: "bookmark")
+                .font(.system(size: 16))
+        }
+        .accessibilityLabel("Bookmark")
+        .accessibilityIdentifier("nowplaying.bookmark")
     }
 
     private var speedMenu: some View {

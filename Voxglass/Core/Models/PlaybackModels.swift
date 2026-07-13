@@ -29,12 +29,34 @@ struct PlaybackPosition: Identifiable, Codable, Equatable, Sendable {
 }
 
 struct Bookmark: Identifiable, Codable, Equatable, Sendable {
-    var id: UUID
+    var id: UUID?
     var bookID: UUID
     var chapterID: UUID
     var position: TimeInterval
     var note: String?
     var createdAt: Date
+    var updatedAt: Date
+    var isDeleted: Bool
+
+    init(
+        id: UUID? = nil,
+        bookID: UUID,
+        chapterID: UUID,
+        position: TimeInterval,
+        note: String? = nil,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date(),
+        isDeleted: Bool = false
+    ) {
+        self.id = id
+        self.bookID = bookID
+        self.chapterID = chapterID
+        self.position = position
+        self.note = note
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.isDeleted = isDeleted
+    }
 }
 
 struct Playlist: Identifiable, Codable, Equatable, Sendable {

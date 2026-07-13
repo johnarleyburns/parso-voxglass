@@ -196,6 +196,16 @@ private struct DatabaseMigration {
                 """,
                 "CREATE INDEX listening_events_occurred_at ON listening_events(occurred_at DESC)"
             ]
+        ),
+        DatabaseMigration(
+            id: 5,
+            name: "bookmarks_updated_at_tombstone",
+            statements: [
+                "ALTER TABLE bookmarks ADD COLUMN updated_at REAL NOT NULL DEFAULT 0",
+                "ALTER TABLE bookmarks ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0",
+                "UPDATE bookmarks SET updated_at = created_at",
+                "CREATE INDEX bookmarks_book_created ON bookmarks(book_id, created_at DESC)"
+            ]
         )
     ]
 }

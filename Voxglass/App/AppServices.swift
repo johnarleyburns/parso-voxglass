@@ -18,9 +18,10 @@ final class AppServices: ObservableObject {
         let database = AppDatabase.makeApplicationDatabase()
         let libraryRepository = LibraryRepository(database: database)
         let positionStore = SQLitePositionStore(database: database)
+        let bookmarkStore = SQLiteBookmarkStore(database: database)
         let audioEngine = AVPlayerAudioEngine()
         let tasteProfileStore = TasteProfileStore(database: database)
-        let cloudSync = VoxglassCloudSync(database: database)
+        let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: bookmarkStore)
         let listeningStatsStore = ListeningStatsStore(database: database)
 
         self.database = database
@@ -37,6 +38,12 @@ final class AppServices: ObservableObject {
         self.offlineDownloadManager = OfflineDownloadManager(repository: libraryRepository)
         self.listeningStatsStore = listeningStatsStore
         self.folderWatchService = FolderWatchService(repository: libraryRepository)
+        self.playbackCoordinator.bookmarkStore = bookmarkStore
+        self.playbackCoordinator.onBookmarkAdded = { [weak self] bookmark in
+            Task { @MainActor [weak self] in
+                await self?.cloudSync.pushBookmarks()
+            }
+        }
         homeRecommendationStore.configure(profileStore: tasteProfileStore, libraryStore: libraryStore)
         libraryStore.configure(playback: playbackCoordinator, offlineManager: offlineDownloadManager)
         playbackCoordinator.listeningStatsStore = listeningStatsStore

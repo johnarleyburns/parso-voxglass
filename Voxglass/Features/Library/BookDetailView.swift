@@ -12,6 +12,8 @@ struct BookDetailView: View {
     @State private var showCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
+    @State private var showingBookmarks = false
+    @State private var bookmarkCount: Int?
 
     private var currentBook: BookWithChapters {
         libraryStore.book(withID: book.book.id) ?? book
@@ -61,6 +63,14 @@ struct BookDetailView: View {
             NavigationStack {
                 ProPaywallView()
             }
+        }
+        .sheet(isPresented: $showingBookmarks) {
+            NavigationStack {
+                BookmarksView()
+                    .environmentObject(playback)
+                    .environmentObject(libraryStore)
+            }
+            .presentationDragIndicator(.visible)
         }
         .confirmationDialog(
             "You're on cellular data",
@@ -299,17 +309,33 @@ struct BookDetailView: View {
                     }
                 }
 
-                NavigationLink {
-                    ChaptersView(book: currentBook, showingNowPlaying: $showingNowPlaying)
-                } label: {
-                    DisclosureListRow(
-                        icon: "list.bullet",
-                        title: "All Chapters",
-                        detail: "\(currentBook.chapters.count) total",
-                        count: nil
-                    )
+                Group {
+                    if let count = playback.bookmarkCount ?? bookmarkCount, count > 0 {
+                        Button {
+                            showingBookmarks = true
+                        } label: {
+                            DisclosureListRow(
+                                icon: "bookmark.fill",
+                                title: "Bookmarks",
+                                detail: "\(count) bookmark\(count == 1 ? "" : "s")",
+                                count: nil
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    NavigationLink {
+                        ChaptersView(book: currentBook, showingNowPlaying: $showingNowPlaying)
+                    } label: {
+                        DisclosureListRow(
+                            icon: "list.bullet",
+                            title: "All Chapters",
+                            detail: "\(currentBook.chapters.count) total",
+                            count: nil
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .glassSurface(cornerRadius: 14)
         }
