@@ -221,7 +221,9 @@ struct NowPlayingView: View {
     }
 
     private func actionBar(_ session: PlaybackSession) -> some View {
-        HStack(spacing: 30) {
+        HStack(spacing: 26) {
+            speedMenu
+
             Button {
                 showingChapters = true
             } label: {
@@ -247,6 +249,28 @@ struct NowPlayingView: View {
         }
         .foregroundStyle(Color.white.opacity(0.6))
         .padding(.top, 16)
+    }
+
+    private var speedMenu: some View {
+        Menu {
+            ForEach(PlaybackRate.menuLadder, id: \.self) { rate in
+                Button {
+                    playback.setPlaybackRate(rate)
+                } label: {
+                    if playback.playbackRate == rate {
+                        Label(PlaybackRate.label(rate), systemImage: "checkmark")
+                    } else {
+                        Text(PlaybackRate.label(rate))
+                    }
+                }
+            }
+        } label: {
+            Text(PlaybackRate.label(playback.playbackRate))
+                .font(.system(size: 13, weight: .bold).monospacedDigit())
+                .frame(minWidth: 34)
+        }
+        .accessibilityLabel("Playback speed")
+        .accessibilityIdentifier("nowplaying.speed")
     }
 
     private func favoriteButton(_ session: PlaybackSession) -> some View {

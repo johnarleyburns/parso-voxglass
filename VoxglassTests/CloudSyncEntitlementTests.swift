@@ -4,9 +4,25 @@ import XCTest
 @MainActor
 final class CloudSyncEntitlementTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        Self.clearCloudSyncKeys()
+    }
+
     override func tearDown() {
         EntitlementCache.shared.setTestEntitlement(nil)
+        Self.clearCloudSyncKeys()
         super.tearDown()
+    }
+
+    /// `NSUbiquitousKeyValueStore.default` persists to disk on the simulator, so a
+    /// prior run's `lastSync`/payload keys leak into the next unless cleared.
+    static func clearCloudSyncKeys() {
+        let store = NSUbiquitousKeyValueStore.default
+        for key in store.dictionaryRepresentation.keys where key.hasPrefix("voxglass.cloudsync.") {
+            store.removeObject(forKey: key)
+        }
+        store.synchronize()
     }
 
     // MARK: - Entitlements file (the "proper entitlements" ask, §1)

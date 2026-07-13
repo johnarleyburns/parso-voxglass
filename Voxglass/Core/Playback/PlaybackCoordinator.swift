@@ -8,6 +8,9 @@ final class PlaybackCoordinator: ObservableObject {
     @Published private(set) var currentSession: PlaybackSession?
     @Published var playbackError: String?
 
+    /// Current playback rate (P0-1). Published so the speed menu tracks it.
+    @Published private(set) var playbackRate: Float = PlaybackRate.normal
+
     /// Called when a playback position is persisted (e.g. periodic save, chapter end,
     /// finished). Receives the book's UUID and whether it was set as favorite.
     /// Used by the recommendation engine for taste signal capture.
@@ -22,6 +25,7 @@ final class PlaybackCoordinator: ObservableObject {
     private let engine: AudioEngine
     private let positionStore: PositionStore
     private let snapshotStore: LastPlaybackSnapshotStore
+    private let rateStore: PlaybackRateStore
     private let eqSettings = EQSettingsStore()
     let eqPresets = EQPresetStore()
     private var progressTask: Task<Void, Never>?
@@ -39,11 +43,13 @@ final class PlaybackCoordinator: ObservableObject {
     init(
         engine: AudioEngine,
         positionStore: PositionStore,
-        snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore()
+        snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
+        rateStore: PlaybackRateStore = PlaybackRateStore()
     ) {
         self.engine = engine
         self.positionStore = positionStore
         self.snapshotStore = snapshotStore
+        self.rateStore = rateStore
         self.engine.onPlaybackEnded = { [weak self] in
             Task { @MainActor in
                 await self?.advanceAfterChapterEnd()
@@ -76,6 +82,7 @@ final class PlaybackCoordinator: ObservableObject {
             }
 
             try await engine.load(url: url, startTime: latest.position)
+            applyStoredRate(forBookID: book.book.id)
             currentSession = PlaybackSession(
                 book: book.book,
                 chapters: book.chapters,
@@ -102,6 +109,7 @@ final class PlaybackCoordinator: ObservableObject {
             let savedPosition = try await positionStore.position(for: book.book.id, chapterID: chapter.id)
             let startTime = savedPosition?.position ?? 0
             try await engine.load(url: playableURL, startTime: startTime)
+            applyStoredRate(forBookID: book.book.id)
             engine.play()
 
             currentSession = PlaybackSession(
@@ -233,6 +241,27 @@ final class PlaybackCoordinator: ObservableObject {
         updateNowPlayingInfo()
     }
 
+    // MARK: - Playback speed (P0-1, FREE)
+
+    /// Applies the per-book stored rate to the engine and publishes it. Called
+    /// after every `engine.load(...)` and on gapless advance.
+    private func applyStoredRate(forBookID bookID: UUID) {
+        let rate = rateStore.rate(forBookID: bookID)
+        playbackRate = rate
+        engine.setRate(rate)
+    }
+
+    /// Sets the playback rate for the current book (0.5–3.5×) and remembers it.
+    func setPlaybackRate(_ rate: Float) {
+        let clamped = PlaybackRate.clamp(rate)
+        playbackRate = clamped
+        engine.setRate(clamped)
+        if let bookID = currentSession?.book.id {
+            rateStore.setRate(clamped, forBookID: bookID)
+        }
+        updateNowPlayingInfo()
+    }
+
     // MARK: - Equalizer (Pro, §2)
 
     var isEQEngaged: Bool {
@@ -331,6 +360,7 @@ final class PlaybackCoordinator: ObservableObject {
         guard let url = chapter.resolvedPlayableURL() else { return }
         do {
             try await engine.load(url: url, startTime: startTime)
+            applyStoredRate(forBookID: session.book.id)
             if shouldPlay {
                 engine.play()
             }
@@ -376,6 +406,9 @@ final class PlaybackCoordinator: ObservableObject {
             duration: nextChapter.duration ?? engine.duration,
             isPlaying: engine.isPlaying
         )
+        // Re-assert the rate: `defaultRate` carries across the gapless advance, but
+        // re-asserting keeps `playbackRate` and Now Playing correct (idempotent).
+        applyStoredRate(forBookID: session.book.id)
         startProgressLoop()
         updateNowPlayingInfo()
 
@@ -457,6 +490,8 @@ final class PlaybackCoordinator: ObservableObject {
             lastListenTick = nil
             return
         }
+        // Records wall-clock seconds on purpose — do NOT scale by playback rate.
+        // "How long you listened" is wall-clock time regardless of speed.
         let now = Date()
         if let last = lastListenTick {
             let elapsed = min(now.timeIntervalSince(last), 2)
@@ -654,6 +689,18 @@ final class PlaybackCoordinator: ObservableObject {
             }
             Task { @MainActor in
                 await self?.seek(to: event.positionTime)
+            }
+            return .success
+        }
+
+        commandCenter.changePlaybackRateCommand.isEnabled = true
+        commandCenter.changePlaybackRateCommand.supportedPlaybackRates = PlaybackRate.systemLadder.map { NSNumber(value: $0) }
+        commandCenter.changePlaybackRateCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackRateCommandEvent else {
+                return .commandFailed
+            }
+            Task { @MainActor in
+                self?.setPlaybackRate(event.playbackRate)
             }
             return .success
         }

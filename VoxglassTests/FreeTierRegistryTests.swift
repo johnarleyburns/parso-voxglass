@@ -67,6 +67,16 @@ final class FreeTierRegistryTests: XCTestCase {
         XCTAssertNotNil(coordinator)
     }
 
+    @MainActor func testSpeedControlIsFree() {
+        EntitlementCache.shared.setTestEntitlement(false)
+        defer { EntitlementCache.shared.setTestEntitlement(nil) }
+        let database = AppDatabase.makeTemporaryDatabase(named: "speed-free")
+        let engine = FakeAudioEngine()
+        let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: database))
+        coordinator.setPlaybackRate(1.75)
+        XCTAssertEqual(engine.rate, 1.75, "Variable speed must work with no Pro entitlement")
+    }
+
     func testAllProFeaturesDeclared() {
         let features = Set(ProFeature.allCases)
         let expected: Set<ProFeature> = [
