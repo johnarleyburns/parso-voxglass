@@ -8,6 +8,38 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var isImporting = false
     @Published var importError: String?
 
+    /// P1-2: in-memory filter + sort. Changing these recomputes `visibleBooks`
+    /// with zero DB round-trips.
+    @Published var filter: LibraryBookFilter = .all
+    @Published var sort: LibrarySort = .recent
+    @Published private(set) var progressByBook: [UUID: BookProgress] = [:]
+
+    /// The library with the active filter/sort applied. Pure, in-memory.
+    var visibleBooks: [BookWithChapters] {
+        var result = books
+
+        switch filter {
+        case .all: break
+        case .favorites:
+            result = result.filter(\.book.isFavorite)
+        case .source(let sourceID):
+            result = result.filter { $0.book.sourceID == sourceID }
+        case .downloaded:
+            // The UI layer already reads offlineManager.state(for:) — this is the DB variant for the repository path. Fall back: keep all.
+            break
+        case .finished:
+            result = result.filter { progressByBook[$0.book.id]?.isFinished == true }
+        case .inProgress:
+            result = result.filter {
+                guard let p = progressByBook[$0.book.id] else { return false }
+                return !p.isFinished && p.lastPosition > 0
+            }
+        }
+
+        result.sort(by: sort.comparator())
+        return result
+    }
+
     private let repository: LibraryRepository
     private let snapshotStore = LastPlaybackSnapshotStore()
     private weak var playback: PlaybackCoordinator?
@@ -29,8 +61,9 @@ final class LibraryStore: ObservableObject {
             books = try await repository.fetchLibrary()
             sources = try await repository.fetchSources()
             recentlyPlayed = try await repository.fetchRecentlyPlayed()
-        } catch {
-            importError = error.localizedDescription
+            progressByBook = try await repository.fetchBookProgress()
+        } catch let fetchError {
+            importError = fetchError.localizedDescription
         }
     }
 

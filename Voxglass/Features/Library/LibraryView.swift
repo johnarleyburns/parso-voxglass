@@ -55,8 +55,9 @@ struct LibraryView: View {
                     systemImage: "books.vertical"
                 )
             } else {
+                filterSortBar
                 VStack(spacing: 6) {
-                    ForEach(libraryStore.books) { book in
+                    ForEach(libraryStore.visibleBooks) { book in
                         NavigationLink {
                             BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
                         } label: {
@@ -82,6 +83,34 @@ struct LibraryView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var filterSortBar: some View {
+        HStack(spacing: 12) {
+            Picker("Filter", selection: Binding<LibraryBookFilter>(
+                get: { libraryStore.filter },
+                set: { libraryStore.filter = $0 }
+            )) {
+                Text("All").tag(LibraryBookFilter.all)
+                Text("Favorites").tag(LibraryBookFilter.favorites)
+                Text("In Progress").tag(LibraryBookFilter.inProgress)
+                Text("Finished").tag(LibraryBookFilter.finished)
+            }
+            .pickerStyle(.segmented)
+            .tint(Palette.brass)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Picker("Sort", selection: Binding<LibrarySort>(
+                get: { libraryStore.sort },
+                set: { libraryStore.sort = $0 }
+            )) {
+                Text("Recent").tag(LibrarySort.recent)
+                Text("Title").tag(LibrarySort.title)
+                Text("Author").tag(LibrarySort.author)
+            }
+            .pickerStyle(.segmented)
+            .tint(Palette.brass)
         }
     }
 

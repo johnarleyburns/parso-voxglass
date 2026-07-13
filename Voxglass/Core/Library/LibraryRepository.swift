@@ -1,10 +1,47 @@
 import Foundation
 
-enum LibraryBookFilter: Equatable, Sendable {
+enum LibraryBookFilter: Equatable, Hashable, Sendable {
     case all
     case favorites
     case source(UUID)
     case downloaded
+    case finished
+    case inProgress
+}
+
+enum LibrarySort: Equatable, Sendable {
+    case recent
+    case title
+    case author
+    case duration
+    case progress
+
+    func comparator() -> (BookWithChapters, BookWithChapters) -> Bool {
+        switch self {
+        case .recent:
+            return { $0.book.updatedAt > $1.book.updatedAt }
+        case .title:
+            return { $0.book.title.localizedCaseInsensitiveCompare($1.book.title) == .orderedAscending }
+        case .author:
+            return {
+                let a = $0.book.authors.first ?? ""
+                let b = $1.book.authors.first ?? ""
+                return a.localizedCaseInsensitiveCompare(b) == .orderedAscending
+            }
+        case .duration:
+            return {
+                ($0.totalDuration ?? .greatestFiniteMagnitude) < ($1.totalDuration ?? .greatestFiniteMagnitude)
+            }
+        case .progress:
+            return { ($0.book.updatedAt) > ($1.book.updatedAt) }
+        }
+    }
+}
+
+/// Aggregated playback progress for a single book (P1-2).
+struct BookProgress: Equatable, Sendable {
+    let lastPosition: TimeInterval
+    let isFinished: Bool
 }
 
 /// A playable audio file discovered inside a watched folder (§4).
@@ -56,6 +93,15 @@ final class LibraryRepository {
         case .downloaded:
             let downloadedIDs = try await downloadedBookIDs()
             return library.filter { downloadedIDs.contains($0.book.id) }
+        case .finished:
+            let progress = try await fetchBookProgress()
+            return library.filter { progress[$0.book.id]?.isFinished == true }
+        case .inProgress:
+            let progress = try await fetchBookProgress()
+            return library.filter { book in
+                guard let p = progress[book.book.id] else { return false }
+                return !p.isFinished && p.lastPosition > 0
+            }
         }
     }
 
@@ -423,6 +469,27 @@ final class LibraryRepository {
         WHERE state IN ('downloaded', 'complete', 'completed') OR local_url IS NOT NULL
         """)
         return Set(try rows.map { try ModelMapping.uuid($0, "book_id") })
+    }
+
+    /// Aggregates playback-progress per book: last position and whether every
+    /// chapter row has `is_finished = 1`. Books with no entries are absent.
+    func fetchBookProgress() async throws -> [UUID: BookProgress] {
+        try await database.prepare()
+        let rows = try await database.query("""
+        SELECT book_id, MAX(position_seconds) AS last_position,
+               MIN(is_finished) AS all_finished
+        FROM playback_positions
+        GROUP BY book_id
+        """)
+        var result: [UUID: BookProgress] = [:]
+        for row in rows {
+            let bookID = try ModelMapping.uuid(row, "book_id")
+            result[bookID] = BookProgress(
+                lastPosition: row.double("last_position") ?? 0,
+                isFinished: row.bool("all_finished") ?? false
+            )
+        }
+        return result
     }
 
     // MARK: - Download records (offline downloads, §7)
