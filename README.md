@@ -68,28 +68,28 @@ Everything below ships **free** — no new Pro gates. Pro remains a one-time unl
 (EQ, folder watch, iCloud sync, listening stats, bulk offline pinning, cache presets).
 
 **Step 0 — testability groundwork**
-- [ ] Widen the `AudioEngine` protocol to absorb the 13 concrete downcasts in `PlaybackCoordinator`; add a
+- [x] Widen the `AudioEngine` protocol to absorb the 13 concrete downcasts in `PlaybackCoordinator`; add a
       `FakeAudioEngine` test double. This is what makes the rest unit-testable.
-- [ ] Extract a pure `nowPlayingInfo` builder; fix two real bugs found en route — EQ silently dies on every
+- [x] Extract a pure `nowPlayingInfo` builder; fix two real bugs found en route — EQ silently dies on every
       gapless chapter auto-advance, and the lock-screen playback rate is hardcoded to 1.0.
 
 **P0 — table stakes**
-- [ ] **Variable playback speed** (0.5×–3.5×, per-book memory, survives gapless auto-advance).
-- [ ] **Sleep timer** (fixed durations + end-of-chapter + fade-out).
-- [ ] **Bookmarks** (create / list / jump / delete, with notes). Bookmark *sync* rides the existing Pro
+- [x] **Variable playback speed** (0.5×–3.5×, per-book memory, survives gapless auto-advance).
+- [x] **Sleep timer** (fixed durations + end-of-chapter + fade-out).
+- [x] **Bookmarks** (create / list / jump / delete, with notes). Bookmark *sync* rides the existing Pro
       iCloud gate — which also makes the paywall's already-shipped bookmark-sync claim true.
-- [ ] **Lock-screen / Control Center artwork.**
+- [x] **Lock-screen / Control Center artwork.**
 
 **P1 — parity**
-- [ ] Customizable skip intervals.
-- [ ] Library sort / filter / finished / in-progress states.
-- [ ] Playlists (as shelves; cross-book continuous playback is a separate epic).
+- [x] Customizable skip intervals.
+- [x] Library sort / filter / finished / in-progress states.
+- [x] Playlists (as shelves; cross-book continuous playback is a separate epic).
 
 **P2 — differentiation**
-- [ ] **Volume normalization** — directly fixes LibriVox's uneven volunteer-recording levels. BookDesign
+- [x] **Volume normalization** — directly fixes LibriVox's uneven volunteer-recording levels. BookDesign
       does not have this.
 - [ ] **Skip silence** (via rate boost — an `MTAudioProcessingTap` cannot drop frames).
-- [ ] Dynamic Type support.
+- [x] Dynamic Type support (via `@ScaledMetric` — `Font.system(size:relativeTo:)` was removed in iOS 26 SDK).
 
 **Paywall refit** — soften the offline hard-wall to a taste limit (a couple of free pinned books), and lead
 with what the competition can't match: EQ, volume normalization, folder watch, private iCloud sync,
@@ -113,9 +113,8 @@ subscriptions, no ads.
 
 ## Current focus
 
-See `plan.md` for the active post-field-test plan: multi-language search/browse, "see more" pagination in
-Explore, guaranteed collection artwork, alphabetical collection sorting, an intelligent on-device
-"Recommended for You" engine, and a monetization refresh.
+The competitive gap plan is substantially complete (Step 0, P0, P1, and volume normalization). Remaining
+work — skip silence, Dynamic Type — is tracked in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md).
 
 ## License
 

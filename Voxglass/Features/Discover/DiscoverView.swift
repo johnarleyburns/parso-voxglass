@@ -80,7 +80,7 @@ struct BrowseView: View {
                 HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching LibriVox")
-                        .font(.system(size: 14))
+                        .scaledFont(size: 14)
                         .foregroundStyle(Palette.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -124,10 +124,10 @@ struct BrowseView: View {
                 } else {
                     Text("See More")
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .bold))
+                        .scaledFont(size: 11, weight: .bold)
                 }
             }
-            .font(.system(size: 14, weight: .semibold))
+            .scaledFont(size: 14, weight: .semibold)
             .foregroundStyle(Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -192,20 +192,20 @@ private struct ExploreCollectionCard: View {
             .frame(width: 190, height: 132)
 
             Text(collection.title)
-                .font(.system(size: 14, weight: .bold))
+                .scaledFont(size: 14, weight: .bold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .frame(width: 190, alignment: .leading)
 
             Text(collection.subtitle)
-                .font(.system(size: 11.5))
+                .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(2)
                 .frame(width: 190, alignment: .leading)
 
             if let caption = approximateCountCaption {
                 Text(caption)
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 190, alignment: .leading)
             }

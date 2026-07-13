@@ -137,7 +137,7 @@ struct BookDetailView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(currentBook.book.title)
-                        .font(.system(size: 20, weight: .heavy))
+                        .scaledFont(size: 20, weight: .heavy)
                         .kerning(-0.5)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(4)
@@ -146,7 +146,7 @@ struct BookDetailView: View {
                     authorLinks
 
                     Text(currentBook.libraryDetailLine(sourceTitle: libraryStore.source(for: currentBook.book)?.kind.displayName))
-                        .font(.system(size: 11.5))
+                        .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(2)
                 }
@@ -168,14 +168,14 @@ struct BookDetailView: View {
             ForEach(currentBook.book.authors.isEmpty ? ["Unknown author"] : currentBook.book.authors, id: \.self) { author in
                 if author == "Unknown author" {
                     Text(author)
-                        .font(.system(size: 14))
+                        .scaledFont(size: 14)
                         .foregroundStyle(Palette.ink2)
                 } else {
                     NavigationLink {
                         AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
                     } label: {
                         Label(author, systemImage: "person.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .scaledFont(size: 14, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                             .lineLimit(1)
                     }
@@ -205,7 +205,7 @@ struct BookDetailView: View {
 
             ShareLink(item: shareText) {
                 Label("Share", systemImage: "square.and.arrow.up")
-                    .font(.system(size: 14, weight: .semibold))
+                    .scaledFont(size: 14, weight: .semibold)
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
                     .foregroundStyle(Palette.ink)
@@ -226,7 +226,7 @@ struct BookDetailView: View {
                 ProgressView(value: progress)
                     .tint(Palette.brass)
                 Text("Caching… \(Int((progress * 100).rounded()))%")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(Palette.ink2)
             }
             .frame(maxWidth: .infinity)
@@ -235,7 +235,7 @@ struct BookDetailView: View {
             .glassSurface(cornerRadius: 18)
         case .cached:
             Label("Cached for offline use", systemImage: "checkmark.circle.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .scaledFont(size: 13, weight: .semibold)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .foregroundStyle(Palette.brass)
@@ -276,7 +276,7 @@ struct BookDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Summary")
             Text(currentBook.book.summary?.isEmpty == false ? currentBook.book.summary! : "No summary is available for this audiobook yet.")
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -292,7 +292,7 @@ struct BookDetailView: View {
                 HStack(spacing: 8) {
                     ForEach(tags, id: \.self) { tag in
                         Text(tag)
-                            .font(.system(size: 11, weight: .semibold))
+                            .scaledFont(size: 11, weight: .semibold)
                             .foregroundStyle(Palette.ink)
                             .padding(.horizontal, 10)
                             .frame(height: 30)
@@ -382,7 +382,7 @@ struct ChaptersView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(currentBook.book.title)
-                        .font(.system(size: 20, weight: .heavy))
+                        .scaledFont(size: 20, weight: .heavy)
                         .kerning(-0.5)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
@@ -425,13 +425,13 @@ struct AuthorDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(authorName)
-                            .font(.system(size: 31, weight: .heavy))
+                            .scaledFont(size: 31, weight: .heavy)
                             .kerning(-0.5)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
                         Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
-                            .font(.system(size: 14))
+                            .scaledFont(size: 14)
                             .foregroundStyle(Palette.ink2)
                     }
 
@@ -489,17 +489,17 @@ private struct ChapterRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: isCurrent ? "waveform.circle.fill" : "play.circle")
-                    .font(.system(size: 18))
+                    .scaledFont(size: 18)
                     .foregroundStyle(isCurrent ? Palette.brass : Palette.ink3)
                     .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(chapter.title)
-                        .font(.system(size: 14, weight: .medium))
+                        .scaledFont(size: 14, weight: .medium)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
                     Text(TimeFormatting.clock(chapter.duration))
-                        .font(.system(size: 11.5).monospacedDigit())
+                        .scaledFont(size: 11.5, design: .monospaced)
                         .foregroundStyle(Palette.ink3)
                 }
 

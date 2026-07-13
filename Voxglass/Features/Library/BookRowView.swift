@@ -26,7 +26,7 @@ struct BookRowView: View {
             Spacer(minLength: 8)
             Button(action: playAction) {
                 Image(systemName: isCurrent ? "waveform.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 34, weight: .semibold))
+                    .scaledFont(size: 34, weight: .semibold)
                     .foregroundStyle(VoxglassTheme.accent)
             }
             .buttonStyle(.plain)

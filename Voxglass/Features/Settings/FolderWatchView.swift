@@ -39,7 +39,7 @@ struct FolderWatchView: View {
 
     private var intro: some View {
         Text("Voxglass watches the folders you add and imports the audio files inside them as local books. New files added to a watched folder appear automatically.")
-            .font(.system(size: 13))
+            .scaledFont(size: 13)
             .foregroundStyle(Palette.ink2)
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -54,7 +54,7 @@ struct FolderWatchView: View {
                 Image(systemName: "folder.fill.badge.plus")
                     .foregroundStyle(Palette.brass)
                 Text("Watch a Folder")
-                    .font(.system(size: 14, weight: .semibold))
+                    .scaledFont(size: 14, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Image(systemName: "plus.circle.fill")
@@ -77,7 +77,7 @@ struct FolderWatchView: View {
                             .foregroundStyle(Palette.brass)
                             .frame(width: 28)
                         Text(folder.name)
-                            .font(.system(size: 14))
+                            .scaledFont(size: 14)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(1)
                         Spacer()

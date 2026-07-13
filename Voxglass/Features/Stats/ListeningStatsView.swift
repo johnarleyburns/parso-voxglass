@@ -64,10 +64,10 @@ struct ListeningStatsView: View {
     private func statTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
-                .font(.system(size: 24, weight: .heavy))
+                .scaledFont(size: 24, weight: .heavy)
                 .foregroundStyle(Palette.ink)
             Text(label)
-                .font(.system(size: 12))
+                .scaledFont(size: 12)
                 .foregroundStyle(Palette.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,7 +78,7 @@ struct ListeningStatsView: View {
     private var weeklyChart: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Last 7 days")
-                .font(.system(size: 13, weight: .bold))
+                .scaledFont(size: 13, weight: .bold)
                 .foregroundStyle(Palette.ink)
             let maxSeconds = max(dailyBars.map(\.seconds).max() ?? 1, 1)
             HStack(alignment: .bottom, spacing: 8) {
@@ -90,7 +90,7 @@ struct ListeningStatsView: View {
                                 startPoint: .top, endPoint: .bottom))
                             .frame(height: max(4, CGFloat(bar.seconds / maxSeconds) * 120))
                         Text(bar.label)
-                            .font(.system(size: 9, weight: .semibold))
+                            .scaledFont(size: 9, weight: .semibold)
                             .foregroundStyle(Palette.ink3)
                     }
                     .frame(maxWidth: .infinity)
@@ -105,17 +105,17 @@ struct ListeningStatsView: View {
     private func termsCard(title: String, terms: [(term: String, seconds: TimeInterval)]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 13, weight: .bold))
+                .scaledFont(size: 13, weight: .bold)
                 .foregroundStyle(Palette.ink)
             ForEach(terms.indices, id: \.self) { index in
                 HStack {
                     Text(terms[index].term.capitalized)
-                        .font(.system(size: 13))
+                        .scaledFont(size: 13)
                         .foregroundStyle(Palette.ink2)
                         .lineLimit(1)
                     Spacer()
                     Text(durationString(terms[index].seconds))
-                        .font(.system(size: 12).monospacedDigit())
+                        .scaledFont(size: 12, design: .monospaced)
                         .foregroundStyle(Palette.ink3)
                 }
             }
@@ -127,13 +127,13 @@ struct ListeningStatsView: View {
     private var lockedTeaser: some View {
         VStack(spacing: 14) {
             Image(systemName: "chart.bar.fill")
-                .font(.system(size: 44))
+                .scaledFont(size: 44)
                 .foregroundStyle(Palette.brass)
             Text("Listening Stats")
-                .font(.system(size: 20, weight: .bold))
+                .scaledFont(size: 20, weight: .bold)
                 .foregroundStyle(Palette.ink)
             Text("See your total listening time, daily streaks, and your most-heard authors and genres. A Voxglass Pro feature.")
-                .font(.system(size: 13))
+                .scaledFont(size: 13)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 30)
@@ -141,7 +141,7 @@ struct ListeningStatsView: View {
                 showPaywall = true
             } label: {
                 Text("Unlock Pro")
-                    .font(.system(size: 14, weight: .bold))
+                    .scaledFont(size: 14, weight: .bold)
                     .foregroundStyle(Color(hex: 0x221503))
                     .padding(.horizontal, 22)
                     .frame(height: 44)

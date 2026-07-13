@@ -68,7 +68,7 @@ struct LibraryView: View {
                             .overlay(alignment: .topTrailing) {
                                 if offlineManager.state(for: book.book.id) == .cached {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 13))
+                                        .scaledFont(size: 13)
                                         .foregroundStyle(Palette.brass)
                                         .padding(6)
                                 }

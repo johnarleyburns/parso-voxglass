@@ -26,7 +26,7 @@ struct MiniPlayerView: View {
                         playback.togglePlayPause()
                     } label: {
                         Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 16, weight: .bold))
+                            .scaledFont(size: 16, weight: .bold)
                             .frame(width: 42, height: 42)
                             .contentShape(Circle())
                     }

@@ -70,10 +70,10 @@ struct EQView: View {
         )) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Equalizer")
-                    .font(.system(size: 15, weight: .semibold))
+                    .scaledFont(size: 15, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                 Text("Apply the 10-band equalizer to playback.")
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
             }
         }
@@ -125,7 +125,7 @@ struct EQView: View {
     private func bandSlider(_ band: Int) -> some View {
         VStack(spacing: 6) {
             Text(gainLabel(gains[band]))
-                .font(.system(size: 9).monospacedDigit())
+                .scaledFont(size: 9, design: .monospaced)
                 .foregroundStyle(Palette.ink3)
             Slider(
                 value: Binding(
@@ -144,7 +144,7 @@ struct EQView: View {
             .frame(maxHeight: .infinity)
             .accessibilityIdentifier("eq.band.\(band)")
             Text(bandLabels[band])
-                .font(.system(size: 9, weight: .semibold))
+                .scaledFont(size: 9, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
         }
         .frame(maxWidth: .infinity)
@@ -156,7 +156,7 @@ struct EQView: View {
             showSavePrompt = true
         } label: {
             Label("Save as Preset", systemImage: "plus.circle.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .scaledFont(size: 13, weight: .semibold)
                 .foregroundStyle(Palette.brass)
         }
         .buttonStyle(.plain)
@@ -165,13 +165,13 @@ struct EQView: View {
     private var lockedTeaser: some View {
         VStack(spacing: 14) {
             Image(systemName: "waveform.path.ecg")
-                .font(.system(size: 44))
+                .scaledFont(size: 44)
                 .foregroundStyle(Palette.brass)
             Text("10-Band Equalizer")
-                .font(.system(size: 20, weight: .bold))
+                .scaledFont(size: 20, weight: .bold)
                 .foregroundStyle(Palette.ink)
             Text("Shape playback with presets for Concert Hall, Spoken Word, 78 rpm — and your own. A Voxglass Pro feature.")
-                .font(.system(size: 13))
+                .scaledFont(size: 13)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 30)
@@ -179,7 +179,7 @@ struct EQView: View {
                 showPaywall = true
             } label: {
                 Text("Unlock Pro")
-                    .font(.system(size: 14, weight: .bold))
+                    .scaledFont(size: 14, weight: .bold)
                     .foregroundStyle(Color(hex: 0x221503))
                     .padding(.horizontal, 22)
                     .frame(height: 44)

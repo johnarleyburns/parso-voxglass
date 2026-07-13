@@ -56,7 +56,7 @@ struct SearchView: View {
                     .frame(width: 20, height: 20)
             }
         }
-        .font(.system(size: 15))
+        .scaledFont(size: 15)
         .padding(.horizontal, 14)
         .frame(height: 40)
         .contentShape(Rectangle())
@@ -76,7 +76,7 @@ struct SearchView: View {
                 HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching LibriVox")
-                        .font(.system(size: 14))
+                        .scaledFont(size: 14)
                         .foregroundStyle(Palette.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -146,16 +146,16 @@ struct InternetArchiveResultRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(result.title)
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2, reservesSpace: true)
                     .minimumScaleFactor(0.82)
                 Text(result.authorLine)
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 Text(detailLine)
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
@@ -167,7 +167,7 @@ struct InternetArchiveResultRow: View {
                     .frame(width: 20, height: 20)
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
+                    .scaledFont(size: 11, weight: .bold)
                     .foregroundStyle(Palette.ink3.opacity(0.7))
             }
         }

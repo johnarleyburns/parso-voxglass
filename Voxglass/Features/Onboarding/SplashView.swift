@@ -14,11 +14,11 @@ struct SplashView: View {
 
                 VStack(spacing: 10) {
                     Text("Voxglass")
-                        .font(.system(size: 31, weight: .heavy, design: .default))
+                        .scaledFont(size: 31, weight: .heavy, design: .default)
                         .kerning(-0.5)
                         .foregroundStyle(Palette.ink)
                     Text("Public-domain audiobooks with a private, local-first shelf.")
-                        .font(.system(size: 15))
+                        .scaledFont(size: 15)
                         .foregroundStyle(Palette.ink2)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -28,7 +28,7 @@ struct SplashView: View {
 
                 Button(action: continueAction) {
                     Label("Get Started", systemImage: "sparkles")
-                        .font(.system(size: 15.5, weight: .bold))
+                        .scaledFont(size: 15.5, weight: .bold)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .foregroundStyle(Color(hex: 0x221503))

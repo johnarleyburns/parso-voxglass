@@ -10,18 +10,18 @@ struct SectionTitle: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 18, weight: .bold))
+                    .scaledFont(size: 18, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 13))
+                        .scaledFont(size: 13)
                         .foregroundStyle(Palette.ink3)
                 }
             }
             Spacer()
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .font(.system(size: 13))
+                    .scaledFont(size: 13)
                     .foregroundStyle(Palette.brass)
             }
         }
@@ -39,10 +39,10 @@ struct FilterChip: View {
             HStack(spacing: 6) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 11, weight: .semibold))
+                        .scaledFont(size: 11, weight: .semibold)
                 }
                 Text(title)
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .scaledFont(size: 12.5, weight: .semibold)
                     .lineLimit(1)
             }
             .padding(.horizontal, 14)
@@ -73,7 +73,7 @@ struct DisclosureListRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(isEnabled ? Palette.brass : Palette.ink3.opacity(0.55))
                 .frame(width: 32, height: 32)
                 .background {
@@ -83,13 +83,13 @@ struct DisclosureListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(isEnabled ? Palette.ink : Palette.ink2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                 if let detail {
                     Text(detail)
-                        .font(.system(size: 11.5))
+                        .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
@@ -99,7 +99,7 @@ struct DisclosureListRow: View {
 
             if let count {
                 Text("\(count)")
-                    .font(.system(size: 11).monospacedDigit().weight(.semibold))
+                    .scaledFont(size: 11, weight: .semibold, design: .monospaced)
                     .foregroundStyle(Palette.ink3)
                     .padding(.horizontal, 8)
                     .frame(height: 24)
@@ -110,7 +110,7 @@ struct DisclosureListRow: View {
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .bold))
+                .scaledFont(size: 11, weight: .bold)
                 .foregroundStyle(Palette.ink3.opacity(isEnabled ? 0.7 : 0.25))
         }
         .padding(.horizontal, 14)
@@ -128,7 +128,7 @@ struct PrimaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.system(size: 15.5, weight: .bold))
+                .scaledFont(size: 15.5, weight: .bold)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .foregroundStyle(Color(hex: 0x221503))
@@ -152,7 +152,7 @@ struct SecondaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.system(size: 14, weight: .semibold))
+                .scaledFont(size: 14, weight: .semibold)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .foregroundStyle(isEnabled ? Palette.ink : Palette.ink3)
@@ -172,22 +172,22 @@ struct CompactBookRowView: View {
             BookArtworkView(title: book.book.title, size: 56, coverURL: book.book.coverURL, cornerRadius: 12)
             VStack(alignment: .leading, spacing: 2) {
                 Text(book.book.title)
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2, reservesSpace: true)
                     .minimumScaleFactor(0.82)
                 Text(book.book.authorLine)
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 Text(book.libraryDetailLine(sourceTitle: sourceTitle))
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .bold))
+                .scaledFont(size: 11, weight: .bold)
                 .foregroundStyle(Palette.ink3.opacity(0.7))
         }
         .frame(minHeight: 72)
@@ -206,12 +206,12 @@ struct HorizontalBookCard: View {
             BookCoverView(title: book.book.title, coverURL: book.book.coverURL)
                 .frame(width: 132, height: 132)
             Text(book.book.title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .scaledFont(size: 12.5, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 7)
             Text(book.book.authorLine)
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)
@@ -231,10 +231,10 @@ struct EmptyStatePanel: View {
                 .font(.title2)
                 .foregroundStyle(Palette.brass)
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .scaledFont(size: 16, weight: .semibold)
                 .foregroundStyle(Palette.ink)
             Text(message)
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
         }
@@ -249,10 +249,10 @@ struct ProvenanceChip: View {
     var body: some View {
         let (icon, text) = badge
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 8))
+            Image(systemName: icon).scaledFont(size: 8)
             Text(text)
         }
-        .font(.system(size: 8.5, weight: .bold))
+        .scaledFont(size: 8.5, weight: .bold)
         .kerning(0.5)
         .foregroundStyle(.white)
         .padding(.horizontal, 7).padding(.vertical, 3)
@@ -287,7 +287,7 @@ extension BookWithChapters {
 struct ProLockBadge: View {
     var body: some View {
         Image(systemName: "lock.fill")
-            .font(.system(size: 10, weight: .semibold))
+            .scaledFont(size: 10, weight: .semibold)
             .foregroundStyle(Color(hex: 0x221503))
             .padding(5)
             .background(Palette.brass, in: Circle())

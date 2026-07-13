@@ -88,17 +88,17 @@ struct ProPaywallView: View {
     private var heroSection: some View {
         VStack(spacing: 12) {
             Image(systemName: "crown.fill")
-                .font(.system(size: 48))
+                .scaledFont(size: 48)
                 .foregroundStyle(Palette.brass)
                 .padding(.top, 24)
 
             Text("Voxglass Pro")
-                .font(.system(size: 31, weight: .heavy))
+                .scaledFont(size: 31, weight: .heavy)
                 .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
 
             Text("One-time purchase. No subscription.\nNo account required.")
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
         }
@@ -108,7 +108,7 @@ struct ProPaywallView: View {
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Pro features")
-                .font(.system(size: 18, weight: .bold))
+                .scaledFont(size: 18, weight: .bold)
                 .foregroundStyle(Palette.ink)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
@@ -118,16 +118,16 @@ struct ProPaywallView: View {
                     let feature = features[index]
                     HStack(spacing: 14) {
                         Image(systemName: feature.icon)
-                            .font(.system(size: 16))
+                            .scaledFont(size: 16)
                             .frame(width: 28)
                             .foregroundStyle(Palette.brass)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(feature.title)
-                                .font(.system(size: 14, weight: .medium))
+                                .scaledFont(size: 14, weight: .medium)
                                 .foregroundStyle(Palette.ink)
                             Text(feature.description)
-                                .font(.system(size: 11.5))
+                                .scaledFont(size: 11.5)
                                 .foregroundStyle(Palette.ink3)
                         }
                     }
@@ -144,11 +144,11 @@ struct ProPaywallView: View {
     private var foreverFreeSection: some View {
         VStack(spacing: 8) {
             Text("Stays free forever")
-                .font(.system(size: 16, weight: .semibold))
+                .scaledFont(size: 16, weight: .semibold)
                 .foregroundStyle(Palette.ink)
 
             Text("FLAC, MP3 playback · Near-gapless · Internet Archive & LibriVox sources · Local file import · No telemetry, no accounts")
-                .font(.system(size: 11.5))
+                .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
@@ -165,7 +165,7 @@ struct ProPaywallView: View {
                     }
                 } label: {
                     Text("Unlock Pro — \(product.displayPrice)")
-                        .font(.system(size: 15.5, weight: .bold))
+                        .scaledFont(size: 15.5, weight: .bold)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .foregroundStyle(Color(hex: 0x221503))
@@ -188,20 +188,20 @@ struct ProPaywallView: View {
                 }
             } label: {
                 Text(storeManager.isRestoring ? "Restoring…" : "Restore Purchases")
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(Palette.ink2)
             }
             .disabled(storeManager.isRestoring)
 
             if let error = storeManager.purchaseError {
                 Text(error)
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.danger)
                     .padding(.top, 4)
             }
 
             Text("You can also build Pro from source —\nvisit the repository for instructions.")
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(Palette.ink3)
                 .multilineTextAlignment(.center)
                 .padding(.top, 12)

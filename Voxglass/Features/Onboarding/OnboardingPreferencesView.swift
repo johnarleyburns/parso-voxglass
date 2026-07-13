@@ -53,19 +53,19 @@ struct OnboardingPreferencesView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: "sparkles")
-                .font(.system(size: 20))
+                .scaledFont(size: 20)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 44, height: 44)
                 .glassSurface(cornerRadius: 14)
 
             Text("Choose a few interests")
-                .font(.system(size: 31, weight: .heavy))
+                .scaledFont(size: 31, weight: .heavy)
                 .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("Voxglass will start with popular LibriVox picks and refresh the shelf around your selections.")
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -74,7 +74,7 @@ struct OnboardingPreferencesView: View {
     private var languagesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Languages")
-                .font(.system(size: 14, weight: .semibold))
+                .scaledFont(size: 14, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
 
             LazyVGrid(columns: languageColumns, spacing: 8) {
@@ -96,10 +96,10 @@ struct OnboardingPreferencesView: View {
                     .minimumScaleFactor(0.8)
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .scaledFont(size: 10, weight: .bold)
                 }
             }
-            .font(.system(size: 12.5, weight: .semibold))
+            .scaledFont(size: 12.5, weight: .semibold)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 9)
@@ -139,7 +139,7 @@ struct OnboardingPreferencesView: View {
     private var featuredCollections: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Or browse our collections")
-                .font(.system(size: 14, weight: .semibold))
+                .scaledFont(size: 14, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -167,7 +167,7 @@ struct OnboardingPreferencesView: View {
                 finishAction(selectedCollectionIDs)
             } label: {
                 Label("Continue", systemImage: "arrow.right")
-                    .font(.system(size: 15.5, weight: .bold))
+                    .scaledFont(size: 15.5, weight: .bold)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .foregroundStyle(Color(hex: 0x221503))
@@ -183,7 +183,7 @@ struct OnboardingPreferencesView: View {
             Button("Skip") {
                 skipAction()
             }
-            .font(.system(size: 12.5))
+            .scaledFont(size: 12.5)
             .foregroundStyle(Palette.ink3)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
@@ -214,7 +214,7 @@ private struct OnboardingCollectionCard: View {
             .frame(width: 170, height: 118)
 
             Text(collection.title)
-                .font(.system(size: 13, weight: .bold))
+                .scaledFont(size: 13, weight: .bold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .frame(width: 170, alignment: .leading)
@@ -229,7 +229,7 @@ private struct OnboardingCollectionCard: View {
         .overlay(alignment: .topTrailing) {
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 20, weight: .bold))
+                    .scaledFont(size: 20, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .background(Circle().fill(Color(hex: 0x221503)))
                     .padding(6)
@@ -247,16 +247,16 @@ private struct CollectionSelectionChip: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: collection.systemImage)
-                    .font(.system(size: 14, weight: .semibold))
+                    .scaledFont(size: 14, weight: .semibold)
                     .frame(width: 28, height: 28)
                 Text(collection.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .scaledFont(size: 14, weight: .semibold)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 Spacer(minLength: 0)
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14, weight: .bold))
+                        .scaledFont(size: 14, weight: .bold)
                 }
             }
             .frame(maxWidth: .infinity)

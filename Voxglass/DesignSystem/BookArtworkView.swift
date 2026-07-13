@@ -114,7 +114,7 @@ struct CollectionArtworkView: View {
                     endPoint: .bottomTrailing
                 )
                 Image(systemName: systemImage)
-                    .font(.system(size: 32, weight: .semibold))
+                    .scaledFont(size: 32, weight: .semibold)
                     .foregroundStyle(Color.white.opacity(0.88))
                     .padding(14)
             }
@@ -148,7 +148,7 @@ struct VisualSummaryRow: View {
                 BookArtworkView(title: fallbackTitle, size: 48, coverURL: artworkURL)
             } else {
                 Image(systemName: systemImage)
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
                     .background {
@@ -159,17 +159,17 @@ struct VisualSummaryRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                 Text(subtitle)
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 if let metadata, !metadata.isEmpty {
                     Text(metadata)
-                        .font(.system(size: 11.5))
+                        .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
@@ -179,7 +179,7 @@ struct VisualSummaryRow: View {
 
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
-                    .font(.system(size: 11, weight: .bold))
+                    .scaledFont(size: 11, weight: .bold)
                     .foregroundStyle(Palette.ink3.opacity(0.7))
             }
         }
@@ -197,13 +197,13 @@ struct HorizontalCatalogCard: View {
                 .frame(width: 132, height: 132)
 
             Text(result.title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .scaledFont(size: 12.5, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 7)
 
             Text(result.authorLine)
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)
@@ -233,9 +233,9 @@ private struct GeneratedBookCover: View {
 
             VStack(spacing: 7) {
                 Image(systemName: "book.closed.fill")
-                    .font(.system(size: 24, weight: .semibold))
+                    .scaledFont(size: 24, weight: .semibold)
                 Text(initials)
-                    .font(.system(size: 15, weight: .bold))
+                    .scaledFont(size: 15, weight: .bold)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.65)

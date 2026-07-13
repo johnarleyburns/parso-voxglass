@@ -16,6 +16,10 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
 
     var onPlaybackEnded: (@MainActor () -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
+    var onSilenceChanged: (@MainActor (Bool) -> Void)? {
+        get { eqProcessor.onSilenceChanged }
+        set { eqProcessor.onSilenceChanged = newValue }
+    }
 
     /// The desired playback rate. Applied via `player.defaultRate` so every
     /// resume path (remote play, interruption resume, chapter change) inherits it

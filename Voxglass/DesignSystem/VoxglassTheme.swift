@@ -63,7 +63,7 @@ struct VoxglassScreen<Content: View>: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text(title)
-                                .font(.system(size: 31, weight: .heavy, design: .default))
+                                .scaledFont(size: 31, weight: .heavy, design: .default)
                                 .kerning(-0.5)
                                 .foregroundStyle(Palette.ink)
                             Spacer()

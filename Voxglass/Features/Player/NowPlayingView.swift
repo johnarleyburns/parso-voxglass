@@ -105,17 +105,17 @@ struct NowPlayingView: View {
     private func metadata(_ session: PlaybackSession) -> some View {
         VStack(spacing: 6) {
             Text(session.book.title)
-                .font(.system(size: 17, weight: .bold))
+                .scaledFont(size: 17, weight: .bold)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.72)
                 .foregroundStyle(Palette.ink)
             Text(session.book.authorLine)
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Color.white.opacity(0.62))
                 .lineLimit(1)
             Text(session.chapter.title)
-                .font(.system(size: 12))
+                .scaledFont(size: 12)
                 .foregroundStyle(Color.white.opacity(0.50))
                 .lineLimit(1)
         }
@@ -161,7 +161,7 @@ struct NowPlayingView: View {
                 }
                 Text("-\(TimeFormatting.clock(max((session.duration ?? 0) - (isScrubbing ? scrubPosition : session.position), 0)))")
             }
-            .font(.system(size: 11).monospacedDigit())
+            .scaledFont(size: 11, design: .monospaced)
             .foregroundStyle(Color.white.opacity(0.55))
         }
         .padding(.horizontal, 2)
@@ -174,7 +174,7 @@ struct NowPlayingView: View {
                 Task { await playback.skipToPreviousChapter() }
             } label: {
                 Image(systemName: "backward.end.fill")
-                    .font(.system(size: 20))
+                    .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
@@ -189,7 +189,7 @@ struct NowPlayingView: View {
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
                     ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15
                 Image(systemName: PlaybackCoordinator.skipBackSymbol(configured))
-                    .font(.system(size: 20))
+                    .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
@@ -200,7 +200,7 @@ struct NowPlayingView: View {
                 playback.togglePlayPause()
             } label: {
                 Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 26, weight: .bold))
+                    .scaledFont(size: 26, weight: .bold)
                     .foregroundStyle(.white)
                     .frame(width: 66, height: 66)
                     .background(Circle().fill(Color.white.opacity(0.16)))
@@ -216,7 +216,7 @@ struct NowPlayingView: View {
                     UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
                         ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30)
                 )
-                    .font(.system(size: 20))
+                    .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
@@ -227,7 +227,7 @@ struct NowPlayingView: View {
                 Task { await playback.skipToNextChapter() }
             } label: {
                 Image(systemName: "forward.end.fill")
-                    .font(.system(size: 20))
+                    .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
@@ -248,7 +248,7 @@ struct NowPlayingView: View {
                 showingChapters = true
             } label: {
                 Image(systemName: "list.bullet")
-                    .font(.system(size: 16))
+                    .scaledFont(size: 16)
             }
             .accessibilityLabel("Chapters")
 
@@ -260,7 +260,7 @@ struct NowPlayingView: View {
 
             ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16))
+                    .scaledFont(size: 16)
             }
         }
         .foregroundStyle(Color.white.opacity(0.6))
@@ -307,17 +307,17 @@ struct NowPlayingView: View {
         switch playback.sleepMode {
         case .off:
             Image(systemName: "moon.zzz")
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
         case .endOfChapter:
             Image(systemName: "moon.zzz.fill")
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
                 .foregroundStyle(Palette.brass)
         case .duration:
             HStack(spacing: 3) {
                 Image(systemName: "moon.zzz.fill")
                 if let remaining = playback.sleepRemaining {
                     Text(sleepCountdown(remaining))
-                        .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                        .scaledFont(size: 12, weight: .semibold, design: .monospaced)
                 }
             }
             .foregroundStyle(Palette.brass)
@@ -337,7 +337,7 @@ struct NowPlayingView: View {
             showingBookmarks = true
         } label: {
             Image(systemName: "bookmark")
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
         }
         .accessibilityLabel("Bookmark")
         .accessibilityIdentifier("nowplaying.bookmark")
@@ -358,7 +358,7 @@ struct NowPlayingView: View {
             }
         } label: {
             Text(PlaybackRate.label(playback.playbackRate))
-                .font(.system(size: 13, weight: .bold).monospacedDigit())
+                .scaledFont(size: 13, weight: .bold, design: .monospaced)
                 .frame(minWidth: 34)
         }
         .accessibilityLabel("Playback speed")
@@ -371,7 +371,7 @@ struct NowPlayingView: View {
             Task { await libraryStore.setFavorite(!favorited, for: session.book.id) }
         } label: {
             Image(systemName: favorited ? "heart.fill" : "heart")
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
                 .foregroundStyle(favorited ? Palette.brass : Color.white.opacity(0.6))
         }
         .accessibilityLabel(favorited ? "Unfavorite" : "Favorite")
@@ -386,7 +386,7 @@ struct NowPlayingView: View {
                 showingEQ = true
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 16))
+                    .scaledFont(size: 16)
             }
             .accessibilityLabel("Equalizer")
             .accessibilityIdentifier("nowplaying.eq")
@@ -395,10 +395,10 @@ struct NowPlayingView: View {
                 showPaywall = true
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 16))
+                    .scaledFont(size: 16)
                     .overlay(alignment: .topTrailing) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 8, weight: .bold))
+                            .scaledFont(size: 8, weight: .bold)
                             .offset(x: 6, y: -6)
                     }
             }
@@ -410,7 +410,7 @@ struct NowPlayingView: View {
     private func chapterList(_ session: PlaybackSession) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Chapters")
-                .font(.system(size: 14, weight: .semibold))
+                .scaledFont(size: 14, weight: .semibold)
                 .foregroundStyle(Palette.ink)
             ForEach(session.chapters.prefix(6)) { chapter in
                 Button {
@@ -427,10 +427,10 @@ struct NowPlayingView: View {
                             .lineLimit(1)
                         Spacer()
                         Text(TimeFormatting.clock(chapter.duration))
-                            .font(.system(size: 11.5).monospacedDigit())
+                            .scaledFont(size: 11.5, design: .monospaced)
                             .foregroundStyle(Color.white.opacity(0.58))
                     }
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .padding(.vertical, 4)
                     .foregroundStyle(chapter.id == session.chapter.id ? Palette.brass : Color.white.opacity(0.82))
                 }

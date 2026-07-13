@@ -109,7 +109,7 @@ private struct LanguagesCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Search, browse, and recommendations are limited to the languages you pick. Leave all off to include every language.")
-                .font(.system(size: 12.5))
+                .scaledFont(size: 12.5)
                 .foregroundStyle(Palette.ink3)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -134,10 +134,10 @@ private struct LanguagesCard: View {
                     .minimumScaleFactor(0.8)
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .scaledFont(size: 10, weight: .bold)
                 }
             }
-            .font(.system(size: 12.5, weight: .semibold))
+            .scaledFont(size: 12.5, weight: .semibold)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 9)
@@ -200,11 +200,11 @@ private struct CacheSettingsCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Streaming Cache")
-                    .font(.system(size: 13, weight: .bold))
+                    .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Text("\(ByteFormatting.string(cacheUsed)) of \(ByteFormatting.string(cacheLimit))")
-                    .font(.system(size: 11))
+                    .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
             }
             .padding(.bottom, 11)
@@ -223,10 +223,10 @@ private struct CacheSettingsCard: View {
 
             HStack {
                 Text("\(cachedCount) tracks cached")
-                    .font(.system(size: 10.5))
+                    .scaledFont(size: 10.5)
                 Spacer()
                 Text("oldest evicted first")
-                    .font(.system(size: 10.5))
+                    .scaledFont(size: 10.5)
             }
             .foregroundStyle(Palette.ink3)
             .padding(.top, 8)
@@ -259,10 +259,10 @@ private struct CacheSettingsCard: View {
                 Text(preset.displayName)
                 if locked {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 9, weight: .semibold))
+                        .scaledFont(size: 9, weight: .semibold)
                 }
             }
-            .font(.system(size: 11, weight: .semibold))
+            .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(selected ? .white : Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -279,10 +279,10 @@ private struct CacheSettingsCard: View {
         Toggle(isOn: $cacheFullBooksOnCellular) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Cache full books on cellular data")
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .scaledFont(size: 13.5, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                 Text("Streaming and next-chapter prefetch always use cellular. This only controls caching whole books offline.")
-                    .font(.system(size: 11))
+                    .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -298,11 +298,11 @@ private struct CacheSettingsCard: View {
         } label: {
             HStack {
                 Text("Clear Cache")
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .scaledFont(size: 13.5, weight: .semibold)
                     .foregroundStyle(Palette.danger)
                 Spacer()
                 Text(ByteFormatting.string(cacheUsed))
-                    .font(.system(size: 13))
+                    .scaledFont(size: 13)
                     .foregroundStyle(Palette.ink3)
             }
             .padding(15)
@@ -427,11 +427,11 @@ struct AboutView: View {
                             Image(systemName: "hand.raised.fill")
                                 .foregroundStyle(Palette.brass)
                             Text("Read the Privacy Policy")
-                                .font(.system(size: 14, weight: .semibold))
+                                .scaledFont(size: 14, weight: .semibold)
                                 .foregroundStyle(Palette.ink)
                             Spacer()
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 12, weight: .bold))
+                                .scaledFont(size: 12, weight: .bold)
                                 .foregroundStyle(Palette.ink3)
                         }
                         .padding(14)
@@ -451,11 +451,11 @@ struct AboutView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Voxglass")
-                .font(.system(size: 26, weight: .heavy))
+                .scaledFont(size: 26, weight: .heavy)
                 .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
             Text("Public-domain audiobooks with a private, local-first shelf.")
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
         }
     }
@@ -468,7 +468,7 @@ struct AboutView: View {
 
             There is no import step. When you play a book it is cached to your device automatically, so it keeps working offline. The cache is managed for you — the oldest, least-used audio is evicted first when space is needed.
             """)
-                .font(.system(size: 13.5))
+                .scaledFont(size: 13.5)
                 .foregroundStyle(Palette.ink2)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -482,7 +482,7 @@ struct AboutView: View {
             Text("""
             Voxglass has no accounts, no tracking, and no analytics. Nothing you listen to leaves your device. The only network requests are to the Internet Archive to fetch audio and cover art you ask for. Your library, playback history, and cache live only on your device.
             """)
-                .font(.system(size: 13.5))
+                .scaledFont(size: 13.5)
                 .foregroundStyle(Palette.ink2)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -557,7 +557,7 @@ private struct SyncSettingsCard: View {
                 Image(systemName: "icloud.fill")
                     .foregroundStyle(Palette.brass)
                 Text("iCloud Sync")
-                    .font(.system(size: 13, weight: .bold))
+                    .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 if cloudSync.isSyncing {
@@ -567,22 +567,22 @@ private struct SyncSettingsCard: View {
             }
 
             Text("Playback positions, bookmarks, and favorites sync across your devices using your private iCloud account. No app account required.")
-                .font(.system(size: 11.5))
+                .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
             if let lastSync = cloudSync.lastSyncDate {
                 Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.system(size: 11))
+                    .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
             }
 
             if !cloudSync.isAvailable {
                 Text("Sign in to iCloud to sync")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .scaledFont(size: 11.5, weight: .semibold)
                     .foregroundStyle(Palette.brass)
             } else if let error = cloudSync.syncError {
                 Text(error)
-                    .font(.system(size: 11.5))
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.danger)
             }
 
@@ -590,7 +590,7 @@ private struct SyncSettingsCard: View {
                 Task { await cloudSync.sync() }
             } label: {
                 Text(cloudSync.isSyncing ? "Syncing…" : "Sync Now")
-                    .font(.system(size: 12, weight: .semibold))
+                    .scaledFont(size: 12, weight: .semibold)
                     .foregroundStyle(cloudSync.isAvailable ? Palette.brass : Palette.ink3)
             }
             .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
@@ -606,12 +606,12 @@ private struct SyncSettingsCard: View {
                 Image(systemName: "icloud.fill")
                     .foregroundStyle(Palette.ink3)
                 Text("iCloud Sync")
-                    .font(.system(size: 13, weight: .bold))
+                    .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 ProLockBadge()
                 Text("Pro")
-                    .font(.system(size: 12.5))
+                    .scaledFont(size: 12.5)
                     .foregroundStyle(Palette.ink3)
             }
             .contentShape(Rectangle())
@@ -678,7 +678,7 @@ private struct PrefetchDepthRow: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 32, height: 32)
                     .background {
@@ -686,7 +686,7 @@ private struct PrefetchDepthRow: View {
                             .fill(Color.white.opacity(0.07))
                     }
                 Text("Prefetch Depth")
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.ink)
                 Spacer()
             }
@@ -700,13 +700,13 @@ private struct PrefetchDepthRow: View {
 
             Toggle(isOn: $wifiOnly) {
                 Text("Prefetch only on Wi-Fi")
-                    .font(.system(size: 12.5))
+                    .scaledFont(size: 12.5)
                     .foregroundStyle(Palette.ink2)
             }
             .tint(Palette.brass)
 
             Text("Warms upcoming chapters so playback never waits. The next chapter is always prefetched for gapless playback.")
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(Palette.ink3)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -742,7 +742,7 @@ private struct SkipIntervalRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Image(systemName: "forward.frame.fill")
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 32, height: 32)
                     .background {
@@ -750,13 +750,13 @@ private struct SkipIntervalRow: View {
                             .fill(Color.white.opacity(0.07))
                     }
                 Text("Skip Intervals")
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.ink)
                 Spacer()
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Forward").font(.system(size: 11.5)).foregroundStyle(Palette.ink3)
+                Text("Forward").scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
                 Picker("Forward", selection: $forward) {
                     ForEach(PlaybackCoordinator.allowedSkipForwardValues, id: \.self) { s in
                         Text("\(s)s").tag(s)
@@ -766,7 +766,7 @@ private struct SkipIntervalRow: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Back").font(.system(size: 11.5)).foregroundStyle(Palette.ink3)
+                Text("Back").scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
                 Picker("Back", selection: $back) {
                     ForEach(PlaybackCoordinator.allowedSkipBackValues, id: \.self) { s in
                         Text("\(s)s").tag(s)
@@ -786,7 +786,7 @@ private struct SleepTimerDefaultRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Image(systemName: "moon.zzz.fill")
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 32, height: 32)
                     .background {
@@ -794,7 +794,7 @@ private struct SleepTimerDefaultRow: View {
                             .fill(Color.white.opacity(0.07))
                     }
                 Text("Default Sleep Timer")
-                    .font(.system(size: 14, weight: .medium))
+                    .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.ink)
                 Spacer()
             }
@@ -808,7 +808,7 @@ private struct SleepTimerDefaultRow: View {
             .pickerStyle(.segmented)
 
             Text("Your preferred sleep-timer length. Pick any duration — or “End of chapter” — from the moon icon while a book is playing.")
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(Palette.ink3)
                 .fixedSize(horizontal: false, vertical: true)
         }

@@ -114,22 +114,22 @@ struct BookmarksView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(chapter?.title ?? "Chapter")
-                    .font(.system(size: 13, weight: .semibold))
+                    .scaledFont(size: 13, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Text(TimeFormatting.clock(bookmark.position))
-                    .font(.system(size: 11.5).monospacedDigit())
+                    .scaledFont(size: 11.5, design: .monospaced)
                     .foregroundStyle(Palette.ink3)
                 if let note = bookmark.note, !note.isEmpty {
                     Text(note)
-                        .font(.system(size: 11))
+                        .scaledFont(size: 11)
                         .foregroundStyle(Palette.ink2)
                         .lineLimit(2)
                 }
             }
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .scaledFont(size: 12, weight: .semibold)
                 .foregroundStyle(Palette.ink3)
         }
         .padding(.horizontal, 14)

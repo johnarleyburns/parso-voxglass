@@ -52,6 +52,10 @@ final class PlaybackCoordinator: ObservableObject {
     private var notificationObservers: [NSObjectProtocol] = []
     private var isHandlingInterruption = false
 
+    private var silenceBoosted = false
+    private let skipSilenceBoost: Float = 3.0
+    private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
+
     /// Cached lock-screen artwork for the current book (P0-4). Built once per
     /// session load — never per 1s tick — keyed by book id.
     private(set) var currentArtwork: MPMediaItemArtwork?
@@ -80,6 +84,9 @@ final class PlaybackCoordinator: ObservableObject {
             Task { @MainActor in
                 await self?.handleItemChanged()
             }
+        }
+        self.engine.onSilenceChanged = { [weak self] isSilent in
+            self?.handleSilenceChanged(isSilent)
         }
         sleepTimer.onFire = { [weak self] in
             self?.handleSleepTimerFired()
@@ -185,6 +192,7 @@ final class PlaybackCoordinator: ObservableObject {
             flushListening(bookID: bookID)
         }
         lastListenTick = nil
+        resetSilenceBoost()
         engine.pause()
         mutateSession {
             $0.position = engine.currentTime
@@ -197,6 +205,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     func seek(to position: TimeInterval) async {
         guard currentSession != nil else { return }
+        resetSilenceBoost()
         await engine.seek(to: position)
         mutateSession {
             $0.position = PlaybackMath.clampedPosition(position, duration: $0.duration)
@@ -243,6 +252,27 @@ final class PlaybackCoordinator: ObservableObject {
         await loadChapter(session.chapters[previousIndex], in: session, startTime: 0, shouldPlay: engine.isPlaying)
     }
 
+    // MARK: - Skip silence (P2-2, Pro)
+
+    private var isSkipSilenceEnabled: Bool {
+        UserDefaults.standard.bool(forKey: isSkipSilenceEnabledKey)
+    }
+
+    private func handleSilenceChanged(_ isSilent: Bool) {
+        guard isSkipSilenceEnabled else { return }
+        if isSilent && !silenceBoosted {
+            silenceBoosted = true
+            engine.setRate(skipSilenceBoost)
+        } else if !isSilent && silenceBoosted {
+            silenceBoosted = false
+            engine.setRate(playbackRate)
+        }
+    }
+
+    private func resetSilenceBoost() {
+        silenceBoosted = false
+    }
+
     func handleScenePhase(_ phase: ScenePhase) {
         if phase == .background {
             if let bookID = currentSession?.book.id {
@@ -259,6 +289,7 @@ final class PlaybackCoordinator: ObservableObject {
         guard currentSession?.book.id == bookID else { return }
         flushListening(bookID: bookID)
         lastListenTick = nil
+        resetSilenceBoost()
         engine.pause()
         progressTask?.cancel()
         progressTask = nil
@@ -283,6 +314,7 @@ final class PlaybackCoordinator: ObservableObject {
     func setPlaybackRate(_ rate: Float) {
         let clamped = PlaybackRate.clamp(rate)
         playbackRate = clamped
+        resetSilenceBoost()
         engine.setRate(clamped)
         if let bookID = currentSession?.book.id {
             rateStore.setRate(clamped, forBookID: bookID)
@@ -416,6 +448,7 @@ final class PlaybackCoordinator: ObservableObject {
     /// is silent). Internal so the effectful shell is directly testable.
     func fadeOutAndPause() async {
         let steps = 10
+        resetSilenceBoost()
         let startVolume = engine.volume
         for step in 1...steps {
             engine.volume = startVolume * Float(steps - step) / Float(steps)
@@ -568,6 +601,7 @@ final class PlaybackCoordinator: ObservableObject {
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
         guard let url = chapter.resolvedPlayableURL() else { return }
         do {
+            resetSilenceBoost()
             try await engine.load(url: url, startTime: startTime)
             applyStoredRate(forBookID: session.book.id)
             if shouldPlay {
@@ -596,6 +630,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     private func handleItemChanged() async {
         guard let session = currentSession else { return }
+        resetSilenceBoost()
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else {
             updateNowPlayingInfo()

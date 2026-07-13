@@ -12,9 +12,12 @@ final class EQAudioProcessor {
     private var contexts: [ObjectIdentifier: TapContext] = [:]
     private var gains: [Float] = Array(repeating: 0, count: EQEngine.isoBands.count)
     private var engaged = false
+    private let silenceDetector = SilenceDetector()
+    private var previousSilenceState: SilenceDetector.State = .speech
 
     var onEngaged: (() -> Void)?
     var onDisengaged: (() -> Void)?
+    var onSilenceChanged: (@MainActor (Bool) -> Void)?
 
     var isEngaged: Bool { engaged }
     var currentGains: [Float] { gains }
@@ -28,11 +31,13 @@ final class EQAudioProcessor {
     final class TapContext {
         let engine: EQEngine
         weak var item: AVPlayerItem?
+        weak var processor: EQAudioProcessor?
         var tap: Unmanaged<MTAudioProcessingTap>?
 
-        init(gains: [Float], item: AVPlayerItem) {
+        init(gains: [Float], item: AVPlayerItem, processor: EQAudioProcessor) {
             self.engine = EQEngine(gains: gains)
             self.item = item
+            self.processor = processor
         }
     }
 
@@ -60,12 +65,13 @@ final class EQAudioProcessor {
         let key = ObjectIdentifier(playerItem)
         guard contexts[key] == nil else { return }   // already tapped
 
-        let context = TapContext(gains: gains, item: playerItem)
+        let context = TapContext(gains: gains, item: playerItem, processor: self)
         guard let tap = makeTap(for: context) else { return }
         context.tap = Unmanaged.passUnretained(tap)
         contexts[key] = context
         registry.attach(playerItem)
         applyMix(tap: tap, to: playerItem)
+        resetSilenceDetector()
         onEngaged?()
     }
 
@@ -90,6 +96,7 @@ final class EQAudioProcessor {
         contexts.removeAll()
         registry.evictAll()
         didDisengage()
+        resetSilenceDetector()
     }
 
     /// Evicts taps for items no longer present in `items` (e.g. after a gapless
@@ -111,6 +118,11 @@ final class EQAudioProcessor {
         guard engaged else { return }
         engaged = false
         onDisengaged?()
+    }
+
+    func resetSilenceDetector() {
+        silenceDetector.reset()
+        previousSilenceState = .speech
     }
 
     // MARK: - Tap plumbing
@@ -143,12 +155,26 @@ final class EQAudioProcessor {
                 guard status == noErr else { return }
 
                 let abl = UnsafeMutableAudioBufferListPointer(bufferListInOut)
+                var rmsSum: Float = 0
+                var rmsCount: Int = 0
                 for buffer in abl {
                     guard let data = buffer.mData else { continue }
                     let count = Int(numberFrames) * Int(buffer.mNumberChannels)
                     let samples = data.bindMemory(to: Float.self, capacity: count)
                     for j in 0..<count {
-                        samples[j] = ctx.engine.process(samples[j])
+                        let sample = ctx.engine.process(samples[j])
+                        samples[j] = sample
+                        rmsSum += sample * sample
+                        rmsCount += 1
+                    }
+                }
+                guard rmsCount > 0, let processor = ctx.processor else { return }
+                let rms = sqrt(rmsSum / Float(rmsCount))
+                let newState = processor.silenceDetector.process(rms: rms)
+                if newState != processor.previousSilenceState {
+                    processor.previousSilenceState = newState
+                    DispatchQueue.main.async { [weak processor] in
+                        processor?.onSilenceChanged?(newState == .silent)
                     }
                 }
             }

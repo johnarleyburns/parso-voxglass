@@ -49,11 +49,11 @@ struct ListenView: View {
     private var hero: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Good listening")
-                .font(.system(size: 31, weight: .heavy))
+                .scaledFont(size: 31, weight: .heavy)
                 .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
             Text("Public-domain audiobooks, private by default.")
-                .font(.system(size: 14))
+                .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -191,12 +191,12 @@ struct ListenBookCard: View {
             BookCoverView(title: book.book.title, coverURL: book.book.coverURL, showBorder: false)
                 .frame(width: 132, height: 132)
             Text(book.book.title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .scaledFont(size: 12.5, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 7)
             Text(book.book.authorLine)
-                .font(.system(size: 11))
+                .scaledFont(size: 11)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)

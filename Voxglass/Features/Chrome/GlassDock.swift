@@ -29,11 +29,11 @@ struct GlassMiniPlayer: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(session.book.title)
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .scaledFont(size: 12.5, weight: .semibold)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                     Text(subtitle(session))
-                        .font(.system(size: 10.5))
+                        .scaledFont(size: 10.5)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
@@ -50,7 +50,7 @@ struct GlassMiniPlayer: View {
                         Image(systemName: "forward.fill")
                     }
                 }
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
                 .foregroundStyle(Palette.ink)
                 .buttonStyle(.plain)
             }
@@ -82,8 +82,8 @@ struct GlassTabBar: View {
                     selection = tab
                 } label: {
                     VStack(spacing: 3) {
-                        Image(systemName: icon).font(.system(size: 18))
-                        Text(label).font(.system(size: 9.5, weight: .medium))
+                        Image(systemName: icon).scaledFont(size: 18)
+                        Text(label).scaledFont(size: 9.5, weight: .medium)
                     }
                     .foregroundStyle(selection == tab ? Palette.brass : Palette.ink3)
                     .frame(maxWidth: .infinity)

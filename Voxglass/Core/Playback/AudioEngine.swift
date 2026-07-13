@@ -16,6 +16,7 @@ protocol AudioEngine: AnyObject {
     var isEQEngaged: Bool { get }
     var onPlaybackEnded: (@MainActor () -> Void)? { get set }
     var onItemChanged: (@MainActor () -> Void)? { get set }
+    var onSilenceChanged: (@MainActor (Bool) -> Void)? { get set }
 
     func configureAudioSession()
     func load(url: URL, startTime: TimeInterval) async throws

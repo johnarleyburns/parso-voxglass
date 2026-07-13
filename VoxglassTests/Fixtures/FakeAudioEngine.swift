@@ -23,6 +23,7 @@ final class FakeAudioEngine: AudioEngine {
         case setEQGain(gain: Float, band: Int)
         case setEQGains([Float])
         case setVolume(Float)
+        case fireSilenceChanged(Bool)
     }
 
     private(set) var calls: [Call] = []
@@ -39,6 +40,7 @@ final class FakeAudioEngine: AudioEngine {
 
     var onPlaybackEnded: (@MainActor () -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
+    var onSilenceChanged: (@MainActor (Bool) -> Void)?
 
     func configureAudioSession() { calls.append(.configureAudioSession) }
 
@@ -85,6 +87,11 @@ final class FakeAudioEngine: AudioEngine {
     /// The engine callbacks are `@MainActor`; fire them synchronously in tests.
     func firePlaybackEnded() { onPlaybackEnded?() }
     func fireItemChanged() { onItemChanged?() }
+
+    func fireSilenceChanged(_ isSilent: Bool) {
+        calls.append(.fireSilenceChanged(isSilent))
+        onSilenceChanged?(isSilent)
+    }
 
     func reset() { calls.removeAll() }
 
