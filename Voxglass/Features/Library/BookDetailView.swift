@@ -53,6 +53,7 @@ struct BookDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .accessibilityLabel("More options")
             }
         }
         .onAppear {
@@ -601,6 +602,10 @@ private struct ChapterRow: View {
             .padding(.vertical, 11)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(chapter.title)
+        .accessibilityValue(isCurrent ? "Now playing" : TimeFormatting.clock(chapter.duration))
+        .accessibilityHint("Plays this chapter")
     }
 }
 

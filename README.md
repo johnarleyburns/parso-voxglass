@@ -9,6 +9,10 @@ own iCloud).
 
 - Stream or download the full LibriVox catalog (70,000+ public-domain audiobooks) sourced through the
   Internet Archive. Multi-format audio: FLAC, Opus, Vorbis, MP3.
+- **Never lose your place**: resume at the exact chapter and offset across restart, force-quit, crash,
+  upgrade, delete-and-reinstall, and a second device. Positions persist redundantly (SQLite +
+  UserDefaults snapshots) and sync free via your private iCloud — identity is content-keyed, so a
+  re-imported book keeps its position.
 - **Variable playback speed** (0.5×–3.5× with per-book memory), **sleep timer** (fixed durations,
   end-of-chapter, fade-out), **bookmarks** with notes, **lock-screen & Control Center artwork**,
   per-chapter narrator display, customizable skip intervals, volume normalization, and skip silence.
@@ -17,7 +21,8 @@ own iCloud).
 - **Dark-mode-first design** with Dynamic Type support. No ads, no telemetry, no tracking — nothing
   you listen to leaves your device.
 - One-time **Voxglass Pro** unlock ($7.99, StoreKit 2, Family Sharing supported) for unlimited offline
-  downloads, iCloud sync, Folder Watch, 10-band EQ, listening stats, and library backup & restore.
+  downloads, bookmarks & favorites sync, Folder Watch, 10-band EQ, listening stats, and library
+  backup & restore.
 
 ## Competitive position
 
@@ -27,9 +32,10 @@ complaints about an unnavigable redesign, broken speed control, missing narrator
 volume spikes.
 
 **Voxglass's free tier already beats their paid tier** — speed, sleep timer, bookmarks, lock-screen
-artwork, per-chapter narrators, volume normalization, skip silence, playlists, favorites, the full
-catalog, and no ads at all. Pro adds unlimited offline downloads, iCloud sync, Folder Watch, 10-band EQ,
-listening stats, and library backup & restore — all for a one-time purchase.
+artwork, per-chapter narrators, volume normalization, skip silence, playlists, favorites, position sync
+across devices, the full catalog, and no ads at all. Pro adds unlimited offline downloads, bookmarks &
+favorites sync, Folder Watch, 10-band EQ, listening stats, and library backup & restore — all for a
+one-time purchase.
 
 The opening is: *the same catalog in a player that respects you*.
 
@@ -39,9 +45,12 @@ The opening is: *the same catalog in a player that respects you*.
 - [x] Variable playback speed, sleep timer, bookmarks, lock-screen/Control Center artwork (P0 table stakes).
 - [x] Customizable skip intervals, library sort/filter, playlists (P1 parity).
 - [x] Volume normalization, Dynamic Type support (P2 differentiation).
-- [x] Offline downloads with free-tier taste limit, iCloud sync, 10-band EQ, Folder Watch, listening stats,
-      library backup & restore (Pro features).
+- [x] Offline downloads with free-tier taste limit, 10-band EQ, Folder Watch, listening stats,
+      library backup & restore, bookmarks & favorites sync (Pro features).
 - [x] One-time Pro unlock with paywall, Family Sharing, App Store compliance.
+- [x] **Resume reliability** (`docs/RELEASE_PLAN.md`): resume at the right chapter and offset from every
+      entry point, crash/force-quit durability, content-keyed identity, free position sync — the app
+      never loses your place.
 
 ### Near-term
 - [ ] **CarPlay** — the single biggest remaining gap versus BookDesign. Blocked on Apple granting the
@@ -68,8 +77,9 @@ in `LICENSE-APPSTORE-EXCEPTION.md`.
 
 ## iCloud Sync setup (for developers)
 
-Cross-device sync via iCloud (requires Voxglass Pro) uses `NSUbiquitousKeyValueStore`. The required
-**iCloud key-value-store** capability is committed as `Voxglass/Resources/Voxglass.entitlements` and wired
+Cross-device sync uses `NSUbiquitousKeyValueStore`. Playback-position sync is free for everyone;
+bookmarks & favorites sync requires Voxglass Pro. The required **iCloud key-value-store** capability is
+committed as `Voxglass/Resources/Voxglass.entitlements` and wired
 through `project.yml` under `settings.base` — so it is attached in **all** configurations, Release and
 TestFlight included. The App Store provisioning profile now carries the iCloud capability; no manual
 capability toggling is needed for development, simulator, unit-test, or archive builds.

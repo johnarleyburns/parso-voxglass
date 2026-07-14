@@ -214,6 +214,16 @@ private struct DatabaseMigration {
                 "ALTER TABLE chapters ADD COLUMN narrators_json TEXT NOT NULL DEFAULT '[]'",
                 "ALTER TABLE books ADD COLUMN narrators_json TEXT NOT NULL DEFAULT '[]'"
             ]
+        ),
+        DatabaseMigration(
+            id: 7,
+            name: "content_keys",
+            statements: [
+                "ALTER TABLE books ADD COLUMN content_key TEXT",
+                "ALTER TABLE chapters ADD COLUMN content_key TEXT",
+                "CREATE INDEX books_content_key ON books(content_key)",
+                "CREATE INDEX chapters_content_key ON chapters(book_id, content_key)"
+            ]
         )
     ]
 }

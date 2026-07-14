@@ -39,6 +39,8 @@ struct MiniPlayerView: View {
                 .glassPanel()
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Now playing: \(session.book.title), \(session.chapter.title)")
+            .accessibilityHint("Opens the full player")
         }
     }
 }

@@ -169,6 +169,30 @@ private struct VoxglassProRow: View {
             }
             .buttonStyle(.plain)
             .glassPanel()
+
+            Button {
+                Task { await storeManager.restorePurchases() }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.clockwise.circle")
+                        .scaledFont(size: 14)
+                        .foregroundStyle(Palette.ink2)
+                        .frame(width: 32, height: 32)
+
+                    Text(storeManager.isRestoring ? "Restoring…" : "Restore Purchases")
+                        .scaledFont(size: 13, weight: .medium)
+                        .foregroundStyle(Palette.ink2)
+
+                    Spacer(minLength: 10)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(storeManager.isRestoring)
+            .accessibilityIdentifier("pro.restorePurchases")
+            .glassPanel()
         }
         .paywallSheet(isPresented: $showPaywall)
         .task {
@@ -641,7 +665,7 @@ private struct SyncSettingsCard: View {
             HStack {
                 Image(systemName: "icloud.fill")
                     .foregroundStyle(Palette.brass)
-                Text("iCloud Sync")
+                Text("Bookmarks & Favorites Sync")
                     .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
@@ -651,7 +675,7 @@ private struct SyncSettingsCard: View {
                 }
             }
 
-            Text("Playback positions, bookmarks, and favorites sync across your devices using your private iCloud account. No app account required.")
+            Text("Your playback position syncs across devices for free. Pro adds bookmarks and favorites sync, using your private iCloud account. No app account required.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
@@ -690,7 +714,7 @@ private struct SyncSettingsCard: View {
             HStack(spacing: 6) {
                 Image(systemName: "icloud.fill")
                     .foregroundStyle(Palette.ink3)
-                Text("iCloud Sync")
+                Text("Bookmarks & Favorites Sync")
                     .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()

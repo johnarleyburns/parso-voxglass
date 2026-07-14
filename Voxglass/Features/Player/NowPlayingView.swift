@@ -296,7 +296,22 @@ struct NowPlayingView: View {
             sleepTimerIcon
         }
         .accessibilityLabel("Sleep timer")
+        .accessibilityValue(sleepTimerAccessibilityValue)
         .accessibilityIdentifier("nowplaying.sleepTimer")
+    }
+
+    private var sleepTimerAccessibilityValue: String {
+        switch playback.sleepMode {
+        case .off:
+            return "Off"
+        case .endOfChapter:
+            return "End of chapter"
+        case .duration:
+            if let remaining = playback.sleepRemaining {
+                return "\(Int(remaining / 60)) minutes remaining"
+            }
+            return "On"
+        }
     }
 
     @ViewBuilder
@@ -368,6 +383,7 @@ struct NowPlayingView: View {
                 .frame(minWidth: 34)
         }
         .accessibilityLabel("Playback speed")
+        .accessibilityValue(PlaybackRate.label(playback.playbackRate))
         .accessibilityIdentifier("nowplaying.speed")
     }
 

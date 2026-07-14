@@ -56,13 +56,21 @@ final class VoxglassCloudSync: ObservableObject {
 
     // MARK: - Push (device → iCloud)
 
+    /// Playback-position sync is FREE (Phase 3): "never lose your place" is a
+    /// trust promise, not an upsell. Only `isAvailable` gates it, never
+    /// `ProFeature.isEnabled(.icloudSync)`.
     func pushPlaybackPositions() async {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
+        guard isAvailable else { return }
         do {
             try await database.prepare()
             let rows = try await database.query("""
-            SELECT id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished
-            FROM playback_positions ORDER BY updated_at DESC LIMIT 100
+            SELECT p.id, p.book_id, p.chapter_id, p.position_seconds, p.duration_seconds,
+                   p.updated_at, p.is_finished,
+                   b.content_key AS book_content_key, c.content_key AS chapter_content_key
+            FROM playback_positions p
+            JOIN books b ON b.id = p.book_id
+            JOIN chapters c ON c.id = p.chapter_id
+            ORDER BY p.updated_at DESC LIMIT 100
             """)
             var count = 0
             for row in rows {
@@ -75,6 +83,8 @@ final class VoxglassCloudSync: ObservableObject {
                     let dict: [String: Any] = [
                         "book_id": row.string("book_id") ?? "",
                         "chapter_id": row.string("chapter_id") ?? "",
+                        "book_content_key": row.string("book_content_key") ?? "",
+                        "chapter_content_key": row.string("chapter_content_key") ?? "",
                         "position_seconds": row.double("position_seconds") ?? 0,
                         "duration_seconds": row.double("duration_seconds") as Any,
                         "updated_at": row.double("updated_at") ?? 0,
@@ -87,6 +97,7 @@ final class VoxglassCloudSync: ObservableObject {
                     }
                 }
             }
+            prunePositionKeys()
             if count > 0 {
                 store.set(Date(), forKey: Key.lastSync)
                 lastSyncDate = Date()
@@ -215,8 +226,13 @@ final class VoxglassCloudSync: ObservableObject {
 
     // MARK: - Pull (iCloud → device)
 
+    /// FREE (Phase 3). Resolves each cloud payload to *local* book/chapter ids by
+    /// content key — raw UUIDs from another install fail the foreign key — and
+    /// upserts last-writer-wins. Payloads whose book isn't in the library yet are
+    /// left in KVS so `adoptCloudPositions(forBookID:)` can apply them after a
+    /// re-import (this is what makes delete-and-reinstall work).
     func pullPlaybackPositions() async {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
+        guard isAvailable else { return }
         do {
             try await database.prepare()
             let allKeys = store.dictionaryRepresentation.keys.filter {
@@ -227,50 +243,147 @@ final class VoxglassCloudSync: ObservableObject {
                       let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                     continue
                 }
-                let id = String(key.dropFirst(Key.positionsPrefix.count))
-                let cloudVersion = Int64(dict["updated_at"] as? Double ?? 0)
-
-                // Check local version (last-writer-wins)
-                let local = try await database.query(
-                    "SELECT updated_at FROM playback_positions WHERE id = ? LIMIT 1",
-                    [.string(id)]
-                )
-                let localVersion = Int64(local.first?.double("updated_at") ?? 0)
-
-                if cloudVersion > localVersion {
-                    let bookID = dict["book_id"] as? String ?? ""
-                    let chapterID = dict["chapter_id"] as? String ?? ""
-                    let position = dict["position_seconds"] as? Double ?? 0
-                    let duration = dict["duration_seconds"] as? Double
-                    let updatedAt = dict["updated_at"] as? Double ?? 0
-                    let finished = dict["is_finished"] as? Bool ?? false
-
-                    try await database.execute("""
-                    INSERT INTO playback_positions
-                        (id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(book_id, chapter_id) DO UPDATE SET
-                        position_seconds = excluded.position_seconds,
-                        duration_seconds = excluded.duration_seconds,
-                        updated_at = excluded.updated_at,
-                        is_finished = excluded.is_finished
-                    """, [
-                        .string(id),
-                        .string(bookID),
-                        .string(chapterID),
-                        .double(position),
-                        duration.map { .double($0) } ?? .null,
-                        .double(updatedAt),
-                        .bool(finished)
-                    ])
+                if await applyCloudPosition(dict) {
+                    let cloudVersion = Int64(dict["updated_at"] as? Double ?? 0)
+                    let storedVersion = store.longLong(forKey: key + Key.versionSuffix)
+                    store.set(max(cloudVersion, storedVersion), forKey: key + Key.versionSuffix)
                 }
-
-                // Update local version tracker
-                store.set(max(cloudVersion, localVersion), forKey: key + Key.versionSuffix)
             }
             store.synchronize()
         } catch {
             syncError = error.localizedDescription
+        }
+    }
+
+    /// Applies every stored cloud position whose content key matches the given
+    /// (newly imported) book. Called after an import so a reinstalled device gets
+    /// its place back the moment the book is in the library again.
+    func adoptCloudPositions(forBookID bookID: UUID) async {
+        guard isAvailable else { return }
+        do {
+            try await database.prepare()
+            let bookRows = try await database.query(
+                "SELECT content_key FROM books WHERE id = ? LIMIT 1",
+                [.string(bookID.uuidString)]
+            )
+            let bookContentKey = bookRows.first?.string("content_key") ?? ""
+
+            let allKeys = store.dictionaryRepresentation.keys.filter {
+                $0.hasPrefix(Key.positionsPrefix) && !$0.hasSuffix(Key.versionSuffix)
+            }
+            for key in allKeys {
+                guard let data = store.data(forKey: key),
+                      let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                    continue
+                }
+                let payloadBookKey = dict["book_content_key"] as? String ?? ""
+                let payloadBookID = dict["book_id"] as? String ?? ""
+                let matchesContentKey = !bookContentKey.isEmpty && payloadBookKey == bookContentKey
+                let matchesRawID = payloadBookID.caseInsensitiveCompare(bookID.uuidString) == .orderedSame
+                guard matchesContentKey || matchesRawID else { continue }
+                _ = await applyCloudPosition(dict)
+            }
+        } catch {
+            syncError = error.localizedDescription
+        }
+    }
+
+    /// Resolves a cloud position payload to local ids (content key first, raw
+    /// UUID as fallback) and upserts it, LWW on `updated_at`. Every
+    /// `UUID(uuidString:)` is guarded. Returns whether the row was applied.
+    private func applyCloudPosition(_ dict: [String: Any]) async -> Bool {
+        let cloudUpdated = dict["updated_at"] as? Double ?? 0
+        let positionSeconds = dict["position_seconds"] as? Double ?? 0
+        let duration = dict["duration_seconds"] as? Double
+        let finished = dict["is_finished"] as? Bool ?? false
+        let bookContentKey = dict["book_content_key"] as? String ?? ""
+        let chapterContentKey = dict["chapter_content_key"] as? String ?? ""
+        let rawBookID = dict["book_id"] as? String ?? ""
+        let rawChapterID = dict["chapter_id"] as? String ?? ""
+
+        var localBookID: String?
+        if !bookContentKey.isEmpty {
+            let rows = try? await database.query(
+                "SELECT id FROM books WHERE content_key = ? LIMIT 1",
+                [.string(bookContentKey)]
+            )
+            localBookID = rows?.first?.string("id")
+        }
+        if localBookID == nil, UUID(uuidString: rawBookID) != nil {
+            let rows = try? await database.query(
+                "SELECT id FROM books WHERE id = ? LIMIT 1",
+                [.string(rawBookID)]
+            )
+            localBookID = rows?.first?.string("id")
+        }
+        guard let bookID = localBookID else { return false }
+
+        var localChapterID: String?
+        if !chapterContentKey.isEmpty {
+            let rows = try? await database.query(
+                "SELECT id FROM chapters WHERE book_id = ? AND content_key = ? LIMIT 1",
+                [.string(bookID), .string(chapterContentKey)]
+            )
+            localChapterID = rows?.first?.string("id")
+        }
+        if localChapterID == nil, UUID(uuidString: rawChapterID) != nil {
+            let rows = try? await database.query(
+                "SELECT id FROM chapters WHERE book_id = ? AND id = ? LIMIT 1",
+                [.string(bookID), .string(rawChapterID)]
+            )
+            localChapterID = rows?.first?.string("id")
+        }
+        guard let chapterID = localChapterID else { return false }
+
+        let localRows = (try? await database.query(
+            "SELECT id, updated_at FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
+            [.string(bookID), .string(chapterID)]
+        )) ?? []
+        let localVersion = localRows.first?.double("updated_at") ?? 0
+        guard cloudUpdated > localVersion else { return false }
+        let rowID = localRows.first?.string("id") ?? UUID().uuidString
+
+        do {
+            try await database.execute("""
+            INSERT INTO playback_positions
+                (id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(book_id, chapter_id) DO UPDATE SET
+                position_seconds = excluded.position_seconds,
+                duration_seconds = excluded.duration_seconds,
+                updated_at = excluded.updated_at,
+                is_finished = excluded.is_finished
+            """, [
+                .string(rowID),
+                .string(bookID),
+                .string(chapterID),
+                .double(positionSeconds),
+                duration.map { .double($0) } ?? .null,
+                .double(cloudUpdated),
+                .bool(finished)
+            ])
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// KVS has a 1024-key / 1 MB ceiling and nothing pruned before Phase 3. Keeps
+    /// the newest `maxPositionKeys` position payloads (by version stamp) and
+    /// removes the rest along with their version trackers.
+    static let maxPositionKeys = 200
+
+    private func prunePositionKeys() {
+        let dataKeys = store.dictionaryRepresentation.keys.filter {
+            $0.hasPrefix(Key.positionsPrefix) && !$0.hasSuffix(Key.versionSuffix)
+        }
+        guard dataKeys.count > Self.maxPositionKeys else { return }
+        let sorted = dataKeys.sorted {
+            store.longLong(forKey: $0 + Key.versionSuffix) > store.longLong(forKey: $1 + Key.versionSuffix)
+        }
+        for key in sorted.dropFirst(Self.maxPositionKeys) {
+            store.removeObject(forKey: key)
+            store.removeObject(forKey: key + Key.versionSuffix)
         }
     }
 
@@ -288,12 +401,16 @@ final class VoxglassCloudSync: ObservableObject {
     // MARK: - Sync orchestration
 
     func sync() async {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
+        guard isAvailable else { return }
         isSyncing = true
         defer { isSyncing = false }
 
+        // Positions are free and always run.
         await pullPlaybackPositions()
         await pushPlaybackPositions()
+
+        // Bookmarks and favorites stay Pro-gated.
+        guard ProFeature.isEnabled(.icloudSync) else { return }
         await pullBookmarks()
         await pushBookmarks()
         await pushFavorites()
@@ -306,6 +423,7 @@ final class VoxglassCloudSync: ObservableObject {
         if reason == NSUbiquitousKeyValueStoreServerChange ||
            reason == NSUbiquitousKeyValueStoreInitialSyncChange {
             await pullPlaybackPositions()
+            guard ProFeature.isEnabled(.icloudSync) else { return }
             let favs = await pullFavorites()
             if !favs.isEmpty {
                 await applyCloudFavorites(favs)

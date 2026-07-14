@@ -132,25 +132,44 @@ final class LibraryBackupService: ObservableObject {
                 guard try await !bookExists(bp.book) else { continue }
 
                 let sourceID = try await ensureSource(bp.source)
-                try await insertBook(bp.book, sourceID: sourceID)
+                try await insertBook(
+                    bp.book,
+                    sourceID: sourceID,
+                    contentKey: ContentKey.book(forSourceURL: bp.source?.url, kind: bp.source?.kind ?? .localFiles)
+                )
                 try await insertChapters(bp.chapters, bookID: bp.book.id)
                 importedCount += 1
             }
 
+            // Positions must survive books that were re-imported under new UUIDs:
+            // resolve each payload position to *local* ids via content keys and
+            // upsert last-writer-wins (the old INSERT OR IGNORE silently dropped
+            // every position whose raw UUID no longer existed).
+            let payloadBookKeys: [UUID: String] = Dictionary(
+                uniqueKeysWithValues: payload.books.compactMap { bp in
+                    ContentKey.book(forSourceURL: bp.source?.url, kind: bp.source?.kind ?? .localFiles)
+                        .map { (bp.book.id, $0) }
+                }
+            )
+            let payloadChapterKeys: [UUID: String] = Dictionary(
+                uniqueKeysWithValues: payload.books.flatMap { bp in
+                    bp.chapters.map { chapter in
+                        (chapter.id, ContentKey.chapter(
+                            remoteURL: chapter.remoteURL,
+                            localURL: chapter.localURL,
+                            index: chapter.index,
+                            title: chapter.title
+                        ))
+                    }
+                }
+            )
+
             for position in payload.positions {
-                try? await database.execute("""
-                INSERT OR IGNORE INTO playback_positions
-                    (id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, [
-                    .string(position.id.uuidString),
-                    .string(position.bookID.uuidString),
-                    .string(position.chapterID.uuidString),
-                    .double(position.position),
-                    position.duration.map { .double($0) } ?? .null,
-                    .double(position.updatedAt.timeIntervalSince1970),
-                    .bool(position.isFinished)
-                ])
+                await upsertPosition(
+                    position,
+                    bookContentKey: payloadBookKeys[position.bookID],
+                    chapterContentKey: payloadChapterKeys[position.chapterID]
+                )
             }
 
             for bm in payload.bookmarks {
@@ -294,6 +313,74 @@ final class LibraryBackupService: ObservableObject {
 
     // MARK: - Import helpers
 
+    /// Content-key-resolved position upsert, LWW on `updated_at`. Resolves the
+    /// payload's book/chapter to local rows by raw UUID first (same-install
+    /// restore), then by content key (books re-imported under new UUIDs).
+    private func upsertPosition(
+        _ position: PlaybackPosition,
+        bookContentKey: String?,
+        chapterContentKey: String?
+    ) async {
+        var localBookID: String?
+        if let rows = try? await database.query(
+            "SELECT id FROM books WHERE id = ? LIMIT 1",
+            [.string(position.bookID.uuidString)]
+        ), rows.first != nil {
+            localBookID = position.bookID.uuidString
+        }
+        if localBookID == nil, let key = bookContentKey, !key.isEmpty {
+            let rows = try? await database.query(
+                "SELECT id FROM books WHERE content_key = ? LIMIT 1",
+                [.string(key)]
+            )
+            localBookID = rows?.first?.string("id")
+        }
+        guard let bookID = localBookID else { return }
+
+        var localChapterID: String?
+        if let rows = try? await database.query(
+            "SELECT id FROM chapters WHERE book_id = ? AND id = ? LIMIT 1",
+            [.string(bookID), .string(position.chapterID.uuidString)]
+        ), rows.first != nil {
+            localChapterID = position.chapterID.uuidString
+        }
+        if localChapterID == nil, let key = chapterContentKey, !key.isEmpty {
+            let rows = try? await database.query(
+                "SELECT id FROM chapters WHERE book_id = ? AND content_key = ? LIMIT 1",
+                [.string(bookID), .string(key)]
+            )
+            localChapterID = rows?.first?.string("id")
+        }
+        guard let chapterID = localChapterID else { return }
+
+        let localRows = (try? await database.query(
+            "SELECT id, updated_at FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
+            [.string(bookID), .string(chapterID)]
+        )) ?? []
+        let localVersion = localRows.first?.double("updated_at") ?? 0
+        guard position.updatedAt.timeIntervalSince1970 > localVersion else { return }
+        let rowID = localRows.first?.string("id") ?? position.id.uuidString
+
+        try? await database.execute("""
+        INSERT INTO playback_positions
+            (id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(book_id, chapter_id) DO UPDATE SET
+            position_seconds = excluded.position_seconds,
+            duration_seconds = excluded.duration_seconds,
+            updated_at = excluded.updated_at,
+            is_finished = excluded.is_finished
+        """, [
+            .string(rowID),
+            .string(bookID),
+            .string(chapterID),
+            .double(position.position),
+            position.duration.map { .double($0) } ?? .null,
+            .double(position.updatedAt.timeIntervalSince1970),
+            .bool(position.isFinished)
+        ])
+    }
+
     private func bookExists(_ book: Book) async throws -> Bool {
         let rows = try await database.query(
             "SELECT 1 FROM books WHERE id = ? LIMIT 1",
@@ -337,7 +424,7 @@ final class LibraryBackupService: ObservableObject {
         return source.id
     }
 
-    private func insertBook(_ book: Book, sourceID: UUID) async throws {
+    private func insertBook(_ book: Book, sourceID: UUID, contentKey: String?) async throws {
         let authorsData = try JSONEncoder().encode(book.authors)
         let narratorsData = try JSONEncoder().encode(book.narrators)
         let authorsJSON = String(data: authorsData, encoding: .utf8) ?? "[]"
@@ -345,8 +432,8 @@ final class LibraryBackupService: ObservableObject {
 
         try await database.execute("""
         INSERT OR IGNORE INTO books
-            (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, [
             .string(book.id.uuidString),
             .string(book.title),
@@ -357,7 +444,8 @@ final class LibraryBackupService: ObservableObject {
             book.coverURL.map { .string($0.absoluteString) } ?? .null,
             .double(book.createdAt.timeIntervalSince1970),
             .double(book.updatedAt.timeIntervalSince1970),
-            .bool(book.isFavorite)
+            .bool(book.isFavorite),
+            contentKey.map { .string($0) } ?? .null
         ])
     }
 
@@ -365,11 +453,17 @@ final class LibraryBackupService: ObservableObject {
         for ch in chapters {
             let narratorsData = try JSONEncoder().encode(ch.narrators)
             let narratorsJSON = String(data: narratorsData, encoding: .utf8) ?? "[]"
+            let contentKey = ContentKey.chapter(
+                remoteURL: ch.remoteURL,
+                localURL: ch.localURL,
+                index: ch.index,
+                title: ch.title
+            )
 
             try await database.execute("""
             INSERT OR IGNORE INTO chapters
-                (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 .string(ch.id.uuidString),
                 .string(bookID.uuidString),
@@ -380,7 +474,8 @@ final class LibraryBackupService: ObservableObject {
                 ch.remoteURL.map { .string($0.absoluteString) } ?? .null,
                 ch.opusURL.map { .string($0.absoluteString) } ?? .null,
                 ch.localURL.map { .string($0.absoluteString) } ?? .null,
-                .string(narratorsJSON)
+                .string(narratorsJSON),
+                .string(contentKey)
             ])
         }
     }

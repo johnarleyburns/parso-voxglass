@@ -4,6 +4,7 @@ protocol PositionStore: Sendable {
     func save(_ position: PlaybackPosition) async throws
     func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition?
     func latestPosition() async throws -> PlaybackPosition?
+    func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition?
 }
 
 struct SQLitePositionStore: PositionStore {
@@ -64,6 +65,19 @@ struct SQLitePositionStore: PositionStore {
         ORDER BY updated_at DESC
         LIMIT 1
         """)
+        return try rows.first.map(Self.position(from:))
+    }
+
+    func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition? {
+        let rows = try await database.query("""
+        SELECT id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished
+        FROM playback_positions
+        WHERE book_id = ?
+        ORDER BY updated_at DESC
+        LIMIT 1
+        """, [
+            ModelMapping.databaseValue(bookID)
+        ])
         return try rows.first.map(Self.position(from:))
     }
 

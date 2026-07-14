@@ -11,6 +11,10 @@ protocol AudioEngine: AnyObject {
     var currentTime: TimeInterval { get }
     var duration: TimeInterval? { get }
     var isPlaying: Bool { get }
+    /// True once an item is loaded and the engine reports a finite playback time.
+    /// The anti-zero guard uses this to refuse persisting a bogus `0` in the
+    /// window after `load()` and before the item is ready.
+    var isReady: Bool { get }
     var rate: Float { get }                    // P0-1
     var volume: Float { get set }              // P0-2 fade-out
     var isEQEngaged: Bool { get }

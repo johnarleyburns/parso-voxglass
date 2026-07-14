@@ -99,15 +99,14 @@ final class PlaybackCoordinator: ObservableObject {
     func restoreLatestSession(from books: [BookWithChapters]) async {
         do {
             let storedPosition = try await positionStore.latestPosition()
-            let snapshotPosition = snapshotStore.load()
-            let latest = [storedPosition, snapshotPosition]
-                .compactMap { $0 }
-                .max { $0.updatedAt < $1.updatedAt }
+            let snapshotPosition = snapshotStore.latest()
+            let latest = Self.preferredPosition(row: storedPosition, snapshot: snapshotPosition)
 
-            guard let latest,
-                  let book = books.first(where: { $0.book.id == latest.bookID }),
+            guard let latest else { return }
+            guard let book = books.first(where: { $0.book.id == latest.bookID }),
                   let chapter = book.chapters.first(where: { $0.id == latest.chapterID }),
                   let url = chapter.resolvedPlayableURL() else {
+                playbackError = "Couldn't restore your last listening session."
                 return
             }
 
@@ -128,17 +127,83 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
+    /// Replays every UserDefaults snapshot into SQLite (launch reconcile). LWW on
+    /// `updatedAt`, with the durable-store tie-break: for the same (book, chapter)
+    /// a snapshot more than 2 s ahead of the row wins even when the row's
+    /// timestamp is newer — a lost SQLite write is exactly what this defends
+    /// against. FK failures (book since deleted) are skipped silently.
+    func reconcileSnapshots() async {
+        for snapshot in snapshotStore.all() {
+            do {
+                let row = try await positionStore.position(
+                    for: snapshot.bookID, chapterID: snapshot.chapterID
+                )
+                if Self.snapshotWins(row: row, snapshot: snapshot) {
+                    try await positionStore.save(snapshot)
+                }
+            } catch {
+                continue
+            }
+        }
+    }
+
+    /// Pure tie-break between a SQLite row and a UserDefaults snapshot for the
+    /// same (book, chapter): the snapshot wins on newer timestamp, or whenever it
+    /// is more than 2 s ahead of the row.
+    static func snapshotWins(row: PlaybackPosition?, snapshot: PlaybackPosition) -> Bool {
+        guard let row else { return true }
+        if snapshot.updatedAt > row.updatedAt { return true }
+        return snapshot.position > row.position + 2
+    }
+
+    /// Merges the SQLite row and the snapshot for restore/resume: same
+    /// (book, chapter) uses the tie-break; otherwise the newer of the two.
+    static func preferredPosition(
+        row: PlaybackPosition?,
+        snapshot: PlaybackPosition?
+    ) -> PlaybackPosition? {
+        switch (row, snapshot) {
+        case (nil, nil): return nil
+        case (let row?, nil): return row
+        case (nil, let snapshot?): return snapshot
+        case (let row?, let snapshot?):
+            if row.bookID == snapshot.bookID && row.chapterID == snapshot.chapterID {
+                return Self.snapshotWins(row: row, snapshot: snapshot) ? snapshot : row
+            }
+            return snapshot.updatedAt > row.updatedAt ? snapshot : row
+        }
+    }
+
     func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
-        let chapter = requestedChapter ?? book.chapters.first
-        guard let chapter else { return }
+        let chapter: Chapter
+        let startTime: TimeInterval
+        var savedDuration: TimeInterval?
+
+        if let requestedChapter {
+            chapter = requestedChapter
+            let saved = try? await positionStore.position(for: book.book.id, chapterID: requestedChapter.id)
+            startTime = saved?.position ?? 0
+            savedDuration = saved?.duration
+        } else {
+            let row = try? await positionStore.latestPosition(forBookID: book.book.id)
+            let saved = Self.preferredPosition(
+                row: row ?? nil,
+                snapshot: snapshotStore.position(forBookID: book.book.id)
+            )
+            guard let target = Self.resolveResume(chapters: book.chapters, saved: saved) else { return }
+            chapter = target.chapter
+            startTime = target.startTime
+            if saved?.chapterID == target.chapter.id {
+                savedDuration = saved?.duration
+            }
+        }
+
         guard let playableURL = chapter.resolvedPlayableURL() else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
             return
         }
 
         do {
-            let savedPosition = try await positionStore.position(for: book.book.id, chapterID: chapter.id)
-            let startTime = savedPosition?.position ?? 0
             try await engine.load(url: playableURL, startTime: startTime)
             applyStoredRate(forBookID: book.book.id)
             updateArtwork(for: book.book)
@@ -149,7 +214,7 @@ final class PlaybackCoordinator: ObservableObject {
                 chapters: book.chapters,
                 chapter: chapter,
                 position: startTime,
-                duration: savedPosition?.duration ?? chapter.duration ?? engine.duration,
+                duration: savedDuration ?? chapter.duration ?? engine.duration,
                 isPlaying: true
             )
             startProgressLoop()
@@ -173,6 +238,52 @@ final class PlaybackCoordinator: ObservableObject {
         book.chapters.firstIndex { $0.id == chapter.id } ?? 0
     }
 
+    // MARK: - Resume resolution (Phase 1, FREE)
+
+    /// The chapter + offset a book should resume at. Pure result type so the
+    /// resolver can be unit-tested with zero I/O (cf. `startDecision`).
+    struct ResumeTarget: Equatable {
+        let chapter: Chapter
+        let startTime: TimeInterval
+    }
+
+    /// Pure resume resolver. Given a book's chapters and the last saved position,
+    /// decides which chapter to open and at what offset. Never touches the engine
+    /// or the store, so every rule is directly assertable.
+    static func resolveResume(
+        chapters: [Chapter],
+        saved: PlaybackPosition?,
+        startFloor: TimeInterval = 5,
+        endEpsilon: TimeInterval = 5
+    ) -> ResumeTarget? {
+        guard let first = chapters.first else { return nil }
+
+        guard let saved,
+              let savedIndex = chapters.firstIndex(where: { $0.id == saved.chapterID }) else {
+            return ResumeTarget(chapter: first, startTime: 0)
+        }
+
+        let chapter = chapters[savedIndex]
+        let duration = saved.duration ?? chapter.duration
+        let isFinished = saved.isFinished
+            || (duration.map { $0 > 0 && saved.position >= $0 - endEpsilon } ?? false)
+
+        if isFinished {
+            let nextIndex = savedIndex + 1
+            if chapters.indices.contains(nextIndex) {
+                return ResumeTarget(chapter: chapters[nextIndex], startTime: 0)
+            }
+            return ResumeTarget(chapter: first, startTime: 0)
+        }
+
+        if saved.position < startFloor {
+            return ResumeTarget(chapter: chapter, startTime: 0)
+        }
+
+        return ResumeTarget(chapter: chapter, startTime: saved.position)
+    }
+
+
     func togglePlayPause() {
         guard currentSession != nil else { return }
         if engine.isPlaying {
@@ -192,9 +303,12 @@ final class PlaybackCoordinator: ObservableObject {
         }
         lastListenTick = nil
         resetSilenceBoost()
+        saveCurrentSnapshot()
         engine.pause()
         mutateSession {
-            $0.position = engine.currentTime
+            if engine.isReady {
+                $0.position = engine.currentTime
+            }
             $0.duration = engine.duration ?? $0.duration
             $0.isPlaying = false
         }
@@ -306,7 +420,7 @@ final class PlaybackCoordinator: ObservableObject {
         currentSession = nil
         currentArtwork = nil
         currentArtworkBookID = nil
-        snapshotStore.clear()
+        snapshotStore.clear(bookID: bookID)
         updateNowPlayingInfo()
     }
 
@@ -783,17 +897,27 @@ final class PlaybackCoordinator: ObservableObject {
 
     private func persistCurrentPosition(reason: PositionPersistReason, finished: Bool = false) async {
         guard let session = currentSession else { return }
-        let position = PlaybackPosition(
+
+        // Anti-zero guard (Phase 1, problem 3): never write a bogus position over a
+        // good row in the window after load() and before the item is ready. A
+        // finish write is exempt (it deliberately records the chapter end), as is
+        // an explicit seek (the user chose that position, including 0).
+        let position = engine.currentTime
+        if !finished, reason != .seek, (!engine.isReady || position <= 0) {
+            return
+        }
+
+        let playbackPosition = PlaybackPosition(
             bookID: session.book.id,
             chapterID: session.chapter.id,
-            position: engine.currentTime,
+            position: position,
             duration: engine.duration ?? session.duration,
             updatedAt: Date(),
             isFinished: finished
         )
-        snapshotStore.save(position)
+        snapshotStore.save(playbackPosition)
         do {
-            try await positionStore.save(position)
+            try await positionStore.save(playbackPosition)
             if reason == .periodic {
                 lastPeriodicSave = Date()
             }
@@ -807,6 +931,9 @@ final class PlaybackCoordinator: ObservableObject {
 
     private func saveCurrentSnapshot() {
         guard let session = currentSession else { return }
+        // Same anti-zero guard: the 1 Hz snapshot must not clobber a good slot with
+        // a not-ready 0.
+        guard engine.isReady, engine.currentTime > 0 else { return }
         snapshotStore.save(PlaybackPosition(
             bookID: session.book.id,
             chapterID: session.chapter.id,
@@ -825,13 +952,25 @@ final class PlaybackCoordinator: ObservableObject {
 
     private func configureNotifications() {
         let center = NotificationCenter.default
+        // willResignActive fires before both didEnterBackground and the
+        // swipe-up-to-kill gesture, and is the last moment a synchronous main
+        // thread write is guaranteed to run. No Task hop here on purpose.
+        notificationObservers.append(center.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.saveCurrentSnapshot()
+            }
+        })
         notificationObservers.append(center.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                await self?.persistCurrentPosition(reason: .background)
+            MainActor.assumeIsolated {
+                self?.persistPositionWithBackgroundTask()
             }
         })
         notificationObservers.append(center.addObserver(
@@ -839,8 +978,8 @@ final class PlaybackCoordinator: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                await self?.persistCurrentPosition(reason: .background)
+            MainActor.assumeIsolated {
+                self?.persistPositionWithBackgroundTask()
             }
         })
         notificationObservers.append(center.addObserver(
@@ -863,6 +1002,20 @@ final class PlaybackCoordinator: ObservableObject {
         })
     }
 
+    /// The snapshot write is synchronous (survives a SIGKILL); the SQLite flush is
+    /// an async actor hop, so it is wrapped in a background task assertion — the
+    /// enqueued write otherwise never runs when the OS kills the app.
+    private func persistPositionWithBackgroundTask() {
+        saveCurrentSnapshot()
+        let taskID = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
+        Task { @MainActor [weak self] in
+            await self?.persistCurrentPosition(reason: .background)
+            if taskID != .invalid {
+                UIApplication.shared.endBackgroundTask(taskID)
+            }
+        }
+    }
+
     private func handleInterruption(_ notification: Notification) async {
         guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
@@ -872,9 +1025,12 @@ final class PlaybackCoordinator: ObservableObject {
         switch type {
         case .began:
             isHandlingInterruption = engine.isPlaying
+            saveCurrentSnapshot()
             engine.pause()
             mutateSession {
-                $0.position = engine.currentTime
+                if engine.isReady {
+                    $0.position = engine.currentTime
+                }
                 $0.isPlaying = false
             }
             await persistCurrentPosition(reason: .interruption)

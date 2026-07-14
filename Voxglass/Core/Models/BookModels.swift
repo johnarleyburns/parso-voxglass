@@ -86,7 +86,10 @@ struct Chapter: Identifiable, Codable, Equatable, Sendable {
     }
 
     func resolvedPlayableURL() -> URL? {
-        localURL ?? remoteURL
+        if let localURL, let remoteURL {
+            return FileManager.default.fileExists(atPath: localURL.path) ? localURL : remoteURL
+        }
+        return localURL ?? remoteURL
     }
 }
 

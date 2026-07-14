@@ -228,6 +228,58 @@ final class LibraryRepository {
         return updated
     }
 
+    /// Backfills `content_key` for books and chapters imported before migration 7,
+    /// deriving each key from data already in the database (source URL/kind for
+    /// books; audio filename stem for chapters). Idempotent — only NULL keys are
+    /// touched, so this is cheap on every launch after the first.
+    @discardableResult
+    func backfillContentKeysIfNeeded() async -> Int {
+        do {
+            try await database.prepare()
+            var updated = 0
+
+            let bookRows = try await database.query("""
+            SELECT b.id AS book_id, s.url AS source_url, s.kind AS source_kind
+            FROM books b JOIN sources s ON s.id = b.source_id
+            WHERE b.content_key IS NULL
+            """)
+            for row in bookRows {
+                guard let bookID = row.string("book_id") else { continue }
+                let kind = SourceKind(rawValue: row.string("source_kind") ?? "") ?? .localFiles
+                let url = row.string("source_url").flatMap(URL.init(string:))
+                guard let key = ContentKey.book(forSourceURL: url, kind: kind) else { continue }
+                try await database.execute(
+                    "UPDATE books SET content_key = ? WHERE id = ?",
+                    [.string(key), .string(bookID)]
+                )
+                updated += 1
+            }
+
+            let chapterRows = try await database.query("""
+            SELECT id, title, chapter_index, remote_url, local_url
+            FROM chapters
+            WHERE content_key IS NULL
+            """)
+            for row in chapterRows {
+                guard let chapterID = row.string("id") else { continue }
+                let key = ContentKey.chapter(
+                    remoteURL: row.string("remote_url").flatMap(URL.init(string:)),
+                    localURL: row.string("local_url").flatMap(URL.init(string:)),
+                    index: Int(row.int("chapter_index") ?? 0),
+                    title: row.string("title") ?? ""
+                )
+                try await database.execute(
+                    "UPDATE chapters SET content_key = ? WHERE id = ?",
+                    [.string(key), .string(chapterID)]
+                )
+                updated += 1
+            }
+            return updated
+        } catch {
+            return 0
+        }
+    }
+
     /// Returns all taste terms (axis, term) for a given book, for seeding
     /// the taste profile when the book is listened to.
     func fetchBookTasteTerms(for bookID: UUID) async throws -> [(axis: String, term: String)] {
@@ -322,7 +374,11 @@ final class LibraryRepository {
             sourceKind: sourceKind
         )
 
-        try await insert(book: book, chapters: chapters)
+        try await insert(
+            book: book,
+            chapters: chapters,
+            bookContentKey: ContentKey.book(forInternetArchiveIdentifier: identifier)
+        )
 
         // Capture taste metadata for the recommendation engine
         let bookIDString = book.id.uuidString
@@ -381,7 +437,11 @@ final class LibraryRepository {
                 createdAt: now,
                 updatedAt: now
             )
-            try await insert(book: book, chapters: [])
+            try await insert(
+                book: book,
+                chapters: [],
+                bookContentKey: ContentKey.book(forLocalFolderName: folderName)
+            )
         }
 
         let knownURLs = Set((existing?.chapters ?? []).compactMap { $0.localURL?.absoluteString })
@@ -399,9 +459,15 @@ final class LibraryRepository {
                 opusURL: nil,
                 localURL: file.url
             )
+            let chapterKey = ContentKey.chapter(
+                remoteURL: nil,
+                localURL: file.url,
+                index: chapter.index,
+                title: file.title
+            )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -412,7 +478,8 @@ final class LibraryRepository {
                 .null,
                 .null,
                 ModelMapping.databaseValue(chapter.localURL),
-                .string(ModelMapping.narratorsJSON(chapter.narrators))
+                .string(ModelMapping.narratorsJSON(chapter.narrators)),
+                .string(chapterKey)
             ])
         }
 
@@ -522,22 +589,36 @@ final class LibraryRepository {
         return Set(try rows.map { try ModelMapping.uuid($0, "book_id") })
     }
 
-    /// Aggregates playback-progress per book: last position and whether every
-    /// chapter row has `is_finished = 1`. Books with no entries are absent.
+    /// Aggregates playback-progress per book. A book is finished only when
+    /// *every* chapter has a finished row (Phase 4 — the old `MIN(is_finished)`
+    /// over only-positioned chapters marked a book finished off one finished
+    /// chapter). Progress is Σ(finished chapter durations) + the current chapter's
+    /// offset, not the largest within-chapter offset.
     func fetchBookProgress() async throws -> [UUID: BookProgress] {
         try await database.prepare()
         let rows = try await database.query("""
-        SELECT book_id, MAX(position_seconds) AS last_position,
-               MIN(is_finished) AS all_finished
-        FROM playback_positions
-        GROUP BY book_id
+        SELECT p.book_id AS book_id,
+               SUM(CASE WHEN p.is_finished = 1 THEN 1 ELSE 0 END) AS finished_chapters,
+               (SELECT COUNT(*) FROM chapters c WHERE c.book_id = p.book_id) AS total_chapters,
+               SUM(CASE WHEN p.is_finished = 1 THEN COALESCE(p.duration_seconds, 0) ELSE 0 END) AS finished_duration,
+               COALESCE((
+                   SELECT p2.position_seconds FROM playback_positions p2
+                   WHERE p2.book_id = p.book_id AND p2.is_finished = 0
+                   ORDER BY p2.updated_at DESC LIMIT 1
+               ), 0) AS current_offset
+        FROM playback_positions p
+        GROUP BY p.book_id
         """)
         var result: [UUID: BookProgress] = [:]
         for row in rows {
             let bookID = try ModelMapping.uuid(row, "book_id")
+            let finishedChapters = row.int("finished_chapters") ?? 0
+            let totalChapters = row.int("total_chapters") ?? 0
+            let finishedDuration = row.double("finished_duration") ?? 0
+            let currentOffset = row.double("current_offset") ?? 0
             result[bookID] = BookProgress(
-                lastPosition: row.double("last_position") ?? 0,
-                isFinished: row.bool("all_finished") ?? false
+                lastPosition: finishedDuration + currentOffset,
+                isFinished: totalChapters > 0 && finishedChapters >= totalChapters
             )
         }
         return result
@@ -677,10 +758,10 @@ final class LibraryRepository {
         }
     }
 
-    private func insert(book: Book, chapters: [Chapter]) async throws {
+    private func insert(book: Book, chapters: [Chapter], bookContentKey: String? = nil) async throws {
         try await database.execute("""
-        INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, [
             ModelMapping.databaseValue(book.id),
             .string(book.title),
@@ -691,13 +772,20 @@ final class LibraryRepository {
             ModelMapping.databaseValue(book.coverURL),
             ModelMapping.databaseValue(book.createdAt),
             ModelMapping.databaseValue(book.updatedAt),
-            .bool(book.isFavorite)
+            .bool(book.isFavorite),
+            bookContentKey.map { .string($0) } ?? .null
         ])
 
         for chapter in chapters {
+            let chapterKey = ContentKey.chapter(
+                remoteURL: chapter.remoteURL,
+                localURL: chapter.localURL,
+                index: chapter.index,
+                title: chapter.title
+            )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -708,7 +796,8 @@ final class LibraryRepository {
                 ModelMapping.databaseValue(chapter.remoteURL),
                 ModelMapping.databaseValue(chapter.opusURL),
                 ModelMapping.databaseValue(chapter.localURL),
-                .string(ModelMapping.narratorsJSON(chapter.narrators))
+                .string(ModelMapping.narratorsJSON(chapter.narrators)),
+                .string(chapterKey)
             ])
         }
     }

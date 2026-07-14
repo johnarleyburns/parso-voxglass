@@ -45,6 +45,10 @@ final class LibraryStore: ObservableObject {
     private weak var playback: PlaybackCoordinator?
     private weak var offlineManager: OfflineDownloadManager?
 
+    /// Invoked after a book is imported so the cloud-sync layer can adopt any
+    /// stored playback position for it (the delete-and-reinstall path, Phase 3).
+    var onBookImported: ((UUID) async -> Void)?
+
     init(repository: LibraryRepository) {
         self.repository = repository
     }
@@ -120,6 +124,7 @@ final class LibraryStore: ObservableObject {
         do {
             let imported = try await repository.importInternetArchiveItem(metadata, sourceKind: sourceKind)
             await refresh()
+            await onBookImported?(imported.book.id)
             return imported
         } catch {
             importError = error.localizedDescription
@@ -175,9 +180,7 @@ final class LibraryStore: ObservableObject {
 
         // 6. Stop playback / clear the restore snapshot if this was the live or
         //    last session.
-        if snapshotStore.load()?.bookID == bookID {
-            snapshotStore.clear()
-        }
+        snapshotStore.clear(bookID: bookID)
         playback?.stopPlayback(forDeletedBook: bookID)
     }
 

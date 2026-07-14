@@ -166,6 +166,95 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertEqual(recentlyPlayed.map(\.book.id), [second.bookID, first.bookID])
     }
 
+    func testBookIsFinishedOnlyWhenAllChaptersFinished() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "progress-finished")
+        let repository = LibraryRepository(database: database)
+        let seeded = try await seedBook(in: database, title: "Two Chapter Book")
+        let secondChapterID = try await seedExtraChapter(in: database, bookID: seeded.bookID, index: 1)
+        let positionStore = SQLitePositionStore(database: database)
+
+        try await positionStore.save(PlaybackPosition(
+            bookID: seeded.bookID,
+            chapterID: seeded.chapterID,
+            position: 120,
+            duration: 120,
+            updatedAt: Date(timeIntervalSince1970: 100),
+            isFinished: true
+        ))
+
+        var progress = try await repository.fetchBookProgress()
+        XCTAssertEqual(
+            progress[seeded.bookID]?.isFinished, false,
+            "One finished chapter out of two must not mark the book finished"
+        )
+
+        try await positionStore.save(PlaybackPosition(
+            bookID: seeded.bookID,
+            chapterID: secondChapterID,
+            position: 120,
+            duration: 120,
+            updatedAt: Date(timeIntervalSince1970: 200),
+            isFinished: true
+        ))
+
+        progress = try await repository.fetchBookProgress()
+        XCTAssertEqual(progress[seeded.bookID]?.isFinished, true)
+    }
+
+    func testBookProgressAccumulatesFinishedChapterDurations() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "progress-cumulative")
+        let repository = LibraryRepository(database: database)
+        let seeded = try await seedBook(in: database, title: "Cumulative Book")
+        let secondChapterID = try await seedExtraChapter(in: database, bookID: seeded.bookID, index: 1)
+        let positionStore = SQLitePositionStore(database: database)
+
+        try await positionStore.save(PlaybackPosition(
+            bookID: seeded.bookID,
+            chapterID: seeded.chapterID,
+            position: 120,
+            duration: 120,
+            updatedAt: Date(timeIntervalSince1970: 100),
+            isFinished: true
+        ))
+        try await positionStore.save(PlaybackPosition(
+            bookID: seeded.bookID,
+            chapterID: secondChapterID,
+            position: 30,
+            duration: 120,
+            updatedAt: Date(timeIntervalSince1970: 200),
+            isFinished: false
+        ))
+
+        let progress = try await repository.fetchBookProgress()
+        XCTAssertEqual(progress[seeded.bookID]?.isFinished, false)
+        XCTAssertEqual(
+            progress[seeded.bookID]?.lastPosition ?? 0, 150, accuracy: 0.001,
+            "Progress must be finished-chapter durations plus the current offset, not the max within-chapter offset"
+        )
+    }
+
+    private func seedExtraChapter(
+        in database: AppDatabase,
+        bookID: UUID,
+        index: Int
+    ) async throws -> UUID {
+        let chapterID = UUID()
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(chapterID.uuidString),
+            .string(bookID.uuidString),
+            .string("Chapter \(index + 1)"),
+            .string("Chapter \(index + 1)"),
+            .int(Int64(index)),
+            .double(120),
+            .null,
+            .string(URL(fileURLWithPath: "/tmp/\(chapterID.uuidString).mp3").absoluteString)
+        ])
+        return chapterID
+    }
+
     private func seedBook(
         in database: AppDatabase,
         title: String,

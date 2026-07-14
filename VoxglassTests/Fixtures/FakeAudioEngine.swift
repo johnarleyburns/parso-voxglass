@@ -31,6 +31,7 @@ final class FakeAudioEngine: AudioEngine {
     var currentTime: TimeInterval = 0
     var duration: TimeInterval?
     var isPlaying: Bool = false
+    var isReady: Bool = true
     private(set) var rate: Float = 1.0
     var isEQEngaged: Bool = false
 

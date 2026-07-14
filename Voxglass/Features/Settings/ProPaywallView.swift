@@ -29,8 +29,8 @@ struct ProPaywallView: View {
         ProFeatureAdvertisement(
             feature: .icloudSync,
             icon: "icloud.fill",
-            title: "iCloud Sync",
-            description: "Sync playback positions, bookmarks, and favorites across your devices via your private iCloud account."
+            title: "Bookmarks & Favorites Sync",
+            description: "Sync your bookmarks and favorites across your devices via your private iCloud account. Your playback position syncs free, for everyone."
         ),
         ProFeatureAdvertisement(
             feature: .folderWatch,
@@ -197,7 +197,7 @@ struct ProPaywallView: View {
 
     private var foreverFreeFooter: some View {
         VStack(spacing: 4) {
-            Text("Speed 0.5–3.5× · Sleep timer · Bookmarks · Lock-screen artwork · Per-chapter narrators · Volume normalization · Skip silence · FLAC & MP3 · No ads · No telemetry · No accounts — stays free forever.")
+            Text("Speed 0.5–3.5× · Sleep timer · Bookmarks · Position sync across devices · Lock-screen artwork · Per-chapter narrators · Volume normalization · Skip silence · FLAC & MP3 · No ads · No telemetry · No accounts — stays free forever.")
                 .scaledFont(size: 10)
                 .foregroundStyle(Palette.ink3)
                 .multilineTextAlignment(.center)

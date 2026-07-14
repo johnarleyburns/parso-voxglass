@@ -113,6 +113,10 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         return seconds.isFinite ? seconds : 0
     }
 
+    var isReady: Bool {
+        player.currentItem != nil && player.currentTime().seconds.isFinite
+    }
+
     var duration: TimeInterval? {
         guard let seconds = player.currentItem?.duration.seconds, seconds.isFinite else {
             return nil

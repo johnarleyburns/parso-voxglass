@@ -52,6 +52,9 @@ final class AppServices: ObservableObject {
         }
         homeRecommendationStore.configure(profileStore: tasteProfileStore, libraryStore: libraryStore)
         libraryStore.configure(playback: playbackCoordinator, offlineManager: offlineDownloadManager)
+        libraryStore.onBookImported = { [weak self] bookID in
+            await self?.cloudSync.adoptCloudPositions(forBookID: bookID)
+        }
         playbackCoordinator.listeningStatsStore = listeningStatsStore
         folderWatchService.configure(libraryStore: libraryStore)
 
@@ -70,7 +73,14 @@ final class AppServices: ObservableObject {
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
         await libraryStore.backfillNarratorsIfNeeded()
+        await libraryRepository.backfillContentKeysIfNeeded()
         await offlineDownloadManager.refreshState(for: libraryStore.books)
+        // Positions first: the KVS read is local and cheap. Doing this before the
+        // restore (instead of inside sync() after it) means a cloud position is
+        // applied this launch, not one launch late. Then replay the UserDefaults
+        // snapshots into SQLite before restoring from it.
+        await cloudSync.pullPlaybackPositions()
+        await playbackCoordinator.reconcileSnapshots()
         await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
         await cloudSync.sync()
         await folderWatchService.rescanAll()
