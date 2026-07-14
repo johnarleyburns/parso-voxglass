@@ -81,7 +81,6 @@ final class EQAudioProcessor {
     func detach(from playerItem: AVPlayerItem) {
         let key = ObjectIdentifier(playerItem)
         guard let context = contexts[key] else { return }
-        playerItem.audioMix = nil
         context.tap?.release()
         contexts[key] = nil
         registry.evict(playerItem)
@@ -93,7 +92,6 @@ final class EQAudioProcessor {
     /// Removes taps from every item and clears state (used when disengaging EQ).
     func detachAll() {
         for context in contexts.values {
-            context.item?.audioMix = nil
             context.tap?.release()
         }
         contexts.removeAll()
@@ -107,7 +105,6 @@ final class EQAudioProcessor {
     func pruneTaps(keeping items: [AVPlayerItem]) {
         let live = Set(items.map(ObjectIdentifier.init))
         for (key, context) in contexts where !live.contains(key) {
-            context.item?.audioMix = nil
             context.tap?.release()
             contexts[key] = nil
             registry.evict(identifier: key)
