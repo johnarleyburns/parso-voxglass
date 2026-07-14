@@ -3,12 +3,12 @@
   "nonRenewingSubscriptions": [],
   "products": [
     {
-      "displayPrice": "$9.99",
-      "familyShareable": false,
+      "displayPrice": "$7.99",
+      "familyShareable": true,
       "internalID": "E1B2C3D4",
       "localizations": [
         {
-          "description": "Unlock offline downloads, cache presets, 10-band EQ, prefetch depth, Folder Watch, iCloud sync, and listening stats. One-time purchase. No subscription, no account required.",
+          "description": "Unlock unlimited offline downloads, iCloud sync, Folder Watch, 10-band EQ, listening stats, and library backup. One-time purchase. No subscription, no account required.",
           "displayName": "Voxglass Pro",
           "locale": "en_US"
         }

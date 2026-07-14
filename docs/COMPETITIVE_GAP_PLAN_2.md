@@ -1,7 +1,11 @@
 # Voxglass — Competitive Gap Re-analysis & Closure Plan (round 2)
 
+> **Superseded for release work by [`RELEASE_PLAN.md`](RELEASE_PLAN.md)**, which carries forward the
+> phases still open here (2d pin-count, 2e force cast, 4A/4B/4D) alongside the monetization and
+> App Store blockers. Phases 0, 1, 2a–2c, 2f, 3 and 4C shipped; this doc remains the record of that work.
+>
 > Successor to [`COMPETITIVE_GAP_PLAN.md`](COMPETITIVE_GAP_PLAN.md) (Step 0 + P0/P1/P2 + paywall refit)
-> and [`remaining-gaps-plan.md`](remaining-gaps-plan.md). Those are now history; this is the live plan.
+> and [`remaining-gaps-plan.md`](remaining-gaps-plan.md). Those are now history.
 
 ## Context
 

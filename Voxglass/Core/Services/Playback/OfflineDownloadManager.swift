@@ -80,6 +80,14 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
         return .start
     }
 
+    static func pinCount(states: [UUID: OfflineState]) -> Int {
+        states.values.filter { state in
+            if case .cached = state { return true }
+            if case .downloading = state { return true }
+            return false
+        }.count
+    }
+
     /// Derives a book's state from per-chapter cache completeness.
     static func derivedState(chapterComplete: [Bool], anyFailed: Bool) -> OfflineState {
         guard !chapterComplete.isEmpty else { return .notCached }
@@ -143,9 +151,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
         allowCellularOverride: Bool = false
     ) async -> OfflineStartDecision {
         let isPro = ProFeature.isEnabled(.offlineDownloads)
-        // Count books that already have cached- or in-flight offline state so the
-        // free tier gets a taste limit (2 pins) rather than a hard wall.
-        let freePinCount = isPro ? Int.max : state.filter { $0.value == .cached }.count
+        let freePinCount = isPro ? Int.max : Self.pinCount(states: state)
         let decision = Self.startDecision(
             isPro: isPro,
             isCellular: isCellular,

@@ -53,6 +53,7 @@ struct LibraryView: View {
                     systemImage: "books.vertical"
                 )
             } else {
+                offlinePinMeter
                 filterSortBar
                 VStack(spacing: 6) {
                     ForEach(libraryStore.visibleBooks) { book in
@@ -140,6 +141,28 @@ struct LibraryView: View {
                 .scaledFont(size: 13)
                 .foregroundStyle(Palette.danger)
                 .padding(6)
+        }
+    }
+
+    @ViewBuilder
+    private var offlinePinMeter: some View {
+        if !StoreManager.shared.isPro {
+            let used = OfflineDownloadManager.pinCount(states: offlineManager.state)
+            HStack(spacing: 8) {
+                Image(systemName: used >= 2 ? "tray.full.fill" : "tray.fill")
+                    .scaledFont(size: 11.5)
+                    .foregroundStyle(used >= 2 ? Palette.ink3 : Palette.brass)
+                Text("\(used) of 2 free downloads used")
+                    .scaledFont(size: 11.5)
+                    .foregroundStyle(used >= 2 ? Palette.ink3 : Palette.brass)
+                if used >= 2 {
+                    Text("· Pro to pin more")
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.brass)
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 2)
         }
     }
 

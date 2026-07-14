@@ -81,10 +81,10 @@ final class FreeTierRegistryTests: XCTestCase {
         let features = Set(ProFeature.allCases)
         let expected: Set<ProFeature> = [
             .cachePresets, .prefetchDepth, .folderWatch, .eq,
-            .icloudSync, .listeningStats, .offlineDownloads
+            .icloudSync, .listeningStats, .offlineDownloads, .libraryBackup
         ]
         XCTAssertEqual(features, expected)
-        XCTAssertEqual(ProFeature.allCases.count, 7)
+        XCTAssertEqual(ProFeature.allCases.count, 8)
     }
 
     func testProFeaturesAreGatedWhenNotEntitled() {

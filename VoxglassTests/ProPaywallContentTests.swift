@@ -6,17 +6,23 @@ import XCTest
 /// Pro feature without updating the paywall (or vice versa) fails here.
 final class ProPaywallContentTests: XCTestCase {
 
-    func testEveryProFeatureIsAdvertisedExactlyOnce() {
-        let advertised = ProPaywallView.advertised.map(\.feature)
+    func testEveryProFeatureIsCovered() {
+        let advertisedFeatures = ProPaywallView.advertised.map(\.feature)
+        let advertisedSet = Set(advertisedFeatures)
+
+        // cachePresets and prefetchDepth are folded into the offlineDownloads row
+        // as supporting detail; they are not standalone bullets but are covered.
+        let foldedFeatures: Set<ProFeature> = [.cachePresets, .prefetchDepth]
+        let allCovered = advertisedSet.union(foldedFeatures)
+
         XCTAssertEqual(
-            Set(advertised), Set(ProFeature.allCases),
-            "The paywall must advertise exactly the set of Pro features."
+            allCovered, Set(ProFeature.allCases),
+            "Every ProFeature must be covered — either as a standalone ad or folded into another row."
         )
         XCTAssertEqual(
-            advertised.count, Set(advertised).count,
+            advertisedFeatures.count, Set(advertisedFeatures).count,
             "No Pro feature may be advertised more than once."
         )
-        XCTAssertEqual(advertised.count, ProFeature.allCases.count)
     }
 
     func testOfflineDownloadsIsAdvertised() {

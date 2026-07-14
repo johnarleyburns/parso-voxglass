@@ -8,6 +8,10 @@ protocol BookmarkStore: Sendable {
     /// tombstone syncs via last-writer-wins rather than being resurrected.
     func delete(id: UUID) async throws
     func updateNote(_ note: String, id: UUID) async throws -> Bookmark?
+    /// Cloud-sync seam: all bookmarks (including tombstones) for a single book, ordered newest-first.
+    func bookmarksForSync(bookID: UUID) async throws -> [Bookmark]
+    /// Cloud-sync seam: upsert bookmarks coming from iCloud.
+    func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws
 }
 
 struct SQLiteBookmarkStore: BookmarkStore {

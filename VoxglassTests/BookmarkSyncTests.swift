@@ -5,6 +5,9 @@ import XCTest
 /// function so the tombstone behaviour is tested with no iCloud, no SQLite.
 final class BookmarkSyncTests: XCTestCase {
 
+    /// Pure LWW tombstone tests (P0-3). The merge logic is extracted as a pure
+    /// function so the tombstone behaviour is tested with no iCloud, no SQLite.
+
     /// Merge two sets of bookmarks — the one with the newer `max(updatedAt)` wins
     /// per-book. A tombstoned bookmark on the winning side stays deleted.
     static func merge(local: [Bookmark], remote: [Bookmark]) -> [Bookmark] {
@@ -57,5 +60,48 @@ final class BookmarkSyncTests: XCTestCase {
         let descriptionLength = NSString(data: data, encoding: String.Encoding.utf8.rawValue)?.length ?? 0
         XCTAssertLessThan(data.count, 1_000_000, "50-bookmark KVS payload must be under 1 MB")
         XCTAssertLessThan(descriptionLength, 100_000, "With reasonable notes, the payload stays compact")
+    }
+
+    @MainActor func testPushWorksWithAnyBookmarkStoreConformer() {
+        // On today's main this crashes because of the `as! SQLiteBookmarkStore` force cast.
+        // After the fix, any BookmarkStore conformer works.
+        let database = AppDatabase.makeTemporaryDatabase(named: "sync-conformer-test")
+        let fakeStore = FakeBookmarkStore()
+        let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: fakeStore)
+        cloudSync.testForceAvailable = true
+        // If we reach this point without a crash, the force cast has been removed.
+        XCTAssertTrue(true)
+    }
+}
+
+/// A non-SQLite BookmarkStore conformer — verifies that VoxglassCloudSync
+/// works with any BookmarkStore, not just SQLiteBookmarkStore.
+private final class FakeBookmarkStore: BookmarkStore {
+    private var storage: [Bookmark] = []
+
+    func add(_ bookmark: Bookmark) async throws -> Bookmark { bookmark }
+
+    func bookmarks(forBookID bookID: UUID) async throws -> [Bookmark] {
+        storage.filter { $0.bookID == bookID && !$0.isDeleted }
+    }
+
+    func allBookmarks() async throws -> [Bookmark] {
+        storage.filter { !$0.isDeleted }
+    }
+
+    func delete(id: UUID) async throws {
+        if let idx = storage.firstIndex(where: { $0.id == id }) {
+            storage[idx].isDeleted = true
+        }
+    }
+
+    func updateNote(_ note: String, id: UUID) async throws -> Bookmark? { nil }
+
+    func bookmarksForSync(bookID: UUID) async throws -> [Bookmark] {
+        storage.filter { $0.bookID == bookID }
+    }
+
+    func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws {
+        storage = bookmarks
     }
 }

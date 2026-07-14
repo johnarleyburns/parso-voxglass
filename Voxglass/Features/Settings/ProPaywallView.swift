@@ -17,43 +17,45 @@ struct ProPaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var storeManager = StoreManager.shared
 
-    /// Ordered high-value first. Every `ProFeature` must appear exactly once.
+    /// Ordered high-value first. cachePresets and prefetchDepth are folded into
+    /// the offlineDownloads row as supporting detail rather than standalone bullets.
     static let advertised: [ProFeatureAdvertisement] = [
         ProFeatureAdvertisement(
-            feature: .eq,
-            icon: "waveform.path.ecg",
-            title: "10-Band EQ",
-            description: "Shape playback with custom or preset EQs."),
-        ProFeatureAdvertisement(
-            feature: .folderWatch,
-            icon: "folder.fill.badge.plus",
-            title: "Folder Watch",
-            description: "Point Voxglass at a folder of audio files — new files appear automatically."),
+            feature: .offlineDownloads,
+            icon: "arrow.down.circle.fill",
+            title: "Unlimited Offline Downloads",
+            description: "Download as many books as you want for gap-free listening anywhere. Free tier lets you pin 2 — plus a 10 GB cache and whole-book prefetch."
+        ),
         ProFeatureAdvertisement(
             feature: .icloudSync,
             icon: "icloud.fill",
             title: "iCloud Sync",
-            description: "Sync playback positions, bookmarks, and favorites across your devices via your private iCloud account."),
+            description: "Sync playback positions, bookmarks, and favorites across your devices via your private iCloud account."
+        ),
+        ProFeatureAdvertisement(
+            feature: .folderWatch,
+            icon: "folder.fill.badge.plus",
+            title: "Folder Watch",
+            description: "Point Voxglass at a folder of audio files — new files appear automatically."
+        ),
+        ProFeatureAdvertisement(
+            feature: .eq,
+            icon: "waveform.path.ecg",
+            title: "10-Band EQ",
+            description: "Shape playback with custom or preset EQs."
+        ),
         ProFeatureAdvertisement(
             feature: .listeningStats,
             icon: "chart.bar.fill",
             title: "Listening Stats",
-            description: "Track your listening habits — total time, genres, authors, and daily streaks."),
+            description: "Track your listening habits — total time, genres, authors, and daily streaks."
+        ),
         ProFeatureAdvertisement(
-            feature: .offlineDownloads,
-            icon: "arrow.down.circle.fill",
-            title: "Unlimited Offline Pins",
-            description: "Download as many books as you want for gap-free listening offline. Free tier lets you pin a couple."),
-        ProFeatureAdvertisement(
-            feature: .cachePresets,
-            icon: "square.split.2x2.fill",
-            title: "Cache Presets",
-            description: "Choose 500 MB, 2 GB, or 10 GB streaming cache to keep more audio available offline."),
-        ProFeatureAdvertisement(
-            feature: .prefetchDepth,
-            icon: "arrow.triangle.branch",
-            title: "Prefetch Depth",
-            description: "Prefetch the next few chapters or your whole book over Wi-Fi so playback never waits.")
+            feature: .libraryBackup,
+            icon: "externaldrive.badge.timemachine",
+            title: "Library Backup & Restore",
+            description: "Export your books, positions, bookmarks, and playlists to a file you control. Import to restore on any device."
+        )
     ]
 
     private var features: [ProFeatureAdvertisement] { Self.advertised }
@@ -66,8 +68,8 @@ struct ProPaywallView: View {
                 VStack(spacing: 0) {
                     heroSection
                     featuresSection
-                    foreverFreeSection
                     purchaseSection
+                    foreverFreeFooter
                 }
                 .padding(.bottom, 32)
             }
@@ -101,6 +103,12 @@ struct ProPaywallView: View {
                 .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
+
+            Text("One-time. Less than a month of Audible — and every book is free, forever.")
+                .scaledFont(size: 11.5)
+                .foregroundStyle(Palette.ink3)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
         }
         .padding(.bottom, 32)
     }
@@ -137,21 +145,6 @@ struct ProPaywallView: View {
             }
             .glassSurface(cornerRadius: 14)
             .padding(.horizontal, 16)
-        }
-        .padding(.bottom, 32)
-    }
-
-    private var foreverFreeSection: some View {
-        VStack(spacing: 8) {
-            Text("Stays free forever")
-                .scaledFont(size: 16, weight: .semibold)
-                .foregroundStyle(Palette.ink)
-
-            Text("Speed 0.5–3.5× · Sleep timer · Bookmarks · Lock-screen artwork · Per-chapter narrators · Volume normalization · Skip silence · FLAC & MP3 playback · No ads · No telemetry · No accounts")
-                .scaledFont(size: 11.5)
-                .foregroundStyle(Palette.ink3)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
         }
         .padding(.bottom, 28)
     }
@@ -199,12 +192,17 @@ struct ProPaywallView: View {
                     .foregroundStyle(Palette.danger)
                     .padding(.top, 4)
             }
+        }
+    }
 
-            Text("You can also build Pro from source —\nvisit the repository for instructions.")
-                .scaledFont(size: 11)
+    private var foreverFreeFooter: some View {
+        VStack(spacing: 4) {
+            Text("Speed 0.5–3.5× · Sleep timer · Bookmarks · Lock-screen artwork · Per-chapter narrators · Volume normalization · Skip silence · FLAC & MP3 · No ads · No telemetry · No accounts — stays free forever.")
+                .scaledFont(size: 10)
                 .foregroundStyle(Palette.ink3)
                 .multilineTextAlignment(.center)
-                .padding(.top, 12)
+                .padding(.horizontal, 20)
         }
+        .padding(.top, 20)
     }
 }

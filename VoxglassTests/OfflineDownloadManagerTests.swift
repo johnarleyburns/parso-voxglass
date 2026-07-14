@@ -88,6 +88,43 @@ final class OfflineDownloadManagerTests: XCTestCase {
         )
     }
 
+    // MARK: - §A5 pin-count (call-site test — must exercise the real state filter)
+
+    func testPinCountCountsCachedAndDownloading() {
+        var states: [UUID: OfflineState] = [
+            UUID(): .cached,
+            UUID(): .downloading(progress: 0.5),
+            UUID(): .failed,
+            UUID(): .notCached
+        ]
+        XCTAssertEqual(OfflineDownloadManager.pinCount(states: states), 2)
+    }
+
+    func testTwoInFlightDownloadsBlocksThird() {
+        var states: [UUID: OfflineState] = [
+            UUID(): .downloading(progress: 0.3),
+            UUID(): .downloading(progress: 0.7)
+        ]
+        let decision = OfflineDownloadManager.startDecision(
+            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
+            freePinCount: OfflineDownloadManager.pinCount(states: states)
+        )
+        XCTAssertEqual(decision, .needsPro, "Two in-flight downloads should consume both free pins and block a third")
+    }
+
+    func testFailedDownloadDoesNotConsumePin() {
+        var states: [UUID: OfflineState] = [
+            UUID(): .failed,
+            UUID(): .downloading(progress: 0.5)
+        ]
+        XCTAssertEqual(OfflineDownloadManager.pinCount(states: states), 1, "A failed download must not consume a pin")
+        let decision = OfflineDownloadManager.startDecision(
+            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
+            freePinCount: OfflineDownloadManager.pinCount(states: states)
+        )
+        XCTAssertEqual(decision, .start, "One pin consumed out of two should allow a second download")
+    }
+
     // MARK: - §6/§7 stable cache keys
 
     func testAudioCacheKeyIsStableAcrossCalls() {

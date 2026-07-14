@@ -134,11 +134,12 @@ final class VoxglassCloudSync: ObservableObject {
             let books = try await database.query("SELECT id FROM books")
             let kvs = self.store
             for bookRow in books {
-                guard let bookID = bookRow.string("id") else { continue }
-                let all = try await (bmStore as! SQLiteBookmarkStore).bookmarksForSync(bookID: UUID(uuidString: bookID)!)
+                guard let bookIDStr = bookRow.string("id"),
+                      let bookID = UUID(uuidString: bookIDStr) else { continue }
+                let all = try await bmStore.bookmarksForSync(bookID: bookID)
                 guard !all.isEmpty else { continue }
                 let maxUpdated = all.map(\.updatedAt.timeIntervalSince1970).max() ?? 0
-                let key = Key.bookmarksPrefix + bookID
+                let key = Key.bookmarksPrefix + bookIDStr
                 let storedVersion = kvs.longLong(forKey: key + Key.versionSuffix)
                 if Int64(maxUpdated) <= storedVersion { continue }
 
@@ -170,7 +171,7 @@ final class VoxglassCloudSync: ObservableObject {
     /// payload so deletions aren't resurrected by another device's push.
     func pullBookmarks() async {
         guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
-        guard let bmStore = bookmarkStore as? SQLiteBookmarkStore else { return }
+        guard let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
             let kvs = self.store

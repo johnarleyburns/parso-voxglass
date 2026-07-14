@@ -155,6 +155,8 @@ struct NowPlayingView: View {
                 )
             }
             .frame(height: 7)
+            .accessibilityLabel("Playback position")
+            .accessibilityValue(TimeFormatting.clock(isScrubbing ? scrubPosition : session.position))
 
             HStack {
                 Text(TimeFormatting.clock(isScrubbing ? scrubPosition : session.position))

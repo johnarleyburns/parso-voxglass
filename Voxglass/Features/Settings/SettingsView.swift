@@ -1,11 +1,24 @@
 import SwiftUI
 
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
+    @State private var showPaywall = false
 
     var body: some View {
         VoxglassScreen(title: "More") {
             VStack(alignment: .leading, spacing: 16) {
+                VoxglassProRow()
+
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Languages")
                     LanguagesCard()
@@ -28,7 +41,7 @@ struct SettingsView: View {
                 settingsGroup("Playback") {
                     PrefetchDepthRow()
                     SkipIntervalRow()
-                    SkipSilenceRow()
+                    // SkipSilenceRow()
                     VolumeNormalizationRow()
                     SleepTimerDefaultRow()
                 }
@@ -65,6 +78,8 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    LibraryBackupRow()
                 }
 
                 settingsGroup("About") {
@@ -95,6 +110,69 @@ struct SettingsView: View {
                 content()
             }
             .glassPanel()
+        }
+    }
+}
+
+private struct VoxglassProRow: View {
+    @StateObject private var storeManager = StoreManager.shared
+    @State private var showPaywall = false
+
+    var body: some View {
+        VStack(spacing: 10) {
+            SectionTitle(title: "Voxglass Pro")
+
+            Button {
+                if storeManager.isPro {
+                    // Already Pro — nothing actionable.
+                } else {
+                    showPaywall = true
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: storeManager.isPro ? "crown.fill" : "crown")
+                        .scaledFont(size: 14)
+                        .foregroundStyle(Palette.brass)
+                        .frame(width: 32, height: 32)
+                        .background {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Color.white.opacity(0.07))
+                        }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(storeManager.isPro ? "Pro Unlocked" : "Voxglass Pro")
+                            .scaledFont(size: 14, weight: .medium)
+                            .foregroundStyle(Palette.ink)
+                        Text(storeManager.isPro
+                            ? "Thank you for supporting Voxglass."
+                            : storeManager.products.first.map { "One-time \($0.displayPrice) — unlock 6 Pro features" } ?? "One-time purchase"
+                        )
+                            .scaledFont(size: 11.5)
+                            .foregroundStyle(Palette.ink3)
+                    }
+
+                    Spacer(minLength: 10)
+
+                    if storeManager.isPro {
+                        Image(systemName: "checkmark.seal.fill")
+                            .scaledFont(size: 18)
+                            .foregroundStyle(Palette.brass)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .scaledFont(size: 11, weight: .bold)
+                            .foregroundStyle(Palette.ink3.opacity(0.7))
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .glassPanel()
+        }
+        .paywallSheet(isPresented: $showPaywall)
+        .task {
+            await storeManager.loadProducts()
         }
     }
 }
@@ -449,7 +527,6 @@ struct AboutView: View {
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
     }
-
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Voxglass")
@@ -492,7 +569,7 @@ struct AboutView: View {
         }
     }
 
-    private var detailsList: some View {
+    @ViewBuilder private var detailsList: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: "doc.text.fill")
@@ -527,6 +604,12 @@ struct AboutView: View {
             .padding(.vertical, 12)
         }
         .glassPanel()
+
+        Text("Voxglass Pro is a one-time purchase. You can also build Pro from source — visit the repository for instructions.")
+            .scaledFont(size: 11.5)
+            .foregroundStyle(Palette.ink3)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 4)
     }
 
     private var appVersion: String {
@@ -973,6 +1056,135 @@ private struct FolderWatchRow: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("pro.lock.folderWatch")
             .paywallSheet(isPresented: $showPaywall)
+        }
+    }
+}
+
+private struct LibraryBackupRow: View {
+    @EnvironmentObject private var backupService: LibraryBackupService
+    @State private var showPaywall = false
+    @State private var showImporter = false
+    @State private var showShare = false
+    @State private var exportURL: URL?
+    @State private var importedCount: Int?
+
+    var body: some View {
+        Button {
+            showImporter = true
+        } label: {
+            DisclosureListRow(
+                icon: "externaldrive.badge.timemachine",
+                title: "Backup & Restore",
+                detail: "Save your library to a file and restore it later",
+                count: nil
+            )
+        }
+        .buttonStyle(.plain)
+        .proLocked(.libraryBackup, id: "pro.lock.libraryBackup", onTapLocked: { showPaywall = true })
+        .paywallSheet(isPresented: $showPaywall)
+        .confirmationDialog("Would you like to export or import?", isPresented: $showImporter, titleVisibility: .visible) {
+            Button("Export Backup") {
+                Task { await exportBackup() }
+            }
+            Button("Import Backup") {
+                showImportSheet = true
+            }
+        }
+        .sheet(isPresented: $showImportSheet, onDismiss: {
+            if importedCount != nil {
+                importAlert = true
+            }
+        }) {
+            BackupImportSheet(backupService: backupService) { count in
+                importedCount = count
+                showImportSheet = false
+            }
+        }
+        .sheet(isPresented: $showShare, onDismiss: { exportURL = nil }) {
+            if let url = exportURL {
+                ShareSheet(items: [url])
+            }
+        }
+        .alert("Import Complete", isPresented: $importAlert) {
+            Button("OK", role: .cancel) { importedCount = nil }
+        } message: {
+            if let count = importedCount {
+                Text("\(count) book\(count == 1 ? "" : "s") restored from backup.")
+            }
+        }
+    }
+
+    @State private var showImportSheet = false
+    @State private var importAlert = false
+
+    private func exportBackup() async {
+        if let url = await backupService.exportToFile() {
+            exportURL = url
+            showShare = true
+        }
+    }
+}
+
+private struct BackupImportSheet: View {
+    let backupService: LibraryBackupService
+    let onComplete: (Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var showFilePicker = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "externaldrive.badge.timemachine")
+                    .scaledFont(size: 48)
+                    .foregroundStyle(Palette.brass)
+                    .padding(.top, 32)
+
+                Text("Import Library Backup")
+                    .scaledFont(size: 20, weight: .heavy)
+                    .foregroundStyle(Palette.ink)
+
+                Text("Select a .voxglassbackup file exported from another device. Books that already exist in your library will be skipped.")
+                    .scaledFont(size: 14)
+                    .foregroundStyle(Palette.ink2)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+
+                Button {
+                    showFilePicker = true
+                } label: {
+                    Text("Choose Backup File")
+                        .scaledFont(size: 15.5, weight: .bold)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .foregroundStyle(Color(hex: 0x221503))
+                        .background {
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                                    startPoint: .top, endPoint: .bottom))
+                        }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 32)
+
+                Spacer()
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.json, BackupPayload.utType]) { result in
+                switch result {
+                case .success(let url):
+                    Task {
+                        let count = await backupService.importFromFile(url)
+                        onComplete(count)
+                    }
+                case .failure:
+                    dismiss()
+                }
+            }
         }
     }
 }

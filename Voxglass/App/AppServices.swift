@@ -14,6 +14,7 @@ final class AppServices: ObservableObject {
     let listeningStatsStore: ListeningStatsStore
     let folderWatchService: FolderWatchService
     let playlistStore: PlaylistStore
+    let libraryBackupService: LibraryBackupService
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()
@@ -42,6 +43,7 @@ final class AppServices: ObservableObject {
         self.offlineDownloadManager = OfflineDownloadManager(repository: libraryRepository)
         self.listeningStatsStore = listeningStatsStore
         self.folderWatchService = FolderWatchService(repository: libraryRepository)
+        self.libraryBackupService = LibraryBackupService(database: database)
         self.playbackCoordinator.bookmarkStore = bookmarkStore
         self.playbackCoordinator.onBookmarkAdded = { [weak self] bookmark in
             Task { @MainActor [weak self] in
@@ -63,6 +65,7 @@ final class AppServices: ObservableObject {
     }
 
     func bootstrap() async {
+        await StoreManager.shared.refreshEntitlement()
         await CacheManager.shared.evictIfNeeded()
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
