@@ -307,16 +307,33 @@ struct BookDetailView: View {
 
     @ViewBuilder
     private var narratorSection: some View {
-        if let narratorLine = currentBook.book.narratorLine {
-            VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(title: "Narrators")
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Narrators")
+            if currentBook.book.narrators.isEmpty {
                 DisclosureListRow(
-                    icon: "mic.fill",
-                    title: narratorLine,
+                    icon: "mic.slash.fill",
+                    title: "Narrator unknown",
                     detail: "\(currentBook.chapters.count) chapter\(currentBook.chapters.count == 1 ? "" : "s")",
                     count: nil
                 )
                 .glassSurface(cornerRadius: 14)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(currentBook.book.narrators, id: \.self) { narrator in
+                        NavigationLink {
+                            NarratorDetailView(narratorName: narrator, showingNowPlaying: $showingNowPlaying)
+                        } label: {
+                            DisclosureListRow(
+                                icon: "mic.fill",
+                                title: narrator,
+                                detail: "Narrator",
+                                count: nil
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .glassSurface(cornerRadius: 14)
+                    }
+                }
             }
         }
     }
@@ -481,6 +498,65 @@ struct AuthorDetailView: View {
             }
         }
         .navigationTitle("Author")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct NarratorDetailView: View {
+    @EnvironmentObject private var libraryStore: LibraryStore
+    var narratorName: String
+    @Binding var showingNowPlaying: Bool
+
+    private var books: [BookWithChapters] {
+        libraryStore.books(byNarrator: narratorName)
+    }
+
+    var body: some View {
+        ZStack {
+            VoxglassBackground()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(narratorName)
+                            .scaledFont(size: 31, weight: .heavy)
+                            .kerning(-0.5)
+                            .foregroundStyle(Palette.ink)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.72)
+                        Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
+                            .scaledFont(size: 14)
+                            .foregroundStyle(Palette.ink2)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionTitle(title: "Local Works")
+                        if books.isEmpty {
+                            EmptyStatePanel(
+                                title: "No Local Works",
+                                message: "Works narrated by this reader will appear here after import.",
+                                systemImage: "mic"
+                            )
+                        } else {
+                            ForEach(books) { book in
+                                NavigationLink {
+                                    BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                                } label: {
+                                    CompactBookRowView(
+                                        book: book,
+                                        sourceTitle: libraryStore.source(for: book.book)?.title
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 28)
+            }
+        }
+        .navigationTitle("Narrator")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

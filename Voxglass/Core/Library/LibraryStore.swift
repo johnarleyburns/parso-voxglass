@@ -75,6 +75,20 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    /// One-time best-effort pass over already-imported books whose narrators are
+    /// empty: extract names from their stored summary and persist them. Refreshes
+    /// the in-memory library if anything changed.
+    func backfillNarratorsIfNeeded() async {
+        do {
+            let updated = try await repository.backfillMissingNarrators()
+            if updated > 0 {
+                books = try await repository.fetchLibrary()
+            }
+        } catch {
+            importError = error.localizedDescription
+        }
+    }
+
     func books(filteredBy filter: LibraryBookFilter) async -> [BookWithChapters] {
         do {
             return try await repository.fetchBooks(filteredBy: filter)
@@ -195,6 +209,19 @@ final class LibraryStore: ObservableObject {
     func books(byAuthor author: String) -> [BookWithChapters] {
         books.filter { book in
             book.book.authors.contains { $0.localizedCaseInsensitiveCompare(author) == .orderedSame }
+        }
+    }
+
+    var narratorNames: [String] {
+        let names = books.flatMap(\.book.narrators)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && $0.localizedCaseInsensitiveCompare("Unknown reader") != .orderedSame }
+        return Array(Set(names)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    func books(byNarrator narrator: String) -> [BookWithChapters] {
+        books.filter { book in
+            book.book.narrators.contains { $0.localizedCaseInsensitiveCompare(narrator) == .orderedSame }
         }
     }
 

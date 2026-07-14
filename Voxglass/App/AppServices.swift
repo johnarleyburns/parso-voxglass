@@ -66,6 +66,7 @@ final class AppServices: ObservableObject {
         await CacheManager.shared.evictIfNeeded()
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
+        await libraryStore.backfillNarratorsIfNeeded()
         await offlineDownloadManager.refreshState(for: libraryStore.books)
         await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
         await cloudSync.sync()

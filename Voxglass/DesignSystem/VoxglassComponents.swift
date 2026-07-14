@@ -180,6 +180,12 @@ struct CompactBookRowView: View {
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
+                if let narratorLine = book.book.narratorLine {
+                    Text(narratorLine)
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.ink3)
+                        .lineLimit(1)
+                }
                 Text(book.libraryDetailLine(sourceTitle: sourceTitle))
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)

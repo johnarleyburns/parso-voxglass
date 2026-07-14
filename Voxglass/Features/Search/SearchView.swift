@@ -154,6 +154,12 @@ struct InternetArchiveResultRow: View {
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
+                if let narratorLine = result.narratorLine {
+                    Text(narratorLine)
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.brass)
+                        .lineLimit(1)
+                }
                 Text(detailLine)
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)

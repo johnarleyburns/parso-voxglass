@@ -13,6 +13,7 @@ enum LibrarySort: Equatable, Sendable {
     case recent
     case title
     case author
+    case narrator
     case duration
     case progress
 
@@ -26,6 +27,12 @@ enum LibrarySort: Equatable, Sendable {
             return {
                 let a = $0.book.authors.first ?? ""
                 let b = $1.book.authors.first ?? ""
+                return a.localizedCaseInsensitiveCompare(b) == .orderedAscending
+            }
+        case .narrator:
+            return {
+                let a = $0.book.narrators.first ?? ""
+                let b = $1.book.narrators.first ?? ""
                 return a.localizedCaseInsensitiveCompare(b) == .orderedAscending
             }
         case .duration:
@@ -185,6 +192,40 @@ final class LibraryRepository {
             ModelMapping.databaseValue(bookID)
         ])
         return try await bookWithChapters(forBookID: bookID)
+    }
+
+    func updateNarrators(_ narrators: [String], for bookID: UUID) async throws {
+        try await database.prepare()
+        try await database.execute("""
+        UPDATE books
+        SET narrators_json = ?
+        WHERE id = ?
+        """, [
+            .string(ModelMapping.narratorsJSON(narrators)),
+            ModelMapping.databaseValue(bookID)
+        ])
+    }
+
+    /// One-time best-effort pass over already-imported books whose narrators are
+    /// empty: extract names from the stored summary and persist them. Returns the
+    /// number of books that were updated.
+    @discardableResult
+    func backfillMissingNarrators() async throws -> Int {
+        try await database.prepare()
+        let rows = try await database.query(
+            "SELECT id, summary FROM books WHERE narrators_json = '[]' OR narrators_json IS NULL",
+            []
+        )
+        var updated = 0
+        for row in rows {
+            guard let summary = row.string("summary") else { continue }
+            let narrators = NarratorExtractor.extract(from: summary)
+            guard !narrators.isEmpty else { continue }
+            let bookID = try ModelMapping.uuid(row, "id")
+            try await updateNarrators(narrators, for: bookID)
+            updated += 1
+        }
+        return updated
     }
 
     /// Returns all taste terms (axis, term) for a given book, for seeding
@@ -588,6 +629,12 @@ final class LibraryRepository {
         metadata: InternetArchiveMetadata,
         sourceKind: SourceKind
     ) async throws {
+        defer {
+            if book.narrators.isEmpty {
+                book.narrators = NarratorExtractor.extract(from: book.summary ?? metadata.metadata.description)
+            }
+        }
+
         guard sourceKind == .librivox,
               let callNumberRaw = metadata.metadata.callNumber,
               let librivoxBookID = Int(callNumberRaw) else { return }

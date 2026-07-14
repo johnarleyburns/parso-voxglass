@@ -39,7 +39,7 @@ final class VisualOnboardingTests: XCTestCase {
     func testInternetArchiveCoverURLUsesServicesImageEndpoint() {
         XCTAssertEqual(
             InternetArchiveMetadata.coverURL(for: "pride_and_prejudice_librivox").absoluteString,
-            "https://archive.org/services/img/pride_and_prejudice_librivox"
+            "https://archive.org/services/img/pride_and_prejudice_librivox?scale=2"
         )
     }
 

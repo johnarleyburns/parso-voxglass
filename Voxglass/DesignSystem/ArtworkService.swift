@@ -169,9 +169,9 @@ final class ArtworkService: @unchecked Sendable {
         let px = Int(image.size.width * image.scale)
         let py = Int(image.size.height * image.scale)
         // IA serves several generic placeholders: the "open book" icon (~180x180),
-        // the "microphone" icon, and a few others. Real LibriVox covers are
-        // almost always ~300-800px and 20+ KB. A small, low-detail image is a
-        // strong signal that it's a placeholder.
+        // the "microphone" icon, and a few others. With ?scale=2, real covers
+        // come back at 360x360 or larger and are well above 8 KB, so a small
+        // low-detail image remains a strong placeholder signal.
         if px <= 200 && py <= 200 && dataCount < 8_000 {
             return true
         }

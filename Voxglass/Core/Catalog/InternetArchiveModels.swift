@@ -36,6 +36,17 @@ struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
         creators.isEmpty ? "Unknown author" : creators.joined(separator: ", ")
     }
 
+    /// Best-effort narrator names parsed from the item description. The search
+    /// API does not expose a narrator field, so this may be empty.
+    var narrators: [String] {
+        NarratorExtractor.extract(from: description)
+    }
+
+    var narratorLine: String? {
+        let names = narrators
+        return names.isEmpty ? nil : "Read by \(names.joined(separator: ", "))"
+    }
+
     var sourceKind: SourceKind {
         collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
             ? .librivox
@@ -182,7 +193,7 @@ struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
     }
 
     static func coverURL(for identifier: String) -> URL {
-        URL(string: "https://archive.org/services/img/\(identifier)")!
+        URL(string: "https://archive.org/services/img/\(identifier)?scale=2")!
     }
 }
 
