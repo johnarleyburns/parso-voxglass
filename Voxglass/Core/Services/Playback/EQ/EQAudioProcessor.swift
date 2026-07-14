@@ -70,7 +70,12 @@ final class EQAudioProcessor {
 
         let context = TapContext(gains: gains, item: playerItem, processor: self)
         guard let tap = makeTap(for: context) else { return }
-        context.tap = Unmanaged.passUnretained(tap)
+        // Ownership: detach/detachAll/pruneTaps call `context.tap?.release()`, so
+        // the stored reference MUST carry its own +1 (`passRetained`). Storing it
+        // unretained releases a retain owned by the item's audioMix/MediaToolbox,
+        // and the over-released tap then crashes MediaToolbox's own CFRelease in
+        // remoteXPCItem_Invalidate (field crash: EXC_BREAKPOINT, FigPlayer_RemoteXPC.m).
+        context.tap = Unmanaged.passRetained(tap)
         contexts[key] = context
         registry.attach(playerItem)
         applyMix(tap: tap, to: playerItem)
