@@ -220,7 +220,7 @@ final class EQAudioProcessor {
 
     private func setMix(tap: MTAudioProcessingTap, track: AVAssetTrack?, on playerItem: AVPlayerItem) {
         let inputParams = AVMutableAudioMixInputParameters(track: track)
-        inputParams.setValue(tap, forKey: "audioTapProcessor")
+        inputParams.audioTapProcessor = tap
         let audioMix = AVMutableAudioMix()
         audioMix.inputParameters = [inputParams]
         playerItem.audioMix = audioMix
