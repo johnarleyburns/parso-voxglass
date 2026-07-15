@@ -23,6 +23,7 @@ final class AppServices: ObservableObject {
         let positionStore = SQLitePositionStore(database: database)
         let bookmarkStore = SQLiteBookmarkStore(database: database)
         let audioEngine = AVPlayerAudioEngine()
+        let playbackBridge = SystemPlaybackBridge()
         let tasteProfileStore = TasteProfileStore(database: database)
         let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: bookmarkStore)
         let listeningStatsStore = ListeningStatsStore(database: database)
@@ -33,8 +34,17 @@ final class AppServices: ObservableObject {
         self.catalogStore = CatalogStore()
         self.playbackCoordinator = PlaybackCoordinator(
             engine: audioEngine,
-            positionStore: positionStore
+            positionStore: positionStore,
+            bridge: playbackBridge
         )
+        // The bridge forwards remote commands into the coordinator (set in its
+        // init) and app-lifecycle / interruption events back the other way.
+        playbackBridge.coordinator = self.playbackCoordinator
+        // Cover art is fetched as raw bytes so the platform-free coordinator never
+        // touches UIImage; the bridge renders it into lock-screen artwork.
+        self.playbackCoordinator.artworkProvider = { url in
+            await ArtworkService.shared.image(for: url)?.pngData()
+        }
         let playlistStore = PlaylistStore(repository: playlistRepository)
         self.playlistStore = playlistStore
         self.tasteProfileStore = tasteProfileStore

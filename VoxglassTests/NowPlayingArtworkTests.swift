@@ -1,15 +1,16 @@
-import MediaPlayer
 import XCTest
 @testable import Voxglass
 
 /// Lock-screen artwork caching (P0-4): fetched once per book, never per tick, and
 /// a fallback covers books with no art. Asserted against a counting fake provider
-/// so no network is needed.
+/// (returning raw `Data`) and a `NoopPlaybackBridge`, so no network / MediaPlayer.
 @MainActor
 final class NowPlayingArtworkTests: XCTestCase {
 
     /// MainActor call counter (both the test and the provider run on MainActor).
     private final class FetchCounter { var count = 0 }
+    /// Stand-in cover bytes; the coordinator only forwards them to the bridge.
+    private let coverData = Data([0x01, 0x02, 0x03])
 
     private func makeBook(title: String, cover: Bool) -> BookWithChapters {
         let bookID = UUID()
@@ -24,14 +25,6 @@ final class NowPlayingArtworkTests: XCTestCase {
         return BookWithChapters(book: book, chapters: [chapter])
     }
 
-    private func makeCoordinator() -> (PlaybackCoordinator, FakeAudioEngine) {
-        let db = AppDatabase.makeTemporaryDatabase(named: "art-\(UUID().uuidString)")
-        return (
-            PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db)),
-            FakeAudioEngine()
-        )
-    }
-
     private func waitUntil(_ predicate: () -> Bool) async {
         for _ in 0..<200 {
             if predicate() { return }
@@ -43,10 +36,7 @@ final class NowPlayingArtworkTests: XCTestCase {
         let db = AppDatabase.makeTemporaryDatabase(named: "art-once-\(UUID().uuidString)")
         let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db))
         let counter = FetchCounter()
-        coordinator.artworkProvider = { _ in
-            counter.count += 1
-            return UIImage(systemName: "book.fill")
-        }
+        coordinator.artworkProvider = { _ in counter.count += 1; return self.coverData }
 
         await coordinator.play(makeBook(title: "A", cover: true))
         await waitUntil { counter.count >= 1 }
@@ -59,13 +49,19 @@ final class NowPlayingArtworkTests: XCTestCase {
 
     func testFallbackUsedWhenCoverURLIsNil() async {
         let db = AppDatabase.makeTemporaryDatabase(named: "art-fallback-\(UUID().uuidString)")
-        let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db))
+        let bridge = NoopPlaybackBridge()
+        let coordinator = PlaybackCoordinator(
+            engine: FakeAudioEngine(),
+            positionStore: SQLitePositionStore(database: db),
+            bridge: bridge
+        )
         let counter = FetchCounter()
-        coordinator.artworkProvider = { _ in counter.count += 1; return nil }
+        coordinator.artworkProvider = { _ in counter.count += 1; return self.coverData }
 
         await coordinator.play(makeBook(title: "No Cover", cover: false))
 
-        XCTAssertNotNil(coordinator.currentArtwork, "A coverless book still gets fallback artwork")
+        XCTAssertEqual(bridge.lastArtworkData, .some(nil),
+                       "A coverless book still requests fallback artwork (setArtwork(nil))")
         XCTAssertEqual(counter.count, 0, "No fetch is attempted when there is no cover URL")
     }
 
@@ -73,7 +69,7 @@ final class NowPlayingArtworkTests: XCTestCase {
         let db = AppDatabase.makeTemporaryDatabase(named: "art-change-\(UUID().uuidString)")
         let coordinator = PlaybackCoordinator(engine: FakeAudioEngine(), positionStore: SQLitePositionStore(database: db))
         let counter = FetchCounter()
-        coordinator.artworkProvider = { _ in counter.count += 1; return UIImage(systemName: "book.fill") }
+        coordinator.artworkProvider = { _ in counter.count += 1; return self.coverData }
 
         await coordinator.play(makeBook(title: "A", cover: true))
         await waitUntil { counter.count >= 1 }

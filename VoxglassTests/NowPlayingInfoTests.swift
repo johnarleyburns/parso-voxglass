@@ -1,10 +1,11 @@
-import MediaPlayer
 import XCTest
 @testable import Voxglass
 
-/// Tests the pure `PlaybackCoordinator.nowPlayingInfo(...)` builder (Step 0b). The
-/// dictionary is fully assertable here, so the device test (D-2) only has to
-/// verify iOS renders it — not that it is correct.
+/// Tests the pure `PlaybackCoordinator.nowPlayingInfo(...)` builder (Step 0b). It
+/// now returns a plain `NowPlayingInfo` value (no MediaPlayer), so the payload is
+/// fully assertable on the host; the device test only has to verify iOS renders
+/// it. Artwork is handled separately by the platform bridge and is covered by
+/// `NowPlayingArtworkTests`.
 final class NowPlayingInfoTests: XCTestCase {
 
     private func makeSession() -> PlaybackSession {
@@ -24,57 +25,39 @@ final class NowPlayingInfoTests: XCTestCase {
     func testSetsCoreMetadata() {
         let info = PlaybackCoordinator.nowPlayingInfo(
             session: makeSession(), currentTime: 42, duration: 300,
-            rate: 1.0, isPlaying: true, artwork: nil
+            rate: 1.0, isPlaying: true
         )
-        XCTAssertEqual(info[MPMediaItemPropertyTitle] as? String, "Chapter One")
-        XCTAssertEqual(info[MPMediaItemPropertyAlbumTitle] as? String, "Moby Dick")
-        XCTAssertEqual(info[MPMediaItemPropertyArtist] as? String, "Herman Melville")
-        XCTAssertEqual(info[MPNowPlayingInfoPropertyElapsedPlaybackTime] as? Double, 42)
-        XCTAssertEqual(info[MPMediaItemPropertyPlaybackDuration] as? Double, 300)
+        XCTAssertEqual(info.title, "Chapter One")
+        XCTAssertEqual(info.albumTitle, "Moby Dick")
+        XCTAssertEqual(info.artist, "Herman Melville")
+        XCTAssertEqual(info.elapsed, 42)
+        XCTAssertEqual(info.duration, 300)
     }
 
     func testSetsBothRateKeysWhenPlaying() {
         let info = PlaybackCoordinator.nowPlayingInfo(
             session: makeSession(), currentTime: 42, duration: 300,
-            rate: 1.5, isPlaying: true, artwork: nil
+            rate: 1.5, isPlaying: true
         )
-        XCTAssertEqual(info[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 1.5)
-        XCTAssertEqual(info[MPNowPlayingInfoPropertyDefaultPlaybackRate] as? Double, 1.5)
+        XCTAssertEqual(info.reportedRate, 1.5)
+        XCTAssertEqual(info.defaultRate, 1.5)
     }
 
     func testPlaybackRateIsZeroWhenPausedButDefaultRatePreserved() {
         let info = PlaybackCoordinator.nowPlayingInfo(
             session: makeSession(), currentTime: 42, duration: 300,
-            rate: 1.5, isPlaying: false, artwork: nil
+            rate: 1.5, isPlaying: false
         )
-        XCTAssertEqual(info[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 0.0,
+        XCTAssertEqual(info.reportedRate, 0.0,
                        "Paused rate must be 0 so the lock-screen scrubber stops advancing")
-        XCTAssertEqual(info[MPNowPlayingInfoPropertyDefaultPlaybackRate] as? Double, 1.5)
-    }
-
-    func testArtworkKeyOmittedWhenNil() {
-        let info = PlaybackCoordinator.nowPlayingInfo(
-            session: makeSession(), currentTime: 0, duration: 300,
-            rate: 1.0, isPlaying: true, artwork: nil
-        )
-        XCTAssertNil(info[MPMediaItemPropertyArtwork])
-    }
-
-    func testArtworkKeySetWhenPresent() {
-        let image = UIImage(systemName: "book.fill")!
-        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-        let info = PlaybackCoordinator.nowPlayingInfo(
-            session: makeSession(), currentTime: 0, duration: 300,
-            rate: 1.0, isPlaying: true, artwork: artwork
-        )
-        XCTAssertNotNil(info[MPMediaItemPropertyArtwork] as? MPMediaItemArtwork)
+        XCTAssertEqual(info.defaultRate, 1.5)
     }
 
     func testDurationOmittedWhenNil() {
         let info = PlaybackCoordinator.nowPlayingInfo(
             session: makeSession(), currentTime: 0, duration: nil,
-            rate: 1.0, isPlaying: true, artwork: nil
+            rate: 1.0, isPlaying: true
         )
-        XCTAssertNil(info[MPMediaItemPropertyPlaybackDuration])
+        XCTAssertNil(info.duration)
     }
 }

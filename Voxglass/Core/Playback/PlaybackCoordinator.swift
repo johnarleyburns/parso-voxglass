@@ -1,7 +1,6 @@
-import AVFoundation
-import MediaPlayer
+import Combine
+import Foundation
 import SwiftUI
-import UIKit
 
 @MainActor
 final class PlaybackCoordinator: ObservableObject {
@@ -49,31 +48,37 @@ final class PlaybackCoordinator: ObservableObject {
     let eqPresets = EQPresetStore()
     private var progressTask: Task<Void, Never>?
     private var lastPeriodicSave = Date.distantPast
-    private var notificationObservers: [NSObjectProtocol] = []
     private var isHandlingInterruption = false
 
     private var silenceBoosted = false
     private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
 
-    /// Cached lock-screen artwork for the current book (P0-4). Built once per
-    /// session load — never per 1s tick — keyed by book id.
-    private(set) var currentArtwork: MPMediaItemArtwork?
+    /// Tracks which book's artwork is currently published, so the cover is fetched
+    /// once per session load — never per 1s tick — keyed by book id. The concrete
+    /// lock-screen artwork lives in the platform `bridge`.
     private var currentArtworkBookID: UUID?
-    /// Fetches cover art; injectable so tests can count fetches without network.
-    var artworkProvider: (@MainActor (URL) async -> UIImage?)?
+    /// Fetches cover art as raw image bytes; injectable so tests can count fetches
+    /// without network. The app injects a provider backed by `ArtworkService`.
+    var artworkProvider: (@MainActor (URL) async -> Data?)?
+
+    /// The platform boundary (Now Playing, remote commands, artwork, background
+    /// tasks). Injected by the app; unit tests use `NoopPlaybackBridge`.
+    private let bridge: PlaybackPlatformBridge
 
     init(
         engine: AudioEngine,
         positionStore: PositionStore,
         snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
         rateStore: PlaybackRateStore = PlaybackRateStore(),
-        sleepTimer: SleepTimer = SleepTimer()
+        sleepTimer: SleepTimer = SleepTimer(),
+        bridge: PlaybackPlatformBridge? = nil
     ) {
         self.engine = engine
         self.positionStore = positionStore
         self.snapshotStore = snapshotStore
         self.rateStore = rateStore
         self.sleepTimer = sleepTimer
+        self.bridge = bridge ?? NoopPlaybackBridge()
         self.engine.onPlaybackEnded = { [weak self] in
             Task { @MainActor in
                 await self?.advanceAfterChapterEnd()
@@ -91,8 +96,10 @@ final class PlaybackCoordinator: ObservableObject {
             self?.handleSleepTimerFired()
         }
         self.engine.configureAudioSession()
-        configureRemoteCommands()
-        configureNotifications()
+        self.bridge.onRemoteCommand = { [weak self] command in
+            self?.handleRemoteCommand(command)
+        }
+        reconfigureSkipIntervals()
         restoreEQ()
     }
 
@@ -418,8 +425,8 @@ final class PlaybackCoordinator: ObservableObject {
         progressTask?.cancel()
         progressTask = nil
         currentSession = nil
-        currentArtwork = nil
         currentArtworkBookID = nil
+        bridge.setArtwork(nil)
         snapshotStore.clear(bookID: bookID)
         updateNowPlayingInfo()
     }
@@ -448,36 +455,36 @@ final class PlaybackCoordinator: ObservableObject {
 
     // MARK: - Skip intervals (P1-1, FREE)
 
-    /// Symbol-backed skip values and their SF Symbols (back/forward).
+    /// Symbol-backed skip values (back/forward). The SF-Symbol *names* for these
+    /// live in the app layer (`SkipSymbol`), since resolving them needs UIKit.
     static let allowedSkipBackValues: [Int] = [10, 15, 30, 45, 60]
     static let allowedSkipForwardValues: [Int] = [15, 30, 45, 60, 90]
 
-    nonisolated static func skipBackSymbol(_ seconds: Int) -> String {
-        UIImage(systemName: "gobackward.\(seconds)") != nil
-            ? "gobackward.\(seconds)"
-            : "gobackward.15"
-    }
-
-    nonisolated static func skipForwardSymbol(_ seconds: Int) -> String {
-        UIImage(systemName: "goforward.\(seconds)") != nil
-            ? "goforward.\(seconds)"
-            : "goforward.30"
-    }
-
-    /// Re-reads the stored skip values and updates `preferredIntervals` on the
-    /// remote-command center so they change immediately without re-registration.
-    func reconfigureSkipIntervals() {
+    /// The stored skip-backward interval (seconds), defaulting to 15.
+    var resolvedSkipBackwardInterval: Int {
         let defaults = UserDefaults.standard
-        let skipBack = defaults.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
+        let v = defaults.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
             ? defaults.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
             : 15
-        let skipForward = defaults.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
+        return v > 0 ? v : 15
+    }
+
+    /// The stored skip-forward interval (seconds), defaulting to 30.
+    var resolvedSkipForwardInterval: Int {
+        let defaults = UserDefaults.standard
+        let v = defaults.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
             ? defaults.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
             : 30
+        return v > 0 ? v : 30
+    }
 
-        let commandCenter = MPRemoteCommandCenter.shared()
-        commandCenter.skipBackwardCommand.preferredIntervals = [NSNumber(value: skipBack)]
-        commandCenter.skipForwardCommand.preferredIntervals = [NSNumber(value: skipForward)]
+    /// Re-reads the stored skip values and pushes them to the platform bridge so
+    /// the lock-screen skip intervals change immediately without re-registration.
+    func reconfigureSkipIntervals() {
+        bridge.setSkipIntervals(
+            backward: resolvedSkipBackwardInterval,
+            forward: resolvedSkipForwardInterval
+        )
     }
 
     // MARK: - Lock-screen artwork (P0-4, FREE)
@@ -489,35 +496,18 @@ final class PlaybackCoordinator: ObservableObject {
     private func updateArtwork(for book: Book) {
         guard currentArtworkBookID != book.id else { return }
         currentArtworkBookID = book.id
-        currentArtwork = Self.fallbackArtwork
+        // nil tells the bridge to show its bundled fallback immediately, so the
+        // lock screen is never blank while the real cover loads.
+        bridge.setArtwork(nil)
 
-        guard let coverURL = book.coverURL else { return }
-        let provider = artworkProvider ?? { url in await ArtworkService.shared.image(for: url) }
+        guard let coverURL = book.coverURL, let provider = artworkProvider else { return }
         Task { [weak self] in
-            let image = await provider(coverURL)
-            guard let self, let image, self.currentArtworkBookID == book.id else { return }
-            self.currentArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            let data = await provider(coverURL)
+            guard let self, let data, self.currentArtworkBookID == book.id else { return }
+            self.bridge.setArtwork(data)
             self.updateNowPlayingInfo()
         }
     }
-
-    /// A static, procedurally-rendered cover used for books without art (or where
-    /// the IA placeholder was rejected). Built once, never per tick.
-    private static let fallbackArtwork: MPMediaItemArtwork = {
-        let size = CGSize(width: 512, height: 512)
-        let image = UIGraphicsImageRenderer(size: size).image { ctx in
-            UIColor(red: 0.16, green: 0.11, blue: 0.03, alpha: 1).setFill()
-            ctx.fill(CGRect(origin: .zero, size: size))
-            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 220, weight: .regular)
-            if let symbol = UIImage(systemName: "headphones", withConfiguration: symbolConfig)?
-                .withTintColor(UIColor(red: 0.93, green: 0.70, blue: 0.36, alpha: 1), renderingMode: .alwaysOriginal) {
-                let origin = CGPoint(x: (size.width - symbol.size.width) / 2,
-                                     y: (size.height - symbol.size.height) / 2)
-                symbol.draw(at: origin)
-            }
-        }
-        return MPMediaItemArtwork(boundsSize: size) { _ in image }
-    }()
 
     // MARK: - Sleep timer (P0-2, FREE)
 
@@ -950,243 +940,137 @@ final class PlaybackCoordinator: ObservableObject {
         currentSession = session
     }
 
-    private func configureNotifications() {
-        let center = NotificationCenter.default
-        // willResignActive fires before both didEnterBackground and the
-        // swipe-up-to-kill gesture, and is the last moment a synchronous main
-        // thread write is guaranteed to run. No Task hop here on purpose.
-        notificationObservers.append(center.addObserver(
-            forName: UIApplication.willResignActiveNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.saveCurrentSnapshot()
-            }
-        })
-        notificationObservers.append(center.addObserver(
-            forName: UIApplication.didEnterBackgroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.persistPositionWithBackgroundTask()
-            }
-        })
-        notificationObservers.append(center.addObserver(
-            forName: UIApplication.willTerminateNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.persistPositionWithBackgroundTask()
-            }
-        })
-        notificationObservers.append(center.addObserver(
-            forName: AVAudioSession.interruptionNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            Task { @MainActor in
-                await self?.handleInterruption(notification)
-            }
-        })
-        notificationObservers.append(center.addObserver(
-            forName: AVAudioSession.routeChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                await self?.persistCurrentPosition(reason: .routeChange)
-            }
-        })
-    }
+    // MARK: - Remote commands (routed through the platform bridge)
 
-    /// The snapshot write is synchronous (survives a SIGKILL); the SQLite flush is
-    /// an async actor hop, so it is wrapped in a background task assertion — the
-    /// enqueued write otherwise never runs when the OS kills the app.
-    private func persistPositionWithBackgroundTask() {
-        saveCurrentSnapshot()
-        let taskID = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
-        Task { @MainActor [weak self] in
-            await self?.persistCurrentPosition(reason: .background)
-            if taskID != .invalid {
-                UIApplication.shared.endBackgroundTask(taskID)
-            }
+    /// Handles a remote/lock-screen command forwarded by the platform bridge.
+    private func handleRemoteCommand(_ command: PlaybackRemoteCommand) {
+        switch command {
+        case .play:
+            resume()
+        case .pause:
+            pause()
+        case .togglePlayPause:
+            togglePlayPause()
+        case .skipForward:
+            let seconds = resolvedSkipForwardInterval
+            Task { await skip(by: TimeInterval(seconds)) }
+        case .skipBackward:
+            let seconds = resolvedSkipBackwardInterval
+            Task { await skip(by: -TimeInterval(seconds)) }
+        case .nextChapter:
+            Task { await skipToNextChapter() }
+        case .previousChapter:
+            Task { await skipToPreviousChapter() }
+        case .seek(let position):
+            Task { await seek(to: position) }
+        case .setRate(let rate):
+            setPlaybackRate(rate)
         }
     }
 
-    private func handleInterruption(_ notification: Notification) async {
-        guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
-            return
-        }
-
-        switch type {
-        case .began:
-            isHandlingInterruption = engine.isPlaying
-            saveCurrentSnapshot()
-            engine.pause()
-            mutateSession {
-                if engine.isReady {
-                    $0.position = engine.currentTime
-                }
-                $0.isPlaying = false
-            }
-            await persistCurrentPosition(reason: .interruption)
-        case .ended:
-            guard isHandlingInterruption else { return }
-            isHandlingInterruption = false
-            engine.play()
-            mutateSession { $0.isPlaying = true }
-            startProgressLoop()
-        @unknown default:
-            break
-        }
+    /// Resumes playback (remote "play"): starts the engine, marks the session
+    /// playing, restarts the progress loop, and refreshes Now Playing.
+    private func resume() {
+        engine.play()
+        mutateSession { $0.isPlaying = true }
+        startProgressLoop()
         updateNowPlayingInfo()
     }
 
-    private func configureRemoteCommands() {
-        let commandCenter = MPRemoteCommandCenter.shared()
+    // MARK: - App lifecycle hooks (called by the platform bridge)
 
-        commandCenter.playCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                self?.engine.play()
-                self?.mutateSession { $0.isPlaying = true }
-                self?.startProgressLoop()
-                self?.updateNowPlayingInfo()
-            }
-            return .success
+    /// The last synchronous main-thread moment before background/kill — persist a
+    /// SIGKILL-surviving snapshot. No async hop on purpose.
+    func handleWillResignActive() {
+        saveCurrentSnapshot()
+    }
+
+    /// On entering the background (or terminating): the snapshot write is
+    /// synchronous, and the SQLite flush is wrapped in a background-task assertion
+    /// (via the bridge) so the enqueued write still runs if the OS kills the app.
+    func handleWillBackgroundOrTerminate() {
+        saveCurrentSnapshot()
+        bridge.runWithBackgroundTask { [weak self] in
+            await self?.persistCurrentPosition(reason: .background)
         }
+    }
 
-        commandCenter.pauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                self?.pause()
+    // MARK: - Audio interruptions & route changes (called by the platform bridge)
+
+    /// An audio interruption began (call, Siri, another app). Pause and persist.
+    func handleAudioInterruptionBegan() {
+        isHandlingInterruption = engine.isPlaying
+        saveCurrentSnapshot()
+        engine.pause()
+        mutateSession {
+            if engine.isReady {
+                $0.position = engine.currentTime
             }
-            return .success
+            $0.isPlaying = false
         }
-
-        commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                self?.togglePlayPause()
-            }
-            return .success
+        Task { [weak self] in
+            await self?.persistCurrentPosition(reason: .interruption)
+            self?.updateNowPlayingInfo()
         }
+    }
 
-        commandCenter.skipForwardCommand.isEnabled = true
-        commandCenter.skipForwardCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
-                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
-                    : 30
-                let resolved = configured > 0 ? configured : 30
-                await self?.skip(by: TimeInterval(resolved))
-            }
-            return .success
+    /// An audio interruption ended. Resume only if we were the one interrupted.
+    func handleAudioInterruptionEnded() {
+        guard isHandlingInterruption else { return }
+        isHandlingInterruption = false
+        engine.play()
+        mutateSession { $0.isPlaying = true }
+        startProgressLoop()
+        updateNowPlayingInfo()
+    }
+
+    /// An audio route change (e.g. headphones unplugged) — persist position.
+    func handleAudioRouteChanged() {
+        Task { [weak self] in
+            await self?.persistCurrentPosition(reason: .routeChange)
         }
-
-        commandCenter.skipBackwardCommand.isEnabled = true
-        commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
-                    ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
-                    : 15
-                let resolved = configured > 0 ? configured : 15
-                await self?.skip(by: -TimeInterval(resolved))
-            }
-            return .success
-        }
-
-        commandCenter.nextTrackCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                await self?.skipToNextChapter()
-            }
-            return .success
-        }
-
-        commandCenter.previousTrackCommand.addTarget { [weak self] _ in
-            Task { @MainActor in
-                await self?.skipToPreviousChapter()
-            }
-            return .success
-        }
-
-        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
-                return .commandFailed
-            }
-            Task { @MainActor in
-                await self?.seek(to: event.positionTime)
-            }
-            return .success
-        }
-
-        commandCenter.changePlaybackRateCommand.isEnabled = true
-        commandCenter.changePlaybackRateCommand.supportedPlaybackRates = PlaybackRate.systemLadder.map { NSNumber(value: $0) }
-        commandCenter.changePlaybackRateCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackRateCommandEvent else {
-                return .commandFailed
-            }
-            Task { @MainActor in
-                self?.setPlaybackRate(event.playbackRate)
-            }
-            return .success
-        }
-
-        reconfigureSkipIntervals()
     }
 
     private func updateNowPlayingInfo() {
         guard let session = currentSession else {
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            bridge.updateNowPlaying(nil)
             return
         }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = Self.nowPlayingInfo(
+        bridge.updateNowPlaying(Self.nowPlayingInfo(
             session: session,
             currentTime: engine.currentTime,
             duration: engine.duration ?? session.duration,
             rate: engine.rate,
-            isPlaying: engine.isPlaying,
-            artwork: currentArtwork
-        )
+            isPlaying: engine.isPlaying
+        ))
     }
 
-    /// Pure builder for the Now Playing dictionary (Step 0b). Extracting it makes
-    /// the lock-screen payload — including the playback-rate fields that would
-    /// otherwise make the scrubber drift at non-1.0x speed, and the artwork — a
-    /// plain assertable dictionary. Sets both `PlaybackRate` (0 when paused so the
-    /// system stops advancing the scrubber) and `DefaultPlaybackRate`.
+    /// Pure builder for the Now Playing payload (Step 0b). Keeping it a plain
+    /// `NowPlayingInfo` value (no MediaPlayer types) makes the lock-screen payload
+    /// directly assertable and host-testable. The app's bridge maps it to
+    /// `MPNowPlayingInfoCenter`. `reportedRate` is 0 when paused so the system
+    /// stops advancing the scrubber; `defaultRate` carries the book's rate.
     nonisolated static func nowPlayingInfo(
         session: PlaybackSession,
         currentTime: TimeInterval,
         duration: TimeInterval?,
         rate: Float,
-        isPlaying: Bool,
-        artwork: MPMediaItemArtwork?
-    ) -> [String: Any] {        var info: [String: Any] = [
-            MPMediaItemPropertyTitle: session.chapter.title,
-            MPMediaItemPropertyAlbumTitle: session.book.title,
-            MPMediaItemPropertyArtist: session.book.authorLine,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
-            MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? Double(rate) : 0.0,
-            MPNowPlayingInfoPropertyDefaultPlaybackRate: Double(rate),
-            MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
-        ]
-        if let duration {
-            info[MPMediaItemPropertyPlaybackDuration] = duration
-        }
-        if let artwork {
-            info[MPMediaItemPropertyArtwork] = artwork
-        }
-        return info
+        isPlaying: Bool
+    ) -> NowPlayingInfo {
+        NowPlayingInfo(
+            title: session.chapter.title,
+            albumTitle: session.book.title,
+            artist: session.book.authorLine,
+            elapsed: currentTime,
+            duration: duration,
+            reportedRate: isPlaying ? Double(rate) : 0.0,
+            defaultRate: Double(rate)
+        )
     }
 
     deinit {
         progressTask?.cancel()
         sleepTask?.cancel()
-        for observer in notificationObservers {
-            NotificationCenter.default.removeObserver(observer)
-        }
     }
 }
 

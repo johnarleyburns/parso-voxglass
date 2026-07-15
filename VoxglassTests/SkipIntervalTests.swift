@@ -5,7 +5,7 @@ final class SkipIntervalTests: XCTestCase {
 
     func testEveryAllowedBackSymbolResolves() {
         for seconds in PlaybackCoordinator.allowedSkipBackValues {
-            let symbol = PlaybackCoordinator.skipBackSymbol(seconds)
+            let symbol = SkipSymbol.back(seconds)
             XCTAssertNotNil(UIImage(systemName: symbol),
                             "\(symbol) must be a valid SF Symbol")
         }
@@ -13,14 +13,14 @@ final class SkipIntervalTests: XCTestCase {
 
     func testEveryAllowedForwardSymbolResolves() {
         for seconds in PlaybackCoordinator.allowedSkipForwardValues {
-            let symbol = PlaybackCoordinator.skipForwardSymbol(seconds)
+            let symbol = SkipSymbol.forward(seconds)
             XCTAssertNotNil(UIImage(systemName: symbol),
                             "\(symbol) must be a valid SF Symbol")
         }
     }
 
     func testUnknownValueFallsBack() {
-        XCTAssertEqual(PlaybackCoordinator.skipBackSymbol(999), "gobackward.15")
-        XCTAssertEqual(PlaybackCoordinator.skipForwardSymbol(999), "goforward.30")
+        XCTAssertEqual(SkipSymbol.back(999), "gobackward.15")
+        XCTAssertEqual(SkipSymbol.forward(999), "goforward.30")
     }
 }

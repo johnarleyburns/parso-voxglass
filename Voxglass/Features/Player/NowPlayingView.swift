@@ -209,7 +209,7 @@ struct NowPlayingView: View {
             } label: {
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
                     ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15
-                Image(systemName: PlaybackCoordinator.skipBackSymbol(configured))
+                Image(systemName: SkipSymbol.back(configured))
                     .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
@@ -233,7 +233,7 @@ struct NowPlayingView: View {
                     ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30
                 Task { await playback.skip(by: TimeInterval(configured)) }
             } label: {
-                Image(systemName: PlaybackCoordinator.skipForwardSymbol(
+                Image(systemName: SkipSymbol.forward(
                     UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
                         ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30)
                 )
