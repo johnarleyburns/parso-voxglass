@@ -26,26 +26,19 @@ echo "=== Running Voxglass test suite (simulator) ==="
 echo "Device name: $DEVICE_NAME"
 echo ""
 
-# Resolve device name to concrete UDID. When multiple simulators share a name
-# (e.g. two "iPhone 16" entries on different runtimes), pick the newest runtime.
-UDID=$(
-  xcrun simctl list devices available \
-    | grep "$DEVICE_NAME (" \
-    | tail -1 \
-    | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/'
-)
-
-if [ -z "$UDID" ]; then
-  echo "ERROR: No available simulator matching \"$DEVICE_NAME\" found."
+# Pin the destination to the simulator *by name* (default: iPhone 16). Binding by
+# name to a device that already exists on disk keeps every run on the same
+# simulator and stops xcodebuild from resolving to — or downloading — any other
+# one. The machine is expected to have exactly one "iPhone 16" installed.
+if ! xcrun simctl list devices available | grep -q "$DEVICE_NAME ("; then
+  echo "ERROR: No available simulator named \"$DEVICE_NAME\" found."
   echo "Available devices:"
   xcrun simctl list devices available | grep -i iphone || true
   exit 1
 fi
 
-echo "UDID: $UDID"
-
 xcodebuild test \
   -scheme Voxglass \
   -project Voxglass.xcodeproj \
-  -destination "platform=iOS Simulator,id=$UDID" \
+  -destination "platform=iOS Simulator,name=$DEVICE_NAME" \
   -quiet
