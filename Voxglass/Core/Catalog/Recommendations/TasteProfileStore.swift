@@ -73,10 +73,51 @@ actor TasteProfileStore {
         await upsertTerm(axis: "language", term: trimmed, increment: increment)
     }
 
+    /// One-time backfill of the taste profile from pre-existing listening history.
+    /// The forward signal (`upsertTerm` on position save) is forward-only, so any
+    /// listening that happened before that wiring — or before this profile was
+    /// rebuilt — never shaped the shelf. This rebuilds it from the authoritative
+    /// `listening_events ⋈ book_taste` join, weighting each (author/subject) term
+    /// by how long the user actually listened. Callers gate this behind a run-once
+    /// flag so it never double-counts.
+    func seedFromHistory() async {
+        do {
+            try await database.prepare()
+            let rows = try await database.query("""
+            SELECT bt.axis AS axis, bt.term AS term, SUM(le.seconds) AS total
+            FROM listening_events le
+            JOIN book_taste bt ON bt.book_id = le.book_id
+            WHERE le.book_id IS NOT NULL AND bt.axis IN ('author', 'subject')
+            GROUP BY bt.axis, bt.term
+            """)
+            for row in rows {
+                guard let axis = row.string("axis"),
+                      let term = row.string("term"),
+                      let seconds = row.double("total"), seconds > 0 else { continue }
+                await upsertTerm(axis: axis, term: term, increment: Self.historyIncrement(forSeconds: seconds))
+            }
+        } catch {}
+    }
+
+    /// Converts listened seconds into a profile increment: weighted by hours
+    /// listened, floored so any genuine listen registers, and capped so a single
+    /// very long book cannot swamp the profile.
+    static func historyIncrement(forSeconds seconds: Double) -> Double {
+        let hours = seconds / 3600.0
+        return min(12.0, max(0.5, hours))
+    }
+
     func seedOnboardingPicks(from collectionIDs: Set<String>) async {
         for id in collectionIDs {
-            await upsertTerm(axis: "subject", term: id.lowercased(),
-                             increment: RecommendationConstants.onboardingSeedWeight)
+            // Onboarding stores browse-collection IDs (e.g. "lv-drama-plays").
+            // Seeding those raw IDs as subject terms builds `subject:"lv-drama-plays"`
+            // queries that match zero archive.org items yet outweigh real listens.
+            // Instead, map each ID to its category's real archive subjects and seed
+            // those, so query generation produces matching subject queries.
+            guard let category = LibriVoxBrowseCategory.category(withID: id) else { continue }
+            for subject in category.representativeSubjects {
+                await seedSubject(subject, increment: RecommendationConstants.onboardingSeedWeight)
+            }
         }
     }
 
@@ -96,6 +137,12 @@ actor TasteProfileStore {
         for t in rawTerms {
             var weight = t.weight
             if t.axis == "subject" {
+                // Belt-and-suspenders: drop legacy onboarding terms that stored a
+                // collection ID (e.g. "lv-drama-plays", "great-books") as a subject.
+                // These never match archive.org and would otherwise dominate.
+                if Self.isCollectionLikeSubject(t.term) {
+                    continue
+                }
                 if RecommendationConstants.subjectStopList.contains(t.term) {
                     weight *= 0.05
                 } else {
@@ -188,5 +235,24 @@ actor TasteProfileStore {
                   let weight = row.double("weight") else { return nil }
             return RawTerm(axis: axis, term: term, weight: weight)
         }
+    }
+
+    // MARK: - Legacy collection-id guard
+
+    /// Known onboarding collection IDs (including curated) — any subject term
+    /// that exactly matches one of these (or begins with `lv-`) is a legacy
+    /// onboarding artefact, not a real archive.org subject, and must be dropped.
+    private static let knownCollectionIDs: Set<String> = {
+        var ids = Set(LibriVoxBrowseGroup.categories.map(\.id))
+        ids.insert("popular-librivox")
+        ids.insert("great-books")
+        ids.insert("greater-books")
+        ids.insert("ancient-greece")
+        ids.insert("librivoxaudio")
+        return ids
+    }()
+
+    private static func isCollectionLikeSubject(_ term: String) -> Bool {
+        knownCollectionIDs.contains(term) || term.hasPrefix("lv-")
     }
 }

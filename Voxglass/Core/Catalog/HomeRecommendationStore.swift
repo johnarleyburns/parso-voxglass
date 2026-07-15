@@ -85,7 +85,7 @@ final class HomeRecommendationStore: ObservableObject {
             date: "1813"
         ),
         seed(
-            identifier: "adventuresofsherlockholmes_1110_librivox",
+            identifier: "adventures_sherlockholmes_1007_librivox",
             title: "The Adventures of Sherlock Holmes",
             creator: "Arthur Conan Doyle",
             description: "Classic detective stories featuring Holmes and Watson.",
@@ -101,7 +101,7 @@ final class HomeRecommendationStore: ObservableObject {
             date: "1865"
         ),
         seed(
-            identifier: "frankenstein_1818_librivox",
+            identifier: "frankenstein_cs_librivox",
             title: "Frankenstein",
             creator: "Mary Wollstonecraft Shelley",
             description: "The Gothic novel that helped define science fiction.",
@@ -133,7 +133,7 @@ final class HomeRecommendationStore: ObservableObject {
             date: "1851"
         ),
         seed(
-            identifier: "war_and_peace_librivox",
+            identifier: "war_and_peace_vol1_dole_mas_librivox",
             title: "War and Peace",
             creator: "Leo Tolstoy",
             description: "Tolstoy's vast novel of family, war, and Russian society.",
@@ -143,16 +143,16 @@ final class HomeRecommendationStore: ObservableObject {
     ]
 
     nonisolated static let bundledTasteSeeds: [InternetArchiveSearchResult] = [
-        seed(identifier: "return_of_sherlock_holmes_librivox", title: "The Return of Sherlock Holmes", creator: "Arthur Conan Doyle", collections: ["librivoxaudio", "lv-mystery-crime"]),
-        seed(identifier: "time_machine_librivox", title: "The Time Machine", creator: "H. G. Wells", collections: ["librivoxaudio", "lv-science-fiction"]),
-        seed(identifier: "call_of_cthulhu_librivox", title: "The Call of Cthulhu", creator: "H. P. Lovecraft", collections: ["librivoxaudio", "lv-horror-gothic"]),
-        seed(identifier: "wuthering_heights_librivox", title: "Wuthering Heights", creator: "Emily Bronte", collections: ["librivoxaudio", "lv-romance"]),
-        seed(identifier: "history_of_the_decline_and_fall_01_librivox", title: "The History of the Decline and Fall of the Roman Empire", creator: "Edward Gibbon", collections: ["librivoxaudio", "lv-history"]),
-        seed(identifier: "republic_librivox", title: "The Republic", creator: "Plato", collections: ["librivoxaudio", "lv-philosophy-mind"]),
+        seed(identifier: "return_holmes_0708_librivox", title: "The Return of Sherlock Holmes", creator: "Arthur Conan Doyle", collections: ["librivoxaudio", "lv-mystery-crime"]),
+        seed(identifier: "timemachine_sjm_librivox", title: "The Time Machine", creator: "H. G. Wells", collections: ["librivoxaudio", "lv-science-fiction"]),
+        seed(identifier: "call_cthulhu_2401_librivox", title: "The Call of Cthulhu", creator: "H. P. Lovecraft", collections: ["librivoxaudio", "lv-horror-gothic"]),
+        seed(identifier: "wuthering_heights_rg_librivox", title: "Wuthering Heights", creator: "Emily Bronte", collections: ["librivoxaudio", "lv-romance"]),
+        seed(identifier: "decline_fall_1_0707_librivox", title: "The History of the Decline and Fall of the Roman Empire", creator: "Edward Gibbon", collections: ["librivoxaudio", "lv-history"]),
+        seed(identifier: "republic_version_2_1310_librivox", title: "The Republic", creator: "Plato", collections: ["librivoxaudio", "lv-philosophy-mind"]),
         seed(identifier: "poems_every_child_should_know_librivox", title: "Poems Every Child Should Know", creator: "Various", collections: ["librivoxaudio", "lv-poetry"]),
-        seed(identifier: "shortstorycollection001_librivox", title: "Short Story Collection", creator: "Various", collections: ["librivoxaudio", "lv-short-stories"]),
-        seed(identifier: "autobiography_benjamin_franklin_librivox", title: "The Autobiography of Benjamin Franklin", creator: "Benjamin Franklin", collections: ["librivoxaudio", "lv-biography"]),
-        seed(identifier: "iliad_librivox", title: "The Iliad", creator: "Homer", collections: ["librivoxaudio", "lv-general-fiction"])
+        seed(identifier: "stories_006_librivox", title: "Short Story Collection", creator: "Various", collections: ["librivoxaudio", "lv-short-stories"]),
+        seed(identifier: "franklin_autobio_gg_librivox", title: "The Autobiography of Benjamin Franklin", creator: "Benjamin Franklin", collections: ["librivoxaudio", "lv-biography"]),
+        seed(identifier: "iliad_popetranslation_1506_librivox", title: "The Iliad", creator: "Homer", collections: ["librivoxaudio", "lv-general-fiction"])
     ]
 
     nonisolated static func uniqueResults(_ results: [InternetArchiveSearchResult]) -> [InternetArchiveSearchResult] {

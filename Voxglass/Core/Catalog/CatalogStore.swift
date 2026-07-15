@@ -80,9 +80,66 @@ final class CatalogStore: ObservableObject {
             let metadata = try await client.metadata(for: result.identifier)
             return await libraryStore.importInternetArchiveItem(metadata, sourceKind: result.sourceKind)
         } catch {
-            catalogError = error.localizedDescription
+            // A seed identifier can go stale (archive.org returns an empty body).
+            // Rather than dead-end the tap, search LibriVox for the same work by
+            // title + creator and import the top live match. This keeps any future
+            // stale bundled/recommended seed playable.
+            if let recovered = await importBySearchFallback(for: result, into: libraryStore) {
+                return recovered
+            }
+            catalogError = Self.importErrorMessage(for: result, underlying: error)
             return nil
         }
+    }
+
+    /// Recovers a stale seed by searching for a live item with the same title and
+    /// creator, then importing the first result that actually resolves.
+    private func importBySearchFallback(
+        for result: InternetArchiveSearchResult,
+        into libraryStore: LibraryStore
+    ) async -> BookWithChapters? {
+        let query = Self.recoveryQuery(for: result)
+        guard let query else { return nil }
+
+        let candidates = (try? await client.searchAdvanced(query: query, rows: 5)) ?? []
+        for candidate in candidates where candidate.identifier != result.identifier {
+            guard let metadata = try? await client.metadata(for: candidate.identifier) else {
+                continue
+            }
+            if let imported = await libraryStore.importInternetArchiveItem(metadata, sourceKind: candidate.sourceKind) {
+                return imported
+            }
+        }
+        return nil
+    }
+
+    /// Builds a precise `title + creator` LibriVox query for seed recovery, or
+    /// `nil` when there is no title to anchor on.
+    private static func recoveryQuery(for result: InternetArchiveSearchResult) -> String? {
+        let title = escapeSolrPhrase(result.title)
+        guard !title.isEmpty else { return nil }
+
+        var clauses = ["title:\"\(title)\""]
+        if let creator = result.creators.first.map(escapeSolrPhrase), !creator.isEmpty {
+            clauses.append("creator:\"\(creator)\"")
+        }
+        clauses.append("collection:librivoxaudio")
+        clauses.append("mediatype:audio")
+        return clauses.joined(separator: " AND ")
+    }
+
+    private static func escapeSolrPhrase(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: " ")
+            .replacingOccurrences(of: "\"", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func importErrorMessage(
+        for result: InternetArchiveSearchResult,
+        underlying error: Error
+    ) -> String {
+        "Couldn't load '\(result.title)' (\(result.identifier)): \(error.localizedDescription)"
     }
 
     func addArchiveURL(

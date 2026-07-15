@@ -183,25 +183,35 @@ struct CompactBookRowView: View {
                 if let narratorLine = book.book.narratorLine {
                     Text(narratorLine)
                         .scaledFont(size: 11.5)
-                        .foregroundStyle(Palette.ink3)
+                        .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
+                Spacer(minLength: 4)
                 Text(book.libraryDetailLine(sourceTitle: sourceTitle))
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
+            .frame(maxHeight: .infinity, alignment: .top)
             Spacer(minLength: 8)
             Image(systemName: "chevron.right")
                 .scaledFont(size: 11, weight: .bold)
                 .foregroundStyle(Palette.ink3.opacity(0.7))
         }
-        .frame(minHeight: 72)
+        .frame(height: BookRowMetrics.contentHeight)
         .padding(.horizontal, 12).padding(.vertical, 8)
         .glassSurface(cornerRadius: 14)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(book.book.title) by \(book.book.authorLine)")
     }
+}
+
+/// Shared sizing for the compact book/result rows (My Books, Explore, Search) so
+/// every card is the same height regardless of whether an optional narrator line
+/// is present. Sized for a 2-line title + author + narrator + bottom detail line
+/// at default Dynamic Type.
+enum BookRowMetrics {
+    static let contentHeight: CGFloat = 84
 }
 
 struct HorizontalBookCard: View {

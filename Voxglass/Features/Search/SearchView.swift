@@ -160,11 +160,13 @@ struct InternetArchiveResultRow: View {
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
+                Spacer(minLength: 4)
                 Text(detailLine)
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
             }
+            .frame(maxHeight: .infinity, alignment: .top)
 
             Spacer(minLength: 8)
 
@@ -177,7 +179,7 @@ struct InternetArchiveResultRow: View {
                     .foregroundStyle(Palette.ink3.opacity(0.7))
             }
         }
-        .frame(minHeight: 72)
+        .frame(height: BookRowMetrics.contentHeight)
         .padding(.horizontal, 12).padding(.vertical, 8)
         .glassSurface(cornerRadius: 14)
         .accessibilityElement(children: .combine)

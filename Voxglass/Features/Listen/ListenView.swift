@@ -44,6 +44,16 @@ struct ListenView: View {
                 await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
             }
         }
+        .onChange(of: showingNowPlaying) { wasShowing, isShowing in
+            // Reflect just-finished listening immediately: when Now Playing is
+            // dismissed, the taste profile may have shifted, so refresh the shelf
+            // (and Jump Back In) without waiting for a tab switch.
+            guard wasShowing, !isShowing else { return }
+            Task {
+                await libraryStore.refreshRecentlyPlayed()
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+            }
+        }
     }
 
     private var hero: some View {

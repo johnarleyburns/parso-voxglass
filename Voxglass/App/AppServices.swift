@@ -74,6 +74,7 @@ final class AppServices: ObservableObject {
         await libraryStore.refresh()
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
+        await seedTasteHistoryIfNeeded()
         await offlineDownloadManager.refreshState(for: libraryStore.books)
         // Positions first: the KVS read is local and cheap. Doing this before the
         // restore (instead of inside sync() after it) means a cloud position is
@@ -94,5 +95,17 @@ final class AppServices: ObservableObject {
             let increment = isFavorite ? RecommendationConstants.favoriteBoost : 1.0
             await tasteProfileStore.upsertTerm(axis: axis, term: term, increment: increment)
         }
+    }
+
+    /// Runs the one-time history backfill so pre-existing listening shapes the
+    /// recommendation shelf. Guarded by a persistent flag so it never re-runs and
+    /// double-counts. Not stored under `AppPreferencesStore.Keys` (it is an
+    /// internal migration marker, not a user preference).
+    private static let tasteHistoryBackfillKey = "voxglass.tasteHistoryBackfilledV1"
+
+    private func seedTasteHistoryIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.tasteHistoryBackfillKey) else { return }
+        await tasteProfileStore.seedFromHistory()
+        UserDefaults.standard.set(true, forKey: Self.tasteHistoryBackfillKey)
     }
 }

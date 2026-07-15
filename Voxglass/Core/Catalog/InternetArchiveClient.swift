@@ -108,14 +108,25 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         }
 
         let data = try await fetch(url)
-        var metadata = try decoder.decode(InternetArchiveMetadata.self, from: data)
-        if metadata.metadata.identifier == nil {
-            metadata.metadata.identifier = trimmed
-        }
-        if metadata.files.isEmpty, !metadata.isCollection {
+        // archive.org returns HTTP 200 with an empty `{}` body for identifiers
+        // that don't exist. Decoding that into `InternetArchiveMetadata` throws a
+        // raw `DecodingError.keyNotFound` ("The data couldn't be read because it
+        // is missing.") with no context. Translate any decode failure here into a
+        // named `itemNotFound` so callers can surface the identifier and recover.
+        let metadata: InternetArchiveMetadata
+        do {
+            metadata = try decoder.decode(InternetArchiveMetadata.self, from: data)
+        } catch {
             throw InternetArchiveError.itemNotFound(trimmed)
         }
-        return metadata
+        var resolved = metadata
+        if resolved.metadata.identifier == nil {
+            resolved.metadata.identifier = trimmed
+        }
+        if resolved.files.isEmpty, !resolved.isCollection {
+            throw InternetArchiveError.itemNotFound(trimmed)
+        }
+        return resolved
     }
 
     private func fetch(_ url: URL) async throws -> Data {

@@ -213,4 +213,89 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
         systemImage: "lightbulb",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Essays & Short Works\" OR subject:\"Literary Criticism\" OR subject:\"Political Science\")"
     )
+
+    // MARK: - Lookup & subject mapping
+
+    /// All browse categories (excludes the synthetic `popular`, which carries no
+    /// subjects), for lookup and genre mapping.
+    static let allCategories: [LibriVoxBrowseCategory] = LibriVoxBrowseGroup.categories
+
+    static func category(withID id: String) -> LibriVoxBrowseCategory? {
+        allCategories.first { $0.id == id }
+    }
+
+    /// The real archive.org `subject:` strings embedded in `archiveQuery`,
+    /// restricted to the positive (non-`AND NOT`) portion so excluded subjects are
+    /// never harvested. Used to seed the taste profile from onboarding picks with
+    /// terms that actually match archive.org items (unlike the raw `lv-*` id).
+    var subjects: [String] {
+        let positive = Self.positiveClause(of: archiveQuery)
+        return Self.extractSubjects(from: positive)
+    }
+
+    /// A small, representative slice of `subjects` for onboarding seeding — enough
+    /// to characterize the category without over-diluting the profile via subject
+    /// dampening.
+    var representativeSubjects: [String] {
+        Array(subjects.prefix(3))
+    }
+
+    /// Best-effort genre mapping for a book: picks the category whose subject
+    /// strings overlap the book's stored subjects the most. Returns `nil` when no
+    /// category shares a subject. Used for the Now Playing genre label + the
+    /// "More in <Genre>" discovery link.
+    static func category(forSubjects bookSubjects: [String]) -> LibriVoxBrowseCategory? {
+        let normalizedBook = bookSubjects
+            .map { $0.lowercased().trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        guard !normalizedBook.isEmpty else { return nil }
+
+        var best: LibriVoxBrowseCategory?
+        var bestScore = 0
+        for category in allCategories {
+            var score = 0
+            for categorySubject in category.subjects {
+                let cs = categorySubject.lowercased()
+                for bs in normalizedBook where Self.subjectsMatch(book: bs, category: cs) {
+                    score += bs == cs ? 2 : 1
+                }
+            }
+            if score > bestScore {
+                bestScore = score
+                best = category
+            }
+        }
+        return bestScore > 0 ? best : nil
+    }
+
+    private static func subjectsMatch(book: String, category: String) -> Bool {
+        if book == category { return true }
+        guard category.count >= 4 else { return false }
+        return book.contains(category) || category.contains(book)
+    }
+
+    private static func positiveClause(of query: String) -> String {
+        guard let range = query.range(of: " AND NOT ") else { return query }
+        return String(query[query.startIndex..<range.lowerBound])
+    }
+
+    private static func extractSubjects(from clause: String) -> [String] {
+        let pattern = "subject:(?:\"([^\"]+)\"|([^\\s()\"]+))"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(clause.startIndex..., in: clause)
+        var results: [String] = []
+        var seen: Set<String> = []
+        regex.enumerateMatches(in: clause, range: range) { match, _, _ in
+            guard let match else { return }
+            let quoted = match.range(at: 1)
+            let bare = match.range(at: 2)
+            let subjectRange = quoted.location != NSNotFound ? quoted : bare
+            guard subjectRange.location != NSNotFound,
+                  let swiftRange = Range(subjectRange, in: clause) else { return }
+            let subject = String(clause[swiftRange]).trimmingCharacters(in: .whitespaces)
+            guard !subject.isEmpty, seen.insert(subject.lowercased()).inserted else { return }
+            results.append(subject)
+        }
+        return results
+    }
 }

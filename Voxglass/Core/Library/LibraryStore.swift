@@ -194,6 +194,15 @@ final class LibraryStore: ObservableObject {
         books.first { $0.book.id == bookID }
     }
 
+    /// The archive.org subjects stored for a book at import time (`book_taste`),
+    /// used to map the book to a browse genre for the Now Playing screen.
+    func bookSubjects(for bookID: UUID) async -> [String] {
+        guard let terms = try? await repository.fetchBookTasteTerms(for: bookID) else {
+            return []
+        }
+        return terms.filter { $0.axis == "subject" }.map(\.term)
+    }
+
     func source(for book: Book) -> Source? {
         sources.first { $0.id == book.sourceID }
     }

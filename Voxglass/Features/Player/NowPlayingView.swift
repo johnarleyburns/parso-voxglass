@@ -6,10 +6,10 @@ struct NowPlayingView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var scrubPosition: Double = 0
     @State private var isScrubbing = false
-    @State private var showingChapters = false
     @State private var showingEQ = false
     @State private var showingBookmarks = false
     @State private var showPaywall = false
+    @State private var genre: LibriVoxBrowseCategory?
 
     /// Favorite state derived from the live library store (source of truth),
     /// falling back to the session's snapshot captured at play time.
@@ -37,22 +37,33 @@ struct NowPlayingView: View {
                 .ignoresSafeArea()
 
             if let session = playback.currentSession {
-                VStack(spacing: 0) {
-                    grabber
-                    Spacer().frame(height: 16)
-                    BookArtworkView(title: session.book.title, size: 240, coverURL: session.book.coverURL)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: .black.opacity(0.55), radius: 24, y: 0)
-                    Spacer().frame(height: 22)
-                    metadata(session)
-                    scrubber(session)
-                    controls(session)
-                    actionBar(session)
-                    chapterList(session)
-                    Spacer(minLength: 0)
+                NavigationStack {
+                    VStack(spacing: 0) {
+                        grabber
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                Spacer().frame(height: 16)
+                                BookArtworkView(title: session.book.title, size: 240, coverURL: session.book.coverURL)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    .shadow(color: .black.opacity(0.55), radius: 24, y: 0)
+                                Spacer().frame(height: 22)
+                                metadata(session)
+                                scrubber(session)
+                                controls(session)
+                                actionBar(session)
+                                chapterList(session)
+                                discoveryLinks(session)
+                                Spacer(minLength: 24)
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 20)
+                        }
+                    }
+                    .toolbar(.hidden, for: .navigationBar)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 20)
+                .task(id: session.book.id) {
+                    await loadGenre(for: session)
+                }
                 .onAppear {
                     scrubPosition = session.position
                 }
@@ -64,17 +75,6 @@ struct NowPlayingView: View {
             } else {
                 ContentUnavailableView("Nothing Playing", systemImage: "headphones")
                     .foregroundStyle(.white)
-            }
-        }
-        .sheet(isPresented: $showingChapters) {
-            if let session = playback.currentSession {
-                NavigationStack {
-                    ChaptersView(
-                        book: BookWithChapters(book: session.book, chapters: session.chapters),
-                        showingNowPlaying: .constant(true)
-                    )
-                }
-                .presentationDragIndicator(.visible)
             }
         }
         .sheet(isPresented: $showingEQ) {
@@ -93,6 +93,11 @@ struct NowPlayingView: View {
             .presentationDragIndicator(.visible)
         }
         .paywallSheet(isPresented: $showPaywall)
+    }
+
+    private func loadGenre(for session: PlaybackSession) async {
+        let subjects = await libraryStore.bookSubjects(for: session.book.id)
+        genre = LibriVoxBrowseCategory.category(forSubjects: subjects)
     }
 
     private var grabber: some View {
@@ -122,6 +127,16 @@ struct NowPlayingView: View {
                 .scaledFont(size: 12)
                 .foregroundStyle(Color.white.opacity(0.50))
                 .lineLimit(1)
+            if let genre {
+                Text(genre.title)
+                    .scaledFont(size: 11, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .lineLimit(1)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color.white.opacity(0.07)))
+                    .accessibilityLabel("Genre: \(genre.title)")
+            }
         }
         .padding(.horizontal, 16)
     }
@@ -249,14 +264,6 @@ struct NowPlayingView: View {
             speedMenu
 
             bookmarkButton
-
-            Button {
-                showingChapters = true
-            } label: {
-                Image(systemName: "list.bullet")
-                    .scaledFont(size: 16)
-            }
-            .accessibilityLabel("Chapters")
 
             favoriteButton(session)
 
@@ -434,7 +441,7 @@ struct NowPlayingView: View {
             Text("Chapters")
                 .scaledFont(size: 14, weight: .semibold)
                 .foregroundStyle(Palette.ink)
-            ForEach(session.chapters.prefix(6)) { chapter in
+            ForEach(session.chapters) { chapter in
                 Button {
                     Task {
                         if chapter.id == session.chapter.id {
@@ -462,5 +469,110 @@ struct NowPlayingView: View {
         .padding(14)
         .glassSurface(cornerRadius: 14, fill: Color.white.opacity(0.06))
         .padding(.top, 16)
+    }
+
+    // MARK: - Discovery links (catalog-wide)
+
+    @ViewBuilder
+    private func discoveryLinks(_ session: PlaybackSession) -> some View {
+        let author = session.book.authors.first?.trimmingCharacters(in: .whitespaces) ?? ""
+        let narrator = session.book.narrators.first?.trimmingCharacters(in: .whitespaces) ?? ""
+        let hasAuthor = !author.isEmpty && author.localizedCaseInsensitiveCompare("Unknown author") != .orderedSame
+        let hasNarrator = !narrator.isEmpty
+
+        if hasAuthor || hasNarrator || genre != nil {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Discover More")
+                    .scaledFont(size: 14, weight: .semibold)
+                    .foregroundStyle(Palette.ink)
+
+                if hasAuthor {
+                    discoveryLink(
+                        label: "More by \(author)",
+                        systemImage: "person.fill",
+                        destinationTitle: author,
+                        query: Self.authorQuery(author)
+                    )
+                }
+                if hasNarrator {
+                    discoveryLink(
+                        label: "More read by \(narrator)",
+                        systemImage: "mic.fill",
+                        destinationTitle: narrator,
+                        query: Self.narratorQuery(narrator)
+                    )
+                }
+                if let genre {
+                    discoveryLink(
+                        label: "More in \(genre.title)",
+                        systemImage: genre.systemImage,
+                        destinationTitle: genre.title,
+                        query: Self.genreQuery(genre)
+                    )
+                }
+            }
+            .padding(14)
+            .glassSurface(cornerRadius: 14, fill: Color.white.opacity(0.06))
+            .padding(.top, 16)
+        }
+    }
+
+    private func discoveryLink(
+        label: String,
+        systemImage: String,
+        destinationTitle: String,
+        query: String
+    ) -> some View {
+        NavigationLink {
+            CatalogDiscoveryView(
+                title: destinationTitle,
+                archiveQuery: query,
+                showingNowPlaying: .constant(true)
+            )
+            .environmentObject(playback)
+            .environmentObject(libraryStore)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .scaledFont(size: 14)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 22)
+                Text(label)
+                    .scaledFont(size: 14, weight: .medium)
+                    .foregroundStyle(Color.white.opacity(0.9))
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .scaledFont(size: 11, weight: .bold)
+                    .foregroundStyle(Color.white.opacity(0.5))
+            }
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private static let discoveryScope = " AND collection:librivoxaudio AND mediatype:audio"
+
+    static func authorQuery(_ author: String) -> String {
+        "creator:\"\(escapeQuotes(author))\"\(discoveryScope)"
+    }
+
+    static func narratorQuery(_ narrator: String) -> String {
+        let escaped = escapeQuotes(narrator)
+        return "(creator:\"\(escaped)\" OR description:\"\(escaped)\")\(discoveryScope)"
+    }
+
+    static func genreQuery(_ category: LibriVoxBrowseCategory) -> String {
+        category.archiveQuery.contains("mediatype:")
+            ? category.archiveQuery
+            : category.archiveQuery + " AND mediatype:audio"
+    }
+
+    private static func escapeQuotes(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: " ")
+            .replacingOccurrences(of: "\"", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
