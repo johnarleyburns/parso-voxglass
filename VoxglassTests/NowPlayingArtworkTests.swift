@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Lock-screen artwork caching (P0-4): fetched once per book, never per tick, and
 /// a fallback covers books with no art. Asserted against a counting fake provider

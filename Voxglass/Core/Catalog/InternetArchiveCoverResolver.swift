@@ -5,6 +5,15 @@ actor InternetArchiveCoverResolver {
 
     private var cache: [String: URL?] = [:]
 
+    /// Validates that a resolved cover URL loads a real image. Injected by the app
+    /// (the concrete check needs UIKit); when unset (e.g. host tests) resolution
+    /// treats covers as unvalidated.
+    private var artworkValidator: CoverArtworkValidating?
+
+    func setArtworkValidator(_ validator: CoverArtworkValidating) {
+        artworkValidator = validator
+    }
+
     func resolve(for identifier: String) async -> URL? {
         if let cached = cache[identifier] {
             return cached
@@ -31,7 +40,7 @@ actor InternetArchiveCoverResolver {
     }
 
     private func artworkValidates(_ url: URL) async -> Bool {
-        (try? await ArtworkService.shared.loadImage(for: url)) != nil
+        await artworkValidator?.imageValidates(at: url) ?? false
     }
 
     private func resolveFromMetadata(identifier: String) async -> URL? {

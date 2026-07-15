@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Pure in-memory sort comparator + LibraryStore visibleBooks (P1-2).
 final class LibrarySortTests: XCTestCase {

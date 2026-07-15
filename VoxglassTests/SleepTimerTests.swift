@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Pure sleep-timer arithmetic (P0-2) with an injected clock — no `Task.sleep`.
 @MainActor

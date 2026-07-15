@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Tests the "which items have a tap" bookkeeping (Step 0b) with plain objects —
 /// no AVFoundation. Proves the current + preloaded items can both hold taps

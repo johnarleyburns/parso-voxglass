@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Phase 2 — survive the crash and the force-quit. The per-book snapshot map and
 /// the durable-store tie-break are asserted directly (radio's I4, ported).

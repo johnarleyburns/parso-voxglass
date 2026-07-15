@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Pure LWW tombstone tests (P0-3). The merge logic is extracted as a pure
 /// function so the tombstone behaviour is tested with no iCloud, no SQLite.

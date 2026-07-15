@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Phase 1 — resume where you actually were. The pure `resolveResume` rules are
 /// asserted with zero I/O; the through-the-coordinator cases run against the

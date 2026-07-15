@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Verifies that pro entitlement is authoritative before any gate is read (A2).
 /// On today's main, `StoreManager` is only ever instantiated by `ProPaywallView`'s

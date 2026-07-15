@@ -21,7 +21,7 @@ final class CollectionCoverStore: ObservableObject {
     @Published private(set) var counts: [String: Int] = [:]
 
     private let client: InternetArchiveCatalogClient
-    private let artwork: ArtworkService
+    private let artwork: CoverArtworkValidating
     private let defaults: UserDefaults
     private let cacheKey = "voxglass.collectionCoverMap"
     private let languageStampKey = "voxglass.collectionCoverLanguages"
@@ -32,7 +32,7 @@ final class CollectionCoverStore: ObservableObject {
 
     init(
         client: InternetArchiveCatalogClient = InternetArchiveClient(),
-        artwork: ArtworkService = .shared,
+        artwork: CoverArtworkValidating,
         defaults: UserDefaults = .standard
     ) {
         self.client = client
@@ -124,7 +124,7 @@ final class CollectionCoverStore: ObservableObject {
     }
 
     private func artworkValidates(_ url: URL) async -> Bool {
-        (try? await artwork.loadImage(for: url)) != nil
+        await artwork.imageValidates(at: url)
     }
 
     private func record(_ url: URL, for collection: IACollection) {

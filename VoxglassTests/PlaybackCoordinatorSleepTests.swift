@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// The hard sleep-timer interactions through the coordinator (P0-2), asserted on
 /// the FakeAudioEngine call log. No AVFoundation.

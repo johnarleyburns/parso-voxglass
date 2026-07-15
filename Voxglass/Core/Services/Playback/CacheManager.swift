@@ -66,9 +66,11 @@ actor CacheManager {
         await StreamCacheStore.shared.setLimit(currentBudget)
     }
 
+    /// Clears the on-disk stream cache. The in-memory artwork tier is cleared
+    /// separately by the app-side caller (see `ArtworkService.clearMemory()`),
+    /// since artwork rendering — and its cache — is an app/UIKit concern.
     func clearCache() async {
         await StreamCacheStore.shared.clearAll()
-        ArtworkService.shared.clearMemory()
     }
 
     func garbageCollectStalePartials() async {

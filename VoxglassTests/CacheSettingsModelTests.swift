@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 final class CacheSettingsModelTests: XCTestCase {
     override func tearDown() async throws {

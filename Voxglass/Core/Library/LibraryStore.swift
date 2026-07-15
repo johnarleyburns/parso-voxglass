@@ -153,7 +153,7 @@ final class LibraryStore: ObservableObject {
             }
         }
         if let coverURL = book.book.coverURL {
-            keys.append(ArtworkService.cacheKey(for: coverURL))
+            keys.append(ArtworkCacheKey.key(for: coverURL))
         }
         if !keys.isEmpty {
             await StreamCacheStore.shared.remove(keys: keys)

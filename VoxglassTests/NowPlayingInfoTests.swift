@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Tests the pure `PlaybackCoordinator.nowPlayingInfo(...)` builder (Step 0b). It
 /// now returns a plain `NowPlayingInfo` value (no MediaPlayer), so the payload is

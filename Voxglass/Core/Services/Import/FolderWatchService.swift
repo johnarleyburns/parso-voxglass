@@ -1,6 +1,8 @@
 import AVFoundation
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Watches user-picked folders of audio files and imports them as local books
 /// (§4). Gated behind `ProFeature.folderWatch`; picking/scanning is a no-op when
@@ -28,6 +30,9 @@ final class FolderWatchService: ObservableObject {
         self.repository = repository
         self.defaults = defaults
         reloadFolders()
+        #if canImport(UIKit)
+        // A foreground rescan keeps watched folders live; the notification is
+        // iOS-only, so on the host (swift test) there is simply no rescan hook.
         foregroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.willEnterForegroundNotification,
             object: nil,
@@ -35,6 +40,7 @@ final class FolderWatchService: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in await self?.rescanAll() }
         }
+        #endif
     }
 
     deinit {
