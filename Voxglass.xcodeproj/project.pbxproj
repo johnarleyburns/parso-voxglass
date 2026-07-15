@@ -48,6 +48,7 @@
 		44909C568B50C6B53E64ABCE /* ProEntitlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A2CE8BA17550D0B0C83422C /* ProEntitlement.swift */; };
 		47455BBFA799E35FCCEC3DE9 /* ArtworkServiceUnifiedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC790663E3E5CDEE2A69FCA /* ArtworkServiceUnifiedTests.swift */; };
 		47AA8052D987CE8A6FABD5D7 /* ProFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3683818DB9958D3AE591BCEA /* ProFeature.swift */; };
+		47C556309884843CDB95D0B7 /* CoverResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEAD08BBD7E66DE15885721 /* CoverResolutionTests.swift */; };
 		4915D5B9011AB873B6CF3C8A /* RecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B09AD6A0FBC5AAF37211F6A1 /* RecommendationEngine.swift */; };
 		4D73FB394FC32F05A4546692 /* OfflineDownloadManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D5AF1567883A6899759263 /* OfflineDownloadManagerTests.swift */; };
 		4E17B88927AF8BB4666FBBE3 /* StreamCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D31866CCDBBD795481D35D /* StreamCacheStore.swift */; };
@@ -148,6 +149,7 @@
 		EFD58001536BFA7C97DCDABD /* VisualOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0789D8083F86F84540255D /* VisualOnboardingTests.swift */; };
 		EFF52894E7D8920360E5F5F9 /* VoxglassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */; };
 		F0F136E9393A986C5F3ACC5D /* NarratorMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA9028189B6D34A3A3901662 /* NarratorMatcherTests.swift */; };
+		F114422D253881DA4C10082C /* InternetArchiveCoverResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B1B0483A8D24AB9A67093B5 /* InternetArchiveCoverResolver.swift */; };
 		F4029D15CB7ED7FA2CDB4F5C /* EQTapRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19F88A17F5CEBAA3D08C8BC /* EQTapRegistryTests.swift */; };
 		F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841534B2BAC23D46DACCD5B1 /* LibraryView.swift */; };
 		F58C6B635FE4217352ADCECA /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D1F526973EBB17A744B728F6 /* StoreKit.framework */; };
@@ -218,6 +220,7 @@
 		368B378FEF3024504A9EDCB5 /* BackupPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupPayloadTests.swift; sourceTree = "<group>"; };
 		385B29245096DA5C30CACEBC /* PlaybackSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackSession.swift; sourceTree = "<group>"; };
 		3A2CE8BA17550D0B0C83422C /* ProEntitlement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProEntitlement.swift; sourceTree = "<group>"; };
+		3B1B0483A8D24AB9A67093B5 /* InternetArchiveCoverResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveCoverResolver.swift; sourceTree = "<group>"; };
 		3C65A954DB381B38E67C6CC6 /* SkipIntervalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipIntervalTests.swift; sourceTree = "<group>"; };
 		3E706D754F17D4738E6903C7 /* VolumeNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeNormalizer.swift; sourceTree = "<group>"; };
 		3F175FD0D4781DE23BBC3210 /* CloudSyncEntitlementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncEntitlementTests.swift; sourceTree = "<group>"; };
@@ -243,6 +246,7 @@
 		5BC5D2456F2BE5E45C32FB38 /* LibraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRepository.swift; sourceTree = "<group>"; };
 		5D70BEAA08735ED193B6D11C /* SilenceDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilenceDetectorTests.swift; sourceTree = "<group>"; };
 		5FE9C1DD357179B18F33DD7C /* FolderWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatchView.swift; sourceTree = "<group>"; };
+		5FEAD08BBD7E66DE15885721 /* CoverResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverResolutionTests.swift; sourceTree = "<group>"; };
 		625CF2D580D87272EEBDE947 /* LastPlaybackSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastPlaybackSnapshotStore.swift; sourceTree = "<group>"; };
 		63E0138B81F7532946A478D9 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		64D35CBE7E6B27C3DE496BAF /* InternetArchiveModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetArchiveModels.swift; sourceTree = "<group>"; };
@@ -638,6 +642,7 @@
 				10412605E1021E75FBF43A82 /* IACollection.swift */,
 				4DF1394BDF3593C56E35B9DC /* InternetArchiveAudioSelector.swift */,
 				437EA198DF6BD31FC98AAF8A /* InternetArchiveClient.swift */,
+				3B1B0483A8D24AB9A67093B5 /* InternetArchiveCoverResolver.swift */,
 				64D35CBE7E6B27C3DE496BAF /* InternetArchiveModels.swift */,
 				334D79A138E41BE3692FE059 /* InternetArchiveURLParser.swift */,
 				26E3467C25D19F186E979A8A /* LibriVoxBrowseCategory.swift */,
@@ -708,6 +713,7 @@
 				45C874B881FBBCD4057C0F64 /* CacheSettingsModelTests.swift */,
 				3F175FD0D4781DE23BBC3210 /* CloudSyncEntitlementTests.swift */,
 				15165146472651B533C882C4 /* ContentKeyTests.swift */,
+				5FEAD08BBD7E66DE15885721 /* CoverResolutionTests.swift */,
 				5713959F04CD5511F124E809 /* DynamicTypeGuardTests.swift */,
 				3535BBB6F973F1CE1D00D8C5 /* EQStoreTests.swift */,
 				F19F88A17F5CEBAA3D08C8BC /* EQTapRegistryTests.swift */,
@@ -964,6 +970,7 @@
 				E7BA389ACEF2463AC7C2031B /* IACollection.swift in Sources */,
 				3C0DE431CC692B27F1033D61 /* InternetArchiveAudioSelector.swift in Sources */,
 				433A4DBD71894CA5974DB2E7 /* InternetArchiveClient.swift in Sources */,
+				F114422D253881DA4C10082C /* InternetArchiveCoverResolver.swift in Sources */,
 				AF6890C534D3C83728E2FADA /* InternetArchiveModels.swift in Sources */,
 				98CDCB1A5DA9E88729B1C08B /* InternetArchiveURLParser.swift in Sources */,
 				19C9A2D1FAEB6534975F4850 /* LastPlaybackSnapshotStore.swift in Sources */,
@@ -1032,6 +1039,7 @@
 				3F33DA2E97223B25B08EA054 /* CacheSettingsModelTests.swift in Sources */,
 				AC96E09B3288A092F986ED72 /* CloudSyncEntitlementTests.swift in Sources */,
 				3228CF6B3EE3F9A0861C6810 /* ContentKeyTests.swift in Sources */,
+				47C556309884843CDB95D0B7 /* CoverResolutionTests.swift in Sources */,
 				73106E61C79293E44E8976E8 /* DynamicTypeGuardTests.swift in Sources */,
 				ED999E3749C8FF3445258661 /* EQStoreTests.swift in Sources */,
 				F4029D15CB7ED7FA2CDB4F5C /* EQTapRegistryTests.swift in Sources */,

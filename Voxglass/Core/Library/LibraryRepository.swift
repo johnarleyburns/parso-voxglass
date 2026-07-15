@@ -323,7 +323,7 @@ final class LibraryRepository {
             authors: metadata.creators.isEmpty ? ["Internet Archive"] : metadata.creators,
             summary: metadata.summary,
             sourceID: source.id,
-            coverURL: InternetArchiveMetadata.coverURL(for: identifier),
+            coverURL: Self.bestCoverURL(identifier: identifier, metadata: metadata),
             createdAt: now,
             updatedAt: now
         )
@@ -756,6 +756,15 @@ final class LibraryRepository {
             }
             book.narrators = ordered
         }
+    }
+
+    static func bestCoverURL(identifier: String, metadata: InternetArchiveMetadata) -> URL? {
+        let primaryURL = InternetArchiveMetadata.coverURL(for: identifier)
+        let coverFiles = metadata.coverImageFiles
+        if let bestCover = coverFiles.first, let fileURL = metadata.fileURL(for: bestCover) {
+            return fileURL
+        }
+        return primaryURL
     }
 
     private func insert(book: Book, chapters: [Chapter], bookContentKey: String? = nil) async throws {

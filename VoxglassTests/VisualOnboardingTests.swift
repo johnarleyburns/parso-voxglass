@@ -49,7 +49,7 @@ final class VisualOnboardingTests: XCTestCase {
             .appendingPathComponent("voxglass-artwork-tests-\(UUID().uuidString)", isDirectory: true)
         let imageURL = URL(string: "https://archive.org/services/img/test_item")!
         let response = HTTPURLResponse(url: imageURL, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        let validPNG = try pngData(width: 48, height: 72)
+        let validPNG = try pngData(width: 200, height: 200)
         let fetchBox = FetchBox(data: validPNG, response: response)
         let service = ArtworkService(cacheDirectory: tempDirectory, timeToLive: 60, fetcher: fetchBox.fetch)
 

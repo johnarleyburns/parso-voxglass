@@ -58,7 +58,15 @@ final class ArtworkService: @unchecked Sendable {
     }
 
     func image(for url: URL) async -> UIImage? {
-        try? await loadImage(for: url)
+        if let image = try? await loadImage(for: url) {
+            return image
+        }
+        guard let identifier = Self.extractIAIdentifier(from: url),
+              let resolvedURL = await InternetArchiveCoverResolver.shared.resolve(for: identifier),
+              resolvedURL != url else {
+            return nil
+        }
+        return try? await loadImage(for: resolvedURL)
     }
 
     func loadImage(for url: URL) async throws -> UIImage {
@@ -172,7 +180,7 @@ final class ArtworkService: @unchecked Sendable {
         // the "microphone" icon, and a few others. With ?scale=2, real covers
         // come back at 360x360 or larger and are well above 8 KB, so a small
         // low-detail image remains a strong placeholder signal.
-        if px <= 200 && py <= 200 && dataCount < 8_000 {
+        if px <= 200 && py <= 200 && dataCount < 1_000 {
             return true
         }
         // The Internet Archive "temple facade" not-found logo served at 2x
@@ -180,7 +188,7 @@ final class ArtworkService: @unchecked Sendable {
         // rule above, but its distinctive non-square dimensions plus tiny byte
         // size never match a real cover (which comes back square from
         // services/img).
-        if px == 320 && py == 220 && dataCount < 8_000 {
+        if px == 320 && py == 220 && dataCount < 5_000 {
             return true
         }
         // Reject the 120x120 placeholder square. Real covers are returned at
@@ -197,6 +205,17 @@ final class ArtworkService: @unchecked Sendable {
     private static func isInternetArchiveNotFoundAsset(_ url: URL) -> Bool {
         guard let host = url.host?.lowercased(), host.hasSuffix("archive.org") else { return false }
         return url.lastPathComponent.lowercased().hasPrefix("notfound")
+    }
+
+    static func extractIAIdentifier(from url: URL) -> String? {
+        guard let host = url.host?.lowercased(),
+              host.hasSuffix("archive.org"),
+              url.path.hasPrefix("/services/img/") else {
+            return nil
+        }
+        let identifier = url.lastPathComponent
+        guard !identifier.isEmpty, !identifier.hasPrefix("notfound") else { return nil }
+        return identifier
     }
 
     static func cacheFileName(for url: URL) -> String {

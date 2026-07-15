@@ -55,7 +55,7 @@ final class ArtworkServiceUnifiedTests: XCTestCase {
         let servedURL = URL(string: "https://archive.org/services/img/prideandprejudice_1005_librivox")!
         let response = HTTPURLResponse(url: servedURL, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "image/png"])!
         let data = try noisyImageData(width: 180, height: 180)
-        XCTAssertGreaterThanOrEqual(data.count, 8_000, "Test cover must exceed the placeholder byte threshold")
+        XCTAssertGreaterThanOrEqual(data.count, 1_000, "Test cover must exceed the new placeholder byte threshold")
 
         XCTAssertNoThrow(try ArtworkService.validatedImage(from: data, response: response))
     }
@@ -65,7 +65,7 @@ final class ArtworkServiceUnifiedTests: XCTestCase {
             .appendingPathComponent("voxglass-artwork-unified-\(UUID().uuidString)", isDirectory: true)
         let url = URL(string: "https://archive.org/services/img/unified_test_item")!
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        let data = try pngData(width: 48, height: 72)
+        let data = try noisyImageData(width: 48, height: 72)
         let fetchBox = FetchBoxUnified(data: data, response: response)
         let spy = HookSpy()
         let service = ArtworkService(

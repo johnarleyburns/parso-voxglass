@@ -86,7 +86,7 @@ enum IACollectionStore {
         archiveQuery: CuratedQueries.ancientGreece,
         systemImage: "scroll.fill",
         assetName: "lv-ancient-greece",
-        remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey_pope_librivox")
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey_butler_librivox")
     )
 
     static let curated: [IACollection] = [greatBooks, greaterBooks, ancientGreece]
@@ -183,23 +183,23 @@ enum IACollectionStore {
         case "lv-war-military":
             return InternetArchiveMetadata.coverURL(for: "art_of_war_librivox")
         case "lv-short-stories":
-            return InternetArchiveMetadata.coverURL(for: "shortstorycollection001_librivox")
+            return InternetArchiveMetadata.coverURL(for: "stories_006_librivox")
         case "lv-drama-plays":
             return InternetArchiveMetadata.coverURL(for: "romeo_and_juliet_librivox")
         case "lv-travel":
             return InternetArchiveMetadata.coverURL(for: "swiss_family_robinson_librivox")
         case "lv-ancient-world":
-            return InternetArchiveMetadata.coverURL(for: "iliad_librivox")
+            return InternetArchiveMetadata.coverURL(for: "illiad_0801_librivox3")
         case "lv-poetry":
             return InternetArchiveMetadata.coverURL(for: "poems_every_child_should_know_librivox")
         case "lv-philosophy-mind":
             return InternetArchiveMetadata.coverURL(for: "beyond_good_and_evil_librivox")
         case "lv-history":
-            return InternetArchiveMetadata.coverURL(for: "history_of_the_decline_and_fall_01_librivox")
+            return InternetArchiveMetadata.coverURL(for: "decline_fall_1_0707_librivox")
         case "lv-biography":
-            return InternetArchiveMetadata.coverURL(for: "autobiography_benjamin_franklin_librivox")
+            return InternetArchiveMetadata.coverURL(for: "franklin_autobio_gg_librivox")
         case "lv-science-nature":
-            return InternetArchiveMetadata.coverURL(for: "origin_of_species_librivox")
+            return InternetArchiveMetadata.coverURL(for: "origin_species_librivox")
         case "lv-religion":
             return InternetArchiveMetadata.coverURL(for: "divine_comedy_librivox")
         case "lv-essays-ideas":

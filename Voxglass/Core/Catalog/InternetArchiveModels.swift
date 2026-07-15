@@ -195,6 +195,26 @@ struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
     static func coverURL(for identifier: String) -> URL {
         URL(string: "https://archive.org/services/img/\(identifier)?scale=2")!
     }
+
+    var coverImageFiles: [InternetArchiveFile] {
+        files
+            .filter { file in
+                let name = file.name.lowercased()
+                let fmt = (file.format ?? "").lowercased()
+                let isImage = (name.hasSuffix(".jpg") || name.hasSuffix(".jpeg") || name.hasSuffix(".png"))
+                    && !name.contains("spectrogram")
+                let isImageFormat = fmt.hasPrefix("jpeg") || fmt == "png" || fmt == "jpeg thumb"
+                return isImage || isImageFormat
+            }
+            .sorted { a, b in
+                let aThumb = a.name.lowercased().contains("thumb")
+                let bThumb = b.name.lowercased().contains("thumb")
+                if aThumb != bThumb { return aThumb }
+                let aSize = Int64(a.size ?? "0") ?? 0
+                let bSize = Int64(b.size ?? "0") ?? 0
+                return aSize > bSize
+            }
+    }
 }
 
 struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
