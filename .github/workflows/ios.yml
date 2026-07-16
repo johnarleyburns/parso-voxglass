@@ -244,10 +244,25 @@ jobs:
           cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
           echo "profile_name=$profile_name" >> "$GITHUB_OUTPUT"
 
+          # The archive step relies on the app target's Release signing settings
+          # from project.yml (signing cannot be passed on the xcodebuild command
+          # line: global overrides leak onto the VoxglassCore SwiftPM target,
+          # which rejects provisioning profiles). Fail fast if the installed
+          # profile is not the one the project expects.
+          expected_profile="$(sed -n 's/.*PROVISIONING_PROFILE_SPECIFIER: "\(.*\)"/\1/p' project.yml)"
+          if [ "$profile_name" != "$expected_profile" ]; then
+            echo "::error title=Provisioning profile mismatch::Installed profile '$profile_name' does not match project.yml's PROVISIONING_PROFILE_SPECIFIER '$expected_profile'."
+            exit 1
+          fi
+
       - name: Archive app
         if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
+          # Signing identity/style/profile come from the Voxglass target's
+          # Release config in project.yml, NOT command-line overrides — CLI
+          # build settings apply to every target, including the VoxglassCore
+          # package, and "VoxglassCore does not support provisioning profiles".
           xcodebuild \
             -project Voxglass.xcodeproj \
             -scheme Voxglass \
@@ -255,12 +270,8 @@ jobs:
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/Voxglass.xcarchive" \
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
-            CODE_SIGNING_ALLOWED=YES \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            CODE_SIGN_STYLE=Manual \
             MARKETING_VERSION="${{ steps.build_number.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
-            PROVISIONING_PROFILE_SPECIFIER="${{ steps.signing.outputs.profile_name }}" \
             archive
 
       - name: Upload to TestFlight
