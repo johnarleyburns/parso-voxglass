@@ -4,8 +4,92 @@
 > see git history). This is the current active plan.
 
 > **Status:** §1 (multi-language), §2 (pagination), §3 (dynamic collection artwork),
-> and §4 (alphabetical sort) are **shipped**. §5 (on-device recommendation engine) and
-> §6 (monetization / iCloud sync) remain as their own later phases.
+> and §4 (alphabetical sort) are **shipped**. §5 (on-device recommendation engine)
+> closeout is **implemented and unit-tested** (subjects flow into scoring/MMR, taste capture
+> is thresholded/delta-based via `taste_signal_state` migration 8, and
+> `TasteProfileStoreTests`/`RecommendationEngineTests`/`TasteSignalCaptureTests` pass along with
+> the full suite and simulator build). The closeout also fixed a latent `upsertTerm` bug where the
+> decay-path SQL had an unbound parameter, so repeat signals silently never updated weights.
+> Remaining before marking §5 done: the manual simulator checks listed in step 4 below.
+> §6 (monetization / iCloud sync) remains as its own later phase.
+
+## Immediate §5 closeout — coding agent instructions
+
+**Goal.** Close the remaining recommendation-engine gaps without reopening the shipped §1-§4 work:
+subjects must reach scoring/MMR, live taste capture must stop over-counting periodic saves, and the
+recommendation math must have focused unit coverage. Do not add dependencies or change the public `Book`
+model; keep using `book_taste` for imported metadata.
+
+**1. Send Internet Archive subjects through search results into scoring.**
+- In `Voxglass/Core/Catalog/InternetArchiveClient.swift`, add `URLQueryItem(name: "fl[]", value: "subject")`
+  to `advancedSearchURL` next to the existing `language` field.
+- In `Voxglass/Core/Catalog/InternetArchiveModels.swift`, add `subjects: [String]` to
+  `InternetArchiveSearchResult` and `InternetArchiveSearchDocument`; decode with
+  `decodeStringListIfPresent(forKey: .subject)` and default the public initializer to `subjects: []`.
+- Update every seed, fixture, and compile failure caused by the initializer change. Existing bundled seeds
+  may keep `subjects: []`; real IA search results must preserve decoded subjects.
+- In `RecommendationEngine.extractTokens`, include normalized subject terms in addition to creators and
+  languages. Trim, lowercase, drop empties, and ignore `RecommendationConstants.subjectStopList`. Because
+  `jaccardSimilarity` already calls `extractTokens`, this also makes MMR diversity subject-aware.
+- Add tests proving `advancedSearchURL` requests `subject`, string/array `subject` values decode, and a
+  candidate sharing a profile subject outranks a candidate that only has popularity.
+
+**2. Replace periodic-save taste capture with thresholded delta capture.**
+- Replace `PlaybackCoordinator.onPositionSaved: ((UUID, Bool) -> Void)?` with
+  `onTasteSignal: ((PlaybackTasteSignal) -> Void)?`. Define `PlaybackTasteSignal` in the playback core
+  with `bookID: UUID`, `isFavorite: Bool`, `position: TimeInterval`, `duration: TimeInterval?`, and
+  `isFinished: Bool`.
+- Emit the signal only after `positionStore.save` succeeds. In `PlaybackCoordinator`, gate emission by
+  `PositionPersistReason`: emit for `periodic`, `pause`, `background`, `interruption`, `routeChange`,
+  `chapterChange`, and all `finished` saves; do not emit for a bare `.seek` or `.skip`.
+- Add `RecommendationConstants.meaningfulListenCompletion = 0.20`.
+- Append the next `DatabaseMigrations.swift` migration after the current max ID. Add:
+  `taste_signal_state(book_id TEXT PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+  max_completion REAL NOT NULL DEFAULT 0, applied_increment REAL NOT NULL DEFAULT 0,
+  updated_at REAL NOT NULL)`.
+- Move the calibration logic into `TasteProfileStore` (or a small recommendations-core helper it owns) so
+  SQLite state and profile upserts happen together:
+  - Compute `completion = isFinished ? 1.0 : clamp(position / duration, 0...1)`; ignore events with invalid
+    duration unless `isFinished`.
+  - Ignore events below `0.20` completion unless `isFinished`.
+  - Compute `targetIncrement = max(0.5, completion)` and multiply by `RecommendationConstants.favoriteBoost`
+    when `isFavorite`.
+  - Load the row from `taste_signal_state`; upsert only `delta = targetIncrement - applied_increment` when
+    `delta > 0.0001`.
+  - Apply that same positive delta to each `(axis, term)` returned by
+    `LibraryRepository.fetchBookTasteTerms(for:)`, then update `max_completion`, `applied_increment`, and
+    `updated_at`.
+- Update `AppServices.captureTasteSignal` to fetch the book's taste terms once per eligible event and call
+  the new delta-capture API. Periodic saves after the first threshold crossing must become no-ops unless
+  completion/favorite state raises the target increment.
+- Leave `TasteProfileStore.historyIncrement(forSeconds:)` unchanged; historical backfill remains
+  `min(12, max(0.5, hours))`.
+
+**3. Add the missing recommendation tests.**
+- Add `VoxglassTests/TasteProfileStoreTests.swift` if absent, or extend the nearest existing test file:
+  decay update matches `prev * exp(-dt / tau) + increment`; subject damping downweights broad/stop-list
+  terms; surfaced ring respects `RecommendationConstants.recoSurfacedCap`; `historyIncrement` keeps its
+  `0.5` floor and `12.0` cap.
+- Add `VoxglassTests/RecommendationEngineTests.swift`: subject tokens influence scoring, MMR diversifies
+  near-duplicate same-author/same-subject candidates, and `WorkKey.normalized` collapses reuploads such as
+  `"Frankenstein"` vs. `"Frankenstein (version 2)"`.
+- Add `VoxglassTests/TasteSignalCaptureTests.swift`: below-20% periodic saves do not upsert; crossing 20%
+  upserts once; repeated periodic saves do not change weights; finishing adds only the completion delta;
+  favoriting adds only the favorite delta once.
+- Use the reference shapes in `../parso-radio-ios-app/ParsoRadio/Core/Tests/` for intent, but adapt names
+  and assertions to Voxglass (`author`, `subject`, `language`, `book_taste`, LibriVox books).
+
+**4. Release housekeeping for this closeout.**
+- Regenerate the project only if files or project membership require it: `xcodegen generate`.
+- Run:
+  - `xcodebuild -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhone 16' build`
+  - `xcodebuild -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhone 16' test`
+- Manual simulator checks: fresh install still shows cold-start seeds; listening past 20% of a subject-rich
+  book shifts "Recommended for You" toward that author/subject; leaving playback running for several minutes
+  does not inflate profile weights; finished/favorited books influence taste once and are excluded from the
+  shelf.
+- Before handing back, update this file's §5/Verification wording only if the implementation and tests have
+  actually passed. Do not mark §6 complete as part of this closeout.
 
 ## Context
 
@@ -309,8 +393,8 @@ For the engineer/agent executing this plan:
   (Foundation, SwiftUI, AVFoundation, StoreKit, CloudKit, libsqlite3). Do not add SPM packages.
 - **Never edit `Voxglass.xcodeproj` by hand.** Add/rename files, then edit `project.yml` if needed and run
   `xcodegen generate`. New Swift files under `Voxglass/` are picked up by the existing source globs.
-- **Persistence conventions:** SQLite via `actor AppDatabase`; schema changes go through a new numbered
-  migration in `DatabaseMigrations.swift` (current max is 2 → add 3). Light prefs via `@AppStorage` in
+- **Persistence conventions:** SQLite via `actor AppDatabase`; schema changes go through the next numbered
+  migration in `DatabaseMigrations.swift` after the current max ID. Light prefs via `@AppStorage` in
   `AppPreferencesStore`. Stores that publish to SwiftUI are `@MainActor ObservableObject`.
 - **Privacy is a hard constraint.** No analytics, logging SDKs, `print`/`os_log`, accounts, or outbound
   traffic except to `archive.org` (and the user's own iCloud for §6). Keep it that way.

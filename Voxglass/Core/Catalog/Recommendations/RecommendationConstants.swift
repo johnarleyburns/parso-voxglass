@@ -13,6 +13,9 @@ public enum RecommendationConstants {
     public static let onboardingSeedWeight: Double = 1.75
     public static let recoSurfacedCap: Int = 500
     public static let downloadFloor: Int = 200
+    /// Minimum fraction of a book that must be listened to before playback
+    /// contributes to the taste profile (unless the book is finished).
+    public static let meaningfulListenCompletion: Double = 0.20
 
     public static let subjectStopList: Set<String> = [
         "music", "audio", "spoken word", "librivox", "podcast",

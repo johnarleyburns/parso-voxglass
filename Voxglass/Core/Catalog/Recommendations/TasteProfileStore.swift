@@ -40,12 +40,13 @@ public actor TasteProfileStore {
             INSERT INTO taste_profile_terms (axis, term, weight, last_ts)
             VALUES (?, ?, ?, ?)
             ON CONFLICT(axis, term) DO UPDATE SET
-                weight = weight * exp(-(\(now) - last_ts) / ?) + excluded.weight,
-                last_ts = \(now)
+                weight = weight * exp(-(excluded.last_ts - last_ts) / ?) + excluded.weight,
+                last_ts = excluded.last_ts
             """, [
                 .string(axis),
                 .string(term.lowercased()),
                 .double(increment),
+                .double(now),
                 .double(RecommendationConstants.tau)
             ])
         } catch {}
@@ -71,6 +72,67 @@ public actor TasteProfileStore {
         let trimmed = language.lowercased().trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         await upsertTerm(axis: "language", term: trimmed, increment: increment)
+    }
+
+    // MARK: - Live signal capture (thresholded, delta-based)
+
+    /// Applies a live playback taste signal using per-book delta calibration so
+    /// periodic saves never over-count. The target increment is derived from the
+    /// listen completion (favorite-boosted); only the positive delta beyond what
+    /// this book has already contributed is applied to its taste terms, with the
+    /// running state persisted in `taste_signal_state`.
+    public func applySignal(
+        _ signal: PlaybackTasteSignal,
+        terms: [(axis: String, term: String)]
+    ) async {
+        let completion: Double
+        if signal.isFinished {
+            completion = 1.0
+        } else {
+            guard let duration = signal.duration, duration > 0 else { return }
+            completion = min(max(signal.position / duration, 0), 1)
+        }
+        guard signal.isFinished
+                || completion >= RecommendationConstants.meaningfulListenCompletion else {
+            return
+        }
+
+        var targetIncrement = max(0.5, completion)
+        if signal.isFavorite {
+            targetIncrement *= RecommendationConstants.favoriteBoost
+        }
+
+        do {
+            try await database.prepare()
+            let rows = try await database.query(
+                "SELECT max_completion, applied_increment FROM taste_signal_state WHERE book_id = ?",
+                [ModelMapping.databaseValue(signal.bookID)]
+            )
+            let priorCompletion = rows.first?.double("max_completion") ?? 0
+            let appliedIncrement = rows.first?.double("applied_increment") ?? 0
+
+            let delta = targetIncrement - appliedIncrement
+            guard delta > 0.0001 else { return }
+
+            for (axis, term) in terms {
+                await upsertTerm(axis: axis, term: term, increment: delta)
+            }
+
+            let now = Date().timeIntervalSince1970
+            try await database.execute("""
+            INSERT INTO taste_signal_state (book_id, max_completion, applied_increment, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(book_id) DO UPDATE SET
+                max_completion = excluded.max_completion,
+                applied_increment = excluded.applied_increment,
+                updated_at = excluded.updated_at
+            """, [
+                ModelMapping.databaseValue(signal.bookID),
+                .double(max(priorCompletion, completion)),
+                .double(targetIncrement),
+                .double(now)
+            ])
+        } catch {}
     }
 
     /// One-time backfill of the taste profile from pre-existing listening history.

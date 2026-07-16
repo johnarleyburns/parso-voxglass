@@ -127,6 +127,11 @@ public final class RecommendationEngine {
 
     private func scoreCandidates(_ results: [InternetArchiveSearchResult],
                                   profile: ProfileBucket) -> [(result: InternetArchiveSearchResult, score: Double)] {
+        Self.scoreCandidates(results, profile: profile)
+    }
+
+    nonisolated static func scoreCandidates(_ results: [InternetArchiveSearchResult],
+                                            profile: ProfileBucket) -> [(result: InternetArchiveSearchResult, score: Double)] {
         var profileWeights: [String: Double] = [:]
         for t in profile.allTerms() {
             profileWeights[t.term, default: 0] += t.weight
@@ -156,7 +161,7 @@ public final class RecommendationEngine {
         return scored.sorted { $0.score > $1.score }
     }
 
-    private func extractTokens(_ result: InternetArchiveSearchResult) -> [String] {
+    nonisolated static func extractTokens(_ result: InternetArchiveSearchResult) -> [String] {
         var tokens: [String] = []
         for creator in result.creators {
             let c = creator.lowercased().trimmingCharacters(in: .whitespaces)
@@ -168,11 +173,22 @@ public final class RecommendationEngine {
             let l = lang.lowercased().trimmingCharacters(in: .whitespaces)
             if !l.isEmpty { tokens.append(l) }
         }
+        for subject in result.subjects {
+            let s = subject.lowercased().trimmingCharacters(in: .whitespaces)
+            if !s.isEmpty, !RecommendationConstants.subjectStopList.contains(s) {
+                tokens.append(s)
+            }
+        }
         return Array(Set(tokens))
     }
 
     private func greedyMMR(_ candidates: [(result: InternetArchiveSearchResult, score: Double)],
                             k: Int, lambda: Double) -> [InternetArchiveSearchResult] {
+        Self.greedyMMR(candidates, k: k, lambda: lambda)
+    }
+
+    nonisolated static func greedyMMR(_ candidates: [(result: InternetArchiveSearchResult, score: Double)],
+                                      k: Int, lambda: Double) -> [InternetArchiveSearchResult] {
         guard !candidates.isEmpty else { return [] }
         var remaining = candidates
         var picked: [InternetArchiveSearchResult] = []
@@ -194,7 +210,7 @@ public final class RecommendationEngine {
         return picked
     }
 
-    private func jaccardSimilarity(_ a: InternetArchiveSearchResult, _ b: InternetArchiveSearchResult) -> Double {
+    nonisolated static func jaccardSimilarity(_ a: InternetArchiveSearchResult, _ b: InternetArchiveSearchResult) -> Double {
         let tokensA = Set(extractTokens(a))
         let tokensB = Set(extractTokens(b))
         let intersection = tokensA.intersection(tokensB).count

@@ -14,10 +14,11 @@ public final class PlaybackCoordinator: ObservableObject {
     @Published public private(set) var sleepMode: SleepTimer.Mode = .off
     @Published public private(set) var sleepRemaining: TimeInterval?
 
-    /// Called when a playback position is persisted (e.g. periodic save, chapter end,
-    /// finished). Receives the book's UUID and whether it was set as favorite.
-    /// Used by the recommendation engine for taste signal capture.
-    public var onPositionSaved: ((UUID, Bool) -> Void)?
+    /// Called after a playback position is persisted for a taste-meaningful
+    /// reason (periodic tick, pause, lifecycle events, chapter changes, and any
+    /// finished save — never a bare seek/skip). The recommendation layer uses
+    /// the completion context to apply thresholded, delta-based profile updates.
+    public var onTasteSignal: ((PlaybackTasteSignal) -> Void)?
     /// Called when a bookmark is added, so the cloud sync layer can push it.
     public var onBookmarkAdded: ((Bookmark) -> Void)?
 
@@ -911,8 +912,14 @@ public final class PlaybackCoordinator: ObservableObject {
             if reason == .periodic {
                 lastPeriodicSave = Date()
             }
-            if reason == .periodic || finished {
-                onPositionSaved?(session.book.id, session.book.isFavorite)
+            if finished || (reason != .seek && reason != .skip) {
+                onTasteSignal?(PlaybackTasteSignal(
+                    bookID: session.book.id,
+                    isFavorite: session.book.isFavorite,
+                    position: playbackPosition.position,
+                    duration: playbackPosition.duration,
+                    isFinished: finished
+                ))
             }
         } catch {
             playbackError = error.localizedDescription
