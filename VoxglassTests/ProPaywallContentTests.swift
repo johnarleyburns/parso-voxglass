@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Registry-drift safety net (§6/§8): the paywall catalog, the `ProFeature`
 /// enum, and the free-tier registry must stay in lockstep. Adding or removing a

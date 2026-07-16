@@ -1,7 +1,7 @@
 import Foundation
 import SQLite3
 
-extension AppDatabase {
+public extension AppDatabase {
     func migrate() throws {
         try executeRaw("""
         CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -47,11 +47,11 @@ extension AppDatabase {
 }
 
 private struct DatabaseMigration {
-    let id: Int
-    let name: String
-    let statements: [String]
+    public let id: Int
+    public let name: String
+    public let statements: [String]
 
-    static let all: [DatabaseMigration] = [
+    public static let all: [DatabaseMigration] = [
         DatabaseMigration(
             id: 1,
             name: "initial_library_and_playback",

@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct ArtworkImageView<Placeholder: View>: View {
     var url: URL?

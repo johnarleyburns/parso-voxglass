@@ -1,6 +1,6 @@
 import UIKit
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 final class ArtworkServiceUnifiedTests: XCTestCase {
     @MainActor

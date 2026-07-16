@@ -1,17 +1,17 @@
 import Foundation
 
-protocol LibriVoxCatalogClient: Sendable {
+public protocol LibriVoxCatalogClient: Sendable {
     func fetchSections(bookID: Int) async throws -> [LibriVoxSection]
 }
 
-struct LibriVoxSection: Decodable, Equatable, Sendable {
-    var sectionNumber: String?
-    var listenURL: String?
-    var fileName: String?
-    var readers: [LibriVoxReader]
-    var urlIArchive: String?
+public struct LibriVoxSection: Decodable, Equatable, Sendable {
+    public var sectionNumber: String?
+    public var listenURL: String?
+    public var fileName: String?
+    public var readers: [LibriVoxReader]
+    public var urlIArchive: String?
 
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case sectionNumber = "section_number"
         case listenURL = "listen_url"
         case fileName = "file_name"
@@ -20,16 +20,16 @@ struct LibriVoxSection: Decodable, Equatable, Sendable {
     }
 }
 
-struct LibriVoxReader: Decodable, Equatable, Sendable {
-    var readerID: String?
-    var displayName: String?
+public struct LibriVoxReader: Decodable, Equatable, Sendable {
+    public var readerID: String?
+    public var displayName: String?
 
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case readerID = "reader_id"
         case displayName = "display_name"
     }
 
-    var displayNameOrUnknown: String {
+    public var displayNameOrUnknown: String {
         guard let name = displayName, !name.trimmingCharacters(in: .whitespaces).isEmpty else {
             return "Unknown reader"
         }
@@ -38,20 +38,20 @@ struct LibriVoxReader: Decodable, Equatable, Sendable {
 }
 
 private struct LibriVoxBookResponse: Decodable {
-    struct Book: Decodable {
+    public struct Book: Decodable {
         var sections: [LibriVoxSection]?
     }
-    var books: [Book]?
+    public var books: [Book]?
 }
 
-final class LibriVoxClient: LibriVoxCatalogClient {
+public final class LibriVoxClient: LibriVoxCatalogClient {
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    public init(session: URLSession = .shared) {
         self.session = session
     }
 
-    func fetchSections(bookID: Int) async throws -> [LibriVoxSection] {
+    public func fetchSections(bookID: Int) async throws -> [LibriVoxSection] {
         let url = URL(string: "https://librivox.org/api/feed/audiobooks/?id=\(bookID)&extended=1&format=json")!
 
         let (data, response) = try await session.data(from: url)
@@ -71,7 +71,7 @@ final class LibriVoxClient: LibriVoxCatalogClient {
     }
 }
 
-enum LibriVoxError: Error {
+public enum LibriVoxError: Error {
     case badStatus(Int)
     case bookNotFound
 }

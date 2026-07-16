@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 /// A lightweight, self-contained catalog list pushed from Now Playing's
 /// discovery links ("More by this Author / Narrator / Genre"). It owns its own

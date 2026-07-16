@@ -1,6 +1,6 @@
 import Foundation
 
-protocol BookmarkStore: Sendable {
+public protocol BookmarkStore: Sendable {
     func add(_ bookmark: Bookmark) async throws -> Bookmark
     func bookmarks(forBookID: UUID) async throws -> [Bookmark]
     func allBookmarks() async throws -> [Bookmark]
@@ -14,14 +14,14 @@ protocol BookmarkStore: Sendable {
     func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws
 }
 
-struct SQLiteBookmarkStore: BookmarkStore {
+public struct SQLiteBookmarkStore: BookmarkStore {
     private let database: AppDatabase
 
-    init(database: AppDatabase) {
+    public init(database: AppDatabase) {
         self.database = database
     }
 
-    func add(_ bookmark: Bookmark) async throws -> Bookmark {
+    public func add(_ bookmark: Bookmark) async throws -> Bookmark {
         try await database.prepare()
         var b = bookmark
         if b.id == nil {
@@ -46,7 +46,7 @@ struct SQLiteBookmarkStore: BookmarkStore {
                          createdAt: b.createdAt, updatedAt: now, isDeleted: false)
     }
 
-    func bookmarks(forBookID bookID: UUID) async throws -> [Bookmark] {
+    public func bookmarks(forBookID bookID: UUID) async throws -> [Bookmark] {
         try await database.prepare()
         return try await database.query("""
         SELECT id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted
@@ -54,7 +54,7 @@ struct SQLiteBookmarkStore: BookmarkStore {
         """, [.string(bookID.uuidString)]).map(Self.rowToBookmark)
     }
 
-    func allBookmarks() async throws -> [Bookmark] {
+    public func allBookmarks() async throws -> [Bookmark] {
         try await database.prepare()
         return try await database.query("""
         SELECT id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted
@@ -62,14 +62,14 @@ struct SQLiteBookmarkStore: BookmarkStore {
         """).map(Self.rowToBookmark)
     }
 
-    func delete(id: UUID) async throws {
+    public func delete(id: UUID) async throws {
         try await database.prepare()
         try await database.execute("""
         UPDATE bookmarks SET is_deleted = 1, updated_at = ? WHERE id = ?
         """, [.double(Date().timeIntervalSince1970), .string(id.uuidString)])
     }
 
-    func updateNote(_ note: String, id: UUID) async throws -> Bookmark? {
+    public func updateNote(_ note: String, id: UUID) async throws -> Bookmark? {
         try await database.prepare()
         try await database.execute("""
         UPDATE bookmarks SET note = ?, updated_at = ? WHERE id = ? AND is_deleted = 0
@@ -82,7 +82,7 @@ struct SQLiteBookmarkStore: BookmarkStore {
     }
 
     // Cloud-sync seam: all bookmarks (including tombstones) for a single book, ordered newest-first.
-    func bookmarksForSync(bookID: UUID) async throws -> [Bookmark] {
+    public func bookmarksForSync(bookID: UUID) async throws -> [Bookmark] {
         try await database.prepare()
         return try await database.query("""
         SELECT id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted
@@ -90,7 +90,7 @@ struct SQLiteBookmarkStore: BookmarkStore {
         """, [.string(bookID.uuidString)]).map(Self.rowToBookmark)
     }
 
-    func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws {
+    public func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws {
         try await database.prepare()
         for b in bookmarks {
             guard let id = b.id else { continue }

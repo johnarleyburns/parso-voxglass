@@ -2,12 +2,12 @@ import Combine
 import Foundation
 import Network
 
-final class NetworkMonitor: ObservableObject {
-    static let shared = NetworkMonitor()
+public final class NetworkMonitor: ObservableObject {
+    public static let shared = NetworkMonitor()
 
-    @Published private(set) var isOnline = true
-    @Published private(set) var isWiFi = true
-    @Published private(set) var isCellular = false
+    @Published public private(set) var isOnline = true
+    @Published public private(set) var isWiFi = true
+    @Published public private(set) var isCellular = false
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "guru.parso.voxglass.networkmonitor")

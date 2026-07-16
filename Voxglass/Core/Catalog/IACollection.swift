@@ -1,17 +1,17 @@
 import Foundation
 
-struct IACollection: Identifiable, Equatable, Sendable {
-    var id: String
-    var title: String
-    var subtitle: String
-    var archiveIdentifier: String?
-    var listURL: URL?
-    var archiveQuery: String
-    var systemImage: String
-    var assetName: String?
-    var remoteImageURL: URL?
+public struct IACollection: Identifiable, Equatable, Sendable {
+    public var id: String
+    public var title: String
+    public var subtitle: String
+    public var archiveIdentifier: String?
+    public var listURL: URL?
+    public var archiveQuery: String
+    public var systemImage: String
+    public var assetName: String?
+    public var remoteImageURL: URL?
 
-    init(
+    public init(
         id: String,
         title: String,
         subtitle: String,
@@ -34,8 +34,8 @@ struct IACollection: Identifiable, Equatable, Sendable {
     }
 }
 
-enum IACollectionStore {
-    static let popular = IACollection(
+public enum IACollectionStore {
+    public static let popular = IACollection(
         id: "popular-librivox",
         title: "Popular LibriVox",
         subtitle: "Frequently downloaded public-domain audio",
@@ -47,19 +47,19 @@ enum IACollectionStore {
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "librivoxaudio")
     )
 
-    static let featured: [IACollection] = [popular] + browseCollections
+    public static let featured: [IACollection] = [popular] + browseCollections
 
-    static var browseCollections: [IACollection] {
+    public static var browseCollections: [IACollection] {
         LibriVoxBrowseGroup.categories.map { browseCollection(for: $0) }
     }
 
-    static var allSelectableCollections: [IACollection] {
+    public static var allSelectableCollections: [IACollection] {
         browseCollections + curated
     }
 
     /// Hand-curated canon collections ported from the Parso Radio catalog.
     /// These use broad creator-based Internet Archive queries against LibriVox.
-    static let greatBooks = IACollection(
+    public static let greatBooks = IACollection(
         id: "great-books",
         title: "Great Books",
         subtitle: "The canonical authors of the Western tradition, read by LibriVox volunteers",
@@ -69,7 +69,7 @@ enum IACollectionStore {
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "iliad_popetranslation_1506_librivox")
     )
 
-    static let greaterBooks = IACollection(
+    public static let greaterBooks = IACollection(
         id: "greater-books",
         title: "Greater Books",
         subtitle: "A broader literary canon — the world's essential novels, plays, and poetry",
@@ -79,7 +79,7 @@ enum IACollectionStore {
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox")
     )
 
-    static let ancientGreece = IACollection(
+    public static let ancientGreece = IACollection(
         id: "ancient-greece",
         title: "Ancient Greece",
         subtitle: "Homer, Plato, the tragedians, and more from the Greek world",
@@ -89,9 +89,9 @@ enum IACollectionStore {
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey_butler_librivox")
     )
 
-    static let curated: [IACollection] = [greatBooks, greaterBooks, ancientGreece]
+    public static let curated: [IACollection] = [greatBooks, greaterBooks, ancientGreece]
 
-    static func collections(for selectedIDs: Set<String>) -> [IACollection] {
+    public static func collections(for selectedIDs: Set<String>) -> [IACollection] {
         // Popular LibriVox always first, then the three curated collections,
         // then the remaining 21 browse categories sorted alphabetically.
         let sortedBrowse = browseCollections.sorted {
@@ -213,7 +213,7 @@ enum IACollectionStore {
 /// Curated Internet Archive Lucene queries for the canon collections.
 /// Broad creator-based matching against the LibriVox collection, with a few
 /// explicit exclusions for authors who share a name with canonical figures.
-enum CuratedQueries {
+public enum CuratedQueries {
     private static let greatBooksCreators = [
         "Homer", "Aeschylus", "Sophocles", "Euripides", "Aristophanes",
         "Herodotus", "Thucydides", "Plato", "Aristotle", "Hippocrates",
@@ -266,12 +266,12 @@ enum CuratedQueries {
         excludedCreators.map { "AND NOT creator:\"\($0)\"" }.joined(separator: " ")
     }
 
-    static let greatBooks: String =
+    public static let greatBooks: String =
         "collection:librivoxaudio AND (\(creatorClause(greatBooksCreators))) \(exclusionClause())"
 
-    static let greaterBooks: String =
+    public static let greaterBooks: String =
         "collection:librivoxaudio AND (\(creatorClause(greaterBooksCreators))) \(exclusionClause())"
 
-    static let ancientGreece: String =
+    public static let ancientGreece: String =
         "collection:librivoxaudio AND (\(creatorClause(ancientGreeceCreators))) \(exclusionClause())"
 }

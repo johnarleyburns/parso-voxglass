@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct ListeningStatsView: View {
     @EnvironmentObject private var stats: ListeningStatsStore

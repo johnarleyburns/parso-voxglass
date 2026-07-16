@@ -1,13 +1,13 @@
 import Foundation
 
-enum DatabaseValue: Equatable {
+public enum DatabaseValue: Equatable {
     case null
     case int(Int64)
     case double(Double)
     case string(String)
     case bool(Bool)
 
-    var stringValue: String? {
+    public var stringValue: String? {
         switch self {
         case .string(let value): value
         case .int(let value): String(value)
@@ -17,7 +17,7 @@ enum DatabaseValue: Equatable {
         }
     }
 
-    var intValue: Int64? {
+    public var intValue: Int64? {
         switch self {
         case .int(let value): value
         case .bool(let value): value ? 1 : 0
@@ -27,7 +27,7 @@ enum DatabaseValue: Equatable {
         }
     }
 
-    var doubleValue: Double? {
+    public var doubleValue: Double? {
         switch self {
         case .double(let value): value
         case .int(let value): Double(value)
@@ -37,7 +37,7 @@ enum DatabaseValue: Equatable {
         }
     }
 
-    var boolValue: Bool? {
+    public var boolValue: Bool? {
         switch self {
         case .bool(let value): value
         case .int(let value): value != 0
@@ -48,34 +48,34 @@ enum DatabaseValue: Equatable {
     }
 }
 
-struct DatabaseRow {
-    let values: [String: DatabaseValue]
+public struct DatabaseRow {
+    public let values: [String: DatabaseValue]
 
-    func string(_ column: String) -> String? {
+    public func string(_ column: String) -> String? {
         values[column]?.stringValue
     }
 
-    func requiredString(_ column: String) throws -> String {
+    public func requiredString(_ column: String) throws -> String {
         guard let value = string(column) else {
             throw DatabaseError.missingColumn(column)
         }
         return value
     }
 
-    func int(_ column: String) -> Int64? {
+    public func int(_ column: String) -> Int64? {
         values[column]?.intValue
     }
 
-    func double(_ column: String) -> Double? {
+    public func double(_ column: String) -> Double? {
         values[column]?.doubleValue
     }
 
-    func bool(_ column: String) -> Bool? {
+    public func bool(_ column: String) -> Bool? {
         values[column]?.boolValue
     }
 }
 
-enum DatabaseError: Error, LocalizedError {
+public enum DatabaseError: Error, LocalizedError {
     case openFailed(String)
     case prepareFailed(String)
     case stepFailed(String)
@@ -83,7 +83,7 @@ enum DatabaseError: Error, LocalizedError {
     case missingColumn(String)
     case invalidUUID(String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .openFailed(let message): "Could not open database: \(message)"
         case .prepareFailed(let message): "Could not prepare SQL statement: \(message)"

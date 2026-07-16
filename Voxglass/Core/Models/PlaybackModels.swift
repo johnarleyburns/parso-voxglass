@@ -1,15 +1,15 @@
 import Foundation
 
-struct PlaybackPosition: Identifiable, Codable, Equatable, Sendable {
-    var id: UUID
-    var bookID: UUID
-    var chapterID: UUID
-    var position: TimeInterval
-    var duration: TimeInterval?
-    var updatedAt: Date
-    var isFinished: Bool
+public struct PlaybackPosition: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID
+    public var bookID: UUID
+    public var chapterID: UUID
+    public var position: TimeInterval
+    public var duration: TimeInterval?
+    public var updatedAt: Date
+    public var isFinished: Bool
 
-    init(
+    public init(
         id: UUID = UUID(),
         bookID: UUID,
         chapterID: UUID,
@@ -28,17 +28,17 @@ struct PlaybackPosition: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-struct Bookmark: Identifiable, Codable, Equatable, Sendable {
-    var id: UUID?
-    var bookID: UUID
-    var chapterID: UUID
-    var position: TimeInterval
-    var note: String?
-    var createdAt: Date
-    var updatedAt: Date
-    var isDeleted: Bool
+public struct Bookmark: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID?
+    public var bookID: UUID
+    public var chapterID: UUID
+    public var position: TimeInterval
+    public var note: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var isDeleted: Bool
 
-    init(
+    public init(
         id: UUID? = nil,
         bookID: UUID,
         chapterID: UUID,
@@ -59,33 +59,33 @@ struct Bookmark: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-struct Playlist: Identifiable, Codable, Equatable, Sendable {
-    var id: UUID
-    var title: String
-    var createdAt: Date
-    var updatedAt: Date
+public struct Playlist: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID
+    public var title: String
+    public var createdAt: Date
+    public var updatedAt: Date
 }
 
-struct DownloadRecord: Identifiable, Codable, Equatable, Sendable {
-    var id: UUID
-    var bookID: UUID
-    var chapterID: UUID?
-    var state: DownloadState
-    var localURL: URL?
-    var bytesDownloaded: Int64
-    var bytesExpected: Int64?
-    var updatedAt: Date
+public struct DownloadRecord: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID
+    public var bookID: UUID
+    public var chapterID: UUID?
+    public var state: DownloadState
+    public var localURL: URL?
+    public var bytesDownloaded: Int64
+    public var bytesExpected: Int64?
+    public var updatedAt: Date
 }
 
-enum DownloadState: String, Codable, Sendable {
+public enum DownloadState: String, Codable, Sendable {
     case queued
     case downloading
     case complete
     case failed
 }
 
-enum PlaybackMath {
-    static func clampedPosition(_ position: TimeInterval, duration: TimeInterval?) -> TimeInterval {
+public enum PlaybackMath {
+    public static func clampedPosition(_ position: TimeInterval, duration: TimeInterval?) -> TimeInterval {
         let lowerBounded = max(0, position)
         guard let duration, duration > 0 else { return lowerBounded }
         return min(lowerBounded, duration)

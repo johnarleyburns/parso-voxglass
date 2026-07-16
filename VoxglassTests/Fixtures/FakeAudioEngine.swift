@@ -1,5 +1,5 @@
 import Foundation
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Test double for `AudioEngine` (Step 0 of the competitive gap plan). Records an
 /// ordered call log so speed, sleep timer, bookmark, and skip-interval decisions

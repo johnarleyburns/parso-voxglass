@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@testable import Voxglass
+@testable import VoxglassCore
 
 final class PostFieldTestImprovementsTests: XCTestCase {
 

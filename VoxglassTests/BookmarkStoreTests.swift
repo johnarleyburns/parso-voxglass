@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Bookmark CRUD and tombstone semantics (P0-3), tested against an on-disk temp
 /// SQLite database using `AppDatabase.makeTemporaryDatabase`.

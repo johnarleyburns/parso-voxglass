@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct AdaptiveGlass: ViewModifier {
     var cornerRadius: CGFloat = 26

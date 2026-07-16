@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct EQView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator

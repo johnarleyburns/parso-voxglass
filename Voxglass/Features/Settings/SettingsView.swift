@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -289,6 +290,9 @@ private struct CacheSettingsCard: View {
             Button("Clear Cache", role: .destructive) {
                 Task {
                     await CacheManager.shared.clearCache()
+                    // Core's CacheManager no longer reaches into the UIKit artwork
+                    // tier; clear its in-memory cache app-side.
+                    ArtworkService.shared.clearMemory()
                     await refresh()
                 }
             }

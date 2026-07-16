@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 @MainActor
 final class ListeningStatsStoreTests: XCTestCase {

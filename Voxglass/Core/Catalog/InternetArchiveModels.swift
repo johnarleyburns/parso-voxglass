@@ -1,18 +1,18 @@
 import Foundation
 
-struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
-    var identifier: String
-    var title: String
-    var creators: [String]
-    var description: String?
-    var collections: [String]
-    var downloads: Int?
-    var date: String?
-    var languages: [String]
+public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
+    public var identifier: String
+    public var title: String
+    public var creators: [String]
+    public var description: String?
+    public var collections: [String]
+    public var downloads: Int?
+    public var date: String?
+    public var languages: [String]
 
-    var id: String { identifier }
+    public var id: String { identifier }
 
-    init(
+    public init(
         identifier: String,
         title: String,
         creators: [String],
@@ -32,60 +32,60 @@ struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
         self.languages = languages
     }
 
-    var authorLine: String {
+    public var authorLine: String {
         creators.isEmpty ? "Unknown author" : creators.joined(separator: ", ")
     }
 
     /// Best-effort narrator names parsed from the item description. The search
     /// API does not expose a narrator field, so this may be empty.
-    var narrators: [String] {
+    public var narrators: [String] {
         NarratorExtractor.extract(from: description)
     }
 
-    var narratorLine: String? {
+    public var narratorLine: String? {
         let names = narrators
         return names.isEmpty ? nil : "Read by \(names.joined(separator: ", "))"
     }
 
-    var sourceKind: SourceKind {
+    public var sourceKind: SourceKind {
         collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
             ? .librivox
             : .internetArchive
     }
 
-    var detailsURL: URL {
+    public var detailsURL: URL {
         InternetArchiveMetadata.detailsURL(for: identifier)
     }
 
-    var coverURL: URL {
+    public var coverURL: URL {
         InternetArchiveMetadata.coverURL(for: identifier)
     }
 }
 
 /// A single page of advanced-search results plus the total match count,
 /// enabling paginated "See More" loading in Explore.
-struct InternetArchivePage: Equatable, Sendable {
-    var results: [InternetArchiveSearchResult]
-    var numFound: Int
-    var page: Int
+public struct InternetArchivePage: Equatable, Sendable {
+    public var results: [InternetArchiveSearchResult]
+    public var numFound: Int
+    public var page: Int
 }
 
-struct InternetArchiveSearchResponse: Decodable, Equatable, Sendable {
-    var response: Response
+public struct InternetArchiveSearchResponse: Decodable, Equatable, Sendable {
+    public var response: Response
 
-    var results: [InternetArchiveSearchResult] {
+    public var results: [InternetArchiveSearchResult] {
         response.docs.map(\.searchResult)
     }
 
-    var numFound: Int {
+    public var numFound: Int {
         response.numFound
     }
 
-    struct Response: Decodable, Equatable, Sendable {
+    public struct Response: Decodable, Equatable, Sendable {
         var docs: [InternetArchiveSearchDocument]
         var numFound: Int
 
-        init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             docs = try container.decode([InternetArchiveSearchDocument].self, forKey: .docs)
             numFound = try container.decodeIfPresent(Int.self, forKey: .numFound) ?? docs.count
@@ -98,17 +98,17 @@ struct InternetArchiveSearchResponse: Decodable, Equatable, Sendable {
     }
 }
 
-struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
-    var identifier: String
-    var title: String
-    var creators: [String]
-    var description: String?
-    var collections: [String]
-    var downloads: Int?
-    var date: String?
-    var languages: [String]
+public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
+    public var identifier: String
+    public var title: String
+    public var creators: [String]
+    public var description: String?
+    public var collections: [String]
+    public var downloads: Int?
+    public var date: String?
+    public var languages: [String]
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         identifier = try container.decode(String.self, forKey: .identifier)
         title = try container.decodeFlexibleStringIfPresent(forKey: .title) ?? identifier
@@ -120,7 +120,7 @@ struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
         languages = try container.decodeStringListIfPresent(forKey: .language)
     }
 
-    var searchResult: InternetArchiveSearchResult {
+    public var searchResult: InternetArchiveSearchResult {
         InternetArchiveSearchResult(
             identifier: identifier,
             title: title,
@@ -145,58 +145,58 @@ struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
     }
 }
 
-struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
-    var metadata: InternetArchiveItemMetadata
-    var files: [InternetArchiveFile]
-    var server: String?
-    var dir: String?
+public struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
+    public var metadata: InternetArchiveItemMetadata
+    public var files: [InternetArchiveFile]
+    public var server: String?
+    public var dir: String?
 
-    var identifier: String {
+    public var identifier: String {
         metadata.identifier ?? ""
     }
 
-    var isCollection: Bool {
+    public var isCollection: Bool {
         metadata.mediatype == "collection"
     }
 
-    var sourceKind: SourceKind {
+    public var sourceKind: SourceKind {
         metadata.collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
             ? .librivox
             : .internetArchive
     }
 
-    var selectedAudioFiles: [InternetArchiveFile] {
+    public var selectedAudioFiles: [InternetArchiveFile] {
         InternetArchiveAudioSelector.selectedAudioFiles(from: files)
     }
 
-    var title: String {
+    public var title: String {
         metadata.title ?? identifier
     }
 
-    var creators: [String] {
+    public var creators: [String] {
         metadata.creators
     }
 
-    var summary: String? {
+    public var summary: String? {
         metadata.description?.cleanedInternetArchiveText
     }
 
-    func fileURL(for file: InternetArchiveFile) -> URL? {
+    public func fileURL(for file: InternetArchiveFile) -> URL? {
         guard !identifier.isEmpty else { return nil }
         let encodedIdentifier = identifier.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? identifier
         let encodedName = file.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? file.name
         return URL(string: "https://archive.org/download/\(encodedIdentifier)/\(encodedName)")
     }
 
-    static func detailsURL(for identifier: String) -> URL {
+    public static func detailsURL(for identifier: String) -> URL {
         URL(string: "https://archive.org/details/\(identifier)")!
     }
 
-    static func coverURL(for identifier: String) -> URL {
+    public static func coverURL(for identifier: String) -> URL {
         URL(string: "https://archive.org/services/img/\(identifier)?scale=2")!
     }
 
-    var coverImageFiles: [InternetArchiveFile] {
+    public var coverImageFiles: [InternetArchiveFile] {
         files
             .filter { file in
                 let name = file.name.lowercased()
@@ -217,18 +217,18 @@ struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
     }
 }
 
-struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
-    var identifier: String?
-    var title: String?
-    var creators: [String]
-    var description: String?
-    var mediatype: String?
-    var collections: [String]
-    var subjects: [String]
-    var language: String?
-    var callNumber: String?
+public struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
+    public var identifier: String?
+    public var title: String?
+    public var creators: [String]
+    public var description: String?
+    public var mediatype: String?
+    public var collections: [String]
+    public var subjects: [String]
+    public var language: String?
+    public var callNumber: String?
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         identifier = try container.decodeFlexibleStringIfPresent(forKey: .identifier)
         title = try container.decodeFlexibleStringIfPresent(forKey: .title)
@@ -254,18 +254,18 @@ struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
     }
 }
 
-struct InternetArchiveFile: Decodable, Equatable, Sendable, Identifiable {
-    var name: String
-    var source: String?
-    var format: String?
-    var title: String?
-    var length: String?
-    var track: String?
-    var size: String?
+public struct InternetArchiveFile: Decodable, Equatable, Sendable, Identifiable {
+    public var name: String
+    public var source: String?
+    public var format: String?
+    public var title: String?
+    public var length: String?
+    public var track: String?
+    public var size: String?
 
-    var id: String { name }
+    public var id: String { name }
 
-    var duration: TimeInterval? {
+    public var duration: TimeInterval? {
         guard let length else { return nil }
         return Self.duration(from: length)
     }
@@ -284,10 +284,10 @@ struct InternetArchiveFile: Decodable, Equatable, Sendable, Identifiable {
     }
 }
 
-enum IADateFormatting {
+public enum IADateFormatting {
     /// "2005-08-01T00:00:00Z" -> "Aug 2005"; "2005-08-01" -> "Aug 2005";
     /// "2005-08" -> "Aug 2005"; "2005" -> "2005"; nil/"" -> nil.
-    static func humanReadable(_ raw: String?) -> String? {
+    public static func humanReadable(_ raw: String?) -> String? {
         guard let raw else { return nil }
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -341,7 +341,7 @@ enum IADateFormatting {
     }()
 }
 
-extension String {
+public extension String {
     var cleanedInternetArchiveText: String {
         let noTags = replacingOccurrences(
             of: "<[^>]+>",
@@ -362,7 +362,7 @@ extension String {
     }
 }
 
-extension KeyedDecodingContainer {
+public extension KeyedDecodingContainer {
     func decodeFlexibleStringIfPresent(forKey key: Key) throws -> String? {
         if let value = try? decodeIfPresent(String.self, forKey: key) {
             return value

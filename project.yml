@@ -4,6 +4,9 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+packages:
+  VoxglassCore:
+    path: .
 settings:
   base:
     MARKETING_VERSION: "1.1"
@@ -21,7 +24,9 @@ targets:
         excludes:
           - Resources/Info.plist
           - Resources/Voxglass.entitlements
+          - Core
     dependencies:
+      - package: VoxglassCore
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
       - sdk: MediaPlayer.framework

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 final class StreamCacheUnifiedTests: XCTestCase {
     private var directory: URL!

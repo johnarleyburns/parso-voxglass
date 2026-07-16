@@ -1,43 +1,43 @@
 import Foundation
 
-enum ModelMapping {
-    static let encoder = JSONEncoder()
-    static let decoder = JSONDecoder()
+public enum ModelMapping {
+    public static let encoder = JSONEncoder()
+    public static let decoder = JSONDecoder()
 
-    static func databaseValue(_ uuid: UUID) -> DatabaseValue {
+    public static func databaseValue(_ uuid: UUID) -> DatabaseValue {
         .string(uuid.uuidString)
     }
 
-    static func databaseValue(_ url: URL?) -> DatabaseValue {
+    public static func databaseValue(_ url: URL?) -> DatabaseValue {
         guard let url else { return .null }
         return .string(url.absoluteString)
     }
 
-    static func databaseValue(_ value: String?) -> DatabaseValue {
+    public static func databaseValue(_ value: String?) -> DatabaseValue {
         guard let value else { return .null }
         return .string(value)
     }
 
-    static func databaseValue(_ date: Date) -> DatabaseValue {
+    public static func databaseValue(_ date: Date) -> DatabaseValue {
         .double(date.timeIntervalSince1970)
     }
 
-    static func databaseValue(_ value: TimeInterval?) -> DatabaseValue {
+    public static func databaseValue(_ value: TimeInterval?) -> DatabaseValue {
         guard let value else { return .null }
         return .double(value)
     }
 
-    static func databaseValue(_ value: Int?) -> DatabaseValue {
+    public static func databaseValue(_ value: Int?) -> DatabaseValue {
         guard let value else { return .null }
         return .int(Int64(value))
     }
 
-    static func databaseValue(_ value: Int64?) -> DatabaseValue {
+    public static func databaseValue(_ value: Int64?) -> DatabaseValue {
         guard let value else { return .null }
         return .int(value)
     }
 
-    static func uuid(_ row: DatabaseRow, _ column: String) throws -> UUID {
+    public static func uuid(_ row: DatabaseRow, _ column: String) throws -> UUID {
         let value = try row.requiredString(column)
         guard let uuid = UUID(uuidString: value) else {
             throw DatabaseError.invalidUUID(value)
@@ -45,15 +45,15 @@ enum ModelMapping {
         return uuid
     }
 
-    static func date(_ row: DatabaseRow, _ column: String) -> Date {
+    public static func date(_ row: DatabaseRow, _ column: String) -> Date {
         Date(timeIntervalSince1970: row.double(column) ?? 0)
     }
 
-    static func url(_ row: DatabaseRow, _ column: String) -> URL? {
+    public static func url(_ row: DatabaseRow, _ column: String) -> URL? {
         row.string(column).flatMap(URL.init(string:))
     }
 
-    static func authors(from row: DatabaseRow) -> [String] {
+    public static func authors(from row: DatabaseRow) -> [String] {
         guard
             let json = row.string("authors_json"),
             let data = json.data(using: .utf8),
@@ -64,7 +64,7 @@ enum ModelMapping {
         return authors
     }
 
-    static func narrators(from row: DatabaseRow) -> [String] {
+    public static func narrators(from row: DatabaseRow) -> [String] {
         guard
             let json = row.string("narrators_json"),
             let data = json.data(using: .utf8),
@@ -75,7 +75,7 @@ enum ModelMapping {
         return narrators
     }
 
-    static func authorsJSON(_ authors: [String]) -> String {
+    public static func authorsJSON(_ authors: [String]) -> String {
         guard
             let data = try? encoder.encode(authors),
             let json = String(data: data, encoding: .utf8)
@@ -85,7 +85,7 @@ enum ModelMapping {
         return json
     }
 
-    static func narratorsJSON(_ narrators: [String]) -> String {
+    public static func narratorsJSON(_ narrators: [String]) -> String {
         guard
             let data = try? encoder.encode(narrators),
             let json = String(data: data, encoding: .utf8)

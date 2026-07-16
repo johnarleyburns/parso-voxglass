@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Rate behaviour through the coordinator, asserted on the FakeAudioEngine call
 /// log (P0-1). No AVFoundation, no simulator audio.

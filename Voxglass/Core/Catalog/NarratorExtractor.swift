@@ -8,14 +8,14 @@ import Foundation
 ///   "Narrated by Jane Doe and John Smith"
 ///   "Narrator: Jane Doe, John Smith"
 ///   "Reader: Jane Doe"
-enum NarratorExtractor {
+public enum NarratorExtractor {
 
     private static let patterns: [String] = [
         #"(?:read|narrated|voiced|performed)\s+by\s*[:\-]?\s*([^\.\n\r;|]+)"#,
         #"(?:narrators?|readers?)\s*[:\-]\s*([^\.\n\r;|]+)"#
     ]
 
-    static func extract(from text: String?) -> [String] {
+    public static func extract(from text: String?) -> [String] {
         guard let text, !text.isEmpty else { return [] }
 
         var seen: Set<String> = []

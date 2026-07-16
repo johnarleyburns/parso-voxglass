@@ -2,22 +2,22 @@ import Combine
 import Foundation
 
 @MainActor
-final class CatalogStore: ObservableObject {
-    @Published private(set) var results: [InternetArchiveSearchResult] = []
-    @Published private(set) var isSearching = false
-    @Published private(set) var isLoadingMore = false
-    @Published private(set) var isResolvingURL = false
-    @Published private(set) var hasMore = false
-    @Published var catalogError: String?
+public final class CatalogStore: ObservableObject {
+    @Published public private(set) var results: [InternetArchiveSearchResult] = []
+    @Published public private(set) var isSearching = false
+    @Published public private(set) var isLoadingMore = false
+    @Published public private(set) var isResolvingURL = false
+    @Published public private(set) var hasMore = false
+    @Published public var catalogError: String?
 
     /// The user's search text, promoted to the store so it survives `SearchView`
     /// being recreated on tab changes (§3). `SearchView` binds its field to this.
-    @Published var query: String = ""
+    @Published public var query: String = ""
 
     /// Languages the user has selected (see §1). Kept in sync from
     /// `AppPreferencesStore`; injected centrally into every catalog query so
     /// language filtering is applied in exactly one place.
-    var selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection {
+    public var selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection {
         didSet {
             guard oldValue != selectedLanguages else { return }
             reloadForLanguageChange()
@@ -31,7 +31,7 @@ final class CatalogStore: ObservableObject {
     private var numFound = 0
     private var seenIdentifiers: Set<String> = []
 
-    init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
+    public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
     }
 
@@ -39,7 +39,7 @@ final class CatalogStore: ObservableObject {
         LibriVoxLanguage.clause(for: selectedLanguages)
     }
 
-    func searchLibriVox(_ query: String) async {
+    public func searchLibriVox(_ query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         self.query = trimmed
         guard !trimmed.isEmpty else {
@@ -49,11 +49,11 @@ final class CatalogStore: ObservableObject {
         await runSearch(query: InternetArchiveClient.libriVoxQuery(for: trimmed) + languageClause)
     }
 
-    func searchAdvanced(_ query: String) async {
+    public func searchAdvanced(_ query: String) async {
         await runSearch(query: query + languageClause)
     }
 
-    func loadMore() async {
+    public func loadMore() async {
         guard hasMore, !isSearching, !isLoadingMore, let query = activeQuery else { return }
 
         isLoadingMore = true
@@ -72,7 +72,7 @@ final class CatalogStore: ObservableObject {
         }
     }
 
-    func importResult(
+    public func importResult(
         _ result: InternetArchiveSearchResult,
         into libraryStore: LibraryStore
     ) async -> BookWithChapters? {
@@ -142,7 +142,7 @@ final class CatalogStore: ObservableObject {
         "Couldn't load '\(result.title)' (\(result.identifier)): \(error.localizedDescription)"
     }
 
-    func addArchiveURL(
+    public func addArchiveURL(
         _ rawValue: String,
         into libraryStore: LibraryStore
     ) async -> BookWithChapters? {

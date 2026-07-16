@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore

@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct SplashView: View {
     var continueAction: () -> Void

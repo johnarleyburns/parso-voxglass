@@ -1,21 +1,21 @@
 import Foundation
 
-struct CandidateQuery: Equatable {
-    let iaQuery: String
-    let anchorTerm: String
-    let noveltyClass: NoveltyClass
-    let requestedCount: Int
+public struct CandidateQuery: Equatable {
+    public let iaQuery: String
+    public let anchorTerm: String
+    public let noveltyClass: NoveltyClass
+    public let requestedCount: Int
 
-    enum NoveltyClass: String, Equatable {
+    public enum NoveltyClass: String, Equatable {
         case exploit
         case explore
         case serendipity
     }
 }
 
-enum RecommendationQueryBuilder {
+public enum RecommendationQueryBuilder {
 
-    static func generateQueries(
+    public static func generateQueries(
         profile: ProfileBucket,
         dateSeed: String,
         languageClause: String,
@@ -105,7 +105,7 @@ enum RecommendationQueryBuilder {
 
     // MARK: - Helpers
 
-    static func buildAdjacentSubjects(from profile: ProfileBucket, topPlayedSet: Set<String>) -> [String] {
+    public static func buildAdjacentSubjects(from profile: ProfileBucket, topPlayedSet: Set<String>) -> [String] {
         let allTerms = profile.allTerms()
         let topWeighted = Set(profile.topSubjects.map { $0.lowercased() })
         var adjacencyCounts: [String: Int] = [:]
@@ -124,7 +124,7 @@ enum RecommendationQueryBuilder {
             .map { $0.key }
     }
 
-    static func hashForDate(_ dateSeed: String, salt: String) -> Int {
+    public static func hashForDate(_ dateSeed: String, salt: String) -> Int {
         let input = "\(dateSeed):\(salt)"
         return abs(input.hashValue)
     }

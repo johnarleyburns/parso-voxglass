@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Pure rate policy + per-book memory (P0-1). No AVFoundation.
 final class PlaybackRateTests: XCTestCase {

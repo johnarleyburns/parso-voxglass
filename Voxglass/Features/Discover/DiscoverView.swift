@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
@@ -7,7 +8,7 @@ struct BrowseView: View {
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
     @State private var playingIdentifier: String?
-    @StateObject private var coverStore = CollectionCoverStore()
+    @StateObject private var coverStore = CollectionCoverStore(artwork: ArtworkService.shared)
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 

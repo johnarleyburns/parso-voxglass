@@ -1,5 +1,5 @@
 import Foundation
-@testable import Voxglass
+@testable import VoxglassCore
 
 final class FakeLibriVoxClient: LibriVoxCatalogClient {
     var sectionsToReturn: [LibriVoxSection] = []

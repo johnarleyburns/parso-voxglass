@@ -1,6 +1,6 @@
 import Foundation
 
-protocol InternetArchiveCatalogClient {
+public protocol InternetArchiveCatalogClient {
     func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
@@ -8,7 +8,7 @@ protocol InternetArchiveCatalogClient {
     func metadata(for identifier: String) async throws -> InternetArchiveMetadata
 }
 
-extension InternetArchiveCatalogClient {
+public extension InternetArchiveCatalogClient {
     func searchLibriVox(query: String) async throws -> [InternetArchiveSearchResult] {
         try await searchLibriVox(query: query, rows: 25)
     }
@@ -26,16 +26,16 @@ extension InternetArchiveCatalogClient {
     }
 }
 
-final class InternetArchiveClient: InternetArchiveCatalogClient {
+public final class InternetArchiveClient: InternetArchiveCatalogClient {
     private let session: URLSession
     private let decoder: JSONDecoder
 
-    init(session: URLSession = .shared, decoder: JSONDecoder = JSONDecoder()) {
+    public init(session: URLSession = .shared, decoder: JSONDecoder = JSONDecoder()) {
         self.session = session
         self.decoder = decoder
     }
 
-    func searchLibriVox(query: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
+    public func searchLibriVox(query: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
 
@@ -52,7 +52,7 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
     /// Keeping token-AND preserves precision; the broadened fields let
     /// subject/description carry thematic queries. Restricted to the LibriVox
     /// audiobook collections.
-    static func libriVoxQuery(for rawInput: String) -> String {
+    public static func libriVoxQuery(for rawInput: String) -> String {
         let scopeClause = " AND collection:(librivoxaudio OR audio_bookspoetry)"
         let tokens = rawInput
             .split { !$0.isLetter && !$0.isNumber }
@@ -70,7 +70,7 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         return "mediatype:audio AND ((\(phraseClause)) OR (\(perToken)))" + scopeClause
     }
 
-    func searchCollection(identifier: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
+    public func searchCollection(identifier: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
         let trimmed = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
 
@@ -78,11 +78,11 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         return try await searchAdvanced(query: archiveQuery, rows: rows)
     }
 
-    func searchAdvanced(query: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
+    public func searchAdvanced(query: String, rows: Int = 25) async throws -> [InternetArchiveSearchResult] {
         try await searchAdvancedPage(query: query, rows: rows, page: 1).results
     }
 
-    func searchAdvancedPage(query: String, rows: Int = 25, page: Int = 1) async throws -> InternetArchivePage {
+    public func searchAdvancedPage(query: String, rows: Int = 25, page: Int = 1) async throws -> InternetArchivePage {
         guard let url = Self.advancedSearchURL(query: query, rows: rows, page: page) else {
             throw InternetArchiveError.invalidURL
         }
@@ -92,7 +92,7 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
         return InternetArchivePage(results: response.results, numFound: response.numFound, page: page)
     }
 
-    func metadata(for identifier: String) async throws -> InternetArchiveMetadata {
+    public func metadata(for identifier: String) async throws -> InternetArchiveMetadata {
         let trimmed = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw InternetArchiveError.missingIdentifier }
 
@@ -166,7 +166,7 @@ final class InternetArchiveClient: InternetArchiveCatalogClient {
     }
 }
 
-enum InternetArchiveError: Error, LocalizedError, Equatable {
+public enum InternetArchiveError: Error, LocalizedError, Equatable {
     case invalidURL
     case missingIdentifier
     case unsupportedURL
@@ -174,7 +174,7 @@ enum InternetArchiveError: Error, LocalizedError, Equatable {
     case noPlayableAudio(String)
     case requestFailed(Int)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .invalidURL:
             "The archive.org URL could not be built."

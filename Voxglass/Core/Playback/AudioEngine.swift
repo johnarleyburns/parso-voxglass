@@ -7,7 +7,7 @@ import Foundation
 /// makes speed, sleep timer, bookmarks, artwork, and skip intervals unit-testable
 /// against a `FakeAudioEngine` with no AVFoundation and no simulator.
 @MainActor
-protocol AudioEngine: AnyObject {
+public protocol AudioEngine: AnyObject {
     var currentTime: TimeInterval { get }
     var duration: TimeInterval? { get }
     var isPlaying: Bool { get }
@@ -37,10 +37,10 @@ protocol AudioEngine: AnyObject {
     func setEQGains(_ gains: [Float])
 }
 
-enum AudioEngineError: Error, LocalizedError {
+public enum AudioEngineError: Error, LocalizedError {
     case missingPlayableURL
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .missingPlayableURL:
             "This chapter does not have a playable audio URL."

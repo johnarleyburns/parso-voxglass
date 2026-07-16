@@ -2,23 +2,23 @@ import Foundation
 
 /// Persists the user's EQ engaged-state and per-band gains so the equalizer
 /// survives relaunch and is re-applied when a track loads.
-final class EQSettingsStore {
+public final class EQSettingsStore {
     private let defaults: UserDefaults
     private let engagedKey = "voxglass.eq.engaged"
     private let gainsKey = "voxglass.eq.gains"
 
-    static let bandCount = 10
+    public static let bandCount = 10
 
-    init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
-    var isEngaged: Bool {
+    public var isEngaged: Bool {
         get { defaults.bool(forKey: engagedKey) }
         set { defaults.set(newValue, forKey: engagedKey) }
     }
 
-    var gains: [Float] {
+    public var gains: [Float] {
         get {
             guard let data = defaults.data(forKey: gainsKey),
                   let stored = try? JSONDecoder().decode([Float].self, from: data),

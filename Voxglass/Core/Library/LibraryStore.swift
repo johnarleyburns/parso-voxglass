@@ -1,21 +1,21 @@
 import Foundation
 
 @MainActor
-final class LibraryStore: ObservableObject {
-    @Published private(set) var books: [BookWithChapters] = []
-    @Published private(set) var sources: [Source] = []
-    @Published private(set) var recentlyPlayed: [BookWithChapters] = []
-    @Published private(set) var isImporting = false
-    @Published var importError: String?
+public final class LibraryStore: ObservableObject {
+    @Published public private(set) var books: [BookWithChapters] = []
+    @Published public private(set) var sources: [Source] = []
+    @Published public private(set) var recentlyPlayed: [BookWithChapters] = []
+    @Published public private(set) var isImporting = false
+    @Published public var importError: String?
 
     /// P1-2: in-memory filter + sort. Changing these recomputes `visibleBooks`
     /// with zero DB round-trips.
-    @Published var filter: LibraryBookFilter = .all
-    @Published var sort: LibrarySort = .recent
-    @Published private(set) var progressByBook: [UUID: BookProgress] = [:]
+    @Published public var filter: LibraryBookFilter = .all
+    @Published public var sort: LibrarySort = .recent
+    @Published public private(set) var progressByBook: [UUID: BookProgress] = [:]
 
     /// The library with the active filter/sort applied. Pure, in-memory.
-    var visibleBooks: [BookWithChapters] {
+    public var visibleBooks: [BookWithChapters] {
         var result = books
 
         switch filter {
@@ -47,20 +47,20 @@ final class LibraryStore: ObservableObject {
 
     /// Invoked after a book is imported so the cloud-sync layer can adopt any
     /// stored playback position for it (the delete-and-reinstall path, Phase 3).
-    var onBookImported: ((UUID) async -> Void)?
+    public var onBookImported: ((UUID) async -> Void)?
 
-    init(repository: LibraryRepository) {
+    public init(repository: LibraryRepository) {
         self.repository = repository
     }
 
     /// Wires up collaborators used by `delete(book:)`. Called by `AppServices`
     /// after all stores are constructed.
-    func configure(playback: PlaybackCoordinator, offlineManager: OfflineDownloadManager) {
+    public func configure(playback: PlaybackCoordinator, offlineManager: OfflineDownloadManager) {
         self.playback = playback
         self.offlineManager = offlineManager
     }
 
-    func refresh() async {
+    public func refresh() async {
         do {
             books = try await repository.fetchLibrary()
             sources = try await repository.fetchSources()
@@ -71,7 +71,7 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func refreshRecentlyPlayed() async {
+    public func refreshRecentlyPlayed() async {
         do {
             recentlyPlayed = try await repository.fetchRecentlyPlayed()
         } catch {
@@ -82,7 +82,7 @@ final class LibraryStore: ObservableObject {
     /// One-time best-effort pass over already-imported books whose narrators are
     /// empty: extract names from their stored summary and persist them. Refreshes
     /// the in-memory library if anything changed.
-    func backfillNarratorsIfNeeded() async {
+    public func backfillNarratorsIfNeeded() async {
         do {
             let updated = try await repository.backfillMissingNarrators()
             if updated > 0 {
@@ -93,7 +93,7 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func books(filteredBy filter: LibraryBookFilter) async -> [BookWithChapters] {
+    public func books(filteredBy filter: LibraryBookFilter) async -> [BookWithChapters] {
         do {
             return try await repository.fetchBooks(filteredBy: filter)
         } catch {
@@ -102,7 +102,7 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func setFavorite(_ isFavorite: Bool, for bookID: UUID) async {
+    public func setFavorite(_ isFavorite: Bool, for bookID: UUID) async {
         do {
             guard let updatedBook = try await repository.setFavorite(isFavorite, for: bookID) else {
                 return
@@ -114,7 +114,7 @@ final class LibraryStore: ObservableObject {
         }
     }
 
-    func importInternetArchiveItem(
+    public func importInternetArchiveItem(
         _ metadata: InternetArchiveMetadata,
         sourceKind: SourceKind
     ) async -> BookWithChapters? {
@@ -136,7 +136,7 @@ final class LibraryStore: ObservableObject {
     /// in-flight offline downloads, pinned/passive cached audio + cover art,
     /// database rows (cascade), recently-viewed entry, and — if it is the current
     /// or last session — the active playback and its restore snapshot.
-    func delete(book: BookWithChapters) async {
+    public func delete(book: BookWithChapters) async {
         let bookID = book.book.id
 
         // 1. Cancel any in-flight offline downloads, unpin + drop their records.
@@ -153,7 +153,7 @@ final class LibraryStore: ObservableObject {
             }
         }
         if let coverURL = book.book.coverURL {
-            keys.append(ArtworkService.cacheKey(for: coverURL))
+            keys.append(ArtworkCacheKey.key(for: coverURL))
         }
         if !keys.isEmpty {
             await StreamCacheStore.shared.remove(keys: keys)
@@ -184,54 +184,54 @@ final class LibraryStore: ObservableObject {
         playback?.stopPlayback(forDeletedBook: bookID)
     }
 
-    func book(containing chapterID: UUID) -> BookWithChapters? {
+    public func book(containing chapterID: UUID) -> BookWithChapters? {
         books.first { book in
             book.chapters.contains { $0.id == chapterID }
         }
     }
 
-    func book(withID bookID: UUID) -> BookWithChapters? {
+    public func book(withID bookID: UUID) -> BookWithChapters? {
         books.first { $0.book.id == bookID }
     }
 
     /// The archive.org subjects stored for a book at import time (`book_taste`),
     /// used to map the book to a browse genre for the Now Playing screen.
-    func bookSubjects(for bookID: UUID) async -> [String] {
+    public func bookSubjects(for bookID: UUID) async -> [String] {
         guard let terms = try? await repository.fetchBookTasteTerms(for: bookID) else {
             return []
         }
         return terms.filter { $0.axis == "subject" }.map(\.term)
     }
 
-    func source(for book: Book) -> Source? {
+    public func source(for book: Book) -> Source? {
         sources.first { $0.id == book.sourceID }
     }
 
-    var favoriteBooks: [BookWithChapters] {
+    public var favoriteBooks: [BookWithChapters] {
         books.filter(\.book.isFavorite)
     }
 
-    var authorNames: [String] {
+    public var authorNames: [String] {
         let names = books.flatMap(\.book.authors)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && $0 != "Unknown author" }
         return Array(Set(names)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 
-    func books(byAuthor author: String) -> [BookWithChapters] {
+    public func books(byAuthor author: String) -> [BookWithChapters] {
         books.filter { book in
             book.book.authors.contains { $0.localizedCaseInsensitiveCompare(author) == .orderedSame }
         }
     }
 
-    var narratorNames: [String] {
+    public var narratorNames: [String] {
         let names = books.flatMap(\.book.narrators)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && $0.localizedCaseInsensitiveCompare("Unknown reader") != .orderedSame }
         return Array(Set(names)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 
-    func books(byNarrator narrator: String) -> [BookWithChapters] {
+    public func books(byNarrator narrator: String) -> [BookWithChapters] {
         books.filter { book in
             book.book.narrators.contains { $0.localizedCaseInsensitiveCompare(narrator) == .orderedSame }
         }

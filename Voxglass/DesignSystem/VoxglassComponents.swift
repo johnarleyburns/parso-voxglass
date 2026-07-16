@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct SectionTitle: View {
     var title: String

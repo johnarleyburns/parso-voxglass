@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassCore
 
 enum TimeFormatting {
     static func clock(_ interval: TimeInterval?) -> String {

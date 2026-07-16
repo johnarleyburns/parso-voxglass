@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 enum VoxglassTheme {
     static let paper = Color(hex: 0x0A0B0D)

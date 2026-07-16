@@ -12,16 +12,16 @@ import Foundation
 /// invalidated when the language selection changes, since the top item can
 /// differ by language.
 @MainActor
-final class CollectionCoverStore: ObservableObject {
-    @Published private(set) var resolvedCovers: [String: URL] = [:]
+public final class CollectionCoverStore: ObservableObject {
+    @Published public private(set) var resolvedCovers: [String: URL] = [:]
 
     /// Approximate, cached "N books" total per collection (live IA `numFound`).
     /// Refreshed only when the language selection changes; each query uses
     /// `rows: 0` so it's cheap.
-    @Published private(set) var counts: [String: Int] = [:]
+    @Published public private(set) var counts: [String: Int] = [:]
 
     private let client: InternetArchiveCatalogClient
-    private let artwork: ArtworkService
+    private let artwork: CoverArtworkValidating
     private let defaults: UserDefaults
     private let cacheKey = "voxglass.collectionCoverMap"
     private let languageStampKey = "voxglass.collectionCoverLanguages"
@@ -30,9 +30,9 @@ final class CollectionCoverStore: ObservableObject {
     private var inFlight: Set<String> = []
     private var countsInFlight: Set<String> = []
 
-    init(
+    public init(
         client: InternetArchiveCatalogClient = InternetArchiveClient(),
-        artwork: ArtworkService = .shared,
+        artwork: CoverArtworkValidating,
         defaults: UserDefaults = .standard
     ) {
         self.client = client
@@ -42,17 +42,17 @@ final class CollectionCoverStore: ObservableObject {
         self.counts = Self.loadCounts(from: defaults, key: countsCacheKey)
     }
 
-    func coverURL(for collection: IACollection) -> URL? {
+    public func coverURL(for collection: IACollection) -> URL? {
         resolvedCovers[collection.id] ?? collection.remoteImageURL
     }
 
-    func count(for collection: IACollection) -> Int? {
+    public func count(for collection: IACollection) -> Int? {
         counts[collection.id]
     }
 
     /// Resolves covers for the given collections. Skips collections that are
     /// already cached unless `force` is set (used when languages change).
-    func resolveCovers(for collections: [IACollection], languages: Set<String>, force: Bool = false) async {
+    public func resolveCovers(for collections: [IACollection], languages: Set<String>, force: Bool = false) async {
         if force || languageStampChanged(languages) {
             resolvedCovers = [:]
             defaults.removeObject(forKey: cacheKey)
@@ -72,7 +72,7 @@ final class CollectionCoverStore: ObservableObject {
     /// Resolves an approximate book count for each collection using the live IA
     /// total (`numFound`). Cached per collection + language stamp; only refreshed
     /// when the language selection changes. `rows: 0` keeps each query cheap.
-    func resolveCounts(for collections: [IACollection], languages: Set<String>, force: Bool = false) async {
+    public func resolveCounts(for collections: [IACollection], languages: Set<String>, force: Bool = false) async {
         if force || countsLanguageStampChanged(languages) {
             counts = [:]
             defaults.removeObject(forKey: countsCacheKey)
@@ -124,7 +124,7 @@ final class CollectionCoverStore: ObservableObject {
     }
 
     private func artworkValidates(_ url: URL) async -> Bool {
-        (try? await artwork.loadImage(for: url)) != nil
+        await artwork.imageValidates(at: url)
     }
 
     private func record(_ url: URL, for collection: IACollection) {

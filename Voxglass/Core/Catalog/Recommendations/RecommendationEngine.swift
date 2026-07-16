@@ -1,12 +1,12 @@
 import Foundation
 
 @MainActor
-final class RecommendationEngine {
+public final class RecommendationEngine {
     private let client: InternetArchiveCatalogClient
     private let profileStore: TasteProfileStore
     private let libraryStore: LibraryStore
 
-    init(
+    public init(
         client: InternetArchiveCatalogClient = InternetArchiveClient(),
         profileStore: TasteProfileStore,
         libraryStore: LibraryStore
@@ -16,7 +16,7 @@ final class RecommendationEngine {
         self.libraryStore = libraryStore
     }
 
-    func fetchRecommendations(
+    public func fetchRecommendations(
         selectedCollectionIDs: Set<String>,
         selectedLanguages: Set<String>
     ) async -> [InternetArchiveSearchResult] {

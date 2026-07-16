@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Source-level guard (P2-3): fails the suite if any SwiftUI file still uses a
 /// bare `.font(.system(size:)` instead of `.scaledFont(size:)`. The one

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 /// Phase 3 — deterministic identity. Pure, no I/O.
 final class ContentKeyTests: XCTestCase {

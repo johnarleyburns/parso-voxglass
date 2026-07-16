@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import MediaPlayer
 import UIKit
+import VoxglassCore
 
 /// The concrete platform implementation of `PlaybackPlatformBridge`. Owns every
 /// MediaPlayer / UIKit / AVAudioSession touch-point that `PlaybackCoordinator`

@@ -1,6 +1,6 @@
 import Foundation
 
-final class VolumeNormalizer {
+public final class VolumeNormalizer {
     private let windowSize = 2048
     private var ring: [Float]
     private var ringIndex = 0
@@ -17,13 +17,13 @@ final class VolumeNormalizer {
     private var hopCounter = 0
     private let hopSize = 256
 
-    private(set) var gain: Float = 1.0
+    public private(set) var gain: Float = 1.0
 
-    init() {
+    public init() {
         ring = Array(repeating: 0, count: windowSize)
     }
 
-    func process(_ sample: Float) -> Float {
+    public func process(_ sample: Float) -> Float {
         let oldSample = ring[ringIndex]
         ring[ringIndex] = sample
         ringIndex = (ringIndex + 1) % windowSize
@@ -55,7 +55,7 @@ final class VolumeNormalizer {
         return output
     }
 
-    func reset() {
+    public func reset() {
         gain = 1.0
         for i in 0..<windowSize {
             ring[i] = 0

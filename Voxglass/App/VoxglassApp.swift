@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 @main
 struct VoxglassApp: App {

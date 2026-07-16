@@ -1,5 +1,5 @@
 import XCTest
-@testable import Voxglass
+@testable import VoxglassCore
 
 final class IADateFormattingTests: XCTestCase {
     func testISO8601Timestamp() {

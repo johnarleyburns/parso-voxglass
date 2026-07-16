@@ -1,39 +1,39 @@
 import Foundation
 
-struct TasteTerm: Equatable {
-    let axis: String
-    let term: String
-    let weight: Double
+public struct TasteTerm: Equatable {
+    public let axis: String
+    public let term: String
+    public let weight: Double
 }
 
-struct ProfileBucket: Equatable {
-    let bucket: String
-    let creatorTerms: [TasteTerm]
-    let subjectTerms: [TasteTerm]
+public struct ProfileBucket: Equatable {
+    public let bucket: String
+    public let creatorTerms: [TasteTerm]
+    public let subjectTerms: [TasteTerm]
 
-    var topCreators: [String] { creatorTerms.prefix(5).map(\.term) }
-    var topSubjects: [String] { subjectTerms.prefix(8).map(\.term) }
+    public var topCreators: [String] { creatorTerms.prefix(5).map(\.term) }
+    public var topSubjects: [String] { subjectTerms.prefix(8).map(\.term) }
 
-    var isEmpty: Bool { creatorTerms.isEmpty && subjectTerms.isEmpty }
+    public var isEmpty: Bool { creatorTerms.isEmpty && subjectTerms.isEmpty }
 
-    func allTerms() -> [TasteTerm] { creatorTerms + subjectTerms }
+    public func allTerms() -> [TasteTerm] { creatorTerms + subjectTerms }
 }
 
-actor TasteProfileStore {
+public actor TasteProfileStore {
     private let database: AppDatabase
 
-    init(database: AppDatabase) {
+    public init(database: AppDatabase) {
         self.database = database
     }
 
-    func hasProfile() async -> Bool {
+    public func hasProfile() async -> Bool {
         let terms = try? await fetchTerms()
         return !(terms ?? []).isEmpty
     }
 
     // MARK: - Upsert terms (decay update)
 
-    func upsertTerm(axis: String, term: String, increment: Double) async {
+    public func upsertTerm(axis: String, term: String, increment: Double) async {
         let now = Date().timeIntervalSince1970
         do {
             try await database.execute("""
@@ -51,7 +51,7 @@ actor TasteProfileStore {
         } catch {}
     }
 
-    func seedAuthor(_ author: String, increment: Double = 1.0) async {
+    public func seedAuthor(_ author: String, increment: Double = 1.0) async {
         let trimmed = author.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, trimmed != "Unknown", trimmed != "Unknown author", trimmed != "Various" else {
             return
@@ -59,7 +59,7 @@ actor TasteProfileStore {
         await upsertTerm(axis: "author", term: trimmed, increment: increment)
     }
 
-    func seedSubject(_ subject: String, increment: Double = 1.0) async {
+    public func seedSubject(_ subject: String, increment: Double = 1.0) async {
         let trimmed = subject.lowercased().trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, !RecommendationConstants.subjectStopList.contains(trimmed) else {
             return
@@ -67,7 +67,7 @@ actor TasteProfileStore {
         await upsertTerm(axis: "subject", term: trimmed, increment: increment)
     }
 
-    func seedLanguage(_ language: String, increment: Double = 1.0) async {
+    public func seedLanguage(_ language: String, increment: Double = 1.0) async {
         let trimmed = language.lowercased().trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         await upsertTerm(axis: "language", term: trimmed, increment: increment)
@@ -80,7 +80,7 @@ actor TasteProfileStore {
     /// `listening_events ⋈ book_taste` join, weighting each (author/subject) term
     /// by how long the user actually listened. Callers gate this behind a run-once
     /// flag so it never double-counts.
-    func seedFromHistory() async {
+    public func seedFromHistory() async {
         do {
             try await database.prepare()
             let rows = try await database.query("""
@@ -102,12 +102,12 @@ actor TasteProfileStore {
     /// Converts listened seconds into a profile increment: weighted by hours
     /// listened, floored so any genuine listen registers, and capped so a single
     /// very long book cannot swamp the profile.
-    static func historyIncrement(forSeconds seconds: Double) -> Double {
+    public static func historyIncrement(forSeconds seconds: Double) -> Double {
         let hours = seconds / 3600.0
         return min(12.0, max(0.5, hours))
     }
 
-    func seedOnboardingPicks(from collectionIDs: Set<String>) async {
+    public func seedOnboardingPicks(from collectionIDs: Set<String>) async {
         for id in collectionIDs {
             // Onboarding stores browse-collection IDs (e.g. "lv-drama-plays").
             // Seeding those raw IDs as subject terms builds `subject:"lv-drama-plays"`
@@ -123,7 +123,7 @@ actor TasteProfileStore {
 
     // MARK: - Profile read (with subject dampening)
 
-    func fetchProfile() async -> ProfileBucket {
+    public func fetchProfile() async -> ProfileBucket {
         let rawTerms = await fetchRawTerms()
         var authors: [TasteTerm] = []
         var subjects: [TasteTerm] = []
@@ -165,7 +165,7 @@ actor TasteProfileStore {
 
     // MARK: - Surfaced ring
 
-    func pushSurfaced(_ identifiers: [String]) async {
+    public func pushSurfaced(_ identifiers: [String]) async {
         let now = Date().timeIntervalSince1970
         do {
             for id in identifiers.prefix(50) {
@@ -182,7 +182,7 @@ actor TasteProfileStore {
         }
     }
 
-    func fetchSurfacedIdentifiers() async -> Set<String> {
+    public func fetchSurfacedIdentifiers() async -> Set<String> {
         do {
             let rows = try await database.query(
                 "SELECT identifier FROM reco_surfaced ORDER BY ts DESC LIMIT ?",

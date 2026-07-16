@@ -1,6 +1,6 @@
 import Foundation
 
-struct BiquadFilter {
+public struct BiquadFilter {
     private var b0: Float = 1
     private var b1: Float = 0
     private var b2: Float = 0
@@ -11,7 +11,7 @@ struct BiquadFilter {
     private var y1: Float = 0
     private var y2: Float = 0
 
-    mutating func process(_ input: Float) -> Float {
+    public mutating func process(_ input: Float) -> Float {
         let output = b0 * input + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
         x2 = x1
         x1 = input
@@ -20,11 +20,11 @@ struct BiquadFilter {
         return output
     }
 
-    mutating func reset() {
+    public mutating func reset() {
         x1 = 0; x2 = 0; y1 = 0; y2 = 0
     }
 
-    mutating func configurePeakingEQ(frequency: Float, sampleRate: Float, gainDB: Float, q: Float) {
+    public mutating func configurePeakingEQ(frequency: Float, sampleRate: Float, gainDB: Float, q: Float) {
         let omega = 2 * Float.pi * frequency / sampleRate
         let sn = sin(omega)
         let cs = cos(omega)
@@ -46,7 +46,7 @@ struct BiquadFilter {
         a2 = a2tmp * a0Inv
     }
 
-    mutating func configureLowShelf(frequency: Float, sampleRate: Float, gainDB: Float, q: Float = 0.707) {
+    public mutating func configureLowShelf(frequency: Float, sampleRate: Float, gainDB: Float, q: Float = 0.707) {
         let omega = 2 * Float.pi * frequency / sampleRate
         let sn = sin(omega)
         let cs = cos(omega)
@@ -68,7 +68,7 @@ struct BiquadFilter {
         a2 = a2tmp * a0Inv
     }
 
-    mutating func configureHighShelf(frequency: Float, sampleRate: Float, gainDB: Float, q: Float = 0.707) {
+    public mutating func configureHighShelf(frequency: Float, sampleRate: Float, gainDB: Float, q: Float = 0.707) {
         let omega = 2 * Float.pi * frequency / sampleRate
         let sn = sin(omega)
         let cs = cos(omega)
@@ -90,37 +90,37 @@ struct BiquadFilter {
         a2 = a2tmp * a0Inv
     }
 
-    var isBypassed: Bool {
+    public var isBypassed: Bool {
         b0 == 1 && b1 == 0 && b2 == 0 && a1 == 0 && a2 == 0
     }
 }
 
-final class EQEngine {
-    static let isoBands: [Float] = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-    static let defaultQ: Float = 1.0
-    static let sampleRate: Float = 44100
+public final class EQEngine {
+    public static let isoBands: [Float] = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+    public static let defaultQ: Float = 1.0
+    public static let sampleRate: Float = 44100
 
     private var filters: [BiquadFilter]
-    var gains: [Float]
-    let normalizer = VolumeNormalizer()
-    var eqStagesEnabled = true
+    public var gains: [Float]
+    public let normalizer = VolumeNormalizer()
+    public var eqStagesEnabled = true
 
-    init(gains: [Float] = Array(repeating: 0, count: 10), eqStagesEnabled: Bool = true) {
+    public init(gains: [Float] = Array(repeating: 0, count: 10), eqStagesEnabled: Bool = true) {
         self.gains = gains
         self.filters = Array(repeating: BiquadFilter(), count: 10)
         self.eqStagesEnabled = eqStagesEnabled
         reconfigure()
     }
 
-    var isFlat: Bool {
+    public var isFlat: Bool {
         gains.allSatisfy { $0 == 0 }
     }
 
-    var isBypassed: Bool {
+    public var isBypassed: Bool {
         filters.allSatisfy { $0.isBypassed }
     }
 
-    func setGain(_ gain: Float, at band: Int) {
+    public func setGain(_ gain: Float, at band: Int) {
         guard band >= 0, band < gains.count else { return }
         gains[band] = gain
         filters[band].configurePeakingEQ(
@@ -131,7 +131,7 @@ final class EQEngine {
         )
     }
 
-    func reconfigure() {
+    public func reconfigure() {
         for (i, gain) in gains.enumerated() {
             filters[i].configurePeakingEQ(
                 frequency: Self.isoBands[i],
@@ -142,7 +142,7 @@ final class EQEngine {
         }
     }
 
-    func process(_ input: Float) -> Float {
+    public func process(_ input: Float) -> Float {
         var sample = input
         if eqStagesEnabled {
             for i in 0..<filters.count {
@@ -153,59 +153,59 @@ final class EQEngine {
         return normalizer.process(sample)
     }
 
-    func reset() {
+    public func reset() {
         for i in 0..<filters.count {
             filters[i].reset()
         }
         normalizer.reset()
     }
 
-    func copy() -> EQEngine {
+    public func copy() -> EQEngine {
         let copy = EQEngine(gains: gains)
         return copy
     }
 }
 
-struct EQPreset: Identifiable, Codable, Equatable {
-    var id: UUID
-    var name: String
-    var gains: [Float]
-    var isBuiltIn: Bool
+public struct EQPreset: Identifiable, Codable, Equatable {
+    public var id: UUID
+    public var name: String
+    public var gains: [Float]
+    public var isBuiltIn: Bool
 
-    init(id: UUID = UUID(), name: String, gains: [Float], isBuiltIn: Bool = false) {
+    public init(id: UUID = UUID(), name: String, gains: [Float], isBuiltIn: Bool = false) {
         self.id = id
         self.name = name
         self.gains = gains
         self.isBuiltIn = isBuiltIn
     }
 
-    static let flat = EQPreset(
+    public static let flat = EQPreset(
         id: UUID(uuidString: "E0000000-0000-0000-0000-000000000001")!,
         name: "Flat",
         gains: Array(repeating: 0, count: 10),
         isBuiltIn: true
     )
 
-    static let concertHall = EQPreset(
+    public static let concertHall = EQPreset(
         id: UUID(uuidString: "E0000000-0000-0000-0000-000000000002")!,
         name: "Concert Hall",
         gains: [3, 2, 1, 0, 0, 0, 1, 2, 3, 4],
         isBuiltIn: true
     )
 
-    static let spokenWord = EQPreset(
+    public static let spokenWord = EQPreset(
         id: UUID(uuidString: "E0000000-0000-0000-0000-000000000003")!,
         name: "Spoken Word",
         gains: [-3, -2, 0, 2, 3, 4, 3, 0, -1, -2],
         isBuiltIn: true
     )
 
-    static let rpm78 = EQPreset(
+    public static let rpm78 = EQPreset(
         id: UUID(uuidString: "E0000000-0000-0000-0000-000000000004")!,
         name: "78 rpm",
         gains: [0, 0, -2, -4, -2, 1, 3, 2, 0, -1],
         isBuiltIn: true
     )
 
-    static let builtInPresets: [EQPreset] = [.flat, .concertHall, .spokenWord, .rpm78]
+    public static let builtInPresets: [EQPreset] = [.flat, .concertHall, .spokenWord, .rpm78]
 }

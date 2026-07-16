@@ -2,15 +2,15 @@ import Foundation
 
 /// Stores the user's own EQ presets (JSON in UserDefaults). Built-in presets are
 /// always present via `EQPreset.builtInPresets`; `all` combines both.
-final class EQPresetStore {
+public final class EQPresetStore {
     private let defaults: UserDefaults
     private let key = "voxglass.eq.userPresets"
 
-    init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
-    func savedPresets() -> [EQPreset] {
+    public func savedPresets() -> [EQPreset] {
         guard let data = defaults.data(forKey: key),
               let presets = try? JSONDecoder().decode([EQPreset].self, from: data) else {
             return []
@@ -18,11 +18,11 @@ final class EQPresetStore {
         return presets
     }
 
-    var all: [EQPreset] {
+    public var all: [EQPreset] {
         EQPreset.builtInPresets + savedPresets()
     }
 
-    func save(_ preset: EQPreset) {
+    public func save(_ preset: EQPreset) {
         var preset = preset
         preset.isBuiltIn = false
         var presets = savedPresets()
@@ -34,7 +34,7 @@ final class EQPresetStore {
         persist(presets)
     }
 
-    func delete(_ id: UUID) {
+    public func delete(_ id: UUID) {
         persist(savedPresets().filter { $0.id != id })
     }
 

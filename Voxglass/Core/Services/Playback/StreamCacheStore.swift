@@ -3,12 +3,12 @@ import Foundation
 /// Streaming byte-range cache accounting: limit, LRU eviction, GC of stale partials.
 /// The cache is passive: nothing here initiates caching of a chapter the player
 /// didn't request. It only stores/evicts what flows through the resource loader.
-actor StreamCacheStore {
-    static let shared = StreamCacheStore()
+public actor StreamCacheStore {
+    public static let shared = StreamCacheStore()
 
-    enum EntryKind: String, Codable { case audio, artwork }
+    public enum EntryKind: String, Codable { case audio, artwork }
 
-    struct Meta: Codable {
+    public struct Meta: Codable {
         var totalBytes: Int64?
         var cachedBytes: Int64
         var complete: Bool
@@ -27,20 +27,20 @@ actor StreamCacheStore {
     private var pinnedKeys: Set<String> = []   // never evicted (offline downloads, §7)
     private var limitBytes: Int64
 
-    static let defaultLimit: Int64 = 500 * 1024 * 1024
+    public static let defaultLimit: Int64 = 500 * 1024 * 1024
 
-    static func cacheBaseDirectory() -> URL {
+    public static func cacheBaseDirectory() -> URL {
         (try? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask,
                                       appropriateFor: nil, create: true))
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
     }
 
     /// Sibling artwork blob directory shared with `ArtworkService`'s disk tier.
-    static var defaultArtworkDirectory: URL {
+    public static var defaultArtworkDirectory: URL {
         cacheBaseDirectory().appendingPathComponent("Voxglass/StreamCacheArt", isDirectory: true)
     }
 
-    init() {
+    public init() {
         let base = Self.cacheBaseDirectory()
         dir = base.appendingPathComponent("Voxglass/StreamCache", isDirectory: true)
         artDir = base.appendingPathComponent("Voxglass/StreamCacheArt", isDirectory: true)
@@ -54,7 +54,7 @@ actor StreamCacheStore {
     }
 
     /// Testable init that isolates all state under a caller-supplied directory.
-    init(directory: URL) {
+    public init(directory: URL) {
         dir = directory.appendingPathComponent("StreamCache", isDirectory: true)
         artDir = directory.appendingPathComponent("StreamCacheArt", isDirectory: true)
         metaDir = directory.appendingPathComponent("StreamCacheMeta", isDirectory: true)
@@ -68,32 +68,32 @@ actor StreamCacheStore {
 
     // MARK: - Public accounting
 
-    func currentLimit() -> Int64 { limitBytes }
+    public func currentLimit() -> Int64 { limitBytes }
 
-    func setLimit(_ bytes: Int64) async {
+    public func setLimit(_ bytes: Int64) async {
         limitBytes = bytes
         await evictToFit(protecting: nil)
     }
 
-    func totalCachedBytes() -> Int64 {
+    public func totalCachedBytes() -> Int64 {
         metas.values.reduce(0) { $0 + $1.cachedBytes }
     }
 
     /// Audio tracks only — cover images are excluded from the "N tracks cached" count.
-    func cachedTrackCount() -> Int {
+    public func cachedTrackCount() -> Int {
         metas.values.filter { $0.complete && $0.effectiveKind == .audio }.count
     }
 
-    func contains(_ key: String) -> Bool {
+    public func contains(_ key: String) -> Bool {
         metas[key] != nil
     }
 
     /// True when the full audio file for `key` is present.
-    func isComplete(_ key: String) -> Bool {
+    public func isComplete(_ key: String) -> Bool {
         metas[key]?.complete ?? false
     }
 
-    func isPinned(_ key: String) -> Bool {
+    public func isPinned(_ key: String) -> Bool {
         pinnedKeys.contains(key)
     }
 
@@ -101,19 +101,19 @@ actor StreamCacheStore {
 
     /// Marks keys as pinned so they are never evicted or GC'd. Pinned bytes are
     /// also excluded from the streaming-budget eviction total.
-    func pin(_ keys: [String]) {
+    public func pin(_ keys: [String]) {
         pinnedKeys.formUnion(keys)
         persistPinnedKeys()
     }
 
-    func unpin(_ keys: [String]) {
+    public func unpin(_ keys: [String]) {
         pinnedKeys.subtract(keys)
         persistPinnedKeys()
     }
 
     /// Removes the given keys' blobs + metadata, and unpins them. Public entry
     /// point used when purging a book's cache (§6) or removing an offline copy (§7).
-    func remove(keys: [String]) {
+    public func remove(keys: [String]) {
         for key in keys {
             remove(key)
         }
@@ -127,7 +127,7 @@ actor StreamCacheStore {
     /// Ingests a fully-downloaded file (delivered complete by a background
     /// `URLSession` download task, not streamed in ranges): moves it into place,
     /// records the full range, marks it complete, and pins it for offline use.
-    func ingestCompleteFile(at tempURL: URL, key: String, totalBytes: Int64) async {
+    public func ingestCompleteFile(at tempURL: URL, key: String, totalBytes: Int64) async {
         let destination = fileURL(for: key)
         let fm = FileManager.default
         try? fm.removeItem(at: destination)
@@ -157,17 +157,17 @@ actor StreamCacheStore {
         pin([key])
     }
 
-    func fileURL(for key: String) -> URL {
+    public func fileURL(for key: String) -> URL {
         let base = (metas[key]?.effectiveKind == .artwork) ? artDir : dir
         return base.appendingPathComponent(key)
     }
 
-    func artworkFileURL(for key: String) -> URL {
+    public func artworkFileURL(for key: String) -> URL {
         artDir.appendingPathComponent(key)
     }
 
     /// Upsert a complete artwork entry, then evict across the unified budget.
-    func registerArtwork(key: String, bytes: Int64) async {
+    public func registerArtwork(key: String, bytes: Int64) async {
         let now = Date()
         var m = metas[key] ?? Meta(totalBytes: bytes, cachedBytes: bytes, complete: true,
                                    lastAccessedAt: now, createdAt: now, rangeMap: ByteRangeMap(),
@@ -182,17 +182,17 @@ actor StreamCacheStore {
         await evictToFit(protecting: nil)
     }
 
-    func rangeMap(for key: String) -> ByteRangeMap {
+    public func rangeMap(for key: String) -> ByteRangeMap {
         metas[key]?.rangeMap ?? ByteRangeMap()
     }
 
-    func totalBytes(for key: String) -> Int64? {
+    public func totalBytes(for key: String) -> Int64? {
         metas[key]?.totalBytes
     }
 
     // MARK: - Mutation (driven by the resource loader only)
 
-    func setContentLength(_ length: Int64, for key: String) {
+    public func setContentLength(_ length: Int64, for key: String) {
         var m = metas[key] ?? Meta(totalBytes: nil, cachedBytes: 0, complete: false,
                                     lastAccessedAt: Date(), createdAt: Date(), rangeMap: ByteRangeMap())
         m.totalBytes = length
@@ -200,7 +200,7 @@ actor StreamCacheStore {
         persistMeta(key)
     }
 
-    func recordWrite(range: Range<Int64>, for key: String) async {
+    public func recordWrite(range: Range<Int64>, for key: String) async {
         var m = metas[key] ?? Meta(totalBytes: nil, cachedBytes: 0, complete: false,
                                    lastAccessedAt: Date(), createdAt: Date(), rangeMap: ByteRangeMap())
         m.rangeMap.insert(range)
@@ -214,14 +214,14 @@ actor StreamCacheStore {
         await evictToFit(protecting: key)
     }
 
-    func touch(_ key: String) {
+    public func touch(_ key: String) {
         guard var m = metas[key] else { return }
         m.lastAccessedAt = Date()
         metas[key] = m
         persistMeta(key)
     }
 
-    func clearAll() {
+    public func clearAll() {
         for key in metas.keys {
             try? FileManager.default.removeItem(at: fileURL(for: key))
             try? FileManager.default.removeItem(at: metaURL(key))
@@ -237,7 +237,7 @@ actor StreamCacheStore {
     }
 
     /// GC partial segments older than 7 days (pinned keys are always kept).
-    func garbageCollectStalePartials() {
+    public func garbageCollectStalePartials() {
         let cutoff = Date().addingTimeInterval(-7 * 24 * 3600)
         for (key, m) in metas where !m.complete && m.lastAccessedAt < cutoff && !pinnedKeys.contains(key) {
             remove(key)
