@@ -35,6 +35,24 @@ jobs:
             -destination generic/platform=iOS \
             CODE_SIGNING_ALLOWED=NO
 
+  logic-tests:
+    name: Logic Tests (swift test)
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Select latest Xcode
+        run: |
+          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
+          sudo xcode-select -s /Applications/$XCODE
+          xcodebuild -version
+
+      - name: Run VoxglassCore logic tests
+        run: swift test
+
   guarded-tests:
     name: Guarded Tests
     runs-on: ubuntu-latest
@@ -80,7 +98,7 @@ jobs:
   testflight:
     name: TestFlight Build
     runs-on: macos-latest
-    needs: [compile, guarded-tests]
+    needs: [compile, logic-tests, guarded-tests]
     timeout-minutes: 45
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     env:

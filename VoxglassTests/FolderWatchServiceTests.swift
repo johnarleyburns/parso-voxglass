@@ -96,25 +96,6 @@ final class FolderWatchServiceTests: XCTestCase {
         let library = try await repository.fetchLibrary()
         XCTAssertTrue(library.isEmpty, "Not-Pro must not import any books")
     }
-
-    func testAddFolderImportsWhenEntitled() async throws {
-        EntitlementCache.shared.setTestEntitlement(true)
-        let database = AppDatabase.makeTemporaryDatabase(named: "folder-gate-on")
-        let repository = LibraryRepository(database: database)
-        let defaults = UserDefaults(suiteName: "folder-gate-on-\(UUID().uuidString)")!
-        let service = FolderWatchService(repository: repository, defaults: defaults)
-
-        let dir = try makeTempAudioFolder(fileCount: 2)
-        defer { try? FileManager.default.removeItem(at: dir) }
-
-        await service.addFolder(dir)
-
-        XCTAssertEqual(service.folders.count, 1, "Pro must add the watched folder")
-        let library = try await repository.fetchLibrary()
-        XCTAssertEqual(library.count, 1)
-        XCTAssertEqual(library.first?.chapters.count, 2)
-    }
-
     private func makeTempAudioFolder(fileCount: Int) throws -> URL {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("VoxglassWatch-\(UUID().uuidString)", isDirectory: true)

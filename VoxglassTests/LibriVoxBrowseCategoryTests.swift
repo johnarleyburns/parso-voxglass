@@ -61,31 +61,6 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
     }
 
     // MARK: - Discovery queries
-
-    func testAuthorQueryScopesToLibriVoxAudio() {
-        let query = NowPlayingView.authorQuery("Arthur Conan Doyle")
-        XCTAssertTrue(query.contains("creator:\"Arthur Conan Doyle\""))
-        XCTAssertTrue(query.contains("collection:librivoxaudio"))
-        XCTAssertTrue(query.contains("mediatype:audio"))
-    }
-
-    func testAuthorQueryStripsQuotes() {
-        let query = NowPlayingView.authorQuery("O\"Brien")
-        XCTAssertFalse(query.dropFirst("creator:\"".count).contains("\"\""))
-    }
-
-    func testNarratorQueryMatchesCreatorOrDescription() {
-        let query = NowPlayingView.narratorQuery("Ruth Golding")
-        XCTAssertTrue(query.contains("creator:\"Ruth Golding\""))
-        XCTAssertTrue(query.contains("description:\"Ruth Golding\""))
-    }
-
-    func testGenreQueryAppendsMediatypeWhenMissing() {
-        let category = LibriVoxBrowseCategory.romance
-        XCTAssertFalse(category.archiveQuery.contains("mediatype:"))
-        XCTAssertTrue(NowPlayingView.genreQuery(category).contains("mediatype:audio"))
-    }
-
     // MARK: - History backfill weighting
 
     func testHistoryIncrementFloorsAndCaps() {

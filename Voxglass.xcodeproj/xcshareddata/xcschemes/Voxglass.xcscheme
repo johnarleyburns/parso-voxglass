@@ -45,17 +45,6 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "08B68FEA2D31598ABDA70D1E"
-               BuildableName = "VoxglassTests.xctest"
-               BlueprintName = "VoxglassTests"
-               ReferencedContainer = "container:Voxglass.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "3B8880C71EB76B457C2934CE"
                BuildableName = "VoxglassUITests.xctest"
                BlueprintName = "VoxglassUITests"

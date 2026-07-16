@@ -50,7 +50,7 @@ final class FreeTierRegistryTests: XCTestCase {
     }
 
     @MainActor func testNearGaplessIsFree() {
-        let engine = AVPlayerAudioEngine()
+        let engine = FakeAudioEngine()
         XCTAssertNotNil(engine)
     }
 
@@ -62,7 +62,7 @@ final class FreeTierRegistryTests: XCTestCase {
     @MainActor func testPlaybackCoordinatorOperatesWithoutPro() {
         let database = AppDatabase.makeTemporaryDatabase(named: "free-tier-test")
         let positionStore = SQLitePositionStore(database: database)
-        let engine = AVPlayerAudioEngine()
+        let engine = FakeAudioEngine()
         let coordinator = PlaybackCoordinator(engine: engine, positionStore: positionStore)
         XCTAssertNotNil(coordinator)
     }

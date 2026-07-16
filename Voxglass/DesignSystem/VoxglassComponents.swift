@@ -301,15 +301,6 @@ extension BookWithChapters {
     }
 }
 
-enum NarratorDisplay {
-    static func chapterLine(chapter: Chapter, bookNarrators: [String]) -> String? {
-        guard !chapter.narrators.isEmpty else { return nil }
-        let uniqueBookNarrators = Set(bookNarrators)
-        if uniqueBookNarrators.count <= 1 { return nil }
-        return chapter.narrators.joined(separator: ", ")
-    }
-}
-
 struct ProLockBadge: View {
     var body: some View {
         Image(systemName: "lock.fill")
