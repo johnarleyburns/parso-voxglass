@@ -72,11 +72,12 @@ final class AppServices: ObservableObject {
         playbackCoordinator.listeningStatsStore = listeningStatsStore
         folderWatchService.configure(libraryStore: libraryStore)
 
-        // Wire signal capture: when a position is saved, seed taste profile
-        playbackCoordinator.onPositionSaved = { [weak self] bookID, isFavorite in
+        // Wire signal capture: when a taste-meaningful position save lands, apply
+        // a thresholded, delta-based taste profile update (never per-tick counts).
+        playbackCoordinator.onTasteSignal = { [weak self] signal in
             guard let self else { return }
             Task {
-                await self.captureTasteSignal(bookID: bookID, isFavorite: isFavorite)
+                await self.captureTasteSignal(signal)
             }
         }
     }
@@ -101,14 +102,12 @@ final class AppServices: ObservableObject {
         await folderWatchService.rescanAll()
     }
 
-    private func captureTasteSignal(bookID: UUID, isFavorite: Bool) async {
-        guard let terms = try? await libraryRepository.fetchBookTasteTerms(for: bookID) else {
+    private func captureTasteSignal(_ signal: PlaybackTasteSignal) async {
+        guard let terms = try? await libraryRepository.fetchBookTasteTerms(for: signal.bookID),
+              !terms.isEmpty else {
             return
         }
-        for (axis, term) in terms {
-            let increment = isFavorite ? RecommendationConstants.favoriteBoost : 1.0
-            await tasteProfileStore.upsertTerm(axis: axis, term: term, increment: increment)
-        }
+        await tasteProfileStore.applySignal(signal, terms: terms)
     }
 
     /// Runs the one-time history backfill so pre-existing listening shapes the

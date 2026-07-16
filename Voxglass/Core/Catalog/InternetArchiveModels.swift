@@ -9,6 +9,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
     public var downloads: Int?
     public var date: String?
     public var languages: [String]
+    public var subjects: [String]
 
     public var id: String { identifier }
 
@@ -20,7 +21,8 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
         collections: [String],
         downloads: Int?,
         date: String?,
-        languages: [String] = []
+        languages: [String] = [],
+        subjects: [String] = []
     ) {
         self.identifier = identifier
         self.title = title
@@ -30,6 +32,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
         self.downloads = downloads
         self.date = date
         self.languages = languages
+        self.subjects = subjects
     }
 
     public var authorLine: String {
@@ -107,6 +110,7 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
     public var downloads: Int?
     public var date: String?
     public var languages: [String]
+    public var subjects: [String]
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -118,6 +122,7 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
         downloads = try container.decodeFlexibleIntIfPresent(forKey: .downloads)
         date = try container.decodeFlexibleStringIfPresent(forKey: .date)
         languages = try container.decodeStringListIfPresent(forKey: .language)
+        subjects = try container.decodeStringListIfPresent(forKey: .subject)
     }
 
     public var searchResult: InternetArchiveSearchResult {
@@ -129,7 +134,8 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
             collections: collections,
             downloads: downloads,
             date: date,
-            languages: languages
+            languages: languages,
+            subjects: subjects
         )
     }
 
@@ -142,6 +148,7 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
         case downloads
         case date
         case language
+        case subject
     }
 }
 

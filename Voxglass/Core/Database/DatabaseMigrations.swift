@@ -224,6 +224,20 @@ private struct DatabaseMigration {
                 "CREATE INDEX books_content_key ON books(content_key)",
                 "CREATE INDEX chapters_content_key ON chapters(book_id, content_key)"
             ]
+        ),
+        DatabaseMigration(
+            id: 8,
+            name: "taste_signal_state",
+            statements: [
+                """
+                CREATE TABLE taste_signal_state (
+                    book_id TEXT PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+                    max_completion REAL NOT NULL DEFAULT 0,
+                    applied_increment REAL NOT NULL DEFAULT 0,
+                    updated_at REAL NOT NULL
+                )
+                """
+            ]
         )
     ]
 }

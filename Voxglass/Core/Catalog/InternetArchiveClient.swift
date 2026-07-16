@@ -138,7 +138,7 @@ public final class InternetArchiveClient: InternetArchiveCatalogClient {
         return data
     }
 
-    private static func advancedSearchURL(query: String, rows: Int, page: Int) -> URL? {
+    static func advancedSearchURL(query: String, rows: Int, page: Int) -> URL? {
         var components = URLComponents()
         components.scheme = "https"
         components.host = "archive.org"
@@ -156,7 +156,8 @@ public final class InternetArchiveClient: InternetArchiveCatalogClient {
             URLQueryItem(name: "fl[]", value: "collection"),
             URLQueryItem(name: "fl[]", value: "downloads"),
             URLQueryItem(name: "fl[]", value: "date"),
-            URLQueryItem(name: "fl[]", value: "language")
+            URLQueryItem(name: "fl[]", value: "language"),
+            URLQueryItem(name: "fl[]", value: "subject")
         ]
         return components.url
     }
