@@ -7,7 +7,7 @@ import Foundation
 /// physically advance past the current chapter).
 @MainActor
 public final class SleepTimer: ObservableObject {
-    public enum Mode: Equatable {
+    public enum Mode: Equatable, Sendable {
         case off
         case duration(TimeInterval)
         case endOfChapter

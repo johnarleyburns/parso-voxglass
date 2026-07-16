@@ -3,6 +3,11 @@ import VoxglassCore
 
 @MainActor
 final class AppServices: ObservableObject {
+    /// Shared across the SwiftUI window scene and the CarPlay scene — both run
+    /// in one process and must share one coordinator/library/audio engine
+    /// (docs/CARPLAY_DESIGN.md §6.2).
+    static let shared = AppServices()
+
     let database: AppDatabase
     let libraryStore: LibraryStore
     let catalogStore: CatalogStore
@@ -81,6 +86,18 @@ final class AppServices: ObservableObject {
             }
         }
     }
+
+    /// Idempotent, once-only bootstrap, callable from either scene. The CarPlay
+    /// scene can cold-launch the app with the phone locked (docs/CARPLAY_DESIGN.md
+    /// §6.3), so whichever scene connects first runs the real bootstrap and the
+    /// other becomes a no-op.
+    func bootstrapOnce() async {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+        await bootstrap()
+    }
+
+    private var didBootstrap = false
 
     func bootstrap() async {
         await StoreManager.shared.refreshEntitlement()

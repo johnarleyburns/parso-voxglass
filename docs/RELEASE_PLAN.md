@@ -299,20 +299,33 @@ toggle than a dead one.
 
 ---
 
-## CarPlay — postponed
+## CarPlay — approved, free, and standalone
 
-**Postponed, awaiting Apple approval of the `com.apple.developer.carplay-audio` entitlement.** Not in scope
-for this release. Nothing here blocks on it.
+**Apple approved `com.apple.developer.carplay-audio` on 2026-07-16. Design is complete** — the full
+engineering handoff, model, test matrix, plist/entitlement diffs, and view-by-view mockups live in
+**`docs/CARPLAY_DESIGN.md`**. It is a self-contained workstream (does not block Phases 1–5).
 
-When the entitlement lands, the build is small: `CPNowPlayingTemplate` is driven entirely by
-`MPNowPlayingInfoCenter` + `MPRemoteCommandCenter`, both of which already ship (speed, artwork, remote
-commands). Add the entitlement to `project.yml` + `Voxglass.entitlements`, add `case carplay` to
-`ProFeature`, add the paywall row, and raise the price to $9.99. Lifetime unlock means early buyers get
-CarPlay free — an honest reason to buy now and a legitimate basis for the later rise.
+**Two binding product decisions (2026-07-16) that reverse the earlier "Pro headline / $9.99" plan:**
 
-**Do not name CarPlay on the paywall or in the IAP description until it ships.** Apple rejects IAP copy that
-promises unreleased functionality, and it would break the paywall-truth discipline this repo enforces with
-drift tests. Put the roadmap in Settings → About.
+- **CarPlay is free for everyone.** No Pro gate on browsing, searching, resuming, or playing in the car.
+  Stripping transport controls from a driver mid-trip is unsafe and 1-star-review material, and "never lose
+  your place" is a free trust promise. Pro stays EQ / bookmarks-&-favorites sync / stats / offline
+  downloads — **not** CarPlay. The Pro price does **not** rise.
+- **CarPlay is standalone.** Search, browse, resume, and (Pro) download entirely from the head unit — no
+  phone handoff — including the cold-launch-straight-into-CarPlay path (phone locked, app never
+  foregrounded).
+
+**The one Pro touchpoint reachable in-car:** offline **Download** is Pro on every surface, so a free user
+who taps "Download for offline" gets a graceful `CPAlertTemplate` ("unlock on your iPhone") — never a dead
+paywall on transport. This reuses the existing `ProFeature.offlineDownloads` bullet; **no new paywall/IAP
+copy is added**, so the paywall-truth drift tests are unaffected. Do **not** add a `case carplay` to
+`ProFeature`.
+
+The build is small where it can be: `CPNowPlayingTemplate` is driven entirely by `MPNowPlayingInfoCenter` +
+`MPRemoteCommandCenter`, both of which already ship (speed, artwork, remote commands). The new surface is the
+browse tree — a pure, host-testable `CarPlayMenuBuilder` in `VoxglassCore` rendered by a thin app-layer
+`CarPlayInterfaceController`, mirroring the existing `PlaybackPlatformBridge` seam. In-car play routes
+through `PlaybackCoordinator.play(...)` so resume + position persistence stay intact.
 
 ---
 
@@ -326,7 +339,7 @@ drift tests. Put the roadmap in Settings → About.
 | **3** | **Phase 3** — content keys, free position sync | Must precede any further Library Backup work. |
 | **4** | **Phase 4** — derived progress | Small, independent. |
 | **5** | **Phase 5** — A4, E2, E3, E4 | Parallelizable. |
-| **Later** | CarPlay | Postponed — awaiting Apple entitlement approval. |
+| **Parallel** | CarPlay | Approved 2026-07-16; free + standalone. Self-contained — see `docs/CARPLAY_DESIGN.md`. |
 
 ---
 

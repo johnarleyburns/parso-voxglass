@@ -53,8 +53,10 @@ The opening is: *the same catalog in a player that respects you*.
       never loses your place.
 
 ### Near-term
-- [ ] **CarPlay** — the single biggest remaining gap versus BookDesign. Blocked on Apple granting the
-      `com.apple.developer.carplay-audio` entitlement. $9.99 Pro price point when it ships.
+- [ ] **CarPlay** — the single biggest remaining gap versus BookDesign. Entitlement approved (2026-07-16);
+      design complete in [`docs/CARPLAY_DESIGN.md`](docs/CARPLAY_DESIGN.md). **Free and standalone** — search,
+      browse, resume, and play entirely from the car, no phone needed. Not a Pro feature; the Pro price does
+      not change.
 
 ### Future (not yet planned)
 

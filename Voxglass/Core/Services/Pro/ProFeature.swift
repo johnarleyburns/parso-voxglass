@@ -1,6 +1,6 @@
 import Foundation
 
-public enum ProFeature: String, CaseIterable {
+public enum ProFeature: String, CaseIterable, Sendable {
     case cachePresets
     case prefetchDepth
     case folderWatch

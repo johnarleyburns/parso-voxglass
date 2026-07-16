@@ -4,7 +4,7 @@ import VoxglassCore
 @main
 struct VoxglassApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var services = AppServices()
+    @StateObject private var services = AppServices.shared
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -22,7 +22,7 @@ struct VoxglassApp: App {
                 .environmentObject(services.libraryBackupService)
                 .preferredColorScheme(.dark)
                 .task {
-                    await services.bootstrap()
+                    await services.bootstrapOnce()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     services.playbackCoordinator.handleScenePhase(newPhase)

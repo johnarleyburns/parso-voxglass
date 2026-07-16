@@ -29,6 +29,7 @@ targets:
       - package: VoxglassCore
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
+      - sdk: CarPlay.framework
       - sdk: MediaPlayer.framework
       - sdk: StoreKit.framework
       - sdk: UniformTypeIdentifiers.framework
@@ -41,6 +42,13 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            CPTemplateApplicationSceneSessionRoleApplication:
+              - UISceneConfigurationName: CarPlay
+                UISceneClassName: CPTemplateApplicationScene
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
         UIBackgroundModes:
           - audio
         UILaunchScreen:
@@ -82,6 +90,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.uitests
         TEST_TARGET_NAME: Voxglass
         CODE_SIGNING_ALLOWED: NO
+  VoxglassCarPlaySmokeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - VoxglassCarPlaySmokeTests
+    dependencies:
+      - target: Voxglass
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.carplaysmoke
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
@@ -91,3 +112,4 @@ schemes:
       gatherCoverageData: true
       targets:
         - VoxglassUITests
+        - VoxglassCarPlaySmokeTests
