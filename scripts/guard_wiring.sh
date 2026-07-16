@@ -22,7 +22,7 @@ SWIFT_FILES="Voxglass/App Voxglass/Core Voxglass/Features Voxglass/DesignSystem"
 # .set(_:forKey:)), excluding the Keys enum definition itself.
 # ──────────────────────────────────────────────────────────────
 check_pref_key_writers() {
-  local keys_file="Voxglass/App/AppPreferencesStore.swift"
+  local keys_file="Voxglass/Core/AppPreferencesStore.swift"
   local had_failure=0
 
   while IFS='|' read -r key_name key_value; do
@@ -188,11 +188,15 @@ check_dynamic_type() {
 
 # ──────────────────────────────────────────────────────────────
 # Rule 6 — target-membership guard
-# Every .swift file on disk is a member of the xcodeproj. Catches the
-# "added a source file, never regenerated the project" bug, which the
-# compiler only reports as `cannot find type X in scope` — and which
-# the ubuntu job cannot see any other way, because it has no Swift
-# toolchain. Pure grep, so it runs everywhere.
+# Every app-target .swift file on disk is a member of the xcodeproj.
+# Catches the "added a source file, never regenerated the project"
+# bug, which the compiler only reports as `cannot find type X in
+# scope` — and which the ubuntu job cannot see any other way, because
+# it has no Swift toolchain. Pure grep, so it runs everywhere.
+# Voxglass/Core/ and VoxglassTests/ are excluded: they are VoxglassCore
+# SwiftPM package sources (see Package.swift; project.yml excludes Core
+# from the app target), compiled by the `compile` and `logic-tests`
+# jobs, so xcodeproj membership does not apply to them.
 # ──────────────────────────────────────────────────────────────
 check_xcodeproj_membership() {
   local pbxproj="Voxglass.xcodeproj/project.pbxproj"
@@ -204,7 +208,7 @@ check_xcodeproj_membership() {
       echo "::error title=Target-membership guard::$file is on disk but is not a member of any xcodeproj target. Run 'xcodegen generate' and commit the result."
       had_failure=1
     fi
-  done < <(find Voxglass VoxglassTests -name '*.swift' 2>/dev/null)
+  done < <(find Voxglass VoxglassUITests -name '*.swift' -not -path 'Voxglass/Core/*' 2>/dev/null)
 
   return $had_failure
 }
