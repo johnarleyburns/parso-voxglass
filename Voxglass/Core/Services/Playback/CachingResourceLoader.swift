@@ -6,8 +6,8 @@ import UniformTypeIdentifiers
 /// Intercepts AVPlayer byte-range requests via a custom URL scheme, streams data
 /// from the network, writes it to a sparse on-disk cache, and serves cached bytes
 /// on subsequent plays without re-downloading.
-final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
-    static let scheme = "voxglass-cache"
+public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
+    public static let scheme = "voxglass-cache"
 
     private let originalURL: URL
     private let cacheKey: String
@@ -18,7 +18,7 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
     private var didShutdown = false
     private var fileHandle: FileHandle?
 
-    init(originalURL: URL) {
+    public init(originalURL: URL) {
         self.originalURL = originalURL
         self.cacheKey = CachingResourceLoader.key(for: originalURL)
         let cfg = URLSessionConfiguration.default
@@ -33,7 +33,7 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
         session.invalidateAndCancel()
     }
 
-    func shutdown() {
+    public func shutdown() {
         stateLock.lock()
         didShutdown = true
         let tasks = inFlight
@@ -48,7 +48,7 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
     /// launches so key-based deletion (§6) and offline-completeness checks (§7)
     /// are reliable — a per-process seeded `Hasher` is not. The trailing
     /// extension is kept only as a debugging aid.
-    static func key(for url: URL) -> String {
+    public static func key(for url: URL) -> String {
         let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
         let hex = digest.map { String(format: "%02x", $0) }.joined()
         let ext = (url.lastPathComponent as NSString).pathExtension.lowercased()
@@ -56,12 +56,12 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
     }
 
     /// Returns true if this URL scheme should be routed through the cache.
-    static func isRemoteCacheable(_ url: URL) -> Bool {
+    public static func isRemoteCacheable(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
         return scheme == "http" || scheme == "https"
     }
 
-    static func cacheURL(for remote: URL) -> URL {
+    public static func cacheURL(for remote: URL) -> URL {
         var comps = URLComponents(url: remote, resolvingAgainstBaseURL: false)!
         comps.scheme = scheme
         return comps.url ?? remote
@@ -73,7 +73,7 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
         return comps.url ?? originalURL
     }
 
-    func resourceLoader(_ resourceLoader: AVAssetResourceLoader,
+    public func resourceLoader(_ resourceLoader: AVAssetResourceLoader,
                         shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         stateLock.lock()
         guard !didShutdown else { stateLock.unlock(); return false }
@@ -86,7 +86,7 @@ final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
         return true
     }
 
-    func resourceLoader(_ resourceLoader: AVAssetResourceLoader,
+    public func resourceLoader(_ resourceLoader: AVAssetResourceLoader,
                         didCancel loadingRequest: AVAssetResourceLoadingRequest) { }
 
     private func handle(_ request: AVAssetResourceLoadingRequest) async {

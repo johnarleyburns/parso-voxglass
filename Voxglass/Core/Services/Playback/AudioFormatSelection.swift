@@ -1,16 +1,16 @@
 import Foundation
 
-enum AudioCodec: Int, Comparable, CaseIterable {
+public enum AudioCodec: Int, Comparable, CaseIterable {
     case flac = 3
     case opus = 2
     case vorbis = 1
     case mp3 = 0
 
-    static func < (lhs: AudioCodec, rhs: AudioCodec) -> Bool {
+    public static func < (lhs: AudioCodec, rhs: AudioCodec) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 
-    var label: String {
+    public var label: String {
         switch self {
         case .flac: return "FLAC"
         case .opus: return "Opus"
@@ -20,7 +20,7 @@ enum AudioCodec: Int, Comparable, CaseIterable {
     }
 }
 
-struct AudioFormatSelection {
+public struct AudioFormatSelection {
     private static let acceptedFormats: [AudioCodec: Set<String>] = [
         .flac: ["Flac", "24bit Flac"],
         .opus: ["Opus"],
@@ -38,7 +38,7 @@ struct AudioFormatSelection {
         .mp3: ["mp3"]
     ]
 
-    static let allPlayableExtensions: Set<String> = {
+    public static let allPlayableExtensions: Set<String> = {
         var all = Set<String>()
         for (_, exts) in acceptedExtensions { all.formUnion(exts) }
         // Also keep the existing extensions that don't map to our codecs
@@ -46,7 +46,7 @@ struct AudioFormatSelection {
         return all
     }()
 
-    static func codec(for format: String?, filename: String) -> AudioCodec? {
+    public static func codec(for format: String?, filename: String) -> AudioCodec? {
         let ext = (filename as NSString).pathExtension.lowercased()
 
         for codec in AudioCodec.allCases.sorted(by: >) {
@@ -76,11 +76,11 @@ struct AudioFormatSelection {
         return nil
     }
 
-    static func isValidFormat(_ format: String?, filename: String) -> Bool {
+    public static func isValidFormat(_ format: String?, filename: String) -> Bool {
         codec(for: format, filename: filename) != nil
     }
 
-    static func qualityRank(for file: InternetArchiveFile, codec: AudioCodec) -> Int {
+    public static func qualityRank(for file: InternetArchiveFile, codec: AudioCodec) -> Int {
         let baseCodecRank = codec.rawValue * 1000
 
         let format = file.format?.lowercased() ?? ""
@@ -99,19 +99,19 @@ struct AudioFormatSelection {
     }
 }
 
-struct DerivativePolicy {
-    enum NetworkCondition {
+public struct DerivativePolicy {
+    public enum NetworkCondition {
         case wifi
         case cellular
         case offline
     }
 
-    let networkCondition: NetworkCondition
-    let isPrefetchOrQueued: Bool
-    let hasCachedOpusCAF: Bool
-    let preferLosslessOnCellular: Bool
+    public let networkCondition: NetworkCondition
+    public let isPrefetchOrQueued: Bool
+    public let hasCachedOpusCAF: Bool
+    public let preferLosslessOnCellular: Bool
 
-    init(
+    public init(
         networkCondition: NetworkCondition = .wifi,
         isPrefetchOrQueued: Bool = false,
         hasCachedOpusCAF: Bool = false,
@@ -123,7 +123,7 @@ struct DerivativePolicy {
         self.preferLosslessOnCellular = preferLosslessOnCellular
     }
 
-    var rankedCodecs: [AudioCodec] {
+    public var rankedCodecs: [AudioCodec] {
         if hasCachedOpusCAF {
             return [.opus]
         }
@@ -145,7 +145,7 @@ struct DerivativePolicy {
         }
     }
 
-    func bestCodec(for files: [InternetArchiveFile]) -> (codec: AudioCodec, file: InternetArchiveFile)? {
+    public func bestCodec(for files: [InternetArchiveFile]) -> (codec: AudioCodec, file: InternetArchiveFile)? {
         for codec in rankedCodecs {
             let candidates = files.filter { AudioFormatSelection.codec(for: $0.format, filename: $0.name) == codec }
             if let best = candidates.max(by: { a, b in

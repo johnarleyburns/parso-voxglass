@@ -1,10 +1,10 @@
 import Foundation
 
 @MainActor
-final class VoxglassCloudSync: ObservableObject {
-    @Published private(set) var isSyncing = false
-    @Published private(set) var lastSyncDate: Date?
-    @Published var syncError: String?
+public final class VoxglassCloudSync: ObservableObject {
+    @Published public private(set) var isSyncing = false
+    @Published public private(set) var lastSyncDate: Date?
+    @Published public var syncError: String?
 
     private let store = NSUbiquitousKeyValueStore.default
     private let database: AppDatabase
@@ -19,7 +19,7 @@ final class VoxglassCloudSync: ObservableObject {
         static let versionSuffix = ".v"
     }
 
-    init(database: AppDatabase, bookmarkStore: (any BookmarkStore)? = nil) {
+    public init(database: AppDatabase, bookmarkStore: (any BookmarkStore)? = nil) {
         self.database = database
         self.bookmarkStore = bookmarkStore
         self.lastSyncDate = store.object(forKey: Key.lastSync) as? Date
@@ -41,7 +41,7 @@ final class VoxglassCloudSync: ObservableObject {
         }
     }
 
-    var isAvailable: Bool {
+    public var isAvailable: Bool {
         #if DEBUG
         if let testForceAvailable { return testForceAvailable }
         #endif
@@ -51,7 +51,7 @@ final class VoxglassCloudSync: ObservableObject {
     #if DEBUG
     /// Test seam: forces iCloud availability without a signed-in account so the
     /// push/pull round-trip can be exercised against the local KVS backing store.
-    var testForceAvailable: Bool?
+    public var testForceAvailable: Bool?
     #endif
 
     // MARK: - Push (device → iCloud)
@@ -59,7 +59,7 @@ final class VoxglassCloudSync: ObservableObject {
     /// Playback-position sync is FREE (Phase 3): "never lose your place" is a
     /// trust promise, not an upsell. Only `isAvailable` gates it, never
     /// `ProFeature.isEnabled(.icloudSync)`.
-    func pushPlaybackPositions() async {
+    public func pushPlaybackPositions() async {
         guard isAvailable else { return }
         do {
             try await database.prepare()
@@ -108,7 +108,7 @@ final class VoxglassCloudSync: ObservableObject {
         }
     }
 
-    func pushFavorites() async {
+    public func pushFavorites() async {
         guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
         do {
             try await database.prepare()
@@ -138,7 +138,7 @@ final class VoxglassCloudSync: ObservableObject {
     /// versioned on `MAX(updated_at)` so a single timestamp guards N bookmarks.
     /// Includes tombstones (`is_deleted = 1`) so pulls on other devices apply
     /// the soft-delete rather than resurrecting it.
-    func pushBookmarks() async {
+    public func pushBookmarks() async {
         guard isAvailable, ProFeature.isEnabled(.icloudSync), let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
@@ -180,7 +180,7 @@ final class VoxglassCloudSync: ObservableObject {
 
     /// Pulls bookmark updates from iCloud, applying tombstones from the remote
     /// payload so deletions aren't resurrected by another device's push.
-    func pullBookmarks() async {
+    public func pullBookmarks() async {
         guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
         guard let bmStore = bookmarkStore else { return }
         do {
@@ -231,7 +231,7 @@ final class VoxglassCloudSync: ObservableObject {
     /// upserts last-writer-wins. Payloads whose book isn't in the library yet are
     /// left in KVS so `adoptCloudPositions(forBookID:)` can apply them after a
     /// re-import (this is what makes delete-and-reinstall work).
-    func pullPlaybackPositions() async {
+    public func pullPlaybackPositions() async {
         guard isAvailable else { return }
         do {
             try await database.prepare()
@@ -258,7 +258,7 @@ final class VoxglassCloudSync: ObservableObject {
     /// Applies every stored cloud position whose content key matches the given
     /// (newly imported) book. Called after an import so a reinstalled device gets
     /// its place back the moment the book is in the library again.
-    func adoptCloudPositions(forBookID bookID: UUID) async {
+    public func adoptCloudPositions(forBookID bookID: UUID) async {
         guard isAvailable else { return }
         do {
             try await database.prepare()
@@ -371,7 +371,7 @@ final class VoxglassCloudSync: ObservableObject {
     /// KVS has a 1024-key / 1 MB ceiling and nothing pruned before Phase 3. Keeps
     /// the newest `maxPositionKeys` position payloads (by version stamp) and
     /// removes the rest along with their version trackers.
-    static let maxPositionKeys = 200
+    public static let maxPositionKeys = 200
 
     private func prunePositionKeys() {
         let dataKeys = store.dictionaryRepresentation.keys.filter {
@@ -387,7 +387,7 @@ final class VoxglassCloudSync: ObservableObject {
         }
     }
 
-    func pullFavorites() async -> Set<String> {
+    public func pullFavorites() async -> Set<String> {
         guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return [] }
         let allKeys = store.dictionaryRepresentation.keys.filter {
             $0.hasPrefix(Key.favoritesPrefix) && !$0.hasSuffix(Key.versionSuffix)
@@ -400,7 +400,7 @@ final class VoxglassCloudSync: ObservableObject {
 
     // MARK: - Sync orchestration
 
-    func sync() async {
+    public func sync() async {
         guard isAvailable else { return }
         isSyncing = true
         defer { isSyncing = false }

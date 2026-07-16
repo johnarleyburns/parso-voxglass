@@ -1,4 +1,5 @@
 import UIKit
+import VoxglassCore
 
 /// SF Symbol names for the skip controls. Resolving a numbered symbol
 /// (`gobackward.45`) requires UIKit to check availability, so this lives in the

@@ -1,5 +1,6 @@
 import StoreKit
 import SwiftUI
+import VoxglassCore
 
 /// A single advertised Pro feature, tied to its `ProFeature` gate so the paywall
 /// copy, the entitlement enum, and the free-tier registry stay in lockstep

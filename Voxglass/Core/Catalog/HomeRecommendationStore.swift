@@ -2,19 +2,19 @@ import Combine
 import Foundation
 
 @MainActor
-final class HomeRecommendationStore: ObservableObject {
-    @Published private(set) var recommendations: [InternetArchiveSearchResult]
-    @Published private(set) var isRefreshing = false
+public final class HomeRecommendationStore: ObservableObject {
+    @Published public private(set) var recommendations: [InternetArchiveSearchResult]
+    @Published public private(set) var isRefreshing = false
 
     private let client: InternetArchiveCatalogClient
     private var engine: RecommendationEngine?
 
-    init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
+    public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
         self.recommendations = Self.coldStartRecommendations(for: [])
     }
 
-    func configure(profileStore: TasteProfileStore, libraryStore: LibraryStore) {
+    public func configure(profileStore: TasteProfileStore, libraryStore: LibraryStore) {
         engine = RecommendationEngine(
             client: client,
             profileStore: profileStore,
@@ -22,7 +22,7 @@ final class HomeRecommendationStore: ObservableObject {
         )
     }
 
-    func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
+    public func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
         if let engine {
             isRefreshing = true
             defer { isRefreshing = false }
@@ -62,7 +62,7 @@ final class HomeRecommendationStore: ObservableObject {
         }
     }
 
-    nonisolated static func coldStartRecommendations(for selectedCollectionIDs: Set<String>) -> [InternetArchiveSearchResult] {
+    public nonisolated static func coldStartRecommendations(for selectedCollectionIDs: Set<String>) -> [InternetArchiveSearchResult] {
         guard !selectedCollectionIDs.isEmpty else {
             return bundledPopularSeeds
         }
@@ -75,7 +75,7 @@ final class HomeRecommendationStore: ObservableObject {
         return matching.isEmpty ? bundledPopularSeeds : uniqueResults(matching + bundledPopularSeeds)
     }
 
-    nonisolated static let bundledPopularSeeds: [InternetArchiveSearchResult] = [
+    public nonisolated static let bundledPopularSeeds: [InternetArchiveSearchResult] = [
         seed(
             identifier: "pride_and_prejudice_librivox",
             title: "Pride and Prejudice",
@@ -142,7 +142,7 @@ final class HomeRecommendationStore: ObservableObject {
         )
     ]
 
-    nonisolated static let bundledTasteSeeds: [InternetArchiveSearchResult] = [
+    public nonisolated static let bundledTasteSeeds: [InternetArchiveSearchResult] = [
         seed(identifier: "return_holmes_0708_librivox", title: "The Return of Sherlock Holmes", creator: "Arthur Conan Doyle", collections: ["librivoxaudio", "lv-mystery-crime"]),
         seed(identifier: "timemachine_sjm_librivox", title: "The Time Machine", creator: "H. G. Wells", collections: ["librivoxaudio", "lv-science-fiction"]),
         seed(identifier: "call_cthulhu_2401_librivox", title: "The Call of Cthulhu", creator: "H. P. Lovecraft", collections: ["librivoxaudio", "lv-horror-gothic"]),
@@ -155,7 +155,7 @@ final class HomeRecommendationStore: ObservableObject {
         seed(identifier: "iliad_popetranslation_1506_librivox", title: "The Iliad", creator: "Homer", collections: ["librivoxaudio", "lv-general-fiction"])
     ]
 
-    nonisolated static func uniqueResults(_ results: [InternetArchiveSearchResult]) -> [InternetArchiveSearchResult] {
+    public nonisolated static func uniqueResults(_ results: [InternetArchiveSearchResult]) -> [InternetArchiveSearchResult] {
         var seen: Set<String> = []
         return results.filter { result in
             seen.insert(result.identifier).inserted

@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 /// Lists bookmarks for the current book, grouped by chapter. Tap to jump,
 /// swipe to delete, tap note to edit.

@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct OnboardingPreferencesView: View {
     var initialSelection: Set<String>

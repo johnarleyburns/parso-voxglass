@@ -3,36 +3,36 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class PlaybackCoordinator: ObservableObject {
-    @Published private(set) var currentSession: PlaybackSession?
-    @Published var playbackError: String?
+public final class PlaybackCoordinator: ObservableObject {
+    @Published public private(set) var currentSession: PlaybackSession?
+    @Published public var playbackError: String?
 
     /// Current playback rate (P0-1). Published so the speed menu tracks it.
-    @Published private(set) var playbackRate: Float = PlaybackRate.normal
+    @Published public private(set) var playbackRate: Float = PlaybackRate.normal
 
     /// Sleep timer state (P0-2), mirrored from `sleepTimer` so the UI updates.
-    @Published private(set) var sleepMode: SleepTimer.Mode = .off
-    @Published private(set) var sleepRemaining: TimeInterval?
+    @Published public private(set) var sleepMode: SleepTimer.Mode = .off
+    @Published public private(set) var sleepRemaining: TimeInterval?
 
     /// Called when a playback position is persisted (e.g. periodic save, chapter end,
     /// finished). Receives the book's UUID and whether it was set as favorite.
     /// Used by the recommendation engine for taste signal capture.
-    var onPositionSaved: ((UUID, Bool) -> Void)?
+    public var onPositionSaved: ((UUID, Bool) -> Void)?
     /// Called when a bookmark is added, so the cloud sync layer can push it.
-    var onBookmarkAdded: ((Bookmark) -> Void)?
+    public var onBookmarkAdded: ((Bookmark) -> Void)?
 
-    var bookmarkStore: BookmarkStore?
+    public var bookmarkStore: BookmarkStore?
 
     /// Returns the count of live bookmarks for the current book, or nil when no
     /// store is present. Published so the UI can update instantly after an add.
-    @Published private(set) var bookmarkCount: Int?
+    @Published public private(set) var bookmarkCount: Int?
 
     /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
     /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
 
     /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
     /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
-    var listeningStatsStore: ListeningStatsStore?
+    public var listeningStatsStore: ListeningStatsStore?
     private var listenedAccumulator: TimeInterval = 0
     private var lastListenTick: Date?
 
@@ -43,9 +43,9 @@ final class PlaybackCoordinator: ObservableObject {
     private let sleepTimer: SleepTimer
     private var sleepTask: Task<Void, Never>?
     /// Duration of the sleep-timer fade-out; small in tests.
-    var fadeOutDuration: TimeInterval = 5
+    public var fadeOutDuration: TimeInterval = 5
     private let eqSettings = EQSettingsStore()
-    let eqPresets = EQPresetStore()
+    public let eqPresets = EQPresetStore()
     private var progressTask: Task<Void, Never>?
     private var lastPeriodicSave = Date.distantPast
     private var isHandlingInterruption = false
@@ -59,13 +59,13 @@ final class PlaybackCoordinator: ObservableObject {
     private var currentArtworkBookID: UUID?
     /// Fetches cover art as raw image bytes; injectable so tests can count fetches
     /// without network. The app injects a provider backed by `ArtworkService`.
-    var artworkProvider: (@MainActor (URL) async -> Data?)?
+    public var artworkProvider: (@MainActor (URL) async -> Data?)?
 
     /// The platform boundary (Now Playing, remote commands, artwork, background
     /// tasks). Injected by the app; unit tests use `NoopPlaybackBridge`.
     private let bridge: PlaybackPlatformBridge
 
-    init(
+    public init(
         engine: AudioEngine,
         positionStore: PositionStore,
         snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
@@ -103,7 +103,7 @@ final class PlaybackCoordinator: ObservableObject {
         restoreEQ()
     }
 
-    func restoreLatestSession(from books: [BookWithChapters]) async {
+    public func restoreLatestSession(from books: [BookWithChapters]) async {
         do {
             let storedPosition = try await positionStore.latestPosition()
             let snapshotPosition = snapshotStore.latest()
@@ -139,7 +139,7 @@ final class PlaybackCoordinator: ObservableObject {
     /// a snapshot more than 2 s ahead of the row wins even when the row's
     /// timestamp is newer — a lost SQLite write is exactly what this defends
     /// against. FK failures (book since deleted) are skipped silently.
-    func reconcileSnapshots() async {
+    public func reconcileSnapshots() async {
         for snapshot in snapshotStore.all() {
             do {
                 let row = try await positionStore.position(
@@ -157,7 +157,7 @@ final class PlaybackCoordinator: ObservableObject {
     /// Pure tie-break between a SQLite row and a UserDefaults snapshot for the
     /// same (book, chapter): the snapshot wins on newer timestamp, or whenever it
     /// is more than 2 s ahead of the row.
-    static func snapshotWins(row: PlaybackPosition?, snapshot: PlaybackPosition) -> Bool {
+    public static func snapshotWins(row: PlaybackPosition?, snapshot: PlaybackPosition) -> Bool {
         guard let row else { return true }
         if snapshot.updatedAt > row.updatedAt { return true }
         return snapshot.position > row.position + 2
@@ -165,7 +165,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// Merges the SQLite row and the snapshot for restore/resume: same
     /// (book, chapter) uses the tie-break; otherwise the newer of the two.
-    static func preferredPosition(
+    public static func preferredPosition(
         row: PlaybackPosition?,
         snapshot: PlaybackPosition?
     ) -> PlaybackPosition? {
@@ -181,7 +181,7 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
+    public func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
         let chapter: Chapter
         let startTime: TimeInterval
         var savedDuration: TimeInterval?
@@ -249,7 +249,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// The chapter + offset a book should resume at. Pure result type so the
     /// resolver can be unit-tested with zero I/O (cf. `startDecision`).
-    struct ResumeTarget: Equatable {
+    public struct ResumeTarget: Equatable {
         let chapter: Chapter
         let startTime: TimeInterval
     }
@@ -257,7 +257,7 @@ final class PlaybackCoordinator: ObservableObject {
     /// Pure resume resolver. Given a book's chapters and the last saved position,
     /// decides which chapter to open and at what offset. Never touches the engine
     /// or the store, so every rule is directly assertable.
-    static func resolveResume(
+    public static func resolveResume(
         chapters: [Chapter],
         saved: PlaybackPosition?,
         startFloor: TimeInterval = 5,
@@ -291,7 +291,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
 
-    func togglePlayPause() {
+    public func togglePlayPause() {
         guard currentSession != nil else { return }
         if engine.isPlaying {
             pause()
@@ -303,7 +303,7 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    func pause() {
+    public func pause() {
         guard currentSession != nil else { return }
         if let bookID = currentSession?.book.id {
             flushListening(bookID: bookID)
@@ -323,7 +323,7 @@ final class PlaybackCoordinator: ObservableObject {
         updateNowPlayingInfo()
     }
 
-    func seek(to position: TimeInterval) async {
+    public func seek(to position: TimeInterval) async {
         guard currentSession != nil else { return }
         resetSilenceBoost()
         await engine.seek(to: position)
@@ -335,12 +335,12 @@ final class PlaybackCoordinator: ObservableObject {
         updateNowPlayingInfo()
     }
 
-    func skip(by delta: TimeInterval) async {
+    public func skip(by delta: TimeInterval) async {
         guard let currentSession else { return }
         await seek(to: currentSession.position + delta)
     }
 
-    func skipToNextChapter() async {
+    public func skipToNextChapter() async {
         guard let session = currentSession else { return }
         await persistCurrentPosition(reason: .skip)
 
@@ -359,7 +359,7 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    func skipToPreviousChapter() async {
+    public func skipToPreviousChapter() async {
         guard let session = currentSession else { return }
         if session.position > 8 {
             await seek(to: 0)
@@ -384,7 +384,7 @@ final class PlaybackCoordinator: ObservableObject {
             : true
     }
 
-    func setVolumeNormalizationEnabled(_ enabled: Bool) {
+    public func setVolumeNormalizationEnabled(_ enabled: Bool) {
         UserDefaults.standard.set(enabled, forKey: AppPreferencesStore.Keys.volumeNormalizationEnabled)
     }
 
@@ -404,7 +404,7 @@ final class PlaybackCoordinator: ObservableObject {
         silenceBoosted = false
     }
 
-    func handleScenePhase(_ phase: ScenePhase) {
+    public func handleScenePhase(_ phase: ScenePhase) {
         if phase == .background {
             if let bookID = currentSession?.book.id {
                 flushListening(bookID: bookID)
@@ -416,7 +416,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// Stops and tears down the current session when its book is deleted (§6),
     /// and clears the restore snapshot so it can't resurface on next launch.
-    func stopPlayback(forDeletedBook bookID: UUID) {
+    public func stopPlayback(forDeletedBook bookID: UUID) {
         guard currentSession?.book.id == bookID else { return }
         flushListening(bookID: bookID)
         lastListenTick = nil
@@ -442,7 +442,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     /// Sets the playback rate for the current book (0.5–3.5×) and remembers it.
-    func setPlaybackRate(_ rate: Float) {
+    public func setPlaybackRate(_ rate: Float) {
         let clamped = PlaybackRate.clamp(rate)
         playbackRate = clamped
         resetSilenceBoost()
@@ -457,11 +457,11 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// Symbol-backed skip values (back/forward). The SF-Symbol *names* for these
     /// live in the app layer (`SkipSymbol`), since resolving them needs UIKit.
-    static let allowedSkipBackValues: [Int] = [10, 15, 30, 45, 60]
-    static let allowedSkipForwardValues: [Int] = [15, 30, 45, 60, 90]
+    public static let allowedSkipBackValues: [Int] = [10, 15, 30, 45, 60]
+    public static let allowedSkipForwardValues: [Int] = [15, 30, 45, 60, 90]
 
     /// The stored skip-backward interval (seconds), defaulting to 15.
-    var resolvedSkipBackwardInterval: Int {
+    public var resolvedSkipBackwardInterval: Int {
         let defaults = UserDefaults.standard
         let v = defaults.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
             ? defaults.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
@@ -470,7 +470,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     /// The stored skip-forward interval (seconds), defaulting to 30.
-    var resolvedSkipForwardInterval: Int {
+    public var resolvedSkipForwardInterval: Int {
         let defaults = UserDefaults.standard
         let v = defaults.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
             ? defaults.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
@@ -480,7 +480,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// Re-reads the stored skip values and pushes them to the platform bridge so
     /// the lock-screen skip intervals change immediately without re-registration.
-    func reconfigureSkipIntervals() {
+    public func reconfigureSkipIntervals() {
         bridge.setSkipIntervals(
             backward: resolvedSkipBackwardInterval,
             forward: resolvedSkipForwardInterval
@@ -514,7 +514,7 @@ final class PlaybackCoordinator: ObservableObject {
     /// Arms/cancels the sleep timer. End-of-chapter immediately cancels the
     /// gapless preload so `AVQueuePlayer` cannot advance past the current chapter;
     /// cancelling end-of-chapter re-arms the preload.
-    func setSleepTimer(_ mode: SleepTimer.Mode) {
+    public func setSleepTimer(_ mode: SleepTimer.Mode) {
         let wasEndOfChapter = sleepTimer.mode == .endOfChapter
         sleepTimer.arm(mode)
         sleepMode = mode
@@ -560,7 +560,7 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// Ramps volume to 0, pauses, then restores volume to 1.0 (or the next play
     /// is silent). Internal so the effectful shell is directly testable.
-    func fadeOutAndPause() async {
+    public func fadeOutAndPause() async {
         let steps = 10
         resetSilenceBoost()
         let startVolume = engine.volume
@@ -582,10 +582,10 @@ final class PlaybackCoordinator: ObservableObject {
     // MARK: - Bookmarks (P0-3, FREE; bookmark sync = Pro iCloud gate)
 
     /// The chapter id of the current session, or `nil`.
-    var currentChapterID: UUID? { currentSession?.chapter.id }
+    public var currentChapterID: UUID? { currentSession?.chapter.id }
 
     /// Adds a bookmark at the current position and published the count.
-    func addBookmark(note: String? = nil) {
+    public func addBookmark(note: String? = nil) {
         guard let store = bookmarkStore, let session = currentSession else { return }
         let pos = engine.currentTime
         let bookmark = Bookmark(
@@ -602,7 +602,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     /// Jumps to a bookmark's position, loading a different chapter if needed.
-    func jump(to bookmark: Bookmark) async {
+    public func jump(to bookmark: Bookmark) async {
         guard let session = currentSession, session.book.id == bookmark.bookID else { return }
         if bookmark.chapterID == session.chapter.id {
             await seek(to: bookmark.position)
@@ -612,7 +612,7 @@ final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    func refreshBookmarkCount(for bookID: UUID) async {
+    public func refreshBookmarkCount(for bookID: UUID) async {
         guard let store = bookmarkStore else { return }
         let all = (try? await store.bookmarks(forBookID: bookID)) ?? []
         bookmarkCount = all.isEmpty ? nil : all.count
@@ -620,27 +620,27 @@ final class PlaybackCoordinator: ObservableObject {
 
     // MARK: - Equalizer (Pro, §2)
 
-    var isEQEngaged: Bool {
+    public var isEQEngaged: Bool {
         engine.isEQEngaged
     }
 
-    var eqGains: [Float] {
+    public var eqGains: [Float] {
         eqSettings.gains
     }
 
-    func setEQEngaged(_ engaged: Bool) {
+    public func setEQEngaged(_ engaged: Bool) {
         guard ProFeature.isEnabled(.eq) else { return }
         engine.setEQEngaged(engaged)
         eqSettings.isEngaged = engaged
     }
 
-    func applyEQPreset(_ preset: EQPreset) {
+    public func applyEQPreset(_ preset: EQPreset) {
         guard ProFeature.isEnabled(.eq) else { return }
         engine.applyEQPreset(preset)
         eqSettings.gains = preset.gains
     }
 
-    func setEQGain(_ gain: Float, at band: Int) {
+    public func setEQGain(_ gain: Float, at band: Int) {
         guard ProFeature.isEnabled(.eq) else { return }
         engine.setEQGain(gain, at: band)
         var gains = eqSettings.gains
@@ -665,12 +665,12 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     /// Sentinel depth meaning "the rest of the book".
-    static let wholeBookPrefetchDepth = 999
+    public static let wholeBookPrefetchDepth = 999
 
     /// Pure resolution of prefetch depth (§3, decision D7): free tier and cellular
     /// (when Wi-Fi-only is on) clamp to 1 so near-gapless is never broken; Pro on
     /// Wi-Fi honors the stored depth.
-    static func resolvedPrefetchDepth(isPro: Bool, stored: Int, isCellular: Bool, wifiOnly: Bool) -> Int {
+    public static func resolvedPrefetchDepth(isPro: Bool, stored: Int, isCellular: Bool, wifiOnly: Bool) -> Int {
         guard isPro else { return 1 }
         if wifiOnly && isCellular { return 1 }
         return max(1, stored)
@@ -981,14 +981,14 @@ final class PlaybackCoordinator: ObservableObject {
 
     /// The last synchronous main-thread moment before background/kill — persist a
     /// SIGKILL-surviving snapshot. No async hop on purpose.
-    func handleWillResignActive() {
+    public func handleWillResignActive() {
         saveCurrentSnapshot()
     }
 
     /// On entering the background (or terminating): the snapshot write is
     /// synchronous, and the SQLite flush is wrapped in a background-task assertion
     /// (via the bridge) so the enqueued write still runs if the OS kills the app.
-    func handleWillBackgroundOrTerminate() {
+    public func handleWillBackgroundOrTerminate() {
         saveCurrentSnapshot()
         bridge.runWithBackgroundTask { [weak self] in
             await self?.persistCurrentPosition(reason: .background)
@@ -998,7 +998,7 @@ final class PlaybackCoordinator: ObservableObject {
     // MARK: - Audio interruptions & route changes (called by the platform bridge)
 
     /// An audio interruption began (call, Siri, another app). Pause and persist.
-    func handleAudioInterruptionBegan() {
+    public func handleAudioInterruptionBegan() {
         isHandlingInterruption = engine.isPlaying
         saveCurrentSnapshot()
         engine.pause()
@@ -1015,7 +1015,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     /// An audio interruption ended. Resume only if we were the one interrupted.
-    func handleAudioInterruptionEnded() {
+    public func handleAudioInterruptionEnded() {
         guard isHandlingInterruption else { return }
         isHandlingInterruption = false
         engine.play()
@@ -1025,7 +1025,7 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     /// An audio route change (e.g. headphones unplugged) — persist position.
-    func handleAudioRouteChanged() {
+    public func handleAudioRouteChanged() {
         Task { [weak self] in
             await self?.persistCurrentPosition(reason: .routeChange)
         }
@@ -1050,7 +1050,7 @@ final class PlaybackCoordinator: ObservableObject {
     /// directly assertable and host-testable. The app's bridge maps it to
     /// `MPNowPlayingInfoCenter`. `reportedRate` is 0 when paused so the system
     /// stops advancing the scrubber; `defaultRate` carries the book's rate.
-    nonisolated static func nowPlayingInfo(
+    public nonisolated static func nowPlayingInfo(
         session: PlaybackSession,
         currentTime: TimeInterval,
         duration: TimeInterval?,

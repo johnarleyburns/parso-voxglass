@@ -1,7 +1,7 @@
 import Foundation
 
-actor InternetArchiveCoverResolver {
-    static let shared = InternetArchiveCoverResolver()
+public actor InternetArchiveCoverResolver {
+    public static let shared = InternetArchiveCoverResolver()
 
     private var cache: [String: URL?] = [:]
 
@@ -10,11 +10,11 @@ actor InternetArchiveCoverResolver {
     /// treats covers as unvalidated.
     private var artworkValidator: CoverArtworkValidating?
 
-    func setArtworkValidator(_ validator: CoverArtworkValidating) {
+    public func setArtworkValidator(_ validator: CoverArtworkValidating) {
         artworkValidator = validator
     }
 
-    func resolve(for identifier: String) async -> URL? {
+    public func resolve(for identifier: String) async -> URL? {
         if let cached = cache[identifier] {
             return cached
         }
@@ -35,7 +35,7 @@ actor InternetArchiveCoverResolver {
         return nil
     }
 
-    func clearCache() {
+    public func clearCache() {
         cache.removeAll()
     }
 

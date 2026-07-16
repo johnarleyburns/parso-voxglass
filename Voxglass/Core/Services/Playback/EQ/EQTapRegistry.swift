@@ -5,33 +5,33 @@ import Foundation
 /// EQ silently dying on every gapless auto-advance — is unit-testable with no
 /// AVFoundation: one processor structurally cannot serve two items through a
 /// single tap, so each item gets its own, and item-changed evicts the old one.
-final class EQTapRegistry {
-    private(set) var identifiers: Set<ObjectIdentifier> = []
+public final class EQTapRegistry {
+    public private(set) var identifiers: Set<ObjectIdentifier> = []
 
-    var count: Int { identifiers.count }
-    var isEmpty: Bool { identifiers.isEmpty }
+    public var count: Int { identifiers.count }
+    public var isEmpty: Bool { identifiers.isEmpty }
 
-    func isAttached(_ object: AnyObject) -> Bool {
+    public func isAttached(_ object: AnyObject) -> Bool {
         identifiers.contains(ObjectIdentifier(object))
     }
 
     /// Records a tap for `object`. Returns `true` when newly attached (was absent).
     @discardableResult
-    func attach(_ object: AnyObject) -> Bool {
+    public func attach(_ object: AnyObject) -> Bool {
         identifiers.insert(ObjectIdentifier(object)).inserted
     }
 
     /// Evicts the tap for `object`. Returns `true` when something was removed.
     @discardableResult
-    func evict(_ object: AnyObject) -> Bool {
+    public func evict(_ object: AnyObject) -> Bool {
         identifiers.remove(ObjectIdentifier(object)) != nil
     }
 
-    func evict(identifier: ObjectIdentifier) {
+    public func evict(identifier: ObjectIdentifier) {
         identifiers.remove(identifier)
     }
 
-    func evictAll() {
+    public func evictAll() {
         identifiers.removeAll()
     }
 }

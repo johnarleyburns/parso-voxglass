@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassCore
 
 @MainActor
 final class AppServices: ObservableObject {
@@ -45,6 +46,9 @@ final class AppServices: ObservableObject {
         self.playbackCoordinator.artworkProvider = { url in
             await ArtworkService.shared.image(for: url)?.pngData()
         }
+        // Cover resolution lives in Core but image decoding needs UIKit, so inject
+        // the app-side validator into the (actor) resolver seam.
+        Task { await InternetArchiveCoverResolver.shared.setArtworkValidator(ArtworkService.shared) }
         let playlistStore = PlaylistStore(repository: playlistRepository)
         self.playlistStore = playlistStore
         self.tasteProfileStore = tasteProfileStore

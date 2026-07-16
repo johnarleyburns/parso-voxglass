@@ -6,12 +6,12 @@ import Foundation
 /// keys are derived purely from what the content *is* — the Internet Archive
 /// identifier or the local folder name, and the audio filename stem — so the
 /// same book imported on any device produces the same keys. Pure, no I/O.
-enum ContentKey {
+public enum ContentKey {
     /// `ia:<identifier>` for Internet Archive imports (parsed from the
     /// `sources.url` details URL, the same identifier
     /// `ensureInternetArchiveSource` dedupes on), or `local:<normalized folder>`
     /// for local-file imports. `nil` when no stable identity can be derived.
-    static func book(forSourceURL url: URL?, kind: SourceKind) -> String? {
+    public static func book(forSourceURL url: URL?, kind: SourceKind) -> String? {
         switch kind {
         case .librivox, .internetArchive, .internetArchiveURL:
             guard let url else { return nil }
@@ -31,12 +31,12 @@ enum ContentKey {
 
     /// Convenience for Internet Archive imports where the identifier is already
     /// in hand.
-    static func book(forInternetArchiveIdentifier identifier: String) -> String? {
+    public static func book(forInternetArchiveIdentifier identifier: String) -> String? {
         identifier.isEmpty ? nil : "ia:\(identifier)"
     }
 
     /// Convenience for local-folder imports.
-    static func book(forLocalFolderName folderName: String) -> String? {
+    public static func book(forLocalFolderName folderName: String) -> String? {
         let normalized = normalize(folderName)
         return normalized.isEmpty ? nil : "local:\(normalized)"
     }
@@ -44,7 +44,7 @@ enum ContentKey {
     /// Normalized filename stem — stable for both IA and local files, and stable
     /// across a folder move — falling back to the normalized title, then to
     /// `idx:<index>`.
-    static func chapter(remoteURL: URL?, localURL: URL?, index: Int, title: String) -> String {
+    public static func chapter(remoteURL: URL?, localURL: URL?, index: Int, title: String) -> String {
         for url in [remoteURL, localURL] {
             guard let url else { continue }
             let stem = normalize(url.deletingPathExtension().lastPathComponent)
@@ -62,7 +62,7 @@ enum ContentKey {
     /// Lowercases, strips diacritics, and collapses every non-alphanumeric run to
     /// a single `-`, so "Chapter 01 — L'Étranger.mp3" and
     /// "chapter_01__l_etranger.MP3" produce the same key.
-    static func normalize(_ raw: String) -> String {
+    public static func normalize(_ raw: String) -> String {
         let folded = raw
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
             .lowercased()

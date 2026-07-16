@@ -7,7 +7,7 @@ import Foundation
 /// is the fix for EQ silently dying on every gapless auto-advance: the preloaded
 /// item receives its own tap while the current item keeps playing through its
 /// own, so `AVQueuePlayer` advancing no longer drops the `audioMix`.
-final class EQAudioProcessor {
+public final class EQAudioProcessor {
     private let registry = EQTapRegistry()
     private var contexts: [ObjectIdentifier: TapContext] = [:]
     private var gains: [Float] = Array(repeating: 0, count: EQEngine.isoBands.count)
@@ -15,24 +15,24 @@ final class EQAudioProcessor {
     private let silenceDetector: SilenceDetector
     private var previousSilenceState: SilenceDetector.State = .speech
 
-    var onEngaged: (() -> Void)?
-    var onDisengaged: (() -> Void)?
-    var onSilenceChanged: (@MainActor (Bool) -> Void)?
+    public var onEngaged: (() -> Void)?
+    public var onDisengaged: (() -> Void)?
+    public var onSilenceChanged: (@MainActor (Bool) -> Void)?
 
-    var isEngaged: Bool { engaged }
-    var currentGains: [Float] { gains }
+    public var isEngaged: Bool { engaged }
+    public var currentGains: [Float] { gains }
 
-    init(silenceDetector: SilenceDetector = SilenceDetector()) {
+    public init(silenceDetector: SilenceDetector = SilenceDetector()) {
         self.silenceDetector = silenceDetector
     }
 
     /// Number of items with a live tap — lets tests prove two taps coexist across
     /// a gapless preload.
-    var activeTapCount: Int { registry.count }
+    public var activeTapCount: Int { registry.count }
 
     /// Per-item tap state. Retained by the tap's storage so each item's `EQEngine`
     /// (and thus its biquad filter history) is independent.
-    final class TapContext {
+    public final class TapContext {
         let engine: EQEngine
         weak var item: AVPlayerItem?
         weak var processor: EQAudioProcessor?
@@ -45,7 +45,7 @@ final class EQAudioProcessor {
         }
     }
 
-    func applyPreset(_ preset: EQPreset) {
+    public func applyPreset(_ preset: EQPreset) {
         guard ProFeature.isEnabled(.eq) else { return }
         gains = preset.gains
         for context in contexts.values {
@@ -54,7 +54,7 @@ final class EQAudioProcessor {
         }
     }
 
-    func setGain(_ gain: Float, at band: Int) {
+    public func setGain(_ gain: Float, at band: Int) {
         guard ProFeature.isEnabled(.eq) else { return }
         guard band >= 0, band < gains.count else { return }
         gains[band] = gain
@@ -63,7 +63,7 @@ final class EQAudioProcessor {
         }
     }
 
-    func attach(to playerItem: AVPlayerItem) {
+    public func attach(to playerItem: AVPlayerItem) {
         engaged = true
         let key = ObjectIdentifier(playerItem)
         guard contexts[key] == nil else { return }   // already tapped
@@ -83,7 +83,7 @@ final class EQAudioProcessor {
         onEngaged?()
     }
 
-    func detach(from playerItem: AVPlayerItem) {
+    public func detach(from playerItem: AVPlayerItem) {
         let key = ObjectIdentifier(playerItem)
         guard let context = contexts[key] else { return }
         context.tap?.release()
@@ -95,7 +95,7 @@ final class EQAudioProcessor {
     }
 
     /// Removes taps from every item and clears state (used when disengaging EQ).
-    func detachAll() {
+    public func detachAll() {
         for context in contexts.values {
             context.tap?.release()
         }
@@ -107,7 +107,7 @@ final class EQAudioProcessor {
 
     /// Evicts taps for items no longer present in `items` (e.g. after a gapless
     /// auto-advance leaves the previous chapter's item behind).
-    func pruneTaps(keeping items: [AVPlayerItem]) {
+    public func pruneTaps(keeping items: [AVPlayerItem]) {
         let live = Set(items.map(ObjectIdentifier.init))
         for (key, context) in contexts where !live.contains(key) {
             context.tap?.release()
@@ -125,13 +125,13 @@ final class EQAudioProcessor {
         onDisengaged?()
     }
 
-    func setEQStagesEnabled(_ enabled: Bool) {
+    public func setEQStagesEnabled(_ enabled: Bool) {
         for context in contexts.values {
             context.engine.eqStagesEnabled = enabled
         }
     }
 
-    func resetSilenceDetector() {
+    public func resetSilenceDetector() {
         silenceDetector.reset()
         previousSilenceState = .speech
     }

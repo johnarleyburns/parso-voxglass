@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct GlassDock: View {
     @EnvironmentObject var playback: PlaybackCoordinator

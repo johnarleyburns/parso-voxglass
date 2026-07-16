@@ -9,15 +9,15 @@ import UIKit
 /// not entitled. Security-scoped bookmarks are persisted so watched folders
 /// survive relaunch; a foreground rescan + `NSFilePresenter` keep them live.
 @MainActor
-final class FolderWatchService: ObservableObject {
-    struct WatchedFolder: Identifiable, Equatable {
-        let id: String
-        let url: URL
-        var name: String { url.lastPathComponent }
+public final class FolderWatchService: ObservableObject {
+    public struct WatchedFolder: Identifiable, Equatable {
+        public let id: String
+        public let url: URL
+        public var name: String { url.lastPathComponent }
     }
 
-    @Published private(set) var folders: [WatchedFolder] = []
-    @Published var errorMessage: String?
+    @Published public private(set) var folders: [WatchedFolder] = []
+    @Published public var errorMessage: String?
 
     private let repository: LibraryRepository
     private let defaults: UserDefaults
@@ -26,7 +26,7 @@ final class FolderWatchService: ObservableObject {
     private var presenters: [FolderPresenter] = []
     private var foregroundObserver: NSObjectProtocol?
 
-    init(repository: LibraryRepository, defaults: UserDefaults = .standard) {
+    public init(repository: LibraryRepository, defaults: UserDefaults = .standard) {
         self.repository = repository
         self.defaults = defaults
         reloadFolders()
@@ -52,14 +52,14 @@ final class FolderWatchService: ObservableObject {
         }
     }
 
-    func configure(libraryStore: LibraryStore) {
+    public func configure(libraryStore: LibraryStore) {
         self.libraryStore = libraryStore
     }
 
     // MARK: - Pure diff helper (testable, §4)
 
     /// The subset of `files` that are playable audio and not already known.
-    static func newAudioFiles(in files: [URL], knownURLs: Set<URL>) -> [URL] {
+    public static func newAudioFiles(in files: [URL], knownURLs: Set<URL>) -> [URL] {
         files.filter { url in
             let ext = url.pathExtension.lowercased()
             return AudioFormatSelection.allPlayableExtensions.contains(ext) && !knownURLs.contains(url)
@@ -68,7 +68,7 @@ final class FolderWatchService: ObservableObject {
 
     // MARK: - Public API
 
-    func addFolder(_ url: URL) async {
+    public func addFolder(_ url: URL) async {
         guard ProFeature.isEnabled(.folderWatch) else { return }
         guard !folders.contains(where: { $0.url == url }) else { return }
 
@@ -89,7 +89,7 @@ final class FolderWatchService: ObservableObject {
         }
     }
 
-    func removeFolder(_ id: String) {
+    public func removeFolder(_ id: String) {
         let remaining = storedBookmarks().filter { data in
             var stale = false
             guard let url = try? URL(resolvingBookmarkData: data, bookmarkDataIsStale: &stale) else { return false }
@@ -99,14 +99,14 @@ final class FolderWatchService: ObservableObject {
         reloadFolders()
     }
 
-    func rescanAll() async {
+    public func rescanAll() async {
         guard ProFeature.isEnabled(.folderWatch) else { return }
         for folder in folders {
             await scan(folder: folder)
         }
     }
 
-    func scan(folder: WatchedFolder) async {
+    public func scan(folder: WatchedFolder) async {
         guard ProFeature.isEnabled(.folderWatch) else { return }
         let url = folder.url
         let accessing = url.startAccessingSecurityScopedResource()
@@ -197,17 +197,17 @@ final class FolderWatchService: ObservableObject {
 /// Live folder watcher: fires the change handler when the folder's contents
 /// change so a rescan can pick up newly added files without a relaunch.
 private final class FolderPresenter: NSObject, NSFilePresenter {
-    let presentedItemURL: URL?
-    let presentedItemOperationQueue: OperationQueue = .main
+    public let presentedItemURL: URL?
+    public let presentedItemOperationQueue: OperationQueue = .main
     private let onChange: () -> Void
 
-    init(url: URL, onChange: @escaping () -> Void) {
+    public init(url: URL, onChange: @escaping () -> Void) {
         self.presentedItemURL = url
         self.onChange = onChange
         super.init()
     }
 
-    func presentedSubitemDidChange(at url: URL) {
+    public func presentedSubitemDidChange(at url: URL) {
         onChange()
     }
 }

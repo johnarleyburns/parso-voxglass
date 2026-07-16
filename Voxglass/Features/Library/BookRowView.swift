@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct BookRowView: View {
     var book: BookWithChapters

@@ -1,8 +1,8 @@
 import Foundation
 
-struct NarratorMatcher {
+public struct NarratorMatcher {
 
-    static func match(
+    public static func match(
         chapters: [Chapter],
         sections: [LibriVoxSection],
         archiveIdentifier: String
@@ -22,7 +22,7 @@ struct NarratorMatcher {
         return bookLevelOnly(sections: sections)
     }
 
-    static func bookLevelNarrators(from sections: [LibriVoxSection]) -> [String] {
+    public static func bookLevelNarrators(from sections: [LibriVoxSection]) -> [String] {
         var seen: Set<String> = []
         var ordered: [String] = []
         for section in sections {
@@ -99,7 +99,7 @@ struct NarratorMatcher {
         [:]
     }
 
-    static func sectionMatchesArchive(section: LibriVoxSection, identifier: String) -> Bool {
+    public static func sectionMatchesArchive(section: LibriVoxSection, identifier: String) -> Bool {
         guard let urlIArchive = section.urlIArchive else { return false }
         let stripped = urlIArchive
             .replacingOccurrences(of: "https://archive.org/details/", with: "")
@@ -108,7 +108,7 @@ struct NarratorMatcher {
         return stripped == identifier
     }
 
-    static func sectionStem(_ section: LibriVoxSection) -> String {
+    public static func sectionStem(_ section: LibriVoxSection) -> String {
         let raw: String
         if let fn = section.fileName, !fn.isEmpty {
             raw = fn
@@ -120,7 +120,7 @@ struct NarratorMatcher {
         return normalizeStem(raw)
     }
 
-    static func urlStem(_ url: URL) -> String {
+    public static func urlStem(_ url: URL) -> String {
         normalizeStem(url.lastPathComponent)
     }
 

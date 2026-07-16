@@ -1,12 +1,12 @@
 import Foundation
 
-enum InternetArchiveURLResource: Equatable, Sendable {
+public enum InternetArchiveURLResource: Equatable, Sendable {
     case advancedSearch(query: String)
     case identifier(String)
 }
 
-enum InternetArchiveURLParser {
-    static func parse(_ rawValue: String) -> InternetArchiveURLResource? {
+public enum InternetArchiveURLParser {
+    public static func parse(_ rawValue: String) -> InternetArchiveURLResource? {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 

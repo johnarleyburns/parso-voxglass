@@ -6,18 +6,18 @@ import Foundation
 /// slot to a bounded per-book map so switching books doesn't discard another
 /// book's safety net. The legacy single-slot key is still read on load so an
 /// upgrading user's in-flight position is preserved.
-struct LastPlaybackSnapshotStore {
+public struct LastPlaybackSnapshotStore {
     private static let legacyKey = "guru.parso.voxglass.lastPlaybackSnapshot"
     private static let mapKey = "guru.parso.voxglass.positionSnapshots"
-    static let maxSnapshots = 50
+    public static let maxSnapshots = 50
 
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
-    func save(_ position: PlaybackPosition) {
+    public func save(_ position: PlaybackPosition) {
         var map = loadMap()
         map[position.bookID.uuidString] = position
         if map.count > Self.maxSnapshots {
@@ -29,19 +29,19 @@ struct LastPlaybackSnapshotStore {
         persist(map)
     }
 
-    func position(forBookID bookID: UUID) -> PlaybackPosition? {
+    public func position(forBookID bookID: UUID) -> PlaybackPosition? {
         loadMap()[bookID.uuidString]
     }
 
-    func latest() -> PlaybackPosition? {
+    public func latest() -> PlaybackPosition? {
         loadMap().values.max { $0.updatedAt < $1.updatedAt }
     }
 
-    func all() -> [PlaybackPosition] {
+    public func all() -> [PlaybackPosition] {
         Array(loadMap().values)
     }
 
-    func clear(bookID: UUID) {
+    public func clear(bookID: UUID) {
         if let legacy = legacySnapshot(), legacy.bookID == bookID {
             defaults.removeObject(forKey: Self.legacyKey)
         }
@@ -50,7 +50,7 @@ struct LastPlaybackSnapshotStore {
         persist(map)
     }
 
-    func clear() {
+    public func clear() {
         defaults.removeObject(forKey: Self.mapKey)
         defaults.removeObject(forKey: Self.legacyKey)
     }

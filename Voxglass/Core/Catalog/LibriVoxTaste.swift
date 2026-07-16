@@ -1,12 +1,12 @@
 import Foundation
 
-struct LibriVoxTaste: Identifiable, Equatable, Sendable {
-    var id: String
-    var title: String
-    var systemImage: String
-    var archiveQuery: String
+public struct LibriVoxTaste: Identifiable, Equatable, Sendable {
+    public var id: String
+    public var title: String
+    public var systemImage: String
+    public var archiveQuery: String
 
-    static let all: [LibriVoxTaste] = [
+    public static let all: [LibriVoxTaste] = [
         LibriVoxTaste(
             id: "classics",
             title: "Classics",
@@ -69,17 +69,17 @@ struct LibriVoxTaste: Identifiable, Equatable, Sendable {
         )
     ]
 
-    static func taste(withID id: String) -> LibriVoxTaste? {
+    public static func taste(withID id: String) -> LibriVoxTaste? {
         all.first { $0.id == id }
     }
 
-    static func selected(from ids: Set<String>) -> [LibriVoxTaste] {
+    public static func selected(from ids: Set<String>) -> [LibriVoxTaste] {
         all.filter { ids.contains($0.id) }
     }
 }
 
-enum LibriVoxRecommendationQueryBuilder {
-    static func queries(for selectedIDs: Set<String>) -> [String] {
+public enum LibriVoxRecommendationQueryBuilder {
+    public static func queries(for selectedIDs: Set<String>) -> [String] {
         let browseQueryMap = Dictionary(uniqueKeysWithValues:
             LibriVoxBrowseGroup.categories.map { ($0.id, $0.archiveQuery) })
         let curatedQueryMap: [String: String] = [

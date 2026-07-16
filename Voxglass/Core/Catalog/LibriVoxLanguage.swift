@@ -7,16 +7,16 @@ import Foundation
 /// `collection:librivoxaudio AND language:<token>` counts — LibriVox items are
 /// overwhelmingly indexed with ISO 639-2/B or 639-3 codes (e.g. `eng`, `deu`,
 /// `fre`/`fra`, `grc`).
-struct LibriVoxLanguage: Identifiable, Equatable, Sendable {
-    var id: String
-    var displayName: String
-    var tokens: [String]
+public struct LibriVoxLanguage: Identifiable, Equatable, Sendable {
+    public var id: String
+    public var displayName: String
+    public var tokens: [String]
 
-    var clause: String {
+    public var clause: String {
         tokens.map { "language:\($0)" }.joined(separator: " OR ")
     }
 
-    static let all: [LibriVoxLanguage] = [
+    public static let all: [LibriVoxLanguage] = [
         LibriVoxLanguage(id: "eng", displayName: "English", tokens: ["eng", "English"]),
         LibriVoxLanguage(id: "deu", displayName: "German", tokens: ["deu", "ger", "German"]),
         LibriVoxLanguage(id: "fre", displayName: "French", tokens: ["fre", "fra", "French"]),
@@ -34,9 +34,9 @@ struct LibriVoxLanguage: Identifiable, Equatable, Sendable {
         LibriVoxLanguage(id: "heb", displayName: "Hebrew", tokens: ["heb", "Hebrew"])
     ]
 
-    static let defaultSelection: Set<String> = ["eng"]
+    public static let defaultSelection: Set<String> = ["eng"]
 
-    static func language(withID id: String) -> LibriVoxLanguage? {
+    public static func language(withID id: String) -> LibriVoxLanguage? {
         all.first { $0.id == id }
     }
 
@@ -44,7 +44,7 @@ struct LibriVoxLanguage: Identifiable, Equatable, Sendable {
     /// e.g. `" AND (language:eng OR language:English OR language:deu OR ...)"`.
     /// Returns `""` when the set is empty (interpreted as "all languages"),
     /// leaving the delegated query unfiltered.
-    static func clause(for codes: Set<String>) -> String {
+    public static func clause(for codes: Set<String>) -> String {
         let selected = all.filter { codes.contains($0.id) }
         guard !selected.isEmpty else { return "" }
         let joined = selected.map(\.clause).joined(separator: " OR ")

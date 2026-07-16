@@ -1,6 +1,6 @@
 import Foundation
 
-enum LibraryBookFilter: Equatable, Hashable, Sendable {
+public enum LibraryBookFilter: Equatable, Hashable, Sendable {
     case all
     case favorites
     case source(UUID)
@@ -9,7 +9,7 @@ enum LibraryBookFilter: Equatable, Hashable, Sendable {
     case inProgress
 }
 
-enum LibrarySort: Equatable, Sendable {
+public enum LibrarySort: Equatable, Sendable {
     case recent
     case title
     case author
@@ -17,7 +17,7 @@ enum LibrarySort: Equatable, Sendable {
     case duration
     case progress
 
-    func comparator() -> (BookWithChapters, BookWithChapters) -> Bool {
+    public func comparator() -> (BookWithChapters, BookWithChapters) -> Bool {
         switch self {
         case .recent:
             return { $0.book.updatedAt > $1.book.updatedAt }
@@ -46,29 +46,29 @@ enum LibrarySort: Equatable, Sendable {
 }
 
 /// Aggregated playback progress for a single book (P1-2).
-struct BookProgress: Equatable, Sendable {
-    let lastPosition: TimeInterval
-    let isFinished: Bool
+public struct BookProgress: Equatable, Sendable {
+    public let lastPosition: TimeInterval
+    public let isFinished: Bool
 }
 
 /// A playable audio file discovered inside a watched folder (§4).
-struct LocalAudioImport: Equatable, Sendable {
-    let url: URL
-    let title: String
-    let sortKey: String
-    let duration: TimeInterval?
+public struct LocalAudioImport: Equatable, Sendable {
+    public let url: URL
+    public let title: String
+    public let sortKey: String
+    public let duration: TimeInterval?
 }
 
-final class LibraryRepository {
+public final class LibraryRepository {
     private let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
 
-    init(database: AppDatabase, librivoxClient: LibriVoxCatalogClient? = nil) {
+    public init(database: AppDatabase, librivoxClient: LibriVoxCatalogClient? = nil) {
         self.database = database
         self.librivoxClient = librivoxClient
     }
 
-    func fetchLibrary() async throws -> [BookWithChapters] {
+    public func fetchLibrary() async throws -> [BookWithChapters] {
         try await database.prepare()
 
         let bookRows = try await database.query("""
@@ -89,7 +89,7 @@ final class LibraryRepository {
         }
     }
 
-    func fetchBooks(filteredBy filter: LibraryBookFilter) async throws -> [BookWithChapters] {
+    public func fetchBooks(filteredBy filter: LibraryBookFilter) async throws -> [BookWithChapters] {
         let library = try await fetchLibrary()
 
         switch filter {
@@ -114,7 +114,7 @@ final class LibraryRepository {
         }
     }
 
-    func fetchSources() async throws -> [Source] {
+    public func fetchSources() async throws -> [Source] {
         try await database.prepare()
 
         let rows = try await database.query("""
@@ -125,7 +125,7 @@ final class LibraryRepository {
         return try rows.map(Self.source(from:))
     }
 
-    func fetchRecentlyPlayed(limit: Int = 50) async throws -> [BookWithChapters] {
+    public func fetchRecentlyPlayed(limit: Int = 50) async throws -> [BookWithChapters] {
         try await database.prepare()
 
         let rows = try await database.query("""
@@ -146,7 +146,7 @@ final class LibraryRepository {
     /// positions, bookmarks, playlist links, taste terms, download records).
     /// Also removes the book's now-orphaned `Source`, since each Internet Archive
     /// import creates its own source row.
-    func deleteBook(_ bookID: UUID) async throws {
+    public func deleteBook(_ bookID: UUID) async throws {
         try await database.prepare()
 
         let rows = try await database.query(
@@ -180,7 +180,7 @@ final class LibraryRepository {
         }
     }
 
-    func setFavorite(_ isFavorite: Bool, for bookID: UUID) async throws -> BookWithChapters? {
+    public func setFavorite(_ isFavorite: Bool, for bookID: UUID) async throws -> BookWithChapters? {
         try await database.prepare()
 
         try await database.execute("""
@@ -194,7 +194,7 @@ final class LibraryRepository {
         return try await bookWithChapters(forBookID: bookID)
     }
 
-    func updateNarrators(_ narrators: [String], for bookID: UUID) async throws {
+    public func updateNarrators(_ narrators: [String], for bookID: UUID) async throws {
         try await database.prepare()
         try await database.execute("""
         UPDATE books
@@ -210,7 +210,7 @@ final class LibraryRepository {
     /// empty: extract names from the stored summary and persist them. Returns the
     /// number of books that were updated.
     @discardableResult
-    func backfillMissingNarrators() async throws -> Int {
+    public func backfillMissingNarrators() async throws -> Int {
         try await database.prepare()
         let rows = try await database.query(
             "SELECT id, summary FROM books WHERE narrators_json = '[]' OR narrators_json IS NULL",
@@ -233,7 +233,7 @@ final class LibraryRepository {
     /// books; audio filename stem for chapters). Idempotent — only NULL keys are
     /// touched, so this is cheap on every launch after the first.
     @discardableResult
-    func backfillContentKeysIfNeeded() async -> Int {
+    public func backfillContentKeysIfNeeded() async -> Int {
         do {
             try await database.prepare()
             var updated = 0
@@ -282,7 +282,7 @@ final class LibraryRepository {
 
     /// Returns all taste terms (axis, term) for a given book, for seeding
     /// the taste profile when the book is listened to.
-    func fetchBookTasteTerms(for bookID: UUID) async throws -> [(axis: String, term: String)] {
+    public func fetchBookTasteTerms(for bookID: UUID) async throws -> [(axis: String, term: String)] {
         try await database.prepare()
         let rows = try await database.query(
             "SELECT axis, term FROM book_taste WHERE book_id = ?",
@@ -294,7 +294,7 @@ final class LibraryRepository {
         }
     }
 
-    func importInternetArchiveItem(
+    public func importInternetArchiveItem(
         _ metadata: InternetArchiveMetadata,
         sourceKind: SourceKind
     ) async throws -> BookWithChapters {
@@ -414,7 +414,7 @@ final class LibraryRepository {
     /// per folder, one chapter per audio file. Idempotent — re-scanning only
     /// appends chapters for files not already present, so no duplicates.
     @discardableResult
-    func importLocalFolder(
+    public func importLocalFolder(
         folderURL: URL,
         folderName: String,
         files: [LocalAudioImport]
@@ -594,7 +594,7 @@ final class LibraryRepository {
     /// over only-positioned chapters marked a book finished off one finished
     /// chapter). Progress is Σ(finished chapter durations) + the current chapter's
     /// offset, not the largest within-chapter offset.
-    func fetchBookProgress() async throws -> [UUID: BookProgress] {
+    public func fetchBookProgress() async throws -> [UUID: BookProgress] {
         try await database.prepare()
         let rows = try await database.query("""
         SELECT p.book_id AS book_id,
@@ -628,7 +628,7 @@ final class LibraryRepository {
 
     /// Replaces all download records for a book with a fresh set (used when a
     /// new offline download is enqueued).
-    func replaceDownloadRecords(_ records: [DownloadRecord], forBookID bookID: UUID) async throws {
+    public func replaceDownloadRecords(_ records: [DownloadRecord], forBookID bookID: UUID) async throws {
         try await database.prepare()
         try await database.execute(
             "DELETE FROM download_records WHERE book_id = ?",
@@ -652,7 +652,7 @@ final class LibraryRepository {
         }
     }
 
-    func updateDownloadRecord(
+    public func updateDownloadRecord(
         bookID: UUID,
         chapterID: UUID,
         state: DownloadState,
@@ -675,7 +675,7 @@ final class LibraryRepository {
         ])
     }
 
-    func deleteDownloadRecords(forBookID bookID: UUID) async throws {
+    public func deleteDownloadRecords(forBookID bookID: UUID) async throws {
         try await database.prepare()
         try await database.execute(
             "DELETE FROM download_records WHERE book_id = ?",
@@ -683,7 +683,7 @@ final class LibraryRepository {
         )
     }
 
-    func fetchDownloadRecords(forBookID bookID: UUID) async throws -> [DownloadRecord] {
+    public func fetchDownloadRecords(forBookID bookID: UUID) async throws -> [DownloadRecord] {
         try await database.prepare()
         let rows = try await database.query("""
         SELECT id, book_id, chapter_id, state, local_url, bytes_downloaded, bytes_expected, updated_at
@@ -693,7 +693,7 @@ final class LibraryRepository {
         return try rows.map(Self.downloadRecord(from:))
     }
 
-    func fetchAllDownloadRecords() async throws -> [DownloadRecord] {
+    public func fetchAllDownloadRecords() async throws -> [DownloadRecord] {
         try await database.prepare()
         let rows = try await database.query("""
         SELECT id, book_id, chapter_id, state, local_url, bytes_downloaded, bytes_expected, updated_at
@@ -758,7 +758,7 @@ final class LibraryRepository {
         }
     }
 
-    static func bestCoverURL(identifier: String, metadata: InternetArchiveMetadata) -> URL? {
+    public static func bestCoverURL(identifier: String, metadata: InternetArchiveMetadata) -> URL? {
         let primaryURL = InternetArchiveMetadata.coverURL(for: identifier)
         let coverFiles = metadata.coverImageFiles
         if let bestCover = coverFiles.first, let fileURL = metadata.fileURL(for: bestCover) {

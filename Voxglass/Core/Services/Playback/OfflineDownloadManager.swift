@@ -1,7 +1,7 @@
 import Foundation
 
 /// Per-book offline availability state (§7).
-enum OfflineState: Equatable {
+public enum OfflineState: Equatable {
     case notCached
     case downloading(progress: Double)
     case cached
@@ -10,7 +10,7 @@ enum OfflineState: Equatable {
 
 /// Result of asking to make a book available offline — lets the UI decide
 /// whether to present the paywall or the cellular prompt before anything starts.
-enum OfflineStartDecision: Equatable {
+public enum OfflineStartDecision: Equatable {
     case start
     case needsPro
     case needsCellularConfirmation
@@ -21,14 +21,14 @@ enum OfflineStartDecision: Equatable {
 /// continue when the app is suspended and survive relaunch. Gated behind Pro;
 /// cellular is gated by the §5 "Cache full books on cellular data" toggle.
 @MainActor
-final class OfflineDownloadManager: NSObject, ObservableObject {
-    static let sessionIdentifier = "guru.parso.voxglass.offline"
+public final class OfflineDownloadManager: NSObject, ObservableObject {
+    public static let sessionIdentifier = "guru.parso.voxglass.offline"
 
     /// The active manager, so the `UIApplicationDelegate` background-events hook
     /// can forward the system completion handler.
-    static weak var current: OfflineDownloadManager?
+    public static weak var current: OfflineDownloadManager?
 
-    @Published private(set) var state: [UUID: OfflineState] = [:]
+    @Published public private(set) var state: [UUID: OfflineState] = [:]
 
     private let repository: LibraryRepository
     private let cacheStore: StreamCacheStore
@@ -40,7 +40,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
     private var failedBooks: Set<UUID> = []
     private var backgroundCompletionHandler: (() -> Void)?
 
-    init(
+    public init(
         repository: LibraryRepository,
         cacheStore: StreamCacheStore = .shared,
         defaults: UserDefaults = .standard
@@ -63,7 +63,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
 
     // MARK: - Pure decision helpers (testable)
 
-    static func startDecision(
+    public static func startDecision(
         isPro: Bool,
         isCellular: Bool,
         cacheOnCellular: Bool,
@@ -80,7 +80,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
         return .start
     }
 
-    static func pinCount(states: [UUID: OfflineState]) -> Int {
+    public static func pinCount(states: [UUID: OfflineState]) -> Int {
         states.values.filter { state in
             if case .cached = state { return true }
             if case .downloading = state { return true }
@@ -89,7 +89,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
     }
 
     /// Derives a book's state from per-chapter cache completeness.
-    static func derivedState(chapterComplete: [Bool], anyFailed: Bool) -> OfflineState {
+    public static func derivedState(chapterComplete: [Bool], anyFailed: Bool) -> OfflineState {
         guard !chapterComplete.isEmpty else { return .notCached }
         if chapterComplete.allSatisfy({ $0 }) { return .cached }
         if anyFailed { return .failed }
@@ -100,13 +100,13 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
 
     // MARK: - Public API
 
-    func state(for bookID: UUID) -> OfflineState {
+    public func state(for bookID: UUID) -> OfflineState {
         state[bookID] ?? .notCached
     }
 
     /// Reconstructs each book's state from `download_records` + cache
     /// completeness, and reattaches any in-flight background tasks. Call on launch.
-    func refreshState(for books: [BookWithChapters]) async {
+    public func refreshState(for books: [BookWithChapters]) async {
         let allRecords = (try? await repository.fetchAllDownloadRecords()) ?? []
         let recordsByBook = Dictionary(grouping: allRecords, by: \.bookID)
         let booksByID = Dictionary(uniqueKeysWithValues: books.map { ($0.book.id, $0) })
@@ -145,7 +145,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
     }
 
     /// Entry point for the "Make available offline" control.
-    func makeAvailableOffline(
+    public func makeAvailableOffline(
         book: BookWithChapters,
         isCellular: Bool,
         allowCellularOverride: Bool = false
@@ -167,7 +167,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
     /// Cancels in-flight tasks, unpins + removes the book's cached chapter files,
     /// deletes its download records, and resets state to `.notCached`. Keeps the
     /// book in the library.
-    func removeOffline(book: BookWithChapters) async {
+    public func removeOffline(book: BookWithChapters) async {
         await cancelTasks(forBookID: book.book.id)
         let keys = cacheableChapters(of: book).map { CachingResourceLoader.key(for: $0.url) }
         await cacheStore.unpin(keys)
@@ -181,7 +181,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
 
     /// Stores the system-provided completion handler for background events; the
     /// session calls it once all events have been delivered.
-    func handleBackgroundEvents(completionHandler: @escaping () -> Void) {
+    public func handleBackgroundEvents(completionHandler: @escaping () -> Void) {
         backgroundCompletionHandler = completionHandler
     }
 
@@ -369,7 +369,7 @@ final class OfflineDownloadManager: NSObject, ObservableObject {
 // MARK: - URLSessionDownloadDelegate
 
 extension OfflineDownloadManager: URLSessionDownloadDelegate {
-    nonisolated func urlSession(
+    public nonisolated func urlSession(
         _ session: URLSession,
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
@@ -386,7 +386,7 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
         }
     }
 
-    nonisolated func urlSession(
+    public nonisolated func urlSession(
         _ session: URLSession,
         downloadTask: URLSessionDownloadTask,
         didWriteData bytesWritten: Int64,
@@ -402,7 +402,7 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
         }
     }
 
-    nonisolated func urlSession(
+    public nonisolated func urlSession(
         _ session: URLSession,
         task: URLSessionTask,
         didCompleteWithError error: Error?
@@ -415,7 +415,7 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
         }
     }
 
-    nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+    public nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         Task { @MainActor in
             self.flushBackgroundCompletion()
         }

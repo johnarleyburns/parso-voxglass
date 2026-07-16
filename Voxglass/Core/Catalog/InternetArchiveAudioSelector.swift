@@ -1,9 +1,9 @@
 import Foundation
 
-enum InternetArchiveAudioSelector {
-    static let playableAudioExtensions = AudioFormatSelection.allPlayableExtensions
+public enum InternetArchiveAudioSelector {
+    public static let playableAudioExtensions = AudioFormatSelection.allPlayableExtensions
 
-    static func selectedAudioFiles(
+    public static func selectedAudioFiles(
         from files: [InternetArchiveFile],
         policy: DerivativePolicy? = nil
     ) -> [InternetArchiveFile] {
@@ -64,7 +64,7 @@ enum InternetArchiveAudioSelector {
         return nil
     }
 
-    static func isPlayableAudio(_ file: InternetArchiveFile) -> Bool {
+    public static func isPlayableAudio(_ file: InternetArchiveFile) -> Bool {
         let ext = URL(fileURLWithPath: file.name).pathExtension.lowercased()
         guard playableAudioExtensions.contains(ext) else { return false }
 
@@ -78,7 +78,7 @@ enum InternetArchiveAudioSelector {
         return true
     }
 
-    static func chapterTitle(for file: InternetArchiveFile) -> String {
+    public static func chapterTitle(for file: InternetArchiveFile) -> String {
         if let title = file.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty {
             return title.cleanedInternetArchiveText
         }

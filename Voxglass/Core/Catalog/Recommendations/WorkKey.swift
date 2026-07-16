@@ -1,8 +1,8 @@
 import Foundation
 
-enum WorkKey {
+public enum WorkKey {
 
-    static func normalized(author: String, title: String) -> String {
+    public static func normalized(author: String, title: String) -> String {
         let normalizedAuthor = author.lowercased()
             .split(separator: " ", omittingEmptySubsequences: true)
             .joined(separator: " ")
@@ -10,7 +10,7 @@ enum WorkKey {
         return "\(normalizedAuthor)\u{00B7}\(cleaned)"
     }
 
-    static func cleanTitle(_ raw: String) -> String {
+    public static func cleanTitle(_ raw: String) -> String {
         var t = raw
         let patterns: [String] = [
             #"\(version\s*\d+\)"#,

@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct ScaledFontModifier: ViewModifier {
     @ScaledMetric private var scaledSize: CGFloat

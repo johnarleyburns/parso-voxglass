@@ -3,13 +3,13 @@ import Foundation
 import StoreKit
 
 @MainActor
-final class StoreManager: ObservableObject {
-    static let shared = StoreManager()
+public final class StoreManager: ObservableObject {
+    public static let shared = StoreManager()
 
-    @Published private(set) var isPro = false
-    @Published private(set) var isRestoring = false
-    @Published private(set) var products: [Product] = []
-    @Published var purchaseError: String?
+    @Published public private(set) var isPro = false
+    @Published public private(set) var isRestoring = false
+    @Published public private(set) var products: [Product] = []
+    @Published public var purchaseError: String?
 
     private let productIDs = ["guru.parso.voxglass.pro"]
     private var updatesTask: Task<Void, Never>?
@@ -25,7 +25,7 @@ final class StoreManager: ObservableObject {
         updatesTask?.cancel()
     }
 
-    func loadProducts() async {
+    public func loadProducts() async {
         do {
             products = try await Product.products(for: productIDs)
         } catch {
@@ -33,7 +33,7 @@ final class StoreManager: ObservableObject {
         }
     }
 
-    func purchase(_ product: Product) async {
+    public func purchase(_ product: Product) async {
         do {
             let result = try await product.purchase()
 
@@ -55,7 +55,7 @@ final class StoreManager: ObservableObject {
         }
     }
 
-    func restorePurchases() async {
+    public func restorePurchases() async {
         isRestoring = true
         defer { isRestoring = false }
 
@@ -67,7 +67,7 @@ final class StoreManager: ObservableObject {
         }
     }
 
-    func refreshEntitlement() async {
+    public func refreshEntitlement() async {
         var foundEntitlement = false
 
         for await verification in Transaction.currentEntitlements {

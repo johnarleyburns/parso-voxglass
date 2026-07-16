@@ -1,11 +1,11 @@
 import Foundation
 
-struct LibriVoxBrowseGroup: Identifiable, Equatable {
-    var id: String
-    var title: String
-    var categories: [LibriVoxBrowseCategory]
+public struct LibriVoxBrowseGroup: Identifiable, Equatable {
+    public var id: String
+    public var title: String
+    public var categories: [LibriVoxBrowseCategory]
 
-    static let all: [LibriVoxBrowseGroup] = [
+    public static let all: [LibriVoxBrowseGroup] = [
         LibriVoxBrowseGroup(
             id: "fiction",
             title: "Fiction",
@@ -47,130 +47,130 @@ struct LibriVoxBrowseGroup: Identifiable, Equatable {
         )
     ]
 
-    static var categories: [LibriVoxBrowseCategory] {
+    public static var categories: [LibriVoxBrowseCategory] {
         all.flatMap(\.categories)
     }
 }
 
-struct LibriVoxBrowseCategory: Identifiable, Equatable {
-    var id: String
-    var title: String
-    var systemImage: String
-    var archiveQuery: String
+public struct LibriVoxBrowseCategory: Identifiable, Equatable {
+    public var id: String
+    public var title: String
+    public var systemImage: String
+    public var archiveQuery: String
 
-    static let popular = LibriVoxBrowseCategory(
+    public static let popular = LibriVoxBrowseCategory(
         id: "books-for-you",
         title: "Popular on LibriVox",
         systemImage: "waveform",
         archiveQuery: "mediatype:audio AND collection:librivoxaudio AND downloads:[50 TO *]"
     )
 
-    static let generalFiction = LibriVoxBrowseCategory(
+    public static let generalFiction = LibriVoxBrowseCategory(
         id: "lv-general-fiction",
         title: "General Fiction",
         systemImage: "book",
         archiveQuery: "collection:librivoxaudio AND (subject:\"General Fiction\" OR subject:\"Culture & Heritage Fiction\" OR subject:\"Family Life\")"
     )
 
-    static let literaryFiction = LibriVoxBrowseCategory(
+    public static let literaryFiction = LibriVoxBrowseCategory(
         id: "lv-literary-fiction",
         title: "Literary Fiction",
         systemImage: "books.vertical",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Literary Fiction\" OR subject:\"Epistolary Fiction\" OR subject:Literature OR subject:\"Literary Collections\")"
     )
 
-    static let scienceFiction = LibriVoxBrowseCategory(
+    public static let scienceFiction = LibriVoxBrowseCategory(
         id: "lv-science-fiction",
         title: "Science Fiction",
         systemImage: "sparkles",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Science Fiction\")"
     )
 
-    static let horrorGothic = LibriVoxBrowseCategory(
+    public static let horrorGothic = LibriVoxBrowseCategory(
         id: "lv-horror-gothic",
         title: "Horror & Gothic",
         systemImage: "moon.stars.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Horror & Supernatural Fiction\" OR subject:Horror OR subject:Gothic OR subject:\"Ghost stories\" OR subject:Supernatural OR subject:\"Gothic Fiction\")"
     )
 
-    static let mysteryCrime = LibriVoxBrowseCategory(
+    public static let mysteryCrime = LibriVoxBrowseCategory(
         id: "lv-mystery-crime",
         title: "Mystery & Crime",
         systemImage: "magnifyingglass",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Crime & Mystery Fiction\" OR subject:\"Detective Fiction\")"
     )
 
-    static let adventure = LibriVoxBrowseCategory(
+    public static let adventure = LibriVoxBrowseCategory(
         id: "lv-adventure",
         title: "Adventure",
         systemImage: "map.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Action & Adventure Fiction\" OR subject:\"Historical Fiction\" OR subject:\"Nautical & Marine Fiction\" OR subject:\"Sagas\" OR subject:Westerns)"
     )
 
-    static let fantasyMythology = LibriVoxBrowseCategory(
+    public static let fantasyMythology = LibriVoxBrowseCategory(
         id: "lv-fantasy-mythology",
         title: "Fantasy & Mythology",
         systemImage: "wand.and.stars",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Fantasy Fiction\" OR subject:Fantasy OR subject:\"Fairy tales\" OR subject:Mythology OR subject:Myths OR subject:Legends OR subject:Folklore OR subject:\"Fantastic Fiction\")"
     )
 
-    static let romance = LibriVoxBrowseCategory(
+    public static let romance = LibriVoxBrowseCategory(
         id: "lv-romance",
         title: "Romance",
         systemImage: "heart.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:Romance)"
     )
 
-    static let satireHumor = LibriVoxBrowseCategory(
+    public static let satireHumor = LibriVoxBrowseCategory(
         id: "lv-satire-humor",
         title: "Satire & Humor",
         systemImage: "face.smiling",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Humorous Fiction\" OR subject:Satire OR subject:Humor)"
     )
 
-    static let warMilitary = LibriVoxBrowseCategory(
+    public static let warMilitary = LibriVoxBrowseCategory(
         id: "lv-war-military",
         title: "War & Military",
         systemImage: "shield.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:\"War & Military Fiction\" OR subject:War OR subject:\"World War\" OR subject:Military OR subject:\"World War I\" OR subject:\"World War, 1914-1918\" OR subject:Espionage OR subject:Thrillers)"
     )
 
-    static let shortStories = LibriVoxBrowseCategory(
+    public static let shortStories = LibriVoxBrowseCategory(
         id: "lv-short-stories",
         title: "Short Stories",
         systemImage: "text.book.closed",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Short Stories\")"
     )
 
-    static let dramaPlays = LibriVoxBrowseCategory(
+    public static let dramaPlays = LibriVoxBrowseCategory(
         id: "lv-drama-plays",
         title: "Drama & Plays",
         systemImage: "theatermasks.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:Plays OR subject:\"Dramatic Readings\")"
     )
 
-    static let travel = LibriVoxBrowseCategory(
+    public static let travel = LibriVoxBrowseCategory(
         id: "lv-travel",
         title: "Travel & Exploration",
         systemImage: "airplane",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Travel & Geography\" OR subject:Travel OR subject:\"Voyages and travels\" OR subject:Geography OR subject:Exploration OR subject:\"Travel Fiction\")"
     )
 
-    static let ancientWorld = LibriVoxBrowseCategory(
+    public static let ancientWorld = LibriVoxBrowseCategory(
         id: "lv-ancient-world",
         title: "Ancient World",
         systemImage: "building.columns.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Classics (Greek & Latin Antiquity)\" OR subject:Antiquity)"
     )
 
-    static let poetry = LibriVoxBrowseCategory(
+    public static let poetry = LibriVoxBrowseCategory(
         id: "lv-poetry",
         title: "Poetry",
         systemImage: "text.quote",
         archiveQuery: "collection:librivoxaudio AND (subject:Poetry)"
     )
 
-    static let philosophyMind = LibriVoxBrowseCategory(
+    public static let philosophyMind = LibriVoxBrowseCategory(
         id: "lv-philosophy-mind",
         title: "Philosophy & Mind",
         systemImage: "brain.head.profile",
@@ -179,35 +179,35 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
         """
     )
 
-    static let history = LibriVoxBrowseCategory(
+    public static let history = LibriVoxBrowseCategory(
         id: "lv-history",
         title: "History",
         systemImage: "scroll",
         archiveQuery: "collection:librivoxaudio AND (subject:History OR subject:\"Middle Ages/Middle History\")"
     )
 
-    static let biography = LibriVoxBrowseCategory(
+    public static let biography = LibriVoxBrowseCategory(
         id: "lv-biography",
         title: "Biography",
         systemImage: "person.text.rectangle",
         archiveQuery: "collection:librivoxaudio AND (subject:\"Biography & Autobiography\" OR subject:Biography OR subject:Autobiography OR subject:Memoirs OR subject:Biographical)"
     )
 
-    static let scienceNature = LibriVoxBrowseCategory(
+    public static let scienceNature = LibriVoxBrowseCategory(
         id: "lv-science-nature",
         title: "Science & Nature",
         systemImage: "atom",
         archiveQuery: "collection:librivoxaudio AND (subject:Science OR subject:Nature OR subject:\"Life Sciences\" OR subject:\"Astronomy, Physics & Mechanics\" OR subject:\"Nature & Animal Fiction\")"
     )
 
-    static let religion = LibriVoxBrowseCategory(
+    public static let religion = LibriVoxBrowseCategory(
         id: "lv-religion",
         title: "Religion & Scripture",
         systemImage: "book.closed.fill",
         archiveQuery: "collection:librivoxaudio AND (subject:Religion OR subject:Bibles OR subject:\"Religious Fiction\")"
     )
 
-    static let essaysIdeas = LibriVoxBrowseCategory(
+    public static let essaysIdeas = LibriVoxBrowseCategory(
         id: "lv-essays-ideas",
         title: "Essays & Ideas",
         systemImage: "lightbulb",
@@ -218,9 +218,9 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
 
     /// All browse categories (excludes the synthetic `popular`, which carries no
     /// subjects), for lookup and genre mapping.
-    static let allCategories: [LibriVoxBrowseCategory] = LibriVoxBrowseGroup.categories
+    public static let allCategories: [LibriVoxBrowseCategory] = LibriVoxBrowseGroup.categories
 
-    static func category(withID id: String) -> LibriVoxBrowseCategory? {
+    public static func category(withID id: String) -> LibriVoxBrowseCategory? {
         allCategories.first { $0.id == id }
     }
 
@@ -228,7 +228,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     /// restricted to the positive (non-`AND NOT`) portion so excluded subjects are
     /// never harvested. Used to seed the taste profile from onboarding picks with
     /// terms that actually match archive.org items (unlike the raw `lv-*` id).
-    var subjects: [String] {
+    public var subjects: [String] {
         let positive = Self.positiveClause(of: archiveQuery)
         return Self.extractSubjects(from: positive)
     }
@@ -236,7 +236,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     /// A small, representative slice of `subjects` for onboarding seeding — enough
     /// to characterize the category without over-diluting the profile via subject
     /// dampening.
-    var representativeSubjects: [String] {
+    public var representativeSubjects: [String] {
         Array(subjects.prefix(3))
     }
 
@@ -244,7 +244,7 @@ struct LibriVoxBrowseCategory: Identifiable, Equatable {
     /// strings overlap the book's stored subjects the most. Returns `nil` when no
     /// category shares a subject. Used for the Now Playing genre label + the
     /// "More in <Genre>" discovery link.
-    static func category(forSubjects bookSubjects: [String]) -> LibriVoxBrowseCategory? {
+    public static func category(forSubjects bookSubjects: [String]) -> LibriVoxBrowseCategory? {
         let normalizedBook = bookSubjects
             .map { $0.lowercased().trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }

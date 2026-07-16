@@ -5,16 +5,16 @@ import Foundation
 /// stats is Pro-gated. `book_id` uses `ON DELETE SET NULL` so lifetime totals stay
 /// correct after a book is removed.
 @MainActor
-final class ListeningStatsStore: ObservableObject {
+public final class ListeningStatsStore: ObservableObject {
     private let database: AppDatabase
 
-    init(database: AppDatabase) {
+    public init(database: AppDatabase) {
         self.database = database
     }
 
     // MARK: - Recording
 
-    func record(bookID: UUID?, seconds: Double, at date: Date = Date()) async {
+    public func record(bookID: UUID?, seconds: Double, at date: Date = Date()) async {
         guard seconds > 0 else { return }
         do {
             try await database.prepare()
@@ -34,12 +34,12 @@ final class ListeningStatsStore: ObservableObject {
 
     // MARK: - Aggregates
 
-    func totalTime() async -> TimeInterval {
+    public func totalTime() async -> TimeInterval {
         (try? await scalar("SELECT COALESCE(SUM(seconds), 0) AS total FROM listening_events", column: "total")) ?? 0
     }
 
     /// Per-day totals for the last `days` days, keyed by the start of each day.
-    func dailyTotals(days: Int, calendar: Calendar = .current, now: Date = Date()) async -> [Date: TimeInterval] {
+    public func dailyTotals(days: Int, calendar: Calendar = .current, now: Date = Date()) async -> [Date: TimeInterval] {
         let cutoff = calendar.startOfDay(for: now).addingTimeInterval(-Double(max(0, days - 1)) * 86_400)
         guard let rows = try? await query("""
         SELECT occurred_at, seconds FROM listening_events
@@ -56,16 +56,16 @@ final class ListeningStatsStore: ObservableObject {
         return totals
     }
 
-    func currentStreak(calendar: Calendar = .current, now: Date = Date()) async -> Int {
+    public func currentStreak(calendar: Calendar = .current, now: Date = Date()) async -> Int {
         let totals = await dailyTotals(days: 400, calendar: calendar, now: now)
         return Self.currentStreak(dayTotals: totals, calendar: calendar, now: now)
     }
 
-    func topAuthors(limit: Int = 5) async -> [(term: String, seconds: TimeInterval)] {
+    public func topAuthors(limit: Int = 5) async -> [(term: String, seconds: TimeInterval)] {
         await topTerms(axis: "author", limit: limit)
     }
 
-    func topSubjects(limit: Int = 5) async -> [(term: String, seconds: TimeInterval)] {
+    public func topSubjects(limit: Int = 5) async -> [(term: String, seconds: TimeInterval)] {
         await topTerms(axis: "subject", limit: limit)
     }
 
@@ -89,7 +89,7 @@ final class ListeningStatsStore: ObservableObject {
 
     // MARK: - Pure streak helper (testable)
 
-    static func currentStreak(dayTotals: [Date: TimeInterval], calendar: Calendar = .current, now: Date = Date()) -> Int {
+    public static func currentStreak(dayTotals: [Date: TimeInterval], calendar: Calendar = .current, now: Date = Date()) -> Int {
         let activeDays = Set(
             dayTotals
                 .filter { $0.value > 0 }

@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import VoxglassCore
 
 @MainActor
 final class AVPlayerAudioEngine: NSObject, AudioEngine {

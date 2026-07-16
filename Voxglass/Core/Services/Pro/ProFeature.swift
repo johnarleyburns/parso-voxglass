@@ -1,6 +1,6 @@
 import Foundation
 
-enum ProFeature: String, CaseIterable {
+public enum ProFeature: String, CaseIterable {
     case cachePresets
     case prefetchDepth
     case folderWatch
@@ -10,13 +10,13 @@ enum ProFeature: String, CaseIterable {
     case offlineDownloads
     case libraryBackup
 
-    static func isEnabled(_ feature: ProFeature) -> Bool {
+    public static func isEnabled(_ feature: ProFeature) -> Bool {
         EntitlementCache.shared.isEntitled
     }
 }
 
-final class EntitlementCache: @unchecked Sendable {
-    static let shared = EntitlementCache()
+public final class EntitlementCache: @unchecked Sendable {
+    public static let shared = EntitlementCache()
 
     private let defaults = UserDefaults.standard
     private let lock = NSLock()
@@ -27,7 +27,7 @@ final class EntitlementCache: @unchecked Sendable {
     private var testOverride: Bool?
     #endif
 
-    private(set) var isEntitled: Bool {
+    public private(set) var isEntitled: Bool {
         get {
             lock.lock(); defer { lock.unlock() }
             #if DEBUG
@@ -54,12 +54,12 @@ final class EntitlementCache: @unchecked Sendable {
     #if DEBUG
     /// Test seam: forces entitlement on/off deterministically without StoreKit.
     /// Pass `nil` to fall back to the cached/real value.
-    func setTestEntitlement(_ value: Bool?) {
+    public func setTestEntitlement(_ value: Bool?) {
         lock.lock(); testOverride = value; lock.unlock()
     }
     #endif
 
-    func cacheEntitlement(_ entitled: Bool, productID: String? = nil) {
+    public func cacheEntitlement(_ entitled: Bool, productID: String? = nil) {
         isEntitled = entitled
         defaults.set(entitled, forKey: entitlementKey)
         if let pid = productID {
@@ -67,7 +67,7 @@ final class EntitlementCache: @unchecked Sendable {
         }
     }
 
-    var cachedProductID: String? {
+    public var cachedProductID: String? {
         defaults.string(forKey: productIDKey)
     }
 

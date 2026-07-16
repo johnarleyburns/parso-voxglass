@@ -1,20 +1,20 @@
 import Foundation
 
-protocol PositionStore: Sendable {
+public protocol PositionStore: Sendable {
     func save(_ position: PlaybackPosition) async throws
     func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition?
     func latestPosition() async throws -> PlaybackPosition?
     func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition?
 }
 
-struct SQLitePositionStore: PositionStore {
+public struct SQLitePositionStore: PositionStore {
     private let database: AppDatabase
 
-    init(database: AppDatabase) {
+    public init(database: AppDatabase) {
         self.database = database
     }
 
-    func save(_ position: PlaybackPosition) async throws {
+    public func save(_ position: PlaybackPosition) async throws {
         let clamped = PlaybackPosition(
             id: position.id,
             bookID: position.bookID,
@@ -45,7 +45,7 @@ struct SQLitePositionStore: PositionStore {
         ])
     }
 
-    func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition? {
+    public func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition? {
         let rows = try await database.query("""
         SELECT id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished
         FROM playback_positions
@@ -58,7 +58,7 @@ struct SQLitePositionStore: PositionStore {
         return try rows.first.map(Self.position(from:))
     }
 
-    func latestPosition() async throws -> PlaybackPosition? {
+    public func latestPosition() async throws -> PlaybackPosition? {
         let rows = try await database.query("""
         SELECT id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished
         FROM playback_positions
@@ -68,7 +68,7 @@ struct SQLitePositionStore: PositionStore {
         return try rows.first.map(Self.position(from:))
     }
 
-    func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition? {
+    public func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition? {
         let rows = try await database.query("""
         SELECT id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished
         FROM playback_positions

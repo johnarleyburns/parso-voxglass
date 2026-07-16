@@ -1,16 +1,16 @@
 import Foundation
 import StoreKit
 
-struct ProEntitlement: Equatable, Sendable {
-    let productID: String
-    let purchaseDate: Date
+public struct ProEntitlement: Equatable, Sendable {
+    public let productID: String
+    public let purchaseDate: Date
 
     private init(productID: String, purchaseDate: Date) {
         self.productID = productID
         self.purchaseDate = purchaseDate
     }
 
-    static func from(_ transaction: Transaction) -> ProEntitlement? {
+    public static func from(_ transaction: Transaction) -> ProEntitlement? {
         guard transaction.productType == .nonConsumable,
               transaction.revocationDate == nil else {
             return nil

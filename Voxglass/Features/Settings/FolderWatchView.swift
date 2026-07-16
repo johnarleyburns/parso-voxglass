@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import VoxglassCore
 
 struct FolderWatchView: View {
     @EnvironmentObject private var folderWatch: FolderWatchService

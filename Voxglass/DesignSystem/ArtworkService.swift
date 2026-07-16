@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import UIKit
+import VoxglassCore
 
 enum ArtworkServiceError: Error, Equatable {
     case invalidHTTPStatus(Int)
@@ -219,14 +220,13 @@ final class ArtworkService: @unchecked Sendable {
     }
 
     static func cacheFileName(for url: URL) -> String {
-        cacheKey(for: url)
+        ArtworkCacheKey.fileName(for: url)
     }
 
-    /// Stable store key for `url`. The `art_` prefix avoids collisions with audio
-    /// cache keys produced by `CachingResourceLoader.key(for:)`.
+    /// Stable store key for `url`. Delegates to Core's `ArtworkCacheKey` so the
+    /// library layer and this service derive identical keys (single source).
     static func cacheKey(for url: URL) -> String {
-        let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
-        return "art_" + digest.map { String(format: "%02x", $0) }.joined()
+        ArtworkCacheKey.key(for: url)
     }
 
     private func cacheKey(_ url: URL) -> String {
@@ -258,5 +258,13 @@ final class ArtworkService: @unchecked Sendable {
             try? fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
             try? data.write(to: url, options: [.atomic])
         }
+    }
+}
+
+extension ArtworkService: CoverArtworkValidating {
+    /// Core's cover-resolution seam: an image "validates" when it decodes to a
+    /// real (non-placeholder) cover, which `loadImage(for:)` enforces.
+    func imageValidates(at url: URL) async -> Bool {
+        (try? await loadImage(for: url)) != nil
     }
 }

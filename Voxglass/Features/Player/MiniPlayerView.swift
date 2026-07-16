@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 struct MiniPlayerView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator

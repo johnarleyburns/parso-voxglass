@@ -1,50 +1,50 @@
 import Foundation
 import UniformTypeIdentifiers
 
-struct BackupPayload: Codable, Equatable {
-    let version: Int
-    let exportDate: Date
-    let books: [BookPayload]
-    let positions: [PlaybackPosition]
-    let bookmarks: [Bookmark]
-    let playlists: [PlaylistPayload]
-    let tasteTerms: [TasteTermPayload]
+public struct BackupPayload: Codable, Equatable {
+    public let version: Int
+    public let exportDate: Date
+    public let books: [BookPayload]
+    public let positions: [PlaybackPosition]
+    public let bookmarks: [Bookmark]
+    public let playlists: [PlaylistPayload]
+    public let tasteTerms: [TasteTermPayload]
 
-    struct BookPayload: Codable, Equatable {
+    public struct BookPayload: Codable, Equatable {
         var book: Book
         var chapters: [Chapter]
         var source: Source?
     }
 
-    struct PlaylistPayload: Codable, Equatable {
+    public struct PlaylistPayload: Codable, Equatable {
         var playlist: Playlist
         var bookIDs: [UUID]
     }
 
-    struct TasteTermPayload: Codable, Equatable {
+    public struct TasteTermPayload: Codable, Equatable {
         var axis: String
         var term: String
         var weight: Double
     }
 
-    static let utType = UTType("guru.parso.voxglass.backup") ?? .json
-    static let currentVersion = 1
+    public static let utType = UTType("guru.parso.voxglass.backup") ?? .json
+    public static let currentVersion = 1
 }
 
 @MainActor
-final class LibraryBackupService: ObservableObject {
-    @Published var isExporting = false
-    @Published var isImporting = false
-    @Published var exportError: String?
-    @Published var importError: String?
+public final class LibraryBackupService: ObservableObject {
+    @Published public var isExporting = false
+    @Published public var isImporting = false
+    @Published public var exportError: String?
+    @Published public var importError: String?
 
     private let database: AppDatabase
 
-    init(database: AppDatabase) {
+    public init(database: AppDatabase) {
         self.database = database
     }
 
-    func exportPayload() async -> BackupPayload? {
+    public func exportPayload() async -> BackupPayload? {
         guard ProFeature.isEnabled(.libraryBackup) else {
             exportError = "Library backup requires Voxglass Pro."
             return nil
@@ -74,7 +74,7 @@ final class LibraryBackupService: ObservableObject {
         }
     }
 
-    func exportToFile() async -> URL? {
+    public func exportToFile() async -> URL? {
         guard let payload = await exportPayload() else { return nil }
 
         do {
@@ -93,7 +93,7 @@ final class LibraryBackupService: ObservableObject {
         }
     }
 
-    func importFromFile(_ url: URL) async -> Int {
+    public func importFromFile(_ url: URL) async -> Int {
         guard ProFeature.isEnabled(.libraryBackup) else {
             importError = "Library restore requires Voxglass Pro."
             return 0
@@ -122,7 +122,7 @@ final class LibraryBackupService: ObservableObject {
         }
     }
 
-    func importPayload(_ payload: BackupPayload) async -> Int {
+    public func importPayload(_ payload: BackupPayload) async -> Int {
         var importedCount = 0
 
         do {
@@ -557,7 +557,7 @@ final class LibraryBackupService: ObservableObject {
     }
 }
 
-extension DateFormatter {
+public extension DateFormatter {
     static let voxglassBackup: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"

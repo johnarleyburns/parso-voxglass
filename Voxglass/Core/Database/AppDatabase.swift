@@ -1,12 +1,12 @@
 import Foundation
 import SQLite3
 
-actor AppDatabase {
+public actor AppDatabase {
     private let url: URL
     private var handle: OpaquePointer?
     private var didMigrate = false
 
-    init(url: URL) {
+    public init(url: URL) {
         self.url = url
     }
 
@@ -16,7 +16,7 @@ actor AppDatabase {
         }
     }
 
-    static func makeApplicationDatabase() -> AppDatabase {
+    public static func makeApplicationDatabase() -> AppDatabase {
         do {
             let directory = try FileManager.default.url(
                 for: .applicationSupportDirectory,
@@ -32,7 +32,7 @@ actor AppDatabase {
         }
     }
 
-    static func makeTemporaryDatabase(named name: String = UUID().uuidString) -> AppDatabase {
+    public static func makeTemporaryDatabase(named name: String = UUID().uuidString) -> AppDatabase {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("VoxglassTests", isDirectory: true)
             .appendingPathComponent("\(name).sqlite")
@@ -41,7 +41,7 @@ actor AppDatabase {
         return AppDatabase(url: url)
     }
 
-    func prepare() throws {
+    public func prepare() throws {
         if handle == nil {
             try open()
         }
@@ -51,7 +51,7 @@ actor AppDatabase {
         }
     }
 
-    func execute(_ sql: String, _ bindings: [DatabaseValue] = []) throws {
+    public func execute(_ sql: String, _ bindings: [DatabaseValue] = []) throws {
         try prepare()
         let statement = try prepareStatement(sql)
         defer { sqlite3_finalize(statement) }
@@ -62,7 +62,7 @@ actor AppDatabase {
         }
     }
 
-    func query(_ sql: String, _ bindings: [DatabaseValue] = []) throws -> [DatabaseRow] {
+    public func query(_ sql: String, _ bindings: [DatabaseValue] = []) throws -> [DatabaseRow] {
         try prepare()
         let statement = try prepareStatement(sql)
         defer { sqlite3_finalize(statement) }
@@ -86,7 +86,7 @@ actor AppDatabase {
         try executeRaw("PRAGMA journal_mode = WAL")
     }
 
-    func executeRaw(_ sql: String) throws {
+    public func executeRaw(_ sql: String) throws {
         guard let handle else { throw DatabaseError.openFailed("database is not open") }
         var error: UnsafeMutablePointer<CChar>?
         guard sqlite3_exec(handle, sql, nil, nil, &error) == SQLITE_OK else {
@@ -96,7 +96,7 @@ actor AppDatabase {
         }
     }
 
-    func prepareStatement(_ sql: String) throws -> OpaquePointer {
+    public func prepareStatement(_ sql: String) throws -> OpaquePointer {
         guard let handle else { throw DatabaseError.openFailed("database is not open") }
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(handle, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
@@ -127,7 +127,7 @@ actor AppDatabase {
         }
     }
 
-    func row(from statement: OpaquePointer) -> DatabaseRow {
+    public func row(from statement: OpaquePointer) -> DatabaseRow {
         let count = sqlite3_column_count(statement)
         var values: [String: DatabaseValue] = [:]
 

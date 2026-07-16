@@ -1,4 +1,5 @@
 import SwiftUI
+import VoxglassCore
 
 /// Lists the user's playlists; enter from the "Library" section in Settings.
 struct PlaylistsView: View {
