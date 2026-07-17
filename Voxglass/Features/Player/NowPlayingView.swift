@@ -193,7 +193,7 @@ struct NowPlayingView: View {
     }
 
     private func controls(_ session: PlaybackSession) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 0) {
             Button {
                 Task { await playback.skipToPreviousChapter() }
             } label: {
@@ -204,6 +204,8 @@ struct NowPlayingView: View {
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
             .accessibilityLabel("Previous chapter")
+
+            Spacer(minLength: 0)
 
             Button {
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
@@ -220,6 +222,8 @@ struct NowPlayingView: View {
             }
             .accessibilityLabel("Back \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15) seconds")
 
+            Spacer(minLength: 0)
+
             Button {
                 playback.togglePlayPause()
             } label: {
@@ -230,6 +234,8 @@ struct NowPlayingView: View {
                     .background(Circle().fill(Color.white.opacity(0.16)))
             }
             .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
+
+            Spacer(minLength: 0)
 
             Button {
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
@@ -247,6 +253,8 @@ struct NowPlayingView: View {
             }
             .accessibilityLabel("Forward \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30) seconds")
 
+            Spacer(minLength: 0)
+
             Button {
                 Task { await playback.skipToNextChapter() }
             } label: {
@@ -258,21 +266,33 @@ struct NowPlayingView: View {
             }
             .accessibilityLabel("Next chapter")
         }
+        .frame(maxWidth: 360)
+        .frame(maxWidth: .infinity)
         .buttonStyle(.plain)
         .padding(.top, 16)
     }
 
     private func actionBar(_ session: PlaybackSession) -> some View {
-        HStack(spacing: 26) {
+        HStack(spacing: 0) {
             speedMenu
+
+            Spacer(minLength: 0)
 
             bookmarkButton
 
+            Spacer(minLength: 0)
+
             favoriteButton(session)
+
+            Spacer(minLength: 0)
 
             equalizerButton
 
+            Spacer(minLength: 0)
+
             sleepTimerMenu
+
+            Spacer(minLength: 0)
 
             ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
                 Image(systemName: "square.and.arrow.up")
@@ -280,6 +300,8 @@ struct NowPlayingView: View {
                     .frame(width: 44, height: 44)
             }
         }
+        .frame(maxWidth: 320)
+        .frame(maxWidth: .infinity)
         .foregroundStyle(Color.white.opacity(0.6))
         .padding(.top, 16)
     }
