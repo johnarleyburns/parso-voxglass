@@ -107,9 +107,148 @@ final class TasteProfileStoreTests: XCTestCase {
         XCTAssertEqual(surfaced.count, cap)
     }
 
+    func testHistoryRebuildIncludesAuthorsSubjectsAndLanguages() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-axes")
+        let store = TasteProfileStore(database: database)
+        try await seedHistoryBook(
+            in: database,
+            title: "The Clouds",
+            author: "Aristophanes",
+            subject: "Drama",
+            language: "eng",
+            listenedSeconds: 7200
+        )
+
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+
+        let profile = await store.fetchProfile()
+        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "aristophanes" })
+        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "drama" })
+        XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
+    }
+
+    func testHistoryRebuildIsIdempotent() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-idempotent")
+        let store = TasteProfileStore(database: database)
+        try await seedHistoryBook(
+            in: database,
+            title: "The Clouds",
+            author: "Aristophanes",
+            subject: "Drama",
+            language: "eng",
+            listenedSeconds: 7200
+        )
+
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        let first = try await rawWeight(in: database, axis: "author", term: "aristophanes")
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        let second = try await rawWeight(in: database, axis: "author", term: "aristophanes")
+
+        XCTAssertEqual(first, 2.0, accuracy: 0.001)
+        XCTAssertEqual(second, first, accuracy: 0.001)
+    }
+
+    func testHistoryRebuildIgnoresOldV1BackfillMarker() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-old-marker")
+        let store = TasteProfileStore(database: database)
+        let oldMarker = "voxglass.tasteHistoryBackfilledV1"
+        UserDefaults.standard.set(true, forKey: oldMarker)
+        defer { UserDefaults.standard.removeObject(forKey: oldMarker) }
+        try await seedHistoryBook(
+            in: database,
+            title: "Hamlet",
+            author: "William Shakespeare",
+            subject: "Drama",
+            language: "eng",
+            listenedSeconds: 3600
+        )
+
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+
+        let weight = try await rawWeight(in: database, axis: "author", term: "william shakespeare")
+        XCTAssertEqual(weight, 1.0, accuracy: 0.001)
+    }
+
     func testHistoryIncrementKeepsFloorAndCap() {
         XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 60), 0.5, "floor at 0.5")
         XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 2 * 3600), 2.0, accuracy: 0.001)
         XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 100 * 3600), 12.0, "cap at 12")
+    }
+
+    @discardableResult
+    private func seedHistoryBook(
+        in database: AppDatabase,
+        title: String,
+        author: String,
+        subject: String,
+        language: String,
+        listenedSeconds: Double
+    ) async throws -> UUID {
+        let sourceID = UUID()
+        let bookID = UUID()
+        let chapterID = UUID()
+        let now = Date().timeIntervalSince1970
+
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID.uuidString),
+            .string(SourceKind.librivox.rawValue),
+            .string(title),
+            .string("https://archive.org/details/\(bookID.uuidString)"),
+            .double(now)
+        ])
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(bookID.uuidString),
+            .string(title),
+            .string(ModelMapping.authorsJSON([author])),
+            .null,
+            .string(sourceID.uuidString),
+            .null,
+            .double(now),
+            .double(now),
+            .bool(false)
+        ])
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(chapterID.uuidString),
+            .string(bookID.uuidString),
+            .string("Chapter 1"),
+            .string("Chapter 1"),
+            .int(0),
+            .double(120),
+            .null,
+            .null
+        ])
+        for (axis, term) in [("author", author), ("subject", subject), ("language", language)] {
+            try await database.execute(
+                "INSERT INTO book_taste (book_id, axis, term) VALUES (?, ?, ?)",
+                [.string(bookID.uuidString), .string(axis), .string(term.lowercased())]
+            )
+        }
+        try await database.execute("""
+        INSERT INTO listening_events (id, book_id, seconds, occurred_at)
+        VALUES (?, ?, ?, ?)
+        """, [
+            .string(UUID().uuidString),
+            .string(bookID.uuidString),
+            .double(listenedSeconds),
+            .double(now)
+        ])
+        return bookID
+    }
+
+    private func rawWeight(in database: AppDatabase, axis: String, term: String) async throws -> Double {
+        let rows = try await database.query(
+            "SELECT weight FROM taste_profile_terms WHERE axis = ? AND term = ?",
+            [.string(axis), .string(term)]
+        )
+        return try XCTUnwrap(rows.first?.double("weight"))
     }
 }

@@ -142,6 +142,44 @@ public final class LibraryRepository {
         return orderedIDs.compactMap { libraryByID[$0] }
     }
 
+    /// Stable identities for every work that has any saved playback position.
+    /// These are used to keep listened items out of recommendation shelves even
+    /// when the local UUID differs from the archive.org result identifier.
+    public func fetchListenedWorkExclusionKeys() async throws -> Set<String> {
+        try await database.prepare()
+
+        let rows = try await database.query("""
+        SELECT DISTINCT b.id AS book_id,
+               b.title AS title,
+               b.authors_json AS authors_json,
+               b.content_key AS content_key,
+               s.kind AS source_kind,
+               s.url AS source_url
+        FROM playback_positions p
+        JOIN books b ON b.id = p.book_id
+        JOIN sources s ON s.id = b.source_id
+        """)
+
+        var keys: Set<String> = []
+        for row in rows {
+            if let bookID = row.string("book_id") {
+                keys.insert(bookID)
+            }
+
+            let kind = SourceKind(rawValue: row.string("source_kind") ?? "") ?? .localFiles
+            let sourceURL = row.string("source_url").flatMap(URL.init(string:))
+            let contentKey = row.string("content_key") ?? ContentKey.book(forSourceURL: sourceURL, kind: kind)
+            if let contentKey {
+                keys.formUnion(Self.exclusionKeys(forContentKey: contentKey))
+            }
+
+            let title = row.string("title") ?? ""
+            let authors = ModelMapping.authors(from: row)
+            keys.insert(WorkKey.normalized(author: authors.isEmpty ? "Unknown author" : authors.joined(separator: ", "), title: title))
+        }
+        return keys
+    }
+
     /// Deletes a book and everything that cascades from it (chapters, playback
     /// positions, bookmarks, playlist links, taste terms, download records).
     /// Also removes the book's now-orphaned `Source`, since each Internet Archive
@@ -834,6 +872,20 @@ public final class LibraryRepository {
             updatedAt: ModelMapping.date(row, "updated_at"),
             isFavorite: row.bool("is_favorite") ?? false
         )
+    }
+
+    private static func exclusionKeys(forContentKey contentKey: String) -> Set<String> {
+        let trimmed = contentKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+
+        var keys: Set<String> = [trimmed]
+        if trimmed.hasPrefix("ia:") {
+            let identifier = String(trimmed.dropFirst(3))
+            if !identifier.isEmpty {
+                keys.insert(identifier)
+            }
+        }
+        return keys
     }
 
     private static func chapter(from row: DatabaseRow) throws -> Chapter {

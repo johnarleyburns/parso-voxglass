@@ -10,16 +10,31 @@ public struct ProfileBucket: Equatable {
     public let bucket: String
     public let creatorTerms: [TasteTerm]
     public let subjectTerms: [TasteTerm]
+    public let languageTerms: [TasteTerm]
+
+    public init(
+        bucket: String,
+        creatorTerms: [TasteTerm],
+        subjectTerms: [TasteTerm],
+        languageTerms: [TasteTerm] = []
+    ) {
+        self.bucket = bucket
+        self.creatorTerms = creatorTerms
+        self.subjectTerms = subjectTerms
+        self.languageTerms = languageTerms
+    }
 
     public var topCreators: [String] { creatorTerms.prefix(5).map(\.term) }
     public var topSubjects: [String] { subjectTerms.prefix(8).map(\.term) }
 
-    public var isEmpty: Bool { creatorTerms.isEmpty && subjectTerms.isEmpty }
+    public var isEmpty: Bool { creatorTerms.isEmpty && subjectTerms.isEmpty && languageTerms.isEmpty }
 
-    public func allTerms() -> [TasteTerm] { creatorTerms + subjectTerms }
+    public func allTerms() -> [TasteTerm] { creatorTerms + subjectTerms + languageTerms }
 }
 
 public actor TasteProfileStore {
+    public static let listeningHistoryRebuildVersion = 2
+
     private let database: AppDatabase
 
     public init(database: AppDatabase) {
@@ -81,20 +96,21 @@ public actor TasteProfileStore {
     /// listen completion (favorite-boosted); only the positive delta beyond what
     /// this book has already contributed is applied to its taste terms, with the
     /// running state persisted in `taste_signal_state`.
+    @discardableResult
     public func applySignal(
         _ signal: PlaybackTasteSignal,
         terms: [(axis: String, term: String)]
-    ) async {
+    ) async -> Bool {
         let completion: Double
         if signal.isFinished {
             completion = 1.0
         } else {
-            guard let duration = signal.duration, duration > 0 else { return }
+            guard let duration = signal.duration, duration > 0 else { return false }
             completion = min(max(signal.position / duration, 0), 1)
         }
         guard signal.isFinished
                 || completion >= RecommendationConstants.meaningfulListenCompletion else {
-            return
+            return false
         }
 
         var targetIncrement = max(0.5, completion)
@@ -112,7 +128,7 @@ public actor TasteProfileStore {
             let appliedIncrement = rows.first?.double("applied_increment") ?? 0
 
             let delta = targetIncrement - appliedIncrement
-            guard delta > 0.0001 else { return }
+            guard delta > 0.0001 else { return false }
 
             for (axis, term) in terms {
                 await upsertTerm(axis: axis, term: term, increment: delta)
@@ -132,33 +148,96 @@ public actor TasteProfileStore {
                 .double(targetIncrement),
                 .double(now)
             ])
-        } catch {}
+            return true
+        } catch {
+            return false
+        }
     }
 
-    /// One-time backfill of the taste profile from pre-existing listening history.
-    /// The forward signal (`upsertTerm` on position save) is forward-only, so any
-    /// listening that happened before that wiring — or before this profile was
-    /// rebuilt — never shaped the shelf. This rebuilds it from the authoritative
-    /// `listening_events ⋈ book_taste` join, weighting each (author/subject) term
-    /// by how long the user actually listened. Callers gate this behind a run-once
-    /// flag so it never double-counts.
-    public func seedFromHistory() async {
+    /// Rebuilds the profile from durable local taste sources. This is safe to run
+    /// repeatedly: it clears the derived table, recomputes history from
+    /// `listening_events JOIN book_taste`, folds in captured playback-signal
+    /// state, and then reapplies onboarding seeds from the current preferences.
+    public func rebuildFromListeningHistory(
+        version: Int = TasteProfileStore.listeningHistoryRebuildVersion,
+        selectedCollectionIDs: Set<String> = []
+    ) async {
+        guard version > 0 else { return }
         do {
             try await database.prepare()
+            var weights: [TermKey: Double] = [:]
+
             let rows = try await database.query("""
-            SELECT bt.axis AS axis, bt.term AS term, SUM(le.seconds) AS total
-            FROM listening_events le
-            JOIN book_taste bt ON bt.book_id = le.book_id
-            WHERE le.book_id IS NOT NULL AND bt.axis IN ('author', 'subject')
-            GROUP BY bt.axis, bt.term
+            SELECT bt.book_id AS book_id,
+                   bt.axis AS axis,
+                   bt.term AS term,
+                   COALESCE(le.total_seconds, 0) AS listened_seconds,
+                   COALESCE(tss.applied_increment, 0) AS applied_increment
+            FROM book_taste bt
+            LEFT JOIN (
+                SELECT book_id, SUM(seconds) AS total_seconds
+                FROM listening_events
+                WHERE book_id IS NOT NULL
+                GROUP BY book_id
+            ) le ON le.book_id = bt.book_id
+            LEFT JOIN taste_signal_state tss ON tss.book_id = bt.book_id
+            WHERE bt.axis IN ('author', 'subject', 'language')
+              AND (COALESCE(le.total_seconds, 0) > 0 OR COALESCE(tss.applied_increment, 0) > 0)
             """)
             for row in rows {
                 guard let axis = row.string("axis"),
                       let term = row.string("term"),
-                      let seconds = row.double("total"), seconds > 0 else { continue }
-                await upsertTerm(axis: axis, term: term, increment: Self.historyIncrement(forSeconds: seconds))
+                      let normalized = Self.normalizedTerm(axis: axis, term: term) else { continue }
+                let normalizedAxis = axis.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                let listenedSeconds = row.double("listened_seconds") ?? 0
+                let historyWeight = listenedSeconds > 0
+                    ? Self.historyIncrement(forSeconds: listenedSeconds)
+                    : 0
+                let signalWeight = row.double("applied_increment") ?? 0
+                let contribution = max(historyWeight, signalWeight)
+                guard contribution > 0 else { continue }
+                weights[TermKey(axis: normalizedAxis, term: normalized), default: 0] += contribution
+            }
+
+            for id in selectedCollectionIDs.sorted() {
+                guard let category = LibriVoxBrowseCategory.category(withID: id) else { continue }
+                for subject in category.representativeSubjects {
+                    guard let normalized = Self.normalizedTerm(axis: "subject", term: subject) else { continue }
+                    weights[TermKey(axis: "subject", term: normalized), default: 0] += RecommendationConstants.onboardingSeedWeight
+                }
+            }
+
+            let now = Date().timeIntervalSince1970
+            try await database.executeRaw("BEGIN IMMEDIATE TRANSACTION")
+            do {
+                try await database.execute("DELETE FROM taste_profile_terms")
+                for entry in weights.sorted(by: { lhs, rhs in
+                    lhs.key.axis == rhs.key.axis
+                        ? lhs.key.term < rhs.key.term
+                        : lhs.key.axis < rhs.key.axis
+                }) {
+                    try await database.execute("""
+                    INSERT INTO taste_profile_terms (axis, term, weight, last_ts)
+                    VALUES (?, ?, ?, ?)
+                    """, [
+                        .string(entry.key.axis),
+                        .string(entry.key.term),
+                        .double(entry.value),
+                        .double(now)
+                    ])
+                }
+                try await database.executeRaw("COMMIT")
+            } catch {
+                try? await database.executeRaw("ROLLBACK")
+                throw error
             }
         } catch {}
+    }
+
+    /// Compatibility wrapper for callers/tests still using the old name. The new
+    /// implementation is idempotent and includes author, subject, and language.
+    public func seedFromHistory() async {
+        await rebuildFromListeningHistory(version: Self.listeningHistoryRebuildVersion)
     }
 
     /// Converts listened seconds into a profile increment: weighted by hours
@@ -189,6 +268,7 @@ public actor TasteProfileStore {
         let rawTerms = await fetchRawTerms()
         var authors: [TasteTerm] = []
         var subjects: [TasteTerm] = []
+        var languages: [TasteTerm] = []
 
         let subjectWeights = rawTerms.filter { $0.axis == "subject" }
         let distinctSubjectCount = Set(subjectWeights.map(\.term)).count
@@ -215,14 +295,21 @@ public actor TasteProfileStore {
             switch t.axis {
             case "author": authors.append(term)
             case "subject": subjects.append(term)
+            case "language": languages.append(term)
             default: break
             }
         }
 
         authors.sort { $0.weight > $1.weight }
         subjects.sort { $0.weight > $1.weight }
+        languages.sort { $0.weight > $1.weight }
 
-        return ProfileBucket(bucket: "audiobooks", creatorTerms: authors, subjectTerms: subjects)
+        return ProfileBucket(
+            bucket: "audiobooks",
+            creatorTerms: authors,
+            subjectTerms: subjects,
+            languageTerms: languages
+        )
     }
 
     // MARK: - Surfaced ring
@@ -264,12 +351,17 @@ public actor TasteProfileStore {
         let weight: Double
     }
 
+    private struct TermKey: Hashable {
+        let axis: String
+        let term: String
+    }
+
     private func fetchRawTerms() async -> [RawTerm] {
         do {
             try await database.prepare()
             let rows = try await database.query("""
             SELECT axis, term, weight FROM taste_profile_terms
-            WHERE axis IN ('author', 'subject')
+            WHERE axis IN ('author', 'subject', 'language')
             ORDER BY weight DESC
             LIMIT 200
             """)
@@ -316,5 +408,25 @@ public actor TasteProfileStore {
 
     private static func isCollectionLikeSubject(_ term: String) -> Bool {
         knownCollectionIDs.contains(term) || term.hasPrefix("lv-")
+    }
+
+    private static func normalizedTerm(axis rawAxis: String, term rawTerm: String) -> String? {
+        let axis = rawAxis.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let term = rawTerm.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !axis.isEmpty, !term.isEmpty else { return nil }
+
+        switch axis {
+        case "author":
+            guard term != "unknown", term != "unknown author", term != "various" else { return nil }
+            return term
+        case "subject":
+            guard !RecommendationConstants.subjectStopList.contains(term),
+                  !isCollectionLikeSubject(term) else { return nil }
+            return term
+        case "language":
+            return term
+        default:
+            return nil
+        }
     }
 }

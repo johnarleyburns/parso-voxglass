@@ -211,7 +211,7 @@ private struct OnboardingCollectionCard: View {
                 assetName: collection.assetName,
                 remoteImageURL: collection.remoteImageURL
             )
-            .frame(width: 170, height: 118)
+            .frame(width: 170, height: 170)
 
             Text(collection.title)
                 .scaledFont(size: 13, weight: .bold)

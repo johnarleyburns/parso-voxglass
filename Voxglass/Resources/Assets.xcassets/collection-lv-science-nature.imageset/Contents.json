@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "collection-lv-science-nature.jpg",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

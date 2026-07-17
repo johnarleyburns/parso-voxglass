@@ -21,17 +21,21 @@ public final class RecommendationEngine {
         selectedLanguages: Set<String>
     ) async -> [InternetArchiveSearchResult] {
         let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
+        let excludeKeys = await buildExcludeKeys()
         let hasProfile = await profileStore.hasProfile()
 
         if !hasProfile {
             let onboarded = HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs)
             await profileStore.seedOnboardingPicks(from: selectedCollectionIDs)
-            return onboarded
+            return filterExcluded(onboarded, excludeKeys: excludeKeys)
         }
 
         let profile = await profileStore.fetchProfile()
         guard !profile.isEmpty else {
-            return HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs)
+            return filterExcluded(
+                HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs),
+                excludeKeys: excludeKeys
+            )
         }
 
         let dateSeed = dateSeedString()
@@ -41,15 +45,8 @@ public final class RecommendationEngine {
             languageClause: languageClause
         )
         guard !queries.isEmpty else {
-            return HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs)
+            return []
         }
-
-        let surfacedIds = await profileStore.fetchSurfacedIdentifiers()
-        let libraryIDs = Set(libraryStore.books.map { book in
-            WorkKey.normalized(author: book.book.authorLine, title: book.book.title)
-        })
-        let libraryRawIDs = Set(libraryStore.books.map(\.book.id.uuidString))
-        let excludeKeys = surfacedIds.union(libraryIDs).union(libraryRawIDs)
 
         var candidates: [InternetArchiveSearchResult] = []
         for query in queries.prefix(6) {
@@ -67,7 +64,9 @@ public final class RecommendationEngine {
         var filtered: [InternetArchiveSearchResult] = []
         for c in candidates {
             if excluded(c, excludeKeys: excludeKeys) { continue }
-            if seen.insert(c.identifier).inserted {
+            let keys = identityKeys(for: c)
+            if seen.isDisjoint(with: keys) {
+                seen.formUnion(keys)
                 filtered.append(c)
             }
         }
@@ -87,24 +86,23 @@ public final class RecommendationEngine {
             }
             for c in extra {
                 if excluded(c, excludeKeys: excludeKeys) { continue }
-                if seen.insert(c.identifier).inserted {
+                let keys = identityKeys(for: c)
+                if seen.isDisjoint(with: keys) {
+                    seen.formUnion(keys)
                     filtered.append(c)
                 }
             }
         }
 
         guard !filtered.isEmpty else {
-            return HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs)
+            return []
         }
 
         let scored = scoreCandidates(filtered, profile: profile)
         let topK = greedyMMR(scored, k: RecommendationConstants.kTarget,
                              lambda: RecommendationConstants.lambdaMMR)
 
-        let surfacedKeys = topK.compactMap { r in
-            let wk = WorkKey.normalized(author: r.authorLine, title: r.title)
-            return wk != r.identifier ? [r.identifier, wk] : [r.identifier]
-        }.flatMap { $0 }
+        let surfacedKeys = topK.flatMap { Array(identityKeys(for: $0)) }
         await profileStore.pushSurfaced(surfacedKeys)
 
         return Array(topK.prefix(18))
@@ -118,11 +116,44 @@ public final class RecommendationEngine {
         return formatter.string(from: Date())
     }
 
+    private func buildExcludeKeys() async -> Set<String> {
+        let surfacedIds = await profileStore.fetchSurfacedIdentifiers()
+        let listenedKeys = await libraryStore.refreshListenedWorkExclusionKeys()
+        let libraryWorkKeys = Set(libraryStore.books.map { book in
+            WorkKey.normalized(author: book.book.authorLine, title: book.book.title)
+        })
+        let libraryRawIDs = Set(libraryStore.books.map(\.book.id.uuidString))
+        return surfacedIds.union(listenedKeys).union(libraryWorkKeys).union(libraryRawIDs)
+    }
+
+    private func filterExcluded(
+        _ results: [InternetArchiveSearchResult],
+        excludeKeys: Set<String>
+    ) -> [InternetArchiveSearchResult] {
+        var seen: Set<String> = []
+        var filtered: [InternetArchiveSearchResult] = []
+        for result in results {
+            if excluded(result, excludeKeys: excludeKeys) { continue }
+            let keys = identityKeys(for: result)
+            if seen.isDisjoint(with: keys) {
+                seen.formUnion(keys)
+                filtered.append(result)
+            }
+        }
+        return filtered
+    }
+
     private func excluded(_ result: InternetArchiveSearchResult, excludeKeys: Set<String>) -> Bool {
-        if excludeKeys.contains(result.identifier) { return true }
+        !excludeKeys.isDisjoint(with: identityKeys(for: result))
+    }
+
+    private func identityKeys(for result: InternetArchiveSearchResult) -> Set<String> {
+        var keys: Set<String> = [result.identifier, "ia:\(result.identifier)"]
         let wk = WorkKey.normalized(author: result.authorLine, title: result.title)
-        if wk != result.identifier, excludeKeys.contains(wk) { return true }
-        return false
+        if wk != result.identifier {
+            keys.insert(wk)
+        }
+        return keys
     }
 
     private func scoreCandidates(_ results: [InternetArchiveSearchResult],

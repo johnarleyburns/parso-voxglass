@@ -31,9 +31,7 @@ public final class HomeRecommendationStore: ObservableObject {
                 selectedCollectionIDs: selectedCollectionIDs,
                 selectedLanguages: selectedLanguages
             )
-            if !recs.isEmpty {
-                recommendations = recs
-            }
+            recommendations = recs
             return
         }
 

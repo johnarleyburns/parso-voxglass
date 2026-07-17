@@ -147,6 +147,137 @@ final class RecommendationEngineTests: XCTestCase {
         XCTAssertGreaterThan(RecommendationEngine.jaccardSimilarity(a, b), 0)
     }
 
+    // MARK: - Listened exclusions
+
+    @MainActor
+    func testListenedIAIdentifierCandidateIsExcluded() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-listened-ia")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        try await seedListenedBook(
+            in: database,
+            title: "Local Recording",
+            author: "Someone Else",
+            iaIdentifier: "clouds_librivox"
+        )
+        await profileStore.upsertTerm(axis: "subject", term: "drama", increment: 5)
+        await libraryStore.refresh()
+
+        let fresh = candidate(identifier: "fresh_drama", title: "A Fresh Drama", creator: "Fresh Author", subjects: ["Drama"])
+        let client = FakeArchiveClient(responses: [
+            [
+                candidate(identifier: "clouds_librivox", title: "Different Metadata", creator: "Different Author", subjects: ["Drama"]),
+                fresh
+            ],
+            []
+        ])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+
+        XCTAssertFalse(recs.contains { $0.identifier == "clouds_librivox" })
+        XCTAssertTrue(recs.contains(fresh))
+    }
+
+    @MainActor
+    func testListenedWorkKeyCandidateIsExcludedAcrossDifferentIAIdentifier() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-listened-workkey")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        try await seedListenedBook(
+            in: database,
+            title: "Frankenstein (Version 2)",
+            author: "Mary Shelley",
+            iaIdentifier: "old_frankenstein"
+        )
+        await profileStore.upsertTerm(axis: "author", term: "Mary Shelley", increment: 5)
+        await libraryStore.refresh()
+
+        let fresh = candidate(identifier: "fresh_shelley", title: "The Last Man", creator: "Mary Shelley", subjects: ["Gothic Fiction"])
+        let client = FakeArchiveClient(responses: [
+            [
+                candidate(identifier: "new_frankenstein_upload", title: "Frankenstein", creator: "Mary Shelley", subjects: ["Gothic Fiction"]),
+                fresh
+            ],
+            []
+        ])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+
+        XCTAssertFalse(recs.contains { $0.identifier == "new_frankenstein_upload" })
+        XCTAssertTrue(recs.contains(fresh))
+    }
+
+    @MainActor
+    func testJumpBackInAndRecommendationsDoNotShareAWork() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-jump-back-overlap")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        let listened = try await seedListenedBook(
+            in: database,
+            title: "The Clouds",
+            author: "Aristophanes",
+            iaIdentifier: "clouds_old"
+        )
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+        await libraryStore.refresh()
+
+        let client = FakeArchiveClient(responses: [
+            [
+                candidate(identifier: "clouds_new", title: "The Clouds (Dramatic Reading)", creator: "Aristophanes", subjects: ["Drama"]),
+                candidate(identifier: "birds_fresh", title: "The Birds", creator: "Aristophanes", subjects: ["Drama"])
+            ],
+            []
+        ])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let jumpBackWorkKeys = Set(libraryStore.recentlyPlayed.map {
+            WorkKey.normalized(author: $0.book.authorLine, title: $0.book.title)
+        })
+        let recommendationWorkKeys = Set(recs.map {
+            WorkKey.normalized(author: $0.authorLine, title: $0.title)
+        })
+
+        XCTAssertEqual(libraryStore.recentlyPlayed.map(\.book.id), [listened.bookID])
+        XCTAssertTrue(jumpBackWorkKeys.isDisjoint(with: recommendationWorkKeys))
+        XCTAssertTrue(recs.contains { $0.identifier == "birds_fresh" })
+    }
+
+    @MainActor
+    func testProfileFallbackUsesProfileCandidatesBeforeBundledPopularSeeds() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-profile-fallback")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+        await libraryStore.refresh()
+
+        let profileFallback = candidate(
+            identifier: "profile_fallback",
+            title: "The Acharnians",
+            creator: "Aristophanes",
+            subjects: ["Drama"]
+        )
+        let client = FakeArchiveClient(responses: [
+            [],
+            [profileFallback]
+        ])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let bundledPopularIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        let advancedQueryCount = await client.advancedQueryCount
+
+        XCTAssertEqual(recs.map(\.identifier), ["profile_fallback"])
+        XCTAssertTrue(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))
+        XCTAssertEqual(advancedQueryCount, 2)
+    }
+
     // MARK: - WorkKey
 
     func testWorkKeyCollapsesReuploadsOfTheSameWork() {
@@ -176,5 +307,109 @@ final class RecommendationEngineTests: XCTestCase {
             languages: ["english"],
             subjects: subjects
         )
+    }
+
+    @discardableResult
+    private func seedListenedBook(
+        in database: AppDatabase,
+        title: String,
+        author: String,
+        iaIdentifier: String
+    ) async throws -> (bookID: UUID, chapterID: UUID) {
+        let sourceID = UUID()
+        let bookID = UUID()
+        let chapterID = UUID()
+        let now = Date().timeIntervalSince1970
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID.uuidString),
+            .string(SourceKind.librivox.rawValue),
+            .string(title),
+            .string("https://archive.org/details/\(iaIdentifier)"),
+            .double(now)
+        ])
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(bookID.uuidString),
+            .string(title),
+            .string(ModelMapping.authorsJSON([author])),
+            .null,
+            .string(sourceID.uuidString),
+            .null,
+            .double(now),
+            .double(now),
+            .bool(false),
+            .string("ia:\(iaIdentifier)")
+        ])
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(chapterID.uuidString),
+            .string(bookID.uuidString),
+            .string("Chapter 1"),
+            .string("Chapter 1"),
+            .int(0),
+            .double(120),
+            .string("https://archive.org/download/\(iaIdentifier)/chapter.mp3"),
+            .null
+        ])
+        try await SQLitePositionStore(database: database).save(PlaybackPosition(
+            bookID: bookID,
+            chapterID: chapterID,
+            position: 10,
+            duration: 120
+        ))
+        return (bookID, chapterID)
+    }
+
+    private final class FakeArchiveClient: InternetArchiveCatalogClient {
+        private let state: State
+
+        var advancedQueryCount: Int {
+            get async { await state.advancedQueryCount }
+        }
+
+        init(responses: [[InternetArchiveSearchResult]]) {
+            self.state = State(responses: responses)
+        }
+
+        func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] {
+            []
+        }
+
+        func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult] {
+            []
+        }
+
+        func searchAdvancedPage(query: String, rows: Int, page: Int) async throws -> InternetArchivePage {
+            let response = await state.nextResponse(for: query)
+            return InternetArchivePage(results: response, numFound: response.count, page: page)
+        }
+
+        func metadata(for identifier: String) async throws -> InternetArchiveMetadata {
+            throw InternetArchiveError.itemNotFound(identifier)
+        }
+
+        private actor State {
+            private let responses: [[InternetArchiveSearchResult]]
+            private var queries: [String] = []
+
+            var advancedQueryCount: Int { queries.count }
+
+            init(responses: [[InternetArchiveSearchResult]]) {
+                self.responses = responses
+            }
+
+            func nextResponse(for query: String) -> [InternetArchiveSearchResult] {
+                queries.append(query)
+                let index = queries.count - 1
+                return index < responses.count ? responses[index] : []
+            }
+        }
     }
 }

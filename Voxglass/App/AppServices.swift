@@ -106,7 +106,7 @@ final class AppServices: ObservableObject {
         await libraryStore.refresh()
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
-        await seedTasteHistoryIfNeeded()
+        await rebuildTasteHistory()
         await offlineDownloadManager.refreshState(for: libraryStore.books)
         // Positions first: the KVS read is local and cheap. Doing this before the
         // restore (instead of inside sync() after it) means a cloud position is
@@ -124,18 +124,29 @@ final class AppServices: ObservableObject {
               !terms.isEmpty else {
             return
         }
-        await tasteProfileStore.applySignal(signal, terms: terms)
+        let changed = await tasteProfileStore.applySignal(signal, terms: terms)
+        if changed {
+            await rebuildTasteHistory()
+        }
     }
 
-    /// Runs the one-time history backfill so pre-existing listening shapes the
-    /// recommendation shelf. Guarded by a persistent flag so it never re-runs and
-    /// double-counts. Not stored under `AppPreferencesStore.Keys` (it is an
-    /// internal migration marker, not a user preference).
-    private static let tasteHistoryBackfillKey = "voxglass.tasteHistoryBackfilledV1"
+    /// Rebuilds local taste rows from authoritative history. This is intentionally
+    /// idempotent, so it can run at launch and after meaningful playback signals
+    /// without double-counting older field-test data. The version marker records
+    /// the last rebuild shape; it does not gate the rebuild itself.
+    private static let tasteHistoryRebuildVersionKey = "voxglass.tasteHistoryRebuiltVersion"
 
-    private func seedTasteHistoryIfNeeded() async {
-        guard !UserDefaults.standard.bool(forKey: Self.tasteHistoryBackfillKey) else { return }
-        await tasteProfileStore.seedFromHistory()
-        UserDefaults.standard.set(true, forKey: Self.tasteHistoryBackfillKey)
+    private func rebuildTasteHistory() async {
+        let selectedIDs = AppPreferencesStore.decodeCollectionIDs(
+            UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.selectedCollectionIDs) ?? ""
+        )
+        await tasteProfileStore.rebuildFromListeningHistory(
+            version: TasteProfileStore.listeningHistoryRebuildVersion,
+            selectedCollectionIDs: selectedIDs
+        )
+        UserDefaults.standard.set(
+            TasteProfileStore.listeningHistoryRebuildVersion,
+            forKey: Self.tasteHistoryRebuildVersionKey
+        )
     }
 }

@@ -190,7 +190,7 @@ private struct ExploreCollectionCard: View {
                 assetName: collection.assetName,
                 remoteImageURL: resolvedCoverURL ?? collection.remoteImageURL
             )
-            .frame(width: 190, height: 132)
+            .frame(width: 190, height: 190)
 
             Text(collection.title)
                 .scaledFont(size: 14, weight: .bold)

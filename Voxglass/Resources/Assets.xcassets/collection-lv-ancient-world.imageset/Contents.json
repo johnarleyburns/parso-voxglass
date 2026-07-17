@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "collection-lv-ancient-world.jpg",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -166,6 +166,44 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertEqual(recentlyPlayed.map(\.book.id), [second.bookID, first.bookID])
     }
 
+    func testFetchListenedWorkExclusionKeysIncludesContentAndWorkKeys() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "listened-work-keys")
+        let repository = LibraryRepository(database: database)
+        let listened = try await seedBook(
+            in: database,
+            title: "The Clouds (Version 2)",
+            authors: ["Aristophanes"],
+            sourceKind: .librivox,
+            sourceURL: URL(string: "https://archive.org/details/clouds_librivox"),
+            contentKey: "ia:clouds_librivox"
+        )
+        let unplayed = try await seedBook(
+            in: database,
+            title: "Unplayed Book",
+            authors: ["Aristophanes"],
+            sourceKind: .librivox,
+            sourceURL: URL(string: "https://archive.org/details/unplayed_librivox"),
+            contentKey: "ia:unplayed_librivox"
+        )
+        let positionStore = SQLitePositionStore(database: database)
+
+        try await positionStore.save(PlaybackPosition(
+            bookID: listened.bookID,
+            chapterID: listened.chapterID,
+            position: 12,
+            duration: 120
+        ))
+
+        let keys = try await repository.fetchListenedWorkExclusionKeys()
+
+        XCTAssertTrue(keys.contains(listened.bookID.uuidString))
+        XCTAssertTrue(keys.contains("ia:clouds_librivox"))
+        XCTAssertTrue(keys.contains("clouds_librivox"))
+        XCTAssertTrue(keys.contains(WorkKey.normalized(author: "Aristophanes", title: "The Clouds (Version 2)")))
+        XCTAssertFalse(keys.contains(unplayed.bookID.uuidString))
+        XCTAssertFalse(keys.contains("unplayed_librivox"))
+    }
+
     func testBookIsFinishedOnlyWhenAllChaptersFinished() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "progress-finished")
         let repository = LibraryRepository(database: database)
@@ -259,12 +297,16 @@ final class LibraryRepositoryTests: XCTestCase {
         in database: AppDatabase,
         title: String,
         authors: [String] = ["Test Author"],
-        isFavorite: Bool = false
+        isFavorite: Bool = false,
+        sourceKind: SourceKind = .localFiles,
+        sourceURL: URL? = nil,
+        contentKey: String? = nil
     ) async throws -> (sourceID: UUID, bookID: UUID, chapterID: UUID) {
         let source = try await seedSource(
             in: database,
             title: "\(title) Source",
-            kind: .localFiles,
+            kind: sourceKind,
+            url: sourceURL,
             createdAt: Date()
         )
         let bookID = UUID()
@@ -272,8 +314,8 @@ final class LibraryRepositoryTests: XCTestCase {
         let now = Date().timeIntervalSince1970
 
         try await database.execute("""
-        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, [
             .string(bookID.uuidString),
             .string(title),
@@ -283,7 +325,8 @@ final class LibraryRepositoryTests: XCTestCase {
             .null,
             .double(now),
             .double(now),
-            .bool(isFavorite)
+            .bool(isFavorite),
+            contentKey.map { .string($0) } ?? .null
         ])
         try await database.execute("""
         INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)

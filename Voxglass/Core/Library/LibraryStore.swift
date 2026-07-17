@@ -13,6 +13,7 @@ public final class LibraryStore: ObservableObject {
     @Published public var filter: LibraryBookFilter = .all
     @Published public var sort: LibrarySort = .recent
     @Published public private(set) var progressByBook: [UUID: BookProgress] = [:]
+    @Published public private(set) var listenedWorkExclusionKeys: Set<String> = []
 
     /// The library with the active filter/sort applied. Pure, in-memory.
     public var visibleBooks: [BookWithChapters] {
@@ -66,6 +67,7 @@ public final class LibraryStore: ObservableObject {
             sources = try await repository.fetchSources()
             recentlyPlayed = try await repository.fetchRecentlyPlayed()
             progressByBook = try await repository.fetchBookProgress()
+            listenedWorkExclusionKeys = try await repository.fetchListenedWorkExclusionKeys()
         } catch let fetchError {
             importError = fetchError.localizedDescription
         }
@@ -74,8 +76,20 @@ public final class LibraryStore: ObservableObject {
     public func refreshRecentlyPlayed() async {
         do {
             recentlyPlayed = try await repository.fetchRecentlyPlayed()
+            listenedWorkExclusionKeys = try await repository.fetchListenedWorkExclusionKeys()
         } catch {
             importError = error.localizedDescription
+        }
+    }
+
+    @discardableResult
+    public func refreshListenedWorkExclusionKeys() async -> Set<String> {
+        do {
+            listenedWorkExclusionKeys = try await repository.fetchListenedWorkExclusionKeys()
+            return listenedWorkExclusionKeys
+        } catch {
+            importError = error.localizedDescription
+            return listenedWorkExclusionKeys
         }
     }
 

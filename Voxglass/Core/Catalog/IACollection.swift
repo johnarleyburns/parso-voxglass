@@ -43,7 +43,7 @@ public enum IACollectionStore {
         listURL: URL(string: "https://archive.org/details/librivoxaudio"),
         archiveQuery: LibriVoxBrowseCategory.popular.archiveQuery,
         systemImage: "waveform",
-        assetName: "lv-popular",
+        assetName: "collection-popular-librivox",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "librivoxaudio")
     )
 
@@ -65,7 +65,7 @@ public enum IACollectionStore {
         subtitle: "The canonical authors of the Western tradition, read by LibriVox volunteers",
         archiveQuery: CuratedQueries.greatBooks,
         systemImage: "books.vertical",
-        assetName: "lv-great-books",
+        assetName: "collection-great-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "iliad_popetranslation_1506_librivox")
     )
 
@@ -75,7 +75,7 @@ public enum IACollectionStore {
         subtitle: "A broader literary canon — the world's essential novels, plays, and poetry",
         archiveQuery: CuratedQueries.greaterBooks,
         systemImage: "text.book.closed",
-        assetName: "lv-greater-books",
+        assetName: "collection-greater-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox")
     )
 
@@ -85,7 +85,7 @@ public enum IACollectionStore {
         subtitle: "Homer, Plato, the tragedians, and more from the Greek world",
         archiveQuery: CuratedQueries.ancientGreece,
         systemImage: "scroll.fill",
-        assetName: "lv-ancient-greece",
+        assetName: "collection-ancient-greece",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey_butler_librivox")
     )
 
@@ -107,6 +107,7 @@ public enum IACollectionStore {
             subtitle: authorSubtitle(for: category.id),
             archiveQuery: category.archiveQuery,
             systemImage: category.systemImage,
+            assetName: "collection-\(category.id)",
             remoteImageURL: coverURL(for: category.id)
         )
     }
