@@ -288,21 +288,39 @@ public actor TasteProfileStore {
         SELECT bt.book_id AS book_id,
                bt.axis AS axis,
                bt.term AS term,
-               COALESCE(le.total_seconds, 0) AS listened_seconds,
+               CASE
+                   WHEN COALESCE(le.event_count, 0) > 0 THEN COALESCE(le.total_seconds, 0)
+                   ELSE COALESCE(pp.total_seconds, 0)
+               END AS listened_seconds,
                COALESCE(tss.applied_increment, 0) AS applied_increment,
                COALESCE(b.is_favorite, 0) AS is_favorite
         FROM book_taste bt
         JOIN books b ON b.id = bt.book_id
         LEFT JOIN (
-            SELECT book_id, SUM(seconds) AS total_seconds
+            SELECT book_id, COUNT(*) AS event_count, SUM(seconds) AS total_seconds
             FROM listening_events
             WHERE book_id IS NOT NULL
             GROUP BY book_id
         ) le ON le.book_id = bt.book_id
+        LEFT JOIN (
+            SELECT book_id,
+                   SUM(
+                       CASE
+                           WHEN is_finished = 1 AND duration_seconds IS NOT NULL AND duration_seconds > 0
+                               THEN duration_seconds
+                           WHEN duration_seconds IS NOT NULL AND duration_seconds > 0
+                               THEN MIN(MAX(position_seconds, 0), duration_seconds)
+                           ELSE MAX(position_seconds, 0)
+                       END
+                   ) AS total_seconds
+            FROM playback_positions
+            GROUP BY book_id
+        ) pp ON pp.book_id = bt.book_id
         LEFT JOIN taste_signal_state tss ON tss.book_id = bt.book_id
         WHERE bt.axis IN ('author', 'subject', 'language')
           AND (
-              COALESCE(le.total_seconds, 0) > 0
+              COALESCE(le.event_count, 0) > 0
+              OR COALESCE(pp.total_seconds, 0) > 0
               OR COALESCE(tss.applied_increment, 0) > 0
               OR COALESCE(b.is_favorite, 0) = 1
           )

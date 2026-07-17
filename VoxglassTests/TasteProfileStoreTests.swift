@@ -127,6 +127,30 @@ final class TasteProfileStoreTests: XCTestCase {
         XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
     }
 
+    func testHistoryRebuildUsesPlaybackPositionWhenNoListeningEventsExist() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-position-only")
+        let store = TasteProfileStore(database: database)
+        try await seedHistoryBook(
+            in: database,
+            title: "Position Only",
+            author: "Position Author",
+            subject: "Adventure",
+            language: "eng",
+            listenedSeconds: 0,
+            playbackPositionSeconds: 5400,
+            playbackDurationSeconds: 7200
+        )
+
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+
+        let weight = try await rawWeight(in: database, axis: "author", term: "position author")
+        XCTAssertEqual(weight, 1.5, accuracy: 0.001)
+        let profile = await store.fetchProfile()
+        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "position author" })
+        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "adventure" })
+        XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
+    }
+
     func testOnboardingOnlyBrowsePickProfileIsNotEmpty() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-onboarding-browse-pick")
         let store = TasteProfileStore(database: database)
@@ -242,7 +266,10 @@ final class TasteProfileStoreTests: XCTestCase {
         subject: String,
         language: String,
         listenedSeconds: Double,
-        isFavorite: Bool = false
+        isFavorite: Bool = false,
+        playbackPositionSeconds: Double? = nil,
+        playbackDurationSeconds: Double? = nil,
+        playbackIsFinished: Bool = false
     ) async throws -> UUID {
         let sourceID = UUID()
         let bookID = UUID()
@@ -302,6 +329,16 @@ final class TasteProfileStoreTests: XCTestCase {
                 .double(listenedSeconds),
                 .double(now)
             ])
+        }
+        if let playbackPositionSeconds {
+            try await SQLitePositionStore(database: database).save(PlaybackPosition(
+                bookID: bookID,
+                chapterID: chapterID,
+                position: playbackPositionSeconds,
+                duration: playbackDurationSeconds,
+                updatedAt: Date(timeIntervalSince1970: now),
+                isFinished: playbackIsFinished
+            ))
         }
         return bookID
     }

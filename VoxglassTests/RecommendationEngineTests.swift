@@ -205,6 +205,61 @@ final class RecommendationEngineTests: XCTestCase {
     }
 
     @MainActor
+    func testPositionOnlyJumpBackInHistoryPersonalizesRecommendations() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-position-only-jump-back")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        var seededAuthorTerms: Set<String> = []
+
+        for index in 0..<12 {
+            let author = "Position Archive Author \(index % 4)"
+            seededAuthorTerms.insert(author.lowercased())
+            try await seedPositionOnlyBook(
+                in: database,
+                title: "Position History \(index)",
+                author: author,
+                subject: "Position History Subject \(index % 3)",
+                iaIdentifier: "position_history_\(index)",
+                position: 1800 + Double(index * 30),
+                duration: 7200,
+                updatedAt: Date(timeIntervalSince1970: Date().timeIntervalSince1970 - Double(index))
+            )
+        }
+
+        await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        let profile = await profileStore.fetchProfile()
+        await libraryStore.refresh()
+
+        let topAuthor = try XCTUnwrap(profile.topCreators.first)
+        let listenedAgain = candidate(
+            identifier: "position_history_0",
+            title: "Position History 0",
+            creator: "Position Archive Author 0",
+            subjects: ["Position History Subject 0"]
+        )
+        let personalized = candidate(
+            identifier: "fresh_position_history_pick",
+            title: "A Fresh Position History",
+            creator: topAuthor,
+            subjects: ["Position History Subject 0"]
+        )
+        let client = FakeArchiveClient(responses: [[listenedAgain, personalized]])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let queries = await client.advancedQueries
+        let bundledPopularIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+
+        XCTAssertFalse(profile.isEmpty)
+        XCTAssertEqual(libraryStore.recentlyPlayed.count, 12)
+        XCTAssertTrue(Set(profile.topCreators).isSubset(of: seededAuthorTerms))
+        XCTAssertTrue(queries.contains { $0.localizedCaseInsensitiveContains("creator:\"\(topAuthor)\"") })
+        XCTAssertEqual(recs.map(\.identifier), [personalized.identifier])
+        XCTAssertTrue(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))
+    }
+
+    @MainActor
     func testGeneratedTTSAndAudioBooksPoetryCandidatesAreExcluded() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-generated-tts-filter")
         let repository = LibraryRepository(database: database)
@@ -532,6 +587,75 @@ final class RecommendationEngineTests: XCTestCase {
             .double(60),
             .double(now)
         ])
+        return (bookID, chapterID)
+    }
+
+    @discardableResult
+    private func seedPositionOnlyBook(
+        in database: AppDatabase,
+        title: String,
+        author: String,
+        subject: String,
+        iaIdentifier: String,
+        position: Double,
+        duration: Double,
+        updatedAt: Date
+    ) async throws -> (bookID: UUID, chapterID: UUID) {
+        let sourceID = UUID()
+        let bookID = UUID()
+        let chapterID = UUID()
+        let now = updatedAt.timeIntervalSince1970
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID.uuidString),
+            .string(SourceKind.librivox.rawValue),
+            .string(title),
+            .string("https://archive.org/details/\(iaIdentifier)"),
+            .double(now)
+        ])
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(bookID.uuidString),
+            .string(title),
+            .string(ModelMapping.authorsJSON([author])),
+            .null,
+            .string(sourceID.uuidString),
+            .null,
+            .double(now),
+            .double(now),
+            .bool(false),
+            .string("ia:\(iaIdentifier)")
+        ])
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(chapterID.uuidString),
+            .string(bookID.uuidString),
+            .string("Chapter 1"),
+            .string("Chapter 1"),
+            .int(0),
+            .double(duration),
+            .string("https://archive.org/download/\(iaIdentifier)/chapter.mp3"),
+            .null
+        ])
+        try await SQLitePositionStore(database: database).save(PlaybackPosition(
+            bookID: bookID,
+            chapterID: chapterID,
+            position: position,
+            duration: duration,
+            updatedAt: updatedAt
+        ))
+        for (axis, term) in [("author", author), ("subject", subject), ("language", "eng")] {
+            try await database.execute(
+                "INSERT INTO book_taste (book_id, axis, term) VALUES (?, ?, ?)",
+                [.string(bookID.uuidString), .string(axis), .string(term.lowercased())]
+            )
+        }
         return (bookID, chapterID)
     }
 
