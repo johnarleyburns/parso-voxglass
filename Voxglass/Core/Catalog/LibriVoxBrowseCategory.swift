@@ -69,7 +69,9 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         id: "lv-general-fiction",
         title: "General Fiction",
         systemImage: "book",
-        archiveQuery: LibriVoxCatalogScope.matching("subject:\"General Fiction\" OR subject:\"Culture & Heritage Fiction\" OR subject:\"Family Life\"")
+        archiveQuery: LibriVoxCatalogScope.matching("""
+        subject:Fiction OR subject:"General Fiction" OR subject:"Culture & Heritage Fiction" OR subject:"Family Life" OR subject:"Domestic fiction" OR subject:"Historical Fiction" OR subject:"Humorous Fiction" OR subject:"Literary Fiction" OR subject:Literature OR subject:Novels OR subject:Novel OR title:novel OR title:stories OR creator:"Jane Austen" OR creator:"Charles Dickens" OR creator:"Mark Twain" OR creator:"Anthony Trollope" OR creator:"George Eliot" OR creator:"Elizabeth Gaskell" OR creator:"Mary Elizabeth Braddon" OR creator:"Hugh Walpole" OR creator:"D. H. Lawrence"
+        """)
     )
 
     public static let literaryFiction = LibriVoxBrowseCategory(
@@ -97,7 +99,9 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         id: "lv-mystery-crime",
         title: "Mystery & Crime",
         systemImage: "magnifyingglass",
-        archiveQuery: LibriVoxCatalogScope.matching("subject:\"Crime & Mystery Fiction\" OR subject:\"Detective Fiction\"")
+        archiveQuery: LibriVoxCatalogScope.matching("""
+        subject:"Crime & Mystery Fiction" OR subject:"Detective Fiction" OR subject:Mystery OR subject:Mysteries OR subject:Detective OR subject:Crime OR subject:"Detective stories" OR subject:"Mystery fiction" OR subject:"Crime fiction" OR subject:"True Crime" OR title:mystery OR title:detective OR title:murder OR title:sherlock OR creator:"Arthur Conan Doyle" OR creator:"Edgar Wallace" OR creator:"R. Austin Freeman" OR creator:"Freeman Wills Crofts" OR creator:"G. K. Chesterton" OR creator:"Anna Katharine Green" OR creator:"Wilkie Collins" OR creator:"Maurice Leblanc" OR creator:"Mary Roberts Rinehart"
+        """)
     )
 
     public static let adventure = LibriVoxBrowseCategory(
@@ -215,7 +219,9 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         id: "lv-essays-ideas",
         title: "Essays & Ideas",
         systemImage: "lightbulb",
-        archiveQuery: LibriVoxCatalogScope.matching("subject:\"Essays & Short Works\" OR subject:\"Literary Criticism\" OR subject:\"Political Science\"")
+        archiveQuery: LibriVoxCatalogScope.matching("""
+        subject:"Essays & Short Works" OR subject:Essays OR subject:"Literary Criticism" OR subject:"Political Science" OR subject:Politics OR subject:"Social Science" OR subject:Economics OR subject:Education OR subject:"Philosophy" OR subject:Criticism OR title:essay OR title:essays OR title:letters OR title:lectures OR creator:"Francis Bacon" OR creator:"Michel de Montaigne" OR creator:"Ralph Waldo Emerson" OR creator:"Henry David Thoreau" OR creator:"William Hazlitt" OR creator:"G. K. Chesterton" OR creator:"Edmund Burke" OR creator:"John Ruskin" OR creator:"George Bernard Shaw" OR creator:"Thomas Carlyle"
+        """)
     )
 
     // MARK: - Lookup & subject mapping

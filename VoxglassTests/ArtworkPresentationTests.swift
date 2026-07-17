@@ -13,24 +13,22 @@ final class ArtworkPresentationTests: XCTestCase {
         XCTAssertFalse(onboarding.contains(".frame(width: 170, height: 118)"))
     }
 
-    func testBookCoverFramesRemainSquare() throws {
+    func testBookCoverUsesSharedPostFrameClippingWrapper() throws {
+        let artwork = try source("Voxglass/DesignSystem/BookArtworkView.swift")
+        let wrapperPattern = #"struct SquareBookCoverView[\s\S]*?BookCoverView\(title:[\s\S]*?\.frame\(width:\s*size,\s*height:\s*size\)[\s\S]*?\.clipShape\([\s\S]*?\.clipped\(\)"#
+        XCTAssertNotNil(
+            artwork.range(of: wrapperPattern, options: .regularExpression),
+            "SquareBookCoverView must apply clipping after the final square frame"
+        )
+
         let files = try swiftFiles(under: repoRoot.appendingPathComponent("Voxglass"))
-        let pattern = #"BookCoverView[\s\S]{0,220}?\.frame\(width:\s*([0-9]+),\s*height:\s*([0-9]+)\)"#
-        let regex = try NSRegularExpression(pattern: pattern)
-        var checked = 0
-
-        for file in files {
+        for file in files where relativePath(file) != "Voxglass/DesignSystem/BookArtworkView.swift" {
             let text = try String(contentsOf: file)
-            let range = NSRange(text.startIndex..., in: text)
-            for match in regex.matches(in: text, range: range) {
-                let width = try capturedInt(match, at: 1, in: text)
-                let height = try capturedInt(match, at: 2, in: text)
-                checked += 1
-                XCTAssertEqual(width, height, "\(relativePath(file)) has a rectangular BookCoverView frame")
-            }
+            XCTAssertFalse(
+                text.contains("BookCoverView("),
+                "\(relativePath(file)) should use BookArtworkView/SquareBookCoverView instead of framing BookCoverView directly"
+            )
         }
-
-        XCTAssertGreaterThan(checked, 0, "The guard should inspect at least one BookCoverView frame")
     }
 
     func testSharedBookListRowArtworkFrameIsSquareAndStable() throws {
@@ -103,12 +101,6 @@ final class ArtworkPresentationTests: XCTestCase {
             }
         }
         return result
-    }
-
-    private func capturedInt(_ match: NSTextCheckingResult, at index: Int, in text: String) throws -> Int {
-        let range = match.range(at: index)
-        let swiftRange = try XCTUnwrap(Range(range, in: text))
-        return try XCTUnwrap(Int(text[swiftRange]))
     }
 
     private func relativePath(_ url: URL) -> String {

@@ -137,6 +137,9 @@ final class ArtworkService: @unchecked Sendable {
         if let finalURL = response?.url, Self.isInternetArchiveNotFoundAsset(finalURL) {
             throw ArtworkServiceError.notFoundImage
         }
+        if let finalURL = response?.url, Self.isAudioVisualizationAsset(finalURL) {
+            throw ArtworkServiceError.notFoundImage
+        }
 
         // Reject non-image Content-Type (text/html is a common IA error page)
         if let mime = (response as? HTTPURLResponse)?.mimeType?.lowercased(),
@@ -206,6 +209,13 @@ final class ArtworkService: @unchecked Sendable {
     private static func isInternetArchiveNotFoundAsset(_ url: URL) -> Bool {
         guard let host = url.host?.lowercased(), host.hasSuffix("archive.org") else { return false }
         return url.lastPathComponent.lowercased().hasPrefix("notfound")
+    }
+
+    private static func isAudioVisualizationAsset(_ url: URL) -> Bool {
+        let path = (url.path.removingPercentEncoding ?? url.path).lowercased()
+        return path.contains("spectrogram")
+            || path.contains("spectral image")
+            || path.contains("audio visualization")
     }
 
     static func extractIAIdentifier(from url: URL) -> String? {

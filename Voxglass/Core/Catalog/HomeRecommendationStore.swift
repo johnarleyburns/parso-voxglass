@@ -69,17 +69,8 @@ public final class HomeRecommendationStore: ObservableObject {
         }
     }
 
-    public nonisolated static func coldStartRecommendations(for selectedCollectionIDs: Set<String>) -> [InternetArchiveSearchResult] {
-        guard !selectedCollectionIDs.isEmpty else {
-            return bundledPopularSeeds
-        }
-
-        let matching = bundledTasteSeeds.filter { result in
-            selectedCollectionIDs.contains { id in
-                result.collections.contains(id)
-            }
-        }
-        return matching.isEmpty ? bundledPopularSeeds : uniqueResults(matching + bundledPopularSeeds)
+    public nonisolated static func coldStartRecommendations(for _: Set<String>) -> [InternetArchiveSearchResult] {
+        bundledPopularSeeds
     }
 
     public nonisolated static let bundledPopularSeeds: [InternetArchiveSearchResult] = [

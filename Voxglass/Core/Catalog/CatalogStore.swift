@@ -70,7 +70,8 @@ public final class CatalogStore: ObservableObject {
             )
             currentPage = nextPage
             numFound = page.numFound
-            let appended = page.results.filter { seenIdentifiers.insert($0.identifier).inserted }
+            let appended = filteredResults(page.results, for: query)
+                .filter { seenIdentifiers.insert($0.identifier).inserted }
             results.append(contentsOf: appended)
             updateHasMore()
         } catch {
@@ -193,11 +194,22 @@ public final class CatalogStore: ObservableObject {
             let page = try await client.searchAdvancedPage(query: query, rows: pageSize, page: 1, sort: sort)
             numFound = page.numFound
             seenIdentifiers = []
-            results = page.results.filter { seenIdentifiers.insert($0.identifier).inserted }
+            results = filteredResults(page.results, for: query)
+                .filter { seenIdentifiers.insert($0.identifier).inserted }
             updateHasMore()
         } catch {
             catalogError = error.localizedDescription
         }
+    }
+
+    private func filteredResults(
+        _ results: [InternetArchiveSearchResult],
+        for query: String
+    ) -> [InternetArchiveSearchResult] {
+        guard query.localizedCaseInsensitiveContains("librivoxaudio") else {
+            return results
+        }
+        return results.filter(\.isStrictLibriVoxCatalogCandidate)
     }
 
     private func reloadForLanguageChange() {

@@ -127,6 +127,42 @@ final class TasteProfileStoreTests: XCTestCase {
         XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
     }
 
+    func testOnboardingOnlySeedsAreNotMeaningfulRecommendationProfile() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-onboarding-only-meaningful")
+        let store = TasteProfileStore(database: database)
+
+        await store.rebuildFromListeningHistory(
+            version: TasteProfileStore.listeningHistoryRebuildVersion,
+            selectedCollectionIDs: ["lv-mystery-crime"]
+        )
+
+        let hasProfile = await store.hasProfile()
+        let hasMeaningfulProfile = await store.hasMeaningfulProfile()
+        XCTAssertTrue(hasProfile)
+        XCTAssertFalse(hasMeaningfulProfile)
+    }
+
+    func testFavoriteBookContributesMeaningfulProfileWeight() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-favorite-meaningful")
+        let store = TasteProfileStore(database: database)
+        try await seedHistoryBook(
+            in: database,
+            title: "Emma",
+            author: "Jane Austen",
+            subject: "Fiction",
+            language: "eng",
+            listenedSeconds: 0,
+            isFavorite: true
+        )
+
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+
+        let hasMeaningfulProfile = await store.hasMeaningfulProfile()
+        XCTAssertTrue(hasMeaningfulProfile)
+        let weight = try await rawWeight(in: database, axis: "author", term: "jane austen")
+        XCTAssertEqual(weight, RecommendationConstants.favoriteBoost, accuracy: 0.001)
+    }
+
     func testHistoryRebuildIsIdempotent() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-idempotent")
         let store = TasteProfileStore(database: database)
@@ -182,7 +218,8 @@ final class TasteProfileStoreTests: XCTestCase {
         author: String,
         subject: String,
         language: String,
-        listenedSeconds: Double
+        listenedSeconds: Double,
+        isFavorite: Bool = false
     ) async throws -> UUID {
         let sourceID = UUID()
         let bookID = UUID()
@@ -211,7 +248,7 @@ final class TasteProfileStoreTests: XCTestCase {
             .null,
             .double(now),
             .double(now),
-            .bool(false)
+            .bool(isFavorite)
         ])
         try await database.execute("""
         INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
@@ -232,15 +269,17 @@ final class TasteProfileStoreTests: XCTestCase {
                 [.string(bookID.uuidString), .string(axis), .string(term.lowercased())]
             )
         }
-        try await database.execute("""
-        INSERT INTO listening_events (id, book_id, seconds, occurred_at)
-        VALUES (?, ?, ?, ?)
-        """, [
-            .string(UUID().uuidString),
-            .string(bookID.uuidString),
-            .double(listenedSeconds),
-            .double(now)
-        ])
+        if listenedSeconds > 0 {
+            try await database.execute("""
+            INSERT INTO listening_events (id, book_id, seconds, occurred_at)
+            VALUES (?, ?, ?, ?)
+            """, [
+                .string(UUID().uuidString),
+                .string(bookID.uuidString),
+                .double(listenedSeconds),
+                .double(now)
+            ])
+        }
         return bookID
     }
 

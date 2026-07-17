@@ -47,22 +47,35 @@ struct BookCoverView: View {
     var title: String
     var coverURL: URL?
     var cornerRadius: CGFloat = 14
-    var showBorder: Bool = true
 
     var body: some View {
         ArtworkImageView(url: coverURL) {
             GeneratedBookCover(title: title, cornerRadius: cornerRadius)
         }
         .aspectRatio(1, contentMode: .fill)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .clipped()
-        .overlay {
-            if showBorder {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
-            }
-        }
         .accessibilityLabel(title)
+    }
+}
+
+struct SquareBookCoverView: View {
+    var title: String
+    var size: CGFloat
+    var coverURL: URL?
+    var cornerRadius: CGFloat = 14
+    var showBorder: Bool = true
+
+    var body: some View {
+        BookCoverView(title: title, coverURL: coverURL, cornerRadius: cornerRadius)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .clipped()
+            .overlay {
+                if showBorder {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                }
+            }
+            .accessibilityLabel(title)
     }
 }
 
@@ -71,10 +84,16 @@ struct BookArtworkView: View {
     var size: CGFloat = 68
     var coverURL: URL?
     var cornerRadius: CGFloat = 12
+    var showBorder: Bool = true
 
     var body: some View {
-        BookCoverView(title: title, coverURL: coverURL, cornerRadius: cornerRadius)
-            .frame(width: size, height: size)
+        SquareBookCoverView(
+            title: title,
+            size: size,
+            coverURL: coverURL,
+            cornerRadius: cornerRadius,
+            showBorder: showBorder
+        )
             .accessibilityHidden(true)
     }
 }
@@ -194,8 +213,7 @@ struct HorizontalCatalogCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            BookCoverView(title: result.title, coverURL: result.coverURL, showBorder: false)
-                .frame(width: 132, height: 132)
+            BookArtworkView(title: result.title, size: 132, coverURL: result.coverURL, cornerRadius: 14, showBorder: false)
 
             Text(result.title)
                 .scaledFont(size: 12.5, weight: .semibold)

@@ -17,25 +17,20 @@ public final class RecommendationEngine {
     }
 
     public func fetchRecommendations(
-        selectedCollectionIDs: Set<String>,
+        selectedCollectionIDs _: Set<String>,
         selectedLanguages: Set<String>
     ) async -> [InternetArchiveSearchResult] {
         let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
         let excludeKeys = await buildExcludeKeys()
-        let hasProfile = await profileStore.hasProfile()
+        let hasProfile = await profileStore.hasMeaningfulProfile()
 
         if !hasProfile {
-            let onboarded = HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs)
-            await profileStore.seedOnboardingPicks(from: selectedCollectionIDs)
-            return filterExcluded(onboarded, excludeKeys: excludeKeys)
+            return filterExcluded(HomeRecommendationStore.bundledPopularSeeds, excludeKeys: excludeKeys)
         }
 
         let profile = await profileStore.fetchProfile()
         guard !profile.isEmpty else {
-            return filterExcluded(
-                HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs),
-                excludeKeys: excludeKeys
-            )
+            return filterExcluded(HomeRecommendationStore.bundledPopularSeeds, excludeKeys: excludeKeys)
         }
 
         let dateSeed = dateSeedString()
@@ -45,7 +40,7 @@ public final class RecommendationEngine {
             languageClause: languageClause
         )
         guard !queries.isEmpty else {
-            return bundledFallback(selectedCollectionIDs: selectedCollectionIDs, excludeKeys: excludeKeys)
+            return bundledFallback(excludeKeys: excludeKeys)
         }
 
         var candidates: [InternetArchiveSearchResult] = []
@@ -63,6 +58,7 @@ public final class RecommendationEngine {
         var seen: Set<String> = []
         var filtered: [InternetArchiveSearchResult] = []
         for c in candidates {
+            if !c.isStrictLibriVoxCatalogCandidate { continue }
             if excluded(c, excludeKeys: excludeKeys) { continue }
             let keys = identityKeys(for: c)
             if seen.isDisjoint(with: keys) {
@@ -85,6 +81,7 @@ public final class RecommendationEngine {
                 }
             }
             for c in extra {
+                if !c.isStrictLibriVoxCatalogCandidate { continue }
                 if excluded(c, excludeKeys: excludeKeys) { continue }
                 let keys = identityKeys(for: c)
                 if seen.isDisjoint(with: keys) {
@@ -95,7 +92,7 @@ public final class RecommendationEngine {
         }
 
         guard !filtered.isEmpty else {
-            return bundledFallback(selectedCollectionIDs: selectedCollectionIDs, excludeKeys: excludeKeys)
+            return bundledFallback(excludeKeys: excludeKeys)
         }
 
         let scored = scoreCandidates(filtered, profile: profile)
@@ -143,14 +140,8 @@ public final class RecommendationEngine {
         return filtered
     }
 
-    private func bundledFallback(
-        selectedCollectionIDs: Set<String>,
-        excludeKeys: Set<String>
-    ) -> [InternetArchiveSearchResult] {
-        filterExcluded(
-            HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs),
-            excludeKeys: excludeKeys
-        )
+    private func bundledFallback(excludeKeys: Set<String>) -> [InternetArchiveSearchResult] {
+        filterExcluded(HomeRecommendationStore.bundledPopularSeeds, excludeKeys: excludeKeys)
     }
 
     private func excluded(_ result: InternetArchiveSearchResult, excludeKeys: Set<String>) -> Bool {

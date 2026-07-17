@@ -72,7 +72,7 @@ public enum CatalogSort: String, CaseIterable, Identifiable, Sendable {
 }
 
 public enum LibriVoxCatalogScope {
-    public static let collectionClause = "collection:(librivoxaudio OR audio_bookspoetry)"
+    public static let collectionClause = "collection:librivoxaudio"
     public static let query = "\(collectionClause) AND mediatype:audio"
 
     public static func matching(_ clause: String) -> String {

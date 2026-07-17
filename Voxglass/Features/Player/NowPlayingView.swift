@@ -44,8 +44,7 @@ struct NowPlayingView: View {
                         ScrollView(showsIndicators: false) {
                             VStack(spacing: 0) {
                                 Spacer().frame(height: 16)
-                                BookArtworkView(title: session.book.title, size: 240, coverURL: session.book.coverURL)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                BookArtworkView(title: session.book.title, size: 240, coverURL: session.book.coverURL, cornerRadius: 16)
                                     .shadow(color: .black.opacity(0.55), radius: 24, y: 0)
                                 Spacer().frame(height: 22)
                                 metadata(session)

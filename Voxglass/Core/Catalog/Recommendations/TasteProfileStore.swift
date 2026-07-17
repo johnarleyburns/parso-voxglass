@@ -46,6 +46,27 @@ public actor TasteProfileStore {
         return !(terms ?? []).isEmpty
     }
 
+    public func hasMeaningfulProfile() async -> Bool {
+        if await hasDurableTasteSignal() {
+            return true
+        }
+
+        // Legacy upgrades may have useful profile rows without the newer
+        // `taste_signal_state` table populated. Onboarding only seeds subjects,
+        // so author/language terms are treated as meaningful legacy profile data.
+        do {
+            try await database.prepare()
+            let rows = try await database.query("""
+            SELECT 1 AS found FROM taste_profile_terms
+            WHERE axis IN ('author', 'language') AND weight > 0
+            LIMIT 1
+            """)
+            return !rows.isEmpty
+        } catch {
+            return false
+        }
+    }
+
     // MARK: - Upsert terms (decay update)
 
     public func upsertTerm(axis: String, term: String, increment: Double) async {
@@ -172,8 +193,10 @@ public actor TasteProfileStore {
                    bt.axis AS axis,
                    bt.term AS term,
                    COALESCE(le.total_seconds, 0) AS listened_seconds,
-                   COALESCE(tss.applied_increment, 0) AS applied_increment
+                   COALESCE(tss.applied_increment, 0) AS applied_increment,
+                   COALESCE(b.is_favorite, 0) AS is_favorite
             FROM book_taste bt
+            JOIN books b ON b.id = bt.book_id
             LEFT JOIN (
                 SELECT book_id, SUM(seconds) AS total_seconds
                 FROM listening_events
@@ -182,7 +205,11 @@ public actor TasteProfileStore {
             ) le ON le.book_id = bt.book_id
             LEFT JOIN taste_signal_state tss ON tss.book_id = bt.book_id
             WHERE bt.axis IN ('author', 'subject', 'language')
-              AND (COALESCE(le.total_seconds, 0) > 0 OR COALESCE(tss.applied_increment, 0) > 0)
+              AND (
+                  COALESCE(le.total_seconds, 0) > 0
+                  OR COALESCE(tss.applied_increment, 0) > 0
+                  OR COALESCE(b.is_favorite, 0) = 1
+              )
             """)
             for row in rows {
                 guard let axis = row.string("axis"),
@@ -194,7 +221,10 @@ public actor TasteProfileStore {
                     ? Self.historyIncrement(forSeconds: listenedSeconds)
                     : 0
                 let signalWeight = row.double("applied_increment") ?? 0
-                let contribution = max(historyWeight, signalWeight)
+                let favoriteWeight = (row.bool("is_favorite") ?? false)
+                    ? RecommendationConstants.favoriteBoost
+                    : 0
+                let contribution = max(historyWeight, signalWeight, favoriteWeight)
                 guard contribution > 0 else { continue }
                 weights[TermKey(axis: normalizedAxis, term: normalized), default: 0] += contribution
             }
@@ -388,6 +418,29 @@ public actor TasteProfileStore {
                   let term = row.string("term"),
                   let weight = row.double("weight") else { return nil }
             return RawTerm(axis: axis, term: term, weight: weight)
+        }
+    }
+
+    private func hasDurableTasteSignal() async -> Bool {
+        do {
+            try await database.prepare()
+            let rows = try await database.query("""
+            SELECT 1 AS found
+            FROM listening_events
+            WHERE book_id IS NOT NULL AND seconds > 0
+            UNION ALL
+            SELECT 1 AS found
+            FROM taste_signal_state
+            WHERE applied_increment > 0
+            UNION ALL
+            SELECT 1 AS found
+            FROM books
+            WHERE is_favorite = 1
+            LIMIT 1
+            """)
+            return !rows.isEmpty
+        } catch {
+            return false
         }
     }
 

@@ -56,6 +56,29 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
             : .internetArchive
     }
 
+    public var isStrictLibriVoxCatalogCandidate: Bool {
+        collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
+            && !isLikelyGeneratedTTSAudio
+    }
+
+    private var isLikelyGeneratedTTSAudio: Bool {
+        if collections.contains(where: { $0.localizedCaseInsensitiveCompare("audio_bookspoetry") == .orderedSame }),
+           !collections.contains(where: { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }) {
+            return true
+        }
+
+        let haystack = ([identifier, title, description ?? ""]
+            + creators
+            + subjects
+            + collections)
+            .joined(separator: " ")
+            .lowercased()
+        return haystack.contains("synapseml_gutenberg")
+            || haystack.contains("project gutenberg tts")
+            || haystack.contains("text-to-speech")
+            || (haystack.contains("microsoft") && haystack.contains("tts"))
+    }
+
     public var detailsURL: URL {
         InternetArchiveMetadata.detailsURL(for: identifier)
     }
@@ -209,9 +232,9 @@ public struct InternetArchiveMetadata: Decodable, Equatable, Sendable {
                 let name = file.name.lowercased()
                 let fmt = (file.format ?? "").lowercased()
                 let isImage = (name.hasSuffix(".jpg") || name.hasSuffix(".jpeg") || name.hasSuffix(".png"))
-                    && !name.contains("spectrogram")
+                    && !file.isLikelyAudioVisualization
                 let isImageFormat = fmt.hasPrefix("jpeg") || fmt == "png" || fmt == "jpeg thumb"
-                return isImage || isImageFormat
+                return !file.isLikelyAudioVisualization && (isImage || isImageFormat)
             }
             .sorted { a, b in
                 let aThumb = a.name.lowercased().contains("thumb")
@@ -234,6 +257,28 @@ public struct InternetArchiveItemMetadata: Decodable, Equatable, Sendable {
     public var subjects: [String]
     public var language: String?
     public var callNumber: String?
+
+    public init(
+        identifier: String? = nil,
+        title: String? = nil,
+        creators: [String] = [],
+        description: String? = nil,
+        mediatype: String? = nil,
+        collections: [String] = [],
+        subjects: [String] = [],
+        language: String? = nil,
+        callNumber: String? = nil
+    ) {
+        self.identifier = identifier
+        self.title = title
+        self.creators = creators
+        self.description = description
+        self.mediatype = mediatype
+        self.collections = collections
+        self.subjects = subjects
+        self.language = language
+        self.callNumber = callNumber
+    }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -271,6 +316,20 @@ public struct InternetArchiveFile: Decodable, Equatable, Sendable, Identifiable 
     public var size: String?
 
     public var id: String { name }
+
+    public var isLikelyAudioVisualization: Bool {
+        let haystack = [
+            name,
+            source ?? "",
+            format ?? "",
+            title ?? ""
+        ]
+            .joined(separator: " ")
+            .lowercased()
+        return haystack.contains("spectrogram")
+            || haystack.contains("spectral image")
+            || haystack.contains("audio visualization")
+    }
 
     public var duration: TimeInterval? {
         guard let length else { return nil }

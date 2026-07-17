@@ -150,6 +150,68 @@ final class RecommendationEngineTests: XCTestCase {
     // MARK: - Listened exclusions
 
     @MainActor
+    func testOnboardingOnlyProfileKeepsBundledPopularSeedsWithoutNetworkRefresh() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-onboarding-only-popular")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.rebuildFromListeningHistory(
+            version: TasteProfileStore.listeningHistoryRebuildVersion,
+            selectedCollectionIDs: ["lv-mystery-crime"]
+        )
+        await libraryStore.refresh()
+
+        let client = FakeArchiveClient(responses: [[
+            candidate(identifier: "personalized", title: "Personalized Mystery", creator: "Someone", subjects: ["Mystery"])
+        ]])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(
+            selectedCollectionIDs: ["lv-mystery-crime"],
+            selectedLanguages: ["eng"]
+        )
+
+        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        let advancedQueryCount = await client.advancedQueryCount
+        XCTAssertEqual(advancedQueryCount, 0)
+    }
+
+    @MainActor
+    func testGeneratedTTSAndAudioBooksPoetryCandidatesAreExcluded() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-generated-tts-filter")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+        await libraryStore.refresh()
+
+        let generated = candidate(
+            identifier: "synapseml_gutenberg_the_eleven_comedies_volume_1_by_aristoph",
+            title: "The Eleven Comedies",
+            creator: "Microsoft TTS",
+            subjects: ["Drama"],
+            collections: ["audio_bookspoetry"]
+        )
+        let fresh = candidate(
+            identifier: "fresh_clouds_librivox",
+            title: "The Clouds",
+            creator: "Aristophanes",
+            subjects: ["Drama"],
+            collections: ["librivoxaudio"]
+        )
+        let client = FakeArchiveClient(responses: [[generated, fresh], []])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let queries = await client.advancedQueries
+
+        XCTAssertFalse(recs.contains { $0.identifier == generated.identifier })
+        XCTAssertTrue(recs.contains { $0.identifier == fresh.identifier })
+        XCTAssertTrue(queries.allSatisfy { $0.contains("collection:librivoxaudio") })
+        XCTAssertTrue(queries.allSatisfy { !$0.contains("audio_bookspoetry") })
+    }
+
+    @MainActor
     func testListenedIAIdentifierCandidateIsExcluded() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-listened-ia")
         let repository = LibraryRepository(database: database)
@@ -357,14 +419,15 @@ final class RecommendationEngineTests: XCTestCase {
         title: String,
         creator: String,
         downloads: Int? = nil,
-        subjects: [String] = []
+        subjects: [String] = [],
+        collections: [String] = ["librivoxaudio"]
     ) -> InternetArchiveSearchResult {
         InternetArchiveSearchResult(
             identifier: identifier,
             title: title,
             creators: [creator],
             description: nil,
-            collections: ["librivoxaudio"],
+            collections: collections,
             downloads: downloads,
             date: nil,
             languages: ["english"],
@@ -427,6 +490,19 @@ final class RecommendationEngineTests: XCTestCase {
             position: 10,
             duration: 120
         ))
+        try await database.execute(
+            "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'author', ?)",
+            [.string(bookID.uuidString), .string(author.lowercased())]
+        )
+        try await database.execute("""
+        INSERT INTO listening_events (id, book_id, seconds, occurred_at)
+        VALUES (?, ?, ?, ?)
+        """, [
+            .string(UUID().uuidString),
+            .string(bookID.uuidString),
+            .double(60),
+            .double(now)
+        ])
         return (bookID, chapterID)
     }
 
@@ -435,6 +511,10 @@ final class RecommendationEngineTests: XCTestCase {
 
         var advancedQueryCount: Int {
             get async { await state.advancedQueryCount }
+        }
+
+        var advancedQueries: [String] {
+            get async { await state.advancedQueries }
         }
 
         init(responses: [[InternetArchiveSearchResult]]) {
@@ -463,6 +543,7 @@ final class RecommendationEngineTests: XCTestCase {
             private var queries: [String] = []
 
             var advancedQueryCount: Int { queries.count }
+            var advancedQueries: [String] { queries }
 
             init(responses: [[InternetArchiveSearchResult]]) {
                 self.responses = responses

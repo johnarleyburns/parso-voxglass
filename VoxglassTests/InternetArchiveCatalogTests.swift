@@ -74,6 +74,7 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertEqual(ids.count, categories.count)
         XCTAssertEqual(LibriVoxBrowseGroup.all.map(\.title), ["Fiction", "Forms", "Ideas & Nonfiction"])
         XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains(LibriVoxCatalogScope.collectionClause) })
+        XCTAssertTrue(categories.allSatisfy { !$0.archiveQuery.contains("audio_bookspoetry") })
         XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains("mediatype:audio") })
         XCTAssertTrue(categories.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
         XCTAssertTrue(LibriVoxBrowseCategory.scienceFiction.archiveQuery.contains("subject:\"Science Fiction\""))
@@ -110,7 +111,8 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertTrue(query.contains("creator:\"sherlock\"^3"))
         XCTAssertTrue(query.contains("subject:\"holmes\"^2"))
         XCTAssertTrue(query.contains("description:\"holmes\"^1"))
-        XCTAssertTrue(query.contains("collection:(librivoxaudio OR audio_bookspoetry)"))
+        XCTAssertTrue(query.contains("collection:librivoxaudio"))
+        XCTAssertFalse(query.contains("audio_bookspoetry"))
         XCTAssertTrue(query.contains(") OR ("))
     }
 
@@ -142,6 +144,74 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertTrue(CuratedQueries.greatBooks.contains("AND NOT creator:\"William John Locke\""))
         XCTAssertTrue(CuratedQueries.ancientGreece.contains("creator:\"Plato\""))
         XCTAssertTrue(CuratedQueries.greaterBooks.contains("creator:\"Jane Austen\""))
+    }
+
+    func testStrictLibriVoxScopeExcludesGeneratedTTSCollections() {
+        XCTAssertEqual(LibriVoxCatalogScope.collectionClause, "collection:librivoxaudio")
+        XCTAssertEqual(LibriVoxCatalogScope.query, "collection:librivoxaudio AND mediatype:audio")
+        XCTAssertFalse(LibriVoxCatalogScope.query.contains("audio_bookspoetry"))
+
+        let generated = InternetArchiveSearchResult(
+            identifier: "synapseml_gutenberg_the_eleven_comedies_volume_1_by_aristoph",
+            title: "The Eleven Comedies",
+            creators: ["Project Gutenberg", "Microsoft"],
+            description: "Project Gutenberg TTS generated audio.",
+            collections: ["audio_bookspoetry"],
+            downloads: 10,
+            date: nil
+        )
+        XCTAssertFalse(generated.isStrictLibriVoxCatalogCandidate)
+
+        let librivox = InternetArchiveSearchResult(
+            identifier: "clouds_librivox",
+            title: "The Clouds",
+            creators: ["Aristophanes"],
+            description: nil,
+            collections: ["librivoxaudio"],
+            downloads: 100,
+            date: nil
+        )
+        XCTAssertTrue(librivox.isStrictLibriVoxCatalogCandidate)
+    }
+
+    func testCoverImageFilesRejectSpectrogramDerivatives() {
+        let metadata = InternetArchiveMetadata(
+            metadata: InternetArchiveItemMetadata(
+                identifier: "example_librivox",
+                title: "Example",
+                creators: ["Author"],
+                description: nil,
+                mediatype: "audio",
+                collections: ["librivoxaudio"],
+                subjects: [],
+                language: "eng",
+                callNumber: nil
+            ),
+            files: [
+                InternetArchiveFile(
+                    name: "example_spectrogram.png",
+                    source: "derivative",
+                    format: "PNG",
+                    title: "Spectrogram",
+                    length: nil,
+                    track: nil,
+                    size: "20000"
+                ),
+                InternetArchiveFile(
+                    name: "cover.jpg",
+                    source: "original",
+                    format: "JPEG",
+                    title: "Cover",
+                    length: nil,
+                    track: nil,
+                    size: "30000"
+                )
+            ],
+            server: nil,
+            dir: nil
+        )
+
+        XCTAssertEqual(metadata.coverImageFiles.map(\.name), ["cover.jpg"])
     }
 
     func testAdvancedSearchURLUsesCatalogSortParameters() throws {

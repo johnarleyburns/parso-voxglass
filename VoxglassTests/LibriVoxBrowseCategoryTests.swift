@@ -63,15 +63,19 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
 
     // MARK: - Discovery queries
 
-    func testWeakCategoryQueriesUseBroadLibriVoxAudioScope() {
+    func testWeakCategoryQueriesUseStrictLibriVoxAudioScope() {
         let queries = [
             LibriVoxBrowseCategory.ancientWorld.archiveQuery,
-            LibriVoxBrowseCategory.dramaPlays.archiveQuery
+            LibriVoxBrowseCategory.dramaPlays.archiveQuery,
+            LibriVoxBrowseCategory.generalFiction.archiveQuery,
+            LibriVoxBrowseCategory.mysteryCrime.archiveQuery,
+            LibriVoxBrowseCategory.essaysIdeas.archiveQuery
         ]
 
         for query in queries {
             XCTAssertTrue(query.contains(LibriVoxCatalogScope.collectionClause))
             XCTAssertTrue(query.contains("mediatype:audio"))
+            XCTAssertFalse(query.contains("audio_bookspoetry"))
         }
     }
 
@@ -85,6 +89,26 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
         XCTAssertTrue(ancient.contains("subject:\"Ancient History\""))
         XCTAssertTrue(ancient.contains("creator:Plato"))
         XCTAssertTrue(ancient.contains("title:roman"))
+    }
+
+    func testGeneralFictionMysteryAndEssaysQueriesIncludeBroaderExpansions() {
+        let general = LibriVoxBrowseCategory.generalFiction.archiveQuery
+        XCTAssertTrue(general.contains("subject:Fiction"))
+        XCTAssertTrue(general.contains("title:novel"))
+        XCTAssertTrue(general.contains("creator:\"Charles Dickens\""))
+        XCTAssertTrue(general.contains(LibriVoxCatalogScope.query))
+
+        let mystery = LibriVoxBrowseCategory.mysteryCrime.archiveQuery
+        XCTAssertTrue(mystery.contains("subject:Mystery"))
+        XCTAssertTrue(mystery.contains("title:murder"))
+        XCTAssertTrue(mystery.contains("creator:\"Arthur Conan Doyle\""))
+        XCTAssertTrue(mystery.contains(LibriVoxCatalogScope.query))
+
+        let essays = LibriVoxBrowseCategory.essaysIdeas.archiveQuery
+        XCTAssertTrue(essays.contains("subject:Essays"))
+        XCTAssertTrue(essays.contains("title:lectures"))
+        XCTAssertTrue(essays.contains("creator:\"Ralph Waldo Emerson\""))
+        XCTAssertTrue(essays.contains(LibriVoxCatalogScope.query))
     }
 
     // MARK: - History backfill weighting

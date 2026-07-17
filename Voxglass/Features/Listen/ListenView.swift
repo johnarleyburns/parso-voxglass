@@ -198,8 +198,7 @@ struct ListenBookCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            BookCoverView(title: book.book.title, coverURL: book.book.coverURL, showBorder: false)
-                .frame(width: 132, height: 132)
+            BookArtworkView(title: book.book.title, size: 132, coverURL: book.book.coverURL, cornerRadius: 14, showBorder: false)
             Text(book.book.title)
                 .scaledFont(size: 12.5, weight: .semibold)
                 .foregroundStyle(Palette.ink)

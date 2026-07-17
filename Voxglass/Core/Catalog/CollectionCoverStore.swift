@@ -19,10 +19,10 @@ public final class CollectionCoverStore: ObservableObject {
     private let client: InternetArchiveCatalogClient
     private let artwork: CoverArtworkValidating
     private let defaults: UserDefaults
-    private let coverIdentifierCacheKey = "voxglass.collectionCoverIdentifierMap.v2"
-    private let coverStampCacheKey = "voxglass.collectionCoverStampMap.v2"
-    private let countsCacheKey = "voxglass.collectionCountMap.v2"
-    private let countsStampCacheKey = "voxglass.collectionCountStampMap.v2"
+    private let coverIdentifierCacheKey = "voxglass.collectionCoverIdentifierMap.v3"
+    private let coverStampCacheKey = "voxglass.collectionCoverStampMap.v3"
+    private let countsCacheKey = "voxglass.collectionCountMap.v3"
+    private let countsStampCacheKey = "voxglass.collectionCountStampMap.v3"
     private var resolvedIdentifiers: [String: String]
     private var coverStamps: [String: String]
     private var countStamps: [String: String]

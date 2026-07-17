@@ -26,8 +26,7 @@ struct GlassMiniPlayer: View {
     var body: some View {
         if let session = playback.currentSession {
             HStack(spacing: 10) {
-                BookArtworkView(title: session.book.title, size: 36, coverURL: session.book.coverURL)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                BookArtworkView(title: session.book.title, size: 36, coverURL: session.book.coverURL, cornerRadius: 10)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(session.book.title)
