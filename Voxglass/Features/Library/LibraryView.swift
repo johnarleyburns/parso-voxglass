@@ -56,15 +56,18 @@ struct LibraryView: View {
             } else {
                 offlinePinMeter
                 filterSortBar
-                VStack(spacing: 6) {
-                    ForEach(libraryStore.visibleBooks) { book in
+                let visibleBooks = libraryStore.visibleBooks
+                VStack(spacing: 0) {
+                    ForEach(visibleBooks.indices, id: \.self) { index in
+                        let book = visibleBooks[index]
                         NavigationLink {
                             BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
                         } label: {
                             CompactBookRowView(
                                 book: book,
                                 sourceTitle: libraryStore.source(for: book.book)?.title,
-                                accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true)
+                                accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
+                                style: .grouped
                             )
                         }
                         .buttonStyle(.plain)
@@ -73,8 +76,12 @@ struct LibraryView: View {
                                 pendingDeletion = book
                             }
                         }
+                        if index < visibleBooks.count - 1 {
+                            VoxglassListDivider()
+                        }
                     }
                 }
+                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
             }
         }
     }

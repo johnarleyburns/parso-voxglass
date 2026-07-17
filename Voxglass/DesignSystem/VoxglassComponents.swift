@@ -107,6 +107,11 @@ enum RowAccessory {
     case none
 }
 
+enum BookListRowStyle {
+    case card
+    case grouped
+}
+
 struct BookListRow: View {
     var title: String
     var subtitle: String
@@ -114,9 +119,27 @@ struct BookListRow: View {
     var metadata: String?
     var coverURL: URL?
     var accessory: RowAccessory = .navigation
+    var style: BookListRowStyle = .card
     var accessibilityLabel: String?
 
     var body: some View {
+        styledRow
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityLabel ?? "\(title), \(subtitle)")
+    }
+
+    @ViewBuilder
+    private var styledRow: some View {
+        switch style {
+        case .card:
+            rowContent
+                .glassSurface(cornerRadius: 14)
+        case .grouped:
+            rowContent
+        }
+    }
+
+    private var rowContent: some View {
         HStack(alignment: .center, spacing: 12) {
             BookArtworkView(title: title, size: 56, coverURL: coverURL, cornerRadius: 12)
 
@@ -155,9 +178,6 @@ struct BookListRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .glassSurface(cornerRadius: 14)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel ?? "\(title), \(subtitle)")
     }
 
     @ViewBuilder
@@ -336,6 +356,7 @@ struct CompactBookRowView: View {
     var book: BookWithChapters
     var sourceTitle: String?
     var accessory: RowAccessory = .navigation
+    var style: BookListRowStyle = .card
 
     var body: some View {
         BookListRow(
@@ -345,6 +366,7 @@ struct CompactBookRowView: View {
             metadata: book.libraryDetailLine(sourceTitle: sourceTitle),
             coverURL: book.book.coverURL,
             accessory: accessory,
+            style: style,
             accessibilityLabel: "\(book.book.title) by \(book.book.authorLine)"
         )
     }
