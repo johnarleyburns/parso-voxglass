@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voxglass HIG Redesign Mockups</title>
+  <style>
+    :root {
+      --bg: #0a0b0d;
+      --panel: rgba(255, 255, 255, 0.075);
+      --panel-strong: rgba(255, 255, 255, 0.115);
+      --line: rgba(255, 255, 255, 0.12);
+      --ink: #f2f4f6;
+      --ink-2: rgba(242, 244, 246, 0.62);
+      --ink-3: rgba(242, 244, 246, 0.38);
+      --brass: #e3a44b;
+      --green: #4cd471;
+      --red: #ff6b5e;
+      --blue: #65a7ff;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #111318;
+    }
+
+    header {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 22px 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 720px;
+      margin: 8px 0 0;
+      color: var(--ink-2);
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+      gap: 28px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 22px 42px;
+    }
+
+    .mockup h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: var(--ink-2);
+      font-weight: 700;
+    }
+
+    .phone {
+      position: relative;
+      width: min(100%, 390px);
+      height: 844px;
+      overflow: hidden;
+      border-radius: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: linear-gradient(180deg, #111318 0%, #090a0d 100%);
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+    }
+
+    .screen {
+      height: 100%;
+      overflow: hidden;
+      padding: 58px 18px 118px;
+    }
+
+    .screen.warm {
+      background:
+        radial-gradient(circle at 50% 0%, rgba(194, 120, 45, 0.28), transparent 34%),
+        linear-gradient(180deg, #24190f 0%, #11100e 38%, #090a0d 100%);
+    }
+
+    .title {
+      font-size: 31px;
+      line-height: 1.06;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--ink-2);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin: 18px 0 10px;
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .section-title span {
+      color: var(--brass);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .shelf {
+      display: flex;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .cover-card {
+      width: 132px;
+      flex: 0 0 132px;
+    }
+
+    .cover {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #70542d, #233a5a 55%, #15171d);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: grid;
+      place-items: center;
+      color: #ffd892;
+      font-weight: 800;
+      font-size: 20px;
+    }
+
+    .cover.red {
+      background: linear-gradient(135deg, #703030, #39304f 55%, #15171d);
+    }
+
+    .cover.green {
+      background: linear-gradient(135deg, #304f42, #4a4125 60%, #15171d);
+    }
+
+    .cover-title {
+      margin: 7px 0 0;
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cover-subtitle {
+      margin-top: 2px;
+      color: var(--ink-3);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-field {
+      height: 44px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 14px;
+      color: var(--ink-3);
+      margin-bottom: 14px;
+    }
+
+    .group {
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .row {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+    }
+
+    .row + .row {
+      border-top: 1px solid var(--line);
+    }
+
+    .row-cover {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      flex: 0 0 56px;
+      background: linear-gradient(135deg, #6e4b26, #22304e);
+      display: grid;
+      place-items: center;
+      color: #ffd892;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .row-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .row-title {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 650;
+      line-height: 1.22;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .row-subtitle,
+    .row-meta {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: var(--ink-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-accent {
+      color: var(--brass);
+    }
+
+    .accessory {
+      width: 44px;
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      color: var(--brass);
+      font-size: 22px;
+      flex: 0 0 44px;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 4px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .segmented div {
+      min-height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      color: var(--ink-3);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .segmented .selected {
+      color: #221503;
+      background: var(--brass);
+    }
+
+    .detail-hero {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    .detail-cover {
+      width: 112px;
+      height: 112px;
+      border-radius: 14px;
+      flex: 0 0 112px;
+      background: linear-gradient(135deg, #714626, #253b62);
+      display: grid;
+      place-items: center;
+      color: #ffd892;
+      font-weight: 800;
+    }
+
+    .primary-button {
+      height: 50px;
+      border-radius: 25px;
+      background: linear-gradient(180deg, #eeb35b, #cf8f34);
+      color: #221503;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 800;
+      margin-top: 14px;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .action {
+      min-height: 46px;
+      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .player-cover {
+      width: 240px;
+      height: 240px;
+      margin: 8px auto 22px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #7a4b1e, #22304e 60%, #0f1522);
+      display: grid;
+      place-items: center;
+      color: #ffd892;
+      font-size: 40px;
+      font-weight: 850;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+    }
+
+    .center-text {
+      text-align: center;
+    }
+
+    .scrubber {
+      margin: 22px 2px 8px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+    }
+
+    .track {
+      width: 100%;
+      height: 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.16);
+      overflow: hidden;
+    }
+
+    .track div {
+      width: 42%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .controls,
+    .actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .control {
+      width: 52px;
+      height: 52px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.12);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    .control.play {
+      width: 66px;
+      height: 66px;
+      border-radius: 33px;
+      background: rgba(255, 255, 255, 0.18);
+      font-size: 24px;
+    }
+
+    .actions div {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      color: var(--ink-2);
+      font-weight: 750;
+    }
+
+    .settings-row {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+
+    .settings-row + .settings-row {
+      border-top: 1px solid var(--line);
+    }
+
+    .settings-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--brass);
+      flex: 0 0 32px;
+    }
+
+    .dock {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .mini {
+      height: 58px;
+      border-radius: 22px;
+      background: rgba(30, 32, 38, 0.78);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px 8px 8px;
+    }
+
+    .tabs {
+      height: 66px;
+      border-radius: 26px;
+      background: rgba(30, 32, 38, 0.82);
+      border: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 7px 6px;
+      gap: 2px;
+    }
+
+    .tab {
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      color: var(--ink-3);
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .tab.selected {
+      color: var(--brass);
+      background: rgba(227, 164, 75, 0.14);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Voxglass HIG Redesign Mockups</h1>
+    <p>Static review target for the SwiftUI implementation: native audiobook hierarchy, grouped rows, centered book-list text, semantic play/navigation accessories, and 44 pt controls.</p>
+  </header>
+
+  <main class="grid">
+    <section class="mockup">
+      <h2>Listen</h2>
+      <div class="phone">
+        <div class="screen">
+          <h3 class="title">Voxglass</h3>
+          <p class="subtitle">Public-domain audiobooks, private by default.</p>
+          <div class="section-title">Jump Back In <span>See All</span></div>
+          <div class="shelf">
+            <div class="cover-card"><div class="cover">PP</div><div class="cover-title">Pride and Prejudice</div><div class="cover-subtitle">Jane Austen</div></div>
+            <div class="cover-card"><div class="cover red">SH</div><div class="cover-title">Sherlock Holmes</div><div class="cover-subtitle">Arthur Conan Doyle</div></div>
+            <div class="cover-card"><div class="cover green">TW</div><div class="cover-title">The Time Machine</div><div class="cover-subtitle">H. G. Wells</div></div>
+          </div>
+          <div class="section-title">Recommended for You</div>
+          <div class="group">
+            <div class="row"><div class="row-cover">JE</div><div class="row-main"><p class="row-title">Jane Eyre</p><p class="row-subtitle">Charlotte Bronte</p><p class="row-meta">Classic Fiction &middot; 18 chapters</p></div><div class="accessory">play</div></div>
+            <div class="row"><div class="row-cover">M</div><div class="row-main"><p class="row-title">Middlemarch</p><p class="row-subtitle">George Eliot</p><p class="row-meta">Popular on LibriVox</p></div><div class="accessory">play</div></div>
+          </div>
+        </div>
+        <div class="dock"><div class="tabs"><div class="tab selected">Listen</div><div class="tab">Books</div><div class="tab">Explore</div><div class="tab">Search</div><div class="tab">More</div></div></div>
+      </div>
+    </section>
+
+    <section class="mockup">
+      <h2>Library</h2>
+      <div class="phone">
+        <div class="screen">
+          <h3 class="title">My Books</h3>
+          <div class="segmented"><div class="selected">All</div><div>Favorites</div><div>Progress</div><div>Done</div></div>
+          <div class="segmented"><div class="selected">Recent</div><div>Title</div><div>Author</div><div>Reader</div></div>
+          <div class="group">
+            <div class="row"><div class="row-cover">PP</div><div class="row-main"><p class="row-title">Pride and Prejudice</p><p class="row-subtitle">Jane Austen</p><p class="row-meta row-accent">Elizabeth Klett</p><p class="row-meta">61% complete &middot; 11h left</p></div><div class="accessory">ok</div></div>
+            <div class="row"><div class="row-cover">W</div><div class="row-main"><p class="row-title">The War of the Worlds</p><p class="row-subtitle">H. G. Wells</p><p class="row-meta">27 chapters &middot; 7h 54m</p></div><div class="accessory">&gt;</div></div>
+            <div class="row"><div class="row-cover">O</div><div class="row-main"><p class="row-title">The Odyssey, a very long title that wraps cleanly inside the row</p><p class="row-subtitle">Homer</p><p class="row-meta">Finished</p></div><div class="accessory">&gt;</div></div>
+          </div>
+        </div>
+        <div class="dock"><div class="mini"><div class="row-cover" style="width:36px;height:36px;flex-basis:36px;">PP</div><div class="row-main"><p class="row-title">Pride and Prejudice</p><p class="row-meta">Chapter 24</p></div><div>pause</div></div><div class="tabs"><div class="tab">Listen</div><div class="tab selected">Books</div><div class="tab">Explore</div><div class="tab">Search</div><div class="tab">More</div></div></div>
+      </div>
+    </section>
+
+    <section class="mockup">
+      <h2>Search</h2>
+      <div class="phone">
+        <div class="screen">
+          <h3 class="title">Search</h3>
+          <div class="search-field">search LibriVox audiobooks</div>
+          <div class="group">
+            <div class="row"><div class="row-cover">A</div><div class="row-main"><p class="row-title">A Room with a View</p><p class="row-subtitle">E. M. Forster</p><p class="row-meta row-accent">Read by Elizabeth Klett</p><p class="row-meta">1918 &middot; 18,402 downloads</p></div><div class="accessory">play</div></div>
+            <div class="row"><div class="row-cover">T</div><div class="row-main"><p class="row-title">The Adventures of Tom Sawyer</p><p class="row-subtitle">Mark Twain</p><p class="row-meta">LibriVox &middot; 22 chapters</p></div><div class="accessory">play</div></div>
+          </div>
+        </div>
+        <div class="dock"><div class="tabs"><div class="tab">Listen</div><div class="tab">Books</div><div class="tab">Explore</div><div class="tab selected">Search</div><div class="tab">More</div></div></div>
+      </div>
+    </section>
+
+    <section class="mockup">
+      <h2>Book Detail</h2>
+      <div class="phone">
+        <div class="screen">
+          <div class="detail-hero">
+            <div class="detail-cover">PP</div>
+            <div class="row-main"><p class="row-title" style="font-size:20px;font-weight:800;">Pride and Prejudice</p><p class="row-subtitle">Jane Austen</p><p class="row-meta">LibriVox &middot; 61 chapters &middot; 12h 17m</p></div>
+          </div>
+          <div class="primary-button">Play</div>
+          <div class="action-grid"><div class="action">Favorite</div><div class="action">Offline</div><div class="action">Playlist</div><div class="action">Share</div></div>
+          <div class="section-title">Summary</div>
+          <div class="group"><div class="settings-row"><div class="row-main"><p class="row-subtitle">A sharp comedy of manners with a memorable heroine, a difficult first impression, and one of English literature's best-known romances.</p></div></div></div>
+          <div class="section-title">Chapters</div>
+          <div class="group">
+            <div class="settings-row"><div class="settings-icon">1</div><div class="row-main"><p class="row-title">Chapter 1</p><p class="row-meta">14:22</p></div></div>
+            <div class="settings-row"><div class="settings-icon">2</div><div class="row-main"><p class="row-title">Chapter 2</p><p class="row-meta">12:08</p></div></div>
+            <div class="settings-row"><div class="settings-icon">...</div><div class="row-main"><p class="row-title">All Chapters</p><p class="row-meta">61 total</p></div><div class="accessory">&gt;</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mockup">
+      <h2>Now Playing</h2>
+      <div class="phone">
+        <div class="screen warm">
+          <div class="player-cover">PP</div>
+          <div class="center-text"><p class="row-title" style="font-size:17px;">Pride and Prejudice</p><p class="row-subtitle">Jane Austen</p><p class="row-meta">Chapter 24</p></div>
+          <div class="scrubber"><div class="track"><div></div></div></div>
+          <div style="display:flex;justify-content:space-between;color:var(--ink-3);font-size:11px;"><span>24:18</span><span>8h left in book</span><span>-12:06</span></div>
+          <div class="controls"><div class="control">prev</div><div class="control">15</div><div class="control play">pause</div><div class="control">30</div><div class="control">next</div></div>
+          <div class="actions"><div>1.25x</div><div>mark</div><div>heart</div><div>eq</div><div>sleep</div><div>share</div></div>
+          <div class="section-title">Chapters</div>
+          <div class="group">
+            <div class="settings-row"><div class="row-main"><p class="row-title row-accent">Chapter 24</p></div><p class="row-meta">14:22</p></div>
+            <div class="settings-row"><div class="row-main"><p class="row-title">Chapter 25</p></div><p class="row-meta">16:11</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mockup">
+      <h2>More</h2>
+      <div class="phone">
+        <div class="screen">
+          <h3 class="title">More</h3>
+          <div class="section-title">Voxglass Pro</div>
+          <div class="group"><div class="settings-row"><div class="settings-icon">c</div><div class="row-main"><p class="row-title">Voxglass Pro</p><p class="row-meta">One-time purchase &middot; unlock advanced audio tools</p></div><div class="accessory">&gt;</div></div></div>
+          <div class="section-title">Playback</div>
+          <div class="group">
+            <div class="settings-row"><div class="settings-icon">eq</div><div class="row-main"><p class="row-title">Equalizer</p><p class="row-meta">10-band EQ with presets</p></div><div class="accessory">&gt;</div></div>
+            <div class="settings-row"><div class="settings-icon">15</div><div class="row-main"><p class="row-title">Skip Intervals</p><p class="row-meta">Back 15s &middot; forward 30s</p></div></div>
+            <div class="settings-row"><div class="settings-icon">z</div><div class="row-main"><p class="row-title">Default Sleep Timer</p><p class="row-meta">30 minutes</p></div></div>
+          </div>
+          <div class="section-title">Library</div>
+          <div class="group">
+            <div class="settings-row"><div class="settings-icon">url</div><div class="row-main"><p class="row-title">Sources</p><p class="row-meta">Add Internet Archive URLs</p></div><div class="accessory">&gt;</div></div>
+            <div class="settings-row"><div class="settings-icon">bak</div><div class="row-main"><p class="row-title">Backup and Restore</p><p class="row-meta">Save your shelf to a file</p></div><div class="accessory">&gt;</div></div>
+          </div>
+        </div>
+        <div class="dock"><div class="tabs"><div class="tab">Listen</div><div class="tab">Books</div><div class="tab">Explore</div><div class="tab">Search</div><div class="tab selected">More</div></div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -16,7 +16,6 @@ struct SplashView: View {
                 VStack(spacing: 10) {
                     Text("Voxglass")
                         .scaledFont(size: 31, weight: .heavy, design: .default)
-                        .kerning(-0.5)
                         .foregroundStyle(Palette.ink)
                     Text("Public-domain audiobooks with a private, local-first shelf.")
                         .scaledFont(size: 15)

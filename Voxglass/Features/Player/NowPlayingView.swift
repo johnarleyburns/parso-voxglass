@@ -157,6 +157,8 @@ struct NowPlayingView: View {
                         .fill(Color.white.opacity(0.90))
                         .frame(width: max(geometry.size.width * CGFloat(progress), 0), height: 7)
                 }
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { val in
@@ -170,7 +172,7 @@ struct NowPlayingView: View {
                         }
                 )
             }
-            .frame(height: 7)
+            .frame(height: 32)
             .accessibilityLabel("Playback position")
             .accessibilityValue(TimeFormatting.clock(isScrubbing ? scrubPosition : session.position))
 
@@ -275,6 +277,7 @@ struct NowPlayingView: View {
             ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
                 Image(systemName: "square.and.arrow.up")
                     .scaledFont(size: 16)
+                    .frame(width: 44, height: 44)
             }
         }
         .foregroundStyle(Color.white.opacity(0.6))
@@ -302,6 +305,7 @@ struct NowPlayingView: View {
             }
         } label: {
             sleepTimerIcon
+                .frame(minWidth: 44, minHeight: 44)
         }
         .accessibilityLabel("Sleep timer")
         .accessibilityValue(sleepTimerAccessibilityValue)
@@ -367,6 +371,7 @@ struct NowPlayingView: View {
         } label: {
             Image(systemName: "bookmark")
                 .scaledFont(size: 16)
+                .frame(width: 44, height: 44)
         }
         .accessibilityLabel("Bookmark")
         .accessibilityIdentifier("nowplaying.bookmark")
@@ -388,7 +393,7 @@ struct NowPlayingView: View {
         } label: {
             Text(PlaybackRate.label(playback.playbackRate))
                 .scaledFont(size: 13, weight: .bold, design: .monospaced)
-                .frame(minWidth: 34)
+                .frame(minWidth: 44, minHeight: 44)
         }
         .accessibilityLabel("Playback speed")
         .accessibilityValue(PlaybackRate.label(playback.playbackRate))
@@ -403,6 +408,7 @@ struct NowPlayingView: View {
             Image(systemName: favorited ? "heart.fill" : "heart")
                 .scaledFont(size: 16)
                 .foregroundStyle(favorited ? Palette.brass : Color.white.opacity(0.6))
+                .frame(width: 44, height: 44)
         }
         .accessibilityLabel(favorited ? "Unfavorite" : "Favorite")
         .accessibilityIdentifier("nowplaying.favorite")
@@ -417,6 +423,7 @@ struct NowPlayingView: View {
             } label: {
                 Image(systemName: "slider.horizontal.3")
                     .scaledFont(size: 16)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Equalizer")
             .accessibilityIdentifier("nowplaying.eq")
@@ -426,6 +433,7 @@ struct NowPlayingView: View {
             } label: {
                 Image(systemName: "slider.horizontal.3")
                     .scaledFont(size: 16)
+                    .frame(width: 44, height: 44)
                     .overlay(alignment: .topTrailing) {
                         Image(systemName: "lock.fill")
                             .scaledFont(size: 8, weight: .bold)
@@ -438,11 +446,10 @@ struct NowPlayingView: View {
     }
 
     private func chapterList(_ session: PlaybackSession) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Chapters")
-                .scaledFont(size: 14, weight: .semibold)
-                .foregroundStyle(Palette.ink)
-            ForEach(session.chapters) { chapter in
+        VoxglassGroupedSection(title: "Chapters") {
+            let chapters = session.chapters
+            ForEach(chapters.indices, id: \.self) { index in
+                let chapter = chapters[index]
                 Button {
                     Task {
                         if chapter.id == session.chapter.id {
@@ -461,14 +468,17 @@ struct NowPlayingView: View {
                             .foregroundStyle(Color.white.opacity(0.58))
                     }
                     .scaledFont(size: 14)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 48)
                     .foregroundStyle(chapter.id == session.chapter.id ? Palette.brass : Color.white.opacity(0.82))
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                if index < chapters.count - 1 {
+                    VoxglassListDivider()
+                }
             }
         }
-        .padding(14)
-        .glassSurface(cornerRadius: 14, fill: Color.white.opacity(0.06))
         .padding(.top, 16)
     }
 
@@ -482,11 +492,7 @@ struct NowPlayingView: View {
         let hasNarrator = !narrator.isEmpty
 
         if hasAuthor || hasNarrator || genre != nil {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Discover More")
-                    .scaledFont(size: 14, weight: .semibold)
-                    .foregroundStyle(Palette.ink)
-
+            VoxglassGroupedSection(title: "Discover More") {
                 if hasAuthor {
                     discoveryLink(
                         label: "More by \(author)",
@@ -494,6 +500,9 @@ struct NowPlayingView: View {
                         destinationTitle: author,
                         query: Self.authorQuery(author)
                     )
+                    if hasNarrator || genre != nil {
+                        VoxglassListDivider()
+                    }
                 }
                 if hasNarrator {
                     discoveryLink(
@@ -502,6 +511,9 @@ struct NowPlayingView: View {
                         destinationTitle: narrator,
                         query: Self.narratorQuery(narrator)
                     )
+                    if genre != nil {
+                        VoxglassListDivider()
+                    }
                 }
                 if let genre {
                     discoveryLink(
@@ -512,8 +524,6 @@ struct NowPlayingView: View {
                     )
                 }
             }
-            .padding(14)
-            .glassSurface(cornerRadius: 14, fill: Color.white.opacity(0.06))
             .padding(.top, 16)
         }
     }
@@ -537,7 +547,7 @@ struct NowPlayingView: View {
                 Image(systemName: systemImage)
                     .scaledFont(size: 14)
                     .foregroundStyle(Palette.brass)
-                    .frame(width: 22)
+                    .frame(width: 32, height: 32)
                 Text(label)
                     .scaledFont(size: 14, weight: .medium)
                     .foregroundStyle(Color.white.opacity(0.9))
@@ -547,7 +557,8 @@ struct NowPlayingView: View {
                     .scaledFont(size: 11, weight: .bold)
                     .foregroundStyle(Color.white.opacity(0.5))
             }
-            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 50)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

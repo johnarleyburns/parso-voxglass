@@ -15,6 +15,7 @@ struct GlassDock: View {
             GlassTabBar(selection: $selectedTab)
         }
         .padding(.horizontal, 12)
+        .padding(.bottom, 8)
     }
 }
 
@@ -87,8 +88,16 @@ struct GlassTabBar: View {
                         Text(label).scaledFont(size: 9.5, weight: .medium)
                     }
                     .foregroundStyle(selection == tab ? Palette.brass : Palette.ink3)
+                    .frame(minHeight: 48)
                     .frame(maxWidth: .infinity)
+                    .background {
+                        if selection == tab {
+                            Capsule()
+                                .fill(Palette.brass.opacity(0.14))
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel(label)
                 .accessibilityAddTraits(selection == tab ? [.isSelected] : [])
             }

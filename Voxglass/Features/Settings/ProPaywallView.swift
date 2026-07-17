@@ -97,7 +97,6 @@ struct ProPaywallView: View {
 
             Text("Voxglass Pro")
                 .scaledFont(size: 31, weight: .heavy)
-                .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
 
             Text("One-time purchase. No subscription.\nNo account required.")

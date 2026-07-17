@@ -105,12 +105,8 @@ struct SettingsView: View {
         _ title: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: title)
-            VStack(spacing: 0) {
-                content()
-            }
-            .glassPanel()
+        VoxglassGroupedSection(title: title) {
+            content()
         }
     }
 }
@@ -245,7 +241,7 @@ private struct LanguagesCard: View {
             .scaledFont(size: 12.5, weight: .semibold)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 9)
+            .frame(minHeight: 44)
             .background(
                 isSelected ? Palette.brass : Color.white.opacity(0.07),
                 in: RoundedRectangle(cornerRadius: 11)
@@ -373,7 +369,7 @@ private struct CacheSettingsCard: View {
             .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(selected ? .white : Palette.ink2)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .frame(minHeight: 44)
             .background(
                 selected ? Palette.brassDeep : Color.white.opacity(0.07),
                 in: RoundedRectangle(cornerRadius: 11)
@@ -559,7 +555,6 @@ struct AboutView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Voxglass")
                 .scaledFont(size: 26, weight: .heavy)
-                .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
             Text("Public-domain audiobooks with a private, local-first shelf.")
                 .scaledFont(size: 14)
@@ -1216,7 +1211,5 @@ private struct BackupImportSheet: View {
         }
     }
 }
-
-
 
 

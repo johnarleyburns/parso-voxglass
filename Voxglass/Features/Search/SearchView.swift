@@ -49,6 +49,7 @@ struct SearchView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Palette.ink3)
+                        .frame(width: 32, height: 32)
                 }
             }
 
@@ -59,7 +60,7 @@ struct SearchView: View {
         }
         .scaledFont(size: 15)
         .padding(.horizontal, 14)
-        .frame(height: 40)
+        .frame(height: 44)
         .contentShape(Rectangle())
         .glassSurface(cornerRadius: 20)
     }
@@ -142,49 +143,15 @@ struct InternetArchiveResultRow: View {
     var isPlaying: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
-            BookArtworkView(title: result.title, size: 56, coverURL: result.coverURL, cornerRadius: 12)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(result.title)
-                    .scaledFont(size: 14, weight: .medium)
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(2, reservesSpace: true)
-                    .minimumScaleFactor(0.82)
-                Text(result.authorLine)
-                    .scaledFont(size: 11.5)
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
-                if let narratorLine = result.narratorLine {
-                    Text(narratorLine)
-                        .scaledFont(size: 11.5)
-                        .foregroundStyle(Palette.brass)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 4)
-                Text(detailLine)
-                    .scaledFont(size: 11.5)
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
-            }
-            .frame(maxHeight: .infinity, alignment: .top)
-
-            Spacer(minLength: 8)
-
-            if isPlaying {
-                ProgressView()
-                    .frame(width: 20, height: 20)
-            } else {
-                Image(systemName: "chevron.right")
-                    .scaledFont(size: 11, weight: .bold)
-                    .foregroundStyle(Palette.ink3.opacity(0.7))
-            }
-        }
-        .frame(height: BookRowMetrics.contentHeight)
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .glassSurface(cornerRadius: 14)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Play \(result.title)")
+        BookListRow(
+            title: result.title,
+            subtitle: result.authorLine,
+            tertiary: result.narratorLine,
+            metadata: detailLine,
+            coverURL: result.coverURL,
+            accessory: isPlaying ? .loading : .play,
+            accessibilityLabel: "Play \(result.title) by \(result.authorLine)"
+        )
     }
 
     var detailLine: String {
@@ -198,6 +165,6 @@ struct InternetArchiveResultRow: View {
         if parts.isEmpty {
             parts.append(result.sourceKind.displayName)
         }
-        return parts.joined(separator: " - ")
+        return parts.joined(separator: " · ")
     }
 }

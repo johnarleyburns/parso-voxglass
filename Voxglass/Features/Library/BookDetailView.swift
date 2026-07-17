@@ -141,7 +141,6 @@ struct BookDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(currentBook.book.title)
                         .scaledFont(size: 20, weight: .heavy)
-                        .kerning(-0.5)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(4)
                         .minimumScaleFactor(0.72)
@@ -221,7 +220,7 @@ struct BookDetailView: View {
     private var offlineControl: some View {
         switch offlineState {
         case .notCached:
-            SecondaryActionButton(title: "Make available offline", systemImage: "arrow.down.circle") {
+            SecondaryActionButton(title: "Offline", systemImage: "arrow.down.circle") {
                 Task { await requestOffline() }
             }
         case .downloading(let progress):
@@ -237,8 +236,10 @@ struct BookDetailView: View {
             .padding(.horizontal, 12)
             .glassSurface(cornerRadius: 18)
         case .cached:
-            Label("Cached for offline use", systemImage: "checkmark.circle.fill")
+            Label("Cached", systemImage: "checkmark.circle.fill")
                 .scaledFont(size: 13, weight: .semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .foregroundStyle(Palette.brass)
@@ -249,7 +250,7 @@ struct BookDetailView: View {
                     }
                 }
         case .failed:
-            SecondaryActionButton(title: "Retry offline", systemImage: "exclamationmark.arrow.circlepath") {
+            SecondaryActionButton(title: "Retry", systemImage: "exclamationmark.arrow.circlepath") {
                 Task { await requestOffline() }
             }
         }
@@ -276,15 +277,13 @@ struct BookDetailView: View {
     }
 
     private var summarySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Summary")
+        VoxglassGroupedSection(title: "Summary") {
             Text(currentBook.book.summary?.isEmpty == false ? currentBook.book.summary! : "No summary is available for this audiobook yet.")
                 .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .glassSurface(cornerRadius: 14)
         }
     }
 
@@ -309,31 +308,32 @@ struct BookDetailView: View {
 
     @ViewBuilder
     private var narratorSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Narrators")
+        VoxglassGroupedSection(title: "Narrators") {
             if currentBook.book.narrators.isEmpty {
                 DisclosureListRow(
                     icon: "mic.slash.fill",
                     title: "Narrator unknown",
                     detail: "\(currentBook.chapters.count) chapter\(currentBook.chapters.count == 1 ? "" : "s")",
-                    count: nil
+                    count: nil,
+                    showsChevron: false
                 )
-                .glassSurface(cornerRadius: 14)
             } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(currentBook.book.narrators, id: \.self) { narrator in
-                        NavigationLink {
-                            NarratorDetailView(narratorName: narrator, showingNowPlaying: $showingNowPlaying)
-                        } label: {
-                            DisclosureListRow(
-                                icon: "mic.fill",
-                                title: narrator,
-                                detail: "Narrator",
-                                count: nil
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .glassSurface(cornerRadius: 14)
+                let narrators = currentBook.book.narrators
+                ForEach(narrators.indices, id: \.self) { index in
+                    let narrator = narrators[index]
+                    NavigationLink {
+                        NarratorDetailView(narratorName: narrator, showingNowPlaying: $showingNowPlaying)
+                    } label: {
+                        DisclosureListRow(
+                            icon: "mic.fill",
+                            title: narrator,
+                            detail: "Narrator",
+                            count: nil
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    if index < narrators.count - 1 {
+                        VoxglassListDivider()
                     }
                 }
             }
@@ -341,48 +341,51 @@ struct BookDetailView: View {
     }
 
     private var chapterPreview: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Chapters")
-
-            VStack(spacing: 0) {
-                ForEach(currentBook.chapters.prefix(6)) { chapter in
-                    ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
-                        Task {
-                            await playback.play(currentBook, chapter: chapter)
-                            showingNowPlaying = true
-                        }
+        VoxglassGroupedSection(title: "Chapters") {
+            let previewChapters = Array(currentBook.chapters.prefix(6))
+            ForEach(previewChapters.indices, id: \.self) { index in
+                let chapter = previewChapters[index]
+                ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
+                    Task {
+                        await playback.play(currentBook, chapter: chapter)
+                        showingNowPlaying = true
                     }
                 }
-
-                Group {
-                    if let count = playback.bookmarkCount ?? bookmarkCount, count > 0 {
-                        Button {
-                            showingBookmarks = true
-                        } label: {
-                            DisclosureListRow(
-                                icon: "bookmark.fill",
-                                title: "Bookmarks",
-                                detail: "\(count) bookmark\(count == 1 ? "" : "s")",
-                                count: nil
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    NavigationLink {
-                        ChaptersView(book: currentBook, showingNowPlaying: $showingNowPlaying)
-                    } label: {
-                        DisclosureListRow(
-                            icon: "list.bullet",
-                            title: "All Chapters",
-                            detail: "\(currentBook.chapters.count) total",
-                            count: nil
-                        )
-                    }
-                    .buttonStyle(.plain)
+                if index < previewChapters.count - 1 {
+                    VoxglassListDivider()
                 }
             }
-            .glassSurface(cornerRadius: 14)
+
+            if !previewChapters.isEmpty {
+                VoxglassListDivider()
+            }
+
+            if let count = playback.bookmarkCount ?? bookmarkCount, count > 0 {
+                Button {
+                    showingBookmarks = true
+                } label: {
+                    DisclosureListRow(
+                        icon: "bookmark.fill",
+                        title: "Bookmarks",
+                        detail: "\(count) bookmark\(count == 1 ? "" : "s")",
+                        count: nil
+                    )
+                }
+                .buttonStyle(.plain)
+                VoxglassListDivider()
+            }
+
+            NavigationLink {
+                ChaptersView(book: currentBook, showingNowPlaying: $showingNowPlaying)
+            } label: {
+                DisclosureListRow(
+                    icon: "list.bullet",
+                    title: "All Chapters",
+                    detail: "\(currentBook.chapters.count) total",
+                    count: nil
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -419,21 +422,24 @@ struct ChaptersView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(currentBook.book.title)
                         .scaledFont(size: 20, weight: .heavy)
-                        .kerning(-0.5)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
 
-                    VStack(spacing: 0) {
-                        ForEach(currentBook.chapters) { chapter in
+                    VoxglassGroupedSection(title: "All Chapters") {
+                        let chapters = currentBook.chapters
+                        ForEach(chapters.indices, id: \.self) { index in
+                            let chapter = chapters[index]
                             ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
                                 Task {
                                     await playback.play(currentBook, chapter: chapter)
                                     showingNowPlaying = true
                                 }
                             }
+                            if index < chapters.count - 1 {
+                                VoxglassListDivider()
+                            }
                         }
                     }
-                    .glassSurface(cornerRadius: 14)
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
@@ -462,7 +468,6 @@ struct AuthorDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(authorName)
                             .scaledFont(size: 31, weight: .heavy)
-                            .kerning(-0.5)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
@@ -521,7 +526,6 @@ struct NarratorDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(narratorName)
                             .scaledFont(size: 31, weight: .heavy)
-                            .kerning(-0.5)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)

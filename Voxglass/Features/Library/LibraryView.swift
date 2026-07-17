@@ -63,11 +63,9 @@ struct LibraryView: View {
                         } label: {
                             CompactBookRowView(
                                 book: book,
-                                sourceTitle: libraryStore.source(for: book.book)?.title
+                                sourceTitle: libraryStore.source(for: book.book)?.title,
+                                accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true)
                             )
-                            .overlay(alignment: .topTrailing) {
-                                downloadBadge(for: book.book.id)
-                            }
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
@@ -106,42 +104,6 @@ struct LibraryView: View {
             }
             .pickerStyle(.segmented)
             .tint(Palette.brass)
-        }
-    }
-
-    @ViewBuilder
-    private func downloadBadge(for bookID: UUID) -> some View {
-        let state = offlineManager.state(for: bookID)
-        switch state {
-        case .cached:
-            Image(systemName: "checkmark.circle.fill")
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.brass)
-                .padding(6)
-        case .downloading(let progress):
-            ZStack {
-                Circle()
-                    .stroke(Palette.ink3.opacity(0.3), lineWidth: 2)
-                Circle()
-                    .trim(from: 0, to: CGFloat(progress))
-                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Image(systemName: "arrow.down")
-                    .scaledFont(size: 7)
-                    .foregroundStyle(Palette.brass)
-            }
-            .frame(width: 18, height: 18)
-            .padding(6)
-        case .notCached:
-            Image(systemName: "arrow.down.circle")
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.ink3)
-                .padding(6)
-        case .failed:
-            Image(systemName: "exclamationmark.circle")
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.danger)
-                .padding(6)
         }
     }
 

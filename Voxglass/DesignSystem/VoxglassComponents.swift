@@ -47,7 +47,7 @@ struct FilterChip: View {
                     .lineLimit(1)
             }
             .padding(.horizontal, 14)
-            .frame(height: 34)
+            .frame(height: 44)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink)
             .background {
                 Capsule()
@@ -64,12 +64,176 @@ struct FilterChip: View {
     }
 }
 
+struct VoxglassGroupedSection<Content: View>: View {
+    let title: String
+    let subtitle: String?
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: title, subtitle: subtitle)
+            VStack(spacing: 0) {
+                content
+            }
+            .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+        }
+    }
+}
+
+struct VoxglassListDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Palette.hairline)
+            .frame(height: 1)
+            .padding(.leading, 58)
+    }
+}
+
+enum RowAccessory {
+    case navigation
+    case play
+    case loading
+    case download(OfflineState, showsNavigation: Bool)
+    case none
+}
+
+struct BookListRow: View {
+    var title: String
+    var subtitle: String
+    var tertiary: String?
+    var metadata: String?
+    var coverURL: URL?
+    var accessory: RowAccessory = .navigation
+    var accessibilityLabel: String?
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            BookArtworkView(title: title, size: 56, coverURL: coverURL, cornerRadius: 12)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .scaledFont(size: 14.5, weight: .medium)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(subtitle)
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Palette.ink3)
+                    .lineLimit(1)
+                if let tertiary, !tertiary.isEmpty {
+                    Text(tertiary)
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.brass)
+                        .lineLimit(1)
+                }
+                if let metadata, !metadata.isEmpty {
+                    Text(metadata)
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.ink3)
+                        .lineLimit(1)
+                }
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 8)
+
+            rowAccessory
+                .accessibilityHidden(true)
+        }
+        .frame(minHeight: 76)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+        .glassSurface(cornerRadius: 14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel ?? "\(title), \(subtitle)")
+    }
+
+    @ViewBuilder
+    private var rowAccessory: some View {
+        switch accessory {
+        case .navigation:
+            Image(systemName: "chevron.right")
+                .scaledFont(size: 11, weight: .bold)
+                .foregroundStyle(Palette.ink3.opacity(0.7))
+                .frame(width: 24, height: 44)
+        case .play:
+            Image(systemName: "play.circle.fill")
+                .scaledFont(size: 27, weight: .semibold)
+                .foregroundStyle(Palette.brass)
+                .frame(width: 44, height: 44)
+        case .loading:
+            ProgressView()
+                .frame(width: 44, height: 44)
+        case .download(let state, let showsNavigation):
+            HStack(spacing: 4) {
+                downloadAccessory(for: state)
+                if showsNavigation {
+                    Image(systemName: "chevron.right")
+                        .scaledFont(size: 11, weight: .bold)
+                        .foregroundStyle(Palette.ink3.opacity(0.7))
+                        .frame(width: 16, height: 44)
+                }
+            }
+        case .none:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func downloadAccessory(for state: OfflineState) -> some View {
+        switch state {
+        case .cached:
+            Image(systemName: "checkmark.circle.fill")
+                .scaledFont(size: 17, weight: .semibold)
+                .foregroundStyle(Palette.brass)
+                .frame(width: 28, height: 44)
+        case .downloading(let progress):
+            ZStack {
+                Circle()
+                    .stroke(Palette.ink3.opacity(0.3), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(progress))
+                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "arrow.down")
+                    .scaledFont(size: 7)
+                    .foregroundStyle(Palette.brass)
+            }
+            .frame(width: 20, height: 20)
+            .frame(width: 28, height: 44)
+        case .notCached:
+            Image(systemName: "arrow.down.circle")
+                .scaledFont(size: 17)
+                .foregroundStyle(Palette.ink3)
+                .frame(width: 28, height: 44)
+        case .failed:
+            Image(systemName: "exclamationmark.circle")
+                .scaledFont(size: 17)
+                .foregroundStyle(Palette.danger)
+                .frame(width: 28, height: 44)
+        }
+    }
+}
+
 struct DisclosureListRow: View {
     var icon: String
     var title: String
     var detail: String?
     var count: Int?
     var isEnabled: Bool = true
+    var showsChevron: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -110,9 +274,11 @@ struct DisclosureListRow: View {
                     }
             }
 
-            Image(systemName: "chevron.right")
-                .scaledFont(size: 11, weight: .bold)
-                .foregroundStyle(Palette.ink3.opacity(isEnabled ? 0.7 : 0.25))
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .scaledFont(size: 11, weight: .bold)
+                    .foregroundStyle(Palette.ink3.opacity(isEnabled ? 0.7 : 0.25))
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -154,6 +320,8 @@ struct SecondaryActionButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .scaledFont(size: 14, weight: .semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .foregroundStyle(isEnabled ? Palette.ink : Palette.ink3)
@@ -167,52 +335,19 @@ struct SecondaryActionButton: View {
 struct CompactBookRowView: View {
     var book: BookWithChapters
     var sourceTitle: String?
+    var accessory: RowAccessory = .navigation
 
     var body: some View {
-        HStack(spacing: 12) {
-            BookArtworkView(title: book.book.title, size: 56, coverURL: book.book.coverURL, cornerRadius: 12)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(book.book.title)
-                    .scaledFont(size: 14, weight: .medium)
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(2, reservesSpace: true)
-                    .minimumScaleFactor(0.82)
-                Text(book.book.authorLine)
-                    .scaledFont(size: 11.5)
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
-                if let narratorLine = book.book.narratorLine {
-                    Text(narratorLine)
-                        .scaledFont(size: 11.5)
-                        .foregroundStyle(Palette.brass)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 4)
-                Text(book.libraryDetailLine(sourceTitle: sourceTitle))
-                    .scaledFont(size: 11.5)
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
-            }
-            .frame(maxHeight: .infinity, alignment: .top)
-            Spacer(minLength: 8)
-            Image(systemName: "chevron.right")
-                .scaledFont(size: 11, weight: .bold)
-                .foregroundStyle(Palette.ink3.opacity(0.7))
-        }
-        .frame(height: BookRowMetrics.contentHeight)
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .glassSurface(cornerRadius: 14)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(book.book.title) by \(book.book.authorLine)")
+        BookListRow(
+            title: book.book.title,
+            subtitle: book.book.authorLine,
+            tertiary: book.book.narratorLine,
+            metadata: book.libraryDetailLine(sourceTitle: sourceTitle),
+            coverURL: book.book.coverURL,
+            accessory: accessory,
+            accessibilityLabel: "\(book.book.title) by \(book.book.authorLine)"
+        )
     }
-}
-
-/// Shared sizing for the compact book/result rows (My Books, Explore, Search) so
-/// every card is the same height regardless of whether an optional narrator line
-/// is present. Sized for a 2-line title + author + narrator + bottom detail line
-/// at default Dynamic Type.
-enum BookRowMetrics {
-    static let contentHeight: CGFloat = 84
 }
 
 struct HorizontalBookCard: View {

@@ -61,7 +61,6 @@ struct OnboardingPreferencesView: View {
 
             Text("Choose a few interests")
                 .scaledFont(size: 31, weight: .heavy)
-                .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -103,7 +102,7 @@ struct OnboardingPreferencesView: View {
             .scaledFont(size: 12.5, weight: .semibold)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 9)
+            .frame(minHeight: 44)
             .background(
                 isSelected ? Palette.brass : Color.white.opacity(0.07),
                 in: RoundedRectangle(cornerRadius: 11)

@@ -61,7 +61,6 @@ struct ListenView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Good listening")
                 .scaledFont(size: 31, weight: .heavy)
-                .kerning(-0.5)
                 .foregroundStyle(Palette.ink)
             Text("Public-domain audiobooks, private by default.")
                 .scaledFont(size: 14)
