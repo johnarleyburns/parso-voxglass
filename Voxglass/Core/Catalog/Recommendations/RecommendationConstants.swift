@@ -17,6 +17,13 @@ public enum RecommendationConstants {
     /// contributes to the taste profile (unless the book is finished).
     public static let meaningfulListenCompletion: Double = 0.20
 
+    /// Smallest increment any meaningful listen can contribute (applySignal floors
+    /// at max(0.5, completion); historyIncrement floors at 0.5).
+    public static let minListenIncrement: Double = 0.5
+    /// Onboarding author seeds must stay BELOW minListenIncrement so one real
+    /// listen always outranks onboarding picks in the creator ranking.
+    public static let onboardingAuthorSeedWeight: Double = 0.4
+
     public static let subjectStopList: Set<String> = [
         "music", "audio", "spoken word", "librivox", "podcast",
         "sound", "recording", "mp3", "ogg", "stream", "broadcast"

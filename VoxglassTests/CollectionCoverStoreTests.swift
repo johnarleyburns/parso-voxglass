@@ -45,6 +45,71 @@ final class CollectionCoverStoreTests: XCTestCase {
         XCTAssertTrue(lastQuery.contains(LibriVoxCatalogScope.query))
     }
 
+    func testDefaultLanguageUsesBundledCountsWithoutNetwork() async throws {
+        let defaultsName = "collection-bundled-count-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+
+        let collection = IACollection(
+            id: "lv-mystery-crime",
+            title: "Mystery & Crime",
+            subtitle: "Test",
+            archiveQuery: LibriVoxBrowseCategory.mysteryCrime.archiveQuery,
+            systemImage: "magnifyingglass",
+            assetName: "collection-test"
+        )
+        let client = FakeCoverClient(results: [], numFound: 0)
+        let store = CollectionCoverStore(
+            client: client,
+            artwork: AlwaysValidArtwork(),
+            defaults: defaults
+        )
+
+        await store.resolveCounts(for: [collection], languages: ["eng"])
+
+        let pageCount = await client.pageCallCount
+        XCTAssertEqual(pageCount, 0, "default English should use bundled counts, not query network")
+        XCTAssertEqual(store.count(for: collection), CollectionBundledCounts.counts["lv-mystery-crime"])
+    }
+
+    func testNonDefaultLanguageStillQueriesNetwork() async throws {
+        let defaultsName = "collection-non-default-lang-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+
+        let collection = IACollection(
+            id: "lv-mystery-crime",
+            title: "Mystery & Crime",
+            subtitle: "Test",
+            archiveQuery: LibriVoxBrowseCategory.mysteryCrime.archiveQuery,
+            systemImage: "magnifyingglass",
+            assetName: "collection-test"
+        )
+        let client = FakeCoverClient(results: [], numFound: 500)
+        let store = CollectionCoverStore(
+            client: client,
+            artwork: AlwaysValidArtwork(),
+            defaults: defaults
+        )
+
+        await store.resolveCounts(for: [collection], languages: ["ger"])
+
+        let pageCount = await client.pageCallCount
+        XCTAssertGreaterThan(pageCount, 0, "non-English should query network")
+        XCTAssertEqual(store.count(for: collection), 500)
+    }
+
+    func testEveryFeaturedCollectionHasBundledCount() {
+        let allIDs = Set(IACollectionStore.collections(for: []).map(\.id))
+        for id in allIDs {
+            let count = CollectionBundledCounts.counts[id]
+            XCTAssertNotNil(count, "missing bundled count for \(id)")
+            if let count {
+                XCTAssertGreaterThan(count, 0, "bundled count for \(id) should be > 0")
+            }
+        }
+    }
+
     func testResolvedArtworkIdentifierCacheSurvivesStoreRecreation() async throws {
         let defaultsName = "collection-cover-cache-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
@@ -103,6 +168,10 @@ private final class FakeCoverClient: InternetArchiveCatalogClient {
         get async { await state.lastSort }
     }
 
+    var pageCallCount: Int {
+        get async { await state.pageCallCount }
+    }
+
     init(results: [InternetArchiveSearchResult], numFound: Int) {
         self.state = State(results: results, numFound: numFound)
     }
@@ -137,6 +206,7 @@ private final class FakeCoverClient: InternetArchiveCatalogClient {
         private let numFound: Int
         private(set) var lastQuery: String?
         private(set) var lastSort: CatalogSort?
+        private(set) var pageCallCount = 0
 
         init(results: [InternetArchiveSearchResult], numFound: Int) {
             self.results = results
@@ -146,6 +216,7 @@ private final class FakeCoverClient: InternetArchiveCatalogClient {
         func page(query: String, page: Int, sort: CatalogSort) -> InternetArchivePage {
             lastQuery = query
             lastSort = sort
+            pageCallCount += 1
             return InternetArchivePage(results: results, numFound: numFound, page: page)
         }
     }

@@ -13,6 +13,11 @@ let package = Package(
             path: "Voxglass/Core",
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
+        .executableTarget(
+            name: "collection-counts",
+            dependencies: ["VoxglassCore"],
+            path: "Tools/CollectionCounts"
+        ),
         .testTarget(
             name: "VoxglassCoreTests",
             dependencies: ["VoxglassCore"],

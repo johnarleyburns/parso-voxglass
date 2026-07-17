@@ -85,22 +85,24 @@ struct BrowseView: View {
                 sortPicker
             }
 
-            if catalogStore.isSearching {
-                HStack(spacing: 12) {
-                    ProgressView()
-                    Text("Searching LibriVox")
-                        .scaledFont(size: 14)
-                        .foregroundStyle(Palette.ink2)
+            if catalogStore.results.isEmpty {
+                if catalogStore.isSearching {
+                    HStack(spacing: 12) {
+                        ProgressView()
+                        Text("Searching LibriVox")
+                            .scaledFont(size: 14)
+                            .foregroundStyle(Palette.ink2)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .glassSurface(cornerRadius: 14)
+                } else {
+                    EmptyStatePanel(
+                        title: "Pick a Collection",
+                        message: "Choose a Featured Collection above to explore curated LibriVox audiobooks. Tap any result to start listening.",
+                        systemImage: "square.stack"
+                    )
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .glassSurface(cornerRadius: 14)
-            } else if catalogStore.results.isEmpty {
-                EmptyStatePanel(
-                    title: "Pick a Collection",
-                    message: "Choose a Featured Collection above to explore curated LibriVox audiobooks. Tap any result to start listening.",
-                    systemImage: "square.stack"
-                )
             } else {
                 let results = catalogStore.results
                 VStack(spacing: 0) {
@@ -116,7 +118,7 @@ struct BrowseView: View {
                             )
                         }
                         .buttonStyle(.plain)
-                        .disabled(playingIdentifier == result.identifier)
+                        .disabled(playingIdentifier == result.identifier || catalogStore.isSearching)
 
                         if index < results.count - 1 {
                             VoxglassListDivider()
@@ -124,6 +126,7 @@ struct BrowseView: View {
                     }
                 }
                 .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                .opacity(catalogStore.isSearching ? 0.5 : 1.0)
 
                 if catalogStore.hasMore {
                     loadMoreButton

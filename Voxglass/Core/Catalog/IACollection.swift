@@ -275,4 +275,28 @@ public enum CuratedQueries {
 
     public static let ancientGreece: String =
         "\(LibriVoxCatalogScope.matching(creatorClause(ancientGreeceCreators))) \(exclusionClause())"
+
+    public static func representativeCreators(forCollectionID id: String) -> [String] {
+        let full: [String]
+        switch id {
+        case "great-books":
+            full = greatBooksCreators
+        case "greater-books":
+            full = greaterBooksCreators
+        case "ancient-greece":
+            full = ancientGreeceCreators
+        default:
+            return []
+        }
+        return strideSample(from: full, count: 8)
+    }
+
+    private static func strideSample(from list: [String], count: Int) -> [String] {
+        guard !list.isEmpty else { return [] }
+        let c = min(count, list.count)
+        return (0..<c).map { i in
+            let index = Int(Double(i) * Double(list.count) / Double(c))
+            return list[min(index, list.count - 1)]
+        }
+    }
 }

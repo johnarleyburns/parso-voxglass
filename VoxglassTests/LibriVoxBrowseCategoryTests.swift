@@ -114,8 +114,8 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
     // MARK: - History backfill weighting
 
     func testHistoryIncrementFloorsAndCaps() {
-        XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 60), 0.5, accuracy: 0.0001)
-        XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 3600), 1.0, accuracy: 0.0001)
-        XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 3600 * 100), 12.0, accuracy: 0.0001)
+        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 60), RecommendationConstants.minListenIncrement, accuracy: 0.0001)
+        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 3600), 1.0, accuracy: 0.0001)
+        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 3600 * 100), 12.0, accuracy: 0.0001)
     }
 }

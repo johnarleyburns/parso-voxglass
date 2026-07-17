@@ -318,6 +318,41 @@ public final class LibraryRepository {
         }
     }
 
+    /// Books imported before taste capture existed (2026-07-11) have no
+    /// book_taste rows, so their listening history is invisible to the
+    /// recommendation profile. Seed author terms from the locally stored
+    /// authors for any book with zero book_taste rows. Idempotent.
+    @discardableResult
+    public func backfillBookTasteIfNeeded() async -> Int {
+        do {
+            try await database.prepare()
+            let rows = try await database.query("""
+            SELECT b.id, b.authors_json FROM books b LEFT JOIN book_taste bt ON
+            bt.book_id = b.id WHERE bt.book_id IS NULL
+            """)
+            var count = 0
+            for row in rows {
+                guard let bookID = row.string("id"),
+                      let authorsJSON = row.string("authors_json") else { continue }
+                let decoder = JSONDecoder()
+                guard let data = authorsJSON.data(using: .utf8),
+                      let authors = try? decoder.decode([String].self, from: data) else { continue }
+                for author in authors {
+                    let trimmed = author.trimmingCharacters(in: .whitespaces)
+                    guard !trimmed.isEmpty, trimmed != "Unknown", trimmed != "Various" else { continue }
+                    try? await database.execute(
+                        "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'author', ?)",
+                        [.string(bookID), .string(trimmed.lowercased())]
+                    )
+                }
+                count += 1
+            }
+            return count
+        } catch {
+            return 0
+        }
+    }
+
     /// Returns all taste terms (axis, term) for a given book, for seeding
     /// the taste profile when the book is listened to.
     public func fetchBookTasteTerms(for bookID: UUID) async throws -> [(axis: String, term: String)] {

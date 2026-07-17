@@ -46,27 +46,6 @@ public actor TasteProfileStore {
         return !(terms ?? []).isEmpty
     }
 
-    public func hasMeaningfulProfile() async -> Bool {
-        if await hasDurableTasteSignal() {
-            return true
-        }
-
-        // Legacy upgrades may have useful profile rows without the newer
-        // `taste_signal_state` table populated. Onboarding only seeds subjects,
-        // so author/language terms are treated as meaningful legacy profile data.
-        do {
-            try await database.prepare()
-            let rows = try await database.query("""
-            SELECT 1 AS found FROM taste_profile_terms
-            WHERE axis IN ('author', 'language') AND weight > 0
-            LIMIT 1
-            """)
-            return !rows.isEmpty
-        } catch {
-            return false
-        }
-    }
-
     // MARK: - Upsert terms (decay update)
 
     public func upsertTerm(axis: String, term: String, increment: Double) async {
@@ -112,11 +91,6 @@ public actor TasteProfileStore {
 
     // MARK: - Live signal capture (thresholded, delta-based)
 
-    /// Applies a live playback taste signal using per-book delta calibration so
-    /// periodic saves never over-count. The target increment is derived from the
-    /// listen completion (favorite-boosted); only the positive delta beyond what
-    /// this book has already contributed is applied to its taste terms, with the
-    /// running state persisted in `taste_signal_state`.
     @discardableResult
     public func applySignal(
         _ signal: PlaybackTasteSignal,
@@ -134,7 +108,7 @@ public actor TasteProfileStore {
             return false
         }
 
-        var targetIncrement = max(0.5, completion)
+        var targetIncrement = max(RecommendationConstants.minListenIncrement, completion)
         if signal.isFavorite {
             targetIncrement *= RecommendationConstants.favoriteBoost
         }
@@ -175,10 +149,6 @@ public actor TasteProfileStore {
         }
     }
 
-    /// Rebuilds the profile from durable local taste sources. This is safe to run
-    /// repeatedly: it clears the derived table, recomputes history from
-    /// `listening_events JOIN book_taste`, folds in captured playback-signal
-    /// state, and then reapplies onboarding seeds from the current preferences.
     public func rebuildFromListeningHistory(
         version: Int = TasteProfileStore.listeningHistoryRebuildVersion,
         selectedCollectionIDs: Set<String> = []
@@ -186,73 +156,30 @@ public actor TasteProfileStore {
         guard version > 0 else { return }
         do {
             try await database.prepare()
-            var weights: [TermKey: Double] = [:]
 
-            let rows = try await database.query("""
-            SELECT bt.book_id AS book_id,
-                   bt.axis AS axis,
-                   bt.term AS term,
-                   COALESCE(le.total_seconds, 0) AS listened_seconds,
-                   COALESCE(tss.applied_increment, 0) AS applied_increment,
-                   COALESCE(b.is_favorite, 0) AS is_favorite
-            FROM book_taste bt
-            JOIN books b ON b.id = bt.book_id
-            LEFT JOIN (
-                SELECT book_id, SUM(seconds) AS total_seconds
-                FROM listening_events
-                WHERE book_id IS NOT NULL
-                GROUP BY book_id
-            ) le ON le.book_id = bt.book_id
-            LEFT JOIN taste_signal_state tss ON tss.book_id = bt.book_id
-            WHERE bt.axis IN ('author', 'subject', 'language')
-              AND (
-                  COALESCE(le.total_seconds, 0) > 0
-                  OR COALESCE(tss.applied_increment, 0) > 0
-                  OR COALESCE(b.is_favorite, 0) = 1
-              )
-            """)
-            for row in rows {
-                guard let axis = row.string("axis"),
-                      let term = row.string("term"),
-                      let normalized = Self.normalizedTerm(axis: axis, term: term) else { continue }
-                let normalizedAxis = axis.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-                let listenedSeconds = row.double("listened_seconds") ?? 0
-                let historyWeight = listenedSeconds > 0
-                    ? Self.historyIncrement(forSeconds: listenedSeconds)
-                    : 0
-                let signalWeight = row.double("applied_increment") ?? 0
-                let favoriteWeight = (row.bool("is_favorite") ?? false)
-                    ? RecommendationConstants.favoriteBoost
-                    : 0
-                let contribution = max(historyWeight, signalWeight, favoriteWeight)
-                guard contribution > 0 else { continue }
-                weights[TermKey(axis: normalizedAxis, term: normalized), default: 0] += contribution
-            }
+            let entries = try await buildListeningHistoryEntries()
 
-            for id in selectedCollectionIDs.sorted() {
-                guard let category = LibriVoxBrowseCategory.category(withID: id) else { continue }
-                for subject in category.representativeSubjects {
-                    guard let normalized = Self.normalizedTerm(axis: "subject", term: subject) else { continue }
-                    weights[TermKey(axis: "subject", term: normalized), default: 0] += RecommendationConstants.onboardingSeedWeight
-                }
-            }
+            let weights = RecommendationPipeline.termWeights(
+                history: entries,
+                onboardingSelectionIDs: selectedCollectionIDs
+            )
 
             let now = Date().timeIntervalSince1970
             try await database.executeRaw("BEGIN IMMEDIATE TRANSACTION")
             do {
                 try await database.execute("DELETE FROM taste_profile_terms")
-                for entry in weights.sorted(by: { lhs, rhs in
-                    lhs.key.axis == rhs.key.axis
-                        ? lhs.key.term < rhs.key.term
-                        : lhs.key.axis < rhs.key.axis
-                }) {
+                let sorted = weights.sorted {
+                    if $0.axis != $1.axis { return $0.axis < $1.axis }
+                    return $0.term < $1.term
+                }
+                for entry in sorted {
                     try await database.execute("""
                     INSERT INTO taste_profile_terms (axis, term, weight, last_ts)
                     VALUES (?, ?, ?, ?)
                     """, [
-                        .string(entry.key.axis),
-                        .string(entry.key.term),
-                        .double(entry.value),
+                        .string(entry.axis),
+                        .string(entry.term),
+                        .double(entry.weight),
                         .double(now)
                     ])
                 }
@@ -264,31 +191,13 @@ public actor TasteProfileStore {
         } catch {}
     }
 
-    /// Compatibility wrapper for callers/tests still using the old name. The new
-    /// implementation is idempotent and includes author, subject, and language.
     public func seedFromHistory() async {
         await rebuildFromListeningHistory(version: Self.listeningHistoryRebuildVersion)
     }
 
-    /// Converts listened seconds into a profile increment: weighted by hours
-    /// listened, floored so any genuine listen registers, and capped so a single
-    /// very long book cannot swamp the profile.
-    public static func historyIncrement(forSeconds seconds: Double) -> Double {
-        let hours = seconds / 3600.0
-        return min(12.0, max(0.5, hours))
-    }
-
     public func seedOnboardingPicks(from collectionIDs: Set<String>) async {
-        for id in collectionIDs {
-            // Onboarding stores browse-collection IDs (e.g. "lv-drama-plays").
-            // Seeding those raw IDs as subject terms builds `subject:"lv-drama-plays"`
-            // queries that match zero archive.org items yet outweigh real listens.
-            // Instead, map each ID to its category's real archive subjects and seed
-            // those, so query generation produces matching subject queries.
-            guard let category = LibriVoxBrowseCategory.category(withID: id) else { continue }
-            for subject in category.representativeSubjects {
-                await seedSubject(subject, increment: RecommendationConstants.onboardingSeedWeight)
-            }
+        for seed in OnboardingTasteSeeds.seeds(for: collectionIDs) {
+            await upsertTerm(axis: seed.axis, term: seed.term, increment: seed.weight)
         }
     }
 
@@ -296,50 +205,8 @@ public actor TasteProfileStore {
 
     public func fetchProfile() async -> ProfileBucket {
         let rawTerms = await fetchRawTerms()
-        var authors: [TasteTerm] = []
-        var subjects: [TasteTerm] = []
-        var languages: [TasteTerm] = []
-
-        let subjectWeights = rawTerms.filter { $0.axis == "subject" }
-        let distinctSubjectCount = Set(subjectWeights.map(\.term)).count
-        let subjectDampDivisor = distinctSubjectCount > 0
-            ? 1.0 + log(Double(distinctSubjectCount) + 1.0)
-            : 1.0
-
-        for t in rawTerms {
-            var weight = t.weight
-            if t.axis == "subject" {
-                // Belt-and-suspenders: drop legacy onboarding terms that stored a
-                // collection ID (e.g. "lv-drama-plays", "great-books") as a subject.
-                // These never match archive.org and would otherwise dominate.
-                if Self.isCollectionLikeSubject(t.term) {
-                    continue
-                }
-                if RecommendationConstants.subjectStopList.contains(t.term) {
-                    weight *= 0.05
-                } else {
-                    weight /= subjectDampDivisor
-                }
-            }
-            let term = TasteTerm(axis: t.axis, term: t.term, weight: weight)
-            switch t.axis {
-            case "author": authors.append(term)
-            case "subject": subjects.append(term)
-            case "language": languages.append(term)
-            default: break
-            }
-        }
-
-        authors.sort { $0.weight > $1.weight }
-        subjects.sort { $0.weight > $1.weight }
-        languages.sort { $0.weight > $1.weight }
-
-        return ProfileBucket(
-            bucket: "audiobooks",
-            creatorTerms: authors,
-            subjectTerms: subjects,
-            languageTerms: languages
-        )
+        let termWeights = rawTerms.map { TermWeight(axis: $0.axis, term: $0.term, weight: $0.weight) }
+        return RecommendationPipeline.profile(fromRawTerms: termWeights)
     }
 
     // MARK: - Surfaced ring
@@ -381,11 +248,6 @@ public actor TasteProfileStore {
         let weight: Double
     }
 
-    private struct TermKey: Hashable {
-        let axis: String
-        let term: String
-    }
-
     private func fetchRawTerms() async -> [RawTerm] {
         do {
             try await database.prepare()
@@ -421,65 +283,60 @@ public actor TasteProfileStore {
         }
     }
 
-    private func hasDurableTasteSignal() async -> Bool {
-        do {
-            try await database.prepare()
-            let rows = try await database.query("""
-            SELECT 1 AS found
+    private func buildListeningHistoryEntries() async throws -> [ListeningHistoryEntry] {
+        let rows = try await database.query("""
+        SELECT bt.book_id AS book_id,
+               bt.axis AS axis,
+               bt.term AS term,
+               COALESCE(le.total_seconds, 0) AS listened_seconds,
+               COALESCE(tss.applied_increment, 0) AS applied_increment,
+               COALESCE(b.is_favorite, 0) AS is_favorite
+        FROM book_taste bt
+        JOIN books b ON b.id = bt.book_id
+        LEFT JOIN (
+            SELECT book_id, SUM(seconds) AS total_seconds
             FROM listening_events
-            WHERE book_id IS NOT NULL AND seconds > 0
-            UNION ALL
-            SELECT 1 AS found
-            FROM taste_signal_state
-            WHERE applied_increment > 0
-            UNION ALL
-            SELECT 1 AS found
-            FROM books
-            WHERE is_favorite = 1
-            LIMIT 1
-            """)
-            return !rows.isEmpty
-        } catch {
-            return false
+            WHERE book_id IS NOT NULL
+            GROUP BY book_id
+        ) le ON le.book_id = bt.book_id
+        LEFT JOIN taste_signal_state tss ON tss.book_id = bt.book_id
+        WHERE bt.axis IN ('author', 'subject', 'language')
+          AND (
+              COALESCE(le.total_seconds, 0) > 0
+              OR COALESCE(tss.applied_increment, 0) > 0
+              OR COALESCE(b.is_favorite, 0) = 1
+          )
+        """)
+
+        var groups: [String: (listened: Double, signal: Double, favorite: Bool, authors: Set<String>, subjects: Set<String>, langs: Set<String>)] = [:]
+
+        for row in rows {
+            guard let bookID = row.string("book_id"),
+                  let axis = row.string("axis"),
+                  let term = row.string("term") else { continue }
+            var entry = groups[bookID] ?? (listened: 0, signal: 0, favorite: false, authors: [], subjects: [], langs: [])
+            entry.listened = row.double("listened_seconds") ?? 0
+            entry.signal = row.double("applied_increment") ?? 0
+            entry.favorite = entry.favorite || (row.bool("is_favorite") ?? false)
+            let lowerTerm = term.lowercased().trimmingCharacters(in: .whitespaces)
+            switch axis.lowercased() {
+            case "author": entry.authors.insert(lowerTerm)
+            case "subject": entry.subjects.insert(lowerTerm)
+            case "language": entry.langs.insert(lowerTerm)
+            default: continue
+            }
+            groups[bookID] = entry
         }
-    }
 
-    // MARK: - Legacy collection-id guard
-
-    /// Known onboarding collection IDs (including curated) — any subject term
-    /// that exactly matches one of these (or begins with `lv-`) is a legacy
-    /// onboarding artefact, not a real archive.org subject, and must be dropped.
-    private static let knownCollectionIDs: Set<String> = {
-        var ids = Set(LibriVoxBrowseGroup.categories.map(\.id))
-        ids.insert("popular-librivox")
-        ids.insert("great-books")
-        ids.insert("greater-books")
-        ids.insert("ancient-greece")
-        ids.insert("librivoxaudio")
-        return ids
-    }()
-
-    private static func isCollectionLikeSubject(_ term: String) -> Bool {
-        knownCollectionIDs.contains(term) || term.hasPrefix("lv-")
-    }
-
-    private static func normalizedTerm(axis rawAxis: String, term rawTerm: String) -> String? {
-        let axis = rawAxis.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let term = rawTerm.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !axis.isEmpty, !term.isEmpty else { return nil }
-
-        switch axis {
-        case "author":
-            guard term != "unknown", term != "unknown author", term != "various" else { return nil }
-            return term
-        case "subject":
-            guard !RecommendationConstants.subjectStopList.contains(term),
-                  !isCollectionLikeSubject(term) else { return nil }
-            return term
-        case "language":
-            return term
-        default:
-            return nil
+        return groups.map { _, entry in
+            ListeningHistoryEntry(
+                authors: Array(entry.authors),
+                subjects: Array(entry.subjects),
+                languages: Array(entry.langs),
+                listenedSeconds: entry.listened,
+                capturedSignalIncrement: entry.signal,
+                isFavorite: entry.favorite
+            )
         }
     }
 }

@@ -67,7 +67,7 @@ final class RecommendationEngineTests: XCTestCase {
             creator: "Mary Shelley",
             subjects: [" Gothic Fiction ", "LibriVox", "", "Horror"]
         )
-        let tokens = Set(RecommendationEngine.extractTokens(result))
+        let tokens = Set(RecommendationPipeline.extractTokens(result))
         XCTAssertTrue(tokens.contains("mary shelley"))
         XCTAssertTrue(tokens.contains("gothic fiction"))
         XCTAssertTrue(tokens.contains("horror"))
@@ -98,7 +98,7 @@ final class RecommendationEngineTests: XCTestCase {
             subjects: ["Cooking"]
         )
 
-        let scored = RecommendationEngine.scoreCandidates([popularOnly, subjectMatch], profile: profile)
+        let scored = RecommendationPipeline.scoreCandidates([popularOnly, subjectMatch], profile: profile)
 
         XCTAssertEqual(scored.first?.result.identifier, "match")
         let matchScore = scored.first { $0.result.identifier == "match" }?.score ?? 0
@@ -133,7 +133,7 @@ final class RecommendationEngineTests: XCTestCase {
             (dupeB, 0.95),
             (distinct, 0.6)
         ]
-        let picked = RecommendationEngine.greedyMMR(scored, k: 2, lambda: RecommendationConstants.lambdaMMR)
+        let picked = RecommendationPipeline.greedyMMR(scored, k: 2, lambda: RecommendationConstants.lambdaMMR)
 
         XCTAssertEqual(picked.count, 2)
         XCTAssertEqual(picked[0].identifier, "frankenstein_v1")
@@ -144,14 +144,14 @@ final class RecommendationEngineTests: XCTestCase {
     func testJaccardSimilarityIsSubjectAware() {
         let a = candidate(identifier: "a", title: "A", creator: "Author One", subjects: ["Horror"])
         let b = candidate(identifier: "b", title: "B", creator: "Author Two", subjects: ["Horror"])
-        XCTAssertGreaterThan(RecommendationEngine.jaccardSimilarity(a, b), 0)
+        XCTAssertGreaterThan(RecommendationPipeline.jaccardSimilarity(a, b), 0)
     }
 
     // MARK: - Listened exclusions
 
     @MainActor
-    func testOnboardingOnlyProfileKeepsBundledPopularSeedsWithoutNetworkRefresh() async throws {
-        let database = AppDatabase.makeTemporaryDatabase(named: "reco-onboarding-only-popular")
+    func testOnboardingOnlyProfileFetchesTunedRecommendations() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-onboarding-tuned")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
         let profileStore = TasteProfileStore(database: database)
@@ -161,9 +161,8 @@ final class RecommendationEngineTests: XCTestCase {
         )
         await libraryStore.refresh()
 
-        let client = FakeArchiveClient(responses: [[
-            candidate(identifier: "personalized", title: "Personalized Mystery", creator: "Someone", subjects: ["Mystery"])
-        ]])
+        let personalized = candidate(identifier: "personalized", title: "Personalized Mystery", creator: "Someone", subjects: ["Mystery"])
+        let client = FakeArchiveClient(responses: [[personalized]])
         let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
 
         let recs = await engine.fetchRecommendations(
@@ -171,9 +170,38 @@ final class RecommendationEngineTests: XCTestCase {
             selectedLanguages: ["eng"]
         )
 
-        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
         let advancedQueryCount = await client.advancedQueryCount
-        XCTAssertEqual(advancedQueryCount, 0)
+        XCTAssertGreaterThan(advancedQueryCount, 0, "onboarding-only profile should trigger engine queries")
+        let queries = await client.advancedQueries
+        let hasSubjectQuery = queries.contains { $0.contains("subject:") }
+        XCTAssertTrue(hasSubjectQuery)
+        XCTAssertEqual(recs.map(\.identifier), ["personalized"])
+    }
+
+    @MainActor
+    func testEngineTunesAfterSingleMeaningfulListen() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-single-meaningful-listen")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        try await seedListenedBook(
+            in: database,
+            title: "The Clouds",
+            author: "Aristophanes",
+            iaIdentifier: "clouds_librivox"
+        )
+        await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        await libraryStore.refresh()
+
+        let result = candidate(identifier: "clouds_new", title: "The Birds", creator: "Aristophanes", subjects: ["Drama"])
+        let client = FakeArchiveClient(responses: [[result], []])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let queries = await client.advancedQueries
+
+        XCTAssertTrue(queries.contains { $0.localizedCaseInsensitiveContains("creator:\"aristophanes\"") })
+        XCTAssertEqual(recs.map(\.identifier), [result.identifier])
     }
 
     @MainActor
@@ -397,6 +425,7 @@ final class RecommendationEngineTests: XCTestCase {
         let store = HomeRecommendationStore(client: FakeArchiveClient(responses: [[], []]))
         let original = store.recommendations
         store.configure(profileStore: profileStore, libraryStore: libraryStore)
+        store.markEngineReady()
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 

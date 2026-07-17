@@ -127,8 +127,8 @@ final class TasteProfileStoreTests: XCTestCase {
         XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
     }
 
-    func testOnboardingOnlySeedsAreNotMeaningfulRecommendationProfile() async throws {
-        let database = AppDatabase.makeTemporaryDatabase(named: "taste-onboarding-only-meaningful")
+    func testOnboardingOnlyBrowsePickProfileIsNotEmpty() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-onboarding-browse-pick")
         let store = TasteProfileStore(database: database)
 
         await store.rebuildFromListeningHistory(
@@ -137,13 +137,14 @@ final class TasteProfileStoreTests: XCTestCase {
         )
 
         let hasProfile = await store.hasProfile()
-        let hasMeaningfulProfile = await store.hasMeaningfulProfile()
         XCTAssertTrue(hasProfile)
-        XCTAssertFalse(hasMeaningfulProfile)
+        let profile = await store.fetchProfile()
+        XCTAssertFalse(profile.isEmpty)
+        XCTAssertFalse(profile.subjectTerms.isEmpty)
     }
 
-    func testFavoriteBookContributesMeaningfulProfileWeight() async throws {
-        let database = AppDatabase.makeTemporaryDatabase(named: "taste-favorite-meaningful")
+    func testFavoriteBookContributesProfileWeight() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-favorite-weight")
         let store = TasteProfileStore(database: database)
         try await seedHistoryBook(
             in: database,
@@ -157,8 +158,6 @@ final class TasteProfileStoreTests: XCTestCase {
 
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
 
-        let hasMeaningfulProfile = await store.hasMeaningfulProfile()
-        XCTAssertTrue(hasMeaningfulProfile)
         let weight = try await rawWeight(in: database, axis: "author", term: "jane austen")
         XCTAssertEqual(weight, RecommendationConstants.favoriteBoost, accuracy: 0.001)
     }
@@ -206,9 +205,33 @@ final class TasteProfileStoreTests: XCTestCase {
     }
 
     func testHistoryIncrementKeepsFloorAndCap() {
-        XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 60), 0.5, "floor at 0.5")
-        XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 2 * 3600), 2.0, accuracy: 0.001)
-        XCTAssertEqual(TasteProfileStore.historyIncrement(forSeconds: 100 * 3600), 12.0, "cap at 12")
+        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 60), RecommendationConstants.minListenIncrement, "floor at minListenIncrement")
+        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 2 * 3600), 2.0, accuracy: 0.001)
+        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 100 * 3600), 12.0, "cap at 12")
+    }
+
+    func testOnboardingAuthorSeedWeightStaysBelowMinListenIncrement() {
+        XCTAssertLessThan(RecommendationConstants.onboardingAuthorSeedWeight, RecommendationConstants.minListenIncrement)
+    }
+
+    func testRebuildSeedsCuratedOnboardingPicksAsAuthors() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-curated-onboarding")
+        let store = TasteProfileStore(database: database)
+
+        await store.rebuildFromListeningHistory(
+            version: TasteProfileStore.listeningHistoryRebuildVersion,
+            selectedCollectionIDs: ["great-books"]
+        )
+
+        let rows = try await database.query(
+            "SELECT axis, term FROM taste_profile_terms WHERE axis = 'author'", []
+        )
+        let authors = rows.compactMap { $0.string("term") }
+        XCTAssertFalse(authors.isEmpty, "curated onboarding should seed author terms")
+        for author in authors {
+            let weight = try await rawWeight(in: database, axis: "author", term: author)
+            XCTAssertEqual(weight, RecommendationConstants.onboardingAuthorSeedWeight, accuracy: 0.001)
+        }
     }
 
     @discardableResult

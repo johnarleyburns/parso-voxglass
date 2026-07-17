@@ -345,6 +345,74 @@ final class LibraryRepositoryTests: XCTestCase {
         return (source.id, bookID, chapterID)
     }
 
+    func testBackfillBookTasteSeedsAuthorsFromPreTasteCaptureBooks() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "backfill-taste")
+        let repository = LibraryRepository(database: database)
+        let profileStore = TasteProfileStore(database: database)
+
+        // Seed a book without book_taste rows (pre-2026-07-11 state)
+        let sourceID = UUID()
+        let bookID = UUID()
+        let chapterID = UUID()
+        let now = Date().timeIntervalSince1970
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID.uuidString),
+            .string(SourceKind.librivox.rawValue),
+            .string("Test Book"),
+            .string("https://archive.org/details/test-book"),
+            .double(now)
+        ])
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(bookID.uuidString),
+            .string("Test Book"),
+            .string(ModelMapping.authorsJSON(["Jane Austen"])),
+            .null,
+            .string(sourceID.uuidString),
+            .null,
+            .double(now),
+            .double(now),
+            .bool(false)
+        ])
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(chapterID.uuidString),
+            .string(bookID.uuidString),
+            .string("Chapter 1"),
+            .string("Chapter 1"),
+            .int(0),
+            .double(120),
+            .null,
+            .null
+        ])
+        try await database.execute("""
+        INSERT INTO listening_events (id, book_id, seconds, occurred_at)
+        VALUES (?, ?, ?, ?)
+        """, [
+            .string(UUID().uuidString),
+            .string(bookID.uuidString),
+            .double(3600),
+            .double(now)
+        ])
+
+        let first = await repository.backfillBookTasteIfNeeded()
+        XCTAssertEqual(first, 1)
+
+        let second = await repository.backfillBookTasteIfNeeded()
+        XCTAssertEqual(second, 0, "idempotent")
+
+        await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        let profile = await profileStore.fetchProfile()
+        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "jane austen" })
+    }
+
     @discardableResult
     private func seedSource(
         in database: AppDatabase,

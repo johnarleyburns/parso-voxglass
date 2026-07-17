@@ -8,6 +8,7 @@ public final class HomeRecommendationStore: ObservableObject {
 
     private let client: InternetArchiveCatalogClient
     private var engine: RecommendationEngine?
+    private var engineReady = false
 
     public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
@@ -22,50 +23,26 @@ public final class HomeRecommendationStore: ObservableObject {
         )
     }
 
+    public func markEngineReady() {
+        engineReady = true
+    }
+
     public func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
         if recommendations.isEmpty {
             recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
         }
 
-        if let engine {
-            isRefreshing = true
-            defer { isRefreshing = false }
-
-            let recs = await engine.fetchRecommendations(
-                selectedCollectionIDs: selectedCollectionIDs,
-                selectedLanguages: selectedLanguages
-            )
-            if !recs.isEmpty {
-                recommendations = recs
-            }
-            return
-        }
-
-        let coldStart = Self.coldStartRecommendations(for: selectedCollectionIDs)
-        if !coldStart.isEmpty {
-            recommendations = coldStart
-        }
-
-        let queries = LibriVoxRecommendationQueryBuilder.queries(for: selectedCollectionIDs)
-        guard !queries.isEmpty else { return }
+        guard let engine, engineReady else { return }
 
         isRefreshing = true
         defer { isRefreshing = false }
 
-        let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
-        var refreshed: [InternetArchiveSearchResult] = []
-        for query in queries.prefix(4) {
-            do {
-                let results = try await client.searchAdvanced(query: query + languageClause, rows: 10)
-                refreshed.append(contentsOf: results)
-            } catch {
-                continue
-            }
-        }
-
-        let unique = Self.uniqueResults(refreshed)
-        if !unique.isEmpty {
-            recommendations = Array(unique.prefix(18))
+        let recs = await engine.fetchRecommendations(
+            selectedCollectionIDs: selectedCollectionIDs,
+            selectedLanguages: selectedLanguages
+        )
+        if !recs.isEmpty {
+            recommendations = recs
         }
     }
 

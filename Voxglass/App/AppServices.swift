@@ -106,7 +106,16 @@ final class AppServices: ObservableObject {
         await libraryStore.refresh()
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
+        await libraryRepository.backfillBookTasteIfNeeded()
         await rebuildTasteHistory()
+        homeRecommendationStore.markEngineReady()
+        let selectedIDs = AppPreferencesStore.decodeCollectionIDs(
+            UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.selectedCollectionIDs) ?? ""
+        )
+        let selectedLanguages = AppPreferencesStore.decodeLanguages(
+            UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.selectedLanguages) ?? "eng"
+        )
+        await homeRecommendationStore.load(selectedCollectionIDs: selectedIDs, selectedLanguages: selectedLanguages)
         await offlineDownloadManager.refreshState(for: libraryStore.books)
         // Positions first: the KVS read is local and cheap. Doing this before the
         // restore (instead of inside sync() after it) means a cloud position is
