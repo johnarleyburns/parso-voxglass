@@ -1,6 +1,6 @@
 import Foundation
 
-public enum RecommendationShelfSource: Equatable {
+public enum RecommendationShelfSource: String, Equatable, Sendable, Codable {
     case personalized
     case popularColdStart
     case popularFallback

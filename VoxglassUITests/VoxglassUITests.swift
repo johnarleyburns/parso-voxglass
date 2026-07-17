@@ -15,7 +15,8 @@ final class VoxglassUITests: XCTestCase {
         app.launchArguments += [
             "-voxglass.hasCompletedSplash", "YES",
             "-voxglass.hasCompletedOnboarding", "YES",
-            "-VoxglassInitialTab", "home"
+            "-VoxglassInitialTab", "home",
+            "-VoxglassDisableAnimatedSplash"
         ]
         app.launch()
 

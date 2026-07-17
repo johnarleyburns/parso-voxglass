@@ -75,6 +75,28 @@ public actor AppDatabase {
         return rows
     }
 
+    /// Runs every statement inside one BEGIN IMMEDIATE…COMMIT transaction in a
+    /// single actor hop, so no other database call — and no reentrant read on a
+    /// calling actor — can interleave mid-transaction.
+    public func executeBatch(_ statements: [(sql: String, bindings: [DatabaseValue])]) throws {
+        try prepare()
+        try executeRaw("BEGIN IMMEDIATE TRANSACTION")
+        do {
+            for statement in statements {
+                let prepared = try prepareStatement(statement.sql)
+                defer { sqlite3_finalize(prepared) }
+                try bind(statement.bindings, to: prepared)
+                guard sqlite3_step(prepared) == SQLITE_DONE else {
+                    throw DatabaseError.stepFailed(lastErrorMessage)
+                }
+            }
+            try executeRaw("COMMIT")
+        } catch {
+            try? executeRaw("ROLLBACK")
+            throw error
+        }
+    }
+
     private func open() throws {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else {

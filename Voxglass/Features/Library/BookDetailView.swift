@@ -379,6 +379,8 @@ struct BookDetailView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Bookmarks")
+                .accessibilityValue("\(count) bookmark\(count == 1 ? "" : "s")")
                 VoxglassListDivider()
             }
 

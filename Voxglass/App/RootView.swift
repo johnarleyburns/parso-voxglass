@@ -6,28 +6,36 @@ struct RootView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @State private var selectedTab: VoxglassTab = .launchDefault
     @State private var showingNowPlaying = false
+    @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-VoxglassDisableAnimatedSplash")
     @AppStorage(AppPreferencesStore.Keys.hasCompletedSplash) private var hasCompletedSplash = false
     @AppStorage(AppPreferencesStore.Keys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
 
     var body: some View {
-        Group {
-            if !hasCompletedSplash {
-                SplashView {
-                    hasCompletedSplash = true
+        ZStack {
+            Group {
+                if !hasCompletedSplash {
+                    SplashView {
+                        hasCompletedSplash = true
+                    }
+                } else if !hasCompletedOnboarding {
+                    OnboardingPreferencesView(
+                        initialSelection: AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
+                    ) { selectedCollectionIDs in
+                        selectedCollectionIDsRaw = AppPreferencesStore.encodeCollectionIDs(selectedCollectionIDs)
+                        hasCompletedOnboarding = true
+                    } skipAction: {
+                        selectedCollectionIDsRaw = ""
+                        hasCompletedOnboarding = true
+                    }
+                } else {
+                    tabs
                 }
-            } else if !hasCompletedOnboarding {
-                OnboardingPreferencesView(
-                    initialSelection: AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
-                ) { selectedCollectionIDs in
-                    selectedCollectionIDsRaw = AppPreferencesStore.encodeCollectionIDs(selectedCollectionIDs)
-                    hasCompletedOnboarding = true
-                } skipAction: {
-                    selectedCollectionIDsRaw = ""
-                    hasCompletedOnboarding = true
-                }
-            } else {
-                tabs
+            }
+
+            if showSplash {
+                AnimatedSplashView(isPresented: $showSplash)
+                    .zIndex(10)
             }
         }
         .tint(VoxglassTheme.accent)

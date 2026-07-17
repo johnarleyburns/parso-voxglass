@@ -145,6 +145,7 @@ struct ListenView: View {
                                 HorizontalCatalogCard(result: result)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("\(result.title) by \(result.authorLine)")
                             .disabled(importingIdentifier == result.identifier)
                         }
                     }

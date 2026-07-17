@@ -1,19 +1,43 @@
 import Combine
 import Foundation
 
+public struct RecommendationShelfSnapshot: Codable, Equatable, Sendable {
+    public var results: [InternetArchiveSearchResult]
+    public var source: RecommendationShelfSource
+    public var savedAt: Date
+
+    public init(results: [InternetArchiveSearchResult], source: RecommendationShelfSource, savedAt: Date) {
+        self.results = results
+        self.source = source
+        self.savedAt = savedAt
+    }
+}
+
 @MainActor
 public final class HomeRecommendationStore: ObservableObject {
+    public nonisolated static let shelfSnapshotKey = "guru.parso.voxglass.recommendationShelfSnapshot"
+
     @Published public private(set) var recommendations: [InternetArchiveSearchResult]
     @Published public private(set) var isRefreshing = false
 
     private let client: InternetArchiveCatalogClient
+    private let defaults: UserDefaults
     private var engine: RecommendationEngine?
     private var engineReady = false
     private var visibleShelfSource: RecommendationShelfSource = .popularColdStart
 
-    public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
+    public init(
+        client: InternetArchiveCatalogClient = InternetArchiveClient(),
+        defaults: UserDefaults = .standard
+    ) {
         self.client = client
-        self.recommendations = Self.coldStartRecommendations(for: [])
+        self.defaults = defaults
+        if let snapshot = Self.loadSnapshot(from: defaults), !snapshot.results.isEmpty {
+            self.recommendations = snapshot.results
+            self.visibleShelfSource = snapshot.source
+        } else {
+            self.recommendations = Self.coldStartRecommendations(for: [])
+        }
     }
 
     public func configure(profileStore: TasteProfileStore, libraryStore: LibraryStore) {
@@ -45,13 +69,29 @@ public final class HomeRecommendationStore: ObservableObject {
         )
         guard !shelf.results.isEmpty else { return }
 
-        if shelf.source == .popularFallback,
-           visibleShelfSource == .personalized {
+        if visibleShelfSource == .personalized,
+           shelf.source != .personalized {
             return
         }
 
         recommendations = shelf.results
         visibleShelfSource = shelf.source
+        if shelf.source == .personalized {
+            Self.saveSnapshot(
+                RecommendationShelfSnapshot(results: shelf.results, source: .personalized, savedAt: Date()),
+                to: defaults
+            )
+        }
+    }
+
+    public nonisolated static func loadSnapshot(from defaults: UserDefaults) -> RecommendationShelfSnapshot? {
+        guard let data = defaults.data(forKey: shelfSnapshotKey) else { return nil }
+        return try? JSONDecoder().decode(RecommendationShelfSnapshot.self, from: data)
+    }
+
+    public nonisolated static func saveSnapshot(_ snapshot: RecommendationShelfSnapshot, to defaults: UserDefaults) {
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        defaults.set(data, forKey: shelfSnapshotKey)
     }
 
     public nonisolated static func coldStartRecommendations(for _: Set<String>) -> [InternetArchiveSearchResult] {

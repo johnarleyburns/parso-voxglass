@@ -19,6 +19,18 @@ final class CacheSettingsModelTests: XCTestCase {
         XCTAssertEqual(budget, CacheManager.CachePreset.free500MB.rawValue)
     }
 
+    func testPersistedProPresetClampsToFreeWhenEntitlementLost() async {
+        EntitlementCache.shared.cacheEntitlement(true)
+        await CacheManager.shared.setPreset(.pro10GB)
+
+        EntitlementCache.shared.cacheEntitlement(false)
+
+        let preset = await CacheManager.shared.selectedPreset
+        let budget = await CacheManager.shared.currentBudget
+        XCTAssertEqual(preset, .free500MB, "a persisted Pro preset must clamp at the model layer for free users")
+        XCTAssertEqual(budget, CacheManager.CachePreset.free500MB.rawValue)
+    }
+
     func testProPresetAllowedWhenEntitledUpdatesBudgetAndStoreLimit() async {
         EntitlementCache.shared.cacheEntitlement(true)
 

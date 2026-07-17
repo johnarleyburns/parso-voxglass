@@ -18,24 +18,31 @@ own iCloud).
   per-chapter narrator display, customizable skip intervals, volume normalization, and skip silence.
 - On-device library with playback positions, favorites, playlists, recently-played history, and
   filter/sort (SQLite, no account).
+- **Personalized recommendations, cached locally**: the "Recommended for You" shelf is built on-device
+  from your listening history and persisted, so it appears instantly on cold launch — even offline —
+  and never flashes back to generic popular titles. An animated launch splash hands off cleanly to
+  the app.
 - **Dark-mode-first design** with Dynamic Type support. No ads, no telemetry, no tracking — nothing
   you listen to leaves your device.
 - One-time **Voxglass Pro** unlock ($7.99, StoreKit 2, Family Sharing supported) for unlimited offline
-  downloads, bookmarks & favorites sync, Folder Watch, 10-band EQ, listening stats, and library
-  backup & restore.
+  downloads, bookmarks & favorites sync, Folder Watch, 10-band EQ, listening stats, library
+  backup & restore, bigger streaming cache presets (2 GB / 10 GB), and whole-book prefetch.
 
 ## Competitive position
 
 The LibriVox catalog on iOS is effectively owned by one competitor: **LibriVox Audiobooks** (BookDesign
-LLC, 4.8★ / 32K ratings), free with ads or $4.99 one-time ad-free. Recent reviews are dominated by
-complaints about an unnavigable redesign, broken speed control, missing narrator names, and ads with
-volume spikes.
+LLC, 4.8★ / 32K ratings), free with ads or a **subscription** — $1.99/mo, $9.99/yr, or $24.99 lifetime —
+that buys ad removal only. Recent reviews are dominated by complaints about an unnavigable redesign,
+broken speed control, missing narrator names, and ads with volume spikes. A newer entrant, **Lex Reader**
+(MWM, $9.99/mo premium), offers free synchronized text+audio over LibriVox but lacks CarPlay and player
+depth — synchronized read-along is Voxglass's named v1.1 differentiator
+(see `docs/RELEASE_READINESS.md`).
 
-**Voxglass's free tier already beats their paid tier** — speed, sleep timer, bookmarks, lock-screen
-artwork, per-chapter narrators, volume normalization, skip silence, playlists, favorites, position sync
-across devices, the full catalog, and no ads at all. Pro adds unlimited offline downloads, bookmarks &
-favorites sync, Folder Watch, 10-band EQ, listening stats, and library backup & restore — all for a
-one-time purchase.
+**Voxglass's free tier already beats BookDesign's paid tier** — speed, sleep timer, bookmarks,
+lock-screen artwork, per-chapter narrators, volume normalization, skip silence, playlists, favorites,
+position sync across devices, CarPlay, the full catalog, and no ads at all. Pro adds unlimited offline
+downloads, bookmarks & favorites sync, Folder Watch, 10-band EQ, listening stats, library backup &
+restore, bigger streaming cache presets, and whole-book prefetch — all for a one-time purchase.
 
 The opening is: *the same catalog in a player that respects you*.
 
@@ -51,12 +58,9 @@ The opening is: *the same catalog in a player that respects you*.
 - [x] **Resume reliability** (`docs/RELEASE_PLAN.md`): resume at the right chapter and offset from every
       entry point, crash/force-quit durability, content-keyed identity, free position sync — the app
       never loses your place.
-
-### Near-term
-- [ ] **CarPlay** — the single biggest remaining gap versus BookDesign. Entitlement approved (2026-07-16);
-      design complete in [`docs/CARPLAY_DESIGN.md`](docs/CARPLAY_DESIGN.md). **Free and standalone** — search,
-      browse, resume, and play entirely from the car, no phone needed. Not a Pro feature; the Pro price does
-      not change.
+- [x] **CarPlay** — free and standalone: search, browse, resume, and play entirely from the car, no
+      phone needed. Not a Pro feature; the Pro price did not change. Design in
+      [`docs/CARPLAY_DESIGN.md`](docs/CARPLAY_DESIGN.md).
 
 ### Future (not yet planned)
 

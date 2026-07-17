@@ -413,6 +413,58 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertTrue(profile.creatorTerms.contains { $0.term == "jane austen" })
     }
 
+    func testPositionOnlyBookContributesTasteTerms() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "backfill-position-only-taste")
+        let repository = LibraryRepository(database: database)
+        let profileStore = TasteProfileStore(database: database)
+
+        let seeded = try await seedBook(
+            in: database,
+            title: "The Mysterious Island",
+            authors: [],
+            sourceKind: .librivox,
+            sourceURL: URL(string: "https://archive.org/details/mysterious_island_librivox")
+        )
+        try await SQLitePositionStore(database: database).save(PlaybackPosition(
+            bookID: seeded.bookID,
+            chapterID: seeded.chapterID,
+            position: 90,
+            duration: 120
+        ))
+
+        _ = await repository.backfillBookTasteIfNeeded()
+        await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+
+        let profile = await profileStore.fetchProfile()
+        XCTAssertFalse(
+            profile.isEmpty,
+            "a played book with no usable authors and no book_taste rows must still contribute taste terms"
+        )
+        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "the mysterious island" })
+    }
+
+    func testTasteSeedTermsPrefersUsableAuthorsOverTitle() {
+        let terms = LibraryRepository.tasteSeedTerms(
+            authors: ["  Jules Verne  ", "Various"],
+            title: "The Mysterious Island"
+        )
+        XCTAssertEqual(terms.map(\.axis), ["author"])
+        XCTAssertEqual(terms.map(\.term), ["jules verne"])
+    }
+
+    func testTasteSeedTermsFallsBackToTitleSubjectWhenAuthorsUnusable() {
+        for authors in [[], ["Unknown"], ["Unknown author"], ["Various"], ["Internet Archive"], ["Local Files"]] {
+            let terms = LibraryRepository.tasteSeedTerms(authors: authors, title: "The Mysterious Island")
+            XCTAssertEqual(terms.map(\.axis), ["subject"], "authors \(authors)")
+            XCTAssertEqual(terms.map(\.term), ["the mysterious island"], "authors \(authors)")
+        }
+    }
+
+    func testTasteSeedTermsEmptyWhenNothingUsable() {
+        XCTAssertTrue(LibraryRepository.tasteSeedTerms(authors: ["Unknown"], title: "   ").isEmpty)
+        XCTAssertTrue(LibraryRepository.tasteSeedTerms(authors: [], title: "").isEmpty)
+    }
+
     @discardableResult
     private func seedSource(
         in database: AppDatabase,

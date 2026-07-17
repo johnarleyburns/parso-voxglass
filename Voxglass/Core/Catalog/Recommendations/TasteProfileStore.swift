@@ -165,29 +165,28 @@ public actor TasteProfileStore {
             )
 
             let now = Date().timeIntervalSince1970
-            try await database.executeRaw("BEGIN IMMEDIATE TRANSACTION")
-            do {
-                try await database.execute("DELETE FROM taste_profile_terms")
-                let sorted = weights.sorted {
-                    if $0.axis != $1.axis { return $0.axis < $1.axis }
-                    return $0.term < $1.term
-                }
-                for entry in sorted {
-                    try await database.execute("""
+            let sorted = weights.sorted {
+                if $0.axis != $1.axis { return $0.axis < $1.axis }
+                return $0.term < $1.term
+            }
+            var statements: [(sql: String, bindings: [DatabaseValue])] = [
+                ("DELETE FROM taste_profile_terms", [])
+            ]
+            for entry in sorted {
+                statements.append((
+                    """
                     INSERT INTO taste_profile_terms (axis, term, weight, last_ts)
                     VALUES (?, ?, ?, ?)
-                    """, [
+                    """,
+                    [
                         .string(entry.axis),
                         .string(entry.term),
                         .double(entry.weight),
                         .double(now)
-                    ])
-                }
-                try await database.executeRaw("COMMIT")
-            } catch {
-                try? await database.executeRaw("ROLLBACK")
-                throw error
+                    ]
+                ))
             }
+            try await database.executeBatch(statements)
         } catch {}
     }
 

@@ -18,14 +18,27 @@ struct ProPaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var storeManager = StoreManager.shared
 
-    /// Ordered high-value first. cachePresets and prefetchDepth are folded into
-    /// the offlineDownloads row as supporting detail rather than standalone bullets.
+    /// Ordered high-value first. Every entry must have a real
+    /// `ProFeature.isEnabled(_:)` gate (guard_wiring.sh Rule 4 +
+    /// `ProPaywallContentTests`).
     static let advertised: [ProFeatureAdvertisement] = [
         ProFeatureAdvertisement(
             feature: .offlineDownloads,
             icon: "arrow.down.circle.fill",
             title: "Unlimited Offline Downloads",
-            description: "Download as many books as you want for gap-free listening anywhere. Free tier lets you pin 2 — plus a 10 GB cache and whole-book prefetch."
+            description: "Download as many books as you want for gap-free listening anywhere. Free tier lets you pin 2."
+        ),
+        ProFeatureAdvertisement(
+            feature: .cachePresets,
+            icon: "internaldrive.fill",
+            title: "Bigger Streaming Cache",
+            description: "2 GB and 10 GB presets keep far more audio ready to play offline."
+        ),
+        ProFeatureAdvertisement(
+            feature: .prefetchDepth,
+            icon: "arrow.triangle.branch",
+            title: "Whole-Book Prefetch",
+            description: "Preload the next 3 chapters or the entire book so playback never waits."
         ),
         ProFeatureAdvertisement(
             feature: .icloudSync,

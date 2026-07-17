@@ -49,6 +49,7 @@ struct SearchView: View {
                         .foregroundStyle(Palette.ink3)
                         .frame(width: 32, height: 32)
                 }
+                .accessibilityLabel("Clear search")
             }
 
             if catalogStore.isSearching {

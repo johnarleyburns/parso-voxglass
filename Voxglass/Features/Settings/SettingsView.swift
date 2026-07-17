@@ -142,7 +142,7 @@ private struct VoxglassProRow: View {
                             .foregroundStyle(Palette.ink)
                         Text(storeManager.isPro
                             ? "Thank you for supporting Voxglass."
-                            : storeManager.products.first.map { "One-time \($0.displayPrice) — unlock 6 Pro features" } ?? "One-time purchase"
+                            : storeManager.products.first.map { "One-time \($0.displayPrice) — unlock \(ProPaywallView.advertised.count) Pro features" } ?? "One-time purchase"
                         )
                             .scaledFont(size: 11.5)
                             .foregroundStyle(Palette.ink3)
@@ -165,6 +165,12 @@ private struct VoxglassProRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(storeManager.isPro
+                ? "Pro unlocked. Thank you for supporting Voxglass."
+                : "Voxglass Pro. One-time purchase — unlock \(ProPaywallView.advertised.count) Pro features."
+            )
+            .accessibilityIdentifier("pro.upsellCell")
             .glassPanel()
 
             Button {
@@ -486,6 +492,7 @@ struct SourcesView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(VoxglassTheme.accent)
+                .accessibilityLabel("Add source")
                 .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
             }
             .padding(12)

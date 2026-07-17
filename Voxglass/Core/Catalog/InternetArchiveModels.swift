@@ -1,6 +1,6 @@
 import Foundation
 
-public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable {
+public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Codable {
     public var identifier: String
     public var title: String
     public var creators: [String]

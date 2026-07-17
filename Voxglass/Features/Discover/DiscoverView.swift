@@ -67,6 +67,7 @@ struct BrowseView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(collection.title)
                     }
                 }
                 .padding(.horizontal, 2)

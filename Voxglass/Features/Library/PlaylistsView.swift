@@ -39,6 +39,7 @@ struct PlaylistsView: View {
                 Button { showCreate = true } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("New playlist")
             }
         }
         .alert("New Playlist", isPresented: $showCreate) {
@@ -84,6 +85,7 @@ struct PlaylistDetailView: View {
                                 Text(book.book.authorLine).font(.caption).foregroundStyle(Palette.ink3)
                             }
                         }
+                        .accessibilityLabel("Play \(book.book.title)")
                         .swipeActions {
                             Button(role: .destructive) {
                                 showRemoveConfirm = book

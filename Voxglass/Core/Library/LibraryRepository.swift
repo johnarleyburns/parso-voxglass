@@ -321,28 +321,28 @@ public final class LibraryRepository {
     /// Books imported before taste capture existed (2026-07-11) have no
     /// book_taste rows, so their listening history is invisible to the
     /// recommendation profile. Seed author terms from the locally stored
-    /// authors for any book with zero book_taste rows. Idempotent.
+    /// authors for any book with zero book_taste rows; when no usable author
+    /// exists, seed a subject term from the title so played books still
+    /// contribute taste (`tasteSeedTerms`). Idempotent.
     @discardableResult
     public func backfillBookTasteIfNeeded() async -> Int {
         do {
             try await database.prepare()
             let rows = try await database.query("""
-            SELECT b.id, b.authors_json FROM books b LEFT JOIN book_taste bt ON
+            SELECT b.id, b.title, b.authors_json FROM books b LEFT JOIN book_taste bt ON
             bt.book_id = b.id WHERE bt.book_id IS NULL
             """)
             var count = 0
             for row in rows {
-                guard let bookID = row.string("id"),
-                      let authorsJSON = row.string("authors_json") else { continue }
-                let decoder = JSONDecoder()
-                guard let data = authorsJSON.data(using: .utf8),
-                      let authors = try? decoder.decode([String].self, from: data) else { continue }
-                for author in authors {
-                    let trimmed = author.trimmingCharacters(in: .whitespaces)
-                    guard !trimmed.isEmpty, trimmed != "Unknown", trimmed != "Various" else { continue }
+                guard let bookID = row.string("id") else { continue }
+                let authors = (row.string("authors_json")?.data(using: .utf8))
+                    .flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []
+                let terms = Self.tasteSeedTerms(authors: authors, title: row.string("title") ?? "")
+                guard !terms.isEmpty else { continue }
+                for term in terms {
                     try? await database.execute(
-                        "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'author', ?)",
-                        [.string(bookID), .string(trimmed.lowercased())]
+                        "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, ?, ?)",
+                        [.string(bookID), .string(term.axis), .string(term.term)]
                     )
                 }
                 count += 1
@@ -351,6 +351,23 @@ public final class LibraryRepository {
         } catch {
             return 0
         }
+    }
+
+    /// Pure decision: which taste terms a book contributes when it has no
+    /// book_taste rows. Usable authors win; otherwise the title seeds a subject
+    /// term so played books with placeholder authors stay visible to taste.
+    public static func tasteSeedTerms(authors: [String], title: String) -> [(axis: String, term: String)] {
+        let placeholders: Set<String> = ["unknown", "unknown author", "various", "internet archive", "local files"]
+        let authorTerms = authors
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !placeholders.contains($0.lowercased()) }
+            .map { (axis: "author", term: $0.lowercased()) }
+        if !authorTerms.isEmpty {
+            return authorTerms
+        }
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmedTitle.isEmpty else { return [] }
+        return [(axis: "subject", term: trimmedTitle)]
     }
 
     /// Returns all taste terms (axis, term) for a given book, for seeding

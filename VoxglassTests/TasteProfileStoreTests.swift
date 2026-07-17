@@ -258,6 +258,42 @@ final class TasteProfileStoreTests: XCTestCase {
         }
     }
 
+    func testConcurrentFetchDuringRebuildNeverSeesEmptyProfile() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-atomic-rebuild")
+        let store = TasteProfileStore(database: database)
+        try await seedHistoryBook(
+            in: database,
+            title: "The Frogs",
+            author: "Aristophanes",
+            subject: "Drama",
+            language: "eng",
+            listenedSeconds: 7200
+        )
+
+        await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        let initial = await store.fetchProfile()
+        XCTAssertFalse(initial.isEmpty, "seeded history must produce a non-empty profile")
+
+        let rebuilds = Task {
+            for _ in 0..<40 {
+                await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+            }
+        }
+        var emptyReads = 0
+        for _ in 0..<400 {
+            let profile = await store.fetchProfile()
+            if profile.isEmpty {
+                emptyReads += 1
+            }
+        }
+        await rebuilds.value
+
+        XCTAssertEqual(
+            emptyReads, 0,
+            "fetchProfile interleaved with a rebuild must never observe an empty (mid-transaction) profile"
+        )
+    }
+
     @discardableResult
     private func seedHistoryBook(
         in database: AppDatabase,
