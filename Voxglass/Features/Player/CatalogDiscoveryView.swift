@@ -5,18 +5,16 @@ import VoxglassCore
 /// discovery links ("More by this Author / Narrator / Genre"). It owns its own
 /// `InternetArchiveClient` fetch and results state so it never clobbers the
 /// shared `CatalogStore` that drives the Explore/Search tabs. Rows reuse
-/// `InternetArchiveResultRow`; tapping a row imports and plays, then pops back to
-/// the Now Playing screen showing the newly-started book.
+/// `InternetArchiveResultRow`; tapping a row opens a catalog Book View, and that
+/// view imports/plays only when its Play button is tapped.
 struct CatalogDiscoveryView: View {
     let title: String
     let archiveQuery: String
     @Binding var showingNowPlaying: Bool
 
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
-    @State private var playingIdentifier: String?
 
     var body: some View {
         ZStack {
@@ -64,17 +62,22 @@ struct CatalogDiscoveryView: View {
                     VStack(spacing: 0) {
                         ForEach(results.indices, id: \.self) { index in
                             let result = results[index]
-                            Button {
-                                Task { await play(result) }
+                            NavigationLink {
+                                CatalogBookDetailView(
+                                    result: result,
+                                    showingNowPlaying: $showingNowPlaying
+                                ) { result, libraryStore in
+                                    await store.importResult(result, into: libraryStore)
+                                } onPlaybackStarted: {
+                                    dismiss()
+                                }
                             } label: {
                                 InternetArchiveResultRow(
                                     result: result,
-                                    isPlaying: playingIdentifier == result.identifier,
                                     style: .grouped
                                 )
                             }
                             .buttonStyle(.plain)
-                            .disabled(playingIdentifier == result.identifier)
 
                             if index < results.count - 1 {
                                 VoxglassListDivider()
@@ -98,17 +101,6 @@ struct CatalogDiscoveryView: View {
                 store.error = nil
                 libraryStore.importError = nil
             }
-        }
-    }
-
-    private func play(_ result: InternetArchiveSearchResult) async {
-        playingIdentifier = result.identifier
-        defer { playingIdentifier = nil }
-
-        if let imported = await store.importResult(result, into: libraryStore) {
-            await playback.play(imported)
-            showingNowPlaying = true
-            dismiss()
         }
     }
 }
@@ -143,10 +135,9 @@ final class CatalogDiscoveryStore: ObservableObject {
         into libraryStore: LibraryStore
     ) async -> BookWithChapters? {
         do {
-            let metadata = try await client.metadata(for: result.identifier)
-            return await libraryStore.importInternetArchiveItem(metadata, sourceKind: result.sourceKind)
+            return try await CatalogResultImporter.importResult(result, into: libraryStore, using: client)
         } catch {
-            self.error = "Couldn't load '\(result.title)' (\(result.identifier)): \(error.localizedDescription)"
+            self.error = CatalogResultImporter.importErrorMessage(for: result, underlying: error)
             return nil
         }
     }

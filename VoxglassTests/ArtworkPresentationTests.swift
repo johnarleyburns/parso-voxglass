@@ -48,14 +48,48 @@ final class ArtworkPresentationTests: XCTestCase {
             XCTAssertTrue(text.contains("style: .grouped"))
             XCTAssertTrue(text.contains("VoxglassListDivider()"))
             XCTAssertTrue(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
+            XCTAssertTrue(text.contains("NavigationLink {"))
+            XCTAssertTrue(text.contains("CatalogBookDetailView("))
         }
     }
 
-    func testCatalogResultMetadataShowsRecordedDateFromIAField() throws {
+    func testCatalogResultRowsUseNavigationAccessoryWithoutMetadata() throws {
         let search = try source("Voxglass/Features/Search/SearchView.swift")
 
-        XCTAssertTrue(search.contains("IADateFormatting.humanReadable(result.date)"))
-        XCTAssertTrue(search.contains("Recorded \\(date)"))
+        XCTAssertTrue(search.contains("accessory: .navigation"))
+        XCTAssertTrue(search.contains("metadata: nil"))
+        XCTAssertFalse(search.contains("IADateFormatting.humanReadable(result.date)"))
+        XCTAssertFalse(search.contains("Recorded \\(date)"))
+        XCTAssertFalse(search.contains("isPlaying ? .loading : .play"))
+    }
+
+    func testLocalBookRowsDoNotShowLibraryMetadataDetailLine() throws {
+        let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
+
+        XCTAssertTrue(components.contains("struct CompactBookRowView: View"))
+        XCTAssertTrue(components.contains("metadata: nil"))
+        XCTAssertFalse(components.contains("metadata: book.libraryDetailLine"))
+    }
+
+    func testBookDetailHeaderShowsNarratorLineNearTop() throws {
+        let detail = try source("Voxglass/Features/Library/BookDetailView.swift")
+
+        XCTAssertTrue(detail.contains("if let narratorLine = currentBook.book.narratorLine"))
+        XCTAssertTrue(detail.contains("Text(narratorLine)"))
+        XCTAssertLessThan(
+            try XCTUnwrap(detail.range(of: "Text(narratorLine)")?.lowerBound),
+            try XCTUnwrap(detail.range(of: "Text(currentBook.libraryDetailLine")?.lowerBound)
+        )
+    }
+
+    func testListeningStatsLockIsReservedInsideDisclosureRow() throws {
+        let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
+
+        XCTAssertTrue(settings.contains("showsLock: !ProFeature.isEnabled(.listeningStats)"))
+        let statsRange = try XCTUnwrap(settings.range(of: "private struct ListeningStatsRow"))
+        let nextRange = try XCTUnwrap(settings.range(of: "private struct FolderWatchRow"))
+        let statsBlock = String(settings[statsRange.lowerBound..<nextRange.lowerBound])
+        XCTAssertFalse(statsBlock.contains(".overlay(alignment: .trailing)"))
     }
 
     func testEveryExploreCollectionHasBundledAsset() {

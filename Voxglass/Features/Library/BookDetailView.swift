@@ -147,6 +147,13 @@ struct BookDetailView: View {
 
                     authorLinks
 
+                    if let narratorLine = currentBook.book.narratorLine {
+                        Text(narratorLine)
+                            .scaledFont(size: 13, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                            .lineLimit(2)
+                    }
+
                     Text(currentBook.libraryDetailLine(sourceTitle: libraryStore.source(for: currentBook.book)?.kind.displayName))
                         .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)

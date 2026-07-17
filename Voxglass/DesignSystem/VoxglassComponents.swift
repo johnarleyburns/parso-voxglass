@@ -256,6 +256,7 @@ struct DisclosureListRow: View {
     var count: Int?
     var isEnabled: Bool = true
     var showsChevron: Bool = true
+    var showsLock: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -294,6 +295,10 @@ struct DisclosureListRow: View {
                         Capsule()
                             .fill(Color.white.opacity(0.07))
                     }
+            }
+
+            if showsLock {
+                ProLockBadge()
             }
 
             if showsChevron {
@@ -365,7 +370,7 @@ struct CompactBookRowView: View {
             title: book.book.title,
             subtitle: book.book.authorLine,
             tertiary: book.book.narratorLine,
-            metadata: book.libraryDetailLine(sourceTitle: sourceTitle),
+            metadata: nil,
             coverURL: book.book.coverURL,
             accessory: accessory,
             style: style,

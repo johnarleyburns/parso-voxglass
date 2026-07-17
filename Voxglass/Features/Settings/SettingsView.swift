@@ -1023,13 +1023,9 @@ private struct ListeningStatsRow: View {
                 title: "Listening Stats",
                 detail: ProFeature.isEnabled(.listeningStats) ? "Total time, streaks, and top authors" : "Total time, streaks — a Pro feature",
                 count: nil,
-                isEnabled: ProFeature.isEnabled(.listeningStats)
+                isEnabled: ProFeature.isEnabled(.listeningStats),
+                showsLock: !ProFeature.isEnabled(.listeningStats)
             )
-            .overlay(alignment: .trailing) {
-                if !ProFeature.isEnabled(.listeningStats) {
-                    ProLockBadge().padding(.trailing, 34)
-                }
-            }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(ProFeature.isEnabled(.listeningStats) ? "settings.listeningStats" : "pro.lock.listeningStats")
@@ -1211,5 +1207,4 @@ private struct BackupImportSheet: View {
         }
     }
 }
-
 

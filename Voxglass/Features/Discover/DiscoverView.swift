@@ -4,11 +4,9 @@ import VoxglassCore
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
     @State private var collectionSort: CatalogSort = .popularity
-    @State private var playingIdentifier: String?
     @StateObject private var coverStore = CollectionCoverStore(artwork: ArtworkService.shared)
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
@@ -99,7 +97,7 @@ struct BrowseView: View {
                 } else {
                     EmptyStatePanel(
                         title: "Pick a Collection",
-                        message: "Choose a Featured Collection above to explore curated LibriVox audiobooks. Tap any result to start listening.",
+                        message: "Choose a Featured Collection above to explore curated LibriVox audiobooks.",
                         systemImage: "square.stack"
                     )
                 }
@@ -108,17 +106,21 @@ struct BrowseView: View {
                 VStack(spacing: 0) {
                     ForEach(results.indices, id: \.self) { index in
                         let result = results[index]
-                        Button {
-                            Task { await playResult(result) }
+                        NavigationLink {
+                            CatalogBookDetailView(
+                                result: result,
+                                showingNowPlaying: $showingNowPlaying
+                            ) { result, libraryStore in
+                                await catalogStore.importResult(result, into: libraryStore)
+                            }
                         } label: {
                             InternetArchiveResultRow(
                                 result: result,
-                                isPlaying: playingIdentifier == result.identifier,
                                 style: .grouped
                             )
                         }
                         .buttonStyle(.plain)
-                        .disabled(playingIdentifier == result.identifier || catalogStore.isSearching)
+                        .disabled(catalogStore.isSearching)
 
                         if index < results.count - 1 {
                             VoxglassListDivider()
@@ -181,16 +183,6 @@ struct BrowseView: View {
                 catalogStore.catalogError = nil
                 libraryStore.importError = nil
             }
-        }
-    }
-
-    private func playResult(_ result: InternetArchiveSearchResult) async {
-        playingIdentifier = result.identifier
-        defer { playingIdentifier = nil }
-
-        if let imported = await catalogStore.importResult(result, into: libraryStore) {
-            await playback.play(imported)
-            showingNowPlaying = true
         }
     }
 

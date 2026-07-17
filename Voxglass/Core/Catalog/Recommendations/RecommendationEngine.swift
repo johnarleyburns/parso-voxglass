@@ -1,5 +1,21 @@
 import Foundation
 
+public enum RecommendationShelfSource: Equatable {
+    case personalized
+    case popularColdStart
+    case popularFallback
+}
+
+public struct RecommendationShelf: Equatable {
+    public var results: [InternetArchiveSearchResult]
+    public var source: RecommendationShelfSource
+
+    public init(results: [InternetArchiveSearchResult], source: RecommendationShelfSource) {
+        self.results = results
+        self.source = source
+    }
+}
+
 @MainActor
 public final class RecommendationEngine {
     private let client: InternetArchiveCatalogClient
@@ -17,17 +33,40 @@ public final class RecommendationEngine {
     }
 
     public func fetchRecommendations(
-        selectedCollectionIDs _: Set<String>,
+        selectedCollectionIDs: Set<String>,
         selectedLanguages: Set<String>
     ) async -> [InternetArchiveSearchResult] {
+        await fetchRecommendationShelf(
+            selectedCollectionIDs: selectedCollectionIDs,
+            selectedLanguages: selectedLanguages
+        ).results
+    }
+
+    public func fetchRecommendationShelf(
+        selectedCollectionIDs _: Set<String>,
+        selectedLanguages: Set<String>
+    ) async -> RecommendationShelf {
         let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
         let excludeKeys = await buildExcludeKeys()
 
         let profile = await profileStore.fetchProfile()
         guard !profile.isEmpty else {
-            return RecommendationPipeline.filterExcluded(
-                HomeRecommendationStore.bundledPopularSeeds,
-                excludeKeys: excludeKeys
+            return RecommendationShelf(
+                results: RecommendationPipeline.filterExcluded(
+                    HomeRecommendationStore.bundledPopularSeeds,
+                    excludeKeys: excludeKeys
+                ),
+                source: .popularColdStart
+            )
+        }
+
+        let popularFallback = {
+            RecommendationShelf(
+                results: RecommendationPipeline.filterExcluded(
+                    HomeRecommendationStore.bundledPopularSeeds,
+                    excludeKeys: excludeKeys
+                ),
+                source: RecommendationShelfSource.popularFallback
             )
         }
 
@@ -38,10 +77,7 @@ public final class RecommendationEngine {
             languageClause: languageClause
         )
         guard !queries.isEmpty else {
-            return RecommendationPipeline.filterExcluded(
-                HomeRecommendationStore.bundledPopularSeeds,
-                excludeKeys: excludeKeys
-            )
+            return popularFallback()
         }
 
         var candidates: [InternetArchiveSearchResult] = []
@@ -84,16 +120,13 @@ public final class RecommendationEngine {
         }
 
         guard !filtered.isEmpty else {
-            return RecommendationPipeline.filterExcluded(
-                HomeRecommendationStore.bundledPopularSeeds,
-                excludeKeys: excludeKeys
-            )
+            return popularFallback()
         }
 
         let surfacedKeys = filtered.flatMap { Array(RecommendationPipeline.identityKeys(for: $0)) }
         await profileStore.pushSurfaced(surfacedKeys)
 
-        return Array(filtered.prefix(18))
+        return RecommendationShelf(results: Array(filtered.prefix(18)), source: .personalized)
     }
 
     // MARK: - Private

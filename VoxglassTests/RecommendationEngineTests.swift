@@ -487,6 +487,42 @@ final class RecommendationEngineTests: XCTestCase {
         XCTAssertEqual(store.recommendations, original)
     }
 
+    @MainActor
+    func testHomeRecommendationStorePreservesPersonalizedShelfWhenRefreshFallsBackToBundledPopular() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "home-reco-preserve-personalized")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+        await libraryStore.refresh()
+
+        let personalized = candidate(
+            identifier: "aristophanes_personalized",
+            title: "The Frogs",
+            creator: "Aristophanes",
+            downloads: 400,
+            subjects: ["Drama"]
+        )
+        let store = HomeRecommendationStore(client: FakeArchiveClient(responses: [
+            [personalized],
+            [],
+            [],
+            []
+        ]))
+        store.configure(profileStore: profileStore, libraryStore: libraryStore)
+        store.markEngineReady()
+
+        await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        XCTAssertEqual(store.recommendations.map(\.identifier), ["aristophanes_personalized"])
+
+        await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        XCTAssertEqual(store.recommendations.map(\.identifier), ["aristophanes_personalized"])
+        XCTAssertNotEqual(
+            store.recommendations.map(\.identifier),
+            HomeRecommendationStore.bundledPopularSeeds.map(\.identifier)
+        )
+    }
+
     // MARK: - WorkKey
 
     func testWorkKeyCollapsesReuploadsOfTheSameWork() {

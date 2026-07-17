@@ -9,6 +9,7 @@ public final class HomeRecommendationStore: ObservableObject {
     private let client: InternetArchiveCatalogClient
     private var engine: RecommendationEngine?
     private var engineReady = false
+    private var visibleShelfSource: RecommendationShelfSource = .popularColdStart
 
     public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
@@ -30,6 +31,7 @@ public final class HomeRecommendationStore: ObservableObject {
     public func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
         if recommendations.isEmpty {
             recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
+            visibleShelfSource = .popularColdStart
         }
 
         guard let engine, engineReady else { return }
@@ -37,13 +39,19 @@ public final class HomeRecommendationStore: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        let recs = await engine.fetchRecommendations(
+        let shelf = await engine.fetchRecommendationShelf(
             selectedCollectionIDs: selectedCollectionIDs,
             selectedLanguages: selectedLanguages
         )
-        if !recs.isEmpty {
-            recommendations = recs
+        guard !shelf.results.isEmpty else { return }
+
+        if shelf.source == .popularFallback,
+           visibleShelfSource == .personalized {
+            return
         }
+
+        recommendations = shelf.results
+        visibleShelfSource = shelf.source
     }
 
     public nonisolated static func coldStartRecommendations(for _: Set<String>) -> [InternetArchiveSearchResult] {
