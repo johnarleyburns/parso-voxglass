@@ -5,6 +5,8 @@ public protocol InternetArchiveCatalogClient {
     func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchAdvancedPage(query: String, rows: Int, page: Int) async throws -> InternetArchivePage
+    func searchAdvanced(query: String, rows: Int, sort: CatalogSort) async throws -> [InternetArchiveSearchResult]
+    func searchAdvancedPage(query: String, rows: Int, page: Int, sort: CatalogSort) async throws -> InternetArchivePage
     func metadata(for identifier: String) async throws -> InternetArchiveMetadata
 }
 
@@ -23,6 +25,61 @@ public extension InternetArchiveCatalogClient {
 
     func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] {
         try await searchAdvancedPage(query: query, rows: rows, page: 1).results
+    }
+
+    func searchAdvanced(query: String, rows: Int, sort: CatalogSort) async throws -> [InternetArchiveSearchResult] {
+        try await searchAdvancedPage(query: query, rows: rows, page: 1, sort: sort).results
+    }
+
+    func searchAdvancedPage(query: String, rows: Int, page: Int, sort: CatalogSort) async throws -> InternetArchivePage {
+        try await searchAdvancedPage(query: query, rows: rows, page: page)
+    }
+}
+
+public enum CatalogSort: String, CaseIterable, Identifiable, Sendable {
+    case popularity
+    case title
+    case author
+    case recordedDate
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .popularity:
+            "Popularity"
+        case .title:
+            "Title"
+        case .author:
+            "Author"
+        case .recordedDate:
+            "Date"
+        }
+    }
+
+    var archiveSortFields: [String] {
+        switch self {
+        case .popularity:
+            ["downloads desc"]
+        case .title:
+            ["titleSorter asc", "title asc"]
+        case .author:
+            ["creatorSorter asc", "creator asc"]
+        case .recordedDate:
+            ["date asc"]
+        }
+    }
+}
+
+public enum LibriVoxCatalogScope {
+    public static let collectionClause = "collection:(librivoxaudio OR audio_bookspoetry)"
+    public static let query = "\(collectionClause) AND mediatype:audio"
+
+    public static func matching(_ clause: String) -> String {
+        let normalized = clause
+            .split { $0.isWhitespace }
+            .joined(separator: " ")
+        return "\(query) AND (\(normalized))"
     }
 }
 
@@ -53,12 +110,12 @@ public final class InternetArchiveClient: InternetArchiveCatalogClient {
     /// subject/description carry thematic queries. Restricted to the LibriVox
     /// audiobook collections.
     public static func libriVoxQuery(for rawInput: String) -> String {
-        let scopeClause = " AND collection:(librivoxaudio OR audio_bookspoetry)"
+        let scopeClause = " AND \(LibriVoxCatalogScope.query)"
         let tokens = rawInput
             .split { !$0.isLetter && !$0.isNumber }
             .map { $0.replacingOccurrences(of: "\"", with: "") }
             .filter { !$0.isEmpty }
-        guard !tokens.isEmpty else { return "mediatype:audio" + scopeClause }
+        guard !tokens.isEmpty else { return LibriVoxCatalogScope.query }
 
         // The phrase is rebuilt from sanitized tokens, so it carries no
         // Lucene-reserved characters.
@@ -83,7 +140,20 @@ public final class InternetArchiveClient: InternetArchiveCatalogClient {
     }
 
     public func searchAdvancedPage(query: String, rows: Int = 25, page: Int = 1) async throws -> InternetArchivePage {
-        guard let url = Self.advancedSearchURL(query: query, rows: rows, page: page) else {
+        try await searchAdvancedPage(query: query, rows: rows, page: page, sort: .popularity)
+    }
+
+    public func searchAdvanced(query: String, rows: Int = 25, sort: CatalogSort) async throws -> [InternetArchiveSearchResult] {
+        try await searchAdvancedPage(query: query, rows: rows, page: 1, sort: sort).results
+    }
+
+    public func searchAdvancedPage(
+        query: String,
+        rows: Int = 25,
+        page: Int = 1,
+        sort: CatalogSort
+    ) async throws -> InternetArchivePage {
+        guard let url = Self.advancedSearchURL(query: query, rows: rows, page: page, sort: sort) else {
             throw InternetArchiveError.invalidURL
         }
 
@@ -138,17 +208,21 @@ public final class InternetArchiveClient: InternetArchiveCatalogClient {
         return data
     }
 
-    static func advancedSearchURL(query: String, rows: Int, page: Int) -> URL? {
+    static func advancedSearchURL(
+        query: String,
+        rows: Int,
+        page: Int,
+        sort: CatalogSort = .popularity
+    ) -> URL? {
         var components = URLComponents()
         components.scheme = "https"
         components.host = "archive.org"
         components.path = "/advancedsearch.php"
-        components.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "output", value: "json"),
             URLQueryItem(name: "rows", value: String(rows)),
             URLQueryItem(name: "page", value: String(max(1, page))),
-            URLQueryItem(name: "sort[]", value: "downloads desc"),
             URLQueryItem(name: "fl[]", value: "identifier"),
             URLQueryItem(name: "fl[]", value: "title"),
             URLQueryItem(name: "fl[]", value: "creator"),
@@ -159,6 +233,11 @@ public final class InternetArchiveClient: InternetArchiveCatalogClient {
             URLQueryItem(name: "fl[]", value: "language"),
             URLQueryItem(name: "fl[]", value: "subject")
         ]
+        let sortItems = sort.archiveSortFields.map {
+            URLQueryItem(name: "sort[]", value: $0)
+        }
+        queryItems.insert(contentsOf: sortItems, at: 4)
+        components.queryItems = queryItems
         return components.url
     }
 

@@ -91,18 +91,28 @@ struct SearchView: View {
                     systemImage: "magnifyingglass"
                 )
             } else {
-                ForEach(catalogStore.results) { result in
-                    Button {
-                        Task { await playResult(result) }
-                    } label: {
-                        InternetArchiveResultRow(
-                            result: result,
-                            isPlaying: playingIdentifier == result.identifier
-                        )
+                let results = catalogStore.results
+                VStack(spacing: 0) {
+                    ForEach(results.indices, id: \.self) { index in
+                        let result = results[index]
+                        Button {
+                            Task { await playResult(result) }
+                        } label: {
+                            InternetArchiveResultRow(
+                                result: result,
+                                isPlaying: playingIdentifier == result.identifier,
+                                style: .grouped
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(playingIdentifier == result.identifier)
+
+                        if index < results.count - 1 {
+                            VoxglassListDivider()
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(playingIdentifier == result.identifier)
                 }
+                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
             }
         }
     }
@@ -141,6 +151,7 @@ struct SearchView: View {
 struct InternetArchiveResultRow: View {
     var result: InternetArchiveSearchResult
     var isPlaying: Bool
+    var style: BookListRowStyle = .card
 
     var body: some View {
         BookListRow(
@@ -150,6 +161,7 @@ struct InternetArchiveResultRow: View {
             metadata: detailLine,
             coverURL: result.coverURL,
             accessory: isPlaying ? .loading : .play,
+            style: style,
             accessibilityLabel: "Play \(result.title) by \(result.authorLine)"
         )
     }
@@ -157,7 +169,7 @@ struct InternetArchiveResultRow: View {
     var detailLine: String {
         var parts: [String] = []
         if let date = IADateFormatting.humanReadable(result.date) {
-            parts.append(date)
+            parts.append("Recorded \(date)")
         }
         if let downloads = result.downloads {
             parts.append("\(downloads) downloads")

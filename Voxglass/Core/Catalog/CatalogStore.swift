@@ -27,6 +27,7 @@ public final class CatalogStore: ObservableObject {
     private let client: InternetArchiveCatalogClient
     private let pageSize = 25
     private var activeQuery: String?
+    private var activeSort: CatalogSort = .popularity
     private var currentPage = 1
     private var numFound = 0
     private var seenIdentifiers: Set<String> = []
@@ -46,11 +47,11 @@ public final class CatalogStore: ObservableObject {
             resetResults()
             return
         }
-        await runSearch(query: InternetArchiveClient.libriVoxQuery(for: trimmed) + languageClause)
+        await runSearch(query: InternetArchiveClient.libriVoxQuery(for: trimmed) + languageClause, sort: .popularity)
     }
 
-    public func searchAdvanced(_ query: String) async {
-        await runSearch(query: query + languageClause)
+    public func searchAdvanced(_ query: String, sort: CatalogSort = .popularity) async {
+        await runSearch(query: query + languageClause, sort: sort)
     }
 
     public func loadMore() async {
@@ -61,7 +62,12 @@ public final class CatalogStore: ObservableObject {
 
         let nextPage = currentPage + 1
         do {
-            let page = try await client.searchAdvancedPage(query: query, rows: pageSize, page: nextPage)
+            let page = try await client.searchAdvancedPage(
+                query: query,
+                rows: pageSize,
+                page: nextPage,
+                sort: activeSort
+            )
             currentPage = nextPage
             numFound = page.numFound
             let appended = page.results.filter { seenIdentifiers.insert($0.identifier).inserted }
@@ -123,8 +129,7 @@ public final class CatalogStore: ObservableObject {
         if let creator = result.creators.first.map(escapeSolrPhrase), !creator.isEmpty {
             clauses.append("creator:\"\(creator)\"")
         }
-        clauses.append("collection:librivoxaudio")
-        clauses.append("mediatype:audio")
+        clauses.append(LibriVoxCatalogScope.query)
         return clauses.joined(separator: " AND ")
     }
 
@@ -157,7 +162,7 @@ public final class CatalogStore: ObservableObject {
         do {
             switch resource {
             case .advancedSearch(let query):
-                await runSearch(query: query + languageClause)
+                await runSearch(query: query + languageClause, sort: .popularity)
                 return nil
             case .identifier(let identifier):
                 let metadata = try await client.metadata(for: identifier)
@@ -176,15 +181,16 @@ public final class CatalogStore: ObservableObject {
         }
     }
 
-    private func runSearch(query: String) async {
+    private func runSearch(query: String, sort: CatalogSort) async {
         isSearching = true
         defer { isSearching = false }
 
         activeQuery = query
+        activeSort = sort
         currentPage = 1
 
         do {
-            let page = try await client.searchAdvancedPage(query: query, rows: pageSize, page: 1)
+            let page = try await client.searchAdvancedPage(query: query, rows: pageSize, page: 1, sort: sort)
             numFound = page.numFound
             seenIdentifiers = []
             results = page.results.filter { seenIdentifiers.insert($0.identifier).inserted }
@@ -196,7 +202,8 @@ public final class CatalogStore: ObservableObject {
 
     private func reloadForLanguageChange() {
         guard let base = baseQuery(from: activeQuery) else { return }
-        Task { await runSearch(query: base + languageClause) }
+        let sort = activeSort
+        Task { await runSearch(query: base + languageClause, sort: sort) }
     }
 
     /// Strips a previously-appended language clause so the base query can be

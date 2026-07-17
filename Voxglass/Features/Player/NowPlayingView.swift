@@ -586,7 +586,7 @@ struct NowPlayingView: View {
         .buttonStyle(.plain)
     }
 
-    private static let discoveryScope = " AND collection:librivoxaudio AND mediatype:audio"
+    private static let discoveryScope = " AND \(LibriVoxCatalogScope.query)"
 
     static func authorQuery(_ author: String) -> String {
         "creator:\"\(escapeQuotes(author))\"\(discoveryScope)"

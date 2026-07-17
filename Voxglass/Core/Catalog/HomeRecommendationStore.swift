@@ -23,6 +23,10 @@ public final class HomeRecommendationStore: ObservableObject {
     }
 
     public func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
+        if recommendations.isEmpty {
+            recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
+        }
+
         if let engine {
             isRefreshing = true
             defer { isRefreshing = false }
@@ -31,11 +35,16 @@ public final class HomeRecommendationStore: ObservableObject {
                 selectedCollectionIDs: selectedCollectionIDs,
                 selectedLanguages: selectedLanguages
             )
-            recommendations = recs
+            if !recs.isEmpty {
+                recommendations = recs
+            }
             return
         }
 
-        recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
+        let coldStart = Self.coldStartRecommendations(for: selectedCollectionIDs)
+        if !coldStart.isEmpty {
+            recommendations = coldStart
+        }
 
         let queries = LibriVoxRecommendationQueryBuilder.queries(for: selectedCollectionIDs)
         guard !queries.isEmpty else { return }

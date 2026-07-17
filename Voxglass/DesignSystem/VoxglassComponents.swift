@@ -142,6 +142,8 @@ struct BookListRow: View {
     private var rowContent: some View {
         HStack(alignment: .center, spacing: 12) {
             BookArtworkView(title: title, size: 56, coverURL: coverURL, cornerRadius: 12)
+                .frame(width: 56, height: 56)
+                .fixedSize()
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)

@@ -18,6 +18,7 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
         let subjects = LibriVoxBrowseCategory.dramaPlays.subjects.map { $0.lowercased() }
         XCTAssertTrue(subjects.contains("plays"))
         XCTAssertTrue(subjects.contains("dramatic readings"))
+        XCTAssertTrue(subjects.contains("drama"))
     }
 
     func testSubjectsIgnoreNegatedClause() {
@@ -61,6 +62,31 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
     }
 
     // MARK: - Discovery queries
+
+    func testWeakCategoryQueriesUseBroadLibriVoxAudioScope() {
+        let queries = [
+            LibriVoxBrowseCategory.ancientWorld.archiveQuery,
+            LibriVoxBrowseCategory.dramaPlays.archiveQuery
+        ]
+
+        for query in queries {
+            XCTAssertTrue(query.contains(LibriVoxCatalogScope.collectionClause))
+            XCTAssertTrue(query.contains("mediatype:audio"))
+        }
+    }
+
+    func testDramaAndAncientWorldQueriesIncludeSubjectCreatorAndTitleExpansion() {
+        let drama = LibriVoxBrowseCategory.dramaPlays.archiveQuery
+        XCTAssertTrue(drama.contains("subject:Drama"))
+        XCTAssertTrue(drama.contains("creator:\"William Shakespeare\""))
+        XCTAssertTrue(drama.contains("title:tragedy"))
+
+        let ancient = LibriVoxBrowseCategory.ancientWorld.archiveQuery
+        XCTAssertTrue(ancient.contains("subject:\"Ancient History\""))
+        XCTAssertTrue(ancient.contains("creator:Plato"))
+        XCTAssertTrue(ancient.contains("title:roman"))
+    }
+
     // MARK: - History backfill weighting
 
     func testHistoryIncrementFloorsAndCaps() {

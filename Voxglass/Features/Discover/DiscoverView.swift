@@ -7,6 +7,7 @@ struct BrowseView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
+    @State private var collectionSort: CatalogSort = .popularity
     @State private var playingIdentifier: String?
     @StateObject private var coverStore = CollectionCoverStore(artwork: ArtworkService.shared)
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
@@ -45,6 +46,10 @@ struct BrowseView: View {
         .onChange(of: catalogStore.results) { _, results in
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
         }
+        .onChange(of: collectionSort) { _, sort in
+            guard let selectedCollection else { return }
+            Task { await catalogStore.searchAdvanced(selectedCollection.archiveQuery, sort: sort) }
+        }
     }
 
     private var collectionShelves: some View {
@@ -76,6 +81,9 @@ struct BrowseView: View {
     private var catalogResults: some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionTitle(title: selectedCollection?.title ?? "Explore Results")
+            if selectedCollection != nil {
+                sortPicker
+            }
 
             if catalogStore.isSearching {
                 HStack(spacing: 12) {
@@ -94,24 +102,45 @@ struct BrowseView: View {
                     systemImage: "square.stack"
                 )
             } else {
-                ForEach(catalogStore.results) { result in
-                    Button {
-                        Task { await playResult(result) }
-                    } label: {
-                        InternetArchiveResultRow(
-                            result: result,
-                            isPlaying: playingIdentifier == result.identifier
-                        )
+                let results = catalogStore.results
+                VStack(spacing: 0) {
+                    ForEach(results.indices, id: \.self) { index in
+                        let result = results[index]
+                        Button {
+                            Task { await playResult(result) }
+                        } label: {
+                            InternetArchiveResultRow(
+                                result: result,
+                                isPlaying: playingIdentifier == result.identifier,
+                                style: .grouped
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(playingIdentifier == result.identifier)
+
+                        if index < results.count - 1 {
+                            VoxglassListDivider()
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(playingIdentifier == result.identifier)
                 }
+                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
 
                 if catalogStore.hasMore {
                     loadMoreButton
                 }
             }
         }
+    }
+
+    private var sortPicker: some View {
+        Picker("Sort", selection: $collectionSort) {
+            ForEach(CatalogSort.allCases) { sort in
+                Text(sort.title).tag(sort)
+            }
+        }
+        .pickerStyle(.segmented)
+        .tint(Palette.brass)
+        .padding(.bottom, 4)
     }
 
     private var loadMoreButton: some View {
@@ -164,7 +193,11 @@ struct BrowseView: View {
 
     private func search(_ collection: IACollection) {
         selectedCollection = collection
-        Task { await catalogStore.searchAdvanced(collection.archiveQuery) }
+        if collectionSort == .popularity {
+            Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: .popularity) }
+        } else {
+            collectionSort = .popularity
+        }
     }
 
     private var selectedCollectionIDs: Set<String> {
@@ -188,7 +221,7 @@ private struct ExploreCollectionCard: View {
                 title: collection.title,
                 systemImage: collection.systemImage,
                 assetName: collection.assetName,
-                remoteImageURL: resolvedCoverURL ?? collection.remoteImageURL
+                remoteImageURL: resolvedCoverURL
             )
             .frame(width: 190, height: 190)
 

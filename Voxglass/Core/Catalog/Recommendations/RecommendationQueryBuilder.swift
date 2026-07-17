@@ -23,7 +23,7 @@ public enum RecommendationQueryBuilder {
     ) -> [CandidateQuery] {
         guard !profile.isEmpty else { return [] }
 
-        let scopeClause = " AND collection:librivoxaudio AND mediatype:audio" + (languageClause.isEmpty ? "" : " \(languageClause)")
+        let scopeClause = " AND \(LibriVoxCatalogScope.query)" + (languageClause.isEmpty ? "" : " \(languageClause)")
 
         let totalAlloc = kTarget
         let exploitAlloc = Int(Double(totalAlloc) * RecommendationConstants.classMix.exploit)
@@ -83,7 +83,7 @@ public enum RecommendationQueryBuilder {
                 let sibling = siblingPool[idx]
                 let escapedTop = escapeSolr(topSubject)
                 let escapedSib = escapeSolr(sibling)
-                let query = "subject:\"\(escapedTop)\" AND subject:\"\(escapedSib)\" AND mediatype:audio AND downloads:[\(RecommendationConstants.downloadFloor) TO *]\(scopeClause)"
+                let query = "subject:\"\(escapedTop)\" AND subject:\"\(escapedSib)\" AND downloads:[\(RecommendationConstants.downloadFloor) TO *]\(scopeClause)"
                 queries.append(CandidateQuery(iaQuery: query, anchorTerm: "\(topSubject)+\(sibling)",
                                                noveltyClass: .serendipity, requestedCount: serendipityAlloc))
             }

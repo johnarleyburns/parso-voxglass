@@ -278,6 +278,69 @@ final class RecommendationEngineTests: XCTestCase {
         XCTAssertEqual(advancedQueryCount, 2)
     }
 
+    @MainActor
+    func testEngineFallsBackToBundledSeedsWhenGeneratedQueriesAreEmpty() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-empty-generated-queries")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "language", term: "english", increment: 5)
+        await libraryStore.refresh()
+
+        let client = FakeArchiveClient(responses: [])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let advancedQueryCount = await client.advancedQueryCount
+
+        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        XCTAssertEqual(advancedQueryCount, 0)
+    }
+
+    @MainActor
+    func testEngineFallsBackToBundledSeedsWhenNetworkCandidatesAreEmpty() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-empty-network-candidates")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+        await libraryStore.refresh()
+
+        let client = FakeArchiveClient(responses: [[], []])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+
+        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+    }
+
+    @MainActor
+    func testHomeRecommendationStorePreservesVisibleRecommendationsWhenRefreshReturnsEmpty() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "home-reco-preserve-empty-refresh")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+
+        for seed in HomeRecommendationStore.bundledPopularSeeds {
+            try await seedListenedBook(
+                in: database,
+                title: seed.title,
+                author: seed.authorLine,
+                iaIdentifier: seed.identifier
+            )
+        }
+        await libraryStore.refresh()
+
+        let store = HomeRecommendationStore(client: FakeArchiveClient(responses: [[], []]))
+        let original = store.recommendations
+        store.configure(profileStore: profileStore, libraryStore: libraryStore)
+
+        await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+
+        XCTAssertEqual(store.recommendations, original)
+    }
+
     // MARK: - WorkKey
 
     func testWorkKeyCollapsesReuploadsOfTheSameWork() {

@@ -33,6 +33,33 @@ final class ArtworkPresentationTests: XCTestCase {
         XCTAssertGreaterThan(checked, 0, "The guard should inspect at least one BookCoverView frame")
     }
 
+    func testSharedBookListRowArtworkFrameIsSquareAndStable() throws {
+        let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
+
+        XCTAssertTrue(components.contains("BookArtworkView(title: title, size: 56"))
+        XCTAssertTrue(components.contains(".frame(width: 56, height: 56)"))
+        XCTAssertTrue(components.contains(".fixedSize()"))
+    }
+
+    func testVerticalCatalogResultListsUseGroupedRows() throws {
+        let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        let search = try source("Voxglass/Features/Search/SearchView.swift")
+        let discovery = try source("Voxglass/Features/Player/CatalogDiscoveryView.swift")
+
+        for text in [discover, search, discovery] {
+            XCTAssertTrue(text.contains("style: .grouped"))
+            XCTAssertTrue(text.contains("VoxglassListDivider()"))
+            XCTAssertTrue(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
+        }
+    }
+
+    func testCatalogResultMetadataShowsRecordedDateFromIAField() throws {
+        let search = try source("Voxglass/Features/Search/SearchView.swift")
+
+        XCTAssertTrue(search.contains("IADateFormatting.humanReadable(result.date)"))
+        XCTAssertTrue(search.contains("Recorded \\(date)"))
+    }
+
     func testEveryExploreCollectionHasBundledAsset() {
         let assetCatalog = repoRoot.appendingPathComponent("Voxglass/Resources/Assets.xcassets", isDirectory: true)
 

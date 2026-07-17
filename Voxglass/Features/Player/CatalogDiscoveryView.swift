@@ -60,18 +60,28 @@ struct CatalogDiscoveryView: View {
                         systemImage: "magnifyingglass"
                     )
                 } else {
-                    ForEach(store.results) { result in
-                        Button {
-                            Task { await play(result) }
-                        } label: {
-                            InternetArchiveResultRow(
-                                result: result,
-                                isPlaying: playingIdentifier == result.identifier
-                            )
+                    let results = store.results
+                    VStack(spacing: 0) {
+                        ForEach(results.indices, id: \.self) { index in
+                            let result = results[index]
+                            Button {
+                                Task { await play(result) }
+                            } label: {
+                                InternetArchiveResultRow(
+                                    result: result,
+                                    isPlaying: playingIdentifier == result.identifier,
+                                    style: .grouped
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(playingIdentifier == result.identifier)
+
+                            if index < results.count - 1 {
+                                VoxglassListDivider()
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .disabled(playingIdentifier == result.identifier)
                     }
+                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
                 }
             }
             .padding(.horizontal, 18)

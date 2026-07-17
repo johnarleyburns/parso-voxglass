@@ -73,7 +73,8 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertEqual(categories.count, 21)
         XCTAssertEqual(ids.count, categories.count)
         XCTAssertEqual(LibriVoxBrowseGroup.all.map(\.title), ["Fiction", "Forms", "Ideas & Nonfiction"])
-        XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains("collection:librivoxaudio") })
+        XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains(LibriVoxCatalogScope.collectionClause) })
+        XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains("mediatype:audio") })
         XCTAssertTrue(categories.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
         XCTAssertTrue(LibriVoxBrowseCategory.scienceFiction.archiveQuery.contains("subject:\"Science Fiction\""))
         XCTAssertTrue(LibriVoxBrowseCategory.philosophyMind.archiveQuery.contains("AND NOT"))
@@ -99,7 +100,7 @@ final class InternetArchiveCatalogTests: XCTestCase {
     func testLibriVoxQueryBuilderScopesToLibriVoxWithBoostsAndPhraseClause() {
         let query = InternetArchiveClient.libriVoxQuery(for: "sherlock holmes")
 
-        XCTAssertTrue(query.hasPrefix("mediatype:audio"))
+        XCTAssertTrue(query.contains(LibriVoxCatalogScope.query))
         // Whole-phrase boost clause across title/subject/description.
         XCTAssertTrue(query.contains("title:\"sherlock holmes\"^8"))
         XCTAssertTrue(query.contains("subject:\"sherlock holmes\"^6"))
@@ -115,7 +116,7 @@ final class InternetArchiveCatalogTests: XCTestCase {
 
     func testLibriVoxQueryBuilderHandlesEmptyInput() {
         let query = InternetArchiveClient.libriVoxQuery(for: "   ")
-        XCTAssertEqual(query, "mediatype:audio AND collection:(librivoxaudio OR audio_bookspoetry)")
+        XCTAssertEqual(query, LibriVoxCatalogScope.query)
     }
 
     func testLibriVoxQueryBuilderAllowsSubjectAnchoredThematicSearch() {
@@ -136,11 +137,36 @@ final class InternetArchiveCatalogTests: XCTestCase {
         XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("greater-books"))
         XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("ancient-greece"))
 
-        XCTAssertTrue(CuratedQueries.greatBooks.contains("collection:librivoxaudio"))
+        XCTAssertTrue(CuratedQueries.greatBooks.contains(LibriVoxCatalogScope.query))
         XCTAssertTrue(CuratedQueries.greatBooks.contains("creator:\"Homer\""))
         XCTAssertTrue(CuratedQueries.greatBooks.contains("AND NOT creator:\"William John Locke\""))
         XCTAssertTrue(CuratedQueries.ancientGreece.contains("creator:\"Plato\""))
         XCTAssertTrue(CuratedQueries.greaterBooks.contains("creator:\"Jane Austen\""))
+    }
+
+    func testAdvancedSearchURLUsesCatalogSortParameters() throws {
+        let expectations: [(CatalogSort, [String])] = [
+            (.popularity, ["downloads desc"]),
+            (.title, ["titleSorter asc", "title asc"]),
+            (.author, ["creatorSorter asc", "creator asc"]),
+            (.recordedDate, ["date asc"])
+        ]
+
+        for (sort, expectedSorts) in expectations {
+            let url = try XCTUnwrap(
+                InternetArchiveClient.advancedSearchURL(
+                    query: LibriVoxCatalogScope.query,
+                    rows: 10,
+                    page: 1,
+                    sort: sort
+                )
+            )
+            let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+            let sorts = (components.queryItems ?? [])
+                .filter { $0.name == "sort[]" }
+                .compactMap(\.value)
+            XCTAssertEqual(sorts, expectedSorts, "Unexpected IA sort fields for \(sort)")
+        }
     }
 
     private func metadataFixture() throws -> InternetArchiveMetadata {

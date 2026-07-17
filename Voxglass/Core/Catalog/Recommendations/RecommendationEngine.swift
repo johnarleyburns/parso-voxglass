@@ -45,7 +45,7 @@ public final class RecommendationEngine {
             languageClause: languageClause
         )
         guard !queries.isEmpty else {
-            return []
+            return bundledFallback(selectedCollectionIDs: selectedCollectionIDs, excludeKeys: excludeKeys)
         }
 
         var candidates: [InternetArchiveSearchResult] = []
@@ -95,7 +95,7 @@ public final class RecommendationEngine {
         }
 
         guard !filtered.isEmpty else {
-            return []
+            return bundledFallback(selectedCollectionIDs: selectedCollectionIDs, excludeKeys: excludeKeys)
         }
 
         let scored = scoreCandidates(filtered, profile: profile)
@@ -141,6 +141,16 @@ public final class RecommendationEngine {
             }
         }
         return filtered
+    }
+
+    private func bundledFallback(
+        selectedCollectionIDs: Set<String>,
+        excludeKeys: Set<String>
+    ) -> [InternetArchiveSearchResult] {
+        filterExcluded(
+            HomeRecommendationStore.coldStartRecommendations(for: selectedCollectionIDs),
+            excludeKeys: excludeKeys
+        )
     }
 
     private func excluded(_ result: InternetArchiveSearchResult, excludeKeys: Set<String>) -> Bool {
@@ -251,7 +261,7 @@ public final class RecommendationEngine {
 
     private func buildFallbackQueries(profile: ProfileBucket,
                                        languageClause: String) -> [String] {
-        let scopeClause = " AND collection:librivoxaudio AND mediatype:audio" + (languageClause.isEmpty ? "" : " \(languageClause)")
+        let scopeClause = " AND \(LibriVoxCatalogScope.query)" + (languageClause.isEmpty ? "" : " \(languageClause)")
         var queries: [String] = []
 
         for creator in profile.topCreators.prefix(5) {

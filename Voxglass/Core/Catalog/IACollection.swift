@@ -268,11 +268,11 @@ public enum CuratedQueries {
     }
 
     public static let greatBooks: String =
-        "collection:librivoxaudio AND (\(creatorClause(greatBooksCreators))) \(exclusionClause())"
+        "\(LibriVoxCatalogScope.matching(creatorClause(greatBooksCreators))) \(exclusionClause())"
 
     public static let greaterBooks: String =
-        "collection:librivoxaudio AND (\(creatorClause(greaterBooksCreators))) \(exclusionClause())"
+        "\(LibriVoxCatalogScope.matching(creatorClause(greaterBooksCreators))) \(exclusionClause())"
 
     public static let ancientGreece: String =
-        "collection:librivoxaudio AND (\(creatorClause(ancientGreeceCreators))) \(exclusionClause())"
+        "\(LibriVoxCatalogScope.matching(creatorClause(ancientGreeceCreators))) \(exclusionClause())"
 }
