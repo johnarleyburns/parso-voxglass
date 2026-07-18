@@ -42,6 +42,14 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
+        UTImportedTypeDeclarations:
+          - UTTypeConformsTo:
+              - public.json
+            UTTypeDescription: Voxglass Backup (legacy)
+            UTTypeIdentifier: guru.parso.voxglass.backup
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - voxglassbackup
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
           UISceneConfigurations:
