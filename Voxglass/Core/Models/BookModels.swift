@@ -85,11 +85,18 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
         localURL ?? remoteURL
     }
 
+    /// The URL playback should use. A stale absolute local path (iOS moves the
+    /// app container on update) is rebased onto the current container first;
+    /// a local file that exists always wins, then the remote URL, then — for
+    /// local-only books with no remote fallback — the original local URL so
+    /// the caller surfaces a playback error instead of silently skipping.
     public func resolvedPlayableURL() -> URL? {
-        if let localURL, let remoteURL {
-            return FileManager.default.fileExists(atPath: localURL.path) ? localURL : remoteURL
+        guard let localURL else { return remoteURL }
+        let local = ContainerPathRebase.rebase(localURL)
+        if FileManager.default.fileExists(atPath: local.path) {
+            return local
         }
-        return localURL ?? remoteURL
+        return remoteURL ?? local
     }
 }
 

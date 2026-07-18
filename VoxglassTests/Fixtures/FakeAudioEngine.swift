@@ -43,10 +43,15 @@ final class FakeAudioEngine: AudioEngine {
     var onItemChanged: (@MainActor () -> Void)?
     var onSilenceChanged: (@MainActor (Bool) -> Void)?
 
+    /// When set, the next `load` records the call and then throws (lazy-load
+    /// failure path: the presented session must survive the error).
+    var loadError: Error?
+
     func configureAudioSession() { calls.append(.configureAudioSession) }
 
     func load(url: URL, startTime: TimeInterval) async throws {
         calls.append(.load(url: url, startTime: startTime))
+        if let loadError { throw loadError }
         currentTime = startTime
     }
 

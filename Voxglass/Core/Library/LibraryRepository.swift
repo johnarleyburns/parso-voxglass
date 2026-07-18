@@ -391,6 +391,51 @@ public final class LibraryRepository {
         }
     }
 
+    /// Rewrites stale absolute `file://` local URLs (chapters and download
+    /// records) whose file is missing but rebases onto the current sandbox
+    /// container — iOS moves the app data container on every update, which
+    /// breaks stored absolute paths (docs/MINIPLAYER_RESTORE_PLAN.md, Phase D).
+    /// Idempotent, and runs once per container move: the marker records the
+    /// container identity the last pass ran against. `roots` and the marker
+    /// are injectable for tests.
+    @discardableResult
+    public func rebaseStaleLocalURLsIfNeeded(
+        defaults: UserDefaults = .standard,
+        roots: [ContainerPathRebase.Root]? = nil,
+        containerMarker: String? = nil
+    ) async -> Int {
+        let markerKey = "voxglass.localURLContainerRebaseV1"
+        let marker = containerMarker
+            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path
+            ?? ""
+        guard defaults.string(forKey: markerKey) != marker else { return 0 }
+        do {
+            try await database.prepare()
+            var updated = 0
+            for table in ["chapters", "download_records"] {
+                let rows = try await database.query(
+                    "SELECT id, local_url FROM \(table) WHERE local_url IS NOT NULL"
+                )
+                for row in rows {
+                    guard let id = row.string("id"),
+                          let raw = row.string("local_url"),
+                          let url = URL(string: raw), url.isFileURL else { continue }
+                    let rebased = ContainerPathRebase.rebase(url, roots: roots)
+                    guard rebased.path != url.path else { continue }
+                    try await database.execute(
+                        "UPDATE \(table) SET local_url = ? WHERE id = ?",
+                        [.string(rebased.absoluteString), .string(id)]
+                    )
+                    updated += 1
+                }
+            }
+            defaults.set(marker, forKey: markerKey)
+            return updated
+        } catch {
+            return 0
+        }
+    }
+
     /// Pure decision: which taste terms a book contributes when it has no
     /// book_taste rows. Usable authors win; otherwise the title seeds a subject
     /// term so played books with placeholder authors stay visible to taste.

@@ -51,6 +51,15 @@ public final class PlaybackCoordinator: ObservableObject {
     private var lastPeriodicSave = Date.distantPast
     private var isHandlingInterruption = false
 
+    /// Whether the engine currently has the presented session's chapter loaded.
+    /// Launch restore is presentation-only (`restorePresentedSession` never
+    /// touches the engine); the first play/seek entry point loads the engine
+    /// lazily at `session.position` via `ensureEngineLoaded()`.
+    private var isEngineLoaded = false
+    /// De-duplicates concurrent lazy loads (e.g. a double-tapped play button):
+    /// every caller awaits the same in-flight load instead of issuing a second.
+    private var engineLoadTask: Task<Bool, Never>?
+
     private var silenceBoosted = false
     private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
 
@@ -104,34 +113,85 @@ public final class PlaybackCoordinator: ObservableObject {
         restoreEQ()
     }
 
-    public func restoreLatestSession(from books: [BookWithChapters]) async {
+    /// Launch restore as a *presentation* concern: rebuilds the paused session
+    /// from persisted metadata (reconciled snapshot/SQLite position, resolved
+    /// through `resolveResume`) without ever touching the audio engine or the
+    /// network. The miniplayer is up the moment the library is loaded; the
+    /// engine loads lazily on the first play press (`ensureEngineLoaded`).
+    /// Nothing restorable is not an error — no banner, no session.
+    public func restorePresentedSession(from books: [BookWithChapters]) async {
+        // A user-initiated play always wins over a launch restore: never clobber
+        // a session whose engine is already loaded or audibly playing.
+        guard !isEngineLoaded, currentSession?.isPlaying != true else { return }
+        let row = try? await positionStore.latestPosition()
+        // Re-check after the suspension point: a user play may have landed
+        // while the row was being read.
+        guard !isEngineLoaded, currentSession?.isPlaying != true else { return }
+        let latest = Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.latest())
+        guard let latest,
+              let book = books.first(where: { $0.book.id == latest.bookID }),
+              let target = Self.resolveResume(chapters: book.chapters, saved: latest)
+        else { return }
+        applyStoredRate(forBookID: book.book.id)
+        updateArtwork(for: book.book)
+        currentSession = PlaybackSession(
+            book: book.book,
+            chapters: book.chapters,
+            chapter: target.chapter,
+            position: target.startTime,
+            duration: (latest.chapterID == target.chapter.id ? latest.duration : nil)
+                ?? target.chapter.duration,
+            isPlaying: false
+        )
+        isEngineLoaded = false
+        updateNowPlayingInfo()
+    }
+
+    /// After the iCloud position pull lands, adopt a newer cloud position into
+    /// the presented (still-unplayed) session. Local activity always wins: once
+    /// the engine is loaded or playing, the pull is presentation-irrelevant this
+    /// launch. Also makes the miniplayer appear on a fresh install once the
+    /// pull delivers positions for a book already in the library.
+    public func refreshPresentedSessionAfterCloudPull(from books: [BookWithChapters]) async {
+        guard !isEngineLoaded, currentSession?.isPlaying != true else { return }
+        await restorePresentedSession(from: books)
+    }
+
+    /// Loads the engine for the presented session at `session.position` if it
+    /// is not already loaded. Concurrent callers share one in-flight load. On
+    /// failure the session is retained (the miniplayer must not vanish) and
+    /// `playbackError` is set so the user can retry.
+    @discardableResult
+    private func ensureEngineLoaded() async -> Bool {
+        if isEngineLoaded { return true }
+        if let engineLoadTask { return await engineLoadTask.value }
+        let task = Task { @MainActor [weak self] in
+            await self?.loadEngineForPresentedSession() ?? false
+        }
+        engineLoadTask = task
+        let loaded = await task.value
+        engineLoadTask = nil
+        return loaded
+    }
+
+    private func loadEngineForPresentedSession() async -> Bool {
+        guard let session = currentSession,
+              let url = session.chapter.resolvedPlayableURL() else {
+            playbackError = AudioEngineError.missingPlayableURL.localizedDescription
+            return false
+        }
         do {
-            let storedPosition = try await positionStore.latestPosition()
-            let snapshotPosition = snapshotStore.latest()
-            let latest = Self.preferredPosition(row: storedPosition, snapshot: snapshotPosition)
-
-            guard let latest else { return }
-            guard let book = books.first(where: { $0.book.id == latest.bookID }),
-                  let chapter = book.chapters.first(where: { $0.id == latest.chapterID }),
-                  let url = chapter.resolvedPlayableURL() else {
-                playbackError = "Couldn't restore your last listening session."
-                return
-            }
-
-            try await engine.load(url: url, startTime: latest.position)
-            applyStoredRate(forBookID: book.book.id)
-            updateArtwork(for: book.book)
-            currentSession = PlaybackSession(
-                book: book.book,
-                chapters: book.chapters,
-                chapter: chapter,
-                position: latest.position,
-                duration: latest.duration ?? chapter.duration ?? engine.duration,
-                isPlaying: false
-            )
-            updateNowPlayingInfo()
+            try await engine.load(url: url, startTime: session.position)
+            applyStoredRate(forBookID: session.book.id)
+            isEngineLoaded = true
+            let bwc = BookWithChapters(book: session.book, chapters: session.chapters)
+            prefetchNextChapter(from: bwc, currentChapter: session.chapter)
+            preloadImmediateNextChapter(in: session)
+            return true
         } catch {
             playbackError = error.localizedDescription
+            isEngineLoaded = false
+            return false
         }
     }
 
@@ -213,6 +273,7 @@ public final class PlaybackCoordinator: ObservableObject {
 
         do {
             try await engine.load(url: playableURL, startTime: startTime)
+            isEngineLoaded = true
             applyStoredRate(forBookID: book.book.id)
             updateArtwork(for: book.book)
             engine.play()
@@ -238,6 +299,7 @@ public final class PlaybackCoordinator: ObservableObject {
                 engine.preloadNext(url: nextURL)
             }
         } catch {
+            isEngineLoaded = false
             playbackError = error.localizedDescription
         }
     }
@@ -296,7 +358,10 @@ public final class PlaybackCoordinator: ObservableObject {
         guard currentSession != nil else { return }
         if engine.isPlaying {
             pause()
-        } else {
+            return
+        }
+        Task { @MainActor in
+            guard await ensureEngineLoaded() else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
             startProgressLoop()
@@ -314,7 +379,7 @@ public final class PlaybackCoordinator: ObservableObject {
         saveCurrentSnapshot()
         engine.pause()
         mutateSession {
-            if engine.isReady {
+            if isEngineLoaded, engine.isReady {
                 $0.position = engine.currentTime
             }
             $0.duration = engine.duration ?? $0.duration
@@ -327,7 +392,11 @@ public final class PlaybackCoordinator: ObservableObject {
     public func seek(to position: TimeInterval) async {
         guard currentSession != nil else { return }
         resetSilenceBoost()
-        await engine.seek(to: position)
+        if isEngineLoaded {
+            await engine.seek(to: position)
+        }
+        // While unloaded, mutating the session is enough: the lazy engine load
+        // starts from `session.position`, so the new offset is picked up there.
         mutateSession {
             $0.position = PlaybackMath.clampedPosition(position, duration: $0.duration)
             $0.duration = engine.duration ?? $0.duration
@@ -426,6 +495,7 @@ public final class PlaybackCoordinator: ObservableObject {
         progressTask?.cancel()
         progressTask = nil
         currentSession = nil
+        isEngineLoaded = false
         currentArtworkBookID = nil
         bridge.setArtwork(nil)
         snapshotStore.clear(bookID: bookID)
@@ -588,7 +658,7 @@ public final class PlaybackCoordinator: ObservableObject {
     /// Adds a bookmark at the current position and published the count.
     public func addBookmark(note: String? = nil) {
         guard let store = bookmarkStore, let session = currentSession else { return }
-        let pos = engine.currentTime
+        let pos = isEngineLoaded ? engine.currentTime : session.position
         let bookmark = Bookmark(
             bookID: session.book.id, chapterID: session.chapter.id,
             position: pos, note: note, createdAt: Date(), updatedAt: Date()
@@ -718,11 +788,12 @@ public final class PlaybackCoordinator: ObservableObject {
         do {
             resetSilenceBoost()
             try await engine.load(url: url, startTime: startTime)
+            isEngineLoaded = true
             applyStoredRate(forBookID: session.book.id)
             if shouldPlay {
                 engine.play()
             }
-            currentSession = PlaybackSession(
+            let newSession = PlaybackSession(
                 book: session.book,
                 chapters: session.chapters,
                 chapter: chapter,
@@ -730,7 +801,12 @@ public final class PlaybackCoordinator: ObservableObject {
                 duration: chapter.duration ?? engine.duration,
                 isPlaying: shouldPlay
             )
-            await persistCurrentPosition(reason: .chapterChange)
+            currentSession = newSession
+            // A durable row for the just-started chapter. `persistCurrentPosition`
+            // would drop this write behind the anti-zero guard (the engine just
+            // loaded and reports ~0), leaving the previous chapter as the newest
+            // row — a force quit here would restore the wrong chapter (RC4).
+            await persistChapterStart(newSession)
             updateNowPlayingInfo()
 
             let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
@@ -739,8 +815,27 @@ public final class PlaybackCoordinator: ObservableObject {
                 engine.preloadNext(url: nextURL)
             }
         } catch {
+            isEngineLoaded = false
             playbackError = error.localizedDescription
         }
+    }
+
+    /// Durably records the presented chapter at its start offset (0 for a
+    /// chapter boundary, the jump target for bookmarks), bypassing the anti-zero
+    /// guard: a genuine 0 for a fresh chapter start is exactly what makes this
+    /// chapter the `latestPosition()` winner on the next launch. Never emits a
+    /// taste signal — starting a chapter says nothing about taste yet.
+    private func persistChapterStart(_ session: PlaybackSession) async {
+        let start = PlaybackPosition(
+            bookID: session.book.id,
+            chapterID: session.chapter.id,
+            position: max(0, session.position),
+            duration: session.duration,
+            updatedAt: Date(),
+            isFinished: false
+        )
+        snapshotStore.save(start)
+        try? await positionStore.save(start)
     }
 
     private func handleItemChanged() async {
@@ -757,7 +852,7 @@ public final class PlaybackCoordinator: ObservableObject {
         await persistCurrentPosition(reason: .chapterChange, finished: true)
 
         // Update session to the new chapter
-        currentSession = PlaybackSession(
+        let newSession = PlaybackSession(
             book: session.book,
             chapters: session.chapters,
             chapter: nextChapter,
@@ -765,6 +860,12 @@ public final class PlaybackCoordinator: ObservableObject {
             duration: nextChapter.duration ?? engine.duration,
             isPlaying: engine.isPlaying
         )
+        currentSession = newSession
+        // Durable row for the new chapter right away: the anti-zero guard drops
+        // periodic/snapshot writes for the first seconds after an auto-advance,
+        // so without this a force quit at the boundary restores the *finished*
+        // previous chapter (RC4).
+        await persistChapterStart(newSession)
         // Re-assert the rate: `defaultRate` carries across the gapless advance, but
         // re-asserting keeps `playbackRate` and Now Playing correct (idempotent).
         applyStoredRate(forBookID: session.book.id)
@@ -835,6 +936,10 @@ public final class PlaybackCoordinator: ObservableObject {
         progressTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
+                // A cancelled sleep throws into `try?` — without this check the
+                // dying task would fire one phantom tick, clobbering the fresh
+                // chapter-start row at every gapless advance (RC4).
+                guard !Task.isCancelled else { return }
                 await self?.tickProgress()
             }
         }
@@ -889,12 +994,16 @@ public final class PlaybackCoordinator: ObservableObject {
     private func persistCurrentPosition(reason: PositionPersistReason, finished: Bool = false) async {
         guard let session = currentSession else { return }
 
+        // While the engine is unloaded (presented-only session), the session is
+        // the source of truth. Only an explicit seek writes in that state — the
+        // other reasons cannot produce a meaningful position while unloaded.
+        let position = isEngineLoaded ? engine.currentTime : session.position
+
         // Anti-zero guard (Phase 1, problem 3): never write a bogus position over a
         // good row in the window after load() and before the item is ready. A
         // finish write is exempt (it deliberately records the chapter end), as is
         // an explicit seek (the user chose that position, including 0).
-        let position = engine.currentTime
-        if !finished, reason != .seek, (!engine.isReady || position <= 0) {
+        if !finished, reason != .seek, (!isEngineLoaded || !engine.isReady || position <= 0) {
             return
         }
 
@@ -929,8 +1038,8 @@ public final class PlaybackCoordinator: ObservableObject {
     private func saveCurrentSnapshot() {
         guard let session = currentSession else { return }
         // Same anti-zero guard: the 1 Hz snapshot must not clobber a good slot with
-        // a not-ready 0.
-        guard engine.isReady, engine.currentTime > 0 else { return }
+        // a not-ready 0 — and an unloaded engine has nothing meaningful to say.
+        guard isEngineLoaded, engine.isReady, engine.currentTime > 0 else { return }
         snapshotStore.save(PlaybackPosition(
             bookID: session.book.id,
             chapterID: session.chapter.id,
@@ -975,13 +1084,19 @@ public final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    /// Resumes playback (remote "play"): starts the engine, marks the session
-    /// playing, restarts the progress loop, and refreshes Now Playing.
+    /// Resumes playback (remote/lock-screen/CarPlay "play"): lazily loads the
+    /// engine when the session is presented-only (a CarPlay cold launch must
+    /// work headless), starts the engine, marks the session playing, restarts
+    /// the progress loop, and refreshes Now Playing.
     private func resume() {
-        engine.play()
-        mutateSession { $0.isPlaying = true }
-        startProgressLoop()
-        updateNowPlayingInfo()
+        guard currentSession != nil else { return }
+        Task { @MainActor in
+            guard await ensureEngineLoaded() else { return }
+            engine.play()
+            mutateSession { $0.isPlaying = true }
+            startProgressLoop()
+            updateNowPlayingInfo()
+        }
     }
 
     // MARK: - App lifecycle hooks (called by the platform bridge)
@@ -1010,7 +1125,7 @@ public final class PlaybackCoordinator: ObservableObject {
         saveCurrentSnapshot()
         engine.pause()
         mutateSession {
-            if engine.isReady {
+            if isEngineLoaded, engine.isReady {
                 $0.position = engine.currentTime
             }
             $0.isPlaying = false
@@ -1023,7 +1138,7 @@ public final class PlaybackCoordinator: ObservableObject {
 
     /// An audio interruption ended. Resume only if we were the one interrupted.
     public func handleAudioInterruptionEnded() {
-        guard isHandlingInterruption else { return }
+        guard isHandlingInterruption, isEngineLoaded else { return }
         isHandlingInterruption = false
         engine.play()
         mutateSession { $0.isPlaying = true }
@@ -1043,12 +1158,14 @@ public final class PlaybackCoordinator: ObservableObject {
             bridge.updateNowPlaying(nil)
             return
         }
+        // While unloaded, the engine reports 0/paused; the session is the truth,
+        // so the lock screen matches the miniplayer.
         bridge.updateNowPlaying(Self.nowPlayingInfo(
             session: session,
-            currentTime: engine.currentTime,
+            currentTime: isEngineLoaded ? engine.currentTime : session.position,
             duration: engine.duration ?? session.duration,
             rate: engine.rate,
-            isPlaying: engine.isPlaying
+            isPlaying: isEngineLoaded ? engine.isPlaying : false
         ))
     }
 

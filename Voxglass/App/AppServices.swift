@@ -100,10 +100,25 @@ final class AppServices: ObservableObject {
     private var didBootstrap = false
 
     func bootstrap() async {
-        await StoreManager.shared.refreshEntitlement()
+        // Presentation first: the miniplayer must show the last session as soon
+        // as the tab UI renders, with no network. Everything the restore needs
+        // (cache hygiene, library rows, snapshot reconcile) is local and cheap;
+        // entitlement refresh, backfills, recommendations, and cloud sync all
+        // run after the session is presented.
         await CacheManager.shared.evictIfNeeded()
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
+        // Rebase any local_url rows left stale by an app update (iOS moves the
+        // data container), then re-read so the in-memory library carries the
+        // rebased URLs.
+        let rebased = await libraryRepository.rebaseStaleLocalURLsIfNeeded()
+        if rebased > 0 {
+            await libraryStore.refresh()
+        }
+        await playbackCoordinator.reconcileSnapshots()
+        await playbackCoordinator.restorePresentedSession(from: libraryStore.books)
+
+        await StoreManager.shared.refreshEntitlement()
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()
@@ -118,13 +133,12 @@ final class AppServices: ObservableObject {
         )
         await homeRecommendationStore.load(selectedCollectionIDs: selectedIDs, selectedLanguages: selectedLanguages)
         await offlineDownloadManager.refreshState(for: libraryStore.books)
-        // Positions first: the KVS read is local and cheap. Doing this before the
-        // restore (instead of inside sync() after it) means a cloud position is
-        // applied this launch, not one launch late. Then replay the UserDefaults
-        // snapshots into SQLite before restoring from it.
+        // The KVS read is local and cheap; pulling before sync() means a cloud
+        // position is applied this launch, not one launch late. If the user
+        // hasn't pressed play yet, adopt a newer cloud position into the
+        // presented session.
         await cloudSync.pullPlaybackPositions()
-        await playbackCoordinator.reconcileSnapshots()
-        await playbackCoordinator.restoreLatestSession(from: libraryStore.books)
+        await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
         await cloudSync.sync()
         await folderWatchService.rescanAll()
     }
