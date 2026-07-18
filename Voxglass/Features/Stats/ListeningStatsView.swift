@@ -2,6 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct ListeningStatsView: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var stats: ListeningStatsStore
     @Environment(\.dismiss) private var dismiss
 
@@ -31,7 +32,7 @@ struct ListeningStatsView: View {
         .navigationTitle("Listening Stats")
         .navigationBarTitleDisplayMode(.inline)
         .paywallSheet(isPresented: $showPaywall)
-        .task {
+        .task(id: storeManager.isPro) {
             guard ProFeature.isEnabled(.listeningStats), !loaded else { return }
             await load()
         }

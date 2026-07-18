@@ -2,6 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct LibraryView: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @Binding var showingNowPlaying: Bool
@@ -116,7 +117,7 @@ struct LibraryView: View {
 
     @ViewBuilder
     private var offlinePinMeter: some View {
-        if !StoreManager.shared.isPro {
+        if !storeManager.isPro {
             let used = OfflineDownloadManager.pinCount(states: offlineManager.state)
             HStack(spacing: 8) {
                 Image(systemName: used >= 2 ? "tray.full.fill" : "tray.fill")

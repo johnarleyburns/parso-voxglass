@@ -99,6 +99,10 @@ struct ProPaywallView: View {
         .task {
             await storeManager.loadProducts()
         }
+        .onChange(of: storeManager.isPro) { _, isPro in
+            guard isPro else { return }
+            Task { try? await Task.sleep(for: .seconds(1.2)); dismiss() }
+        }
     }
 
     private var heroSection: some View {
@@ -164,7 +168,35 @@ struct ProPaywallView: View {
 
     private var purchaseSection: some View {
         VStack(spacing: 14) {
-            if let product = storeManager.products.first {
+            if storeManager.isPro {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .scaledFont(size: 44)
+                        .foregroundStyle(Palette.brass)
+
+                    Text("Pro Unlocked")
+                        .scaledFont(size: 20, weight: .bold)
+                        .foregroundStyle(Palette.ink)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Continue")
+                            .scaledFont(size: 15.5, weight: .bold)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .foregroundStyle(Color(hex: 0x221503))
+                            .background {
+                                Capsule()
+                                    .fill(LinearGradient(
+                                        colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                                        startPoint: .top, endPoint: .bottom))
+                            }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .accessibilityIdentifier("paywall.success")
+            } else if let product = storeManager.products.first {
                 Button {
                     Task {
                         await storeManager.purchase(product)
@@ -188,16 +220,18 @@ struct ProPaywallView: View {
                     .padding(.vertical, 14)
             }
 
-            Button {
-                Task {
-                    await storeManager.restorePurchases()
+            if !storeManager.isPro {
+                Button {
+                    Task {
+                        await storeManager.restorePurchases()
+                    }
+                } label: {
+                    Text(storeManager.isRestoring ? "Restoring…" : "Restore Purchases")
+                        .scaledFont(size: 14)
+                        .foregroundStyle(Palette.ink2)
                 }
-            } label: {
-                Text(storeManager.isRestoring ? "Restoring…" : "Restore Purchases")
-                    .scaledFont(size: 14)
-                    .foregroundStyle(Palette.ink2)
+                .disabled(storeManager.isRestoring)
             }
-            .disabled(storeManager.isRestoring)
 
             if let error = storeManager.purchaseError {
                 Text(error)

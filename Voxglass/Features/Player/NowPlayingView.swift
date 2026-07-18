@@ -2,6 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct NowPlayingView: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var playback: PlaybackCoordinator
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.dismiss) private var dismiss

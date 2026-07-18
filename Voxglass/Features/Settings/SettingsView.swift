@@ -270,6 +270,7 @@ private struct LanguagesCard: View {
 }
 
 private struct CacheSettingsCard: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @State private var cacheUsed: Int64 = 0
     @State private var cacheLimit: Int64 = StreamCacheStore.defaultLimit
     @State private var cachedCount: Int = 0
@@ -650,6 +651,7 @@ struct AboutView: View {
 }
 
 private struct SyncSettingsCard: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
     @State private var showPaywall = false
 
@@ -737,6 +739,7 @@ private struct SyncSettingsCard: View {
 }
 
 private struct EQSettingsRow: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var playback: PlaybackCoordinator
     @State private var showEQ = false
     @State private var showPaywall = false
@@ -775,6 +778,7 @@ private struct EQSettingsRow: View {
 }
 
 private struct PrefetchDepthRow: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @AppStorage(AppPreferencesStore.Keys.prefetchDepth) private var depth = 1
     @AppStorage(AppPreferencesStore.Keys.prefetchWifiOnly) private var wifiOnly = true
     @State private var showPaywall = false
@@ -1013,6 +1017,7 @@ private struct SleepTimerDefaultRow: View {
 }
 
 private struct ListeningStatsRow: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var stats: ListeningStatsStore
     @State private var showStats = false
     @State private var showPaywall = false
@@ -1047,6 +1052,7 @@ private struct ListeningStatsRow: View {
 }
 
 private struct FolderWatchRow: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var folderWatch: FolderWatchService
     @State private var showPaywall = false
 

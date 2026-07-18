@@ -480,6 +480,8 @@ private struct ProLockedModifier: ViewModifier {
     let identifier: String
     let onTapLocked: () -> Void
 
+    @ObservedObject private var storeManager = StoreManager.shared
+
     func body(content: Content) -> some View {
         if ProFeature.isEnabled(feature) {
             content

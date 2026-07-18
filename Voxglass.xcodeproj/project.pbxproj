@@ -28,6 +28,7 @@
 		6B402D9D8F9CCEE8C4E7B22F /* Pro.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 9D332E6309846362FD6D4EDA /* Pro.storekit */; };
 		6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F8ACEE07BAD813F34C6DBE /* EQView.swift */; };
 		6D1F2947C9F08205C5A4C991 /* ArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75882B51F22C8D3A3EEAAD /* ArtworkService.swift */; };
+		710C49270D1BBE8B1EC41923 /* VoxglassProPurchaseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF590053152470ACFAC80E9 /* VoxglassProPurchaseUITests.swift */; };
 		713811C821F808FF77A38F59 /* VoxglassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */; };
 		754A7A41F77C785EFA367369 /* FolderWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE9C1DD357179B18F33DD7C /* FolderWatchView.swift */; };
 		79935A2261A23D4B387A6083 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336F165C2E66C5C32ABDD2CA /* CarPlaySceneDelegate.swift */; };
@@ -126,6 +127,7 @@
 		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassTheme.swift; sourceTree = "<group>"; };
+		EEF590053152470ACFAC80E9 /* VoxglassProPurchaseUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassProPurchaseUITests.swift; sourceTree = "<group>"; };
 		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F8133D9EE165903ECF80F723 /* CarPlayNowPlayingConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNowPlayingConfigurator.swift; sourceTree = "<group>"; };
@@ -338,6 +340,7 @@
 		F1BE95C159C6821B95663D5C /* VoxglassUITests */ = {
 			isa = PBXGroup;
 			children = (
+				EEF590053152470ACFAC80E9 /* VoxglassProPurchaseUITests.swift */,
 				CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */,
 			);
 			path = VoxglassUITests;
@@ -492,6 +495,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				710C49270D1BBE8B1EC41923 /* VoxglassProPurchaseUITests.swift in Sources */,
 				9A64C2D2E69FD9609615B505 /* VoxglassUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

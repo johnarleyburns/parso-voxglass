@@ -2,6 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct EQView: View {
+    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Environment(\.dismiss) private var dismiss
 

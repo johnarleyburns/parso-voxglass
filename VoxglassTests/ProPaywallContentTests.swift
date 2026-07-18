@@ -51,6 +51,32 @@ final class ProPaywallContentTests: XCTestCase {
         )
     }
 
+    func testProPaywallHasOnChangeObservation() throws {
+        let paywall = try String(
+            contentsOf: sourcesRoot()
+                .appendingPathComponent("Features/Settings/ProPaywallView.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(
+            paywall.contains(".onChange(of: storeManager.isPro"),
+            "ProPaywallView must observe storeManager.isPro for auto-dismiss on purchase success"
+        )
+    }
+
+    func testProPaywallHasSuccessAccessibilityMarker() throws {
+        let paywall = try String(
+            contentsOf: sourcesRoot()
+                .appendingPathComponent("Features/Settings/ProPaywallView.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(
+            paywall.contains("paywall.success"),
+            "ProPaywallView must have a paywall.success accessibility identifier for post-purchase success state"
+        )
+    }
+
     // MARK: - Source parsing
 
     private func advertisedFeatureNames() throws -> [String] {

@@ -40,8 +40,8 @@ public final class StoreManager: ObservableObject {
             switch result {
             case .success(let verification):
                 if let entitlement = await verifyAndCache(verification) {
-                    isPro = true
                     EntitlementCache.shared.cacheEntitlement(true, productID: entitlement.productID)
+                    isPro = true
                 }
             case .userCancelled:
                 break
@@ -105,8 +105,8 @@ public final class StoreManager: ObservableObject {
     private func observeTransactionUpdates() async {
         for await verification in Transaction.updates {
             if let entitlement = await verifyAndCache(verification) {
-                isPro = true
                 EntitlementCache.shared.cacheEntitlement(true, productID: entitlement.productID)
+                isPro = true
             } else {
                 await refreshEntitlement()
             }
