@@ -447,11 +447,22 @@ public extension KeyedDecodingContainer {
 
     func decodeStringListIfPresent(forKey key: Key) throws -> [String] {
         if let values = try? decodeIfPresent([String].self, forKey: key) {
-            return values.map(Self.cleanListValue).filter { !$0.isEmpty }
+            return values.flatMap { element in
+                let cleaned = Self.cleanListValue(element)
+                guard !cleaned.isEmpty else { return [String]() }
+                if cleaned.contains(";") {
+                    return RecommendationPipeline.splitSubjectTokens(cleaned)
+                }
+                return [cleaned]
+            }
         }
         if let value = try? decodeIfPresent(String.self, forKey: key) {
             let cleaned = Self.cleanListValue(value)
-            return cleaned.isEmpty ? [] : [cleaned]
+            guard !cleaned.isEmpty else { return [] }
+            if cleaned.contains(";") {
+                return RecommendationPipeline.splitSubjectTokens(cleaned)
+            }
+            return [cleaned]
         }
         if let value = try? decodeIfPresent(Int.self, forKey: key) {
             return [String(value)]

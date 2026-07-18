@@ -24,8 +24,11 @@ public enum RecommendationConstants {
     /// listen always outranks onboarding picks in the creator ranking.
     public static let onboardingAuthorSeedWeight: Double = 0.4
 
+    public static let recoSurfacedTTL: Double = 14 * 86400
+
     public static let subjectStopList: Set<String> = [
         "music", "audio", "spoken word", "librivox", "podcast",
-        "sound", "recording", "mp3", "ogg", "stream", "broadcast"
+        "sound", "recording", "mp3", "ogg", "stream", "broadcast",
+        "audiobook", "audiobooks"
     ]
 }

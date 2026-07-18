@@ -69,7 +69,9 @@ public actor TasteProfileStore {
 
     public func seedAuthor(_ author: String, increment: Double = 1.0) async {
         let trimmed = author.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, trimmed != "Unknown", trimmed != "Unknown author", trimmed != "Various" else {
+        guard !trimmed.isEmpty,
+              trimmed != "Unknown", trimmed != "Unknown author", trimmed != "Various",
+              trimmed.lowercased() != "anonymous" else {
             return
         }
         await upsertTerm(axis: "author", term: trimmed, increment: increment)
@@ -212,7 +214,12 @@ public actor TasteProfileStore {
 
     public func pushSurfaced(_ identifiers: [String]) async {
         let now = Date().timeIntervalSince1970
+        let cutoff = now - RecommendationConstants.recoSurfacedTTL
         do {
+            try? await database.execute(
+                "DELETE FROM reco_surfaced WHERE ts < ?",
+                [.double(cutoff)]
+            )
             for id in identifiers.prefix(50) {
                 try? await database.execute("""
                 INSERT OR REPLACE INTO reco_surfaced (identifier, ts)
@@ -228,7 +235,12 @@ public actor TasteProfileStore {
     }
 
     public func fetchSurfacedIdentifiers() async -> Set<String> {
+        let cutoff = Date().timeIntervalSince1970 - RecommendationConstants.recoSurfacedTTL
         do {
+            try? await database.execute(
+                "DELETE FROM reco_surfaced WHERE ts < ?",
+                [.double(cutoff)]
+            )
             let rows = try await database.query(
                 "SELECT identifier FROM reco_surfaced ORDER BY ts DESC LIMIT ?",
                 [.int(Int64(RecommendationConstants.recoSurfacedCap))]

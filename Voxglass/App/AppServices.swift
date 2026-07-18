@@ -107,6 +107,7 @@ final class AppServices: ObservableObject {
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()
+        await libraryRepository.resplitBookTasteSubjectsIfNeeded()
         await rebuildTasteHistory()
         homeRecommendationStore.markEngineReady()
         let selectedIDs = AppPreferencesStore.decodeCollectionIDs(

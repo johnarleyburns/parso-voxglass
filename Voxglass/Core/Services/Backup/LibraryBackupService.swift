@@ -79,11 +79,11 @@ public final class LibraryBackupService: ObservableObject {
 
         do {
             let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(payload)
 
             let tempDir = FileManager.default.temporaryDirectory
-            let fileName = "Voxglass Backup \(DateFormatter.voxglassBackup.string(from: payload.exportDate)).voxglassbackup"
+            let fileName = "Voxglass Backup \(DateFormatter.voxglassBackup.string(from: payload.exportDate)).json"
             let url = tempDir.appendingPathComponent(fileName)
             try data.write(to: url)
             return url

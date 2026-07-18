@@ -532,6 +532,95 @@ final class RecommendationEngineTests: XCTestCase {
         XCTAssertNotEqual(WorkKey.normalized(author: "Mary Shelley", title: "The Last Man"), base)
     }
 
+    @MainActor
+    func testFullySurfacedPoolStillReturnsPersonalized() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-surfaced-grace-degrade")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+        await libraryStore.refresh()
+
+        let personalized = candidate(
+            identifier: "the_birds",
+            title: "The Birds",
+            creator: "Aristophanes",
+            subjects: ["Drama"]
+        )
+        let another = candidate(
+            identifier: "the_frogs",
+            title: "The Frogs",
+            creator: "Aristophanes",
+            subjects: ["Greek Comedy"]
+        )
+
+        // Pre-populate reco_surfaced with all candidate keys so they would
+        // normally be excluded by the exclude set.
+        let allKeys = [personalized, another].flatMap {
+            Array(RecommendationPipeline.identityKeys(for: $0))
+        }
+        for key in allKeys {
+            try await database.execute(
+                "INSERT OR REPLACE INTO reco_surfaced (identifier, ts) VALUES (?, ?)",
+                [.string(key), .double(Date().timeIntervalSince1970)]
+            )
+        }
+
+        let client = FakeArchiveClient(responses: [
+            [personalized, another],
+            []
+        ])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        let bundledPopularIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+
+        XCTAssertFalse(recs.isEmpty, "even with fully-surfaced ring, should return personalized re-rank, not empty")
+        XCTAssertTrue(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs),
+                      "should not fall back to bundled popular seeds when surfaced ring burns out")
+    }
+
+    @MainActor
+    func testFullySurfacedPoolExcludesLibraryOwnedBooks() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "reco-surfaced-library-exclude")
+        let repository = LibraryRepository(database: database)
+        let libraryStore = LibraryStore(repository: repository)
+        let profileStore = TasteProfileStore(database: database)
+        await profileStore.upsertTerm(axis: "author", term: "Aristophanes", increment: 5)
+
+        // Seed a book already in the library
+        let listened = try await seedListenedBook(
+            in: database,
+            title: "The Clouds",
+            author: "Aristophanes",
+            iaIdentifier: "clouds_librivox"
+        )
+        await libraryStore.refresh()
+
+        let libraryOwned = candidate(
+            identifier: "clouds_librivox",
+            title: "The Clouds",
+            creator: "Aristophanes",
+            subjects: ["Drama"]
+        )
+        let fresh = candidate(
+            identifier: "the_birds_fresh",
+            title: "The Birds",
+            creator: "Aristophanes",
+            subjects: ["Drama"]
+        )
+
+        let client = FakeArchiveClient(responses: [
+            [libraryOwned, fresh],
+            []
+        ])
+        let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
+
+        let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
+        XCTAssertFalse(recs.contains { $0.identifier == libraryOwned.identifier },
+                       "library-owned books must remain excluded even when surfaced ring ignores them")
+    }
+
     // MARK: - Helpers
 
     private func candidate(

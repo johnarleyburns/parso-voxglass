@@ -294,6 +294,51 @@ final class TasteProfileStoreTests: XCTestCase {
         )
     }
 
+    // MARK: - Surfaced ring TTL
+
+    func testSurfacedRingExpiresByTTL() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-surfaced-ttl")
+        let store = TasteProfileStore(database: database)
+        let now = Date().timeIntervalSince1970
+        let ttl = RecommendationConstants.recoSurfacedTTL
+
+        try await database.execute(
+            "INSERT INTO reco_surfaced (identifier, ts) VALUES (?, ?)",
+            [.string("old-item"), .double(now - ttl - 86400)]
+        )
+        try await database.execute(
+            "INSERT INTO reco_surfaced (identifier, ts) VALUES (?, ?)",
+            [.string("fresh-item"), .double(now)]
+        )
+
+        let surfaced = await store.fetchSurfacedIdentifiers()
+        XCTAssertFalse(surfaced.contains("old-item"), "expired surfaced item must be purged by TTL")
+        XCTAssertTrue(surfaced.contains("fresh-item"), "fresh surfaced item must survive TTL check")
+    }
+
+    // MARK: - Anonymous author filtering
+
+    func testNormalizedTermRejectsAnonymousAuthor() {
+        XCTAssertNotNil(RecommendationPipeline.normalizedTerm(axis: "author", term: "Jane Austen"))
+        XCTAssertNil(RecommendationPipeline.normalizedTerm(axis: "author", term: "anonymous"))
+        XCTAssertNil(RecommendationPipeline.normalizedTerm(axis: "author", term: "Anonymous"))
+    }
+
+    func testSeedAuthorRejectsAnonymous() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "taste-seed-anonymous")
+        let store = TasteProfileStore(database: database)
+
+        await store.seedAuthor("Jane Austen")
+        await store.seedAuthor("anonymous")
+        await store.seedAuthor("Anonymous")
+
+        let rows = try await database.query(
+            "SELECT term FROM taste_profile_terms WHERE axis = 'author'", []
+        )
+        let terms = rows.compactMap { $0.string("term") }
+        XCTAssertEqual(terms, ["jane austen"])
+    }
+
     @discardableResult
     private func seedHistoryBook(
         in database: AppDatabase,

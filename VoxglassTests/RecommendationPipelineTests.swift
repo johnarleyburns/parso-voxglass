@@ -271,6 +271,106 @@ final class RecommendationPipelineTests: XCTestCase {
         XCTAssertEqual(first.map(\.identifier), second.map(\.identifier))
     }
 
+    // MARK: - Subject semicolon splitting
+
+    func testTermWeightsSplitsSemicolonSubjects() {
+        let entry = ListeningHistoryEntry(
+            authors: [],
+            subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"],
+            listenedSeconds: 7200
+        )
+        let weights = RecommendationPipeline.termWeights(history: [entry])
+        let subjectWeights = weights.filter { $0.axis == "subject" }
+        let subjectTerms = Set(subjectWeights.map(\.term))
+        XCTAssertTrue(subjectTerms.contains("greek drama"))
+        XCTAssertTrue(subjectTerms.contains("aristophanes"))
+        XCTAssertTrue(subjectTerms.contains("greek comedy"))
+        XCTAssertFalse(subjectTerms.contains { $0.contains(";") })
+        XCTAssertFalse(subjectTerms.contains("librivox"))
+        XCTAssertFalse(subjectTerms.contains("audiobooks"))
+    }
+
+    func testExtractTokensSplitsSemicolonSubjects() {
+        let result = candidate(
+            "test",
+            "Test",
+            "Author One",
+            subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"]
+        )
+        let tokens = Set(RecommendationPipeline.extractTokens(result))
+        XCTAssertTrue(tokens.contains("greek drama"))
+        XCTAssertTrue(tokens.contains("aristophanes"))
+        XCTAssertTrue(tokens.contains("greek comedy"))
+        XCTAssertFalse(tokens.contains("librivox"), "stop-listed generic terms are dropped")
+        XCTAssertFalse(tokens.contains("audiobooks"), "stop-listed generic terms are dropped")
+        XCTAssertFalse(tokens.contains(";"))
+    }
+
+    func testScoreCandidatesMatchesSplitSubjects() {
+        let entry = ListeningHistoryEntry(
+            authors: [],
+            subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+
+        let cand = candidate(
+            "match",
+            "The Frogs",
+            "Aristophanes",
+            subjects: ["greek drama", "comedy"]
+        )
+        let scored = RecommendationPipeline.scoreCandidates([cand], profile: profile)
+        XCTAssertEqual(scored.count, 1)
+        XCTAssertGreaterThan(scored[0].score, 0, "split subject profile should match individual subject tokens from search")
+    }
+
+    // MARK: - Query builder
+
+    func testGeneratedSubjectQueriesUseSingleTerms() {
+        let entry = ListeningHistoryEntry(
+            authors: [],
+            subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+        let queries = RecommendationQueryBuilder.generateQueries(
+            profile: profile,
+            dateSeed: "2026-01-01",
+            languageClause: ""
+        )
+        for query in queries {
+            if query.iaQuery.contains("subject:") {
+                let subjectClauses = query.iaQuery.components(separatedBy: "subject:\"")
+                for clause in subjectClauses.dropFirst() {
+                    let endQuote = clause.components(separatedBy: "\"")
+                    if let term = endQuote.first {
+                        XCTAssertFalse(term.contains(";"), "generated query must not contain semicolon inside subject clause: '\(term)' in \(query.iaQuery)")
+                    }
+                }
+            }
+        }
+    }
+
+    func testExploitRowsFloor() {
+        let entries: [ListeningHistoryEntry] = (0..<10).map { i in
+            ListeningHistoryEntry(
+                authors: ["Author\(i)"],
+                subjects: [],
+                listenedSeconds: 7200
+            )
+        }
+        let profile = RecommendationPipeline.buildProfile(history: entries)
+        let queries = RecommendationQueryBuilder.generateQueries(
+            profile: profile,
+            dateSeed: "2026-01-01",
+            languageClause: ""
+        )
+        for query in queries where query.noveltyClass == .exploit {
+            XCTAssertGreaterThanOrEqual(query.requestedCount, 4, "exploit query requestedCount must be at least 4")
+        }
+    }
+
     // MARK: - Helpers
 
     private func candidate(

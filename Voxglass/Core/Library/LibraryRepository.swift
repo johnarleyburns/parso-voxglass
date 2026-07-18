@@ -353,6 +353,44 @@ public final class LibraryRepository {
         }
     }
 
+    public func resplitBookTasteSubjectsIfNeeded() async -> Int {
+        let flagKey = "voxglass.bookTasteSubjectResplitV1"
+        guard !UserDefaults.standard.bool(forKey: flagKey) else { return 0 }
+        do {
+            try await database.prepare()
+            let rows = try await database.query(
+                "SELECT book_id, term FROM book_taste WHERE axis = 'subject' AND term LIKE '%;%'"
+            )
+            guard !rows.isEmpty else {
+                UserDefaults.standard.set(true, forKey: flagKey)
+                return 0
+            }
+            var insertStatements: [(sql: String, bindings: [DatabaseValue])] = []
+            for row in rows {
+                guard let bookID = row.string("book_id"),
+                      let term = row.string("term") else { continue }
+                insertStatements.append((
+                    "DELETE FROM book_taste WHERE book_id = ? AND axis = 'subject' AND term = ?",
+                    [.string(bookID), .string(term)]
+                ))
+                let tokens = RecommendationPipeline.splitSubjectTokens(term)
+                for token in tokens {
+                    guard !token.isEmpty else { continue }
+                    insertStatements.append((
+                        "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
+                        [.string(bookID), .string(token)]
+                    ))
+                }
+            }
+            try await database.executeBatch(insertStatements)
+            try? await database.execute("DELETE FROM reco_surfaced")
+            UserDefaults.standard.set(true, forKey: flagKey)
+            return rows.count
+        } catch {
+            return 0
+        }
+    }
+
     /// Pure decision: which taste terms a book contributes when it has no
     /// book_taste rows. Usable authors win; otherwise the title seeds a subject
     /// term so played books with placeholder authors stay visible to taste.
@@ -483,10 +521,16 @@ public final class LibraryRepository {
         for subject in metadata.metadata.subjects {
             let trimmed = subject.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
-            try? await database.execute(
-                "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
-                [.string(bookIDString), .string(trimmed.lowercased())]
-            )
+            let tokens = trimmed.contains(";")
+                ? RecommendationPipeline.splitSubjectTokens(trimmed)
+                : [trimmed.lowercased()]
+            for token in tokens {
+                guard !token.isEmpty else { continue }
+                try? await database.execute(
+                    "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
+                    [.string(bookIDString), .string(token)]
+                )
+            }
         }
         if let language = metadata.metadata.language?.trimmingCharacters(in: .whitespaces), !language.isEmpty {
             try? await database.execute(

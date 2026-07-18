@@ -1175,7 +1175,7 @@ private struct BackupImportSheet: View {
                     .scaledFont(size: 20, weight: .heavy)
                     .foregroundStyle(Palette.ink)
 
-                Text("Select a .voxglassbackup file exported from another device. Books that already exist in your library will be skipped.")
+                Text("Select a Voxglass backup file (.json, or legacy .voxglassbackup) from another device. Books that already exist in your library will be skipped.")
                     .scaledFont(size: 14)
                     .foregroundStyle(Palette.ink2)
                     .multilineTextAlignment(.center)

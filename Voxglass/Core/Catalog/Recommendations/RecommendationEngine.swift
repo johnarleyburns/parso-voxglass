@@ -97,6 +97,7 @@ public final class RecommendationEngine {
             profile: profile,
             excludeKeys: excludeKeys
         )
+        var effectiveCandidates = candidates
 
         if filtered.count < RecommendationConstants.minShelf {
             let fallbackQueries = buildFallbackQueries(profile: profile, languageClause: languageClause)
@@ -112,6 +113,7 @@ public final class RecommendationEngine {
                 }
             }
             let combined = candidates + extra
+            effectiveCandidates = combined
             filtered = RecommendationPipeline.rank(
                 candidates: combined,
                 profile: profile,
@@ -120,13 +122,28 @@ public final class RecommendationEngine {
         }
 
         guard !filtered.isEmpty else {
-            return popularFallback()
+            let surfacedIds = await profileStore.fetchSurfacedIdentifiers()
+            var excludeMinusSurfaced = excludeKeys
+            excludeMinusSurfaced.subtract(surfacedIds)
+            let fallbackRanked = RecommendationPipeline.rank(
+                candidates: effectiveCandidates,
+                profile: profile,
+                excludeKeys: excludeMinusSurfaced
+            )
+            guard !fallbackRanked.isEmpty else {
+                return popularFallback()
+            }
+            let shelfSlice = Array(fallbackRanked.prefix(18))
+            let shelfKeys = shelfSlice.flatMap { Array(RecommendationPipeline.identityKeys(for: $0)) }
+            await profileStore.pushSurfaced(shelfKeys)
+            return RecommendationShelf(results: shelfSlice, source: .personalized)
         }
 
-        let surfacedKeys = filtered.flatMap { Array(RecommendationPipeline.identityKeys(for: $0)) }
-        await profileStore.pushSurfaced(surfacedKeys)
+        let shelfSlice = Array(filtered.prefix(18))
+        let shelfKeys = shelfSlice.flatMap { Array(RecommendationPipeline.identityKeys(for: $0)) }
+        await profileStore.pushSurfaced(shelfKeys)
 
-        return RecommendationShelf(results: Array(filtered.prefix(18)), source: .personalized)
+        return RecommendationShelf(results: shelfSlice, source: .personalized)
     }
 
     // MARK: - Private

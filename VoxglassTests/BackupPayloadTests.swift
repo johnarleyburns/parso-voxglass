@@ -190,4 +190,67 @@ final class BackupPayloadTests: XCTestCase {
         let second = await service.importPayload(payload)
         XCTAssertEqual(second, 0, "Re-importing the same payload must not create duplicates")
     }
+
+    @MainActor func testExportFileNameUsesJSONExtension() async throws {
+        EntitlementCache.shared.setTestEntitlement(true)
+        defer { EntitlementCache.shared.setTestEntitlement(nil) }
+
+        let database = AppDatabase.makeTemporaryDatabase(named: "backup-json-ext")
+        let service = LibraryBackupService(database: database)
+        let bookID = UUID(), sourceID = UUID()
+        try await database.execute("""
+        INSERT INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID.uuidString), .string(SourceKind.librivox.rawValue),
+            .string("Test Source"), .string("https://archive.org/details/test"), .double(0)
+        ])
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            .string(bookID.uuidString), .string("Test"), .string("[]"),
+            .null, .string(sourceID.uuidString), .null, .double(0), .double(0), .bool(false)
+        ])
+
+        let url = await service.exportToFile()
+        let exportedURL = try XCTUnwrap(url)
+        XCTAssertTrue(exportedURL.lastPathComponent.hasSuffix(".json"), "exported file must have .json extension")
+    }
+
+    @MainActor func testImportReadsLegacyVoxglassbackupFile() async throws {
+        EntitlementCache.shared.setTestEntitlement(true)
+        defer { EntitlementCache.shared.setTestEntitlement(nil) }
+
+        let database = AppDatabase.makeTemporaryDatabase(named: "backup-legacy-ext")
+        let service = LibraryBackupService(database: database)
+
+        let bookID = UUID(), sourceID = UUID()
+        let payload = BackupPayload(
+            version: 1,
+            exportDate: Date(),
+            books: [
+                BackupPayload.BookPayload(
+                    book: Book(id: bookID, title: "Legacy Book", authors: [], sourceID: sourceID),
+                    chapters: [
+                        Chapter(id: UUID(), bookID: bookID, title: "Ch1", index: 0)
+                    ],
+                    source: Source(id: sourceID, kind: .librivox, title: "Legacy Source")
+                )
+            ],
+            positions: [],
+            bookmarks: [],
+            playlists: [],
+            tasteTerms: []
+        )
+
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(payload)
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("test_legacy.voxglassbackup")
+        try data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let count = await service.importFromFile(tempURL)
+        XCTAssertEqual(count, 1, "legacy .voxglassbackup files must import successfully")
+    }
 }

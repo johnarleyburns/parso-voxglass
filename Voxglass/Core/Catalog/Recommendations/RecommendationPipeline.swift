@@ -65,8 +65,14 @@ public enum RecommendationPipeline {
                 weights[TermKey(axis: "author", term: normalized), default: 0] += contribution
             }
             for subject in dedupedSubjects {
-                guard let normalized = Self.normalizedTerm(axis: "subject", term: subject) else { continue }
-                weights[TermKey(axis: "subject", term: normalized), default: 0] += contribution
+                let split = subject.contains(";")
+                    ? Self.splitSubjectTokens(subject)
+                    : [subject.lowercased().trimmingCharacters(in: .whitespaces)]
+                for token in split {
+                    guard !token.isEmpty else { continue }
+                    guard let normalized = Self.normalizedTerm(axis: "subject", term: token) else { continue }
+                    weights[TermKey(axis: "subject", term: normalized), default: 0] += contribution
+                }
             }
             for language in dedupedLanguages {
                 guard let normalized = Self.normalizedTerm(axis: "language", term: language) else { continue }
@@ -220,7 +226,7 @@ public enum RecommendationPipeline {
         var tokens: [String] = []
         for creator in result.creators {
             let c = creator.lowercased().trimmingCharacters(in: .whitespaces)
-            if !c.isEmpty, c != "unknown", c != "various" {
+            if !c.isEmpty, c != "unknown", c != "various", c != "anonymous" {
                 tokens.append(c)
             }
         }
@@ -229,8 +235,11 @@ public enum RecommendationPipeline {
             if !l.isEmpty { tokens.append(l) }
         }
         for subject in result.subjects {
-            let s = subject.lowercased().trimmingCharacters(in: .whitespaces)
-            if !s.isEmpty, !RecommendationConstants.subjectStopList.contains(s) {
+            let split = subject.contains(";")
+                ? Self.splitSubjectTokens(subject)
+                : [subject.lowercased().trimmingCharacters(in: .whitespaces)]
+            for s in split {
+                guard !s.isEmpty, !RecommendationConstants.subjectStopList.contains(s) else { continue }
                 tokens.append(s)
             }
         }
@@ -304,6 +313,12 @@ public enum RecommendationPipeline {
         !excludeKeys.isDisjoint(with: identityKeys(for: result))
     }
 
+    public static func splitSubjectTokens(_ raw: String) -> [String] {
+        raw.components(separatedBy: ";")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
+    }
+
     // MARK: - Private helpers
 
     private struct TermKey: Hashable {
@@ -332,7 +347,7 @@ public enum RecommendationPipeline {
 
         switch axis {
         case "author":
-            guard term != "unknown", term != "unknown author", term != "various" else { return nil }
+            guard term != "unknown", term != "unknown author", term != "various", term != "anonymous" else { return nil }
             return term
         case "subject":
             guard !RecommendationConstants.subjectStopList.contains(term),

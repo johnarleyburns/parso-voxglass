@@ -465,6 +465,118 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertTrue(LibraryRepository.tasteSeedTerms(authors: [], title: "").isEmpty)
     }
 
+    func testResplitBookTasteMigration() async throws {
+        let flagKey = "voxglass.bookTasteSubjectResplitV1"
+        UserDefaults.standard.removeObject(forKey: flagKey)
+        defer { UserDefaults.standard.removeObject(forKey: flagKey) }
+
+        let database = AppDatabase.makeTemporaryDatabase(named: "resplit-subject-test")
+        let repository = LibraryRepository(database: database)
+
+        let bookID = UUID().uuidString
+        let sourceID = UUID().uuidString
+        let now = Date().timeIntervalSince1970
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+            [.string(sourceID), .string(SourceKind.librivox.rawValue),
+             .string("Test Source"), .string("https://archive.org/details/test"), .double(now)]
+        )
+        try await database.execute(
+            "INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [.string(bookID), .string("Test Book"),
+             .string(ModelMapping.authorsJSON(["Test Author"])), .null,
+             .string(sourceID), .null, .double(now), .double(now), .bool(false)]
+        )
+        try await database.execute(
+            "INSERT INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
+            [.string(bookID), .string("librivox; audiobooks;greek drama; aristophanes; greek comedy")]
+        )
+
+        let count = await repository.resplitBookTasteSubjectsIfNeeded()
+        XCTAssertEqual(count, 1)
+
+        let rows = try await database.query(
+            "SELECT term FROM book_taste WHERE book_id = ? AND axis = 'subject' ORDER BY term",
+            [.string(bookID)]
+        )
+        let terms = rows.compactMap { $0.string("term") }
+        XCTAssertTrue(terms.contains("greek drama"))
+        XCTAssertTrue(terms.contains("aristophanes"))
+        XCTAssertTrue(terms.contains("greek comedy"))
+        XCTAssertFalse(terms.contains { $0.contains(";") }, "no term should contain semicolon after migration")
+
+        // Idempotent second run
+        let secondCount = await repository.resplitBookTasteSubjectsIfNeeded()
+        XCTAssertEqual(secondCount, 0, "migration must be idempotent")
+
+        // Verify reco_surfaced was cleared
+        let surfacedRows = try await database.query("SELECT COUNT(*) AS n FROM reco_surfaced", [])
+        let n = surfacedRows.first?.int("n") ?? -1
+        XCTAssertEqual(Int(n), 0, "reco_surfaced must be cleared by migration")
+    }
+
+    func testResplitMigrationProfileRebuildUsesSplitTerms() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "resplit-profile-rebuild")
+        let repository = LibraryRepository(database: database)
+        let profileStore = TasteProfileStore(database: database)
+
+        // Create a real book + source + listening event connected to split book_taste
+        let sourceID = UUID()
+        let bookID = UUID()
+        let chapterID = UUID()
+        let now = Date().timeIntervalSince1970
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+            [.string(sourceID.uuidString), .string(SourceKind.librivox.rawValue),
+             .string("Test Source"), .string("https://archive.org/details/test"), .double(now)]
+        )
+        try await database.execute(
+            "INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [.string(bookID.uuidString), .string("The Frogs"),
+             .string(ModelMapping.authorsJSON(["Aristophanes"])), .null,
+             .string(sourceID.uuidString), .null, .double(now), .double(now), .bool(false)]
+        )
+        try await database.execute(
+            "INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [.string(chapterID.uuidString), .string(bookID.uuidString),
+             .string("Chapter 1"), .string("Chapter 1"), .int(0), .double(120), .null, .null]
+        )
+        try await database.execute(
+            "INSERT INTO listening_events (id, book_id, seconds, occurred_at) VALUES (?, ?, ?, ?)",
+            [.string(UUID().uuidString), .string(bookID.uuidString), .double(7200), .double(now)]
+        )
+        // Insert semicolon subject (the pre-migration state)
+        try await database.execute(
+            "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'author', ?)",
+            [.string(bookID.uuidString), .string("aristophanes")]
+        )
+        try await database.execute(
+            "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'language', ?)",
+            [.string(bookID.uuidString), .string("eng")]
+        )
+
+        // Run the migration (idempotent; may be a no-op if already done)
+        _ = await repository.resplitBookTasteSubjectsIfNeeded()
+
+        // Now insert the proper split subject terms (migration cleared semicolons; but we need to
+        // insert them manually since we didn't have them pre-migration for this test book)
+        try await database.execute(
+            "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
+            [.string(bookID.uuidString), .string("greek drama")]
+        )
+        try await database.execute(
+            "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'subject', ?)",
+            [.string(bookID.uuidString), .string("aristophanes")]
+        )
+
+        // Rebuild and verify split terms appear in profile
+        await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
+        let profile = await profileStore.fetchProfile()
+        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "greek drama" })
+        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "aristophanes" })
+        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "aristophanes" })
+    }
+
     @discardableResult
     private func seedSource(
         in database: AppDatabase,

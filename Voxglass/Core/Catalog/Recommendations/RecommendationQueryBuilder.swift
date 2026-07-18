@@ -35,7 +35,7 @@ public enum RecommendationQueryBuilder {
         // EXPLOIT: same creator you already love
         let exploitCreators = profile.topCreators
         if !exploitCreators.isEmpty, exploitAlloc > 0 {
-            let perCreator = max(1, exploitAlloc / exploitCreators.count)
+            let perCreator = max(4, exploitAlloc / exploitCreators.count)
             for creator in exploitCreators {
                 let escaped = escapeSolr(creator)
                 let query = "(creator:\"\(escaped)\")\(scopeClause)"
