@@ -1,10 +1,8 @@
 #!/bin/bash
-# .githooks/pre-push — Opt-in local gate.
+# .githooks/pre-push — Full test gate.
 # Install with: git config core.hooksPath .githooks
 #
-# Runs the source-level wiring guards (same as CI) and optionally
-# the simulator test suite. Set VOXGLASS_SKIP_TESTS=1 to skip
-# the simulator suite (it takes minutes).
+# Runs ALL tests: wiring guards, unit tests, and simulator smoke tests.
 
 set -euo pipefail
 
@@ -23,13 +21,10 @@ if ! bash scripts/guard_wiring.sh; then
   exit 1
 fi
 
-if [ "${VOXGLASS_SKIP_TESTS:-0}" = "1" ]; then
-  echo ""
-  echo "Skipping simulator test suite (VOXGLASS_SKIP_TESTS=1)."
-  exit 0
-fi
+echo ""
+echo "--- swift test (unit tests) ---"
+swift test
 
 echo ""
 echo "--- simulator test suite ---"
-echo "This takes a couple of minutes. Set VOXGLASS_SKIP_TESTS=1 to skip."
 bash scripts/test.sh

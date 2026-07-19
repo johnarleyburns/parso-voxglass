@@ -1,0 +1,18 @@
+#!/bin/bash
+# .githooks/pre-commit — Fast unit-test gate.
+# Install with: git config core.hooksPath .githooks
+#
+# Runs swift test (VoxglassCore logic tests, no simulator needed).
+# This is designed to be fast enough for every commit.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+echo ""
+echo "=== pre-commit guard ==="
+
+echo ""
+echo "--- swift test (unit tests) ---"
+swift test
