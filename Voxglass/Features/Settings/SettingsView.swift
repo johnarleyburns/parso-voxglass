@@ -556,35 +556,52 @@ private struct SyncSettingsCard: View {
                 }
             }
 
-            Text("Your playback position syncs across devices for free. Bookmarks and favorites sync using your private iCloud account. No app account required.")
+            Text("Your playback position, bookmarks, and favorites sync across devices using your private iCloud account. No app account required.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
-            if let lastSync = cloudSync.lastSyncDate {
-                Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                    .scaledFont(size: 11)
+            Toggle("Sync with iCloud", isOn: Binding(
+                get: { cloudSync.isEnabled },
+                set: { cloudSync.isEnabled = $0 }
+            ))
+            .scaledFont(size: 12, weight: .semibold)
+            .foregroundStyle(Palette.ink)
+            .tint(Palette.brass)
+            .accessibilityIdentifier("sync.enabled")
+
+            if !cloudSync.isEnabled {
+                Text("Sync is off. Your listening data stays only on this device.")
+                    .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
             }
 
-            if !cloudSync.isAvailable {
-                Text("Sign in to iCloud to sync")
-                    .scaledFont(size: 11.5, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-            } else if let error = cloudSync.syncError {
-                Text(error)
-                    .scaledFont(size: 11.5)
-                    .foregroundStyle(Palette.danger)
-            }
+            if cloudSync.isEnabled {
+                if let lastSync = cloudSync.lastSyncDate {
+                    Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                        .scaledFont(size: 11)
+                        .foregroundStyle(Palette.ink3)
+                }
 
-            Button {
-                Task { await cloudSync.sync() }
-            } label: {
-                Text(cloudSync.isSyncing ? "Syncing…" : "Sync Now")
-                    .scaledFont(size: 12, weight: .semibold)
-                    .foregroundStyle(cloudSync.isAvailable ? Palette.brass : Palette.ink3)
+                if !cloudSync.isAvailable {
+                    Text("Sign in to iCloud to sync")
+                        .scaledFont(size: 11.5, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                } else if let error = cloudSync.syncError {
+                    Text(error)
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.danger)
+                }
+
+                Button {
+                    Task { await cloudSync.sync() }
+                } label: {
+                    Text(cloudSync.isSyncing ? "Syncing…" : "Sync Now")
+                        .scaledFont(size: 12, weight: .semibold)
+                        .foregroundStyle(cloudSync.isAvailable ? Palette.brass : Palette.ink3)
+                }
+                .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
+                .accessibilityIdentifier("sync.now")
             }
-            .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
-            .accessibilityIdentifier("sync.now")
         }
         .padding(15)
         .glassSurface(cornerRadius: 18)

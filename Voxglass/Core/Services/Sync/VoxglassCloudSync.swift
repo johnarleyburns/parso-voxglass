@@ -11,6 +11,22 @@ public final class VoxglassCloudSync: ObservableObject {
     private var bookmarkStore: (any BookmarkStore)?
     private var observer: NSObjectProtocol?
 
+    public var isEnabled: Bool {
+        get {
+            let defaults = UserDefaults.standard
+            if defaults.object(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled) == nil {
+                return true
+            }
+            return defaults.bool(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
+            if newValue {
+                Task { await sync() }
+            }
+        }
+    }
+
     private enum Key {
         static let lastSync = "voxglass.cloudsync.lastSync"
         static let positionsPrefix = "voxglass.cloudsync.pos."
@@ -56,11 +72,10 @@ public final class VoxglassCloudSync: ObservableObject {
 
     // MARK: - Push (device → iCloud)
 
-    /// Playback-position sync is FREE (Phase 3): "never lose your place" is a
-    /// trust promise, not an upsell. Only `isAvailable` gates it, never
-    /// iCloud sync is always enabled.
+    /// Pushes playback positions to iCloud KVS. Gated on both availability and
+    /// the user's sync toggle preference.
     public func pushPlaybackPositions() async {
-        guard isAvailable else { return }
+        guard isAvailable, isEnabled else { return }
         do {
             try await database.prepare()
             let rows = try await database.query("""
@@ -109,7 +124,7 @@ public final class VoxglassCloudSync: ObservableObject {
     }
 
     public func pushFavorites() async {
-        guard isAvailable else { return }
+        guard isAvailable, isEnabled else { return }
         do {
             try await database.prepare()
             let rows = try await database.query("""
@@ -139,7 +154,7 @@ public final class VoxglassCloudSync: ObservableObject {
     /// Includes tombstones (`is_deleted = 1`) so pulls on other devices apply
     /// the soft-delete rather than resurrecting it.
     public func pushBookmarks() async {
-        guard isAvailable, let bmStore = bookmarkStore else { return }
+        guard isAvailable, isEnabled, let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
             let books = try await database.query("SELECT id FROM books")
@@ -181,7 +196,7 @@ public final class VoxglassCloudSync: ObservableObject {
     /// Pulls bookmark updates from iCloud, applying tombstones from the remote
     /// payload so deletions aren't resurrected by another device's push.
     public func pullBookmarks() async {
-        guard isAvailable else { return }
+        guard isAvailable, isEnabled else { return }
         guard let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
@@ -232,7 +247,7 @@ public final class VoxglassCloudSync: ObservableObject {
     /// left in KVS so `adoptCloudPositions(forBookID:)` can apply them after a
     /// re-import (this is what makes delete-and-reinstall work).
     public func pullPlaybackPositions() async {
-        guard isAvailable else { return }
+        guard isAvailable, isEnabled else { return }
         do {
             try await database.prepare()
             let allKeys = store.dictionaryRepresentation.keys.filter {
@@ -259,7 +274,7 @@ public final class VoxglassCloudSync: ObservableObject {
     /// (newly imported) book. Called after an import so a reinstalled device gets
     /// its place back the moment the book is in the library again.
     public func adoptCloudPositions(forBookID bookID: UUID) async {
-        guard isAvailable else { return }
+        guard isAvailable, isEnabled else { return }
         do {
             try await database.prepare()
             let bookRows = try await database.query(
@@ -388,7 +403,7 @@ public final class VoxglassCloudSync: ObservableObject {
     }
 
     public func pullFavorites() async -> Set<String> {
-        guard isAvailable else { return [] }
+        guard isAvailable, isEnabled else { return [] }
         let allKeys = store.dictionaryRepresentation.keys.filter {
             $0.hasPrefix(Key.favoritesPrefix) && !$0.hasSuffix(Key.versionSuffix)
         }
@@ -401,7 +416,7 @@ public final class VoxglassCloudSync: ObservableObject {
     // MARK: - Sync orchestration
 
     public func sync() async {
-        guard isAvailable else { return }
+        guard isAvailable, isEnabled else { return }
         isSyncing = true
         defer { isSyncing = false }
 
@@ -415,6 +430,7 @@ public final class VoxglassCloudSync: ObservableObject {
     }
 
     private func handleExternalChange(_ notification: Notification) async {
+        guard isEnabled else { return }
         guard let reason = notification.userInfo?[NSUbiquitousKeyValueStoreChangeReasonKey] as? Int else {
             return
         }
