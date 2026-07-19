@@ -85,6 +85,11 @@ final class ArtworkService: @unchecked Sendable {
             return image
         }
 
+        if let bundled = BundledArtworkProvider.image(forCoverURL: url) {
+            memoryCache.setObject(bundled, forKey: nsURL)
+            return bundled
+        }
+
         let (data, response) = try await fetcher(url)
         let image = try Self.validatedImage(from: data, response: response)
         memoryCache.setObject(image, forKey: nsURL)

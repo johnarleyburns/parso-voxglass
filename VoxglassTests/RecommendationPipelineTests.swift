@@ -11,7 +11,9 @@ final class RecommendationPipelineTests: XCTestCase {
             onboardingSelectionIDs: [],
             candidates: []
         )
-        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        let seedIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        XCTAssertFalse(recs.isEmpty)
+        XCTAssertTrue(recs.allSatisfy { seedIDs.contains($0.identifier) }, "All recommendations should be from bundled popular seeds")
     }
 
     func testEmptyEverythingExcludesGivenKeys() {

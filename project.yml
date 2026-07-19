@@ -25,6 +25,8 @@ targets:
           - Resources/Info.plist
           - Resources/Voxglass.entitlements
           - Core
+      - path: Voxglass/Resources/Artwork
+        type: folder
     dependencies:
       - package: VoxglassCore
       - sdk: AudioToolbox.framework

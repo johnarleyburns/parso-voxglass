@@ -1,0 +1,802 @@
+[
+  {
+    "identifier": "art_of_war_librivox",
+    "title": "The Art of War",
+    "creator": "Sun Tzu",
+    "downloads": 24415739,
+    "date": "2006-11-02T00:00:00Z",
+    "filename": "art_of_war_librivox.jpg"
+  },
+  {
+    "identifier": "alice_in_wonderland_librivox",
+    "title": "Alice's Adventures in Wonderland, by Lewis Carroll",
+    "creator": "Lewis Carroll",
+    "downloads": 24067020,
+    "date": "2006-01-11T00:00:00Z",
+    "filename": "alice_in_wonderland_librivox.jpg"
+  },
+  {
+    "identifier": "tom_sawyer_librivox",
+    "title": "The Adventures of Tom Sawyer",
+    "creator": "Mark Twain",
+    "downloads": 18317587,
+    "date": "2006-05-01T00:00:00Z",
+    "filename": "tom_sawyer_librivox.jpg"
+  },
+  {
+    "identifier": "adventures_holmes",
+    "title": "The Adventures of Sherlock Holmes",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 17636280,
+    "date": "2007-03-10T00:00:00Z",
+    "filename": "adventures_holmes.jpg"
+  },
+  {
+    "identifier": "moby_dick_librivox",
+    "title": "Moby Dick, or the Whale",
+    "creator": "Herman Melville",
+    "downloads": 12463315,
+    "date": "2007-03-06T00:00:00Z",
+    "filename": "moby_dick_librivox.jpg"
+  },
+  {
+    "identifier": "huck_finn_librivox",
+    "title": "Adventures of Huckleberry Finn",
+    "creator": "Mark Twain",
+    "downloads": 11580359,
+    "date": "2006-07-30T00:00:00Z",
+    "filename": "huck_finn_librivox.jpg"
+  },
+  {
+    "identifier": "pride_and_prejudice_librivox",
+    "title": "Pride and Prejudice",
+    "creator": "Jane Austen",
+    "downloads": 10263319,
+    "date": "2006-03-13T00:00:00Z",
+    "filename": "pride_and_prejudice_librivox.jpg"
+  },
+  {
+    "identifier": "dracula_librivox",
+    "title": "Dracula",
+    "creator": "Bram Stoker",
+    "downloads": 9545337,
+    "date": "2006-05-10T00:00:00Z",
+    "filename": "dracula_librivox.jpg"
+  },
+  {
+    "identifier": "adventures_sherlockholmes_1007_librivox",
+    "title": "The Adventures of Sherlock Holmes",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 8742378,
+    "date": "2010-07-31T00:00:00Z",
+    "filename": "adventures_sherlockholmes_1007_librivox.jpg"
+  },
+  {
+    "identifier": "count_monte_cristo_0711_librivox",
+    "title": "The Count of Monte Cristo",
+    "creator": "Alexandre Dumas",
+    "downloads": 7901132,
+    "date": "2007-11-30T00:00:00Z",
+    "filename": "count_monte_cristo_0711_librivox.jpg"
+  },
+  {
+    "identifier": "pride_prejudice_krs_librivox",
+    "title": "Pride and Prejudice (version 3)",
+    "creator": "Jane Austen",
+    "downloads": 7325292,
+    "date": "2007-11-26T00:00:00Z",
+    "filename": "pride_prejudice_krs_librivox.jpg"
+  },
+  {
+    "identifier": "peter_pan_0707_librivox",
+    "title": "Peter Pan",
+    "creator": "J. M. Barrie",
+    "downloads": 6842429,
+    "date": "2007-07-31T00:00:00Z",
+    "filename": "peter_pan_0707_librivox.jpg"
+  },
+  {
+    "identifier": "secret_garden_librivox",
+    "title": "The Secret Garden",
+    "creator": "Frances Hodgson Burnett",
+    "downloads": 6718538,
+    "date": "2006-02-22T00:00:00Z",
+    "filename": "secret_garden_librivox.jpg"
+  },
+  {
+    "identifier": "solo_pride_librivox",
+    "title": "Pride and Prejudice (version 2)",
+    "creator": "Jane Austen",
+    "downloads": 6249030,
+    "date": "2006-01-23T00:00:00Z",
+    "filename": "solo_pride_librivox.jpg"
+  },
+  {
+    "identifier": "odyssey_butler_librivox",
+    "title": "The Odyssey",
+    "creator": "Homer",
+    "downloads": 6101901,
+    "date": "2007-03-12T00:00:00Z",
+    "filename": "odyssey_butler_librivox.jpg"
+  },
+  {
+    "identifier": "grimms_english_librivox",
+    "title": "Grimms' Fairy Tales",
+    "creator": "Jacob and Wilhelm Grimm",
+    "downloads": 5615276,
+    "date": "2006-02-19T00:00:00Z",
+    "filename": "grimms_english_librivox.jpg"
+  },
+  {
+    "identifier": "1891_collection_bt_librivox",
+    "title": "1891 Collection",
+    "creator": "Various",
+    "downloads": 5517521,
+    "date": "2013-04-03T00:00:00Z",
+    "filename": "1891_collection_bt_librivox.jpg"
+  },
+  {
+    "identifier": "prideandprejudice_1005_librivox",
+    "title": "Pride and Prejudice (version 4)",
+    "creator": "Jane Austen",
+    "downloads": 5426264,
+    "date": "2010-05-05T00:00:00Z",
+    "filename": "prideandprejudice_1005_librivox.jpg"
+  },
+  {
+    "identifier": "alices_adventures_1003",
+    "title": "Alice's Adventures in Wonderland",
+    "creator": "Lewis Carroll",
+    "downloads": 5359128,
+    "date": "2010-03-18T00:00:00Z",
+    "filename": "alices_adventures_1003.jpg"
+  },
+  {
+    "identifier": "uncle_toms_cabin_librivox",
+    "title": "Uncle Tom's Cabin",
+    "creator": "Harriet Beecher Stowe",
+    "downloads": 5097247,
+    "date": "2006-11-09T00:00:00Z",
+    "filename": "uncle_toms_cabin_librivox.jpg"
+  },
+  {
+    "identifier": "tale_two_cities_librivox",
+    "title": "A Tale of Two Cities",
+    "creator": "Charles Dickens",
+    "downloads": 5067943,
+    "date": "2006-11-15T00:00:00Z",
+    "filename": "tale_two_cities_librivox.jpg"
+  },
+  {
+    "identifier": "adventures_sherlock_holmes_rg_librivox",
+    "title": "The Adventures of Sherlock Holmes (Version 2)",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 5063525,
+    "date": "2010-07-15T00:00:00Z",
+    "filename": "adventures_sherlock_holmes_rg_librivox.jpg"
+  },
+  {
+    "identifier": "adventures_pinocchio_librivox",
+    "title": "The Adventures of Pinocchio",
+    "creator": "C. Collodi",
+    "downloads": 4942806,
+    "date": "2006-05-13T00:00:00Z",
+    "filename": "adventures_pinocchio_librivox.jpg"
+  },
+  {
+    "identifier": "treasure_island_ap_librivox",
+    "title": "Treasure Island",
+    "creator": "Robert Louis Stevenson",
+    "downloads": 4928857,
+    "date": "2007-12-14T00:00:00Z",
+    "filename": "treasure_island_ap_librivox.jpg"
+  },
+  {
+    "identifier": "emma_solo_librivox",
+    "title": "Emma",
+    "creator": "Jane Austen",
+    "downloads": 4875850,
+    "date": "2006-09-29T00:00:00Z",
+    "filename": "emma_solo_librivox.jpg"
+  },
+  {
+    "identifier": "huckleberry_mfs_librivox",
+    "title": "Adventures of Huckleberry Finn (version 02)",
+    "creator": "Mark Twain",
+    "downloads": 4825892,
+    "date": "2007-07-12T00:00:00Z",
+    "filename": "huckleberry_mfs_librivox.jpg"
+  },
+  {
+    "identifier": "memoirs_holmes_0709_librivox",
+    "title": "The Memoirs of Sherlock Holmes",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 4810545,
+    "date": "2007-09-30T00:00:00Z",
+    "filename": "memoirs_holmes_0709_librivox.jpg"
+  },
+  {
+    "identifier": "aesop_fables_volume_one_librivox",
+    "title": "Aesop's Fables, Volume 1 (Fables 1-25)",
+    "creator": "Aesop",
+    "downloads": 4728426,
+    "date": "2006-01-17T00:00:00Z",
+    "filename": "aesop_fables_volume_one_librivox.jpg"
+  },
+  {
+    "identifier": "andersensfairy_1307_librivox",
+    "title": "Andersen's Fairy Tales (Version 2)",
+    "creator": "Hans Christian Andersen",
+    "downloads": 4702744,
+    "date": "2013-07-22T00:00:00Z",
+    "filename": "andersensfairy_1307_librivox.jpg"
+  },
+  {
+    "identifier": "jane_eyre_ver03_0809_librivox",
+    "title": "Jane Eyre (version 3)",
+    "creator": "Charlotte Bront\u00eb",
+    "downloads": 4627380,
+    "date": "2008-10-01T00:00:00Z",
+    "filename": "jane_eyre_ver03_0809_librivox.jpg"
+  },
+  {
+    "identifier": "swiss_family_robinson_librivox",
+    "title": "The Swiss Family Robinson",
+    "creator": "Johann David Wyss",
+    "downloads": 4314039,
+    "date": "2006-08-31T00:00:00Z",
+    "filename": "swiss_family_robinson_librivox.jpg"
+  },
+  {
+    "identifier": "andersens_fairytales_librivox",
+    "title": "Andersen's Fairy Tales",
+    "creator": "Hans Christian Andersen",
+    "downloads": 4255577,
+    "date": "2006-05-14T00:00:00Z",
+    "filename": "andersens_fairytales_librivox.jpg"
+  },
+  {
+    "identifier": "return_holmes_0708_librivox",
+    "title": "The Return of Sherlock Holmes",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 4208367,
+    "date": "2007-08-21T00:00:00Z",
+    "filename": "return_holmes_0708_librivox.jpg"
+  },
+  {
+    "identifier": "great_expectations_mfs_0812_librivox",
+    "title": "Great Expectations",
+    "creator": "Charles Dickens",
+    "downloads": 3962102,
+    "date": "2008-12-11T00:00:00Z",
+    "filename": "great_expectations_mfs_0812_librivox.jpg"
+  },
+  {
+    "identifier": "robinson_crusoe_librivox",
+    "title": "The Life and Strange Surprising Adventures of Robinson Crusoe of York, Mariner",
+    "creator": "Daniel Defoe",
+    "downloads": 3961153,
+    "date": "2006-02-25T00:00:00Z",
+    "filename": "robinson_crusoe_librivox.jpg"
+  },
+  {
+    "identifier": "game_of_life_0911_librivox",
+    "title": "The Game of Life and How to Play It",
+    "creator": "Florence Scovel Shinn",
+    "downloads": 3862505,
+    "date": "2009-11-16T00:00:00Z",
+    "filename": "game_of_life_0911_librivox.jpg"
+  },
+  {
+    "identifier": "bleak_house_cl_librivox",
+    "title": "Bleak House",
+    "creator": "Charles Dickens",
+    "downloads": 3801954,
+    "date": "2008-01-21T00:00:00Z",
+    "filename": "bleak_house_cl_librivox.jpg"
+  },
+  {
+    "identifier": "anthem_librivox",
+    "title": "Anthem",
+    "creator": "Ayn Rand",
+    "downloads": 3784258,
+    "date": "2007-05-02T03:19:04Z",
+    "filename": "anthem_librivox.jpg"
+  },
+  {
+    "identifier": "romeo_and_juliet_librivox",
+    "title": "Romeo and Juliet",
+    "creator": "William Shakespeare",
+    "downloads": 3661949,
+    "date": "2006-08-06T00:00:00Z",
+    "filename": "romeo_and_juliet_librivox.jpg"
+  },
+  {
+    "identifier": "anne_greengables_librivox",
+    "title": "Anne of Green Gables (version 3)",
+    "creator": "Lucy Maud Montgomery",
+    "downloads": 3654302,
+    "date": "2007-06-12T00:00:00Z",
+    "filename": "anne_greengables_librivox.jpg"
+  },
+  {
+    "identifier": "invisible_man_librivox",
+    "title": "The Invisible Man",
+    "creator": "H.G. Wells",
+    "downloads": 3627712,
+    "date": "2006-06-22T00:00:00Z",
+    "filename": "invisible_man_librivox.jpg"
+  },
+  {
+    "identifier": "grimm_fairy_tales_1202_librivox",
+    "title": "Grimm's Fairy Tales (version 2)",
+    "creator": "Jacob & Wilhelm Grimm",
+    "downloads": 3608157,
+    "date": "2012-02-11T00:00:00Z",
+    "filename": "grimm_fairy_tales_1202_librivox.jpg"
+  },
+  {
+    "identifier": "walden_librivox",
+    "title": "Walden",
+    "creator": "Henry David Thoreau",
+    "downloads": 3577834,
+    "date": "2006-07-19T00:00:00Z",
+    "filename": "walden_librivox.jpg"
+  },
+  {
+    "identifier": "timemachine_sjm_librivox",
+    "title": "The Time Machine (version 3)",
+    "creator": "H. G. Wells",
+    "downloads": 3550415,
+    "date": "2011-08-09T00:00:00Z",
+    "filename": "timemachine_sjm_librivox.jpg"
+  },
+  {
+    "identifier": "wizard_of_oz",
+    "title": "The Wonderful Wizard of Oz",
+    "creator": "L. Frank Baum",
+    "downloads": 3517070,
+    "date": "2007-03-10T00:00:00Z",
+    "filename": "wizard_of_oz.jpg"
+  },
+  {
+    "identifier": "jane_eyre_librivox",
+    "title": "Jane Eyre",
+    "creator": "Charlotte Bront\u00eb",
+    "downloads": 3508740,
+    "date": "2007-05-18T00:00:00Z",
+    "filename": "jane_eyre_librivox.jpg"
+  },
+  {
+    "identifier": "fabulas_esopo_01_librivox",
+    "title": "Las F\u00e1bulas de Esopo, vol. 01",
+    "creator": "Townsend, George Fyler; tr. Jorge R. Rodr\u00edguez",
+    "downloads": 3450848,
+    "date": "2006-11-30T00:00:00Z",
+    "filename": "fabulas_esopo_01_librivox.jpg"
+  },
+  {
+    "identifier": "english_fairy_tales_joy_librivox",
+    "title": "English Fairy Tales",
+    "creator": "Joseph Jacobs",
+    "downloads": 3444360,
+    "date": "2007-01-06T00:00:00Z",
+    "filename": "english_fairy_tales_joy_librivox.jpg"
+  },
+  {
+    "identifier": "don_quijote_vol1_0706_librivox",
+    "title": "Don Quijote, Volume 1",
+    "creator": "Miguel de Cervantes Saavedra",
+    "downloads": 3430939,
+    "date": "2007-07-01T00:00:00Z",
+    "filename": "don_quijote_vol1_0706_librivox.jpg"
+  },
+  {
+    "identifier": "anne_of_green_gables_librivox",
+    "title": "Anne of Green Gables",
+    "creator": "Lucy Maud Montgomery",
+    "downloads": 3413406,
+    "date": "2006-03-28T00:00:00Z",
+    "filename": "anne_of_green_gables_librivox.jpg"
+  },
+  {
+    "identifier": "penguin_island_ms_librivox",
+    "title": "Penguin Island",
+    "creator": "Anatole France",
+    "downloads": 3367921,
+    "date": "2007-05-30T00:00:00Z",
+    "filename": "penguin_island_ms_librivox.jpg"
+  },
+  {
+    "identifier": "beyond_good_and_evil_librivox",
+    "title": "Beyond Good and Evil",
+    "creator": "Friedrich Nietzsche (transl. Helen Zimmern)",
+    "downloads": 3279705,
+    "date": "2006-07-29T00:00:00Z",
+    "filename": "beyond_good_and_evil_librivox.jpg"
+  },
+  {
+    "identifier": "romeoandjuliet_ss_0901_librivox",
+    "title": "Romeo and Juliet",
+    "creator": "William Shakespeare",
+    "downloads": 3275137,
+    "date": "2009-01-21T00:00:00Z",
+    "filename": "romeoandjuliet_ss_0901_librivox.jpg"
+  },
+  {
+    "identifier": "1601_0903_librivox",
+    "title": "1601: Conversation, as it was by the Social Fireside, in the Time of the Tudors",
+    "creator": "Mark Twain",
+    "downloads": 3214997,
+    "date": "2009-03-07T00:00:00Z",
+    "filename": "1601_0903_librivox.jpg"
+  },
+  {
+    "identifier": "railway_children_librivox",
+    "title": "Railway Children",
+    "creator": "E. Nesbit",
+    "downloads": 3195271,
+    "date": "2006-11-22T00:00:00Z",
+    "filename": "railway_children_librivox.jpg"
+  },
+  {
+    "identifier": "divine_comedy_librivox",
+    "title": "The Divine Comedy",
+    "creator": "Dante Alighieri",
+    "downloads": 3123731,
+    "date": "2007-01-20T00:00:00Z",
+    "filename": "divine_comedy_librivox.jpg"
+  },
+  {
+    "identifier": "letters_brides_0709_librivox",
+    "title": "Letters of Two Brides",
+    "creator": "Honore de Balzac",
+    "downloads": 3115719,
+    "date": "2007-09-07T00:00:00Z",
+    "filename": "letters_brides_0709_librivox.jpg"
+  },
+  {
+    "identifier": "heart_of_darkness",
+    "title": "Heart of Darkness",
+    "creator": "Joseph Conrad",
+    "downloads": 3108867,
+    "date": "2006-03-11T00:00:00Z",
+    "filename": "heart_of_darkness.jpg"
+  },
+  {
+    "identifier": "frankenstein_shelley",
+    "title": "Frankenstein",
+    "creator": "Mary W. Shelley",
+    "downloads": 3108261,
+    "date": "2005-10-20T00:00:00Z",
+    "filename": "frankenstein_shelley.jpg"
+  },
+  {
+    "identifier": "adventuressherlockholmes_v4_1501_librivox",
+    "title": "The Adventures of Sherlock Holmes (version 4)",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 3092898,
+    "date": "2015-01-18T00:00:00Z",
+    "filename": "adventuressherlockholmes_v4_1501_librivox.jpg"
+  },
+  {
+    "identifier": "beowulf_te_librivox",
+    "title": "Beowulf",
+    "creator": "Unknown",
+    "downloads": 2979406,
+    "date": "2013-10-11T00:00:00Z",
+    "filename": "beowulf_te_librivox.jpg"
+  },
+  {
+    "identifier": "your_invisible_power_2104_librivox",
+    "title": "Your Invisible Power",
+    "creator": "Genevieve Behrend",
+    "downloads": 2933396,
+    "date": "2012-04-19T00:00:00Z",
+    "filename": "your_invisible_power_2104_librivox.jpg"
+  },
+  {
+    "identifier": "alexander_great_ld_librivox",
+    "title": "Alexander the Great",
+    "creator": "Jacob Abbott",
+    "downloads": 2879200,
+    "date": "2007-08-04T00:00:00Z",
+    "filename": "alexander_great_ld_librivox.jpg"
+  },
+  {
+    "identifier": "secret_garden_version2_librivox",
+    "title": "The Secret Garden",
+    "creator": "Frances Hodgson Burnett",
+    "downloads": 2751338,
+    "date": "2009-10-19T00:00:00Z",
+    "filename": "secret_garden_version2_librivox.jpg"
+  },
+  {
+    "identifier": "city_worlds_end_1203_librivox",
+    "title": "The City at World's End",
+    "creator": "Edmond Hamilton",
+    "downloads": 2722259,
+    "date": "2012-03-20T00:00:00Z",
+    "filename": "city_worlds_end_1203_librivox.jpg"
+  },
+  {
+    "identifier": "king_solomon_librivox",
+    "title": "King Solomon's Mines",
+    "creator": "H. Rider Haggard",
+    "downloads": 2669172,
+    "date": "2006-05-01T00:00:00Z",
+    "filename": "king_solomon_librivox.jpg"
+  },
+  {
+    "identifier": "8thanniversary_1308_librivox",
+    "title": "LibriVox 8th Anniversary Collection",
+    "creator": "Various",
+    "downloads": 2652821,
+    "date": "2013-08-08T00:00:00Z",
+    "filename": "8thanniversary_1308_librivox.jpg"
+  },
+  {
+    "identifier": "12_creepytales_1206_librivox",
+    "title": "12 Creepy Tales by Edgar Allan Poe",
+    "creator": "Edgar Allan Poe",
+    "downloads": 2550915,
+    "date": "2012-06-24T00:00:00Z",
+    "filename": "12_creepytales_1206_librivox.jpg"
+  },
+  {
+    "identifier": "count_montecristo_1308_librivox",
+    "title": "The Count of Monte Cristo",
+    "creator": "Alexandre Dumas",
+    "downloads": 2533258,
+    "date": "2013-08-09T00:00:00Z",
+    "filename": "count_montecristo_1308_librivox.jpg"
+  },
+  {
+    "identifier": "dracula_1006_librivox",
+    "title": "Dracula (version 2)",
+    "creator": "Bram Stoker",
+    "downloads": 2526394,
+    "date": "2010-06-30T00:00:00Z",
+    "filename": "dracula_1006_librivox.jpg"
+  },
+  {
+    "identifier": "terror_mystery_0707_librivox",
+    "title": "Tales of Terror and Mystery",
+    "creator": "Sir Arthur Conan Doyle",
+    "downloads": 2526210,
+    "date": "2007-07-06T00:00:00Z",
+    "filename": "terror_mystery_0707_librivox.jpg"
+  },
+  {
+    "identifier": "ghost_stories_001_librivox",
+    "title": "Ghost Story Collection 001",
+    "creator": "Various",
+    "downloads": 2515896,
+    "date": "2006-08-20T00:00:00Z",
+    "filename": "ghost_stories_001_librivox.jpg"
+  },
+  {
+    "identifier": "beowulf",
+    "title": "Beowulf",
+    "creator": "Anonymous",
+    "downloads": 2503961,
+    "date": "2006-03-20T00:00:00Z",
+    "filename": "beowulf.jpg"
+  },
+  {
+    "identifier": "bequest_jg_librivox",
+    "title": "The $30,000 Bequest and Other Stories",
+    "creator": "Mark Twain",
+    "downloads": 2493565,
+    "date": "2011-10-12T00:00:00Z",
+    "filename": "bequest_jg_librivox.jpg"
+  },
+  {
+    "identifier": "love_freindship_cs_librivox",
+    "title": "Love and Freindship",
+    "creator": "Jane Austen",
+    "downloads": 2472880,
+    "date": "2007-09-10T00:00:00Z",
+    "filename": "love_freindship_cs_librivox.jpg"
+  },
+  {
+    "identifier": "call_of_the_wild",
+    "title": "The Call of the Wild",
+    "creator": "Jack London",
+    "downloads": 2463160,
+    "date": "2005-10-17T00:00:00Z",
+    "filename": "call_of_the_wild.jpg"
+  },
+  {
+    "identifier": "little_princess_krs",
+    "title": "A Little Princess",
+    "creator": "Frances Hodgson Burnett",
+    "downloads": 2426321,
+    "date": "2007-09-29T00:00:00Z",
+    "filename": "little_princess_krs.jpg"
+  },
+  {
+    "identifier": "les_mis_vol01_0810_librivox",
+    "title": "Les Mis\u00e9rables, Vol. 1",
+    "creator": "Victor Hugo",
+    "downloads": 2355745,
+    "date": "2008-10-28T00:00:00Z",
+    "filename": "les_mis_vol01_0810_librivox.jpg"
+  },
+  {
+    "identifier": "as_a_man_thinketh_mc_librivox",
+    "title": "As a Man Thinketh",
+    "creator": "James Allen",
+    "downloads": 2324951,
+    "date": "2008-03-21T00:00:00Z",
+    "filename": "as_a_man_thinketh_mc_librivox.jpg"
+  },
+  {
+    "identifier": "prince_librivox",
+    "title": "The Prince",
+    "creator": "Nicolo Machiavelli; translated by W. K. Marriott",
+    "downloads": 2294079,
+    "date": "2006-08-02T00:00:00Z",
+    "filename": "prince_librivox.jpg"
+  },
+  {
+    "identifier": "reluctant_dragon_librivox",
+    "title": "The Reluctant Dragon",
+    "creator": "Kenneth Grahame",
+    "downloads": 2237631,
+    "date": "2006-10-20T00:00:00Z",
+    "filename": "reluctant_dragon_librivox.jpg"
+  },
+  {
+    "identifier": "2br02b_0801_librivox",
+    "title": "2 B R 0 2 B",
+    "creator": "Kurt Vonnegut",
+    "downloads": 2223109,
+    "date": "2008-01-15T00:00:00Z",
+    "filename": "2br02b_0801_librivox.jpg"
+  },
+  {
+    "identifier": "fanny_hill_librivox",
+    "title": "Fanny Hill: Memoirs of a Woman of Pleasure",
+    "creator": "John Cleland",
+    "downloads": 2220597,
+    "date": "2006-01-04T00:00:00Z",
+    "filename": "fanny_hill_librivox.jpg"
+  },
+  {
+    "identifier": "amateur_cracksman_librivox",
+    "title": "The Amateur Cracksman",
+    "creator": "E.W. Hornung",
+    "downloads": 2218127,
+    "date": "2006-10-20T00:00:00Z",
+    "filename": "amateur_cracksman_librivox.jpg"
+  },
+  {
+    "identifier": "art_war_ps_librivox",
+    "title": "The Art of War",
+    "creator": "Sun Tzu",
+    "downloads": 2199575,
+    "date": "2007-10-12T00:00:00Z",
+    "filename": "art_war_ps_librivox.jpg"
+  },
+  {
+    "identifier": "sense_sensibility_ver3_ek",
+    "title": "Sense and Sensibility (Version 3)",
+    "creator": "Jane Austen",
+    "downloads": 2173061,
+    "date": "2009-02-26T00:00:00Z",
+    "filename": "sense_sensibility_ver3_ek.jpg"
+  },
+  {
+    "identifier": "aliceinwonderland_1102_librivox",
+    "title": "Alice's Adventures in Wonderland (dramatic reading)",
+    "creator": "Lewis Carroll",
+    "downloads": 2142891,
+    "date": "2011-02-21T00:00:00Z",
+    "filename": "aliceinwonderland_1102_librivox.jpg"
+  },
+  {
+    "identifier": "mysterious_island_ms_librivox",
+    "title": "The Mysterious Island",
+    "creator": "Jules Verne",
+    "downloads": 2081051,
+    "date": "2007-05-10T00:00:00Z",
+    "filename": "mysterious_island_ms_librivox.jpg"
+  },
+  {
+    "identifier": "american_indian_tales_librivox",
+    "title": "American Indian Fairy Tales",
+    "creator": "William Trowbridge Larned",
+    "downloads": 2023228,
+    "date": "2006-01-25T00:00:00Z",
+    "filename": "american_indian_tales_librivox.jpg"
+  },
+  {
+    "identifier": "0_sense_and_sensibility_librivox",
+    "title": "Sense and Sensibility",
+    "creator": "Jane Austen",
+    "downloads": 2010335,
+    "date": "2007-03-30T00:00:00Z",
+    "filename": "0_sense_and_sensibility_librivox.jpg"
+  },
+  {
+    "identifier": "franklin_autobio_gg_librivox",
+    "title": "The Autobiography of Benjamin Franklin",
+    "creator": "Benjamin Franklin, ed. Frank Woodworth Pine",
+    "downloads": 2009096,
+    "date": "2007-06-24T00:00:00Z",
+    "filename": "franklin_autobio_gg_librivox.jpg"
+  },
+  {
+    "identifier": "fabulas_esopo_02_librivox",
+    "title": "Las F\u00e1bulas de Esopo, vol. 02",
+    "creator": "Townsend, George Fyler; tr. Jorge R. Rodr\u00edguez",
+    "downloads": 1996067,
+    "date": "2006-11-07T00:00:00Z",
+    "filename": "fabulas_esopo_02_librivox.jpg"
+  },
+  {
+    "identifier": "gods_of_mars_librivox",
+    "title": "The Gods of Mars",
+    "creator": "Edgar Rice Burroughs",
+    "downloads": 1974417,
+    "date": "2006-11-08T00:00:00Z",
+    "filename": "gods_of_mars_librivox.jpg"
+  },
+  {
+    "identifier": "science_gettingrich_1005_librivox",
+    "title": "The Science of Getting Rich",
+    "creator": "Wallace D. Wattles",
+    "downloads": 1955966,
+    "date": "2010-05-30T00:00:00Z",
+    "filename": "science_gettingrich_1005_librivox.jpg"
+  },
+  {
+    "identifier": "being_earnest_librivox",
+    "title": "The Importance of Being Earnest",
+    "creator": "Oscar Wilde",
+    "downloads": 1942337,
+    "date": "2006-08-07T00:00:00Z",
+    "filename": "being_earnest_librivox.jpg"
+  },
+  {
+    "identifier": "war_worlds_solo_librivox",
+    "title": "War of the Worlds",
+    "creator": "H.G. Wells",
+    "downloads": 1934877,
+    "date": "2006-04-08T00:00:00Z",
+    "filename": "war_worlds_solo_librivox.jpg"
+  },
+  {
+    "identifier": "wuthering_heights_rg_librivox",
+    "title": "Wuthering Heights (Solo Version)",
+    "creator": "Emily Bronte",
+    "downloads": 1934338,
+    "date": "2009-05-18T00:00:00Z",
+    "filename": "wuthering_heights_rg_librivox.jpg"
+  },
+  {
+    "identifier": "alice_wonderland_0711_librivox",
+    "title": "Alice's Adventures in Wonderland",
+    "creator": "Lewis Carroll",
+    "downloads": 1852365,
+    "date": "2007-11-07T00:00:00Z",
+    "filename": "alice_wonderland_0711_librivox.jpg"
+  },
+  {
+    "identifier": "gulliver_ld_librivox",
+    "title": "Gulliver's Travels",
+    "creator": "Jonathan Swift",
+    "downloads": 1842997,
+    "date": "2007-04-30T00:00:00Z",
+    "filename": "gulliver_ld_librivox.jpg"
+  },
+  {
+    "identifier": "girl_boat_1109_librivox",
+    "title": "The Girl on the Boat",
+    "creator": "P.G. Wodehouse",
+    "downloads": 1832814,
+    "date": "2011-09-10T00:00:00Z",
+    "filename": "girl_boat_1109_librivox.jpg"
+  }
+]

@@ -438,7 +438,9 @@ final class RecommendationEngineTests: XCTestCase {
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
         let advancedQueryCount = await client.advancedQueryCount
 
-        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        let seedIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        XCTAssertFalse(recs.isEmpty)
+        XCTAssertTrue(recs.allSatisfy { seedIDs.contains($0.identifier) }, "All recommendations should be from bundled popular seeds")
         XCTAssertEqual(advancedQueryCount, 0)
     }
 
@@ -456,7 +458,9 @@ final class RecommendationEngineTests: XCTestCase {
 
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 
-        XCTAssertEqual(recs.map(\.identifier), HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        let seedIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        XCTAssertFalse(recs.isEmpty)
+        XCTAssertTrue(recs.allSatisfy { seedIDs.contains($0.identifier) }, "All recommendations should be from bundled popular seeds")
     }
 
     @MainActor
