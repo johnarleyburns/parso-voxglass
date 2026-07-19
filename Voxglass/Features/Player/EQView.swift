@@ -134,9 +134,9 @@ struct EQView: View {
                 in: -12...12,
                 step: 1
             )
+            .frame(width: 150)
             .rotationEffect(.degrees(-90))
-            .frame(width: 150, height: 28)
-            .frame(maxHeight: .infinity)
+            .frame(width: 28, height: 150)
             .accessibilityIdentifier("eq.band.\(band)")
             Text(bandLabels[band])
                 .scaledFont(size: 9, weight: .semibold)
