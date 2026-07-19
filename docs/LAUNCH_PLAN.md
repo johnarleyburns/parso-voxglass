@@ -6,11 +6,11 @@ Voxglass is release-ready competitively (see `docs/RELEASE_READINESS.md`) except
 **"Recommended for You" always shows the bundled popular titles on startup** even with 12+ items in
 Jump Back In, occasionally flashing the personalized list before reverting. The equivalent feature works
 in `../parso-radio-ios-app`. Root cause is confirmed (below). Alongside the fix, this plan covers the
-remaining pre-launch items: README refresh, accessibility sweep, advertising + verifying the two
-unadvertised Pro gates, porting the radio app's animated splash, and the physical-device checklist.
+remaining pre-launch items: README refresh, accessibility sweep, porting the radio app's animated splash,
+and the physical-device checklist.
 
-Repo ground rules apply (from `docs/RELEASE_PLAN.md`): falsification-first tests, all Pro gating through
-`ProFeature.isEnabled(_:)`, `xcodegen generate` after adding files, no code comments unless non-obvious,
+Repo ground rules apply (from `docs/RELEASE_PLAN.md`): falsification-first tests,
+`xcodegen generate` after adding files, no code comments unless non-obvious,
 pure/static decision functions over coordinator-buried logic.
 
 ---
@@ -79,28 +79,9 @@ book while on Listen tab → shelf never reverts to popular.
 
 ---
 
-## P1 — Advertise + lock in the two hidden Pro gates
+## P1 — All features are free (no gates)
 
-Both gates are **verified enforced** (no code fix needed): `.cachePresets` clamps at the model layer
-(`CacheManager.swift:46-48, 56`) with locked UI (`SettingsView.swift:351-367`); `.prefetchDepth`
-hard-returns depth 1 for free (`PlaybackCoordinator.swift:674-678`) with the picker hidden for free
-users (`SettingsView.swift:778-842`). Note: there is no separate "Pro view" — the paywall's
-`advertised` array is the app's only Pro feature enumeration, plus a count string in Settings.
-
-- **`ProPaywallView.swift`**: add two entries to `advertised` (:23-60) — `.cachePresets` ("Bigger
-  streaming cache — 2 GB and 10 GB presets") and `.prefetchDepth` ("Whole-book prefetch — preload the
-  next 3 chapters or the entire book"). Trim the folded mentions from the offlineDownloads description
-  (:28) and the stale comment (:21-22).
-- **`SettingsView.swift:145`**: replace hardcoded "unlock 6 Pro features" with a count derived from
-  `ProPaywallView.advertised.count`.
-- **Recreate the missing drift test** — `ProPaywallContentTests` is referenced in comments
-  (`ProPaywallView.swift:6-7,21`) but was deleted; no paywall↔enforcement drift test exists today.
-  New `VoxglassTests/ProPaywallContentTests.swift`: advertised set == expected 8 features; every
-  advertised feature has a real gate (mirror `guard_wiring.sh` Rule 4 in-process); Settings count
-  string derives from the array.
-- Add two behavior tests if not already present: free `selectedPreset` clamps to `.free500MB`;
-  `resolvedPrefetchDepth` returns 1 when `!isPro`.
-- `guard_wiring.sh` Rule 4 and `FreeTierRegistryTests` pass unchanged (no new enum cases).
+All previously Pro-gated features are now free. No paywall updates needed.
 
 ---
 
@@ -116,7 +97,7 @@ ones, `.combine` on composite rows, `accessibilityHidden` on decorative art). Ad
 | `PlaylistsView.swift:39` | toolbar plus button | "New playlist" |
 | `PlaylistsView.swift:79` | playlist book play button | "Play" + book title |
 | `SettingsView.swift:476` | add-source plus button | "Add source" |
-| `SettingsView.swift:122` | Pro upsell cell | label + `accessibilityIdentifier("pro.upsellCell")` |
+| `SettingsView.swift:122` | Settings cell | label + `accessibilityIdentifier("settings.cell")` |
 | `DiscoverView.swift:59` | ExploreCollectionCard button | collection title |
 | `ListenView.swift:142` | HorizontalCatalogCard button | "Title by Author" |
 | `BookDetailView.swift:371` | Bookmarks disclosure row | "Bookmarks" |
@@ -153,7 +134,6 @@ Radio's `ParsoRadio/Views/SplashView.swift` is pure SwiftUI, dependency-free: sp
 - Competitive section: BookDesign is now subscription ($1.99/mo / $9.99/yr / $24.99-lifetime ad
   removal); add Lex Reader (free text+audio sync over LibriVox, $9.99/mo premium, no CarPlay/player
   depth) — names read-along as the v1.1 differentiator, per `docs/RELEASE_READINESS.md`.
-- Pro bullet list: 6 → 8 features (cache presets, whole-book prefetch).
 - Note the new animated splash + reco caching under Highlights if touched sections warrant.
 
 ---
@@ -174,7 +154,7 @@ restore, skip-silence on a real LibriVox recording, VoiceOver over Now Playing),
 | Order | Work | Notes |
 |---|---|---|
 | 1 | **P0 reco fix** | The blocker. Falsification tests first. |
-| 2–4 | P1 Pro bullets, P2 accessibility, P3 splash | Independent, parallelizable. |
+| 2–4 | P1, P2 accessibility, P3 splash | Independent, parallelizable. |
 | 5 | P4 README | Last, so it describes what shipped. |
 | 6 | P5 device pass | Human; after all code lands. |
 
@@ -182,6 +162,5 @@ restore, skip-silence on a real LibriVox recording, VoiceOver over Now Playing),
 
 - `scripts/test.sh` (simulator, local gate) and `scripts/guard_wiring.sh` green; the five new P0
   falsification tests confirmed failing pre-fix; `xcodegen generate` diff clean.
-- New `ProPaywallContentTests` green; paywall shows 8 bullets; Settings count string matches.
 - Simulator VoiceOver spot-check over Search/Playlists/Settings/Discover/Listen.
 - P5 device checklist run on hardware (user).

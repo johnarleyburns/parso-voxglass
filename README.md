@@ -24,9 +24,8 @@ own iCloud).
   the app.
 - **Dark-mode-first design** with Dynamic Type support. No ads, no telemetry, no tracking — nothing
   you listen to leaves your device.
-- One-time **Voxglass Pro** unlock ($7.99, StoreKit 2, Family Sharing supported) for unlimited offline
-  downloads, bookmarks & favorites sync, Folder Watch, 10-band EQ, listening stats, library
-  backup & restore, bigger streaming cache presets (2 GB / 10 GB), and whole-book prefetch.
+- Future monetization will come from audiobook sales and library partnership integrations —
+  the app itself remains free, private, and ad-free.
 
 ## Competitive position
 
@@ -38,11 +37,11 @@ broken speed control, missing narrator names, and ads with volume spikes. A newe
 depth — synchronized read-along is Voxglass's named v1.1 differentiator
 (see `docs/RELEASE_READINESS.md`).
 
-**Voxglass's free tier already beats BookDesign's paid tier** — speed, sleep timer, bookmarks,
+**Voxglass already beats BookDesign's paid tier** — speed, sleep timer, bookmarks,
 lock-screen artwork, per-chapter narrators, volume normalization, skip silence, playlists, favorites,
-position sync across devices, CarPlay, the full catalog, and no ads at all. Pro adds unlimited offline
-downloads, bookmarks & favorites sync, Folder Watch, 10-band EQ, listening stats, library backup &
-restore, bigger streaming cache presets, and whole-book prefetch — all for a one-time purchase.
+position sync across devices, CarPlay, offline downloads, Folder Watch, 10-band EQ, listening stats,
+library backup & restore, and the full catalog — all free, no ads at all. Future monetization will
+come from audiobook sales and library partnerships, not feature gates.
 
 The opening is: *the same catalog in a player that respects you*.
 
@@ -52,15 +51,13 @@ The opening is: *the same catalog in a player that respects you*.
 - [x] Variable playback speed, sleep timer, bookmarks, lock-screen/Control Center artwork (P0 table stakes).
 - [x] Customizable skip intervals, library sort/filter, playlists (P1 parity).
 - [x] Volume normalization, Dynamic Type support (P2 differentiation).
-- [x] Offline downloads with free-tier taste limit, 10-band EQ, Folder Watch, listening stats,
-      library backup & restore, bookmarks & favorites sync (Pro features).
-- [x] One-time Pro unlock with paywall, Family Sharing, App Store compliance.
+- [x] Offline downloads, 10-band EQ, Folder Watch, listening stats, library backup & restore,
+      bookmarks & favorites sync.
 - [x] **Resume reliability** (`docs/RELEASE_PLAN.md`): resume at the right chapter and offset from every
       entry point, crash/force-quit durability, content-keyed identity, free position sync — the app
       never loses your place.
 - [x] **CarPlay** — free and standalone: search, browse, resume, and play entirely from the car, no
-      phone needed. Not a Pro feature; the Pro price did not change. Design in
-      [`docs/CARPLAY_DESIGN.md`](docs/CARPLAY_DESIGN.md).
+      phone needed. Design in [`docs/CARPLAY_DESIGN.md`](docs/CARPLAY_DESIGN.md).
 
 ### Future (not yet planned)
 
@@ -100,7 +97,7 @@ chapter and a cover image. Use wired or Bluetooth headphones for the remote-cont
 6. Change playback speed (e.g. 1.5×). **Expect:** audio speeds up; the speed persists when you reopen the book.
 7. Set a sleep timer for "1 minute" and for "End of chapter". **Expect:** at 1 minute, audio fades out and pauses; "End of chapter" pauses at the chapter boundary without rolling into the next chapter.
 8. Add a bookmark, move elsewhere, then jump to the bookmark. **Expect:** playback returns to the bookmarked position (loading a different chapter if needed).
-9. (Pro) Open the EQ, engage it, and change a band / apply a preset. **Expect:** the sound changes; the setting persists across relaunch.
+9. Open the EQ, engage it, and change a band / apply a preset. **Expect:** the sound changes; the setting persists across relaunch.
 
 ### 3. Lock screen & remote controls (bridge — the critical part)
 10. Start playback, lock the phone. **Expect:** the lock screen shows the chapter title, book title, author, **cover artwork**, and a scrubber that advances at the correct rate.
@@ -124,13 +121,13 @@ in `LICENSE-APPSTORE-EXCEPTION.md`.
 
 ## iCloud Sync setup (for developers)
 
-Cross-device sync uses `NSUbiquitousKeyValueStore`. Playback-position sync is free for everyone;
-bookmarks & favorites sync requires Voxglass Pro. The required **iCloud key-value-store** capability is
+Cross-device sync uses `NSUbiquitousKeyValueStore`. Playback-position sync, bookmarks sync, and
+favorites sync are all free for everyone. The required **iCloud key-value-store** capability is
 committed as `Voxglass/Resources/Voxglass.entitlements` and wired
 through `project.yml` under `settings.base` — so it is attached in **all** configurations, Release and
 TestFlight included. The App Store provisioning profile now carries the iCloud capability; no manual
 capability toggling is needed for development, simulator, unit-test, or archive builds.
 
-Without the entitlement, `NSUbiquitousKeyValueStore.synchronize()` is a no-op and sync will not function
-even if Pro is unlocked — so if you fork this project under a different App ID, enable **iCloud →
+Without the entitlement, `NSUbiquitousKeyValueStore.synchronize()` is a no-op and sync will not function —
+so if you fork this project under a different App ID, enable **iCloud →
 Key-value storage** for your App ID in the Apple Developer portal and regenerate your provisioning profile.

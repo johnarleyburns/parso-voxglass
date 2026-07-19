@@ -700,19 +700,16 @@ public final class PlaybackCoordinator: ObservableObject {
     }
 
     public func setEQEngaged(_ engaged: Bool) {
-        guard ProFeature.isEnabled(.eq) else { return }
         engine.setEQEngaged(engaged)
         eqSettings.isEngaged = engaged
     }
 
     public func applyEQPreset(_ preset: EQPreset) {
-        guard ProFeature.isEnabled(.eq) else { return }
         engine.applyEQPreset(preset)
         eqSettings.gains = preset.gains
     }
 
     public func setEQGain(_ gain: Float, at band: Int) {
-        guard ProFeature.isEnabled(.eq) else { return }
         engine.setEQGain(gain, at: band)
         var gains = eqSettings.gains
         guard band >= 0, band < gains.count else { return }
@@ -724,7 +721,6 @@ public final class PlaybackCoordinator: ObservableObject {
     /// survives relaunch. The engine's desired-engaged flag is set now (before any
     /// track loads) so `load(...)` re-attaches the tap automatically.
     private func restoreEQ() {
-        guard ProFeature.isEnabled(.eq) else { return }
         engine.setEQGains(eqSettings.gains)
         if eqSettings.isEngaged {
             engine.setEQEngaged(true)
@@ -738,11 +734,10 @@ public final class PlaybackCoordinator: ObservableObject {
     /// Sentinel depth meaning "the rest of the book".
     public static let wholeBookPrefetchDepth = 999
 
-    /// Pure resolution of prefetch depth (§3, decision D7): free tier and cellular
-    /// (when Wi-Fi-only is on) clamp to 1 so near-gapless is never broken; Pro on
+    /// Pure resolution of prefetch depth (§3, decision D7): cellular
+    /// (when Wi-Fi-only is on) clamps to 1 so near-gapless is never broken; on
     /// Wi-Fi honors the stored depth.
-    public static func resolvedPrefetchDepth(isPro: Bool, stored: Int, isCellular: Bool, wifiOnly: Bool) -> Int {
-        guard isPro else { return 1 }
+    public static func resolvedPrefetchDepth(stored: Int, isCellular: Bool, wifiOnly: Bool) -> Int {
         if wifiOnly && isCellular { return 1 }
         return max(1, stored)
     }
@@ -762,7 +757,6 @@ public final class PlaybackCoordinator: ObservableObject {
         guard let currentIndex = book.chapters.firstIndex(where: { $0.id == currentChapter.id }) else { return }
 
         let depth = Self.resolvedPrefetchDepth(
-            isPro: ProFeature.isEnabled(.prefetchDepth),
             stored: storedPrefetchDepth,
             isCellular: NetworkMonitor.shared.isCellular,
             wifiOnly: prefetchWifiOnly

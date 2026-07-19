@@ -39,14 +39,13 @@ public final class EQAudioProcessor {
         var tap: Unmanaged<MTAudioProcessingTap>?
 
         init(gains: [Float], item: AVPlayerItem, processor: EQAudioProcessor) {
-            self.engine = EQEngine(gains: gains, eqStagesEnabled: ProFeature.isEnabled(.eq))
+            self.engine = EQEngine(gains: gains, eqStagesEnabled: true)
             self.item = item
             self.processor = processor
         }
     }
 
     public func applyPreset(_ preset: EQPreset) {
-        guard ProFeature.isEnabled(.eq) else { return }
         gains = preset.gains
         for context in contexts.values {
             context.engine.gains = preset.gains
@@ -55,7 +54,6 @@ public final class EQAudioProcessor {
     }
 
     public func setGain(_ gain: Float, at band: Int) {
-        guard ProFeature.isEnabled(.eq) else { return }
         guard band >= 0, band < gains.count else { return }
         gains[band] = gain
         for context in contexts.values {

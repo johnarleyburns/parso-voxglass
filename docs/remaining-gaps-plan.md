@@ -1,34 +1,17 @@
 # Remaining Gaps — Implementation Plan
 
 > Covers the 3 items that are still open after the `COMPETITIVE_GAP_PLAN.md`
-> sweep: paywall/README copy adjustments, P2-2 skip silence, and P2-3
-> Dynamic Type.  Everything else (Step 0, P0, P1, P2-1, paywall refit, docs)
+> sweep: P2-2 skip silence and P2-3
+> Dynamic Type.  Everything else (Step 0, P0, P1, P2-1, docs)
 > is already shipped and green.
 
 ---
 
-## Phase A — Pro feature set copy & README adjustments
+## Phase A — README adjustments
 
-### A1 — Paywall "Stays free forever" section
+### A1 — Copy adjustments (no longer needed)
 
-**File:** `Features/Settings/ProPaywallView.swift:149-153`
-
-The current text enumerates only pre-existing free features.  P0 shipped four
-new free features (speed, sleep timer, bookmarks, lock-screen artwork) and the
-plan calls out "no ads ever" as a differentiator that must appear in the
-paywall.
-
-**Change the `foreverFreeSection` copy to include the new free features:**
-
-```
-*Variable speed 0.5–3.5×  ·  Sleep timer  ·  Bookmarks with iCloud sync (Pro)*
-*Lock-screen artwork  ·  FLAC & MP3 playback  ·  Near-gapless*
-*Internet Archive & LibriVox sources  ·  Local file import*
-*No ads ever  ·  No telemetry, no accounts*
-```
-
-Split into multiple lines for readability.  Keep the existing layout
-(`.multilineTextAlignment(.center)`, `Palette.ink3`).
+Pro paywall copy is no longer relevant — all features are free. Skip.
 
 ### A2 — README updates
 
@@ -267,14 +250,11 @@ xcodebuild test -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhon
 ### D2 — Guard tests
 
 - `DynamicTypeGuardTests.testNoBareSystemSizeWithoutRelativeTo` must pass.
-- `ProPaywallContentTests` must stay green (zero structural changes to
-  `ProFeature` or `advertised`).
-- `FreeTierRegistryTests` must stay green (zero new `ProFeature` cases).
 
 ### D3 — CI
 
 The existing GitHub Actions workflow (`.github/workflows/ios.yml`) runs
-guarded-tests (StoreKit import boundary + network endpoint allowlist) followed
+guarded-tests (network endpoint allowlist) followed
 by the full test suite on macOS.  Nothing in this plan changes the CI
 configuration — all new tests are XCTest cases that run as part of the
 existing scheme.
@@ -301,10 +281,7 @@ Phase C1 → C2 → C3 → C4  ───┘
 
 ## Notes
 
-- **No new `ProFeature` cases.**  Skip silence rides the existing EQ
-  infrastructure (the tap only runs when Pro is enabled), same as volume
-  normalization.
-- **No `project.yml` changes.**  No new files need to be added to any target
+- **No new files need to be added to any target
   except the two test files (`SilenceDetectorTests.swift`,
   `PlaybackCoordinatorSilenceTests.swift`), which are picked up automatically
   by the XcodeGen-generated project.

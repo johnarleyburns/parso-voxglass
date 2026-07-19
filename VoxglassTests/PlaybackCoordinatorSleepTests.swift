@@ -104,13 +104,5 @@ final class PlaybackCoordinatorSleepTests: XCTestCase {
         XCTAssertEqual(engine.calls.last, .setVolume(1.0))
     }
 
-    func testSleepTimerIsFree() async {
-        EntitlementCache.shared.setTestEntitlement(false)
-        defer { EntitlementCache.shared.setTestEntitlement(nil) }
-        let (coordinator, engine) = makeCoordinator()
-        await coordinator.play(makeBook())
-        engine.reset()
-        coordinator.setSleepTimer(.endOfChapter)
-        XCTAssertTrue(engine.didCancelPreload, "Sleep timer must work with no Pro entitlement")
-    }
+
 }

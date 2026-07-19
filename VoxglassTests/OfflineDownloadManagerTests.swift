@@ -6,47 +6,30 @@ final class OfflineDownloadManagerTests: XCTestCase {
 
     // MARK: - §7 cellular / Pro gate decision
 
-    func testStartDecisionAllowsFreeTasteLimit() {
-        // Free tier with 0 pins → starts (taste limit: 2 free pins).
-        let decision = OfflineDownloadManager.startDecision(
-            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
-            freePinCount: 0
-        )
-        XCTAssertEqual(decision, .start, "Free tier gets 2 pin slots before Pro is required")
-    }
-
-    func testStartDecisionRequiresProWhenTasteLimitReached() {
-        let decision = OfflineDownloadManager.startDecision(
-            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
-            freePinCount: 2
-        )
-        XCTAssertEqual(decision, .needsPro, "After 2 free pins, Pro is required")
-    }
-
     func testStartDecisionPromptsOnCellularWhenToggleOff() {
         let decision = OfflineDownloadManager.startDecision(
-            isPro: true, isCellular: true, cacheOnCellular: false, allowCellularOverride: false
+            isCellular: true, cacheOnCellular: false, allowCellularOverride: false
         )
         XCTAssertEqual(decision, .needsCellularConfirmation)
     }
 
     func testStartDecisionStartsOnCellularWhenToggleOn() {
         let decision = OfflineDownloadManager.startDecision(
-            isPro: true, isCellular: true, cacheOnCellular: true, allowCellularOverride: false
+            isCellular: true, cacheOnCellular: true, allowCellularOverride: false
         )
         XCTAssertEqual(decision, .start)
     }
 
     func testStartDecisionStartsOnCellularWithOverride() {
         let decision = OfflineDownloadManager.startDecision(
-            isPro: true, isCellular: true, cacheOnCellular: false, allowCellularOverride: true
+            isCellular: true, cacheOnCellular: false, allowCellularOverride: true
         )
         XCTAssertEqual(decision, .start)
     }
 
     func testStartDecisionStartsOnWiFi() {
         let decision = OfflineDownloadManager.startDecision(
-            isPro: true, isCellular: false, cacheOnCellular: false, allowCellularOverride: false
+            isCellular: false, cacheOnCellular: false, allowCellularOverride: false
         )
         XCTAssertEqual(decision, .start)
     }
@@ -100,30 +83,7 @@ final class OfflineDownloadManagerTests: XCTestCase {
         XCTAssertEqual(OfflineDownloadManager.pinCount(states: states), 2)
     }
 
-    func testTwoInFlightDownloadsBlocksThird() {
-        var states: [UUID: OfflineState] = [
-            UUID(): .downloading(progress: 0.3),
-            UUID(): .downloading(progress: 0.7)
-        ]
-        let decision = OfflineDownloadManager.startDecision(
-            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
-            freePinCount: OfflineDownloadManager.pinCount(states: states)
-        )
-        XCTAssertEqual(decision, .needsPro, "Two in-flight downloads should consume both free pins and block a third")
-    }
 
-    func testFailedDownloadDoesNotConsumePin() {
-        var states: [UUID: OfflineState] = [
-            UUID(): .failed,
-            UUID(): .downloading(progress: 0.5)
-        ]
-        XCTAssertEqual(OfflineDownloadManager.pinCount(states: states), 1, "A failed download must not consume a pin")
-        let decision = OfflineDownloadManager.startDecision(
-            isPro: false, isCellular: false, cacheOnCellular: false, allowCellularOverride: false,
-            freePinCount: OfflineDownloadManager.pinCount(states: states)
-        )
-        XCTAssertEqual(decision, .start, "One pin consumed out of two should allow a second download")
-    }
 
     // MARK: - §6/§7 stable cache keys
 

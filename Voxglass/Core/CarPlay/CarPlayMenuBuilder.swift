@@ -308,16 +308,14 @@ public enum CarPlayMenuBuilder {
         )
     }
 
-    public static func downloadAction(for b: CarPlayBookSnapshot, isDownloadsPro: Bool) -> CarPlayAction {
+    public static func downloadAction(for b: CarPlayBookSnapshot) -> CarPlayAction {
         switch b.download {
         case .downloaded:
             return .removeDownload(bookID: b.id)
         case .downloading:
             return .none
         case .notDownloaded:
-            return isDownloadsPro
-                ? .download(bookID: b.id)
-                : .showProUpsell(.offlineDownloads)
+            return .download(bookID: b.id)
         }
     }
 

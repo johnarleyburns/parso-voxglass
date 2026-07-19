@@ -2,7 +2,6 @@ import SwiftUI
 import VoxglassCore
 
 struct EQView: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var playback: PlaybackCoordinator
     @Environment(\.dismiss) private var dismiss
 
@@ -12,7 +11,6 @@ struct EQView: View {
     @State private var selectedPresetID: UUID?
     @State private var showSavePrompt = false
     @State private var newPresetName = ""
-    @State private var showPaywall = false
 
     private var bandLabels: [String] {
         EQEngine.isoBands.map { hz in
@@ -25,11 +23,7 @@ struct EQView: View {
     var body: some View {
         ZStack {
             VoxglassTheme.warmBackground.ignoresSafeArea()
-            if ProFeature.isEnabled(.eq) {
-                content
-            } else {
-                lockedTeaser
-            }
+            content
         }
         .navigationTitle("Equalizer")
         .navigationBarTitleDisplayMode(.inline)
@@ -39,7 +33,6 @@ struct EQView: View {
                     .foregroundStyle(Palette.ink2)
             }
         }
-        .paywallSheet(isPresented: $showPaywall)
         .onAppear(perform: loadState)
         .alert("Save Preset", isPresented: $showSavePrompt) {
             TextField("Preset name", text: $newPresetName)
@@ -162,35 +155,6 @@ struct EQView: View {
                 .foregroundStyle(Palette.brass)
         }
         .buttonStyle(.plain)
-    }
-
-    private var lockedTeaser: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "waveform.path.ecg")
-                .scaledFont(size: 44)
-                .foregroundStyle(Palette.brass)
-            Text("10-Band Equalizer")
-                .scaledFont(size: 20, weight: .bold)
-                .foregroundStyle(Palette.ink)
-            Text("Shape playback with presets for Concert Hall, Spoken Word, 78 rpm — and your own. A Voxglass Pro feature.")
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.ink2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-            Button {
-                showPaywall = true
-            } label: {
-                Text("Unlock Pro")
-                    .scaledFont(size: 14, weight: .bold)
-                    .foregroundStyle(Color(hex: 0x221503))
-                    .padding(.horizontal, 22)
-                    .frame(height: 44)
-                    .background(Palette.brass, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("pro.lock.eq")
-        }
-        .padding(24)
     }
 
     private func gainLabel(_ gain: Float) -> String {

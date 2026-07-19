@@ -87,15 +87,6 @@ final class CarPlayActionDispatcher {
         case .setRate(let rate):
             coordinator.setPlaybackRate(rate)
 
-        case .showProUpsell:
-            let alert = CPAlertTemplate(
-                titleVariants: ["Downloads are a Voxglass Pro feature. Unlock on your iPhone."],
-                actions: [CPAlertAction(title: "OK", style: .default) { [weak self] _ in
-                    self?.controller?.dismissPresented()
-                }]
-            )
-            controller?.present(alert)
-
         case .none:
             break
         }

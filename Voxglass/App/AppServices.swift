@@ -118,7 +118,6 @@ final class AppServices: ObservableObject {
         await playbackCoordinator.reconcileSnapshots()
         await playbackCoordinator.restorePresentedSession(from: libraryStore.books)
 
-        await StoreManager.shared.refreshEntitlement()
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()

@@ -2,7 +2,6 @@ import SwiftUI
 import VoxglassCore
 
 struct ListeningStatsView: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var stats: ListeningStatsStore
     @Environment(\.dismiss) private var dismiss
 
@@ -12,7 +11,6 @@ struct ListeningStatsView: View {
     @State private var topAuthors: [(term: String, seconds: TimeInterval)] = []
     @State private var topSubjects: [(term: String, seconds: TimeInterval)] = []
     @State private var loaded = false
-    @State private var showPaywall = false
 
     struct DayBar: Identifiable {
         let id = UUID()
@@ -23,17 +21,12 @@ struct ListeningStatsView: View {
     var body: some View {
         ZStack {
             VoxglassBackground()
-            if ProFeature.isEnabled(.listeningStats) {
-                content
-            } else {
-                lockedTeaser
-            }
+            content
         }
         .navigationTitle("Listening Stats")
         .navigationBarTitleDisplayMode(.inline)
-        .paywallSheet(isPresented: $showPaywall)
-        .task(id: storeManager.isPro) {
-            guard ProFeature.isEnabled(.listeningStats), !loaded else { return }
+        .task {
+            guard !loaded else { return }
             await load()
         }
     }
@@ -124,35 +117,6 @@ struct ListeningStatsView: View {
         }
         .padding(15)
         .glassSurface(cornerRadius: 16)
-    }
-
-    private var lockedTeaser: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "chart.bar.fill")
-                .scaledFont(size: 44)
-                .foregroundStyle(Palette.brass)
-            Text("Listening Stats")
-                .scaledFont(size: 20, weight: .bold)
-                .foregroundStyle(Palette.ink)
-            Text("See your total listening time, daily streaks, and your most-heard authors and genres. A Voxglass Pro feature.")
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.ink2)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-            Button {
-                showPaywall = true
-            } label: {
-                Text("Unlock Pro")
-                    .scaledFont(size: 14, weight: .bold)
-                    .foregroundStyle(Color(hex: 0x221503))
-                    .padding(.horizontal, 22)
-                    .frame(height: 44)
-                    .background(Palette.brass, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("pro.lock.listeningStats")
-        }
-        .padding(24)
     }
 
     private func durationString(_ seconds: TimeInterval) -> String {

@@ -119,6 +119,5 @@ public enum CarPlayAction: Equatable, Sendable {
     case addBookmark
     case showChapters
     case setRate(Float)
-    case showProUpsell(ProFeature)
     case none
 }

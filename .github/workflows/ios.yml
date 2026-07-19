@@ -65,20 +65,6 @@ jobs:
       - name: Run wiring guards
         run: bash scripts/guard_wiring.sh
 
-      - name: Guard StoreKit import boundary
-        run: |
-          set -euo pipefail
-          matches="$(find Voxglass -name '*.swift' -print0 | xargs -0 grep -nE '^\s*import\s+StoreKit\s*$' || true)"
-          if [ -z "$matches" ]; then
-            exit 0
-          fi
-
-          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'Voxglass/Core/Services/Pro/|Voxglass/Features/Settings/.*Paywall|Voxglass/Features/.*/ProPaywall' || true)"
-          if [ -n "$disallowed" ]; then
-            echo "::error title=StoreKit import guard::import StoreKit is only allowed under Core/Services/Pro/ and the paywall view."
-            printf '%s\n' "$disallowed"
-            exit 1
-          fi
 
       - name: Guard runtime network endpoints
         run: |

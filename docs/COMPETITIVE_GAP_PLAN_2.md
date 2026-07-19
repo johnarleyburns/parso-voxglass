@@ -75,11 +75,9 @@ regression and which Voxglass also lacks.
    (~0.02) plus on-device tuning.
 
 **Architectural finding (drives Phase 1).** Volume normalization *and* skip silence both live inside
-the EQ tap, which only attaches when the user has Pro **and** has manually engaged the EQ
+the EQ tap, which only attaches when the user has engaged the EQ
 (`EQAudioProcessor.swift:45,54,63`; `AVPlayerAudioEngine.swift:178,195`). So neither can ever run for
-a free user — contradicting the plan's "everything in P0–P2 ships free, zero new `ProFeature` cases"
-rule — and normalization is off even for Pro users who never touch the EQ, while the paywall advertises
-"automatic volume leveling."
+a user who hasn't turned EQ on — and normalization is off even for users who never touch the EQ.
 
 **Genuine competitive gaps the first analysis never named:** no way to text-search your own library
 (zero `.searchable` in the codebase); per-chapter progress data exists in `PositionStore` but is never
@@ -88,8 +86,8 @@ picker; nine feature views with zero VoiceOver annotations and zero `accessibili
 
 ### Decisions taken
 
-- **Unbundle the audio tap from the EQ Pro gate.** Normalization and skip silence ship **free**, per the
-  original rule. No new `ProFeature` cases.
+- **Unbundle the audio tap from the EQ gate.** Normalization and skip silence ship **free**, per the
+  original rule.
 - **CarPlay stays out of scope** — the Apple entitlement is still pending.
 - Library search, per-chapter progress, narrator names, and accessibility + AirPlay are all in scope.
 - **The simulator never runs in GitHub Actions.** CI stays fast, free, and Linux-only; the
@@ -119,8 +117,8 @@ source*, so it cannot rot as new keys and methods are added. Rules:
   **Catches #3** — `reconfigureSkipIntervals`.
 - **No dead placeholder rows:** no `isEnabled: false` within a few lines of "not available yet" /
   "coming soon" under `Voxglass/Features/`. **Catches #7.**
-- **Every advertised Pro feature is actually enforced:** each `ProFeatureAdvertisement.feature` appears in
-  a real `ProFeature.isEnabled(.x)` call.
+- **No dead placeholder rows:** no `isEnabled: false` within a few lines of "not available yet" /
+  "coming soon" under `Voxglass/Features/`. **Catches #7.**
 - **Port the existing source-walking XCTest guards into the script** — `DynamicTypeGuardTests`'s
   bare-`Font.system(size:)` rule, plus (from 4D) "any `Features/` file with a `Button` has an
   `accessibilityLabel`" and "any file with a `Slider(` has an `accessibilityValue`". Today
@@ -169,7 +167,7 @@ enum AudioTapPolicy {
 }
 ```
 
-**Thin shell:** delete the three `ProFeature.isEnabled(.eq)` guards in `EQAudioProcessor.swift:45,54,63`
+**Thin shell:** delete the three guard conditions in `EQAudioProcessor.swift:45,54,63`
 (gating now lives in one place, not smeared across three methods); `AVPlayerAudioEngine.swift:178,195`
 attaches on `stages.shouldAttach` rather than `eqEngagedDesired`; `AudioEngine.setEQEngaged(_:)` becomes
 `setTapStages(_:)`, recorded by `FakeAudioEngine`. **Also move the silence RMS to the raw input sample**
@@ -221,15 +219,13 @@ puts a real Narrators section in that space.
 Normalization ships **free** (LibriVox-specific quality fix; the rule is no new gates; Phase 1 makes it
 structurally reachable). Therefore:
 
-- `ProPaywallView.advertised[.eq]`: `"10-Band EQ + Volume Normalization"` → `"10-Band EQ"`, dropping the
-  volume-leveling clause — it is now false.
 - Rewrite `foreverFreeSection` (`:144-153`) to name what actually shipped: speed 0.5–3.5x, sleep timer,
   bookmarks, lock-screen artwork, per-chapter narrators, volume normalization, skip silence, library
   search, FLAC/MP3, **no ads ever**, no telemetry, no accounts.
 
-No `ProFeature` case is added or removed — `ProPaywallContentTests` / `FreeTierRegistryTests` should need
-no structural edits. New assertions: `testForeverFreeSectionNamesTheP0Features`,
-`testEQAdvertisementDoesNotClaimNormalization`, `testVolumeNormalizationIsFree`, `testSkipSilenceIsFree`.
+No `ProFeature` case is added or removed. New assertions:
+`testForeverFreeSectionNamesTheP0Features`,
+`testVolumeNormalizationIsFree`, `testSkipSilenceIsFree`.
 
 ---
 
@@ -320,7 +316,7 @@ scripts/guard_wiring.sh
 xcodegen generate && git diff --exit-code Voxglass.xcodeproj
 ```
 
-plus the two existing greps (StoreKit boundary; host allowlist — `librivox.org` is already permitted, so
+plus the two existing greps (host allowlist — `librivox.org` is already permitted, so
 4C trips nothing).
 
 **Locally (simulator — never in CI):**

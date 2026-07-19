@@ -13,13 +13,10 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
-    @State private var showPaywall = false
 
     var body: some View {
         VoxglassScreen(title: "More") {
             VStack(alignment: .leading, spacing: 16) {
-                VoxglassProRow()
-
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Languages")
                     LanguagesCard()
@@ -111,99 +108,6 @@ struct SettingsView: View {
     }
 }
 
-private struct VoxglassProRow: View {
-    @StateObject private var storeManager = StoreManager.shared
-    @State private var showPaywall = false
-
-    var body: some View {
-        VStack(spacing: 10) {
-            SectionTitle(title: "Voxglass Pro")
-
-            Button {
-                if storeManager.isPro {
-                    // Already Pro — nothing actionable.
-                } else {
-                    showPaywall = true
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: storeManager.isPro ? "crown.fill" : "crown")
-                        .scaledFont(size: 14)
-                        .foregroundStyle(Palette.brass)
-                        .frame(width: 32, height: 32)
-                        .background {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(Color.white.opacity(0.07))
-                        }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(storeManager.isPro ? "Pro Unlocked" : "Voxglass Pro")
-                            .scaledFont(size: 14, weight: .medium)
-                            .foregroundStyle(Palette.ink)
-                        Text(storeManager.isPro
-                            ? "Thank you for supporting Voxglass."
-                            : storeManager.products.first.map { "One-time \($0.displayPrice) — unlock \(ProPaywallView.advertised.count) Pro features" } ?? "One-time purchase"
-                        )
-                            .scaledFont(size: 11.5)
-                            .foregroundStyle(Palette.ink3)
-                    }
-
-                    Spacer(minLength: 10)
-
-                    if storeManager.isPro {
-                        Image(systemName: "checkmark.seal.fill")
-                            .scaledFont(size: 18)
-                            .foregroundStyle(Palette.brass)
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .scaledFont(size: 11, weight: .bold)
-                            .foregroundStyle(Palette.ink3.opacity(0.7))
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(storeManager.isPro
-                ? "Pro unlocked. Thank you for supporting Voxglass."
-                : "Voxglass Pro. One-time purchase — unlock \(ProPaywallView.advertised.count) Pro features."
-            )
-            .accessibilityIdentifier("pro.upsellCell")
-            .glassPanel()
-
-            Button {
-                Task { await storeManager.restorePurchases() }
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "arrow.clockwise.circle")
-                        .scaledFont(size: 14)
-                        .foregroundStyle(Palette.ink2)
-                        .frame(width: 32, height: 32)
-
-                    Text(storeManager.isRestoring ? "Restoring…" : "Restore Purchases")
-                        .scaledFont(size: 13, weight: .medium)
-                        .foregroundStyle(Palette.ink2)
-
-                    Spacer(minLength: 10)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(storeManager.isRestoring)
-            .accessibilityIdentifier("pro.restorePurchases")
-            .glassPanel()
-        }
-        .paywallSheet(isPresented: $showPaywall)
-        .task {
-            await storeManager.loadProducts()
-        }
-    }
-}
-
 private struct LanguagesCard: View {
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
@@ -270,12 +174,10 @@ private struct LanguagesCard: View {
 }
 
 private struct CacheSettingsCard: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @State private var cacheUsed: Int64 = 0
     @State private var cacheLimit: Int64 = StreamCacheStore.defaultLimit
     @State private var cachedCount: Int = 0
     @State private var showClearConfirm = false
-    @State private var showPaywall = false
     @AppStorage(AppPreferencesStore.Keys.cacheFullBooksOnCellular) private var cacheFullBooksOnCellular = false
 
     var body: some View {
@@ -298,11 +200,6 @@ private struct CacheSettingsCard: View {
                     ArtworkService.shared.clearMemory()
                     await refresh()
                 }
-            }
-        }
-        .sheet(isPresented: $showPaywall) {
-            NavigationStack {
-                ProPaywallView()
             }
         }
     }
@@ -355,23 +252,14 @@ private struct CacheSettingsCard: View {
 
     private func presetButton(_ preset: CacheManager.CachePreset) -> some View {
         let selected = preset.rawValue == cacheLimit
-        let locked = preset.isProOnly && !ProFeature.isEnabled(.cachePresets)
         return Button {
-            if locked {
-                showPaywall = true
-            } else {
-                Task {
-                    await CacheManager.shared.setPreset(preset)
-                    await refresh()
-                }
+            Task {
+                await CacheManager.shared.setPreset(preset)
+                await refresh()
             }
         } label: {
             HStack(spacing: 4) {
                 Text(preset.displayName)
-                if locked {
-                    Image(systemName: "lock.fill")
-                        .scaledFont(size: 9, weight: .semibold)
-                }
             }
             .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(selected ? .white : Palette.ink2)
@@ -383,7 +271,7 @@ private struct CacheSettingsCard: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier(locked ? "pro.lock.cache.\(preset.accessibilitySuffix)" : "cache.preset.\(preset.accessibilitySuffix)")
+        .accessibilityIdentifier("cache.preset.\(preset.accessibilitySuffix)")
     }
 
     private var cellularCard: some View {
@@ -651,24 +539,9 @@ struct AboutView: View {
 }
 
 private struct SyncSettingsCard: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
-    @State private var showPaywall = false
 
     var body: some View {
-        Group {
-            if ProFeature.isEnabled(.icloudSync) {
-                entitledCard
-            } else {
-                lockedCard
-            }
-        }
-        .padding(15)
-        .glassSurface(cornerRadius: 18)
-        .paywallSheet(isPresented: $showPaywall)
-    }
-
-    private var entitledCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "icloud.fill")
@@ -683,7 +556,7 @@ private struct SyncSettingsCard: View {
                 }
             }
 
-            Text("Your playback position syncs across devices for free. Pro adds bookmarks and favorites sync, using your private iCloud account. No app account required.")
+            Text("Your playback position syncs across devices for free. Bookmarks and favorites sync using your private iCloud account. No app account required.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
@@ -713,87 +586,45 @@ private struct SyncSettingsCard: View {
             .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
             .accessibilityIdentifier("sync.now")
         }
-    }
-
-    private var lockedCard: some View {
-        Button {
-            showPaywall = true
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "icloud.fill")
-                    .foregroundStyle(Palette.ink3)
-                Text("Bookmarks & Favorites Sync")
-                    .scaledFont(size: 13, weight: .bold)
-                    .foregroundStyle(Palette.ink)
-                Spacer()
-                ProLockBadge()
-                Text("Pro")
-                    .scaledFont(size: 12.5)
-                    .foregroundStyle(Palette.ink3)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("pro.lock.icloudSync")
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
     }
 }
 
 private struct EQSettingsRow: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var playback: PlaybackCoordinator
     @State private var showEQ = false
-    @State private var showPaywall = false
 
     var body: some View {
         Button {
-            if ProFeature.isEnabled(.eq) {
-                showEQ = true
-            } else {
-                showPaywall = true
-            }
+            showEQ = true
         } label: {
             DisclosureListRow(
                 icon: "waveform.path.ecg",
                 title: "Equalizer",
-                detail: ProFeature.isEnabled(.eq) ? "10-band EQ with presets" : "10-band EQ — a Pro feature",
+                detail: "10-band EQ with presets",
                 count: nil,
-                isEnabled: ProFeature.isEnabled(.eq)
+                isEnabled: true
             )
-            .overlay(alignment: .trailing) {
-                if !ProFeature.isEnabled(.eq) {
-                    ProLockBadge().padding(.trailing, 34)
-                }
-            }
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier(ProFeature.isEnabled(.eq) ? "settings.eq" : "pro.lock.eq")
+        .accessibilityIdentifier("settings.eq")
         .sheet(isPresented: $showEQ) {
             NavigationStack {
                 EQView().environmentObject(playback)
             }
             .presentationDragIndicator(.visible)
         }
-        .paywallSheet(isPresented: $showPaywall)
     }
 }
 
 private struct PrefetchDepthRow: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @AppStorage(AppPreferencesStore.Keys.prefetchDepth) private var depth = 1
     @AppStorage(AppPreferencesStore.Keys.prefetchWifiOnly) private var wifiOnly = true
-    @State private var showPaywall = false
 
     private let whole = PlaybackCoordinator.wholeBookPrefetchDepth
 
     var body: some View {
-        if ProFeature.isEnabled(.prefetchDepth) {
-            entitled
-        } else {
-            locked
-        }
-    }
-
-    private var entitled: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: "arrow.triangle.branch")
@@ -830,26 +661,6 @@ private struct PrefetchDepthRow: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
-    }
-
-    private var locked: some View {
-        Button {
-            showPaywall = true
-        } label: {
-            DisclosureListRow(
-                icon: "arrow.triangle.branch",
-                title: "Prefetch Depth",
-                detail: "Next chapter (1) — Pro prefetches more",
-                count: nil,
-                isEnabled: false
-            )
-            .overlay(alignment: .trailing) {
-                ProLockBadge().padding(.trailing, 34)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("pro.lock.prefetchDepth")
-        .paywallSheet(isPresented: $showPaywall)
     }
 }
 
@@ -1017,84 +828,53 @@ private struct SleepTimerDefaultRow: View {
 }
 
 private struct ListeningStatsRow: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var stats: ListeningStatsStore
     @State private var showStats = false
-    @State private var showPaywall = false
 
     var body: some View {
         Button {
-            if ProFeature.isEnabled(.listeningStats) {
-                showStats = true
-            } else {
-                showPaywall = true
-            }
+            showStats = true
         } label: {
             DisclosureListRow(
                 icon: "chart.bar.fill",
                 title: "Listening Stats",
-                detail: ProFeature.isEnabled(.listeningStats) ? "Total time, streaks, and top authors" : "Total time, streaks — a Pro feature",
+                detail: "Total time, streaks, and top authors",
                 count: nil,
-                isEnabled: ProFeature.isEnabled(.listeningStats),
-                showsLock: !ProFeature.isEnabled(.listeningStats)
+                isEnabled: true
             )
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier(ProFeature.isEnabled(.listeningStats) ? "settings.listeningStats" : "pro.lock.listeningStats")
+        .accessibilityIdentifier("settings.listeningStats")
         .sheet(isPresented: $showStats) {
             NavigationStack {
                 ListeningStatsView().environmentObject(stats)
             }
             .presentationDragIndicator(.visible)
         }
-        .paywallSheet(isPresented: $showPaywall)
     }
 }
 
 private struct FolderWatchRow: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var folderWatch: FolderWatchService
-    @State private var showPaywall = false
 
     var body: some View {
-        if ProFeature.isEnabled(.folderWatch) {
-            NavigationLink {
-                FolderWatchView().environmentObject(folderWatch)
-            } label: {
-                DisclosureListRow(
-                    icon: "folder.fill.badge.plus",
-                    title: "Watch a Folder",
-                    detail: folderWatch.folders.isEmpty ? "Import audio files from a folder" : "\(folderWatch.folders.count) watched",
-                    count: nil
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("settings.folderWatch")
-        } else {
-            Button {
-                showPaywall = true
-            } label: {
-                DisclosureListRow(
-                    icon: "folder.fill.badge.plus",
-                    title: "Watch a Folder",
-                    detail: "Import from a folder — a Pro feature",
-                    count: nil,
-                    isEnabled: false
-                )
-                .overlay(alignment: .trailing) {
-                    ProLockBadge().padding(.trailing, 34)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("pro.lock.folderWatch")
-            .paywallSheet(isPresented: $showPaywall)
+        NavigationLink {
+            FolderWatchView().environmentObject(folderWatch)
+        } label: {
+            DisclosureListRow(
+                icon: "folder.fill.badge.plus",
+                title: "Watch a Folder",
+                detail: folderWatch.folders.isEmpty ? "Import from a folder" : "\(folderWatch.folders.count) watched",
+                count: nil
+            )
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("settings.folderWatch")
     }
 }
 
 private struct LibraryBackupRow: View {
     @EnvironmentObject private var backupService: LibraryBackupService
-    @State private var showPaywall = false
     @State private var showImporter = false
     @State private var showShare = false
     @State private var exportURL: URL?
@@ -1112,8 +892,6 @@ private struct LibraryBackupRow: View {
             )
         }
         .buttonStyle(.plain)
-        .proLocked(.libraryBackup, id: "pro.lock.libraryBackup", onTapLocked: { showPaywall = true })
-        .paywallSheet(isPresented: $showPaywall)
         .confirmationDialog("Would you like to export or import?", isPresented: $showImporter, titleVisibility: .visible) {
             Button("Export Backup") {
                 Task { await exportBackup() }

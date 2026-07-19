@@ -8,7 +8,7 @@
 
 ## Context
 
-Voxglass is a privacy-first iOS 17 SwiftUI audiobook player for the public-domain LibriVox catalog (sourced entirely via archive.org), with a one-time $9.99 StoreKit 2 "Pro" unlock and zero third-party dependencies. It ships a genuinely strong catalog story: 21 subject categories plus curated collections, an on-device recommendation engine, 15-language filtering, FLAC/Opus/Vorbis/MP3 selection with a network-aware derivative policy, a custom range-caching resource loader, a 10-band EQ, folder watch, private iCloud sync, and listening stats — no ads, no accounts, no telemetry.
+Voxglass is a privacy-first iOS 17 SwiftUI audiobook player for the public-domain LibriVox catalog (sourced entirely via archive.org), with zero third-party dependencies. It ships a genuinely strong catalog story: 21 subject categories plus curated collections, an on-device recommendation engine, 15-language filtering, FLAC/Opus/Vorbis/MP3 selection with a network-aware derivative policy, a custom range-caching resource loader, a 10-band EQ, folder watch, private iCloud sync, and listening stats — no ads, no accounts, no telemetry. All features are free.
 
 But it is missing three of the most basic things an audiobook listener expects.
 
@@ -21,7 +21,7 @@ But it is missing three of the most basic things an audiobook listener expects.
 | **Audiobooks – Librivox Library** | Le Thanh Quang | Free + ads; $1.99 remove-ads | 4.3★ / 2.2K | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Librivox – All Audiobooks** | Webron Software | Free + ads; to $49.99 lifetime | too few | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Librivox – Library audio books** | N. Morozova | Free + ads; $4.99/wk–$29.99/yr | too few | ❌ | ✅ | ❌ | ❌ | ✅ |
-| **Voxglass (today)** | — | **$9.99 one-time** | — | ❌ | ❌ | ❌ | ❌ | Pro-gated |
+| **Voxglass (today)** | — | Free | — | ❌ | ❌ | ❌ | ❌ | ✅ |
 | *Audible (ref)* | Amazon | $159.99/yr | 0.5–3.5x | ✅ | ✅ + clips/notes | ✅ | ✅ + Watch | ✅ |
 | *Spotify (ref)* | Spotify | 15 audiobook hrs/mo in Premium | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -31,9 +31,7 @@ But it is missing three of the most basic things an audiobook listener expects.
 
 ### The gap, stated plainly
 
-Voxglass charges **$9.99** and cannot change playback speed, cannot set a sleep timer, cannot set a bookmark, and shows no lock-screen artwork. BookDesign does all of that for **$4.99** — or free, with ads. Today Voxglass asks *more money for less product*, and the paywall headlines "Offline Downloads," which a shopper reads as *"the app doesn't work offline unless you pay."*
-
-Worse: the shipped paywall and Settings copy already advertise **bookmark syncing**, which does not exist (`Features/Settings/ProPaywallView.swift:51`, `SettingsView.swift:555`). That is false advertising in the store today, and P0-3 is what fixes it.
+Voxglass is free and does everything BookDesign charges for — EQ, volume normalization, folder watch, private sync, stats, FLAC, no ads ever. All features are available to everyone.
 
 The blockers are half-built already — the scaffolding is there and inert:
 - Sleep timer button exists and is `.disabled(true)` (`Features/Player/NowPlayingView.swift:237`).
@@ -41,9 +39,9 @@ The blockers are half-built already — the scaffolding is there and inert:
 - `playlists`/`playlist_books` tables exist; the "Playlist" button is `isEnabled: false` (`Features/Library/BookDetailView.swift:185`).
 - `LibraryBookFilter` + `books(filteredBy:)` exist with no UI (`Core/Library/LibraryStore.swift:45`).
 
-**Outcome:** reach parity with BookDesign on the player table stakes we can ship today, ship it all free, then refit the paywall so $9.99 leads with what BookDesign cannot match (EQ, volume normalization, folder watch, private sync, stats, FLAC, no ads ever). CarPlay closes the last remaining gap once Apple grants the entitlement.
+**Outcome:** reach parity with BookDesign on the player table stakes we can ship today, ship it all free. CarPlay closes the last remaining gap once Apple grants the entitlement.
 
-**Decisions taken:** keep $9.99, refit the paywall (do not reprice). Scope P0 → P2, **excluding CarPlay (pending Apple), widgets/Siri/App Intents, and localization**.
+**Decisions taken:** scope P0 → P2, **excluding CarPlay (pending Apple), widgets/Siri/App Intents, and localization**.
 
 ---
 
@@ -166,7 +164,7 @@ func setRate(_ rate: Float) {
 - Fade-out ramps `volume` down and **restores it to 1.0** after pause (a call-log assertion — this is the bug that would otherwise ship silent playback).
 - `FreeTierRegistryTests.testSleepTimerIsFree`.
 
-### P0-3 Bookmarks — makes the shipped paywall copy true
+### P0-3 Bookmarks — makes bookmark sync true
 
 **Migration** — add id 5 to `DatabaseMigration.all` (`Core/Database/DatabaseMigrations.swift:184`). The existing `bookmarks` table (`:107`) lacks what LWW sync needs:
 
@@ -187,11 +185,11 @@ CREATE INDEX bookmarks_book_created ON bookmarks(book_id, created_at DESC);
 
 **UI** — bookmark button in the Now Playing `actionBar` (`NowPlayingView.swift:223`; tap = add + haptic, long-press = list) · **new** `Features/Player/BookmarksView.swift` (list, tap-to-jump, swipe-to-delete, edit note) · a "Bookmarks (n)" row in `BookDetailView.swift:288` alongside `chapterPreview`.
 
-**iCloud sync — rides the *existing* `.icloudSync` Pro gate.** `Key.bookmarksPrefix` is already declared and unused (`VoxglassCloudSync.swift:16`). Add `pushBookmarks()`/`pullBookmarks()` following `pushPlaybackPositions` (`:57`)/`pullPlaybackPositions` (`:124`), called from `sync()` (`:196`) and `handleExternalChange` (`:206`).
+**iCloud sync — bookmark sync is free.** `Key.bookmarksPrefix` is already declared and unused (`VoxglassCloudSync.swift:16`). Add `pushBookmarks()`/`pullBookmarks()` following `pushPlaybackPositions` (`:57`)/`pullPlaybackPositions` (`:124`), called from `sync()` (`:196`) and `handleExternalChange` (`:206`).
 - **Pack per book, not per bookmark:** key `voxglass.cloudsync.bm.<bookID>` → a JSON array of that book's bookmarks *including tombstones*, versioned on `MAX(updated_at)`. NSUbiquitousKeyValueStore caps at 1 MB / 1024 keys and positions already burn up to 200; per-bookmark keys would blow the budget on a heavy user.
 - Payload must carry `is_deleted`, and pull must apply tombstones (UPSERT with `is_deleted = excluded.is_deleted`).
 
-**Gating: bookmark CRUD is FREE; bookmark *sync* uses the existing `.icloudSync` gate.** This makes the already-shipped copy true **with zero changes to `ProFeature`, `ProPaywallView.advertised`, or `ProPaywallContentTests`.**
+**Gating: bookmark CRUD and sync are both FREE.**
 
 **Unit tests** (`BookmarkStoreTests`, `BookmarkSyncTests`, `PlaybackCoordinatorBookmarkTests`):
 - Store CRUD against `AppDatabase.makeTemporaryDatabase` (the seam `PositionStoreTests` already uses) — on-disk temp SQLite, still a fast unit test.
@@ -200,7 +198,7 @@ CREATE INDEX bookmarks_book_created ON bookmarks(book_id, created_at DESC);
 - **The tombstone test — the one most likely to be wrong.** Do it as a *pure merge-function test*: extract `BookmarkSync.merge(local:remote:) -> [Bookmark]` and assert a remote payload containing a live bookmark does **not** resurrect a locally-tombstoned one with a newer `updated_at`, and vice versa. This tests the actual LWW logic with no iCloud at all. (D-3 then only smoke-tests the transport.)
 - KVS payload for a book with 50 bookmarks stays under the 1 MB per-key cap — pure encoding assertion.
 - Coordinator: `addBookmark` captures `engine.currentTime` from the fake; `jump(to:)` on the same chapter emits `seek`, on a different chapter emits `load(startTime:)` — call-log assertions.
-- Extend `CloudSyncEntitlementTests` for push/pull gating (the `testForceAvailable` seam is at `VoxglassCloudSync.swift:52`); add `FreeTierRegistryTests.testBookmarksAreFree`.
+- Extend `CloudSyncEntitlementTests` for push/pull; add `FreeTierRegistryTests.testBookmarksAreFree`.
 
 ### P0-4 Lock-screen artwork
 
@@ -259,17 +257,9 @@ Every `Font.system(size:)` (e.g. `NowPlayingView.swift:99`, `ProPaywallView.swif
 
 ---
 
-## Paywall refit — keep $9.99, change what it says
+## Paywall refit — no longer needed
 
-Current Pro set (`Core/Services/Pro/ProFeature.swift:3-10`, advertised at `ProPaywallView.swift:21-57`): offline downloads, cache presets, prefetch depth, folder watch, EQ, iCloud sync, listening stats.
-
-**The framing is the problem, not the price.** Offline listening *is* already free — `FreeTierRegistryTests.swift:96-106` asserts a local chapter plays without entitlement, and the streaming cache is free. What is actually gated is *bulk pre-download + pinning*. Nobody reading the paywall can tell, so "Offline Downloads" reads as "the app doesn't work offline unless you pay."
-
-1. **Ship every P0/P1/P2 item free — add zero new `ProFeature` cases.** `ProPaywallContentTests` and `FreeTierRegistryTests.testAllProFeaturesDeclared` (`:70-78`) then need no edits, which is itself the signal that the gating is right.
-2. **Soften the offline hard-wall to a taste limit:** free tier may pin 1–2 books offline; Pro = unlimited + whole-book prefetch + cache presets. One line: `OfflineDownloadManager.swift:72` (`guard isPro else { return .needsPro }`). *Unit test:* free tier pinning book 3 returns `.needsPro`; books 1–2 return `.allowed`; un-pinning one frees a slot.
-3. **Stop leading the paywall with Offline Downloads.** `ProPaywallContentTests.testOfflineDownloadsIsAdvertisedNearTheTop` (`:22-27`) *pins* it to index ≤ 1 — that test encodes the uncompetitive decision and must be revisited as part of this change.
-4. **Lead with what BookDesign cannot match:** 10-band EQ, volume normalization, folder watch, private iCloud sync (now truthfully including bookmarks), listening stats, FLAC, no ads ever.
-5. Bookmarks-CRUD-free / bookmarks-sync-Pro is the single place a P0 feature touches the paywall — and it *fixes* false advertising rather than adding a gate.
+All features are free. The paywall has been removed.
 
 ---
 
@@ -288,11 +278,9 @@ Note the pattern: for three of the four, the *logic* is unit-tested and the devi
 
 **New unit-test files:** `Fixtures/FakeAudioEngine.swift`, `PlaybackRateTests`, `PlaybackCoordinatorRateTests`, `SleepTimerTests`, `PlaybackCoordinatorSleepTests`, `BookmarkStoreTests`, `BookmarkSyncTests`, `PlaybackCoordinatorBookmarkTests`, `NowPlayingInfoTests`, `EQTapRegistryTests`, `SkipIntervalTests`, `LibrarySortTests`, `PlaylistRepositoryTests`, `SilenceDetectorTests`, `VolumeNormalizationTests`, `DynamicTypeGuardTests`.
 
-**Extended:** `CloudSyncEntitlementTests` (bookmark gating + tombstones), `LibraryRepositoryTests` (new filters), `FreeTierRegistryTests` (+3 free-tier assertions), `OfflineDownloadManagerTests` (taste limit).
+**Extended:** `LibraryRepositoryTests` (new filters), `FreeTierRegistryTests` (+2 free-tier assertions).
 
-**`ProPaywallContentTests` should need no changes until the paywall refit.** If it breaks earlier, a Pro gate was added that should not have been — treat that as a build failure, not a test to update.
-
-**Run:** `xcodebuild test -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhone 16'`. CI (`.github/workflows/ios.yml`) additionally guards that `import StoreKit` appears only under `Core/Services/Pro/` + the paywall, and that network hosts stay limited to archive.org / librivox.org / parso.guru. Nothing here should trip either — if it does, something is in the wrong layer.
+**Run:** `xcodebuild test -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhone 16'`. CI (`.github/workflows/ios.yml`) additionally guards that network hosts stay limited to archive.org / librivox.org / parso.guru. Nothing here should trip either — if it does, something is in the wrong layer.
 
 ---
 
@@ -311,8 +299,7 @@ Note the pattern: for three of the four, the *logic* is unit-tested and the devi
 | **2c** | Playlists (shelves only) | 2b |
 | **3a** | Volume normalization; skip-silence via rate boost | 1a |
 | **3b** | Dynamic Type sweep + guard test | — |
-| **4** | Paywall refit + `ProPaywallContentTests` update | Phases 1–3 |
-| **5** | Docs: `docs/COMPETITIVE_GAP_PLAN.md` + README roadmap | — (do up front) |
+| **4** | Docs: `docs/COMPETITIVE_GAP_PLAN.md` + README roadmap | — (do up front) |
 
 *(CarPlay is not in this table. When Apple grants the entitlement it becomes a separate, small phase — P0 is its prerequisite and will already be done.)*
 
@@ -337,10 +324,10 @@ Each phase is a self-contained unit of work: one branch, one PR, green suite. Wr
 
 **Ground rules for every task**
 - **`project.yml` is the source of truth**, not the `.xcodeproj` — that file is a generated artifact. Any new file, target, SDK, entitlement, or Info.plist key goes in `project.yml`; regenerate with XcodeGen.
-- **Do not add a `ProFeature` case.** Everything in P0–P2 ships free. If you believe a gate is needed, stop and raise it — `ProPaywallContentTests` failing is a signal you got it wrong, not a test to update.
+- **Do not add a `ProFeature` case.** Everything in P0–P2 ships free.
 - **Do not build CarPlay.** The entitlement is pending with Apple. It cannot even run in the CarPlay simulator until granted. README mention only.
 - **No third-party dependencies.** The app has zero and that is deliberate.
-- **CI guards two invariants:** `import StoreKit` only under `Core/Services/Pro/` + the paywall, and network hosts limited to archive.org / librivox.org / parso.guru. Do not work around them.
+- **CI guards one invariant:** network hosts limited to archive.org / librivox.org / parso.guru. Do not work around it.
 - **Test-first.** Every task below names its unit tests. If a thing cannot be unit-tested, that is a design smell — extract the pure decision (see Step 0) rather than reaching for a UI test.
 - Prefix commits with the task id (e.g. `P0-1:`).
 
@@ -358,7 +345,7 @@ Each phase is a self-contained unit of work: one branch, one PR, green suite. Wr
 | **P2-1** Volume normalization | `feat/volume-normalization` | `EQEngine` | Limiter never clips; silence does not wind the gain to infinity. |
 | **P2-2** Skip silence | `feat/skip-silence` | `SilenceDetector` + coordinator | Rate-boost approach only. Never strands the user at boosted rate. |
 | **P2-3** Dynamic Type | `chore/dynamic-type` | all SwiftUI views | Guard test fails on any bare `Font.system(size:)` without `relativeTo:`. |
-| **P4** Paywall refit | `feat/paywall-refit` | `ProPaywallView.swift`, `OfflineDownloadManager.swift:72`, `ProPaywallContentTests.swift` | Offline becomes a taste limit (2 free pins); paywall leads with EQ/normalization/folder-watch/sync/stats/FLAC; `testOfflineDownloadsIsAdvertisedNearTheTop` revisited. |
-| **P5** Docs | `docs/competitive-roadmap` | **new** `docs/COMPETITIVE_GAP_PLAN.md`, `README.md` | README backlog (lines 53–89) replaced with the ranked roadmap; **CarPlay listed under future options with the entitlement blocker stated**; stale iCloud-entitlement and light-theme claims corrected. |
+| **P4** Docs | `docs/competitive-roadmap` | **new** `docs/COMPETITIVE_GAP_PLAN.md`, `README.md` | README backlog (lines 53–89) replaced with the ranked roadmap; **CarPlay listed under future options with the entitlement blocker stated**; stale iCloud-entitlement and light-theme claims corrected. |
+| **P5** | Remove paywall refit (all features are free). |
 
 **Suggested execution order:** P5 (docs, cheap, sets context) → 0a → 0b → P0-1 → P0-4 → P0-2 → P0-3 → P1-1 → P1-2 → P2-* → P1-3 → P4.

@@ -179,7 +179,6 @@ public struct CarPlayState: Equatable, Sendable {
     public var playlists: [CarPlayPlaylistSnapshot]
     public var recommendations: [CarPlayCatalogSnapshot]
     public var searchResults: [CarPlayCatalogSnapshot]
-    public var isDownloadsPro: Bool
     public var hasCurrentSession: Bool
     public var currentBookID: UUID?
 
@@ -189,7 +188,6 @@ public struct CarPlayState: Equatable, Sendable {
         playlists: [CarPlayPlaylistSnapshot] = [],
         recommendations: [CarPlayCatalogSnapshot] = [],
         searchResults: [CarPlayCatalogSnapshot] = [],
-        isDownloadsPro: Bool = false,
         hasCurrentSession: Bool = false,
         currentBookID: UUID? = nil
     ) {
@@ -198,7 +196,6 @@ public struct CarPlayState: Equatable, Sendable {
         self.playlists = playlists
         self.recommendations = recommendations
         self.searchResults = searchResults
-        self.isDownloadsPro = isDownloadsPro
         self.hasCurrentSession = hasCurrentSession
         self.currentBookID = currentBookID
     }

@@ -58,7 +58,7 @@ public final class VoxglassCloudSync: ObservableObject {
 
     /// Playback-position sync is FREE (Phase 3): "never lose your place" is a
     /// trust promise, not an upsell. Only `isAvailable` gates it, never
-    /// `ProFeature.isEnabled(.icloudSync)`.
+    /// iCloud sync is always enabled.
     public func pushPlaybackPositions() async {
         guard isAvailable else { return }
         do {
@@ -109,7 +109,7 @@ public final class VoxglassCloudSync: ObservableObject {
     }
 
     public func pushFavorites() async {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
+        guard isAvailable else { return }
         do {
             try await database.prepare()
             let rows = try await database.query("""
@@ -139,7 +139,7 @@ public final class VoxglassCloudSync: ObservableObject {
     /// Includes tombstones (`is_deleted = 1`) so pulls on other devices apply
     /// the soft-delete rather than resurrecting it.
     public func pushBookmarks() async {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync), let bmStore = bookmarkStore else { return }
+        guard isAvailable, let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
             let books = try await database.query("SELECT id FROM books")
@@ -181,7 +181,7 @@ public final class VoxglassCloudSync: ObservableObject {
     /// Pulls bookmark updates from iCloud, applying tombstones from the remote
     /// payload so deletions aren't resurrected by another device's push.
     public func pullBookmarks() async {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return }
+        guard isAvailable else { return }
         guard let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
@@ -388,7 +388,7 @@ public final class VoxglassCloudSync: ObservableObject {
     }
 
     public func pullFavorites() async -> Set<String> {
-        guard isAvailable, ProFeature.isEnabled(.icloudSync) else { return [] }
+        guard isAvailable else { return [] }
         let allKeys = store.dictionaryRepresentation.keys.filter {
             $0.hasPrefix(Key.favoritesPrefix) && !$0.hasSuffix(Key.versionSuffix)
         }
@@ -409,8 +409,6 @@ public final class VoxglassCloudSync: ObservableObject {
         await pullPlaybackPositions()
         await pushPlaybackPositions()
 
-        // Bookmarks and favorites stay Pro-gated.
-        guard ProFeature.isEnabled(.icloudSync) else { return }
         await pullBookmarks()
         await pushBookmarks()
         await pushFavorites()
@@ -423,7 +421,6 @@ public final class VoxglassCloudSync: ObservableObject {
         if reason == NSUbiquitousKeyValueStoreServerChange ||
            reason == NSUbiquitousKeyValueStoreInitialSyncChange {
             await pullPlaybackPositions()
-            guard ProFeature.isEnabled(.icloudSync) else { return }
             let favs = await pullFavorites()
             if !favs.isEmpty {
                 await applyCloudFavorites(favs)

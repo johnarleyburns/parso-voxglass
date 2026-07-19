@@ -112,7 +112,7 @@ Architecture recap (so the executor has the mental model):
 Decisions locked with the user:
 - **Language**: multi-select set, English preselected but fully removable; applies to search,
   browse, and recommendations.
-- **Monetization**: expand the one-time Pro bundle **and** add iCloud/CloudKit sync as a Pro anchor.
+- **Monetization**: future audiobook sales and library partnership integrations — no feature gates.
 - **Competitor gaps**: prioritized roadmap goes in the README; this plan stays on the six items.
 
 ---
@@ -305,39 +305,23 @@ RecommendationQueryBuilder,RecommendationEngine,WorkKey}.swift`; edits to `Datab
 
 ---
 
-## 6. Monetization: expand one-time Pro + iCloud/CloudKit sync anchor
+## 6. Monetization: future audiobook sales + library partnerships
 
-**Current state.** One-time non-consumable "Voxglass Pro" ($9.99) via StoreKit 2
-(`Core/Services/Pro/`). Gates today: cache presets, EQ. Declared-but-unwired: `prefetchDepth`,
-`folderWatch`, `carplay`. No subscription, no ads, no analytics — an explicit product stance
-("no accounts, no tracking, no telemetry"). Free-tier guarantees pinned by
-`VoxglassTests/FreeTierRegistryTests.swift`.
+**Current state.** The app is entirely free — no feature gates, no subscriptions, no ads, no
+accounts. All features (offline downloads, 10-band EQ, Folder Watch, listening stats, library
+backup & restore, iCloud bookmark/favorites/position sync, CarPlay, volume normalization,
+skip silence, and the full catalog) are available to everyone. iCloud sync is fully free and
+functional.
 
-**Direction (user-selected): keep the lifetime unlock and grow its value; add iCloud sync as the anchor.**
+**Direction.** Monetization is deferred to a future phase and will happen through:
+- **Audiobook sales** — curated public-domain recordings with premium production quality.
+- **Library partnerships** — institution integrations for library card holders.
 
-1. **Grow the Pro bundle** (no subscription, privacy intact):
-   - Wire the already-declared `ProFeature.prefetchDepth`, `.folderWatch`, `.carplay` to real gates as
-     those features ship.
-   - Add the highest-value new Pro features from the roadmap (§7) — notably **listening stats** and the
-     **Apple Watch app** — behind the existing single unlock.
-2. **iCloud/CloudKit sync (the anchor, its own phase).** Cross-device sync of playback position,
-   bookmarks, and favorites via the **user's own iCloud** — CloudKit *private* database (or
-   `NSUbiquitousKeyValueStore` for the smaller position/bookmark set). This adds **no app account and no
-   server of ours**, so it stays consistent with the privacy stance: data lives in the user's iCloud, not
-   telemetry. Add `ProFeature.icloudSync`; gate the sync engine behind it. This directly closes the #1
-   monetizable competitor gap (cross-device position sync) without compromising positioning.
-   - Sync layer plugs into the SQLite stores (`PositionStore`, bookmarks table, `books.is_favorite`);
-     design it as a mirror/merge with last-writer-wins on `updated_at`.
-3. **Keep free-tier promises.** Never gate formats, near-gapless playback, sources/import, offline
-   listening, or privacy. Update `FreeTierRegistryTests` and the paywall copy
-   (`ProPaywallView.swift`) to reflect the expanded bundle. Update the design note under
-   `docs/opus-pro-unlock/`.
-4. **Explicitly not doing now:** subscriptions and a tip jar (not selected).
+This approach preserves the privacy-first stance (no accounts, no tracking, no telemetry)
+while creating sustainable revenue. No feature gates will be reintroduced.
 
-**Key files:** `Core/Services/Pro/{ProFeature,StoreManager}.swift`, new sync module (e.g.
-`Core/Services/Sync/`), `Features/Settings/{SettingsView,ProPaywallView}.swift`,
-`VoxglassTests/FreeTierRegistryTests.swift`, `Resources/Pro.storekit` (unchanged price),
-`docs/opus-pro-unlock/`.
+**Key files (to remove/clean up in a future sweep):** `Core/Services/Pro/`,
+`Features/Settings/ProPaywallView.swift`.
 
 ---
 
@@ -376,11 +360,9 @@ Per-item checks:
    → after refresh, "Recommended for You" skews to that author/adjacent subjects and excludes already-heard
    titles. Add unit tests for the decay upsert, subject damping, scorer, and MMR diversification (port the
    parso-radio test shapes).
-6. **Monetization.** Free build hits paywall on new Pro features; purchase/restore unlocks; iCloud sync
-   round-trips position between two simulators signed into the same iCloud; `FreeTierRegistryTests` pass.
-
-Run the existing guard tests (import/network guards in CI) and `/security-review` on the sync + StoreKit
-changes before opening a PR.
+6. **Monetization.** All features remain free; iCloud sync round-trips position between two
+   simulators signed into the same iCloud. Future monetization via audiobook sales / library
+   partnerships (not feature gates).
 
 ---
 
@@ -390,7 +372,7 @@ For the engineer/agent executing this plan:
 
 **Ground rules**
 - **No third-party dependencies.** SwiftPM config is intentionally empty; use only Apple frameworks
-  (Foundation, SwiftUI, AVFoundation, StoreKit, CloudKit, libsqlite3). Do not add SPM packages.
+   (Foundation, SwiftUI, AVFoundation, CloudKit, libsqlite3). Do not add SPM packages.
 - **Never edit `Voxglass.xcodeproj` by hand.** Add/rename files, then edit `project.yml` if needed and run
   `xcodegen generate`. New Swift files under `Voxglass/` are picked up by the existing source globs.
 - **Persistence conventions:** SQLite via `actor AppDatabase`; schema changes go through the next numbered

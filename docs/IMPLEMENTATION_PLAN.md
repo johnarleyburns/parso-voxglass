@@ -49,5 +49,5 @@ Voxglass is a GPLv3, iOS-native, privacy-first public-domain audiobook app. It h
 - Add bundled author metadata and author cards.
 - Add explicit user-tapped external author links where available.
 - Add recommendations generated from on-device library and bundled metadata.
-- Add optional StoreKit 2 tip jar without feature gating.
+- Add recommendations generated from on-device library and bundled metadata.
 

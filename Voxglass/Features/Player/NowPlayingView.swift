@@ -2,7 +2,6 @@ import SwiftUI
 import VoxglassCore
 
 struct NowPlayingView: View {
-    @ObservedObject private var storeManager = StoreManager.shared
     @EnvironmentObject private var playback: PlaybackCoordinator
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.dismiss) private var dismiss
@@ -10,7 +9,6 @@ struct NowPlayingView: View {
     @State private var isScrubbing = false
     @State private var showingEQ = false
     @State private var showingBookmarks = false
-    @State private var showPaywall = false
     @State private var genre: LibriVoxBrowseCategory?
 
     /// Favorite state derived from the live library store (source of truth),
@@ -93,7 +91,6 @@ struct NowPlayingView: View {
             }
             .presentationDragIndicator(.visible)
         }
-        .paywallSheet(isPresented: $showPaywall)
     }
 
     private func loadGenre(for session: PlaybackSession) async {
@@ -439,32 +436,15 @@ struct NowPlayingView: View {
 
     @ViewBuilder
     private var equalizerButton: some View {
-        if ProFeature.isEnabled(.eq) {
-            Button {
-                showingEQ = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .scaledFont(size: 16)
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("Equalizer")
-            .accessibilityIdentifier("nowplaying.eq")
-        } else {
-            Button {
-                showPaywall = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .scaledFont(size: 16)
-                    .frame(width: 44, height: 44)
-                    .overlay(alignment: .topTrailing) {
-                        Image(systemName: "lock.fill")
-                            .scaledFont(size: 8, weight: .bold)
-                            .offset(x: 6, y: -6)
-                    }
-            }
-            .accessibilityLabel("Equalizer (Pro)")
-            .accessibilityIdentifier("pro.lock.eq")
+        Button {
+            showingEQ = true
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .scaledFont(size: 16)
+                .frame(width: 44, height: 44)
         }
+        .accessibilityLabel("Equalizer")
+        .accessibilityIdentifier("nowplaying.eq")
     }
 
     private func chapterList(_ session: PlaybackSession) -> some View {

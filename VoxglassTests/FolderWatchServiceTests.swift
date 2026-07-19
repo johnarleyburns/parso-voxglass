@@ -5,7 +5,6 @@ import XCTest
 final class FolderWatchServiceTests: XCTestCase {
 
     override func tearDown() {
-        EntitlementCache.shared.setTestEntitlement(nil)
         super.tearDown()
     }
 
@@ -76,34 +75,5 @@ final class FolderWatchServiceTests: XCTestCase {
         XCTAssertEqual(library.count, 1, "One book per folder")
         let sources = try await repository.fetchSources()
         XCTAssertEqual(sources.count, 1, "One source per folder")
-    }
-
-    // MARK: - Gating
-
-    func testScanSkippedWhenNotEntitled() async throws {
-        EntitlementCache.shared.setTestEntitlement(false)
-        let database = AppDatabase.makeTemporaryDatabase(named: "folder-gate-off")
-        let repository = LibraryRepository(database: database)
-        let defaults = UserDefaults(suiteName: "folder-gate-off-\(UUID().uuidString)")!
-        let service = FolderWatchService(repository: repository, defaults: defaults)
-
-        let dir = try makeTempAudioFolder(fileCount: 2)
-        defer { try? FileManager.default.removeItem(at: dir) }
-
-        await service.addFolder(dir)
-
-        XCTAssertTrue(service.folders.isEmpty, "Not-Pro must not add watched folders")
-        let library = try await repository.fetchLibrary()
-        XCTAssertTrue(library.isEmpty, "Not-Pro must not import any books")
-    }
-    private func makeTempAudioFolder(fileCount: Int) throws -> URL {
-        let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("VoxglassWatch-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        for index in 0..<fileCount {
-            let file = dir.appendingPathComponent(String(format: "%02d.mp3", index + 1))
-            try Data("audio".utf8).write(to: file)
-        }
-        return dir
     }
 }

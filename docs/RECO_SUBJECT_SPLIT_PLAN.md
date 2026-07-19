@@ -203,9 +203,7 @@ setup style (see `TasteProfileStoreTests.swift`, `LibraryRepositoryTests.swift:3
 
 `BackupPayloadTests.swift`:
 - `testExportFileNameUsesJSONExtension` — `exportToFile()` URL ends in
-  `.json` (gate Pro check via existing test hooks if needed; if
-  `ProFeature.isEnabled` blocks unit tests, assert on the filename format
-  helper instead — check how existing backup tests handle Pro gating).
+   `.json`.
 - `testImportReadsLegacyVoxglassbackupFile` — write a valid payload to a
   temp file named `x.voxglassbackup`, import, assert books restored.
 

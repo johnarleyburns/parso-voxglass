@@ -61,7 +61,6 @@ final class CarPlayInterfaceController {
             },
             recommendations: services.homeRecommendationStore.recommendations.map(makeCatalogSnapshot),
             searchResults: services.catalogStore.results.map(makeCatalogSnapshot),
-            isDownloadsPro: ProFeature.isEnabled(.offlineDownloads),
             hasCurrentSession: coordinator.currentSession != nil,
             currentBookID: coordinator.currentSession?.book.id
         )

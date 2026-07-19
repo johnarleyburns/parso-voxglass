@@ -34,8 +34,7 @@ commit `c20235c`.
 ### RC1 — Restore is gated behind a long network-bound bootstrap chain
 
 `AppServices.bootstrap()` (AppServices.swift:102-130) awaits, **before**
-restoring the session: `StoreManager.refreshEntitlement()` (StoreKit, network),
-`libraryStore.refresh()`, three repository backfills, a taste-history rebuild,
+restoring the session: `libraryStore.refresh()`, three repository backfills, a taste-history rebuild,
 `homeRecommendationStore.load(...)` (network fetch), offline-download state
 refresh, and `cloudSync.pullPlaybackPositions()`. On a cold post-upgrade launch
 (cold caches, backfills doing real work) or with a slow/absent network, the
@@ -226,7 +225,6 @@ func bootstrap() async {
     await libraryStore.refresh()
     await playbackCoordinator.reconcileSnapshots()
     await playbackCoordinator.restorePresentedSession(from: libraryStore.books)
-    await StoreManager.shared.refreshEntitlement()
     // ... backfills, taste rebuild, reco load, offline refresh (unchanged) ...
     await cloudSync.pullPlaybackPositions()
     await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
@@ -250,9 +248,8 @@ public func refreshPresentedSessionAfterCloudPull(from books: [BookWithChapters]
 (If `currentSession` was nil — first launch on a new device with cloud data —
 this also makes the miniplayer appear once the pull lands.)
 
-Entitlement note: `restorePresentedSession` touches no Pro-gated feature
-(`applyStoredRate` and artwork are free), so running it before
-`refreshEntitlement()` is safe. `restoreEQ` already ran in `init`.
+Entitlement note: `restorePresentedSession` is fully free
+(`applyStoredRate` and artwork are free), so running it before the rest of bootstrap is safe.
 
 ### Phase C — durable row at chapter auto-advance (PlaybackCoordinator.swift)
 
@@ -361,5 +358,5 @@ Repeat with a force quit ~2 s after an auto-advance chapter boundary.
 - **Risk (Phase C):** writing 0 over a chapter row — intentional and correct at
   a genuine chapter start; confined to `persistChapterStart` call sites so the
   anti-zero guard stays meaningful everywhere else.
-- Hard constraint honored: playback position is never lost or Pro-gated
+- Hard constraint honored: playback position is never lost or gated
   (docs/RELEASE_PLAN.md; position durability layers untouched).

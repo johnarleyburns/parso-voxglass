@@ -9,7 +9,6 @@ struct BookDetailView: View {
     var book: BookWithChapters
     @Binding var showingNowPlaying: Bool
     @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
-    @State private var showPaywall = false
     @State private var showCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
@@ -62,11 +61,6 @@ struct BookDetailView: View {
                 bookID: currentBook.book.id,
                 in: recentlyViewedRaw
             )
-        }
-        .sheet(isPresented: $showPaywall) {
-            NavigationStack {
-                ProPaywallView()
-            }
         }
         .sheet(isPresented: $showingBookmarks) {
             NavigationStack {
@@ -274,8 +268,6 @@ struct BookDetailView: View {
             allowCellularOverride: allowCellular
         )
         switch decision {
-        case .needsPro:
-            showPaywall = true
         case .needsCellularConfirmation:
             showCellularPrompt = true
         case .start:

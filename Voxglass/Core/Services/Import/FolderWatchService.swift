@@ -5,8 +5,7 @@ import UIKit
 #endif
 
 /// Watches user-picked folders of audio files and imports them as local books
-/// (§4). Gated behind `ProFeature.folderWatch`; picking/scanning is a no-op when
-/// not entitled. Security-scoped bookmarks are persisted so watched folders
+/// (§4). Security-scoped bookmarks are persisted so watched folders
 /// survive relaunch; a foreground rescan + `NSFilePresenter` keep them live.
 @MainActor
 public final class FolderWatchService: ObservableObject {
@@ -69,7 +68,6 @@ public final class FolderWatchService: ObservableObject {
     // MARK: - Public API
 
     public func addFolder(_ url: URL) async {
-        guard ProFeature.isEnabled(.folderWatch) else { return }
         guard !folders.contains(where: { $0.url == url }) else { return }
 
         let accessing = url.startAccessingSecurityScopedResource()
@@ -100,14 +98,12 @@ public final class FolderWatchService: ObservableObject {
     }
 
     public func rescanAll() async {
-        guard ProFeature.isEnabled(.folderWatch) else { return }
         for folder in folders {
             await scan(folder: folder)
         }
     }
 
     public func scan(folder: WatchedFolder) async {
-        guard ProFeature.isEnabled(.folderWatch) else { return }
         let url = folder.url
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }

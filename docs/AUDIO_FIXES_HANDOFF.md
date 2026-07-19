@@ -57,8 +57,8 @@ That is precisely how the bug in §2 shipped: a Skip Silence toggle that writes 
 on. When you finish, **drive the app** (§Verification) — do not conclude from a green suite.
 
 **One product decision is already made** (don't relitigate it): volume normalization ships **free**.
-EQ bands stay Pro. This follows `docs/COMPETITIVE_GAP_PLAN_2.md` ("no new gates") and forces the
-paywall copy change in §4.
+EQ bands are also free. All features are available to everyone. This follows
+`docs/COMPETITIVE_GAP_PLAN_2.md` ("no new gates").
 
 ---
 
@@ -87,21 +87,14 @@ distortion, not leveling. Three further defects in the same block:
   leaks across chapters and prepares.
 - Gain is recomputed **per sample** rather than per hop.
 
-**Skip Silence is dead for free users.** The silence detector lives *inside the EQ tap*
+**Skip Silence is dead for users who haven't engaged EQ.** The silence detector lives *inside the EQ tap*
 (`EQAudioProcessor.swift:15`), and:
 
-- `EQAudioProcessor.attach(to:)` is gated on `ProFeature.isEnabled(.eq)` (`:63`), and
+- `EQAudioProcessor.attach(to:)` is gated on EQ engagement (`:63`), and
 - the tap is only attached when the user *engages EQ* (`AVPlayerAudioEngine.setEQEngaged`, `:83-93`).
 
-The signal path is `tap → EQAudioProcessor.onSilenceChanged → AudioEngine → PlaybackCoordinator`
-(`PlaybackCoordinator.swift:88`). So silence events only ever reach the coordinator for a **Pro
-user who has turned EQ on**. Skip Silence has no `ProFeature` case — it is a free feature, and its
-Settings toggle (shipped in `83dd549`) writes a preference nothing acts on. The wiring guard passed
-because a writer exists.
-
-**Consequences.** The tap must attach for *everyone*, or Skip Silence stays a lie. Once it does,
-normalization runs for free users too — which is the intended outcome, and which makes the paywall
-line "10-Band EQ + Volume Normalization" (`ProPaywallView.swift:25`) false.
+**Consequences.** The tap must attach for *everyone*, or Skip Silence stays broken. Once it does,
+normalization runs for all users too — which is the intended outcome.
 
 **Outcome we want:** normalization that levels quiet LibriVox recordings instead of distorting
 them; a Skip Silence toggle that works; a paywall that only claims what it gates; a test script
@@ -142,11 +135,8 @@ converges toward target for a quiet input, limiter never clips, silence does not
 
 This is what un-deads Skip Silence. Without it, §2 only ever runs for Pro users with EQ engaged.
 
-- `EQAudioProcessor.attach(to:)` — **drop the `ProFeature.isEnabled(.eq)` guard** (`:63`) so every
-  user gets a tap. *Keep* the guard on `applyPreset` (`:45`) and `setGain` (`:54`) — those are the
-  Pro surface.
-- `EQEngine` — add an `eqStagesEnabled` flag, set from `ProFeature.isEnabled(.eq)` when `TapContext`
-  constructs it (`EQAudioProcessor.swift:37-41`). When false, skip the biquad chain. Free users run
+- `EQAudioProcessor.attach(to:)` — **drop the gate** (`:63`) so every user gets a tap.
+- `EQEngine` — add an `eqStagesEnabled` flag. When false, skip the biquad chain. Users run
   the tap with EQ bypassed: normalization and silence detection only.
 - `AVPlayerAudioEngine` — attach the tap on `load` / `preloadNext` unconditionally rather than only
   from `setEQEngaged` (`:83-93`, `:179`, `:196`). `eqEngagedDesired` now toggles EQ *stages*, not
@@ -178,17 +168,9 @@ four places (`:41`, `:51`, `:64`, `:70`, `:79`, `:85`); those become the relativ
 and 2.5× must clamp to 3.5× rather than overshoot. Extend `SilenceDetectorTests` with a realistic
 noise-floor fixture — hiss at ~0.01 reads as silence at the new threshold; speech at ~0.05 does not.
 
-## 5. Paywall truth
+## 5. No paywall changes needed
 
-- `ProPaywallView.swift:25` — `"10-Band EQ + Volume Normalization"` → `"10-Band EQ"`. The
-  normalization clause is now false.
-- Rewrite `foreverFreeSection` (`:144-157`) to name what actually ships free: speed 0.5–3.5×, sleep
-  timer, bookmarks, lock-screen artwork, per-chapter narrators, volume normalization, skip silence,
-  FLAC/MP3, no ads, no telemetry, no accounts.
-
-No `ProFeature` case is added or removed, so `FreeTierRegistryTests` needs no structural edit. Add
-assertions to `ProPaywallContentTests`: the EQ advertisement does not claim normalization; the free
-section names normalization and skip silence.
+All features are now free — no paywall copy changes needed.
 
 ## 6. `scripts/test.sh`
 
@@ -216,29 +198,28 @@ list, and runs nothing — so the script looks like it hangs.
 - [ ] Full simulator suite green (244 tests today, plus the new ones).
 - [ ] `bash scripts/guard_wiring.sh` — all 7 guards pass.
 - [ ] `scripts/test.sh` runs with no arguments, on a clean checkout, without a destination dump.
-- [ ] Paywall makes no claim the app does not gate.
-- [ ] **Driven in the app, as a free user** (see below).
+- [ ] Paywall makes no claims the app does not deliver.
+- [ ] **Driven in the app** (see below).
 
 ## Verification
 
 Tests are necessary but not sufficient here — a fully green suite is exactly what shipped a dead
 Skip Silence toggle. Build and drive the app:
 
-1. As a **free** user (EQ never engaged), turn on Skip Silence, play a quiet LibriVox chapter, and
+1. Turn on Skip Silence, play a quiet LibriVox chapter, and
    confirm the rate actually rises in the silent gaps and returns to the user's chosen rate on
    speech. This is the bug this work exists to fix; if it doesn't happen, §3 is incomplete.
-2. Confirm a quiet recording is audibly **leveled** with EQ off — that is normalization running free.
-3. Confirm EQ bands still do nothing for a free user (stages bypassed, tap attached).
+2. Confirm a quiet recording is audibly **leveled** with EQ off — that is normalization running.
+3. Confirm EQ bands are active when engaged.
 4. Set playback to 3.5× and confirm silence does not *slow you down*.
 5. Push a branch, confirm `guarded-tests` is green in CI **before** merging to `main` — and remember
    a green ubuntu job does not mean it compiles. The simulator suite is the compile gate.
 
 ## Risks
 
-- **Always-on taps** mean every user now pays the per-sample processing cost, not just Pro users
-  with EQ engaged. It is a tight loop over a buffer that Pro users already run. If it shows up on
-  older devices, the fallback is to attach the tap only when Skip Silence or normalization is
-  actually enabled — a preference-driven attach rather than an unconditional one.
+- **Always-on taps** mean every user now pays the per-sample processing cost. It is a tight loop over
+  a buffer. If it shows up on older devices, the fallback is to attach the tap only when Skip Silence
+  or normalization is actually enabled — a preference-driven attach rather than an unconditional one.
 - Changing `handleSilenceChanged` and the `SilenceDetector` threshold changes audible behavior for
   anyone already using Skip Silence — which, given it was inert, is nobody.
 

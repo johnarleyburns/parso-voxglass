@@ -33,7 +33,7 @@ targets:
       - sdk: AVFoundation.framework
       - sdk: CarPlay.framework
       - sdk: MediaPlayer.framework
-      - sdk: StoreKit.framework
+
       - sdk: UniformTypeIdentifiers.framework
       - sdk: libsqlite3.tbd
     info:

@@ -1,10 +1,7 @@
 # Voxglass — CarPlay Technical Design & Agentic-Coding Handoff
 
 **Status:** ready to build. Apple approved `com.apple.developer.carplay-audio` on 2026-07-16.
-**Gating:** CarPlay is **free** for everyone. Pro stays EQ / iCloud sync / stats / offline downloads —
-*not* CarPlay. The only Pro touchpoint reachable in-car is the **Download** action (offline download is Pro
-everywhere); a free user who taps it gets a graceful "unlock on your iPhone" alert, never a paywalled
-transport screen. See the memory `carplay-free-standalone` and `never-lose-playback-position`.
+**Gating:** CarPlay is **free** for everyone — all features are free.
 **Companion:** the visual mockups of every view + behavior live in the CarPlay Mockups artifact.
 
 > This document supersedes the "CarPlay — postponed / Pro headline" section of `docs/RELEASE_PLAN.md`.
@@ -19,14 +16,14 @@ An audiobook head unit is not a music head unit. The listener is mid-book, hands
 
 1. **Resume is the hero.** Connecting the car and it's already on the "Continue" tab, top row = the book you
    were in, one tap from exactly where you left off. This is Voxglass's whole promise, in the car.
-2. **Standalone.** Search, browse, resume, and (Pro) download entirely from the head unit — no phone. This
+2. **Standalone.** Search, browse, resume, and download entirely from the head unit — no phone. This
    includes the **cold-launch-straight-into-CarPlay** path: phone locked, app never foregrounded, user
    connects and plays. (§6.3 — this is the subtle one.)
 3. **Never lose the place — in the car too.** Every in-car play routes through
    `PlaybackCoordinator.play(book)`, which already resumes and persists. CarPlay adds *zero* new playback
    paths; it is a new *browse surface* over the existing coordinator.
 4. **Safe by construction.** Lists are capped for driving (§4.4). No modal traps. The keyboard is only used
-   parked; search is voice-first. Free users never hit a wall — the audio keeps working.
+   parked; search is voice-first. Users never hit a wall — the audio keeps working.
 5. **Beautiful, honest, quiet.** Cover art everywhere, progress bars on in-progress books, human detail
    text ("Ch 5 · 18 min left"), and warm empty states — never a spinner with no story.
 
@@ -161,7 +158,7 @@ public enum CarPlayAction: Equatable, Sendable {
     case openRoute(CarPlayBrowseRoute)                  // push a nested browse list
     case playCatalogItem(identifier: String)            // import-then-play a Discover/Search result
     case openCatalogItem(identifier: String)            // push detail for a not-yet-imported item
-    case download(bookID: UUID)                         // Pro; free → showProUpsell
+    case download(bookID: UUID)                         // free for everyone
     case removeDownload(bookID: UUID)
     case beginSearch
     case runSearch(query: String)
@@ -169,7 +166,6 @@ public enum CarPlayAction: Equatable, Sendable {
     case addBookmark
     case showChapters
     case setRate(Float)
-    case showProUpsell(ProFeature)                      // download-while-free info alert
     case none
 }
 ```
@@ -244,14 +240,14 @@ public enum CarPlayMenuBuilder {
     // Pure helpers (each independently unit-tested):
     public static func progressDetail(_ p: CarPlayProgress) -> String
     public static func bookItem(_ b: CarPlayBookSnapshot, action: CarPlayAction) -> CarPlayItem
-    public static func downloadAction(for b: CarPlayBookSnapshot, isDownloadsPro: Bool) -> CarPlayAction
+    public static func downloadAction(for b: CarPlayBookSnapshot) -> CarPlayAction
     public static func applyCap(_ items: [CarPlayItem], limit: Int = drivingItemCap) -> [CarPlayItem]
     public static func emptyState(_ tab: CarPlayTabID) -> CarPlaySection
 }
 ```
 
 `CarPlayState` is the single injected snapshot bag (library books, recently-played, favorites, playlists,
-downloaded set, recommendations, latest search results, `isDownloadsPro`, `hasCurrentSession`,
+downloaded set, recommendations, latest search results, `hasCurrentSession`,
 `currentBookID`). The controller rebuilds it from live stores and hands it in — pure in, pure out.
 
 ### 4.1 Tabs (5 — the CarPlay maximum)
@@ -281,22 +277,19 @@ Reuse `DesignSystem/TimeFormatting`-style formatting, but the pure builder needs
 add `CarPlayTimeFormat.compact(_:)` in Core (`"2h 14m"`, `"18 min"`, `"48s"`) so the builder stays pure and
 host-testable. (Do **not** reach into the app-layer `TimeFormatting`.)
 
-### 4.3 The download gate (the one Pro branch)
+### 4.3 The download action
 
 ```swift
-static func downloadAction(for b: CarPlayBookSnapshot, isDownloadsPro: Bool) -> CarPlayAction {
+static func downloadAction(for b: CarPlayBookSnapshot) -> CarPlayAction {
     switch b.download {
     case .downloaded:            return .removeDownload(bookID: b.id)
     case .downloading:           return .none                       // row shows live progress, not tappable
-    case .notDownloaded:         return isDownloadsPro ? .download(bookID: b.id)
-                                                       : .showProUpsell(.offlineDownloads)
+    case .notDownloaded:         return .download(bookID: b.id)
     }
 }
 ```
 
-`isDownloadsPro = ProFeature.isEnabled(.offlineDownloads)` is read by the controller and passed in (keeps
-the builder pure and lets tests drive both branches). This is the **only** place Pro appears in CarPlay, and
-it matches the existing invariant that offline download is Pro everywhere.
+Offline downloads are free for everyone — no Pro gate.
 
 ### 4.4 Driving cap
 
@@ -489,7 +482,6 @@ case .openBook:                 push chapterList template
 case .playChapter:              coordinator.play(book, chapter:)
 case .playCatalogItem:          Task { importThenPlay(identifier) }   // libraryStore.importInternetArchiveItem → coordinator.play
 case .download:                 offlineDownloadManager.download(book:)
-case .showProUpsell:            present CPAlertTemplate("Downloads are a Voxglass Pro feature. Unlock on your iPhone.")
 case .setSleepTimer:            coordinator.setSleepTimer(mode)
 case .addBookmark:              coordinator.addBookmark()
 case .beginSearch:              push CPSearchTemplate
@@ -543,8 +535,7 @@ Style matches `PlaybackResumeTests` (pure inputs, `XCTAssertEqual`, `@MainActor`
   nothing-known → `"Ch 5 of 24"`; `CarPlayTimeFormat.compact` cases (`2h 14m`, `18 min`, `48s`, `0s`).
 
 ### `CarPlayDownloadGateTests.swift`
-- `testNotDownloadedProYieldsDownloadAction`
-- `testNotDownloadedFreeYieldsProUpsell` (`.showProUpsell(.offlineDownloads)`)
+- `testNotDownloadedYieldsDownloadAction`
 - `testDownloadedYieldsRemoveAction`
 - `testDownloadingYieldsNoneAndProgressAccessory`
 
@@ -638,16 +629,14 @@ final class VoxglassCarPlaySmokeTests: XCTestCase {
 5. **Downloaded** tab shows only offline books; airplane mode → they still play; streaming rows show cloud.
 6. **Discover** → tap a recommendation → imports and plays (spinner row while importing, then Now Playing).
 7. **Search** → parked, type; moving, dictate → results → tap → imports + plays.
-8. **Download (Pro)** a book from Library detail → row shows live % → "Downloaded ✓"; it appears in Downloaded.
-9. **Download (free)** → `CPAlertTemplate` "unlock on your iPhone"; audio unaffected.
-10. Interruptions: a phone call pauses and resumes (existing interruption handling, unchanged).
+8. **Download** a book from Library detail → row shows live % → "Downloaded ✓"; it appears in Downloaded.
+9. Interruptions: a phone call pauses and resumes (existing interruption handling, unchanged).
 11. Sleep timer "End of chapter" stops cleanly at the boundary (existing behavior via the same coordinator).
 12. Long list (>12 books) is capped to 12 with the most-relevant head; full list still on phone.
 
 **Definition of done:** all unit tests green in `swift test`; the one smoke test green on simulator;
 `scripts/guard_wiring.sh` + `xcodegen generate` drift check green; the 12 device checks pass; RELEASE_PLAN.md
-CarPlay section updated; paywall/IAP copy unchanged (CarPlay is free — nothing new to advertise, and the
-download upsell reuses the existing offline-downloads Pro bullet).
+CarPlay section updated.
 
 ---
 
@@ -655,7 +644,7 @@ download upsell reuses the existing offline-downloads Pro bullet).
 
 - In-car play **only** through `PlaybackCoordinator.play(...)` — never a new playback path. Position
   persistence + resume are non-negotiable (`never-lose-playback-position`).
-- All Pro checks flow through `ProFeature.isEnabled(_:)`; the only in-car one is `.offlineDownloads`.
+- All Pro checks have been removed — all features are free.
 - `import CarPlay` **only** under the app layer (`Voxglass/App/CarPlay/`), never in `VoxglassCore`. The
   builder/model/config compile and test on Linux.
 - No new network endpoints beyond `archive.org` / `librivox.org` / `parso.guru` (CI-guarded) — CarPlay reuses
@@ -673,5 +662,5 @@ download upsell reuses the existing offline-downloads Pro bullet).
 | 4 | App: entitlement + Info.plist scene + `project.yml` + `CarPlaySceneDelegate` + empty controller (renders Continue only) | needs 1–2; first on-device light-up |
 | 5 | App: full `CarPlayTemplateRenderer` + `CarPlayInterfaceController` (all tabs, live updates) + dispatcher | needs 4 |
 | 6 | App: `CarPlayNowPlayingConfigurator` (speed/sleep/bookmark/chapters) | needs 5 |
-| 7 | App: Discover + Search (import-then-play) + Download gate | needs 5 |
+| 7 | App: Discover + Search (import-then-play) + Download | needs 5 |
 | 8 | The single smoke test; device pass; update RELEASE_PLAN.md | last |

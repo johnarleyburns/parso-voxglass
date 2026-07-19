@@ -89,34 +89,3 @@ final class EQSettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.gains, Array(repeating: 0, count: 10))
     }
 }
-
-final class EQGatingTests: XCTestCase {
-
-    override func tearDown() {
-        EntitlementCache.shared.setTestEntitlement(nil)
-        super.tearDown()
-    }
-
-    func testProcessorIgnoresPresetAndGainWhenNotEntitled() {
-        EntitlementCache.shared.setTestEntitlement(false)
-        let processor = EQAudioProcessor()
-
-        processor.applyPreset(.concertHall)
-        XCTAssertEqual(processor.currentGains, Array(repeating: 0, count: 10),
-                       "applyPreset must no-op when EQ is not entitled")
-
-        processor.setGain(6, at: 2)
-        XCTAssertEqual(processor.currentGains[2], 0, "setGain must no-op when EQ is not entitled")
-    }
-
-    func testProcessorAppliesPresetAndGainWhenEntitled() {
-        EntitlementCache.shared.setTestEntitlement(true)
-        let processor = EQAudioProcessor()
-
-        processor.applyPreset(.concertHall)
-        XCTAssertEqual(processor.currentGains, EQPreset.concertHall.gains)
-
-        processor.setGain(-5, at: 0)
-        XCTAssertEqual(processor.currentGains[0], -5)
-    }
-}

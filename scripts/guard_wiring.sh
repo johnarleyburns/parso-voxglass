@@ -138,29 +138,6 @@ check_dead_placeholders() {
   return $had_failure
 }
 
-# ──────────────────────────────────────────────────────────────
-# Rule 4 — Pro feature advertisement enforcement
-# Every ProFeatureAdvertisement.feature in the paywall appears in a
-# real ProFeature.isEnabled(.x) call somewhere in the source.
-# ──────────────────────────────────────────────────────────────
-check_pro_feature_enforcement() {
-  local paywall_file="Voxglass/Features/Settings/ProPaywallView.swift"
-  local had_failure=0
-
-  while IFS= read -r feature_case; do
-    [ -z "$feature_case" ] && continue
-
-    local usage_count
-    usage_count=$(grep -r "ProFeature.isEnabled(.$feature_case)" Voxglass --include='*.swift' -l 2>/dev/null | wc -l | tr -d ' ')
-
-    if [ "$usage_count" -eq 0 ]; then
-      echo "::error title=Pro-feature-enforcement guard::Advertised feature '.$feature_case' has zero ProFeature.isEnabled(.$feature_case) calls anywhere in the codebase."
-      had_failure=1
-    fi
-  done < <(sed -n 's/.*feature:\s*\.\([a-zA-Z_][a-zA-Z0-9_]*\).*/\1/p' "$paywall_file")
-
-  return $had_failure
-}
 
 # ──────────────────────────────────────────────────────────────
 # Rule 5 — Dynamic Type guard
@@ -274,7 +251,7 @@ run_check() {
 run_check "preference-key writers"  check_pref_key_writers
 run_check "coordinator callers"     check_coordinator_callers
 run_check "dead placeholder rows"   check_dead_placeholders
-run_check "pro-feature enforcement" check_pro_feature_enforcement
+
 run_check "Dynamic Type"            check_dynamic_type
 run_check "target membership"       check_xcodeproj_membership
 run_check "xcodeproj drift"         check_xcodeproj_drift

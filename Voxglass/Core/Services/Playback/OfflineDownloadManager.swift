@@ -12,14 +12,13 @@ public enum OfflineState: Equatable {
 /// whether to present the paywall or the cellular prompt before anything starts.
 public enum OfflineStartDecision: Equatable {
     case start
-    case needsPro
     case needsCellularConfirmation
 }
 
 /// Downloads every chapter of a book into the streaming cache as *pinned*
 /// (never-evicted) complete files, using a background `URLSession` so downloads
-/// continue when the app is suspended and survive relaunch. Gated behind Pro;
-/// cellular is gated by the §5 "Cache full books on cellular data" toggle.
+/// continue when the app is suspended and survive relaunch.
+/// Cellular is gated by the §5 "Cache full books on cellular data" toggle.
 @MainActor
 public final class OfflineDownloadManager: NSObject, ObservableObject {
     public static let sessionIdentifier = "guru.parso.voxglass.offline"
@@ -64,16 +63,10 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     // MARK: - Pure decision helpers (testable)
 
     public static func startDecision(
-        isPro: Bool,
         isCellular: Bool,
         cacheOnCellular: Bool,
-        allowCellularOverride: Bool,
-        freePinCount: Int = 0,
-        freePinLimit: Int = 2
+        allowCellularOverride: Bool
     ) -> OfflineStartDecision {
-        if !isPro && freePinCount >= freePinLimit {
-            return .needsPro
-        }
         if isCellular && !cacheOnCellular && !allowCellularOverride {
             return .needsCellularConfirmation
         }
@@ -150,14 +143,10 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         isCellular: Bool,
         allowCellularOverride: Bool = false
     ) async -> OfflineStartDecision {
-        let isPro = ProFeature.isEnabled(.offlineDownloads)
-        let freePinCount = isPro ? Int.max : Self.pinCount(states: state)
         let decision = Self.startDecision(
-            isPro: isPro,
             isCellular: isCellular,
             cacheOnCellular: defaults.bool(forKey: AppPreferencesStore.Keys.cacheFullBooksOnCellular),
-            allowCellularOverride: allowCellularOverride,
-            freePinCount: freePinCount
+            allowCellularOverride: allowCellularOverride
         )
         guard decision == .start else { return decision }
         await startDownload(book: book)

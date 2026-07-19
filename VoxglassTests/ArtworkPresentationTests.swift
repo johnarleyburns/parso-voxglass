@@ -85,11 +85,12 @@ final class ArtworkPresentationTests: XCTestCase {
     func testListeningStatsLockIsReservedInsideDisclosureRow() throws {
         let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
 
-        XCTAssertTrue(settings.contains("showsLock: !ProFeature.isEnabled(.listeningStats)"))
         let statsRange = try XCTUnwrap(settings.range(of: "private struct ListeningStatsRow"))
         let nextRange = try XCTUnwrap(settings.range(of: "private struct FolderWatchRow"))
         let statsBlock = String(settings[statsRange.lowerBound..<nextRange.lowerBound])
-        XCTAssertFalse(statsBlock.contains(".overlay(alignment: .trailing)"))
+        XCTAssertFalse(statsBlock.contains("ProLockBadge"))
+        XCTAssertFalse(statsBlock.contains("ProFeature"))
+        XCTAssertFalse(statsBlock.contains("showsLock"))
     }
 
     func testEveryExploreCollectionHasBundledAsset() {

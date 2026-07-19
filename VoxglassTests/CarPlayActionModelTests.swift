@@ -21,7 +21,6 @@ final class CarPlayActionModelTests: XCTestCase {
     func testCarPlayActionSendableCompiles() {
         _ = CarPlayAction.setSleepTimer(.endOfChapter)
         _ = CarPlayAction.setSleepTimer(.duration(1800))
-        _ = CarPlayAction.showProUpsell(.offlineDownloads)
         XCTAssertTrue(true) // compilation proves Sendable
     }
 

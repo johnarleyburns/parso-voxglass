@@ -6,15 +6,14 @@ Field testing of the Voxglass audiobook app (SwiftUI/iOS, streaming LibriVox/Int
 with passive on-disk caching) surfaced six issues, plus a new feature request: **explicit offline
 availability** for a whole book. This plan fixes each issue at its root cause (reusing existing
 services — `NetworkMonitor`, `CollectionCoverStore`, `StreamCacheStore`, `ArtworkService`,
-`download_records` table, `ProFeature`) and adds a Pro-gated, background offline-download capability.
+`download_records` table) and adds a background offline-download capability.
 
 Product decisions confirmed with the user:
 - **Cellular:** current-chapter streaming **and** next-chapter prefetch **always** run on cellular
   (prefetch is required to avoid playback gaps). The new toggle gates **only full-book offline
   caching**. Settings must avoid the word "Download" — use **"Cache"** (toggle: **"Cache full books
   on cellular data"**, default OFF).
-- **Offline** is a **Pro feature**; free tier = stream + passive cache only.
-- Offline downloads run as **true background downloads** (background `URLSession`).
+- **Offline** downloads run as **true background downloads** (background `URLSession`).
 - Collection counts: **approximate, cached** (live IA `numFound`).
 - Delete affordance: **both** the library list and Book Detail, each behind confirmation, labeled
   **"Remove from My Books"**.
@@ -142,17 +141,15 @@ playback_positions, bookmarks, playlist_books, book_taste.
 
 ---
 
-## 7. Offline downloads (Pro, background)
+## 7. Offline downloads (background)
 
 **Goal:** In Book Detail, a "Make available offline" control that downloads **all chapters'** full
 audio into our cache (pinned, never evicted), with live progress; on completion the control becomes a
-non-interactive **"Cached for offline use"** indicator. Gated behind Pro; cellular handled per the §5
+non-interactive **"Cached for offline use"** indicator. Cellular handled per the §5
 toggle with a prompt.
 
-### 7a. New `ProFeature` case
-Add `case offlineDownloads` to `Voxglass/Core/Services/Pro/ProFeature.swift`. Gate the offline action
-with `ProFeature.isEnabled(.offlineDownloads)`; if not entitled, present the existing
-`ProPaywallView` instead of starting a download.
+### 7a. Remove `ProFeature` — no gate needed
+All features are free; no offline download gate.
 
 ### 7b. `StreamCacheStore` — pinning + full-file ingest
 `Voxglass/Core/Services/Playback/StreamCacheStore.swift`:
@@ -172,11 +169,10 @@ owning an `NSURLSession` background configuration (`URLSessionConfiguration.back
   downloading(progress: Double) | cached | failed`. Derive initial state at load from
   `download_records` + `StreamCacheStore.isComplete` per chapter.
 - **`makeAvailableOffline(book:)`:**
-  1. If `!ProFeature.isEnabled(.offlineDownloads)` → signal UI to present paywall; return.
-  2. If `NetworkMonitor.shared.isCellular && !cacheFullBooksOnCellular` → signal UI to present the
-     **cellular prompt** (see 7d); do not start.
-  3. Else enqueue a background `downloadTask` per chapter (`chapter.resolvedPlayableURL()` /
-     `remoteURL`), keyed by `CachingResourceLoader.key(for:)`. Persist a task registry
+   1. If `NetworkMonitor.shared.isCellular && !cacheFullBooksOnCellular` → signal UI to present the
+      **cellular prompt** (see 7d); do not start.
+   2. Else enqueue a background `downloadTask` per chapter (`chapter.resolvedPlayableURL()` /
+      `remoteURL`), keyed by `CachingResourceLoader.key(for:)`. Persist a task registry
      (bookID + chapter key ↔ task identifier) so completions survive app relaunch. Write a
      `download_records` row per book/chapter with `DownloadState`.
 - **Delegate callbacks:** `didWriteData` → update per-book progress (aggregate across chapters);
@@ -200,7 +196,7 @@ with an offline control driven by `offlineManager.state[book.id]`:
   optional cancel.
 - `.cached` → non-interactive **"Cached for offline use"** with a filled check
   (`checkmark.circle.fill`); expose "Remove offline copy" via overflow/long-press → `removeOffline`.
-- **Paywall:** if not Pro, tapping presents `ProPaywallView` (existing).
+- **Paywall removed:** the paywall is no longer shown for offline downloads. All users can download freely.
 - **Cellular prompt** (confirmationDialog / alert): title notes the user is on cellular; actions:
   **"Cache now on cellular"** → set `cacheFullBooksOnCellular = true` and start the download; and
   **"Wait for Wi-Fi"** → cancel. (Matches the requested behavior: change the setting there and begin,
@@ -293,11 +289,11 @@ for the touched suites.
 5. **#6:** From My Books and Book Detail, "Remove from My Books" → confirm → book gone from My Books /
    Jump Back In / Recently Added; cached audio + cover removed from `Caches/Voxglass/StreamCache*`;
    still gone after relaunch.
-6. **#7:** As Pro, Book Detail → "Make available offline": progress shows, then "Cached for offline
+6. **#7:** Book Detail → "Make available offline": progress shows, then "Cached for offline
    use". Enable Airplane Mode → all chapters play from cache. On cellular with the toggle OFF, tapping
    shows the prompt; "Cache now on cellular" flips the setting and starts; "Wait for Wi-Fi" cancels.
    Start a download, background the app → it completes via the background session (verify state on
-   return / relaunch). As non-Pro, tapping presents the paywall. "Remove offline copy" frees the
+   return / relaunch). "Remove offline copy" frees the
    cache but keeps the book.
 7. **#8:** Search "greek plays" → returns Greek tragedies/plays (not empty); "aristophanes" and
    "pride and prejudice" still return correct, clean results. Query-shape tests pass.

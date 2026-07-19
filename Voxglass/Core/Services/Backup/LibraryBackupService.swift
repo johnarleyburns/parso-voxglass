@@ -45,11 +45,6 @@ public final class LibraryBackupService: ObservableObject {
     }
 
     public func exportPayload() async -> BackupPayload? {
-        guard ProFeature.isEnabled(.libraryBackup) else {
-            exportError = "Library backup requires Voxglass Pro."
-            return nil
-        }
-
         do {
             try await database.prepare()
 
@@ -94,11 +89,6 @@ public final class LibraryBackupService: ObservableObject {
     }
 
     public func importFromFile(_ url: URL) async -> Int {
-        guard ProFeature.isEnabled(.libraryBackup) else {
-            importError = "Library restore requires Voxglass Pro."
-            return 0
-        }
-
         guard url.startAccessingSecurityScopedResource() else {
             importError = "Could not access the backup file."
             return 0

@@ -8,12 +8,13 @@ that BookDesign's users hate what it became — an unnavigable redesign, speed c
 unlabeled slider, narrator names deleted from chapters, ads with volume spikes. Voxglass is "the same
 catalog in a player that respects you."
 
-**The monetization round is done.** A previous plan restructured Pro into a six-bullet, $7.99 one-time
-unlock (offline downloads, iCloud sync, folder watch, EQ, listening stats, library backup), fixed four
-release blockers, rebuilt the paywall, and added a macOS compile gate to CI. **That work is complete and is
-described here only as history — it is no longer actionable.** The free tier still decisively beats
-BookDesign's paid tier (speed, sleep timer, bookmarks, lock-screen artwork, per-chapter narrators, volume
-normalization, skip silence, playlists, favorites, full catalog, no ads).
+**All features are free.** The app previously had a one-time Pro unlock ($7.99) for offline
+downloads, iCloud sync, folder watch, EQ, listening stats, and library backup. That has been
+removed — every feature is now available to everyone at no cost. Future monetization will come
+from audiobook sales and library partnership integrations. The free tier decisively beats
+BookDesign's paid tier (speed, sleep timer, bookmarks, lock-screen artwork, per-chapter narrators,
+volume normalization, skip silence, playlists, favorites, full catalog, EQ, offline downloads,
+listening stats, no ads).
 
 **What this plan is now about: the app loses your place, and that is the one thing it must never do.**
 
@@ -69,15 +70,12 @@ in-place upgrade (same SQLite file) but **not** a delete-and-reinstall, and **no
 Because `playback_positions` sync ships raw `book_id`/`chapter_id` and `PRAGMA foreign_keys = ON`, a
 position pulled from another device references a book id that does not exist locally, **fails the foreign
 key, and throws**. Cross-device position sync is structurally dead today. `LibraryBackupService`'s
-`INSERT OR IGNORE INTO playback_positions` silently drops every position for the same reason. And position
-sync is Pro-gated, so a free user has no protection against reinstall or device loss at all.
+`INSERT OR IGNORE INTO playback_positions` silently drops every position for the same reason.
 
-### Decision: position sync becomes free
+### Decision: position sync is free
 
 "Never lose your place" is a trust promise, not an upsell — and it is squarely the "a player that respects
-you" wedge. **Playback-position sync is ungated.** Bookmarks, favorites, and the rest of iCloud sync stay
-Pro. The paywall bullet must be reworded from *iCloud Sync* to *Bookmarks & Favorites Sync*, and the drift
-tests must move in lockstep.
+you" wedge. **Playback-position sync, bookmarks sync, and favorites sync are all free.**
 
 ### Lessons ported from `../parso-radio-ios-app`
 
@@ -100,11 +98,10 @@ That app solved this problem; these are its load-bearing ideas.
 
 ## Step 0 — Get the existing work committed
 
-The monetization round is **implemented but uncommitted**: 19 modified files, 5 untracked. Everything below
-builds on it.
+The changes below are implemented and ready for commit.
 
 Run `scripts/test.sh` and `scripts/guard_wiring.sh` against the working tree as it stands, fix any fallout,
-and **commit**. A large body of unreviewed, untested work sitting in the working tree is its own risk.
+and **commit**.
 
 ---
 
@@ -238,9 +235,8 @@ and `importLocalFolder`.
 
 **`Voxglass/Core/Services/Sync/VoxglassCloudSync.swift`:**
 
-- **Ungate positions.** `pushPlaybackPositions()` / `pullPlaybackPositions()` drop the
-  `ProFeature.isEnabled(.icloudSync)` guard (keep `isAvailable`). Split `sync()` (`:290`) so positions always
-  run and bookmarks/favorites stay Pro-gated.
+- **All sync is free.** `pushPlaybackPositions()` / `pullPlaybackPositions()`/
+  `pushBookmarks()`/`pullBookmarks()` all run without any entitlement gate.
 - Add `book_content_key` and `chapter_content_key` to the KVS position payload.
 - **Pull resolves by content key**, not raw UUID: match the local book/chapter by `content_key` and upsert
   with *local* ids. Guard every `UUID(uuidString:)`.
@@ -255,13 +251,8 @@ and `importLocalFolder`.
 new UUIDs. Change to a content-key-resolved upsert with LWW on `updated_at`. **Library Backup already
 shipped with this defect baked in** — Phase 3 is what fixes it.
 
-**Paywall consequence:** reword the Pro bullet from *iCloud Sync* to *Bookmarks & Favorites Sync*.
-`ProPaywallContentTests`, `FreeTierRegistryTests`, and `scripts/guard_wiring.sh`'s *"every advertised Pro
-feature is enforced"* rule must all move in lockstep, or they will (correctly) fail.
-
 **AC:** `testCloudPullResolvesForeignBookIDsViaContentKey` fails on today's tree (FK throw) and passes
-after. Device: delete the app, reinstall, re-import the same LibriVox book on a **free** build → position
-restored.
+after. Device: delete the app, reinstall, re-import the same LibriVox book → position restored.
 
 ---
 
@@ -279,11 +270,7 @@ chapter offset.
 
 ## Phase 5 — Remaining App Store polish
 
-**A4. Restore Purchases is not reachable outside the paywall.** `StoreManager.restorePurchases()` is called
-only from `ProPaywallView:180`. The Settings Pro row opens the paywall for non-Pro users (so Restore is
-*transitively* reachable) but is explicitly inert once you own Pro (`SettingsView:127` — *"Already Pro —
-nothing actionable"*). Guideline 3.1.1 is not worth arguing with a reviewer over: add an explicit **"Restore
-Purchases"** row in Settings calling the existing `StoreManager.restorePurchases()`. ~10 lines.
+**A4. Settings polish.**
 
 **E2. Accessibility.** The repo has **exactly one** `accessibilityValue` (`NowPlayingView:159`, the
 scrubber). The labels sweep across the bare `Features/` views never happened. For an app whose pitch is *"a
@@ -305,21 +292,14 @@ toggle than a dead one.
 engineering handoff, model, test matrix, plist/entitlement diffs, and view-by-view mockups live in
 **`docs/CARPLAY_DESIGN.md`**. It is a self-contained workstream (does not block Phases 1–5).
 
-**Two binding product decisions (2026-07-16) that reverse the earlier "Pro headline / $9.99" plan:**
+**Two binding product decisions (2026-07-16):**
 
-- **CarPlay is free for everyone.** No Pro gate on browsing, searching, resuming, or playing in the car.
-  Stripping transport controls from a driver mid-trip is unsafe and 1-star-review material, and "never lose
-  your place" is a free trust promise. Pro stays EQ / bookmarks-&-favorites sync / stats / offline
-  downloads — **not** CarPlay. The Pro price does **not** rise.
-- **CarPlay is standalone.** Search, browse, resume, and (Pro) download entirely from the head unit — no
+- **CarPlay is free for everyone.** No gate on browsing, searching, resuming, or playing in the car.
+  Stripping transport controls from a driver mid-trip is unsafe and 1-star-review material, and "never
+  lose your place" is a free trust promise.
+- **CarPlay is standalone.** Search, browse, resume, and download entirely from the head unit — no
   phone handoff — including the cold-launch-straight-into-CarPlay path (phone locked, app never
   foregrounded).
-
-**The one Pro touchpoint reachable in-car:** offline **Download** is Pro on every surface, so a free user
-who taps "Download for offline" gets a graceful `CPAlertTemplate` ("unlock on your iPhone") — never a dead
-paywall on transport. This reuses the existing `ProFeature.offlineDownloads` bullet; **no new paywall/IAP
-copy is added**, so the paywall-truth drift tests are unaffected. Do **not** add a `case carplay` to
-`ProFeature`.
 
 The build is small where it can be: `CPNowPlayingTemplate` is driven entirely by `MPNowPlayingInfoCenter` +
 `MPRemoteCommandCenter`, both of which already ship (speed, artwork, remote commands). The new surface is the
@@ -347,9 +327,7 @@ through `PlaybackCoordinator.play(...)` so resume + position persistence stay in
 
 ## Ground rules (binding)
 
-- All Pro gating flows through `ProFeature.isEnabled(_:)`. **Never** gate formats, near-gapless, IA sources,
-  local import, privacy — **or playback position** (new: see Phase 3).
-- `import StoreKit` **only** under `Voxglass/Core/Services/Pro/` and paywall views — CI-guarded.
+- `import StoreKit` **has no restrictions** — Pro feature gating has been removed.
 - No new network endpoints beyond `archive.org`, `librivox.org`, `parso.guru` — CI-guarded.
 - XcodeGen-managed: new files just need to live under `Voxglass/`; **run `xcodegen generate` before
   building**. Never hand-edit the `.xcodeproj`. Never use `xcodegen --project` — it silently nests the
@@ -371,7 +349,6 @@ Tests that **must fail today**:
 - `PlaybackResumeTests.testEngineZeroTimeDoesNotOverwriteSavedPosition` (Phase 1 — problem 3)
 - `PositionDurabilityTests.testSnapshotStoreKeepsAPositionPerBook` (Phase 2 — single global slot)
 - `CloudSyncTests.testCloudPullResolvesForeignBookIDsViaContentKey` (Phase 3 — FK throw)
-- `CloudSyncTests.testPositionSyncRunsWithoutProEntitlement` (Phase 3)
 - `LibraryRepositoryTests.testBookIsFinishedOnlyWhenAllChaptersFinished` (Phase 4)
 
 ## New test files
@@ -388,8 +365,7 @@ restarts at book start; below-floor starts at 0; engine-zero does not overwrite.
 
 **`VoxglassTests/ContentKeyTests.swift`** (pure) + additions to `CloudSyncEntitlementTests`:
 `testBookContentKeyIsStableAcrossReimport`; `testCloudPullResolvesForeignBookIDsViaContentKey`;
-`testImportAdoptsCloudPositionForMatchingContentKey` (the reinstall scenario);
-`testPositionSyncRunsWithoutProEntitlement`.
+`testImportAdoptsCloudPositionForMatchingContentKey` (the reinstall scenario).
 
 ## Verification
 
@@ -399,9 +375,7 @@ restarts at book start; below-floor starts at 0; engine-zero does not overwrite.
 **Compile (macOS CI):** `xcodebuild build -scheme Voxglass -destination generic/platform=iOS` — no simulator
 boot. This job exists and is green; CI now genuinely compiles the app.
 
-**Local suite:** `scripts/test.sh` (simulator; local-only gate by design). Drift tests to update in lockstep
-with the Phase 3 paywall reword: `ProPaywallContentTests`, `FreeTierRegistryTests`, and the `pro.lock.*`
-matrix in `VoxglassUITests`.
+**Local suite:** `scripts/test.sh` (simulator; local-only gate by design).
 
 **Device — the irreducible acceptance tests. This is what "never lose my position" means:**
 
