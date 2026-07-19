@@ -873,11 +873,16 @@ private struct FolderWatchRow: View {
     }
 }
 
+struct ExportedBackup: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 private struct LibraryBackupRow: View {
     @EnvironmentObject private var backupService: LibraryBackupService
     @State private var showImporter = false
-    @State private var showShare = false
-    @State private var exportURL: URL?
+    @State private var exportedBackup: ExportedBackup?
+    @State private var showExportError = false
     @State private var importedCount: Int?
 
     var body: some View {
@@ -893,9 +898,10 @@ private struct LibraryBackupRow: View {
         }
         .buttonStyle(.plain)
         .confirmationDialog("Would you like to export or import?", isPresented: $showImporter, titleVisibility: .visible) {
-            Button("Export Backup") {
+            Button(backupService.isExporting ? "Exporting…" : "Export Backup") {
                 Task { await exportBackup() }
             }
+            .disabled(backupService.isExporting)
             Button("Import Backup") {
                 showImportSheet = true
             }
@@ -910,10 +916,8 @@ private struct LibraryBackupRow: View {
                 showImportSheet = false
             }
         }
-        .sheet(isPresented: $showShare, onDismiss: { exportURL = nil }) {
-            if let url = exportURL {
-                ShareSheet(items: [url])
-            }
+        .sheet(item: $exportedBackup) { backup in
+            ShareSheet(items: [backup.url])
         }
         .alert("Import Complete", isPresented: $importAlert) {
             Button("OK", role: .cancel) { importedCount = nil }
@@ -922,15 +926,27 @@ private struct LibraryBackupRow: View {
                 Text("\(count) book\(count == 1 ? "" : "s") restored from backup.")
             }
         }
+        .alert("Export Failed", isPresented: $showExportError) {
+            Button("OK", role: .cancel) { backupService.exportError = nil }
+        } message: {
+            Text(backupService.exportError ?? "Could not write the backup file.")
+        }
+        .overlay {
+            if backupService.isExporting {
+                ProgressView()
+            }
+        }
     }
 
     @State private var showImportSheet = false
     @State private var importAlert = false
 
     private func exportBackup() async {
+        backupService.exportError = nil
         if let url = await backupService.exportToFile() {
-            exportURL = url
-            showShare = true
+            exportedBackup = ExportedBackup(url: url)
+        } else {
+            showExportError = true
         }
     }
 }
