@@ -88,13 +88,18 @@ public final class CollectionCoverStore: ObservableObject {
                 persistCountStamps()
             }
             if counts[collection.id] != nil { continue }
-            if languages == CollectionBundledCounts.languages,
-               let bundled = CollectionBundledCounts.counts[collection.id] {
-                counts[collection.id] = bundled
-                countStamps[collection.id] = stamp
-                persistCounts()
-                persistCountStamps()
-                continue
+            if languages == CollectionBundledCounts.languages {
+                if collection.isCurated, let curatedName = collection.curatedListName {
+                    counts[collection.id] = CuratedManifest.load(named: curatedName).count
+                } else if let bundled = CollectionBundledCounts.counts[collection.id] {
+                    counts[collection.id] = bundled
+                }
+                if counts[collection.id] != nil {
+                    countStamps[collection.id] = stamp
+                    persistCounts()
+                    persistCountStamps()
+                    continue
+                }
             }
             if countsInFlight.contains(collection.id) { continue }
             countsInFlight.insert(collection.id)

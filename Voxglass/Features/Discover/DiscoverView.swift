@@ -297,9 +297,12 @@ private struct ExploreCollectionCard: View {
         .accessibilityIdentifier("collection.curatedBadge")
     }
 
-    /// "~N books", rounded to ~2 significant figures so it reads as approximate.
     private var approximateCountCaption: String? {
         guard let count = approximateCount, count > 0 else { return nil }
+        if collection.isCurated {
+            let formatted = Self.formatter.string(from: NSNumber(value: count)) ?? "\(count)"
+            return "\(formatted) book\(count == 1 ? "" : "s")"
+        }
         let rounded = Self.roundedToTwoSignificantFigures(count)
         let formatted = Self.formatter.string(from: NSNumber(value: rounded)) ?? "\(rounded)"
         return "~\(formatted) book\(rounded == 1 ? "" : "s")"
