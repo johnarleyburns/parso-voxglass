@@ -11,7 +11,6 @@ public struct LibriVoxBrowseGroup: Identifiable, Equatable {
             title: "Fiction",
             categories: [
                 .generalFiction,
-                .literaryFiction,
                 .scienceFiction,
                 .horrorGothic,
                 .mysteryCrime,
@@ -70,15 +69,8 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         title: "General Fiction",
         systemImage: "book",
         archiveQuery: LibriVoxCatalogScope.matching("""
-        subject:Fiction OR subject:"General Fiction" OR subject:"Culture & Heritage Fiction" OR subject:"Family Life" OR subject:"Domestic fiction" OR subject:"Historical Fiction" OR subject:"Humorous Fiction" OR subject:"Literary Fiction" OR subject:Literature OR subject:Novels OR subject:Novel OR title:novel OR title:stories OR creator:"Jane Austen" OR creator:"Charles Dickens" OR creator:"Mark Twain" OR creator:"Anthony Trollope" OR creator:"George Eliot" OR creator:"Elizabeth Gaskell" OR creator:"Mary Elizabeth Braddon" OR creator:"Hugh Walpole" OR creator:"D. H. Lawrence"
+        subject:"General Fiction" OR subject:"Culture & Heritage Fiction" OR subject:"Family Life" OR subject:"Domestic fiction" OR subject:"Historical Fiction" OR subject:"Humorous Fiction" OR subject:"Literary Fiction" OR creator:"Jane Austen" OR creator:"Charles Dickens" OR creator:"Mark Twain" OR creator:"Anthony Trollope" OR creator:"George Eliot" OR creator:"Elizabeth Gaskell" OR creator:"Mary Elizabeth Braddon" OR creator:"Hugh Walpole" OR creator:"D. H. Lawrence"
         """)
-    )
-
-    public static let literaryFiction = LibriVoxBrowseCategory(
-        id: "lv-literary-fiction",
-        title: "Literary Fiction",
-        systemImage: "books.vertical",
-        archiveQuery: LibriVoxCatalogScope.matching("subject:\"Literary Fiction\" OR subject:\"Epistolary Fiction\" OR subject:Literature OR subject:\"Literary Collections\"")
     )
 
     public static let scienceFiction = LibriVoxBrowseCategory(
@@ -136,7 +128,9 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         id: "lv-war-military",
         title: "War & Military",
         systemImage: "shield.fill",
-        archiveQuery: LibriVoxCatalogScope.matching("subject:\"War & Military Fiction\" OR subject:War OR subject:\"World War\" OR subject:Military OR subject:\"World War I\" OR subject:\"World War, 1914-1918\" OR subject:Espionage OR subject:Thrillers")
+        archiveQuery: LibriVoxCatalogScope.matching("""
+        subject:"War & Military Fiction" OR subject:"World War, 1914-1918" OR subject:"World War I" OR subject:"World War II" OR subject:"Napoleonic Wars" OR subject:"Civil War" OR subject:"Strategy & Tactics" OR creator:"Sun Tzu" OR creator:"Carl von Clausewitz" OR creator:"Julius Caesar" OR creator:"A. T. Mahan"
+        """)
     )
 
     public static let shortStories = LibriVoxBrowseCategory(
@@ -167,7 +161,7 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         title: "Ancient World",
         systemImage: "building.columns.fill",
         archiveQuery: LibriVoxCatalogScope.matching("""
-        subject:"Classics (Greek & Latin Antiquity)" OR subject:Antiquity OR subject:"Ancient History" OR subject:"Ancient Greece" OR subject:"Ancient Rome" OR subject:Greek OR subject:Latin OR subject:Mythology OR title:ancient OR title:greece OR title:greek OR title:rome OR title:roman OR creator:Homer OR creator:Hesiod OR creator:Aeschylus OR creator:Sophocles OR creator:Euripides OR creator:Aristophanes OR creator:Herodotus OR creator:Thucydides OR creator:Plato OR creator:Aristotle OR creator:Xenophon OR creator:Plutarch OR creator:Virgil OR creator:Ovid OR creator:Tacitus OR creator:Livy OR creator:"Marcus Aurelius" OR creator:Epictetus OR creator:Lucretius OR creator:Cicero
+        subject:"Classics (Greek & Latin Antiquity)" OR subject:Antiquity OR subject:"Ancient History" OR subject:"Ancient Greece" OR subject:"Ancient Rome" OR subject:Greek OR subject:Latin OR subject:Mythology OR creator:Homer OR creator:Hesiod OR creator:Aeschylus OR creator:Sophocles OR creator:Euripides OR creator:Aristophanes OR creator:Herodotus OR creator:Thucydides OR creator:Plato OR creator:Aristotle OR creator:Xenophon OR creator:Plutarch OR creator:Virgil OR creator:Ovid OR creator:Tacitus OR creator:Livy OR creator:"Marcus Aurelius" OR creator:Epictetus OR creator:Lucretius OR creator:Cicero OR creator:Sappho OR creator:Plotinus
         """)
     )
 
@@ -205,7 +199,9 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         id: "lv-science-nature",
         title: "Science & Nature",
         systemImage: "atom",
-        archiveQuery: LibriVoxCatalogScope.matching("subject:Science OR subject:Nature OR subject:\"Life Sciences\" OR subject:\"Astronomy, Physics & Mechanics\" OR subject:\"Nature & Animal Fiction\"")
+        archiveQuery: LibriVoxCatalogScope.matching("""
+        subject:"Life Sciences" OR subject:"Astronomy, Physics & Mechanics" OR subject:"Earth Sciences" OR subject:"Mathematics" OR subject:"Chemistry" OR subject:"Medicine" OR subject:"Natural History" OR subject:"Animals" OR subject:"Gardening" OR subject:"Nature" OR creator:"Charles Darwin" OR creator:"Michael Faraday" OR creator:"Thomas Henry Huxley" OR creator:"John Muir" OR creator:"Jean-Henri Fabre" OR creator:"John Burroughs"
+        """)
     )
 
     public static let religion = LibriVoxBrowseCategory(
@@ -220,7 +216,7 @@ public struct LibriVoxBrowseCategory: Identifiable, Equatable {
         title: "Essays & Ideas",
         systemImage: "lightbulb",
         archiveQuery: LibriVoxCatalogScope.matching("""
-        subject:"Essays & Short Works" OR subject:Essays OR subject:"Literary Criticism" OR subject:"Political Science" OR subject:Politics OR subject:"Social Science" OR subject:Economics OR subject:Education OR subject:"Philosophy" OR subject:Criticism OR title:essay OR title:essays OR title:letters OR title:lectures OR creator:"Francis Bacon" OR creator:"Michel de Montaigne" OR creator:"Ralph Waldo Emerson" OR creator:"Henry David Thoreau" OR creator:"William Hazlitt" OR creator:"G. K. Chesterton" OR creator:"Edmund Burke" OR creator:"John Ruskin" OR creator:"George Bernard Shaw" OR creator:"Thomas Carlyle"
+        subject:"Essays & Short Works" OR subject:Essays OR subject:"Literary Criticism" OR subject:"Political Science" OR subject:Politics OR subject:"Social Science" OR subject:Economics OR subject:Education OR subject:Criticism OR creator:"Francis Bacon" OR creator:"Michel de Montaigne" OR creator:"Ralph Waldo Emerson" OR creator:"Henry David Thoreau" OR creator:"William Hazlitt" OR creator:"G. K. Chesterton" OR creator:"Edmund Burke" OR creator:"John Ruskin" OR creator:"George Bernard Shaw" OR creator:"Thomas Carlyle"
         """)
     )
 

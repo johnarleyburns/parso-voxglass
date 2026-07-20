@@ -37,12 +37,23 @@ public struct AppPreferencesStore: DynamicProperty {
     }
 
     public static func decodeCollectionIDs(_ rawValue: String) -> Set<String> {
-        Set(
+        let decoded = Set(
             rawValue
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
         )
+        return migrateCollectionIDs(decoded)
+    }
+
+    private static func migrateCollectionIDs(_ ids: Set<String>) -> Set<String> {
+        var migrated = ids
+        migrated.remove("lv-literary-fiction")
+        if migrated.contains("ancient-greece") {
+            migrated.remove("ancient-greece")
+            migrated.insert("lv-ancient-world")
+        }
+        return migrated
     }
 
     public static func encodeLanguages(_ codes: Set<String>) -> String {

@@ -4,7 +4,6 @@
 public enum CollectionBundledCounts {
     public static let languages: Set<String> = ["eng"]
     public static let counts: [String: Int] = [
-        "ancient-greece": 149,
         "great-books": 632,
         "greater-books": 1623,
         "lv-adventure": 202,
@@ -16,7 +15,6 @@ public enum CollectionBundledCounts {
         "lv-general-fiction": 6609,
         "lv-history": 1401,
         "lv-horror-gothic": 386,
-        "lv-literary-fiction": 3354,
         "lv-mystery-crime": 1303,
         "lv-philosophy-mind": 223,
         "lv-poetry": 2617,

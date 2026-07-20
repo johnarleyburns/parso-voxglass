@@ -79,20 +79,10 @@ public enum IACollectionStore {
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox")
     )
 
-    public static let ancientGreece = IACollection(
-        id: "ancient-greece",
-        title: "Ancient Greece",
-        subtitle: "Homer, Plato, the tragedians, and more from the Greek world",
-        archiveQuery: CuratedQueries.ancientGreece,
-        systemImage: "scroll.fill",
-        assetName: "collection-ancient-greece",
-        remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey_butler_librivox")
-    )
-
-    public static let curated: [IACollection] = [greatBooks, greaterBooks, ancientGreece]
+    public static let curated: [IACollection] = [greatBooks, greaterBooks]
 
     public static func collections(for selectedIDs: Set<String>) -> [IACollection] {
-        // Popular LibriVox always first, then the three curated collections,
+        // Popular LibriVox always first, then the two curated collections,
         // then the remaining 21 browse categories sorted alphabetically.
         let sortedBrowse = browseCollections.sorted {
             $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
@@ -116,8 +106,6 @@ public enum IACollectionStore {
         switch categoryID {
         case "lv-general-fiction":
             return "Pansy, Mary Elizabeth Braddon, Hugh Walpole, D. H. Lawrence, Charles Dickens"
-        case "lv-literary-fiction":
-            return "Jane Austen, Mark Twain, Arthur Conan Doyle, Charles Dickens, Oscar Wilde"
         case "lv-science-fiction":
             return "H. G. Wells, Edgar Rice Burroughs, Murray Leinster, H. Beam Piper, Andre Norton"
         case "lv-horror-gothic":
@@ -133,7 +121,7 @@ public enum IACollectionStore {
         case "lv-satire-humor":
             return "Mark Twain, P. G. Wodehouse, Jane Austen, Jerome K. Jerome, Jonathan Swift"
         case "lv-war-military":
-            return "Sun Tzu, John Buchan, Theodore Roosevelt, Homer, Stephen Crane"
+            return "Carl von Clausewitz, Sun Tzu, Julius Caesar, Stephen Crane, Homer"
         case "lv-short-stories":
             return "Luigi Pirandello, Edgar Allan Poe, Arthur Conan Doyle, O. Henry, Mark Twain"
         case "lv-drama-plays":
@@ -151,11 +139,11 @@ public enum IACollectionStore {
         case "lv-biography":
             return "Jacob Abbott, Helen Keller, Mark Twain, Benjamin Franklin, Frederick Douglass"
         case "lv-science-nature":
-            return "Edgar Rice Burroughs, H. G. Wells, Charles Darwin, Andre Norton, Jules Verne"
+            return "Charles Darwin, John Muir, Michael Faraday, Jean-Henri Fabre, John Burroughs"
         case "lv-religion":
             return "Andrew Murray, Leo Tolstoy, Dante Alighieri, Augustine of Hippo, Charles H. Spurgeon"
         case "lv-essays-ideas":
-            return "Edmund Burke, G. K. Chesterton, William Hazlitt, Hugh Walpole, George Bernard Shaw"
+            return "Ralph Waldo Emerson, Michel de Montaigne, Francis Bacon, G. K. Chesterton, Henry David Thoreau"
         default:
             return "LibriVox public-domain audiobooks"
         }
@@ -165,8 +153,6 @@ public enum IACollectionStore {
         switch categoryID {
         case "lv-general-fiction":
             return InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox")
-        case "lv-literary-fiction":
-            return InternetArchiveMetadata.coverURL(for: "great_expectations_mfs_0812_librivox")
         case "lv-science-fiction":
             return InternetArchiveMetadata.coverURL(for: "invisible_man_librivox")
         case "lv-horror-gothic":
@@ -182,7 +168,7 @@ public enum IACollectionStore {
         case "lv-satire-humor":
             return InternetArchiveMetadata.coverURL(for: "bequest_jg_librivox")
         case "lv-war-military":
-            return InternetArchiveMetadata.coverURL(for: "art_of_war_librivox")
+            return InternetArchiveMetadata.coverURL(for: "on_war_librivox")
         case "lv-short-stories":
             return InternetArchiveMetadata.coverURL(for: "stories_006_librivox")
         case "lv-drama-plays":
@@ -273,9 +259,6 @@ public enum CuratedQueries {
     public static let greaterBooks: String =
         "\(LibriVoxCatalogScope.matching(creatorClause(greaterBooksCreators))) \(exclusionClause())"
 
-    public static let ancientGreece: String =
-        "\(LibriVoxCatalogScope.matching(creatorClause(ancientGreeceCreators))) \(exclusionClause())"
-
     public static func representativeCreators(forCollectionID id: String) -> [String] {
         let full: [String]
         switch id {
@@ -283,8 +266,6 @@ public enum CuratedQueries {
             full = greatBooksCreators
         case "greater-books":
             full = greaterBooksCreators
-        case "ancient-greece":
-            full = ancientGreeceCreators
         default:
             return []
         }
