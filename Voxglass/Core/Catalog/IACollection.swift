@@ -215,7 +215,7 @@ public enum CuratedQueries {
         "Plutarch", "Tacitus", "Ptolemy", "Plotinus", "Augustine",
         "Thomas Aquinas", "Dante Alighieri", "Geoffrey Chaucer", "Niccolò Machiavelli",
         "Thomas Hobbes", "François Rabelais", "Michel de Montaigne", "William Shakespeare",
-        "Galileo Galilei", "William Gilbert", "William Harvey", "Miguel de Cervantes",
+        "Galileo Galilei", "William Harvey", "Miguel de Cervantes",
         "Francis Bacon", "René Descartes", "Baruch Spinoza", "John Milton",
         "Blaise Pascal", "Isaac Newton", "Christiaan Huygens", "John Locke",
         "George Berkeley", "David Hume", "Jonathan Swift", "Laurence Sterne",
