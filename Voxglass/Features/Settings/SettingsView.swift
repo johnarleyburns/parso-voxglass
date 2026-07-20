@@ -540,6 +540,7 @@ struct AboutView: View {
 
 private struct SyncSettingsCard: View {
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
+    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -560,14 +561,14 @@ private struct SyncSettingsCard: View {
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
-            Toggle("Sync with iCloud", isOn: Binding(
-                get: { cloudSync.isEnabled },
-                set: { cloudSync.isEnabled = $0 }
-            ))
+            Toggle("Sync with iCloud", isOn: $syncEnabled)
             .scaledFont(size: 12, weight: .semibold)
             .foregroundStyle(Palette.ink)
             .tint(Palette.brass)
             .accessibilityIdentifier("sync.enabled")
+            .onChange(of: syncEnabled) { _, newValue in
+                if newValue { Task { await cloudSync.sync() } }
+            }
 
             if !cloudSync.isEnabled {
                 Text("Sync is off. Your listening data stays only on this device.")
