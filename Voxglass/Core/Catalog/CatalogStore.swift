@@ -33,6 +33,7 @@ public final class CatalogStore: ObservableObject {
     private var numFound = 0
     private var seenIdentifiers: Set<String> = []
     private var chainFetchCount = 0
+    private var curatedManifest: [CuratedManifestEntry] = []
 
     public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
@@ -54,11 +55,26 @@ public final class CatalogStore: ObservableObject {
 
     public func searchAdvanced(_ query: String, sort: CatalogSort = .popularity, collectionID: String? = nil) async {
         activeCollectionID = collectionID
-        await runSearch(query: query + languageClause, sort: sort)
+        curatedManifest = []
+        if sort == .curation, let id = collectionID,
+           let collection = IACollectionStore.allSelectableCollections.first(where: { $0.id == id }),
+           let curatedName = collection.curatedListName {
+            curatedManifest = CuratedManifest.load(named: curatedName)
+        }
+        if sort == .curation {
+            await runCurationSearch()
+        } else {
+            await runSearch(query: query + languageClause, sort: sort)
+        }
     }
 
     public func loadMore() async {
-        guard hasMore, !isSearching, !isLoadingMore, let query = activeQuery else { return }
+        guard hasMore, !isSearching, !isLoadingMore else { return }
+        if activeSort == .curation {
+            await loadMoreCuration()
+            return
+        }
+        guard let query = activeQuery else { return }
 
         isLoadingMore = true
         defer { isLoadingMore = false }
@@ -80,6 +96,65 @@ public final class CatalogStore: ObservableObject {
         } catch {
             catalogError = error.localizedDescription
         }
+    }
+
+    private func runCurationSearch() async {
+        isSearching = true
+        defer { isSearching = false }
+
+        activeSort = .curation
+        currentPage = 1
+        numFound = curatedManifest.count
+
+        let slice = CuratedPager.slice(manifest: curatedManifest, page: 1, size: pageSize)
+        guard !slice.isEmpty else {
+            results = []
+            seenIdentifiers = []
+            updateHasMore()
+            return
+        }
+        let identifierQuery = buildIdentifierQuery(from: slice)
+
+        do {
+            let page = try await client.searchAdvancedPage(query: identifierQuery, rows: pageSize, page: 1, sort: .popularity)
+            seenIdentifiers = []
+            let ordered = CuratedPager.order(results: page.results, by: slice)
+            let filtered = filteredResults(ordered, for: identifierQuery)
+                .filter { seenIdentifiers.insert($0.identifier).inserted }
+            results = filtered
+            updateHasMore()
+        } catch {
+            catalogError = error.localizedDescription
+        }
+    }
+
+    private func loadMoreCuration() async {
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        let nextPage = currentPage + 1
+        let slice = CuratedPager.slice(manifest: curatedManifest, page: nextPage, size: pageSize)
+        guard !slice.isEmpty else {
+            updateHasMore()
+            return
+        }
+        let identifierQuery = buildIdentifierQuery(from: slice)
+
+        do {
+            let page = try await client.searchAdvancedPage(query: identifierQuery, rows: pageSize, page: 1, sort: .popularity)
+            currentPage = nextPage
+            let ordered = CuratedPager.order(results: page.results, by: slice)
+            let appended = ordered.filter { seenIdentifiers.insert($0.identifier).inserted }
+            results.append(contentsOf: appended)
+            updateHasMore()
+        } catch {
+            catalogError = error.localizedDescription
+        }
+    }
+
+    private func buildIdentifierQuery(from slice: [CuratedManifestEntry]) -> String {
+        let identifiers = slice.map { "identifier:\"\($0.identifier)\"" }
+        return "mediatype:audio AND (\(identifiers.joined(separator: " OR ")))"
     }
 
     public func importResult(
@@ -201,6 +276,7 @@ public final class CatalogStore: ObservableObject {
         numFound = 0
         hasMore = false
         seenIdentifiers = Set(results.map(\.identifier))
+        curatedManifest = []
     }
 
     private func updateHasMore() {

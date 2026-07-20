@@ -41,6 +41,7 @@ public enum CatalogSort: String, CaseIterable, Identifiable, Sendable {
     case title
     case author
     case recordedDate
+    case curation
 
     public var id: String { rawValue }
 
@@ -54,6 +55,8 @@ public enum CatalogSort: String, CaseIterable, Identifiable, Sendable {
             "Author"
         case .recordedDate:
             "Date"
+        case .curation:
+            "Curated"
         }
     }
 
@@ -67,7 +70,21 @@ public enum CatalogSort: String, CaseIterable, Identifiable, Sendable {
             ["creatorSorter asc", "creator asc"]
         case .recordedDate:
             ["date asc"]
+        case .curation:
+            []
         }
+    }
+
+    public static func defaultSort(for collection: IACollection) -> CatalogSort {
+        collection.isCurated ? .curation : .popularity
+    }
+
+    public static func availableSorts(for collection: IACollection) -> [CatalogSort] {
+        var cases = CatalogSort.allCases
+        if !collection.isCurated {
+            cases.removeAll { $0 == .curation }
+        }
+        return cases
     }
 }
 

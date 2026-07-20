@@ -82,6 +82,9 @@ struct BrowseView: View {
             SectionTitle(title: selectedCollection?.title ?? "Explore Results")
             if selectedCollection != nil {
                 sortPicker
+                if selectedCollection?.isCurated == true {
+                    curatedStatusBanner
+                }
             }
 
             if catalogStore.results.isEmpty {
@@ -140,13 +143,36 @@ struct BrowseView: View {
 
     private var sortPicker: some View {
         Picker("Sort", selection: $collectionSort) {
-            ForEach(CatalogSort.allCases) { sort in
+            ForEach(CatalogSort.availableSorts(for: selectedCollection ?? IACollectionStore.popular)) { sort in
                 Text(sort.title).tag(sort)
             }
         }
         .pickerStyle(.segmented)
         .tint(Palette.brass)
         .padding(.bottom, 4)
+    }
+
+    private var curatedStatusBanner: some View {
+        Text(curatedStatusMessage)
+            .scaledFont(size: 11, weight: .medium)
+            .foregroundStyle(Palette.brass)
+            .padding(.bottom, 2)
+            .accessibilityLabel(curatedStatusMessage)
+    }
+
+    private var curatedStatusMessage: String {
+        switch collectionSort {
+        case .curation:
+            "Hand-picked list · shown in curation order"
+        case .popularity:
+            "Sorted by popularity"
+        case .title:
+            "Sorted by title"
+        case .author:
+            "Sorted by author"
+        case .recordedDate:
+            "Sorted by date"
+        }
     }
 
     private var loadMoreButton: some View {
@@ -189,11 +215,9 @@ struct BrowseView: View {
 
     private func search(_ collection: IACollection) {
         selectedCollection = collection
-        if collectionSort == .popularity {
-            Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: .popularity, collectionID: collection.id) }
-        } else {
-            collectionSort = .popularity
-        }
+        let defaultSort = CatalogSort.defaultSort(for: collection)
+        collectionSort = defaultSort
+        Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
     }
 
     private var selectedCollectionIDs: Set<String> {
@@ -213,13 +237,19 @@ private struct ExploreCollectionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CollectionArtworkView(
-                title: collection.title,
-                systemImage: collection.systemImage,
-                assetName: collection.assetName,
-                remoteImageURL: resolvedCoverURL
-            )
-            .frame(width: 190, height: 190)
+            ZStack(alignment: .top) {
+                CollectionArtworkView(
+                    title: collection.title,
+                    systemImage: collection.systemImage,
+                    assetName: collection.assetName,
+                    remoteImageURL: resolvedCoverURL
+                )
+                .frame(width: 190, height: 190)
+
+                if collection.isCurated {
+                    curatedBadge
+                }
+            }
 
             Text(collection.title)
                 .scaledFont(size: 14, weight: .bold)
@@ -247,6 +277,24 @@ private struct ExploreCollectionCard: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
         }
+    }
+
+    private var curatedBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "rosette")
+                .scaledFont(size: 9, weight: .bold)
+            Text("CURATED")
+                .scaledFont(size: 9, weight: .bold)
+        }
+        .foregroundStyle(.black)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(Palette.brass)
+        .cornerRadius(4)
+        .padding(6)
+        .accessibilityElement()
+        .accessibilityLabel("Curated collection")
+        .accessibilityIdentifier("collection.curatedBadge")
     }
 
     /// "~N books", rounded to ~2 significant figures so it reads as approximate.

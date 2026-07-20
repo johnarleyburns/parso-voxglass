@@ -10,6 +10,9 @@ public struct IACollection: Identifiable, Equatable, Sendable {
     public var systemImage: String
     public var assetName: String?
     public var remoteImageURL: URL?
+    public var curatedListName: String?
+
+    public var isCurated: Bool { curatedListName != nil }
 
     public init(
         id: String,
@@ -20,7 +23,8 @@ public struct IACollection: Identifiable, Equatable, Sendable {
         archiveQuery: String,
         systemImage: String,
         assetName: String? = nil,
-        remoteImageURL: URL? = nil
+        remoteImageURL: URL? = nil,
+        curatedListName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -31,6 +35,7 @@ public struct IACollection: Identifiable, Equatable, Sendable {
         self.systemImage = systemImage
         self.assetName = assetName
         self.remoteImageURL = remoteImageURL
+        self.curatedListName = curatedListName
     }
 }
 
@@ -66,7 +71,8 @@ public enum IACollectionStore {
         archiveQuery: CuratedQueries.greatBooks,
         systemImage: "books.vertical",
         assetName: "collection-great-books",
-        remoteImageURL: InternetArchiveMetadata.coverURL(for: "iliad_popetranslation_1506_librivox")
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "iliad_popetranslation_1506_librivox"),
+        curatedListName: "great-books"
     )
 
     public static let greaterBooks = IACollection(
@@ -76,7 +82,8 @@ public enum IACollectionStore {
         archiveQuery: CuratedQueries.greaterBooks,
         systemImage: "text.book.closed",
         assetName: "collection-greater-books",
-        remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox")
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox"),
+        curatedListName: "greater-books"
     )
 
     public static let curated: [IACollection] = [greatBooks, greaterBooks]

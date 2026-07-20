@@ -1,0 +1,332 @@
+[
+  {
+    "author" : "Homer",
+    "identifier" : "odyssey_butler_librivox",
+    "rank" : 1,
+    "title" : "The Odyssey"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "tragediassofocles_1606_librivox",
+    "rank" : 2,
+    "title" : "Las Siete Tragedias de Sófocles"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigenia_in_aulis_1308_librivox",
+    "rank" : 3,
+    "title" : "Iphigenia in Aulis"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "clouds_1506_librivox",
+    "rank" : 4,
+    "title" : "The Clouds"
+  },
+  {
+    "author" : "Virgil",
+    "identifier" : "the_aeneid_prose_1405_librivox",
+    "rank" : 5,
+    "title" : "The Aeneid, prose translation"
+  },
+  {
+    "author" : "Publius Ovidius Naso (Ovid)",
+    "identifier" : "metamorphoses_1006_librivox",
+    "rank" : 6,
+    "title" : "Metamorphoses"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divine_comedy_librivox",
+    "rank" : 7,
+    "title" : "The Divine Comedy"
+  },
+  {
+    "author" : "Geoffrey Chaucer",
+    "identifier" : "canterburytales_librivox",
+    "rank" : 8,
+    "title" : "The Canterbury Tales"
+  },
+  {
+    "author" : "Miguel de Cervantes Saavedra",
+    "identifier" : "don_quijote_vol1_0706_librivox",
+    "rank" : 9,
+    "title" : "Don Quijote, Volume 1"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "romeo_and_juliet_librivox",
+    "rank" : 10,
+    "title" : "Romeo and Juliet"
+  },
+  {
+    "author" : "Christopher Marlowe",
+    "identifier" : "doctor_faustus_1010_librivox",
+    "rank" : 11,
+    "title" : "The Tragical History of Doctor Faustus"
+  },
+  {
+    "author" : "Molière",
+    "identifier" : "comtesse_escarbagnas_0809_librivox",
+    "rank" : 12,
+    "title" : "La Comtesse d'Escarbagnas"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "paradise_lost_08083_librivox",
+    "rank" : 13,
+    "title" : "Paradise Lost"
+  },
+  {
+    "author" : "Daniel Defoe",
+    "identifier" : "robinson_crusoe_librivox",
+    "rank" : 14,
+    "title" : "The Life and Strange Surprising Adventures of Robinson Crusoe of York, Mariner"
+  },
+  {
+    "author" : "Jonathan Swift",
+    "identifier" : "gulliver_ld_librivox",
+    "rank" : 15,
+    "title" : "Gulliver's Travels"
+  },
+  {
+    "author" : "Henry Fielding",
+    "identifier" : "tomjones_0811_librivox",
+    "rank" : 16,
+    "title" : "The History of Tom Jones, A Foundling"
+  },
+  {
+    "author" : "Voltaire",
+    "identifier" : "candide_librivox",
+    "rank" : 17,
+    "title" : "Candide"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "pride_and_prejudice_librivox",
+    "rank" : 18,
+    "title" : "Pride and Prejudice"
+  },
+  {
+    "author" : "Mary Shelley",
+    "identifier" : "frankenstein_1210_librivox",
+    "rank" : 19,
+    "title" : "Frankenstein (dramatic reading)"
+  },
+  {
+    "author" : "Sir Walter Scott",
+    "identifier" : "talisman_0810_librivox",
+    "rank" : 20,
+    "title" : "The Talisman"
+  },
+  {
+    "author" : "George Gordon, Lord Byron",
+    "identifier" : "corsario_vv_1903_librivox",
+    "rank" : 21,
+    "title" : "El Corsario"
+  },
+  {
+    "author" : "John Keats; Sidney Colvin",
+    "identifier" : "lettersofjohnkeats_1909_librivox",
+    "rank" : 22,
+    "title" : "Letters of John Keats to His Family and Friends"
+  },
+  {
+    "author" : "William Blake",
+    "identifier" : "songs_innocence_experience_librivox",
+    "rank" : 23,
+    "title" : "Songs of Innocence and Experience"
+  },
+  {
+    "author" : "William Wordsworth",
+    "identifier" : "wandered_lonely_as_a_cloud_librivox",
+    "rank" : 24,
+    "title" : "I Wandered Lonely As a Cloud"
+  },
+  {
+    "author" : "Edgar Allan Poe",
+    "identifier" : "12_creepytales_1206_librivox",
+    "rank" : 25,
+    "title" : "12 Creepy Tales by Edgar Allan Poe"
+  },
+  {
+    "author" : "Nathaniel Hawthorne",
+    "identifier" : "scarlet_letter_0710",
+    "rank" : 26,
+    "title" : "The Scarlet Letter"
+  },
+  {
+    "author" : "Herman Melville",
+    "identifier" : "moby_dick_librivox",
+    "rank" : 27,
+    "title" : "Moby Dick, or the Whale"
+  },
+  {
+    "author" : "Walt Whitman",
+    "identifier" : "leaves_of_grass_librivox",
+    "rank" : 28,
+    "title" : "Leaves of Grass"
+  },
+  {
+    "author" : "Henry David Thoreau",
+    "identifier" : "walden_librivox",
+    "rank" : 29,
+    "title" : "Walden"
+  },
+  {
+    "author" : "Emily Bronte",
+    "identifier" : "wuthering_heights_rg_librivox",
+    "rank" : 30,
+    "title" : "Wuthering Heights (Solo Version)"
+  },
+  {
+    "author" : "Charlotte Brontë",
+    "identifier" : "jane_eyre_ver03_0809_librivox",
+    "rank" : 31,
+    "title" : "Jane Eyre (version 3)"
+  },
+  {
+    "author" : "Charles Dickens",
+    "identifier" : "tale_two_cities_librivox",
+    "rank" : 32,
+    "title" : "A Tale of Two Cities"
+  },
+  {
+    "author" : "George Eliot",
+    "identifier" : "middlemarch_version2_1310_librivox",
+    "rank" : 33,
+    "title" : "Middlemarch (version 2)"
+  },
+  {
+    "author" : "Thomas Hardy",
+    "identifier" : "return_native_librivox",
+    "rank" : 34,
+    "title" : "The Return of the Native"
+  },
+  {
+    "author" : "Lewis Carroll",
+    "identifier" : "alice_in_wonderland_librivox",
+    "rank" : 35,
+    "title" : "Alice's Adventures in Wonderland, by Lewis Carroll"
+  },
+  {
+    "author" : "Robert Louis Stevenson",
+    "identifier" : "treasure_island_ap_librivox",
+    "rank" : 36,
+    "title" : "Treasure Island"
+  },
+  {
+    "author" : "Bram Stoker",
+    "identifier" : "dracula_librivox",
+    "rank" : 37,
+    "title" : "Dracula"
+  },
+  {
+    "author" : "Oscar Wilde",
+    "identifier" : "being_earnest_librivox",
+    "rank" : 38,
+    "title" : "The Importance of Being Earnest"
+  },
+  {
+    "author" : "Rudyard Kipling",
+    "identifier" : "jungle_book_mh_0808_librivox",
+    "rank" : 39,
+    "title" : "The Jungle Book"
+  },
+  {
+    "author" : "Sir Arthur Conan Doyle",
+    "identifier" : "adventures_holmes",
+    "rank" : 40,
+    "title" : "The Adventures of Sherlock Holmes"
+  },
+  {
+    "author" : "Jules Verne",
+    "identifier" : "mysterious_island_ms_librivox",
+    "rank" : 41,
+    "title" : "The Mysterious Island"
+  },
+  {
+    "author" : "H. G. Wells",
+    "identifier" : "timemachine_sjm_librivox",
+    "rank" : 42,
+    "title" : "The Time Machine (version 3)"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "tom_sawyer_librivox",
+    "rank" : 43,
+    "title" : "The Adventures of Tom Sawyer"
+  },
+  {
+    "author" : "Frederick Douglass",
+    "identifier" : "frederick-douglass_jf_librivox",
+    "rank" : 44,
+    "title" : "Narrative of the Life of Frederick Douglass"
+  },
+  {
+    "author" : "Victor Hugo",
+    "identifier" : "les_mis_vol01_0810_librivox",
+    "rank" : 45,
+    "title" : "Les Misérables, Vol. 1"
+  },
+  {
+    "author" : "Alexandre Dumas",
+    "identifier" : "count_monte_cristo_0711_librivox",
+    "rank" : 46,
+    "title" : "The Count of Monte Cristo"
+  },
+  {
+    "author" : "Gustave Flaubert",
+    "identifier" : "madame_bovary_0809_librivox",
+    "rank" : 47,
+    "title" : "Madame Bovary"
+  },
+  {
+    "author" : "Emile Zola",
+    "identifier" : "jaccuse_librivox",
+    "rank" : 48,
+    "title" : "J'accuse...!"
+  },
+  {
+    "author" : "Fyodor Dostoevsky",
+    "identifier" : "white_nights_librivox",
+    "rank" : 49,
+    "title" : "Белые ночи - White Nights"
+  },
+  {
+    "author" : "Leo Tolstoy (transl. Aylmer and Louise Maude)",
+    "identifier" : "war_and_peace_01_librivox",
+    "rank" : 50,
+    "title" : "War and Peace, Book 01: 1805"
+  },
+  {
+    "author" : "Anton Chekhov",
+    "identifier" : "the_house_with_the_mezzanine_and_other_stories_1309_librivox",
+    "rank" : 51,
+    "title" : "The House With The Mezzanine And Other Stories"
+  },
+  {
+    "author" : "Alexander Pushkin",
+    "identifier" : "krasavitse-librivox",
+    "rank" : 52,
+    "title" : "Krasavitse"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "dolls_house_0812_librivox",
+    "rank" : 54,
+    "title" : "A Doll's House"
+  },
+  {
+    "author" : "Joseph Conrad",
+    "identifier" : "heart_of_darkness",
+    "rank" : 55,
+    "title" : "Heart of Darkness"
+  },
+  {
+    "author" : "Henry James",
+    "identifier" : "turn_screw_librivox",
+    "rank" : 56,
+    "title" : "The Turn of the Screw"
+  }
+]
