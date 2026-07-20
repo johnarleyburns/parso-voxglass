@@ -27,10 +27,12 @@ public final class CatalogStore: ObservableObject {
     private let client: InternetArchiveCatalogClient
     private let pageSize = 25
     private var activeQuery: String?
+    private var activeCollectionID: String?
     private var activeSort: CatalogSort = .popularity
     private var currentPage = 1
     private var numFound = 0
     private var seenIdentifiers: Set<String> = []
+    private var chainFetchCount = 0
 
     public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
@@ -50,7 +52,8 @@ public final class CatalogStore: ObservableObject {
         await runSearch(query: InternetArchiveClient.libriVoxQuery(for: trimmed) + languageClause, sort: .popularity)
     }
 
-    public func searchAdvanced(_ query: String, sort: CatalogSort = .popularity) async {
+    public func searchAdvanced(_ query: String, sort: CatalogSort = .popularity, collectionID: String? = nil) async {
+        activeCollectionID = collectionID
         await runSearch(query: query + languageClause, sort: sort)
     }
 
@@ -149,10 +152,27 @@ public final class CatalogStore: ObservableObject {
         _ results: [InternetArchiveSearchResult],
         for query: String
     ) -> [InternetArchiveSearchResult] {
-        guard query.localizedCaseInsensitiveContains("librivoxaudio") else {
-            return results
+        var filtered = results
+
+        if query.localizedCaseInsensitiveContains("librivoxaudio") {
+            filtered = filtered.filter(\.isStrictLibriVoxCatalogCandidate)
         }
-        return results.filter(\.isStrictLibriVoxCatalogCandidate)
+
+        if let collectionID = activeCollectionID,
+           let rules = CollectionRulesRegistry.rules(forCollectionID: collectionID) {
+            filtered = filtered.filter { result in
+                rules.allows(subjects: result.subjects, creator: result.authorLine, title: result.title)
+            }
+        }
+
+        if filtered.isEmpty && !results.isEmpty && chainFetchCount < 3 {
+            chainFetchCount += 1
+            return results
+        } else if !filtered.isEmpty {
+            chainFetchCount = 0
+        }
+
+        return filtered
     }
 
     private func reloadForLanguageChange() {

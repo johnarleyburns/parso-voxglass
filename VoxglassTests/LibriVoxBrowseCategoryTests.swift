@@ -88,15 +88,18 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
         let ancient = LibriVoxBrowseCategory.ancientWorld.archiveQuery
         XCTAssertTrue(ancient.contains("subject:\"Ancient History\""))
         XCTAssertTrue(ancient.contains("creator:Plato"))
-        XCTAssertTrue(ancient.contains("title:roman"))
+        XCTAssertTrue(ancient.contains("creator:Sappho"))
+        XCTAssertFalse(ancient.contains("title:ancient"))
+        XCTAssertFalse(ancient.contains("title:roman"))
     }
 
     func testGeneralFictionMysteryAndEssaysQueriesIncludeBroaderExpansions() {
         let general = LibriVoxBrowseCategory.generalFiction.archiveQuery
-        XCTAssertTrue(general.contains("subject:Fiction"))
-        XCTAssertTrue(general.contains("title:novel"))
+        XCTAssertTrue(general.contains("subject:\"General Fiction\""))
         XCTAssertTrue(general.contains("creator:\"Charles Dickens\""))
         XCTAssertTrue(general.contains(LibriVoxCatalogScope.query))
+        XCTAssertFalse(general.contains("subject:Fiction"))
+        XCTAssertFalse(general.contains("title:novel"))
 
         let mystery = LibriVoxBrowseCategory.mysteryCrime.archiveQuery
         XCTAssertTrue(mystery.contains("subject:Mystery"))
@@ -106,9 +109,10 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
 
         let essays = LibriVoxBrowseCategory.essaysIdeas.archiveQuery
         XCTAssertTrue(essays.contains("subject:Essays"))
-        XCTAssertTrue(essays.contains("title:lectures"))
         XCTAssertTrue(essays.contains("creator:\"Ralph Waldo Emerson\""))
         XCTAssertTrue(essays.contains(LibriVoxCatalogScope.query))
+        XCTAssertFalse(essays.contains("title:lectures"))
+        XCTAssertFalse(essays.contains("subject:\"Philosophy\""))
     }
 
     // MARK: - History backfill weighting

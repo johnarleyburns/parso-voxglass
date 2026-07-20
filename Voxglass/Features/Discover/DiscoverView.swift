@@ -46,7 +46,7 @@ struct BrowseView: View {
         }
         .onChange(of: collectionSort) { _, sort in
             guard let selectedCollection else { return }
-            Task { await catalogStore.searchAdvanced(selectedCollection.archiveQuery, sort: sort) }
+            Task { await catalogStore.searchAdvanced(selectedCollection.archiveQuery, sort: sort, collectionID: selectedCollection.id) }
         }
     }
 
@@ -190,7 +190,7 @@ struct BrowseView: View {
     private func search(_ collection: IACollection) {
         selectedCollection = collection
         if collectionSort == .popularity {
-            Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: .popularity) }
+            Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: .popularity, collectionID: collection.id) }
         } else {
             collectionSort = .popularity
         }

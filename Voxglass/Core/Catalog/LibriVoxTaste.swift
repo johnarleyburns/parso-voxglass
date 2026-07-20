@@ -11,7 +11,7 @@ public struct LibriVoxTaste: Identifiable, Equatable, Sendable {
             id: "classics",
             title: "Classics",
             systemImage: "building.columns.fill",
-            archiveQuery: LibriVoxCatalogScope.matching("subject:Classics OR subject:Literature OR subject:\"Classics (Greek & Latin Antiquity)\" OR subject:\"Literary Fiction\"")
+            archiveQuery: LibriVoxCatalogScope.matching("subject:Classics OR subject:Literature OR subject:\"Classics (Greek & Latin Antiquity)\"")
         ),
         LibriVoxTaste(
             id: "mystery",

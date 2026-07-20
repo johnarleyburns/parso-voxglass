@@ -331,7 +331,6 @@ public enum RecommendationPipeline {
         ids.insert("popular-librivox")
         ids.insert("great-books")
         ids.insert("greater-books")
-        ids.insert("ancient-greece")
         ids.insert("librivoxaudio")
         return ids
     }()

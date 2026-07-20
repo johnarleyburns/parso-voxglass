@@ -70,7 +70,7 @@ final class InternetArchiveCatalogTests: XCTestCase {
         let categories = LibriVoxBrowseGroup.categories
         let ids = Set(categories.map(\.id))
 
-        XCTAssertEqual(categories.count, 21)
+        XCTAssertEqual(categories.count, 20)
         XCTAssertEqual(ids.count, categories.count)
         XCTAssertEqual(LibriVoxBrowseGroup.all.map(\.title), ["Fiction", "Forms", "Ideas & Nonfiction"])
         XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains(LibriVoxCatalogScope.collectionClause) })
@@ -137,12 +137,11 @@ final class InternetArchiveCatalogTests: XCTestCase {
     func testCuratedCollectionsUseBroadCreatorQueries() {
         XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books"))
         XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("greater-books"))
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("ancient-greece"))
+        XCTAssertEqual(IACollectionStore.curated.count, 2)
 
         XCTAssertTrue(CuratedQueries.greatBooks.contains(LibriVoxCatalogScope.query))
         XCTAssertTrue(CuratedQueries.greatBooks.contains("creator:\"Homer\""))
         XCTAssertTrue(CuratedQueries.greatBooks.contains("AND NOT creator:\"William John Locke\""))
-        XCTAssertTrue(CuratedQueries.ancientGreece.contains("creator:\"Plato\""))
         XCTAssertTrue(CuratedQueries.greaterBooks.contains("creator:\"Jane Austen\""))
     }
 

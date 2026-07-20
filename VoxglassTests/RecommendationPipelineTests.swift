@@ -111,7 +111,7 @@ final class RecommendationPipelineTests: XCTestCase {
     func testOnboardingOnlyCuratedPickProducesNonEmptyProfile() {
         let profile = RecommendationPipeline.buildProfile(
             history: [],
-            onboardingSelectionIDs: ["ancient-greece"]
+            onboardingSelectionIDs: ["great-books"]
         )
         XCTAssertFalse(profile.isEmpty)
         XCTAssertFalse(profile.creatorTerms.isEmpty)
