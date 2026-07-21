@@ -10,6 +10,7 @@ struct BrowseView: View {
     @StateObject private var coverStore = CollectionCoverStore(artwork: ArtworkService.shared)
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
+    @State private var isDescriptionExpanded = false
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
@@ -84,6 +85,9 @@ struct BrowseView: View {
                 sortPicker
                 if selectedCollection?.isCurated == true {
                     curatedStatusBanner
+                }
+                if let collection = selectedCollection, collection.hasDescription {
+                    collectionDescriptionView(collection)
                 }
             }
 
@@ -215,9 +219,50 @@ struct BrowseView: View {
 
     private func search(_ collection: IACollection) {
         selectedCollection = collection
+        isDescriptionExpanded = false
         let defaultSort = CatalogSort.defaultSort(for: collection)
         collectionSort = defaultSort
         Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
+    }
+
+    @ViewBuilder
+    private func collectionDescriptionView(_ collection: IACollection) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if !collection.summaryLine.isEmpty {
+                Text(collection.summaryLine)
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Palette.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isDescriptionExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(isDescriptionExpanded ? "Less" : "More About this Collection")
+                        .scaledFont(size: 12, weight: .medium)
+                    Image(systemName: isDescriptionExpanded ? "chevron.up" : "chevron.right")
+                        .scaledFont(size: 10, weight: .bold)
+                }
+                .foregroundStyle(Palette.brass)
+            }
+            .buttonStyle(.plain)
+
+            if isDescriptionExpanded {
+                Text(collection.description)
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Palette.ink2)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .glassSurface(cornerRadius: 12)
+        .padding(.bottom, 4)
     }
 
     private var selectedCollectionIDs: Set<String> {

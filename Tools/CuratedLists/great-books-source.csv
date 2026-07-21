@@ -1,86 +1,102 @@
 rank,author,title,identifier_override
-1,Homer,The Odyssey,odyssey_butler_librivox
-2,Aeschylus,The Oresteia,oresteia_1002_librivox
-3,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-4,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-5,Aristophanes,The Clouds,clouds_1506_librivox
-6,Herodotus,Libro IV de la Historia de Heródoto,historiaherodoto4_1508_librivox
-7,Thucydides,The History of the Peloponnesian War,history_peloponnesian_war_librivox
-8,Plato,Alcibiades I,alcibiades1_1212_librivox
-9,Aristotle,Politics,politics_0802_librivox
-10,Hippocrates,,
-11,Galen,,
-12,Euclid,,
-13,Archimedes,,
-14,Apollonius of Perga,,
-15,Nicomachus,,
-16,Lucretius,On the Nature of Things (Watson translation),on_the_nature_of_things_1001_librivox
-17,Epictetus,The Enchiridion,enchiridion_librivox
-18,Marcus Aurelius,Meditations,meditations_0708_librivox
+1,Homer,"The Odyssey",odyssey_butler_librivox
+2,Aeschylus,"The Oresteia",oresteia_1002_librivox
+3,Sophocles,"Las Siete Tragedias de Sófocles",tragediassofocles_1606_librivox
+4,Euripides,"Iphigenia in Aulis",iphigenia_in_aulis_1308_librivox
+5,Aristophanes,"The Clouds",clouds_1506_librivox
+6,Herodotus,"Libro IV de la Historia de Heródoto",historiaherodoto4_1508_librivox
+7,Thucydides,"The History of the Peloponnesian War",history_peloponnesian_war_librivox
+8,Plato,"Alcibiades I",alcibiades1_1212_librivox
+9,Aristotle,"Politics",politics_0802_librivox
+10,Hippocrates,"The Oath and Law of Hippocrates",nonfiction002_librivox
+11,Galen,"",
+12,Euclid,"",
+13,Archimedes,"",
+14,Apollonius of Perga,"",
+15,Nicomachus,"",
+16,Lucretius,"On the Nature of Things (Watson translation)",on_the_nature_of_things_1001_librivox
+17,Epictetus,"The Enchiridion",enchiridion_librivox
+18,Marcus Aurelius,"Meditations",meditations_0708_librivox
 19,Virgil,"The Aeneid, prose translation",the_aeneid_prose_1405_librivox
 20,Plutarch,"The Morals (Moralia), Book 2",morals2_26_1506_librivox
-21,Tacitus,Las Germanias,las_germanias_2203_librivox
-22,Ptolemy,,
-23,Nicolaus Copernicus,,
-24,Johannes Kepler,,
-25,Plotinus,Enneads,enneads_-plotinus_1806_librivox
-26,Augustine of Hippo,Confessions,confessions_augustine_0911_librivox
+21,Tacitus,"Las Germanias",las_germanias_2203_librivox
+22,Ptolemy,"",
+23,Nicolaus Copernicus,"",
+24,Johannes Kepler,"",
+25,Plotinus,"Enneads",enneads_-plotinus_1806_librivox
+26,Augustine of Hippo,"Confessions",confessions_augustine_0911_librivox
 27,Thomas Aquinas,"Summa Theologica, Prima Pars, Initial Questions",summa_1_01_jr_0901_librivox
-28,Dante Alighieri,The Divine Comedy,divine_comedy_librivox
-29,Geoffrey Chaucer,The Canterbury Tales,canterburytales_librivox
-30,Niccolò Machiavelli,Il Principe,il_principe_1711_librivox
-31,Erasmus,Das Lob der Narrheit,lob_der_narrheit_1503_librivox
+28,Dante Alighieri,"The Divine Comedy",divine_comedy_librivox
+29,Geoffrey Chaucer,"The Canterbury Tales",canterburytales_librivox
+30,Niccolò Machiavelli,"Il Principe",il_principe_1711_librivox
+31,Erasmus,"Das Lob der Narrheit",lob_der_narrheit_1503_librivox
 32,John Calvin,"Institutes of the Christian Religion, Book One",institutes_christian_religion1_0909_librivox
-33,Thomas Hobbes,Leviathan (Books I and II),leviathan_1_2_0802_librivox
+33,Thomas Hobbes,"Leviathan (Books I and II)",leviathan_1_2_0802_librivox
 34,François Rabelais,"Gargantua and Pantagruel, Book II",gargantuapantagruel2_1308_librivox
 35,Michel de Montaigne,"Essays, Book 1",essays_book1_1204_librivox
-37,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-38,Galileo Galilei,Dialogo dei Massimi Sistemi,dialogo_dei_massimi_sistemi_2009_librivox
-39,William Harvey,,
-40,Miguel de Cervantes,"Don Quijote, Volume 1",don_quijote_vol1_0706_librivox
-41,Francis Bacon,The Essays of Francis Bacon,essays_francis_bacon_cv3_librivox
-42,René Descartes,Meditations on First Philosophy,meditations_descartes_dew_librivox
-43,Baruch Spinoza,The Ethics,ethics_1010_librivox
-44,John Milton,Paradise Lost,paradise_lost_08083_librivox
-45,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-46,Jean Racine,Esther,esther_2505_librivox
-47,Blaise Pascal,Pensées,pensees_0906_dx_librivox1
-48,Christiaan Huygens,Treatise on Light,treatise_light_ava_librivox
-49,Isaac Newton,Opticks,opticks_1203_librivox
-50,John Locke,Two Treatises of Civil Government,two_treatises_0902_librivox
-51,George Berkeley,"A Treatise Concerning the Principles of Human Knowledge, Part 1",treatise_0905_librivox
-52,David Hume,An Enquiry Concerning Human Understanding,human_understanding_0711_lv_2
-53,Voltaire,Candide,candide_librivox
-54,Jonathan Swift,Gulliver's Travels,gulliver_ld_librivox
-55,Montesquieu,"De l'esprit des lois, livres 01-13",delespritdeslois_anlo_1004_librivox
-56,Laurence Sterne,"The Life and Opinions of Tristram Shandy, Gentleman, Vol. 4",tristramshandy4_1008_librivox
-57,Henry Fielding,"The History of Tom Jones, A Foundling",tomjones_0811_librivox
-58,Denis Diderot,Regrets sur ma vieille robe de chambre,regrets_sur_ma_vieille_robe_de_chambre_enko_0808_librivox
-59,Jean-Jacques Rousseau,A Discourse Upon the Origin and the Foundation of the Inequality Among Mankind,discourse_inequality_ej_librivox
-60,Adam Smith,The Wealth of Nations - Book 1,wealth_nations01_se
-61,Immanuel Kant,The Critique of Pure Reason,critique_pure_reason_0709_librivox
-62,Edward Gibbon,The Decline and Fall of the Roman Empire Vol. I,decline_fall_1_0707_librivox
-63,Alexander Hamilton; James Madison; John Jay,The Federalist Papers,federalist_papers_librivox
-64,John Stuart Mill,On Liberty,on_liberty_librivox
-65,Alexis de Tocqueville,Democracy in America Vol. I,democracy_america_vol1_0709
-66,James Boswell,"The Life of Samuel Johnson, Vol. II (version 2)",samuel_johnson_vol_ii_version_2_1504_librivox
-67,Johann Wolfgang von Goethe,Die Leiden des jungen Werther,leiden_werther_librivox
-68,Georg Wilhelm Friedrich Hegel,Introduction to the Philosophy of History,intro_philosophy_history_dew_librivox
-69,Jane Austen,Pride and Prejudice,pride_and_prejudice_librivox
-70,Honoré de Balzac,Letters of Two Brides,letters_brides_0709_librivox
-71,Søren Kierkegaard,"""Fear and Trembling (selections)""",fear_and_trembling_selections_2010_librivox
-72,Charles Darwin,On the Origin of Species by Means of Natural Selection,origin_species_librivox
-73,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-74,Herman Melville,"Moby Dick, or the Whale",moby_dick_librivox
-75,George Eliot,Middlemarch (version 2),middlemarch_version2_1310_librivox
-76,Karl Marx,"The Communist Manifesto, by Karl Marx and Friedrich Engels",communistmanifesto_librivox
-77,Leo Tolstoy,"War and Peace, Book 01: 1805",war_and_peace_01_librivox
-78,Mark Twain,The Adventures of Tom Sawyer,tom_sawyer_librivox
-79,Friedrich Nietzsche,Beyond Good and Evil,beyond_good_and_evil_librivox
-80,Fyodor Dostoevsky,Белые ночи - White Nights,white_nights_librivox
-81,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-82,William James,Varieties of Religious Experience,religious_experience_1008_librivox
-83,Sigmund Freud,Dream Psychology,dream_psychology_librivox
-84,Antoine Lavoisier,,
-85,Joseph Fourier,,
-86,Michael Faraday,The Chemical History of a Candle,chemical_history_candle_ava_librivox
+36,William Shakespeare,"Romeo and Juliet",romeo_and_juliet_librivox
+37,Galileo Galilei,"Dialogo dei Massimi Sistemi",dialogo_dei_massimi_sistemi_2009_librivox
+38,William Harvey,"",
+39,Miguel de Cervantes,"Don Quijote, Volume 1",don_quijote_vol1_0706_librivox
+40,Francis Bacon,"The Essays of Francis Bacon",essays_francis_bacon_cv3_librivox
+41,René Descartes,"Meditations on First Philosophy",meditations_descartes_dew_librivox
+42,Baruch Spinoza,"The Ethics",ethics_1010_librivox
+43,John Milton,"Paradise Lost",paradise_lost_08083_librivox
+44,Molière,"La Comtesse d'Escarbagnas",comtesse_escarbagnas_0809_librivox
+45,Jean Racine,"Esther",esther_2505_librivox
+46,Blaise Pascal,"Pensées",pensees_0906_dx_librivox1
+47,Christiaan Huygens,"Treatise on Light",treatise_light_ava_librivox
+48,Isaac Newton,"Opticks",opticks_1203_librivox
+49,John Locke,"Two Treatises of Civil Government",two_treatises_0902_librivox
+50,George Berkeley,"A Treatise Concerning the Principles of Human Knowledge, Part 1",treatise_0905_librivox
+51,David Hume,"An Enquiry Concerning Human Understanding",human_understanding_0711_lv_2
+52,Voltaire,"Candide",candide_librivox
+53,Jonathan Swift,"Gulliver's Travels",gulliver_ld_librivox
+54,Montesquieu,"De l'esprit des lois, livres 01-13",delespritdeslois_anlo_1004_librivox
+55,Laurence Sterne,"The Life and Opinions of Tristram Shandy, Gentleman, Vol. 4",tristramshandy4_1008_librivox
+56,Henry Fielding,"The History of Tom Jones, A Foundling",tomjones_0811_librivox
+57,Denis Diderot,"Regrets sur ma vieille robe de chambre",regrets_sur_ma_vieille_robe_de_chambre_enko_0808_librivox
+58,Jean-Jacques Rousseau,"A Discourse Upon the Origin and the Foundation of the Inequality Among Mankind",discourse_inequality_ej_librivox
+59,Adam Smith,"The Wealth of Nations - Book 1",wealth_nations01_se
+60,Immanuel Kant,"The Critique of Pure Reason",critique_pure_reason_0709_librivox
+61,Edward Gibbon,"The Decline and Fall of the Roman Empire Vol. I",decline_fall_1_0707_librivox
+62,Alexander Hamilton; James Madison; John Jay,"The Federalist Papers",federalist_papers_librivox
+63,John Stuart Mill,"On Liberty",on_liberty_librivox
+64,Alexis de Tocqueville,"Democracy in America Vol. I",democracy_america_vol1_0709
+65,James Boswell,"The Life of Samuel Johnson, Vol. II (version 2)",samuel_johnson_vol_ii_version_2_1504_librivox
+66,Johann Wolfgang von Goethe,"Die Leiden des jungen Werther",leiden_werther_librivox
+67,Georg Wilhelm Friedrich Hegel,"Introduction to the Philosophy of History",intro_philosophy_history_dew_librivox
+68,Jane Austen,"Pride and Prejudice",pride_and_prejudice_librivox
+69,Honoré de Balzac,"Letters of Two Brides",letters_brides_0709_librivox
+70,Søren Kierkegaard,"""Fear and Trembling (selections)""",fear_and_trembling_selections_2010_librivox
+71,Charles Darwin,"On the Origin of Species by Means of Natural Selection",origin_species_librivox
+72,Charles Dickens,"A Tale of Two Cities",tale_two_cities_librivox
+73,Herman Melville,"Moby Dick, or the Whale",moby_dick_librivox
+74,George Eliot,"Middlemarch (version 2)",middlemarch_version2_1310_librivox
+75,Karl Marx,"The Communist Manifesto, by Karl Marx and Friedrich Engels",communistmanifesto_librivox
+76,Leo Tolstoy,"War and Peace, Book 01: 1805",war_and_peace_01_librivox
+77,Mark Twain,"The Adventures of Tom Sawyer",tom_sawyer_librivox
+78,Friedrich Nietzsche,"Beyond Good and Evil",beyond_good_and_evil_librivox
+79,Fyodor Dostoevsky,"Белые ночи - White Nights",white_nights_librivox
+80,Henrik Ibsen,"A Doll's House",dolls_house_0812_librivox
+81,William James,"Varieties of Religious Experience",religious_experience_1008_librivox
+82,Sigmund Freud,"Dream Psychology",dream_psychology_librivox
+83,Antoine Lavoisier,"",
+84,Joseph Fourier,"",
+85,Michael Faraday,"The Chemical History of a Candle",chemical_history_candle_ava_librivox
+86,Homer,"The Iliad",illiad_0801_librivox3
+87,William Shakespeare,"Hamlet",hamlet_librivox
+88,William Shakespeare,"Macbeth",macbeth_librivox
+89,William Shakespeare,"King Lear",king_lear_librivox
+90,William Shakespeare,"A Midsummer Night's Dream",midsummer_nights_dream_librivox
+91,Jane Austen,"Emma",emma_librivox
+92,Johann Wolfgang von Goethe,"Faust",faust_librivox
+93,Mark Twain,"Adventures of Huckleberry Finn",huckleberry_finn_librivox
+94,Charles Darwin,"The Descent of Man",descent_man_librivox
+95,Karl Marx,"Capital, Volume I",capital_volume_1_librivox
+96,Fyodor Dostoevsky,"The Brothers Karamazov",brothers_karamazov_librivox
+97,James Joyce,"A Portrait of the Artist as a Young Man",portrait_artist_young_man_librivox
+98,Franz Kafka,"The Metamorphosis",metamorphosis_kafka_librivox
+99,Joseph Conrad,"Heart of Darkness",heart_of_darkness_librivox
+100,Anton Chekhov,"Uncle Vanya",uncle_vanya_librivox
+101,Albert Einstein,"Relativity: The Special and the General Theory",relativity_librivox

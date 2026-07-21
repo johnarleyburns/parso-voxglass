@@ -13,7 +13,7 @@
   },
   {
     "rank": 3,
-    "title": "Las Siete Tragedias de Sófocles",
+    "title": "Las Siete Tragedias de S\u00f3focles",
     "author": "Sophocles",
     "identifier": "tragediassofocles_1606_librivox"
   },
@@ -31,7 +31,7 @@
   },
   {
     "rank": 6,
-    "title": "Libro IV de la Historia de Heródoto",
+    "title": "Libro IV de la Historia de Her\u00f3doto",
     "author": "Herodotus",
     "identifier": "historiaherodoto4_1508_librivox"
   },
@@ -54,6 +54,12 @@
     "identifier": "politics_0802_librivox"
   },
   {
+    "rank": 10,
+    "title": "The Oath and Law of Hippocrates",
+    "author": "Hippocrates",
+    "identifier": "nonfiction002_librivox"
+  },
+  {
     "rank": 16,
     "title": "On the Nature of Things (Watson translation)",
     "author": "Lucretius",
@@ -62,7 +68,7 @@
   {
     "rank": 17,
     "title": "The Enchiridion",
-    "author": "Epictetus, tr. Elizabeth Carter",
+    "author": "Epictetus",
     "identifier": "enchiridion_librivox"
   },
   {
@@ -92,19 +98,19 @@
   {
     "rank": 25,
     "title": "Enneads",
-    "author": "Plotinus; Porphyry",
+    "author": "Plotinus",
     "identifier": "enneads_-plotinus_1806_librivox"
   },
   {
     "rank": 26,
     "title": "Confessions",
-    "author": "Saint Augustine of Hippo",
+    "author": "Augustine of Hippo",
     "identifier": "confessions_augustine_0911_librivox"
   },
   {
     "rank": 27,
     "title": "Summa Theologica, Prima Pars, Initial Questions",
-    "author": "Saint Thomas Aquinas",
+    "author": "Thomas Aquinas",
     "identifier": "summa_1_01_jr_0901_librivox"
   },
   {
@@ -122,7 +128,7 @@
   {
     "rank": 30,
     "title": "Il Principe",
-    "author": "Niccolò Machiavelli",
+    "author": "Niccol\u00f2 Machiavelli",
     "identifier": "il_principe_1711_librivox"
   },
   {
@@ -146,7 +152,7 @@
   {
     "rank": 34,
     "title": "Gargantua and Pantagruel, Book II",
-    "author": "François Rabelais",
+    "author": "Fran\u00e7ois Rabelais",
     "identifier": "gargantuapantagruel2_1308_librivox"
   },
   {
@@ -156,285 +162,381 @@
     "identifier": "essays_book1_1204_librivox"
   },
   {
-    "rank": 37,
+    "rank": 36,
     "title": "Romeo and Juliet",
     "author": "William Shakespeare",
     "identifier": "romeo_and_juliet_librivox"
   },
   {
-    "rank": 38,
+    "rank": 37,
     "title": "Dialogo dei Massimi Sistemi",
     "author": "Galileo Galilei",
     "identifier": "dialogo_dei_massimi_sistemi_2009_librivox"
   },
   {
-    "rank": 40,
+    "rank": 39,
     "title": "Don Quijote, Volume 1",
     "author": "Miguel de Cervantes",
     "identifier": "don_quijote_vol1_0706_librivox"
   },
   {
-    "rank": 41,
+    "rank": 40,
     "title": "The Essays of Francis Bacon",
     "author": "Francis Bacon",
     "identifier": "essays_francis_bacon_cv3_librivox"
   },
   {
-    "rank": 42,
+    "rank": 41,
     "title": "Meditations on First Philosophy",
-    "author": "René Descartes",
+    "author": "Ren\u00e9 Descartes",
     "identifier": "meditations_descartes_dew_librivox"
   },
   {
-    "rank": 43,
+    "rank": 42,
     "title": "The Ethics",
     "author": "Baruch Spinoza",
     "identifier": "ethics_1010_librivox"
   },
   {
-    "rank": 44,
+    "rank": 43,
     "title": "Paradise Lost",
     "author": "John Milton",
     "identifier": "paradise_lost_08083_librivox"
   },
   {
-    "rank": 45,
+    "rank": 44,
     "title": "La Comtesse d'Escarbagnas",
-    "author": "Molière",
+    "author": "Moli\u00e8re",
     "identifier": "comtesse_escarbagnas_0809_librivox"
   },
   {
-    "rank": 46,
+    "rank": 45,
     "title": "Esther",
     "author": "Jean Racine",
     "identifier": "esther_2505_librivox"
   },
   {
-    "rank": 47,
-    "title": "Pensées",
+    "rank": 46,
+    "title": "Pens\u00e9es",
     "author": "Blaise Pascal",
     "identifier": "pensees_0906_dx_librivox1"
   },
   {
-    "rank": 48,
+    "rank": 47,
     "title": "Treatise on Light",
     "author": "Christiaan Huygens",
     "identifier": "treatise_light_ava_librivox"
   },
   {
-    "rank": 49,
+    "rank": 48,
     "title": "Opticks",
     "author": "Isaac Newton",
     "identifier": "opticks_1203_librivox"
   },
   {
-    "rank": 50,
+    "rank": 49,
     "title": "Two Treatises of Civil Government",
     "author": "John Locke",
     "identifier": "two_treatises_0902_librivox"
   },
   {
-    "rank": 51,
+    "rank": 50,
     "title": "A Treatise Concerning the Principles of Human Knowledge, Part 1",
     "author": "George Berkeley",
     "identifier": "treatise_0905_librivox"
   },
   {
-    "rank": 52,
+    "rank": 51,
     "title": "An Enquiry Concerning Human Understanding",
     "author": "David Hume",
     "identifier": "human_understanding_0711_lv_2"
   },
   {
-    "rank": 53,
+    "rank": 52,
     "title": "Candide",
     "author": "Voltaire",
     "identifier": "candide_librivox"
   },
   {
-    "rank": 54,
+    "rank": 53,
     "title": "Gulliver's Travels",
     "author": "Jonathan Swift",
     "identifier": "gulliver_ld_librivox"
   },
   {
-    "rank": 55,
+    "rank": 54,
     "title": "De l'esprit des lois, livres 01-13",
     "author": "Montesquieu",
     "identifier": "delespritdeslois_anlo_1004_librivox"
   },
   {
-    "rank": 56,
+    "rank": 55,
     "title": "The Life and Opinions of Tristram Shandy, Gentleman, Vol. 4",
     "author": "Laurence Sterne",
     "identifier": "tristramshandy4_1008_librivox"
   },
   {
-    "rank": 57,
+    "rank": 56,
     "title": "The History of Tom Jones, A Foundling",
     "author": "Henry Fielding",
     "identifier": "tomjones_0811_librivox"
   },
   {
-    "rank": 58,
+    "rank": 57,
     "title": "Regrets sur ma vieille robe de chambre",
     "author": "Denis Diderot",
     "identifier": "regrets_sur_ma_vieille_robe_de_chambre_enko_0808_librivox"
   },
   {
-    "rank": 59,
+    "rank": 58,
     "title": "A Discourse Upon the Origin and the Foundation of the Inequality Among Mankind",
     "author": "Jean-Jacques Rousseau",
     "identifier": "discourse_inequality_ej_librivox"
   },
   {
-    "rank": 60,
+    "rank": 59,
     "title": "The Wealth of Nations - Book 1",
     "author": "Adam Smith",
     "identifier": "wealth_nations01_se"
   },
   {
-    "rank": 61,
+    "rank": 60,
     "title": "The Critique of Pure Reason",
     "author": "Immanuel Kant",
     "identifier": "critique_pure_reason_0709_librivox"
   },
   {
-    "rank": 62,
+    "rank": 61,
     "title": "The Decline and Fall of the Roman Empire Vol. I",
     "author": "Edward Gibbon",
     "identifier": "decline_fall_1_0707_librivox"
   },
   {
-    "rank": 63,
+    "rank": 62,
     "title": "The Federalist Papers",
-    "author": "Alexander Hamilton; John Jay; James Madison",
+    "author": "Alexander Hamilton; James Madison; John Jay",
     "identifier": "federalist_papers_librivox"
   },
   {
-    "rank": 64,
+    "rank": 63,
     "title": "On Liberty",
     "author": "John Stuart Mill",
     "identifier": "on_liberty_librivox"
   },
   {
-    "rank": 65,
+    "rank": 64,
     "title": "Democracy in America Vol. I",
     "author": "Alexis de Tocqueville",
     "identifier": "democracy_america_vol1_0709"
   },
   {
-    "rank": 66,
+    "rank": 65,
     "title": "The Life of Samuel Johnson, Vol. II (version 2)",
     "author": "James Boswell",
     "identifier": "samuel_johnson_vol_ii_version_2_1504_librivox"
   },
   {
-    "rank": 67,
+    "rank": 66,
     "title": "Die Leiden des jungen Werther",
     "author": "Johann Wolfgang von Goethe",
     "identifier": "leiden_werther_librivox"
   },
   {
-    "rank": 68,
+    "rank": 67,
     "title": "Introduction to the Philosophy of History",
     "author": "Georg Wilhelm Friedrich Hegel",
     "identifier": "intro_philosophy_history_dew_librivox"
   },
   {
-    "rank": 69,
+    "rank": 68,
     "title": "Pride and Prejudice",
     "author": "Jane Austen",
     "identifier": "pride_and_prejudice_librivox"
   },
   {
-    "rank": 70,
+    "rank": 69,
     "title": "Letters of Two Brides",
-    "author": "Honoré de Balzac",
+    "author": "Honor\u00e9 de Balzac",
     "identifier": "letters_brides_0709_librivox"
   },
   {
-    "rank": 71,
-    "title": "Fear and Trembling (selections)",
-    "author": "Søren Kierkegaard",
+    "rank": 70,
+    "title": "\"Fear and Trembling (selections)\"",
+    "author": "S\u00f8ren Kierkegaard",
     "identifier": "fear_and_trembling_selections_2010_librivox"
   },
   {
-    "rank": 72,
+    "rank": 71,
     "title": "On the Origin of Species by Means of Natural Selection",
     "author": "Charles Darwin",
     "identifier": "origin_species_librivox"
   },
   {
-    "rank": 73,
+    "rank": 72,
     "title": "A Tale of Two Cities",
     "author": "Charles Dickens",
     "identifier": "tale_two_cities_librivox"
   },
   {
-    "rank": 74,
+    "rank": 73,
     "title": "Moby Dick, or the Whale",
     "author": "Herman Melville",
     "identifier": "moby_dick_librivox"
   },
   {
-    "rank": 75,
+    "rank": 74,
     "title": "Middlemarch (version 2)",
     "author": "George Eliot",
     "identifier": "middlemarch_version2_1310_librivox"
   },
   {
-    "rank": 76,
+    "rank": 75,
     "title": "The Communist Manifesto, by Karl Marx and Friedrich Engels",
-    "author": "Karl Marx; Friedrich Engels",
+    "author": "Karl Marx",
     "identifier": "communistmanifesto_librivox"
   },
   {
-    "rank": 77,
+    "rank": 76,
     "title": "War and Peace, Book 01: 1805",
-    "author": "Leo Tolstoy (transl. Aylmer and Louise Maude)",
+    "author": "Leo Tolstoy",
     "identifier": "war_and_peace_01_librivox"
   },
   {
-    "rank": 78,
+    "rank": 77,
     "title": "The Adventures of Tom Sawyer",
     "author": "Mark Twain",
     "identifier": "tom_sawyer_librivox"
   },
   {
-    "rank": 79,
+    "rank": 78,
     "title": "Beyond Good and Evil",
     "author": "Friedrich Nietzsche",
     "identifier": "beyond_good_and_evil_librivox"
   },
   {
-    "rank": 80,
-    "title": "Белые ночи - White Nights",
+    "rank": 79,
+    "title": "\u0411\u0435\u043b\u044b\u0435 \u043d\u043e\u0447\u0438 - White Nights",
     "author": "Fyodor Dostoevsky",
     "identifier": "white_nights_librivox"
   },
   {
-    "rank": 81,
+    "rank": 80,
     "title": "A Doll's House",
     "author": "Henrik Ibsen",
     "identifier": "dolls_house_0812_librivox"
   },
   {
-    "rank": 82,
+    "rank": 81,
     "title": "Varieties of Religious Experience",
     "author": "William James",
     "identifier": "religious_experience_1008_librivox"
   },
   {
-    "rank": 83,
+    "rank": 82,
     "title": "Dream Psychology",
     "author": "Sigmund Freud",
     "identifier": "dream_psychology_librivox"
   },
   {
-    "rank": 86,
+    "rank": 85,
     "title": "The Chemical History of a Candle",
     "author": "Michael Faraday",
     "identifier": "chemical_history_candle_ava_librivox"
+  },
+  {
+    "rank": 86,
+    "title": "The Iliad",
+    "author": "Homer",
+    "identifier": "illiad_0801_librivox3"
+  },
+  {
+    "rank": 87,
+    "title": "Hamlet",
+    "author": "William Shakespeare",
+    "identifier": "hamlet_librivox"
+  },
+  {
+    "rank": 88,
+    "title": "Macbeth",
+    "author": "William Shakespeare",
+    "identifier": "macbeth_librivox"
+  },
+  {
+    "rank": 89,
+    "title": "King Lear",
+    "author": "William Shakespeare",
+    "identifier": "king_lear_librivox"
+  },
+  {
+    "rank": 90,
+    "title": "A Midsummer Night's Dream",
+    "author": "William Shakespeare",
+    "identifier": "midsummer_nights_dream_librivox"
+  },
+  {
+    "rank": 91,
+    "title": "Emma",
+    "author": "Jane Austen",
+    "identifier": "emma_librivox"
+  },
+  {
+    "rank": 92,
+    "title": "Faust",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "faust_librivox"
+  },
+  {
+    "rank": 93,
+    "title": "Adventures of Huckleberry Finn",
+    "author": "Mark Twain",
+    "identifier": "huckleberry_finn_librivox"
+  },
+  {
+    "rank": 94,
+    "title": "The Descent of Man",
+    "author": "Charles Darwin",
+    "identifier": "descent_man_librivox"
+  },
+  {
+    "rank": 95,
+    "title": "Capital, Volume I",
+    "author": "Karl Marx",
+    "identifier": "capital_volume_1_librivox"
+  },
+  {
+    "rank": 96,
+    "title": "The Brothers Karamazov",
+    "author": "Fyodor Dostoevsky",
+    "identifier": "brothers_karamazov_librivox"
+  },
+  {
+    "rank": 97,
+    "title": "A Portrait of the Artist as a Young Man",
+    "author": "James Joyce",
+    "identifier": "portrait_artist_young_man_librivox"
+  },
+  {
+    "rank": 98,
+    "title": "The Metamorphosis",
+    "author": "Franz Kafka",
+    "identifier": "metamorphosis_kafka_librivox"
+  },
+  {
+    "rank": 99,
+    "title": "Heart of Darkness",
+    "author": "Joseph Conrad",
+    "identifier": "heart_of_darkness_librivox"
+  },
+  {
+    "rank": 100,
+    "title": "Uncle Vanya",
+    "author": "Anton Chekhov",
+    "identifier": "uncle_vanya_librivox"
+  },
+  {
+    "rank": 101,
+    "title": "Relativity: The Special and the General Theory",
+    "author": "Albert Einstein",
+    "identifier": "relativity_librivox"
   }
 ]
