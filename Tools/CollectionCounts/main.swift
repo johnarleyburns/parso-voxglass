@@ -8,7 +8,21 @@ let outputPath = "Voxglass/Core/Catalog/CollectionBundledCounts.swift"
 var counts: [String: Int] = [:]
 let semaphore = DispatchSemaphore(value: 0)
 
+func bundledCuratedCount(named name: String) -> Int {
+    let url = URL(fileURLWithPath: "Voxglass/Core/Resources/CuratedLists/\(name).json")
+    guard let data = try? Data(contentsOf: url),
+          let entries = try? JSONDecoder().decode([CuratedManifestEntry].self, from: data) else {
+        return 0
+    }
+    return entries.count
+}
+
 for collection in collections {
+    if collection.isCurated, let curatedName = collection.curatedListName {
+        counts[collection.id] = bundledCuratedCount(named: curatedName)
+        continue
+    }
+
     let query = collection.archiveQuery + languageClause
     var components = URLComponents(string: "https://archive.org/advancedsearch.php")!
     components.queryItems = [

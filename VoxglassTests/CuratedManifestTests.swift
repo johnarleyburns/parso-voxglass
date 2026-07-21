@@ -51,6 +51,68 @@ struct CuratedManifestTests {
         let first = manifest.first
         #expect(first?.rank == 1)
         #expect(first?.author.localizedCaseInsensitiveContains("Homer") == true)
+        #expect(first?.title.localizedCaseInsensitiveContains("Odyssey") == true)
+    }
+
+    @Test func greaterBooksManifestUsesGeneratedBulkAudit() {
+        let manifest = CuratedManifest.load(named: "greater-books")
+        #expect(manifest.count == 916)
+        #expect(CollectionBundledCounts.counts["greater-books"] == manifest.count)
+        #expect(manifest.contains { $0.identifier == "herodotus_histories_2_0906_librivox2" })
+        #expect(manifest.contains { $0.identifier == "platos_republic_0902_librivox1" })
+        #expect(!manifest.contains { $0.identifier == "historiaherodoto4_1508_librivox" })
+        #expect(!manifest.contains { $0.identifier == "alcibiades1_1212_librivox" })
+    }
+
+    @Test func curatedBundledCountsMatchManifestCounts() {
+        for collection in IACollectionStore.curated {
+            guard let name = collection.curatedListName else {
+                Issue.record("Curated collection \(collection.id) is missing curatedListName")
+                continue
+            }
+            let manifest = CuratedManifest.load(named: name)
+            #expect(CollectionBundledCounts.counts[collection.id] == manifest.count)
+        }
+    }
+
+    @Test func greaterBooksSourceAndReportAreConsistent() throws {
+        struct Work: Decodable {
+            let rank: Int
+            let period: String
+            let author: String
+            let title: String
+        }
+        struct ZeroCoverageWork: Decodable {}
+        struct Report: Decodable {
+            let totalWorks: Int
+            let manifestCount: Int
+            let coveredWorks: Int
+            let zeroCoverageWorks: [ZeroCoverageWork]
+        }
+
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let worksURL = root.appendingPathComponent("Tools/CuratedLists/greater-books-works.json")
+        let reportURL = root.appendingPathComponent("Tools/CuratedLists/out/greater-books-report.json")
+        let works = try JSONDecoder().decode([Work].self, from: Data(contentsOf: worksURL))
+        let report = try JSONDecoder().decode(Report.self, from: Data(contentsOf: reportURL))
+
+        #expect(works.count == 540)
+        #expect(works.filter { $0.period == "Prehistory to 700 A. D." }.count == 94)
+        #expect(works.filter { $0.period == "700 to 1650" }.count == 85)
+        #expect(works.filter { $0.period == "1650 to 1900" }.count == 239)
+        #expect(works.filter { $0.period == "1900 to present" }.count == 122)
+        #expect(works.filter { $0.author.isEmpty }.count == 12)
+        #expect(works.first?.rank == 1)
+        #expect(works.first?.author == "Homer")
+        #expect(works.first?.title == "The Odyssey")
+
+        let manifest = CuratedManifest.load(named: "greater-books")
+        #expect(report.totalWorks == works.count)
+        #expect(report.manifestCount == manifest.count)
+        #expect(report.coveredWorks == 340)
+        #expect(report.zeroCoverageWorks.count == report.totalWorks - report.coveredWorks)
     }
 
     // MARK: - Per-language manifest validation

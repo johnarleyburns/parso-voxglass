@@ -187,13 +187,13 @@ public enum IACollectionStore {
         assetName: "collection-greater-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox"),
         curatedListName: "greater-books",
-        summaryLine: "A hand-curated selection of over 450 essential literary works from Homer to Henry James, sourced from the greaterbooks.com canon.",
+        summaryLine: "916 LibriVox recordings spanning 340 works from the 540-row Greater Books shortlist, in English.",
         description: """
-            This collection draws from the Greater Books shortlist at [greaterbooks.com](https://greaterbooks.com) \u{2014} an open-source literary canon that extends the Great Books tradition into a broader, more inclusive survey of world literature. Unlike the 60-volume Great Books set, which is weighted toward philosophy and natural science, the Greater Books list emphasizes novels, plays, and poetry from the ancient world through the early 20th century.
+            This collection draws from the Greater Books shortlist at [greaterbooks.com](https://greaterbooks.com) \u{2014} an open-source literary canon that extends the Great Books tradition into a broader, more inclusive survey of world literature. Unlike the 60-volume Great Books set, which is weighted toward philosophy and natural science, the Greater Books list emphasizes novels, plays, poetry, scripture, history, and major works of modern literature.
 
             The collection spans roughly 2,800 years: the epics of Homer and Virgil, the tragedies and comedies of classical Athens, the medieval visions of Dante and Chaucer, the plays of Shakespeare and his contemporaries Marlowe and Moli\u{00E8}re, the early novels of Cervantes, Defoe, and Fielding, the 19th-century triumphs of Austen, the Bront\u{00EB}s, Dickens, Eliot, Melville, Hawthorne, Flaubert, Dostoevsky, and Tolstoy, and the transitional moderns \u{2014} Conrad, Henry James, Chekhov, Ibsen, Kipling, Wilde, and Wells.
 
-            Every entry in the list links to a specific LibriVox recording, chosen for readability and recording quality from the many versions contributed by the volunteer community. When multiple translations exist, preference is given to English recordings that preserve the character of the original. Browsing by Curation Order follows the greaterbooks.com reading sequence, which is organized by period and tradition.
+            Each entry links to a specific English LibriVox recording matched from the Internet Archive catalog. Multiple complete recordings, translations, and public-domain readings are preserved as separate rows, while works without a completed English LibriVox recording are omitted from the listening list and tracked in the generator report. Browsing by Curation Order follows the greaterbooks.com shortlist sequence, grouped by period and then by recording version.
             """
     )
 

@@ -1,0 +1,1377 @@
+{
+  "_note": "Generated from the Greater Books shortlist and reused Great Books IA creator aliases. Review before widening matching rules.",
+  "_excluded": [
+    "Homer Eon Flint",
+    "Homer Greene",
+    "William John Locke"
+  ],
+  "authors": {
+    "Adam Smith": {
+      "observed": [
+        "Adam Smith"
+      ]
+    },
+    "Aeschylus": {
+      "observed": [
+        "Aeschylus"
+      ]
+    },
+    "Aesop": {
+      "observed": [
+        "Aesop",
+        "Æsop"
+      ]
+    },
+    "Albert Camus": {
+      "observed": [
+        "Albert Camus"
+      ]
+    },
+    "Albert Einstein": {
+      "observed": [
+        "Albert Einstein"
+      ]
+    },
+    "Aldous Huxley": {
+      "observed": [
+        "Aldous Huxley"
+      ]
+    },
+    "Alexander Hamilton; John Jay; James Madison": {
+      "observed": [
+        "Alexander Hamilton",
+        "James Madison",
+        "John Jay"
+      ]
+    },
+    "Alexander Pope": {
+      "observed": [
+        "Alexander Pope"
+      ]
+    },
+    "Alexander Pushkin": {
+      "observed": [
+        "Alexander Pushkin"
+      ]
+    },
+    "Alexander Solzhenitsyn": {
+      "observed": [
+        "Alexander Solzhenitsyn"
+      ]
+    },
+    "Alexis de Tocqueville": {
+      "observed": [
+        "Alexis de Tocqueville"
+      ]
+    },
+    "André Malraux": {
+      "observed": [
+        "André Malraux"
+      ]
+    },
+    "Antoine de Saint-Exupéry": {
+      "observed": [
+        "Antoine de Saint-Exupéry"
+      ]
+    },
+    "Anton Chekhov": {
+      "observed": [
+        "Anton Chekhov",
+        "Anton Chekov"
+      ]
+    },
+    "Apuleius": {
+      "observed": [
+        "Apuleius"
+      ]
+    },
+    "Aristophanes": {
+      "observed": [
+        "Aristophanes"
+      ]
+    },
+    "Aristotle": {
+      "observed": [
+        "Aristotle"
+      ]
+    },
+    "Arthur Conan Doyle": {
+      "observed": [
+        "Arthur Conan Doyle"
+      ]
+    },
+    "Arthur Miller": {
+      "observed": [
+        "Arthur Miller"
+      ]
+    },
+    "Arthur Rimbaud": {
+      "observed": [
+        "Arthur Rimbaud"
+      ]
+    },
+    "August Strindberg": {
+      "observed": [
+        "August Strindberg"
+      ]
+    },
+    "Augustine of Hippo": {
+      "observed": [
+        "Augustine of Hippo"
+      ]
+    },
+    "Baruch Spinoza": {
+      "observed": [
+        "Baruch Spinoza",
+        "Benedict de Spinoza",
+        "Spinoza, Benedict de"
+      ]
+    },
+    "Basho Matsuo": {
+      "observed": [
+        "Basho Matsuo"
+      ]
+    },
+    "Ben Jonson": {
+      "observed": [
+        "Ben Jonson"
+      ]
+    },
+    "Benjamin Franklin": {
+      "observed": [
+        "Benjamin Franklin"
+      ]
+    },
+    "Benvenuto Cellini": {
+      "observed": [
+        "Benvenuto Cellini"
+      ]
+    },
+    "Blaise Pascal": {
+      "observed": [
+        "Blaise Pascal"
+      ]
+    },
+    "Boethius": {
+      "observed": [
+        "Boethius"
+      ]
+    },
+    "Boris Pasternak": {
+      "observed": [
+        "Boris Pasternak"
+      ]
+    },
+    "Bram Stoker": {
+      "observed": [
+        "Bram Stoker"
+      ]
+    },
+    "Carl von Clausewitz": {
+      "observed": [
+        "Carl von Clausewitz"
+      ]
+    },
+    "Catullus": {
+      "observed": [
+        "Catullus"
+      ]
+    },
+    "Charles Baudelaire": {
+      "observed": [
+        "Charles Baudelaire"
+      ]
+    },
+    "Charles Darwin": {
+      "observed": [
+        "Charles Darwin"
+      ]
+    },
+    "Charles Dickens": {
+      "observed": [
+        "Charles Dickens"
+      ]
+    },
+    "Charlotte Brontë": {
+      "observed": [
+        "Charlotte Brontë"
+      ]
+    },
+    "Chinua Achebe": {
+      "observed": [
+        "Chinua Achebe"
+      ]
+    },
+    "Choderlos de Laclos": {
+      "observed": [
+        "Choderlos de Laclos"
+      ]
+    },
+    "Christopher Marlowe": {
+      "observed": [
+        "Christopher Marlowe"
+      ]
+    },
+    "Cicero": {
+      "observed": [
+        "Cicero",
+        "Marcus Tullius Cicero"
+      ]
+    },
+    "Confucius": {
+      "observed": [
+        "Confucius"
+      ]
+    },
+    "Cornelius Tacitus": {
+      "observed": [
+        "Cornelius Tacitus",
+        "Tacitus"
+      ]
+    },
+    "Cáo Xuěqín": {
+      "observed": [
+        "Cáo Xuěqín"
+      ]
+    },
+    "D H Lawrence": {
+      "observed": [
+        "D H Lawrence",
+        "D. H. Lawrence"
+      ]
+    },
+    "Daniel Defoe": {
+      "observed": [
+        "Daniel Defoe"
+      ]
+    },
+    "Dante": {
+      "observed": [
+        "Dante",
+        "Dante Alighieri"
+      ]
+    },
+    "Daphne du Maurier": {
+      "observed": [
+        "Daphne du Maurier"
+      ]
+    },
+    "David Hume": {
+      "observed": [
+        "David Hume"
+      ]
+    },
+    "Denis Diderot": {
+      "observed": [
+        "Denis Diderot"
+      ]
+    },
+    "Denis Diderot et al.": {
+      "observed": [
+        "Denis Diderot"
+      ]
+    },
+    "Desiderius Erasmus": {
+      "observed": [
+        "Desiderius Erasmus"
+      ]
+    },
+    "E M Forster": {
+      "observed": [
+        "E M Forster",
+        "E. M. Forster"
+      ]
+    },
+    "Edgar Allan Poe": {
+      "observed": [
+        "Edgar Allan Poe"
+      ]
+    },
+    "Edith Wharton": {
+      "observed": [
+        "Edith Wharton"
+      ]
+    },
+    "Edmund Burke": {
+      "observed": [
+        "Edmund Burke"
+      ]
+    },
+    "Edmund Spenser": {
+      "observed": [
+        "Edmund Spenser"
+      ]
+    },
+    "Edward Gibbon": {
+      "observed": [
+        "Edward Gibbon"
+      ]
+    },
+    "Emily Brontë": {
+      "observed": [
+        "Emily Brontë"
+      ]
+    },
+    "Emily Dickinson": {
+      "observed": [
+        "Emily Dickinson"
+      ]
+    },
+    "Epictetus": {
+      "observed": [
+        "Epictetus"
+      ]
+    },
+    "Erich Maria Remarque": {
+      "observed": [
+        "Erich Maria Remarque"
+      ]
+    },
+    "Ernest Hemingway": {
+      "observed": [
+        "Ernest Hemingway"
+      ]
+    },
+    "Euclid": {
+      "observed": [
+        "Euclid"
+      ]
+    },
+    "Eugene O'Neill": {
+      "observed": [
+        "Eugene O'Neill"
+      ]
+    },
+    "Euripides": {
+      "observed": [
+        "Euripides"
+      ]
+    },
+    "Ezra Pound": {
+      "observed": [
+        "Ezra Pound"
+      ]
+    },
+    "F Scott Fitzgerald": {
+      "observed": [
+        "F Scott Fitzgerald",
+        "F. Scott Fitzgerald"
+      ]
+    },
+    "Ferdowsi": {
+      "observed": [
+        "Ferdowsi"
+      ]
+    },
+    "Francis Bacon": {
+      "observed": [
+        "Francis Bacon"
+      ]
+    },
+    "Franz Kafka": {
+      "observed": [
+        "Franz Kafka"
+      ]
+    },
+    "François Rabelais": {
+      "observed": [
+        "Francois Rabelais",
+        "François Rabelais"
+      ]
+    },
+    "François Villon": {
+      "observed": [
+        "François Villon"
+      ]
+    },
+    "Frederick Douglass": {
+      "observed": [
+        "Frederick Douglass"
+      ]
+    },
+    "Friedrich Nietzsche": {
+      "observed": [
+        "Friedrich Nietzsche"
+      ]
+    },
+    "Fyodor Dostoevsky": {
+      "observed": [
+        "Fyodor Dostoevsky",
+        "Fyodor Dostoyevsky"
+      ]
+    },
+    "Gabriel García Márquez": {
+      "observed": [
+        "Gabriel García Márquez"
+      ]
+    },
+    "Galileo": {
+      "observed": [
+        "Galileo",
+        "Galileo Galilei"
+      ]
+    },
+    "Geoffrey Chaucer": {
+      "observed": [
+        "Geoffrey Chaucer"
+      ]
+    },
+    "George Berkeley": {
+      "observed": [
+        "George Berkeley"
+      ]
+    },
+    "George Bernard Shaw": {
+      "observed": [
+        "George Bernard Shaw"
+      ]
+    },
+    "George Eliot": {
+      "observed": [
+        "George Eliot"
+      ]
+    },
+    "George Orwell": {
+      "observed": [
+        "George Orwell"
+      ]
+    },
+    "George Wilhelm Friedrich Hegel": {
+      "observed": [
+        "Georg Wilhelm Friedrich Hegel",
+        "George Wilhelm Friedrich Hegel"
+      ]
+    },
+    "Giambattista Vico": {
+      "observed": [
+        "Giambattista Vico"
+      ]
+    },
+    "Giorgio Vasari": {
+      "observed": [
+        "Giorgio Vasari"
+      ]
+    },
+    "Giovanni Boccaccio": {
+      "observed": [
+        "Giovanni Boccaccio"
+      ]
+    },
+    "Giuseppe Tomasi di Lampedusa": {
+      "observed": [
+        "Giuseppe Tomasi di Lampedusa"
+      ]
+    },
+    "Gottfried von Strassberg": {
+      "observed": [
+        "Gottfried von Strassberg"
+      ]
+    },
+    "Gustave Flaubert": {
+      "observed": [
+        "Gustave Flaubert"
+      ]
+    },
+    "Günter Grass": {
+      "observed": [
+        "Günter Grass"
+      ]
+    },
+    "H G Wells": {
+      "observed": [
+        "H G Wells",
+        "H. G. Wells"
+      ]
+    },
+    "Hans Christian Andersen": {
+      "observed": [
+        "Hans Christian Andersen"
+      ]
+    },
+    "Harper Lee": {
+      "observed": [
+        "Harper Lee"
+      ]
+    },
+    "Harriet Beecher Stowe": {
+      "observed": [
+        "Harriet Beecher Stowe"
+      ]
+    },
+    "Henrik Ibsen": {
+      "observed": [
+        "Henrik Ibsen"
+      ]
+    },
+    "Henry Adams": {
+      "observed": [
+        "Henry Adams"
+      ]
+    },
+    "Henry David Thoreau": {
+      "observed": [
+        "Henry David Thoreau"
+      ]
+    },
+    "Henry Dead Thoreau": {
+      "observed": [
+        "Henry David Thoreau"
+      ]
+    },
+    "Henry Fielding": {
+      "observed": [
+        "Henry Fielding"
+      ]
+    },
+    "Henry James": {
+      "observed": [
+        "Henry James"
+      ]
+    },
+    "Herman Melville": {
+      "observed": [
+        "Herman Melville"
+      ]
+    },
+    "Herodotus": {
+      "observed": [
+        "Herodotus"
+      ]
+    },
+    "Hesiod": {
+      "observed": [
+        "Hesiod"
+      ]
+    },
+    "Homer": {
+      "observed": [
+        "Homer"
+      ]
+    },
+    "Honoré de Balzac": {
+      "observed": [
+        "Honore de Balzac",
+        "Honoré de Balzac"
+      ]
+    },
+    "Horace": {
+      "observed": [
+        "Horace",
+        "Quintus Horatius Flaccus"
+      ]
+    },
+    "Immanuel Kant": {
+      "observed": [
+        "Immanuel Kant"
+      ]
+    },
+    "Isaac Newton": {
+      "observed": [
+        "Isaac Newton"
+      ]
+    },
+    "Italo Calvino": {
+      "observed": [
+        "Italo Calvino"
+      ]
+    },
+    "Ivan Turgenev": {
+      "observed": [
+        "Ivan Turgenev"
+      ]
+    },
+    "J D Salinger": {
+      "observed": [
+        "J D Salinger",
+        "J. D. Salinger"
+      ]
+    },
+    "J K Rowling": {
+      "observed": [
+        "J K Rowling",
+        "J. K. Rowling"
+      ]
+    },
+    "J R R Tolkien": {
+      "observed": [
+        "J R R Tolkien",
+        "J. R. R. Tolkien"
+      ]
+    },
+    "Jack Kerouac": {
+      "observed": [
+        "Jack Kerouac"
+      ]
+    },
+    "James Agee": {
+      "observed": [
+        "James Agee"
+      ]
+    },
+    "James Boswell": {
+      "observed": [
+        "James Boswell"
+      ]
+    },
+    "James George Frazer": {
+      "observed": [
+        "James George Frazer"
+      ]
+    },
+    "James Joyce": {
+      "observed": [
+        "James Joyce"
+      ]
+    },
+    "Jane Austen": {
+      "observed": [
+        "Jane Austen"
+      ]
+    },
+    "Jean Racine": {
+      "observed": [
+        "Jean Racine"
+      ]
+    },
+    "Jean de la Fontaine": {
+      "observed": [
+        "Jean de la Fontaine"
+      ]
+    },
+    "Jean-Jacques Rousseau": {
+      "observed": [
+        "Jean-Jacques Rousseau"
+      ]
+    },
+    "Jean-Paul Sartre": {
+      "observed": [
+        "Jean-Paul Sartre"
+      ]
+    },
+    "Jeremy Bentham": {
+      "observed": [
+        "Jeremy Bentham"
+      ]
+    },
+    "Johann Wolfgang von Goethe": {
+      "observed": [
+        "Johann Wolfgang von Goethe"
+      ]
+    },
+    "John Bunyan": {
+      "observed": [
+        "John Bunyan"
+      ]
+    },
+    "John Calvin": {
+      "observed": [
+        "John Calvin"
+      ]
+    },
+    "John Donne": {
+      "observed": [
+        "John Donne"
+      ]
+    },
+    "John Keats": {
+      "observed": [
+        "John Keats"
+      ]
+    },
+    "John Locke": {
+      "observed": [
+        "John Locke"
+      ]
+    },
+    "John Millington Synge": {
+      "observed": [
+        "John Millington Synge"
+      ]
+    },
+    "John Milton": {
+      "observed": [
+        "John Milton"
+      ]
+    },
+    "John Steinbeck": {
+      "observed": [
+        "John Steinbeck"
+      ]
+    },
+    "John Stuart Mill": {
+      "observed": [
+        "John Stuart Mill"
+      ]
+    },
+    "Jonathan Swift": {
+      "observed": [
+        "Jonathan Swift"
+      ]
+    },
+    "Jorge Luis Borges": {
+      "observed": [
+        "Jorge Luis Borges"
+      ]
+    },
+    "Joseph Conrad": {
+      "observed": [
+        "Joseph Conrad"
+      ]
+    },
+    "Joseph Heller": {
+      "observed": [
+        "Joseph Heller"
+      ]
+    },
+    "Jules Verne": {
+      "observed": [
+        "Jules Verne"
+      ]
+    },
+    "Kalidasa": {
+      "observed": [
+        "Kalidasa"
+      ]
+    },
+    "Karl Marx": {
+      "observed": [
+        "Karl Marx"
+      ]
+    },
+    "Karl Marx and Friedrich Engels": {
+      "observed": [
+        "Friedrich Engels",
+        "Karl Marx"
+      ]
+    },
+    "Kate Chopin": {
+      "observed": [
+        "Kate Chopin"
+      ]
+    },
+    "Ken Kesey": {
+      "observed": [
+        "Ken Kesey"
+      ]
+    },
+    "Knut Hamsun": {
+      "observed": [
+        "Knut Hamsun"
+      ]
+    },
+    "Laurence Sterne": {
+      "observed": [
+        "Laurence Sterne"
+      ]
+    },
+    "Leo Tolstoy": {
+      "observed": [
+        "Leo Tolstoi",
+        "Leo Tolstoy"
+      ]
+    },
+    "Leonardo da Vinci": {
+      "observed": [
+        "Leonardo da Vinci"
+      ]
+    },
+    "Lewis Carroll": {
+      "observed": [
+        "Lewis Carroll"
+      ]
+    },
+    "Livy": {
+      "observed": [
+        "Livy"
+      ]
+    },
+    "Lord Byron": {
+      "observed": [
+        "Lord Byron"
+      ]
+    },
+    "Louis-Ferdinand Céline": {
+      "observed": [
+        "Louis-Ferdinand Céline"
+      ]
+    },
+    "Louisa M Alcott": {
+      "observed": [
+        "Louisa M Alcott"
+      ]
+    },
+    "Lucian": {
+      "observed": [
+        "Lucian"
+      ]
+    },
+    "Lucretius": {
+      "observed": [
+        "Lucretius",
+        "Titus Lucretius Carus"
+      ]
+    },
+    "Ludovico Ariosto": {
+      "observed": [
+        "Ludovico Ariosto"
+      ]
+    },
+    "Lăozĭ": {
+      "observed": [
+        "Lao Tzu",
+        "Laozi",
+        "Lăozĭ"
+      ]
+    },
+    "Marcel Proust": {
+      "observed": [
+        "Marcel Proust"
+      ]
+    },
+    "Marcus Aurelius": {
+      "observed": [
+        "Marcus Aurelius"
+      ]
+    },
+    "Margaret Atwood": {
+      "observed": [
+        "Margaret Atwood"
+      ]
+    },
+    "Mark Twain": {
+      "observed": [
+        "Mark Twain"
+      ]
+    },
+    "Martin Luther": {
+      "observed": [
+        "Martin Luther"
+      ]
+    },
+    "Mary Shelley": {
+      "observed": [
+        "Mary Shelley"
+      ]
+    },
+    "Mary Wollstonecraft": {
+      "observed": [
+        "Mary Wollstonecraft"
+      ]
+    },
+    "Maya Angelou": {
+      "observed": [
+        "Maya Angelou"
+      ]
+    },
+    "Mencius": {
+      "observed": [
+        "Mencius",
+        "Mengzi"
+      ]
+    },
+    "Michel de Montaigne": {
+      "observed": [
+        "Michel Eyquem de Montaigne",
+        "Michel de Montaigne"
+      ]
+    },
+    "Miguel de Cervantes": {
+      "observed": [
+        "Miguel de Cervantes"
+      ]
+    },
+    "Mikhail Bulgakov": {
+      "observed": [
+        "Mikhail Bulgakov"
+      ]
+    },
+    "Molière": {
+      "observed": [
+        "Moliere",
+        "Molière"
+      ]
+    },
+    "Montesquieu": {
+      "observed": [
+        "Charles-Louis de Secondat, baron de La Brède et de Montesquieu",
+        "Montesquieu"
+      ]
+    },
+    "Murasaki Shikibu": {
+      "observed": [
+        "Murasaki Shikibu"
+      ]
+    },
+    "Nathaniel Hawthorne": {
+      "observed": [
+        "Nathaniel Hawthorne"
+      ]
+    },
+    "Niccolò Machiavelli": {
+      "observed": [
+        "Niccolo Machiavelli",
+        "Niccolò Machiavelli"
+      ]
+    },
+    "Nicolas Copernicus": {
+      "observed": [
+        "Nicolas Copernicus"
+      ]
+    },
+    "Nikolai Gogol": {
+      "observed": [
+        "Nikolai Gogol"
+      ]
+    },
+    "Oliver Goldsmith": {
+      "observed": [
+        "Oliver Goldsmith"
+      ]
+    },
+    "Omar Khayyám": {
+      "observed": [
+        "Omar Khayyám"
+      ]
+    },
+    "Oscar Wilde": {
+      "observed": [
+        "Oscar Wilde"
+      ]
+    },
+    "Ovid": {
+      "observed": [
+        "Ovid",
+        "Publius (Ovid) Ovidius Naso",
+        "Publius Ovidius Naso",
+        "Publius Ovidius Naso (Ovid)"
+      ]
+    },
+    "Pedro Calderón de la Barca": {
+      "observed": [
+        "Pedro Calderón de la Barca"
+      ]
+    },
+    "Percy Bysshe Shelley": {
+      "observed": [
+        "Percy Bysshe Shelley"
+      ]
+    },
+    "Petronius": {
+      "observed": [
+        "Petronius"
+      ]
+    },
+    "Pierre Abélard": {
+      "observed": [
+        "Pierre Abélard"
+      ]
+    },
+    "Pierre Corneille": {
+      "observed": [
+        "Pierre Corneille"
+      ]
+    },
+    "Plato": {
+      "observed": [
+        "Plato"
+      ]
+    },
+    "Plotinus": {
+      "observed": [
+        "Plotinus"
+      ]
+    },
+    "Plutarch": {
+      "observed": [
+        "Lucius Mestrius Plutarchus",
+        "Plutarch"
+      ]
+    },
+    "Ptolemy": {
+      "observed": [
+        "Ptolemy"
+      ]
+    },
+    "Rachel Carson": {
+      "observed": [
+        "Rachel Carson"
+      ]
+    },
+    "Rainer Maria Rilke": {
+      "observed": [
+        "Rainer Maria Rilke"
+      ]
+    },
+    "Ralph Ellison": {
+      "observed": [
+        "Ralph Ellison"
+      ]
+    },
+    "Ralph Waldo Emerson": {
+      "observed": [
+        "Ralph Waldo Emerson"
+      ]
+    },
+    "René Descartes": {
+      "observed": [
+        "Rene Descartes",
+        "René Descartes"
+      ]
+    },
+    "Richard Brinsley Sheridan": {
+      "observed": [
+        "Richard Brinsley Sheridan"
+      ]
+    },
+    "Richard Wright": {
+      "observed": [
+        "Richard Wright"
+      ]
+    },
+    "Robert Burns": {
+      "observed": [
+        "Robert Burns"
+      ]
+    },
+    "Robert Graves": {
+      "observed": [
+        "Robert Graves"
+      ]
+    },
+    "Robert Louis Stevenson": {
+      "observed": [
+        "Robert Louis Stevenson"
+      ]
+    },
+    "Robert Musil": {
+      "observed": [
+        "Robert Musil"
+      ]
+    },
+    "Robert Penn Warren": {
+      "observed": [
+        "Robert Penn Warren"
+      ]
+    },
+    "Rudyard Kipling": {
+      "observed": [
+        "Rudyard Kipling"
+      ]
+    },
+    "Salman Rushdie": {
+      "observed": [
+        "Salman Rushdie"
+      ]
+    },
+    "Samuel Beckett": {
+      "observed": [
+        "Samuel Beckett"
+      ]
+    },
+    "Samuel Butler": {
+      "observed": [
+        "Samuel Butler"
+      ]
+    },
+    "Samuel Johnson": {
+      "observed": [
+        "Samuel Johnson"
+      ]
+    },
+    "Samuel Richardson": {
+      "observed": [
+        "Samuel Richardson"
+      ]
+    },
+    "Samuel Taylor Coleridge": {
+      "observed": [
+        "Samuel Taylor Coleridge"
+      ]
+    },
+    "Sappho": {
+      "observed": [
+        "Sappho"
+      ]
+    },
+    "Sherwood Anderson": {
+      "observed": [
+        "Sherwood Anderson"
+      ]
+    },
+    "Shī Nài'ān": {
+      "observed": [
+        "Shī Nài'ān"
+      ]
+    },
+    "Sigmund Freud": {
+      "observed": [
+        "Sigmund Freud"
+      ]
+    },
+    "Simone Beauvoir": {
+      "observed": [
+        "Simone Beauvoir",
+        "Simone de Beauvoir"
+      ]
+    },
+    "Sinclair Lewis": {
+      "observed": [
+        "Sinclair Lewis"
+      ]
+    },
+    "Sophocles": {
+      "observed": [
+        "Sophocles"
+      ]
+    },
+    "Stendhal": {
+      "observed": [
+        "Stendhal"
+      ]
+    },
+    "Stephen Crane": {
+      "observed": [
+        "Stephen Crane"
+      ]
+    },
+    "Suetonius": {
+      "observed": [
+        "Suetonius"
+      ]
+    },
+    "Sylvia Plath": {
+      "observed": [
+        "Sylvia Plath"
+      ]
+    },
+    "Sǿren Kierkegaard": {
+      "observed": [
+        "Soren Kierkegaard",
+        "Søren Kierkegaard",
+        "Sǿren Kierkegaard"
+      ]
+    },
+    "T S Eliot": {
+      "observed": [
+        "T S Eliot",
+        "T. S. Eliot",
+        "Thomas Stearns Eliot"
+      ]
+    },
+    "Tacitus": {
+      "observed": [
+        "Cornelius Tacitus",
+        "Tacitus"
+      ]
+    },
+    "Tennessee Williams": {
+      "observed": [
+        "Tennessee Williams"
+      ]
+    },
+    "Thomas Aquinas": {
+      "observed": [
+        "Saint Thomas Aquinas",
+        "St. Thomas Aquinas",
+        "Thomas Aquinas"
+      ]
+    },
+    "Thomas Browne": {
+      "observed": [
+        "Thomas Browne"
+      ]
+    },
+    "Thomas Hardy": {
+      "observed": [
+        "Thomas Hardy"
+      ]
+    },
+    "Thomas Hobbes": {
+      "observed": [
+        "Thomas Hobbes"
+      ]
+    },
+    "Thomas Malory": {
+      "observed": [
+        "Thomas Malory"
+      ]
+    },
+    "Thomas Mann": {
+      "observed": [
+        "Thomas Mann"
+      ]
+    },
+    "Thomas More": {
+      "observed": [
+        "Thomas More"
+      ]
+    },
+    "Thomas Paine": {
+      "observed": [
+        "Thomas Paine"
+      ]
+    },
+    "Thomas Robert Malthus": {
+      "observed": [
+        "Thomas Robert Malthus"
+      ]
+    },
+    "Thomas S Kuhn": {
+      "observed": [
+        "Thomas S Kuhn",
+        "Thomas S. Kuhn"
+      ]
+    },
+    "Thornton Wilder": {
+      "observed": [
+        "Thornton Wilder"
+      ]
+    },
+    "Thucydides": {
+      "observed": [
+        "Thucydides"
+      ]
+    },
+    "Toni Morrison": {
+      "observed": [
+        "Toni Morrison"
+      ]
+    },
+    "Upton Sinclair": {
+      "observed": [
+        "Upton Sinclair"
+      ]
+    },
+    "Valmiki": {
+      "observed": [
+        "Valmiki"
+      ]
+    },
+    "Victor Hugo": {
+      "observed": [
+        "Victor Hugo"
+      ]
+    },
+    "Virgil": {
+      "observed": [
+        "Virgil"
+      ]
+    },
+    "Virginia Woolf": {
+      "observed": [
+        "Virginia Woolf"
+      ]
+    },
+    "Vladimir Nabokov": {
+      "observed": [
+        "Vladimir Nabokov"
+      ]
+    },
+    "Voltaire": {
+      "observed": [
+        "Voltaire"
+      ]
+    },
+    "Vyasa": {
+      "observed": [
+        "Vyasa"
+      ]
+    },
+    "Walt Whitman": {
+      "observed": [
+        "Walt Whitman"
+      ]
+    },
+    "Walter Scott": {
+      "observed": [
+        "Walter Scott"
+      ]
+    },
+    "Willa Cather": {
+      "observed": [
+        "Willa Cather"
+      ]
+    },
+    "William Blake": {
+      "observed": [
+        "William Blake"
+      ]
+    },
+    "William Butler Yeats": {
+      "observed": [
+        "William Butler Yeats"
+      ]
+    },
+    "William Carlos Williams": {
+      "observed": [
+        "William Carlos Williams"
+      ]
+    },
+    "William Congreve": {
+      "observed": [
+        "William Congreve"
+      ]
+    },
+    "William Faulkner": {
+      "observed": [
+        "William Faulkner"
+      ]
+    },
+    "William Golding": {
+      "observed": [
+        "William Golding"
+      ]
+    },
+    "William Harvey": {
+      "observed": [
+        "William Harvey"
+      ]
+    },
+    "William James": {
+      "observed": [
+        "William James"
+      ]
+    },
+    "William Makepeace Thackeray": {
+      "observed": [
+        "William Makepeace Thackeray"
+      ]
+    },
+    "William Shakespeare": {
+      "observed": [
+        "William Shakespeare"
+      ]
+    },
+    "William Wordsworth": {
+      "observed": [
+        "William Wordsworth"
+      ]
+    },
+    "William Wordsworth; Samuel Taylor Coleridge": {
+      "observed": [
+        "Samuel Taylor Coleridge",
+        "William Wordsworth"
+      ]
+    },
+    "Wú Chéng-ēn": {
+      "observed": [
+        "Wú Chéng-ēn"
+      ]
+    },
+    "Zhuāngzī": {
+      "observed": [
+        "Zhuāngzī"
+      ]
+    },
+    "Zora Neale Hurston": {
+      "observed": [
+        "Zora Neale Hurston"
+      ]
+    },
+    "Émile Zola": {
+      "observed": [
+        "Émile Zola"
+      ]
+    }
+  }
+}

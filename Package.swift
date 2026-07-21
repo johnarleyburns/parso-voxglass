@@ -22,7 +22,21 @@ let package = Package(
         .executableTarget(
             name: "curated-lists",
             dependencies: ["VoxglassCore"],
-            path: "Tools/CuratedLists"
+            path: "Tools/CuratedLists",
+            exclude: [
+                "creator-aliases.json",
+                "extract_workbook.py",
+                "gbww-works.json",
+                "generate_greater_books.py",
+                "great-books-source.csv",
+                "greater-books-creator-aliases.json",
+                "greater-books-source.csv",
+                "greater-books-works.json",
+                "__pycache__",
+                "out",
+                "probe_creator_aliases.py",
+                "verified-seed.json"
+            ]
         ),
         .testTarget(
             name: "VoxglassCoreTests",

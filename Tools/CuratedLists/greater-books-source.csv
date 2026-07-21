@@ -1,476 +1,541 @@
-rank,author,title,identifier_override
-1,Homer,,
-2,Homer,,
-3,Virgil,"The Aeneid, prose translation",the_aeneid_prose_1405_librivox
-4,Herodotus,Libro IV de la Historia de Heródoto,historiaherodoto4_1508_librivox
-5,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-6,Augustine of Hippo,Confessions,confessions_augustine_0911_librivox
-7,Plato,Alcibiades I,alcibiades1_1212_librivox
-8,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-9,Thucydides,The History of the Peloponnesian War,history_peloponnesian_war_librivox
-10,Aeschylus,The Oresteia,oresteia_1002_librivox
-11,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-12,Lucretius,On the Nature of Things (Watson translation),on_the_nature_of_things_1001_librivox
-13,Plutarch,"The Morals (Moralia), Book 2",morals2_26_1506_librivox
-14,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-15,The Bible,,
-16,Marcus Aurelius,Meditations,meditations_0708_librivox
-17,Aristotle,Politics,politics_0802_librivox
-18,Plato,Alcibiades I,alcibiades1_1212_librivox
-19,Aristotle,Politics,politics_0802_librivox
-20,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-21,Ovid,Metamorphoses,metamorphoses_1006_librivox
-22,Plato,Alcibiades I,alcibiades1_1212_librivox
-23,Thomas Aquinas,"Summa Theologica, Prima Pars, Initial Questions",summa_1_01_jr_0901_librivox
-24,Aristophanes,The Clouds,clouds_1506_librivox
-25,Aristophanes,The Clouds,clouds_1506_librivox
-26,Plato,Alcibiades I,alcibiades1_1212_librivox
-27,Aeschylus,The Oresteia,oresteia_1002_librivox
-28,Aristophanes,The Clouds,clouds_1506_librivox
-29,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-30,Aristophanes,The Clouds,clouds_1506_librivox
-31,Aristotle,Politics,politics_0802_librivox
-32,Plato,Alcibiades I,alcibiades1_1212_librivox
-33,Tacitus,Las Germanias,las_germanias_2203_librivox
-34,Epictetus,The Enchiridion,enchiridion_librivox
-35,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-36,Tacitus,Las Germanias,las_germanias_2203_librivox
-37,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-38,Plotinus,Enneads,enneads_-plotinus_1806_librivox
-39,Euclid,,
-40,Plato,Alcibiades I,alcibiades1_1212_librivox
-41,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-42,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-43,Aeschylus,The Oresteia,oresteia_1002_librivox
-44,Aristophanes,The Clouds,clouds_1506_librivox
-45,Aristophanes,The Clouds,clouds_1506_librivox
-46,Aristotle,Politics,politics_0802_librivox
-47,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-48,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-49,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-50,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-51,Euripides,Iphigenia in Aulis,iphigenia_in_aulis_1308_librivox
-52,Plato,Alcibiades I,alcibiades1_1212_librivox
-53,Ptolemy,,
-54,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-55,Sophocles,Las Siete Tragedias de Sófocles,tragediassofocles_1606_librivox
-56,Miguel de Cervantes,"Don Quijote, Volume 1",don_quijote_vol1_0706_librivox
-57,Dante Alighieri,The Divine Comedy,divine_comedy_librivox
-58,Geoffrey Chaucer,The Canterbury Tales,canterburytales_librivox
-59,Niccolò Machiavelli,The Prince,prince_pa_librivox
-60,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-61,Michel de Montaigne,"Essays, Book 1",essays_book1_1204_librivox
-62,François Rabelais,"Gargantua and Pantagruel, Book II",gargantuapantagruel2_1308_librivox
-63,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-64,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-65,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-66,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-67,Thomas More,Utopia,utopia_j_librivox
-68,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-69,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-70,Giovanni Boccaccio,The Decameron,the_decameron_0903_librivox1
-71,Thomas Malory,Le Morte d'Arthur Volume One,morte_darthur_v1_0808_librivox
-72,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-73,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-74,Erasmus,Das Lob der Narrheit,lob_der_narrheit_1503_librivox
-75,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-76,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-77,Francis Bacon,The Essays of Francis Bacon,essays_francis_bacon_cv3_librivox
-78,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-79,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-80,Christopher Marlowe,The Tragical History of Doctor Faustus,doctor_faustus_1010_librivox
-81,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-82,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-83,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-84,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-85,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-86,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-87,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-88,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-89,John Calvin,"Institutes of the Christian Religion, Book One",institutes_christian_religion1_0909_librivox
-90,Geoffrey Chaucer,The Canterbury Tales,canterburytales_librivox
-91,John Donne,,
-92,Pierre Corneille,,
-93,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-94,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-95,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-96,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-97,Nicolaus Copernicus,,
-98,William Harvey,,
-99,Christopher Marlowe,The Tragical History of Doctor Faustus,doctor_faustus_1010_librivox
-100,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-101,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-102,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-103,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-104,Francis Bacon,The Essays of Francis Bacon,essays_francis_bacon_cv3_librivox
-105,Francis Bacon,The Essays of Francis Bacon,essays_francis_bacon_cv3_librivox
-106,Dante Alighieri,The Divine Comedy,divine_comedy_librivox
-107,Dante Alighieri,The Divine Comedy,divine_comedy_librivox
-108,Ben Jonson,The Alchemist,alchemist_1207_librivox
-109,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-110,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-111,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-112,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-113,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-114,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-115,Leonardo da Vinci,Thoughts on Art and Life,thoughts_on_art_and_life_1702_librivox
-116,Ludovico Ariosto,Orlando Furioso,orlando_furioso_tc_librivox
-117,Pierre Corneille,,
-118,Pierre Corneille,,
-119,Ben Jonson,The Alchemist,alchemist_1207_librivox
-120,Martin Luther,To the Christian Nobility of the German Nation,christian_nobility_1306_librivox
-121,Martin Luther,To the Christian Nobility of the German Nation,christian_nobility_1306_librivox
-122,Christopher Marlowe,The Tragical History of Doctor Faustus,doctor_faustus_1010_librivox
-123,Christopher Marlowe,The Tragical History of Doctor Faustus,doctor_faustus_1010_librivox
-124,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-125,William Shakespeare,Romeo and Juliet,romeo_and_juliet_librivox
-126,Gustave Flaubert,Madame Bovary,madame_bovary_0809_librivox
-127,Jane Austen,Pride and Prejudice,pride_and_prejudice_librivox
-128,Jonathan Swift,Gulliver's Travels,gulliver_ld_librivox
-129,John Milton,Paradise Lost,paradise_lost_08083_librivox
-130,Johann Wolfgang von Goethe,Die Leiden des jungen Werther,leiden_werther_librivox
-131,Herman Melville,"Moby Dick, or the Whale",moby_dick_librivox
-132,Leo Tolstoy,"War and Peace, Book 01: 1805",war_and_peace_01_librivox
-133,Charles Darwin,On the Origin of Species by Means of Natural Selection,origin_species_librivox
-134,Fyodor Dostoevsky,Белые ночи - White Nights,white_nights_librivox
-135,Voltaire,Candide,candide_librivox
-136,Fyodor Dostoevsky,Белые ночи - White Nights,white_nights_librivox
-137,George Eliot,Middlemarch (version 2),middlemarch_version2_1310_librivox
-138,Edward Gibbon,The Decline and Fall of the Roman Empire Vol. I,decline_fall_1_0707_librivox
-139,Mark Twain,The Adventures of Tom Sawyer,tom_sawyer_librivox
-140,James Boswell,"The Life of Samuel Johnson, Vol. II (version 2)",samuel_johnson_vol_ii_version_2_1504_librivox
-141,Daniel Defoe,"The Life and Strange Surprising Adventures of Robinson Crusoe of York, Mariner",robinson_crusoe_librivox
-142,Nathaniel Hawthorne,The Scarlet Letter,scarlet_letter_0710
-143,Leo Tolstoy,"War and Peace, Book 01: 1805",war_and_peace_01_librivox
-144,Blaise Pascal,Pensées,pensees_0906_dx_librivox1
-145,Henry David Thoreau,Walden,walden_librivox
-146,Walt Whitman,Leaves of Grass,leaves_of_grass_librivox
-147,Henry Fielding,"The History of Tom Jones, A Foundling",tomjones_0811_librivox
-148,Stendhal,Le Rouge et le noir,rougeetnoir_1810_librivox
-149,William Makepeace Thackeray,Vanity Fair,vanity_fair_librivox
-150,Emily Brontë,Wuthering Heights (Solo Version),wuthering_heights_rg_librivox
-151,John Bunyan,,
-152,Lewis Carroll,"Alice's Adventures in Wonderland, by Lewis Carroll",alice_in_wonderland_librivox
-153,René Descartes,Meditations on First Philosophy,meditations_descartes_dew_librivox
-154,Victor Hugo,"Les Misérables, Vol. 1",les_mis_vol01_0810_librivox
-155,Jean-Jacques Rousseau,Discourse on Inequality,discourse_inequality_ej_librivox
-156,Thomas Hobbes,Leviathan (Books I and II),leviathan_1_2_0802_librivox
-157,John Stuart Mill,On Liberty,on_liberty_librivox
-158,Honoré de Balzac,La Comédie Humaine: 10 - Scènes de la vie parisienne tome 2,comedie_humaine_scenes_de_vie_parisienne_2__librivox
-159,Charlotte Brontë,Jane Eyre (version 3),jane_eyre_ver03_0809_librivox
-160,Joseph Conrad,Heart of Darkness,heart_of_darkness
-161,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-162,Sigmund Freud,Dream Psychology,dream_psychology_librivox
-163,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-164,Adam Smith,The Wealth of Nations - Book 1,wealth_nations01_se
-165,Baruch Spinoza,The Ethics,ethics_1010_librivox
-166,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-167,Thomas Hardy,The Return of the Native,return_native_librivox
-168,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-169,Friedrich Nietzsche,Beyond Good and Evil,beyond_good_and_evil_librivox
-170,Jean-Jacques Rousseau,Discourse on Inequality,discourse_inequality_ej_librivox
-171,Laurence Sterne,"The Life and Opinions of Tristram Shandy, Gentleman, Vol. 4",tristramshandy4_1008_librivox
-172,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-173,Henry James,The Turn of the Screw,turn_screw_librivox
-174,Henry James,The Turn of the Screw,turn_screw_librivox
-175,Francis Bacon,The Essays of Francis Bacon,essays_francis_bacon_cv3_librivox
-176,Karl Marx,"The Communist Manifesto, by Karl Marx and Friedrich Engels",communistmanifesto_librivox
-177,Karl Marx; Friedrich Engels,"The Communist Manifesto, by Karl Marx and Friedrich Engels",communistmanifesto_librivox
-178,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-179,Jean Racine,Esther,esther_2505_librivox
-180,Alexander Hamilton; John Jay; James Madison,The Federalist Papers,federalist_papers_librivox
-181,Immanuel Kant,The Critique of Pure Reason,critique_pure_reason_0709_librivox
-182,John Milton,Paradise Lost,paradise_lost_08083_librivox
-183,Mary Shelley,Frankenstein (dramatic reading),frankenstein_1210_librivox
-184,Stendhal,Le Rouge et le noir,rougeetnoir_1810_librivox
-185,Alexis de Tocqueville,Democracy in America Vol. I,democracy_america_vol1_0709
-186,Jane Austen,Pride and Prejudice,pride_and_prejudice_librivox
-187,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-188,Fyodor Dostoevsky,Белые ночи - White Nights,white_nights_librivox
-189,Nikolai Gogol,Dead Souls,dead_souls_0910_librivox1
-190,Ivan Turgenev,First Love,first_love_mg_librivox
-191,Lewis Carroll,"Alice's Adventures in Wonderland, by Lewis Carroll",alice_in_wonderland_librivox
-192,Anton Chekhov,The House With The Mezzanine And Other Stories,the_house_with_the_mezzanine_and_other_stories_1309_librivox
-193,Fyodor Dostoevsky,Белые ночи - White Nights,white_nights_librivox
-194,David Hume,An Enquiry Concerning Human Understanding,human_understanding_0711_lv_2
-195,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-196,John Locke,,
-197,Isaac Newton,Opticks,opticks_1203_librivox
-198,William Wordsworth,I Wandered Lonely As a Cloud,wandered_lonely_as_a_cloud_librivox
-199,Émile Zola,J'accuse...!,jaccuse_librivox
-200,Charles Baudelaire,An Invitation to a Journey,invitation_2205.poem_librivox
-201,Edmund Burke,Reflections on the Revolution in France,reflections_revolution_france_mr_librivox
-202,Lord Byron,El Corsario,corsario_vv_1903_librivox
-203,Stephen Crane,The Red Badge of Courage,badge_courage_librivox
-204,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-205,Ralph Waldo Emerson,"Essays, First Series",essays_first_series_0708_librivox
-206,Galileo Galilei,Dialogo dei Massimi Sistemi,dialogo_dei_massimi_sistemi_2009_librivox
-207,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-208,Henry James,The Turn of the Screw,turn_screw_librivox
-209,Herman Melville,"Moby Dick, or the Whale",moby_dick_librivox
-210,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-211,Anton Chekhov,The House With The Mezzanine And Other Stories,the_house_with_the_mezzanine_and_other_stories_1309_librivox
-212,Anton Chekhov,The House With The Mezzanine And Other Stories,the_house_with_the_mezzanine_and_other_stories_1309_librivox
-213,Samuel Taylor Coleridge,The Rime of the Ancient Mariner,rime_ancient_mariner_librivox
-214,Daniel Defoe,"The Life and Strange Surprising Adventures of Robinson Crusoe of York, Mariner",robinson_crusoe_librivox
-215,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-216,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-217,George Eliot,Middlemarch (version 2),middlemarch_version2_1310_librivox
-218,Gustave Flaubert,Madame Bovary,madame_bovary_0809_librivox
-219,Johann Wolfgang von Goethe,Die Leiden des jungen Werther,leiden_werther_librivox
-220,Thomas Hardy,The Return of the Native,return_native_librivox
-221,Thomas Hardy,The Return of the Native,return_native_librivox
-222,Victor Hugo,"Les Misérables, Vol. 1",les_mis_vol01_0810_librivox
-223,William James,Varieties of Religious Experience,religious_experience_1008_librivox
-224,Ben Jonson,The Alchemist,alchemist_1207_librivox
-225,John Locke,,
-226,John Milton,Paradise Lost,paradise_lost_08083_librivox
-227,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-228,Montesquieu,"De l'esprit des lois, livres 01-13",delespritdeslois_anlo_1004_librivox
-229,Friedrich Nietzsche,Beyond Good and Evil,beyond_good_and_evil_librivox
-230,Alexander Pushkin,Krasavitse,krasavitse-librivox
-231,Edmund Spenser,Amoretti: A sonnet sequence,amoretti_llw_librivox
-232,Oscar Wilde,The Importance of Being Earnest,being_earnest_librivox
-233,Mary Wollstonecraft,"Frankenstein; or, The Modern Prometheus (1818)",frankenstein_cs_librivox
-234,William Wordsworth,I Wandered Lonely As a Cloud,wandered_lonely_as_a_cloud_librivox
-235,Jane Austen,Pride and Prejudice,pride_and_prejudice_librivox
-236,Honoré de Balzac,La Comédie Humaine: 10 - Scènes de la vie parisienne tome 2,comedie_humaine_scenes_de_vie_parisienne_2__librivox
-237,Honoré de Balzac,La Comédie Humaine: 10 - Scènes de la vie parisienne tome 2,comedie_humaine_scenes_de_vie_parisienne_2__librivox
-238,George Berkeley,"A Treatise Concerning the Principles of Human Knowledge, Part 1",treatise_0905_librivox
-239,Anton Chekhov,The House With The Mezzanine And Other Stories,the_house_with_the_mezzanine_and_other_stories_1309_librivox
-240,Anton Chekhov,The House With The Mezzanine And Other Stories,the_house_with_the_mezzanine_and_other_stories_1309_librivox
-241,Samuel Taylor Coleridge,The Rime of the Ancient Mariner,rime_ancient_mariner_librivox
-242,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-243,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-244,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-245,Denis Diderot,Regrets sur ma vieille robe de chambre,regrets_sur_ma_vieille_robe_de_chambre_enko_0808_librivox
-246,Denis Diderot,Regrets sur ma vieille robe de chambre,regrets_sur_ma_vieille_robe_de_chambre_enko_0808_librivox
-247,Frederick Douglass,Narrative of the Life of Frederick Douglass,frederick-douglass_jf_librivox
-248,Arthur Conan Doyle,The Adventures of Sherlock Holmes,adventures_holmes
-249,Arthur Conan Doyle,The Adventures of Sherlock Holmes,adventures_holmes
-250,Jean de la Fontaine,"Fables de La Fontaine, livre 01",fables_lafontaine_01_librivox
-251,Benjamin Franklin,The Autobiography of Benjamin Franklin,franklin_autobio_gg_librivox
-252,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-253,Samuel Johnson,,
-254,John Keats,Letters of John Keats to His Family and Friends,lettersofjohnkeats_1909_librivox
-255,Thomas Robert Malthus,,
-256,John Stuart Mill,On Liberty,on_liberty_librivox
-257,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-258,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-259,Thomas Paine,The Age of Reason,age_reason_0910_librivox
-260,Jean Racine,Esther,esther_2505_librivox
-261,Jean-Jacques Rousseau,Discourse on Inequality,discourse_inequality_ej_librivox
-262,Percy Bysshe Shelley,Ozymandias of Egypt,ozymandias_librivox
-263,Robert Louis Stevenson,Treasure Island,treasure_island_ap_librivox
-264,Henry David Thoreau,Walden,walden_librivox
-265,Mark Twain,The Adventures of Tom Sawyer,tom_sawyer_librivox
-266,William Wordsworth; Samuel Taylor Coleridge,I Wandered Lonely As a Cloud,wandered_lonely_as_a_cloud_librivox
-267,Louisa May Alcott,Little Women,little_women_0711_librivox
-268,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-269,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-270,William Congreve,The Way of the World,way_of_world_1201_librivox
-271,Joseph Conrad,Heart of Darkness,heart_of_darkness
-272,Daniel Defoe,"The Life and Strange Surprising Adventures of Robinson Crusoe of York, Mariner",robinson_crusoe_librivox
-273,René Descartes,Meditations on First Philosophy,meditations_descartes_dew_librivox
-274,Emily Dickinson,Because I Could Not Stop for Death,couldnotstop_1305_librivox
-275,Fyodor Dostoevsky,Белые ночи - White Nights,white_nights_librivox
-276,George Eliot,Middlemarch (version 2),middlemarch_version2_1310_librivox
-277,George Eliot,Middlemarch (version 2),middlemarch_version2_1310_librivox
-278,Thomas Hardy,The Return of the Native,return_native_librivox
-279,Georg Wilhelm Friedrich Hegel,Introduction to the Philosophy of History,intro_philosophy_history_dew_librivox
-280,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-281,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-282,Henrik Ibsen,A Doll's House,dolls_house_0812_librivox
-283,Samuel Johnson,,
-284,Samuel Johnson,,
-285,Henry Fielding,"The History of Tom Jones, A Foundling",tomjones_0811_librivox
-286,Oliver Goldsmith,The Good-Natured Man,goodnaturedman_1309_librivox
-287,Rudyard Kipling,The Jungle Book,jungle_book_mh_0808_librivox
-288,Choderlos de Laclos,Les liaisons dangereuses,liaisons_dangereuses_librivox
-289,John Milton,Paradise Lost,paradise_lost_08083_librivox
-290,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-291,Blaise Pascal,Pensées,pensees_0906_dx_librivox1
-292,Edgar Allan Poe,12 Creepy Tales by Edgar Allan Poe,12_creepytales_1206_librivox
-293,Alexander Pope,An Essay on Man,essay_on_man_0909_librivox
-294,Arthur Rimbaud,Illuminations,illuminations_jc_librivox
-295,Walter Scott,The Talisman,talisman_0810_librivox
-296,Richard Brinsley Sheridan,The School For Scandal,schoolforscandal_1301_librivox
-297,Laurence Sterne,"The Life and Opinions of Tristram Shandy, Gentleman, Vol. 4",tristramshandy4_1008_librivox
-298,Bram Stoker,Dracula,dracula_librivox
-299,Harriet Beecher Stowe,Uncle Tom's Cabin,uncle_toms_cabin_librivox
-300,Jonathan Swift,Gulliver's Travels,gulliver_ld_librivox
-301,Giambattista Vico,,
-302,Voltaire,Candide,candide_librivox
-303,Émile Zola,J'accuse...!,jaccuse_librivox
-304,Émile Zola,J'accuse...!,jaccuse_librivox
-305,Honoré de Balzac,La Comédie Humaine: 10 - Scènes de la vie parisienne tome 2,comedie_humaine_scenes_de_vie_parisienne_2__librivox
-306,Jeremy Bentham,An Introduction to the Principles of Morals and Legislation,principles_morals_legislation_1001_librivox
-307,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-308,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-309,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-310,James Boswell,"The Life of Samuel Johnson, Vol. II (version 2)",samuel_johnson_vol_ii_version_2_1504_librivox
-311,Thomas Browne,Religio Medici and Hydriotaphia,religio_medici_nl_librivox
-312,Lord Byron,El Corsario,corsario_vv_1903_librivox
-313,Lord Byron,El Corsario,corsario_vv_1903_librivox
-314,Samuel Butler,A First Year in Canterbury Settlement,first_year_canterbury_settlement_2309_librivox
-315,Carl von Clausewitz,On War Volume 1,onwar_1005_librivox
-316,Kate Chopin,The Awakening,awakening_librivox
-317,Samuel Taylor Coleridge,The Rime of the Ancient Mariner,rime_ancient_mariner_librivox
-318,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-319,Charles Dickens,A Tale of Two Cities,tale_two_cities_librivox
-320,Arthur Conan Doyle,The Adventures of Sherlock Holmes,adventures_holmes
-321,Arthur Conan Doyle,The Adventures of Sherlock Holmes,adventures_holmes
-322,Arthur Conan Doyle,The Adventures of Sherlock Holmes,adventures_holmes
-323,Ralph Waldo Emerson,"Essays, First Series",essays_first_series_0708_librivox
-324,Johann Wolfgang von Goethe,Die Leiden des jungen Werther,leiden_werther_librivox
-325,Johann Wolfgang von Goethe,Die Leiden des jungen Werther,leiden_werther_librivox
-326,Thomas Hardy,The Return of the Native,return_native_librivox
-327,Georg Wilhelm Friedrich Hegel,Introduction to the Philosophy of History,intro_philosophy_history_dew_librivox
-328,John Keats,Letters of John Keats to His Family and Friends,lettersofjohnkeats_1909_librivox
-329,John Keats,Letters of John Keats to His Family and Friends,lettersofjohnkeats_1909_librivox
-330,Soren Kierkegaard,,
-331,John Stuart Mill,On Liberty,on_liberty_librivox
-332,John Milton,Paradise Lost,paradise_lost_08083_librivox
-333,Molière,La Comtesse d'Escarbagnas,comtesse_escarbagnas_0809_librivox
-334,Friedrich Nietzsche,Beyond Good and Evil,beyond_good_and_evil_librivox
-335,Edgar Allan Poe,12 Creepy Tales by Edgar Allan Poe,12_creepytales_1206_librivox
-336,Edgar Allan Poe,12 Creepy Tales by Edgar Allan Poe,12_creepytales_1206_librivox
-337,Alexander Pope,An Essay on Man,essay_on_man_0909_librivox
-338,Alexander Pushkin,Krasavitse,krasavitse-librivox
-339,Jean Racine,Esther,esther_2505_librivox
-340,Samuel Richardson,"Pamela, or Virtue Rewarded",pamela_0910_librivox
-341,Arthur Rimbaud,Illuminations,illuminations_jc_librivox
-342,Jean-Jacques Rousseau,Discourse on Inequality,discourse_inequality_ej_librivox
-343,August Strindberg,Das Buch der Liebe,buchderliebe_2504_librivox
-344,John Millington Synge,,
-345,Leo Tolstoy,"War and Peace, Book 01: 1805",war_and_peace_01_librivox
-346,Giorgio Vasari,"Lives of the Most Eminent Painters, Sculptors and Architects Vol 2",livesofpainters_vol2_1407_librivox
-347,Jules Verne,The Mysterious Island,mysterious_island_ms_librivox
-348,Voltaire,Candide,candide_librivox
-349,Oscar Wilde,The Importance of Being Earnest,being_earnest_librivox
-350,James Joyce,,
-351,Gabriel Garcia Marquez,,
-352,F. Scott Fitzgerald,,
-353,George Orwell,,
-354,Marcel Proust,,
-355,Franz Kafka,,
-356,Albert Camus,,
-357,Samuel Beckett,,
-358,James Joyce,,
-359,Franz Kafka,,
-360,William Faulkner,,
-361,Ralph Ellison,,
-362,Thomas Mann,,
-363,John Steinbeck,,
-364,Virginia Woolf,,
-365,Henry Adams,Democracy - An American Novel,democracy_nc_1106_librivox
-366,T. S. Eliot,,
-367,Joseph Heller,,
-368,Vladimir Nabokov,,
-369,Virginia Woolf,,
-370,Chinua Achebe,,
-371,T. S. Eliot,,
-372,James Joyce,,
-373,D. H. Lawrence,,
-374,Rachel Carson,,
-375,Willa Cather,,
-376,Aldous Huxley,,
-377,Franz Kafka,,
-378,Toni Morrison,,
-379,Albert Camus,,
-380,William Faulkner,,
-381,E. M. Forster,,
-382,Ernest Hemingway,,
-383,Vladimir Nabokov,,
-384,Eugene O'Neill,Anna Christie,anna_christie_1107_librivox
-385,Ezra Pound,,
-386,Salman Rushdie,,
-387,J. D. Salinger,,
-388,Richard Wright,,
-389,Simone de Beauvoir,,
-390,Mikhail Bulgakov,,
-391,T. S. Eliot,,
-392,William Faulkner,,
-393,Sigmund Freud,Dream Psychology,dream_psychology_librivox
-394,Gabriel Garcia Marquez,,
-395,Ernest Hemingway,,
-396,Ernest Hemingway,,
-397,Zora Neale Hurston,,
-398,William James,Varieties of Religious Experience,religious_experience_1008_librivox
-399,William James,Varieties of Religious Experience,religious_experience_1008_librivox
-400,Thomas Mann,,
-401,Jean-Paul Sartre,,
-402,George Bernard Shaw,,
-403,George Bernard Shaw,,
-404,J. R. R. Tolkien,,
-405,Edith Wharton,,
-406,Edith Wharton,,
-407,James Agee,,
-408,Margaret Atwood,,
-409,Jorge Luis Borges,,
-410,Jorge Luis Borges,,
-411,Joseph Conrad,Heart of Darkness,heart_of_darkness
-412,Albert Einstein,,
-413,F. Scott Fitzgerald,,
-414,James George Frazer,,
-415,William Golding,,
-416,Gunter Grass,,
-417,Ernest Hemingway,,
-418,Henry James,The Turn of the Screw,turn_screw_librivox
-419,Thomas Mann,,
-420,Arthur Miller,,
-421,Boris Pasternak,,
-422,Erich Maria Remarque,,
-423,Jean-Paul Sartre,,
-424,Virginia Woolf,,
-425,Henry Adams,Democracy - An American Novel,democracy_nc_1106_librivox
-426,Sherwood Anderson,,
-427,Maya Angelou,,
-428,Italo Calvino,,
-429,Louis-Ferdinand Celine,,
-430,T. S. Eliot,,
-431,T. S. Eliot,,
-432,Robert Graves,,
-433,Knut Hamsun,,
-434,James Joyce,,
-435,Franz Kafka,,
-436,Jack Kerouac,,
-437,Ken Kesey,,
-438,Thomas S. Kuhn,,
-439,Giuseppe Tomasi di Lampedusa,,
-440,D. H. Lawrence,,
-441,Harper Lee,,
-442,Sinclair Lewis,,
-443,Andre Malraux,,
-444,Daphne du Maurier,,
-445,Toni Morrison,,
-446,Robert Musil,,
-447,Sylvia Plath,,
-448,Rainer Maria Rilke,,
-449,J. K. Rowling,,
-450,Antoine de Saint-Exupéry,,
-451,Jean-Paul Sartre,,
-452,Upton Sinclair,,
-453,Alexander Solzhenitsyn,,
-454,Robert Louis Stevenson,Treasure Island,treasure_island_ap_librivox
-455,Robert Penn Warren,,
-456,H. G. Wells,The Time Machine (version 3),timemachine_sjm_librivox
-457,Edith Wharton,,
-458,Thornton Wilder,,
-459,Tennessee Williams,,
-460,Tennessee Williams,,
-461,William Carlos Williams,,
-462,Virginia Woolf,,
-463,William Butler Yeats,,
-464,Alexander Pushkin,Krasavitse,krasavitse-librivox
-465,Anton Chekhov,The House With The Mezzanine And Other Stories,the_house_with_the_mezzanine_and_other_stories_1309_librivox
-466,Rudyard Kipling,The Jungle Book,jungle_book_mh_0808_librivox
-467,Jules Verne,The Mysterious Island,mysterious_island_ms_librivox
-468,Alexandre Dumas,The Count of Monte Cristo,count_monte_cristo_0711_librivox
-469,Emile Zola,J'accuse...!,jaccuse_librivox
-470,Walter Scott,The Talisman,talisman_0810_librivox
-471,Lord Byron,El Corsario,corsario_vv_1903_librivox
-472,John Keats,Letters of John Keats to His Family and Friends,lettersofjohnkeats_1909_librivox
-473,William Blake,Songs of Innocence and Experience,songs_innocence_experience_librivox
-474,William Wordsworth,I Wandered Lonely As a Cloud,wandered_lonely_as_a_cloud_librivox
-475,Edgar Allan Poe,12 Creepy Tales by Edgar Allan Poe,12_creepytales_1206_librivox
+rank,period,period_rank,author,title,score
+1,Prehistory to 700 A. D.,1,Homer,The Odyssey,38
+2,Prehistory to 700 A. D.,2,Homer,The Iliad,35
+3,Prehistory to 700 A. D.,3,Virgil,The Aeneid,28
+4,Prehistory to 700 A. D.,4,Herodotus,History,27
+5,Prehistory to 700 A. D.,5,Sophocles,Oedipus the King,26
+6,Prehistory to 700 A. D.,6,Augustine of Hippo,Confessions,25
+7,Prehistory to 700 A. D.,7,Plato,The Republic,24
+8,Prehistory to 700 A. D.,8,Sophocles,Antigone,23
+9,Prehistory to 700 A. D.,9,Thucydides,The Peloponnesian War,23
+10,Prehistory to 700 A. D.,10,Aeschylus,Oresteia,21
+11,Prehistory to 700 A. D.,11,Sophocles,Oedipus at Colonus,21
+12,Prehistory to 700 A. D.,12,Lucretius,On the Nature of Things,20
+13,Prehistory to 700 A. D.,13,Plutarch,Parallel Lives,19
+14,Prehistory to 700 A. D.,14,Euripides,Medea,18
+15,Prehistory to 700 A. D.,15,,The Bible,18
+16,Prehistory to 700 A. D.,16,Marcus Aurelius,Meditations,17
+17,Prehistory to 700 A. D.,17,Aristotle,Nicomachean Ethics,17
+18,Prehistory to 700 A. D.,18,Plato,The Apology,16
+19,Prehistory to 700 A. D.,19,Aristotle,Poetics,16
+20,Prehistory to 700 A. D.,20,Euripides,The Bacchae,15
+21,Prehistory to 700 A. D.,21,Ovid,Metamorphoses,15
+22,Prehistory to 700 A. D.,22,Plato,Phaedo,15
+23,Prehistory to 700 A. D.,23,Thomas Aquinas,Summa Theologiae,14
+24,Prehistory to 700 A. D.,24,Aristophanes,Lysistrata,14
+25,Prehistory to 700 A. D.,25,Aristophanes,The Birds,14
+26,Prehistory to 700 A. D.,26,Plato,Crito,14
+27,Prehistory to 700 A. D.,27,Aeschylus,Prometheus Bound,13
+28,Prehistory to 700 A. D.,28,Vyasa,Mahabharata,13
+29,Prehistory to 700 A. D.,29,Aristophanes,The Clouds,12
+30,Prehistory to 700 A. D.,30,Confucius,Analects,12
+31,Prehistory to 700 A. D.,31,Euripides,Hippolytos,12
+32,Prehistory to 700 A. D.,32,Aristophanes,The Frogs,11
+33,Prehistory to 700 A. D.,33,Aristotle,Politics,11
+34,Prehistory to 700 A. D.,34,Horace,Odes,11
+35,Prehistory to 700 A. D.,35,Lăozĭ,Tao te Ching,11
+36,Prehistory to 700 A. D.,36,Plato,Dialogues,11
+37,Prehistory to 700 A. D.,37,Plato,Symposium,11
+38,Prehistory to 700 A. D.,38,Tacitus,Annals,11
+39,Prehistory to 700 A. D.,39,,The Epic of Gilgamesh,11
+40,Prehistory to 700 A. D.,40,,The Quran,11
+41,Prehistory to 700 A. D.,41,Valmiki,Ramayana,10
+42,Prehistory to 700 A. D.,42,Augustine of Hippo,The City of God,9
+43,Prehistory to 700 A. D.,43,Epictetus,Discourses,9
+44,Prehistory to 700 A. D.,44,Euripides,The Trojan Woman,9
+45,Prehistory to 700 A. D.,45,Tacitus,Histories,9
+46,Prehistory to 700 A. D.,46,Euripides,Electra,8
+47,Prehistory to 700 A. D.,47,Petronius,Satyricon,8
+48,Prehistory to 700 A. D.,48,Vyasa,Bhagavad Gita,8
+49,Prehistory to 700 A. D.,49,,The Book of Job,8
+50,Prehistory to 700 A. D.,50,Euripides,Alcestis,7
+51,Prehistory to 700 A. D.,51,Euclid,Elements,7
+52,Prehistory to 700 A. D.,52,Lucian,True History,7
+53,Prehistory to 700 A. D.,53,Plotinus,Enneads,7
+54,Prehistory to 700 A. D.,54,Aesop,Fables,6
+55,Prehistory to 700 A. D.,55,Aristophanes,The Acharnians,6
+56,Prehistory to 700 A. D.,56,Aristophanes,The Knights,6
+57,Prehistory to 700 A. D.,57,Aristophanes,Peace,6
+58,Prehistory to 700 A. D.,58,Aristophanes,Thesmophoriazousai,6
+59,Prehistory to 700 A. D.,59,Apuleius,The Golden Ass,6
+60,Prehistory to 700 A. D.,60,Catullus,Poems,6
+61,Prehistory to 700 A. D.,61,Cicero,On Old Age,6
+62,Prehistory to 700 A. D.,62,Horace,Satires,6
+63,Prehistory to 700 A. D.,63,Horace,Epodes,6
+64,Prehistory to 700 A. D.,64,Kalidasa,The Recognition of Sakuntala,6
+65,Prehistory to 700 A. D.,65,Livy,History of Rome,6
+66,Prehistory to 700 A. D.,66,Plato,Euthyphro,6
+67,Prehistory to 700 A. D.,67,Sappho,Poems,6
+68,Prehistory to 700 A. D.,68,Sophocles,Ajax,6
+69,Prehistory to 700 A. D.,69,Sophocles,Philocetes,6
+70,Prehistory to 700 A. D.,70,Aeschylus,Seven against Thebes,5
+71,Prehistory to 700 A. D.,71,Aristophanes,Plays,5
+72,Prehistory to 700 A. D.,72,Aristophanes,The Wasps,5
+73,Prehistory to 700 A. D.,73,Aristophanes,A Parliament of Women,5
+74,Prehistory to 700 A. D.,74,Aristotle,Physics,5
+75,Prehistory to 700 A. D.,75,Boethius,Consolatio Philosophiae,5
+76,Prehistory to 700 A. D.,76,Cicero,On Friendship,5
+77,Prehistory to 700 A. D.,77,Cicero,On Duties,5
+78,Prehistory to 700 A. D.,78,Euripides,Plays,5
+79,Prehistory to 700 A. D.,79,Euripides,Andromache,5
+80,Prehistory to 700 A. D.,80,Euripides,Iphigeneia in Tauris,5
+81,Prehistory to 700 A. D.,81,Euripides,Ion,5
+82,Prehistory to 700 A. D.,82,Euripides,Iphigeneia in Aulis,5
+83,Prehistory to 700 A. D.,83,Euripides,Cyclops,5
+84,Prehistory to 700 A. D.,84,Hesiod,Works and Days,5
+85,Prehistory to 700 A. D.,85,Horace,Ars Poetica,5
+86,Prehistory to 700 A. D.,86,Mencius,Mengzi,5
+87,Prehistory to 700 A. D.,87,Plato,Protagoras,5
+88,Prehistory to 700 A. D.,88,Ptolemy,Almagest,5
+89,Prehistory to 700 A. D.,89,Sophocles,The Women of Trachis,5
+90,Prehistory to 700 A. D.,90,Sophocles,Elektra,5
+91,Prehistory to 700 A. D.,91,Suetonius,The Lives of the Twelve Caesars,5
+92,Prehistory to 700 A. D.,92,Zhuāngzī,Zhuāngzī,5
+93,Prehistory to 700 A. D.,93,,The Book of Genesis,5
+94,Prehistory to 700 A. D.,94,,Ecclesiastes,5
+95,700 to 1650,1,Miguel de Cervantes,Don Quixote,39
+96,700 to 1650,2,Dante,The Divine Commedy,35
+97,700 to 1650,3,Geoffrey Chaucer,The Canterbury Tales,32
+98,700 to 1650,4,Niccolò Machiavelli,The Prince,30
+99,700 to 1650,5,William Shakespeare,Hamlet,28
+100,700 to 1650,6,Michel de Montaigne,Essays,27
+101,700 to 1650,7,François Rabelais,Gargantua and Pantagruel,23
+102,700 to 1650,8,William Shakespeare,King Lear,21
+103,700 to 1650,9,William Shakespeare,The Tempest,20
+104,700 to 1650,10,,The Arabian Nights,17
+105,700 to 1650,11,William Shakespeare,Macbeth,16
+106,700 to 1650,12,William Shakespeare,A Midsummer Night's Dream,15
+107,700 to 1650,13,Thomas More,Utopia,14
+108,700 to 1650,14,William Shakespeare,Othello,14
+109,700 to 1650,15,William Shakespeare,Romeo and Juliet,14
+110,700 to 1650,16,Murasaki Shikibu,The Tale of Genji,14
+111,700 to 1650,17,,Beowulf,14
+112,700 to 1650,18,Giovanni Boccaccio,The Decameron,13
+113,700 to 1650,19,Thomas Malory,Le Morte d'Arthur,13
+114,700 to 1650,20,William Shakespeare,Antony and Cleopatra,13
+115,700 to 1650,21,William Shakespeare,The First Part of Henry IV,13
+116,700 to 1650,22,Desiderius Erasmus,In Praise of Folly,12
+117,700 to 1650,23,William Shakespeare,As You Like It,12
+118,700 to 1650,24,William Shakespeare,The Second Part of Henry IV,12
+119,700 to 1650,25,Francis Bacon,Novum Organum,11
+120,700 to 1650,26,William Shakespeare,The Merchant of Venice,11
+121,700 to 1650,27,William Shakespeare,Richard III,11
+122,700 to 1650,28,Christopher Marlowe,Doctor Faustus,10
+123,700 to 1650,29,William Shakespeare,Henry V,10
+124,700 to 1650,30,William Shakespeare,Much Ado About Nothing,10
+125,700 to 1650,31,William Shakespeare,Richard II,10
+126,700 to 1650,32,William Shakespeare,"Twelfth Night; or, What You Will",10
+127,700 to 1650,33,William Shakespeare,Measure for Measure,10
+128,700 to 1650,34,William Shakespeare,The Winter's Tale,10
+129,700 to 1650,35,,The Song of Roland,10
+130,700 to 1650,36,William Shakespeare,Julius Caesar,9
+131,700 to 1650,37,William Shakespeare,The Taming of the Shrew,9
+132,700 to 1650,38,Pedro Calderón de la Barca,Life Is a Dream,8
+133,700 to 1650,39,John Calvin,Institutes of the Christian Religion,8
+134,700 to 1650,40,Geoffrey Chaucer,Troilus and Criseyde,8
+135,700 to 1650,41,John Donne,Poems,8
+136,700 to 1650,42,Pierre Corneille,Le Cid,8
+137,700 to 1650,43,William Shakespeare,All's Well That Ends Well,8
+138,700 to 1650,44,William Shakespeare,The Comedy of Errors,8
+139,700 to 1650,45,William Shakespeare,Coriolanus,8
+140,700 to 1650,46,William Shakespeare,Sonnets,8
+141,700 to 1650,47,,Nibelungenlied,8
+142,700 to 1650,48,Benvenuto Cellini,Autobiography,7
+143,700 to 1650,49,Nicolas Copernicus,On the Revolutions of the Heavenly Spheres,7
+144,700 to 1650,50,Ferdowsi,Shahnameh,7
+145,700 to 1650,51,William Harvey,On the Motion of the Heart and Blood in Animals,7
+146,700 to 1650,52,Christopher Marlowe,Tamburlaine the Great,7
+147,700 to 1650,53,William Shakespeare,The Merry Wives of Windsor,7
+148,700 to 1650,54,William Shakespeare,Timon of Athens,7
+149,700 to 1650,55,William Shakespeare,Troilus and Cressida,7
+150,700 to 1650,56,William Shakespeare,The Two Gentlemen of Verona,7
+151,700 to 1650,57,,Sir Gawain and the Green Knight,7
+152,700 to 1650,58,Francis Bacon,The Advancement of Learning,6
+153,700 to 1650,59,Francis Bacon,Nova Atlantis,6
+154,700 to 1650,60,Dante,The New Life,6
+155,700 to 1650,61,Dante,Inferno,6
+156,700 to 1650,62,Ben Jonson,Volpone,6
+157,700 to 1650,63,William Shakespeare,The First Part of Henry VI,6
+158,700 to 1650,64,William Shakespeare,The Second Part of Henry VI,6
+159,700 to 1650,65,William Shakespeare,The Third Part of Henry VI,6
+160,700 to 1650,66,William Shakespeare,Henry VIII,6
+161,700 to 1650,67,William Shakespeare,Love's Labour Lost,6
+162,700 to 1650,68,William Shakespeare,Cymbeline,6
+163,700 to 1650,69,Leonardo da Vinci,Notebooks,6
+164,700 to 1650,70,Wú Chéng-ēn,Monkey,6
+165,700 to 1650,71,,Njáls Saga,6
+166,700 to 1650,72,Pierre Abélard,Historia Calamitatum,5
+167,700 to 1650,73,Ludovico Ariosto,Orlando Furioso,5
+168,700 to 1650,74,Pierre Corneille,Polyeucte,5
+169,700 to 1650,75,Pierre Corneille,Cinna,5
+170,700 to 1650,76,Gottfried von Strassberg,Tristan,5
+171,700 to 1650,77,Ben Jonson,Bartholomew Fayre,5
+172,700 to 1650,78,Martin Luther,On the Babylonian Captivity of the Church,5
+173,700 to 1650,79,Martin Luther,To the Christian Nobility of the German Nation,5
+174,700 to 1650,80,Christopher Marlowe,The Jew of Malta,5
+175,700 to 1650,81,Christopher Marlowe,Edward II,5
+176,700 to 1650,82,William Shakespeare,Titus Andronicus,5
+177,700 to 1650,83,William Shakespeare,King John,5
+178,700 to 1650,84,William Shakespeare,Complete works,5
+179,700 to 1650,85,Shī Nài'ān,The Water Margin,5
+180,1650 to 1900,1,Gustave Flaubert,Madame Bovary,31
+181,1650 to 1900,2,Jane Austen,Pride and Prejudice,30
+182,1650 to 1900,3,Jonathan Swift,Gulliver's Travels,30
+183,1650 to 1900,4,John Milton,Paradise Lost,29
+184,1650 to 1900,5,Johann Wolfgang von Goethe,Faust,28
+185,1650 to 1900,6,Herman Melville,Moby-Dick,26
+186,1650 to 1900,7,Leo Tolstoy,War and Peace,26
+187,1650 to 1900,8,Charles Darwin,The Origin of Species,25
+188,1650 to 1900,9,Fyodor Dostoevsky,Crime and Punishment,25
+189,1650 to 1900,10,Voltaire,Candide,24
+190,1650 to 1900,11,Fyodor Dostoevsky,The Brothers Karamozov,23
+191,1650 to 1900,12,George Eliot,Middlemarch,23
+192,1650 to 1900,13,Edward Gibbon,The Decline and Fall of the Roman Empire,23
+193,1650 to 1900,14,Mark Twain,Huckleberry Finn,23
+194,1650 to 1900,15,James Boswell,The Life of Samuel Johnson,22
+195,1650 to 1900,16,Daniel Defoe,Robinson Crusoe,21
+196,1650 to 1900,17,Nathaniel Hawthorne,The Scarlet Letter,21
+197,1650 to 1900,18,Leo Tolstoy,Anna Karenina,21
+198,1650 to 1900,19,Blaise Pascal,Thoughts,21
+199,1650 to 1900,20,Henry David Thoreau,Walden,20
+200,1650 to 1900,21,Walt Whitman,Leaves of Grass,20
+201,1650 to 1900,22,Henry Fielding,Tom Jones,20
+202,1650 to 1900,23,Stendhal,The Red and the Black,19
+203,1650 to 1900,24,William Makepeace Thackeray,Vanity Fair,19
+204,1650 to 1900,25,Emily Brontë,Wuthering Heights,18
+205,1650 to 1900,26,John Bunyan,The Pilgrim's Progress,18
+206,1650 to 1900,27,Lewis Carroll,Alice's Adventures in Wonderland,18
+207,1650 to 1900,28,René Descartes,Discourse on the Method,18
+208,1650 to 1900,29,Victor Hugo,Les Misérables,18
+209,1650 to 1900,30,Jean-Jacques Rousseau,The Social Contract,18
+210,1650 to 1900,31,Thomas Hobbes,Leviathan,17
+211,1650 to 1900,32,John Stuart Mill,On Liberty,17
+212,1650 to 1900,33,Honoré de Balzac,Father Goriot,16
+213,1650 to 1900,34,Charlotte Brontë,Jane Eyre,16
+214,1650 to 1900,35,Joseph Conrad,Heart of Darkness,16
+215,1650 to 1900,36,Charles Dickens,David Copperfield,16
+216,1650 to 1900,37,Sigmund Freud,The Interpretation of Dreams,16
+217,1650 to 1900,38,Molière,Tartuffe,16
+218,1650 to 1900,39,Adam Smith,The Wealth of Nations,16
+219,1650 to 1900,40,Baruch Spinoza,Ethics,16
+220,1650 to 1900,41,Charles Dickens,Great Expectations,15
+221,1650 to 1900,42,Thomas Hardy,Tess of the d'Urbervilles,15
+222,1650 to 1900,43,Henrik Ibsen,A Doll's House,15
+223,1650 to 1900,44,Friedrich Nietzsche,Thus Spake Zarathustra,15
+224,1650 to 1900,45,Jean-Jacques Rousseau,Confessions,15
+225,1650 to 1900,46,Laurence Sterne,Tristram Shandy,15
+226,1650 to 1900,47,Charles Dickens,The Pickwick Papers,14
+227,1650 to 1900,48,Henry James,The Portrait of a Lady,14
+228,1650 to 1900,49,Henry James,The Ambassadors,14
+229,1650 to 1900,50,Francis Bacon,Essays,13
+230,1650 to 1900,51,Karl Marx,Capital,13
+231,1650 to 1900,52,Karl Marx and Friedrich Engels,The Communist Manifesto,13
+232,1650 to 1900,53,Molière,The Misanthrope,13
+233,1650 to 1900,54,Jean Racine,Phèdre,13
+234,1650 to 1900,55,Alexander Hamilton; John Jay; James Madison,The Federalist Papers,12
+235,1650 to 1900,56,Immanuel Kant,Critique of Pure Reason,12
+236,1650 to 1900,57,John Milton,Areopagitica,12
+237,1650 to 1900,58,Mary Shelley,Frankenstein,12
+238,1650 to 1900,59,Stendhal,The Charterhouse of Parma,12
+239,1650 to 1900,60,Alexis de Tocqueville,Democracy in America,12
+240,1650 to 1900,61,Jane Austen,Emma,11
+241,1650 to 1900,62,William Blake,Songs of Innocence and Experience,11
+242,1650 to 1900,63,Fyodor Dostoevsky,Idiot,11
+243,1650 to 1900,64,Nikolai Gogol,Dead Souls,11
+244,1650 to 1900,65,Ivan Turgenev,Fathers and Children,11
+245,1650 to 1900,66,Lewis Carroll,"Through the Looking-Glass, and What Alice Found There",10
+246,1650 to 1900,67,Anton Chekhov,Uncle Vanya,10
+247,1650 to 1900,68,Fyodor Dostoevsky,Demons,10
+248,1650 to 1900,69,David Hume,An Enquiry Concerning Human Understanding,10
+249,1650 to 1900,70,Henrik Ibsen,Hedda Gabler,10
+250,1650 to 1900,71,John Locke,An Essay Concerning Human Understanding,10
+251,1650 to 1900,72,Isaac Newton,Mathematical Principles of Natural Philosophy,10
+252,1650 to 1900,73,William Wordsworth,The Prelude,10
+253,1650 to 1900,74,Émile Zola,Germinal,10
+254,1650 to 1900,75,Charles Baudelaire,The Flowers of Evil,9
+255,1650 to 1900,76,Edmund Burke,Reflections on the Revolution in France,9
+256,1650 to 1900,77,Lord Byron,Don Juan,9
+257,1650 to 1900,78,Stephen Crane,The Red Badge of Courage,9
+258,1650 to 1900,79,Charles Dickens,Oliver Twist,9
+259,1650 to 1900,80,Ralph Waldo Emerson,Essays,9
+260,1650 to 1900,81,Galileo,Dialogue Concerning the Two Chief World Systems,9
+261,1650 to 1900,82,Henrik Ibsen,The Wild Duck,9
+262,1650 to 1900,83,Henry James,The Turn of the Screw,9
+263,1650 to 1900,84,Herman Melville,Billy Budd,9
+264,1650 to 1900,85,Molière,The Miser,9
+265,1650 to 1900,86,Cáo Xuěqín,Dream of the Red Chamber,8
+266,1650 to 1900,87,Anton Chekhov,Three Sisters,8
+267,1650 to 1900,88,Anton Chekhov,The Cherry Orchard,8
+268,1650 to 1900,89,Samuel Taylor Coleridge,Biographia Literaria,8
+269,1650 to 1900,90,Daniel Defoe,Moll Flanders,8
+270,1650 to 1900,91,Charles Dickens,Bleak House,8
+271,1650 to 1900,92,Charles Dickens,A Tale of Two Cities,8
+272,1650 to 1900,93,George Eliot,Adam Bede,8
+273,1650 to 1900,94,Gustave Flaubert,Sentimental Education,8
+274,1650 to 1900,95,Johann Wolfgang von Goethe,The Sorrows of Young Werther,8
+275,1650 to 1900,96,Thomas Hardy,Jude the Obscure,8
+276,1650 to 1900,97,Thomas Hardy,The Return of the Native,8
+277,1650 to 1900,98,Victor Hugo,The Hunchback of Notre Dame,8
+278,1650 to 1900,99,William James,Pragmatism,8
+279,1650 to 1900,100,Ben Jonson,The Alchemist,8
+280,1650 to 1900,101,Omar Khayyám,The Rubaiyat of Omar Khayyam,8
+281,1650 to 1900,102,John Locke,Second Treatise,8
+282,1650 to 1900,103,John Milton,Paradise Regained,8
+283,1650 to 1900,104,Molière,Le Bourgeois Gentilhomme,8
+284,1650 to 1900,105,Montesquieu,The Spirit of Laws,8
+285,1650 to 1900,106,Friedrich Nietzsche,Beyond Good and Evil,8
+286,1650 to 1900,107,George Orwell,Animal Farm,8
+287,1650 to 1900,108,Alexander Pope,The Rape of the Lock,8
+288,1650 to 1900,109,Alexander Pushkin,Eugene Onegin,8
+289,1650 to 1900,110,George Bernard Shaw,Saint Joan,8
+290,1650 to 1900,111,Edmund Spenser,The Faerie Queene,8
+291,1650 to 1900,112,Oscar Wilde,The Importance of Being Earnest,8
+292,1650 to 1900,113,Mary Wollstonecraft,A Vindication of the Rights of Woman,8
+293,1650 to 1900,114,William Wordsworth,Poems,8
+294,1650 to 1900,115,Jane Austen,Persuasion,7
+295,1650 to 1900,116,Honoré de Balzac,Cousin Bette,7
+296,1650 to 1900,117,Honoré de Balzac,Eugénie Grandet,7
+297,1650 to 1900,118,George Berkeley,The Principles of Human Knowledge,7
+298,1650 to 1900,119,Robert Burns,Poems,7
+299,1650 to 1900,120,Anton Chekhov,The Seagull,7
+300,1650 to 1900,121,Anton Chekhov,Stories,7
+301,1650 to 1900,122,Samuel Taylor Coleridge,'The Rime of the Ancyent Marinere',7
+302,1650 to 1900,123,Charles Dickens,Hard Times,7
+303,1650 to 1900,124,Charles Dickens,A Christmas Carol,7
+304,1650 to 1900,125,Charles Dickens,Our Mutual Friend,7
+305,1650 to 1900,126,Denis Diderot,Rameau's Nephew,7
+306,1650 to 1900,127,Denis Diderot et al.,Encyclopédie,7
+307,1650 to 1900,128,Frederick Douglass,Narrative of the Life of Frederick Douglass,7
+308,1650 to 1900,129,Arthur Conan Doyle,The Adventures of Sherlock Holmes,7
+309,1650 to 1900,130,Arthur Conan Doyle,A Study in Scarlet,7
+310,1650 to 1900,131,Jean de la Fontaine,Fables,7
+311,1650 to 1900,132,Benjamin Franklin,Autobiography of Benjamin Franklin,7
+312,1650 to 1900,133,Henrik Ibsen,Peer Gynt,7
+313,1650 to 1900,134,Samuel Johnson,Rasselas,7
+314,1650 to 1900,135,John Keats,Poems,7
+315,1650 to 1900,136,Thomas Robert Malthus,An Essay on the Principle of Population,7
+316,1650 to 1900,137,John Stuart Mill,Autobiography,7
+317,1650 to 1900,138,Molière,Don Juan,7
+318,1650 to 1900,139,Molière,The Imaginary Invalid,7
+319,1650 to 1900,140,Thomas Paine,The Rights of Man,7
+320,1650 to 1900,141,Jean Racine,Andromaque,7
+321,1650 to 1900,142,Jean-Jacques Rousseau,Discourse on Inequality,7
+322,1650 to 1900,143,Percy Bysshe Shelley,Poems,7
+323,1650 to 1900,144,Robert Louis Stevenson,Dr. Jekyll and Mr. Hyde,7
+324,1650 to 1900,145,Henry Dead Thoreau,'Civil Disobedience',7
+325,1650 to 1900,146,Mark Twain,The Adventures of Tom Sawyer,7
+326,1650 to 1900,147,François Villon,The Grand Testament,7
+327,1650 to 1900,148,William Wordsworth; Samuel Taylor Coleridge,Lyrical Ballads,7
+328,1650 to 1900,149,William Butler Yeats,Words for Music Perhaps,7
+329,1650 to 1900,150,Louisa M Alcott,Little Women,6
+330,1650 to 1900,151,William Blake,The Marriage of Heaven and Hell,6
+331,1650 to 1900,152,William Blake,Jerusalem,6
+332,1650 to 1900,153,William Congreve,The Way of the World,6
+333,1650 to 1900,154,Joseph Conrad,Lord Jim,6
+334,1650 to 1900,155,Daniel Defoe,A Journal of the Plague Year,6
+335,1650 to 1900,156,René Descartes,Meditations on First Philosophy,6
+336,1650 to 1900,157,Emily Dickinson,Poems,6
+337,1650 to 1900,158,Fyodor Dostoevsky,Notes From Underground,6
+338,1650 to 1900,159,George Eliot,The Mill on the Floss,6
+339,1650 to 1900,160,George Eliot,Silas Marner,6
+340,1650 to 1900,161,Oliver Goldsmith,The Vicar of Wakefield,6
+341,1650 to 1900,162,Thomas Hardy,The Mayor of Casterbridge,6
+342,1650 to 1900,163,George Wilhelm Friedrich Hegel,The Philosophy of History,6
+343,1650 to 1900,164,Henrik Ibsen,An Enemy of the People,6
+344,1650 to 1900,165,Henrik Ibsen,Ghosts,6
+345,1650 to 1900,166,Henrik Ibsen,The Master Builder,6
+346,1650 to 1900,167,Samuel Johnson,A Dictionary of the English Language,6
+347,1650 to 1900,168,Samuel Johnson,The Lives of the English Poets,6
+348,1650 to 1900,169,Henry Fielding,Joseph Andrews,6
+349,1650 to 1900,170,Oliver Goldsmith,She Stoops to Conquer,6
+350,1650 to 1900,171,Rudyard Kipling,Kim,6
+351,1650 to 1900,172,Choderlos de Laclos,The Dangerous Liaisons,6
+352,1650 to 1900,173,John Milton,'Lycidas',6
+353,1650 to 1900,174,Molière,The School for Wives,6
+354,1650 to 1900,175,Molière,Plays,6
+355,1650 to 1900,176,Blaise Pascal,The Provincial Letters,6
+356,1650 to 1900,177,Edgar Allan Poe,Stories,6
+357,1650 to 1900,178,Alexander Pope,Essay on Man,6
+358,1650 to 1900,179,Arthur Rimbaud,A Season in Hell,6
+359,1650 to 1900,180,Walter Scott,Ivanhoe,6
+360,1650 to 1900,181,Richard Brinsley Sheridan,School for Scandal,6
+361,1650 to 1900,182,Laurence Sterne,A Sentimental Journey Through France and Italy,6
+362,1650 to 1900,183,Bram Stoker,Dracula,6
+363,1650 to 1900,184,Harriet Beecher Stowe,Uncle Tom's Cabin,6
+364,1650 to 1900,185,Jonathan Swift,A Modest Proposal,6
+365,1650 to 1900,186,Giambattista Vico,The New Science,6
+366,1650 to 1900,187,Voltaire,Zadig,6
+367,1650 to 1900,188,Émile Zola,L'Assommoir,6
+368,1650 to 1900,189,Émile Zola,Nana,6
+369,1650 to 1900,190,Hans Christian Andersen,Fables,5
+370,1650 to 1900,191,Honoré de Balzac,La Comédie Humaine,5
+371,1650 to 1900,192,Basho Matsuo,The Narrow Road to the Deep North,5
+372,1650 to 1900,193,Jeremy Bentham,Introduction to the Principles of Morals and Legislation,5
+373,1650 to 1900,194,William Blake,The Book of Thel,5
+374,1650 to 1900,195,William Blake,The Book of Urizen,5
+375,1650 to 1900,196,William Blake,Milton,5
+376,1650 to 1900,197,James Boswell,London Journal,5
+377,1650 to 1900,198,Thomas Browne,Religio Medici,5
+378,1650 to 1900,199,Lord Byron,Poems,5
+379,1650 to 1900,200,Lord Byron,Childe Harold's Pilgrimage,5
+380,1650 to 1900,201,Samuel Butler,The Way of All Flesh,5
+381,1650 to 1900,202,Carl von Clausewitz,On War,5
+382,1650 to 1900,203,Kate Chopin,The Awakening,5
+383,1650 to 1900,204,Samuel Taylor Coleridge,Poems,5
+384,1650 to 1900,205,Charles Dickens,Nicholas Nickleby,5
+385,1650 to 1900,206,Charles Dickens,Little Dorrit,5
+386,1650 to 1900,207,Arthur Conan Doyle,The Hound of the Baskervilles,5
+387,1650 to 1900,208,Arthur Conan Doyle,The Sign of the Four,5
+388,1650 to 1900,209,Arthur Conan Doyle,The Valley of Fear,5
+389,1650 to 1900,210,Ralph Waldo Emerson,The American Scholar,5
+390,1650 to 1900,211,Johann Wolfgang von Goethe,Poetry and Truth,5
+391,1650 to 1900,212,Johann Wolfgang von Goethe,Wilhelm Meister's Apprenticeship,5
+392,1650 to 1900,213,Thomas Hardy,Far From the Madding Crowd,5
+393,1650 to 1900,214,George Wilhelm Friedrich Hegel,Elements of the Philosophy of Right,5
+394,1650 to 1900,215,Henrik Ibsen,Plays,5
+395,1650 to 1900,216,John Keats,'Ode on a Grecian Urn',5
+396,1650 to 1900,217,John Keats,'Ode to a Nightingale',5
+397,1650 to 1900,218,Sǿren Kierkegaard,Fear and Trembling,5
+398,1650 to 1900,219,John Stuart Mill,Utilitarianism,5
+399,1650 to 1900,220,John Milton,Minor poems,5
+400,1650 to 1900,221,Molière,The Doctor in Spite of Himself,5
+401,1650 to 1900,222,Friedrich Nietzsche,The Genealogy of Morals,5
+402,1650 to 1900,223,Edgar Allan Poe,'The Fall of the House of Usher',5
+403,1650 to 1900,224,Edgar Allan Poe,'The Murders in the Rue Morgue',5
+404,1650 to 1900,225,Alexander Pope,Essay on Criticism,5
+405,1650 to 1900,226,Alexander Pushkin,The Captain's Daughter,5
+406,1650 to 1900,227,Jean Racine,Athalie,5
+407,1650 to 1900,228,Samuel Richardson,Clarissa,5
+408,1650 to 1900,229,Arthur Rimbaud,Illuminations,5
+409,1650 to 1900,230,Jean-Jacques Rousseau,Émile,5
+410,1650 to 1900,231,August Strindberg,Miss Julie,5
+411,1650 to 1900,232,John Millington Synge,The Playboy of the Western World,5
+412,1650 to 1900,233,Cornelius Tacitus,Germania,5
+413,1650 to 1900,234,William Makepeace Thackeray,Henry Esmond,5
+414,1650 to 1900,235,Leo Tolstoy,The Death of Ivan Ilyich,5
+415,1650 to 1900,236,Giorgio Vasari,The Lives of the Artists,5
+416,1650 to 1900,237,Jules Verne,Twenty Thousand Leagues Under the Sea,5
+417,1650 to 1900,238,Voltaire,Letters Concerning the English Nation,5
+418,1650 to 1900,239,Oscar Wilde,The Picture of Dorian Grey,5
+419,1900 to present,1,James Joyce,Ulysses,21
+420,1900 to present,2,Gabriel García Márquez,One Hundred Years of Solitude,19
+421,1900 to present,3,F Scott Fitzgerald,The Great Gatsby,17
+422,1900 to present,4,George Orwell,Nineteen Eighty-Four,17
+423,1900 to present,5,Marcel Proust,In Remembrance of Things Past,17
+424,1900 to present,6,Franz Kafka,The Trial,16
+425,1900 to present,7,Albert Camus,The Stranger,15
+426,1900 to present,8,Samuel Beckett,Waiting for Godot,14
+427,1900 to present,9,James Joyce,A Portrait of the Artist as a Young Man,14
+428,1900 to present,10,Franz Kafka,The Metamorphosis,14
+429,1900 to present,11,William Faulkner,The Sound and the Fury,13
+430,1900 to present,12,Ralph Ellison,Invisible Man,12
+431,1900 to present,13,Thomas Mann,The Magic Mountain,12
+432,1900 to present,14,John Steinbeck,The Grapes of Wrath,12
+433,1900 to present,15,Virginia Woolf,To the Lighthouse,12
+434,1900 to present,16,Henry Adams,The Education of Henry Adams,11
+435,1900 to present,17,T S Eliot,'The Waste Land',11
+436,1900 to present,18,Joseph Heller,Catch-22,11
+437,1900 to present,19,Vladimir Nabokov,Lolita,11
+438,1900 to present,20,Virginia Woolf,Mrs. Dalloway,11
+439,1900 to present,21,Chinua Achebe,Things Fall Apart,10
+440,1900 to present,22,T S Eliot,Four Quartets,10
+441,1900 to present,23,James Joyce,Dubliners,10
+442,1900 to present,24,D H Lawrence,Sons and Lovers,10
+443,1900 to present,25,Rachel Carson,Silent Spring,9
+444,1900 to present,26,Willa Cather,My Ántonia,9
+445,1900 to present,27,Aldous Huxley,Brave New World,9
+446,1900 to present,28,Franz Kafka,The Castle,9
+447,1900 to present,29,Toni Morrison,Beloved,9
+448,1900 to present,30,Albert Camus,The Plague,8
+449,1900 to present,31,William Faulkner,As I Lay Dying,8
+450,1900 to present,32,E M Forster,A Passage to India,8
+451,1900 to present,33,Ernest Hemingway,The Old Man and the Sea,8
+452,1900 to present,34,Vladimir Nabokov,Pale Fire,8
+453,1900 to present,35,Eugene O'Neill,Long Day's Journey Into Night,8
+454,1900 to present,36,Ezra Pound,Cantos,8
+455,1900 to present,37,Salman Rushdie,Midnight's Children,8
+456,1900 to present,38,J D Salinger,Catcher in the Rye,8
+457,1900 to present,39,Richard Wright,Native Son,8
+458,1900 to present,40,Simone Beauvoir,The Second Sex,7
+459,1900 to present,41,Mikhail Bulgakov,The Master and Margarita,7
+460,1900 to present,42,T S Eliot,Ash Wednesday,7
+461,1900 to present,43,William Faulkner,"Absalom, Absalom!",7
+462,1900 to present,44,Sigmund Freud,Civilization and Its Discontents,7
+463,1900 to present,45,Gabriel García Márquez,Love in the Time of Cholera,7
+464,1900 to present,46,Nathaniel Hawthorne,The House of Seven Gables,7
+465,1900 to present,47,Ernest Hemingway,The Sun Also Rises,7
+466,1900 to present,48,Ernest Hemingway,For Whom the Bell Tolls,7
+467,1900 to present,49,Zora Neale Hurston,Their Eyes Were Watching God,7
+468,1900 to present,50,William James,The Principles of Psychology,7
+469,1900 to present,51,William James,The Varieties of Religious Experience,7
+470,1900 to present,52,Thomas Mann,Death in Venice,7
+471,1900 to present,53,Jean-Paul Sartre,Nausea,7
+472,1900 to present,54,George Bernard Shaw,Man and Superman,7
+473,1900 to present,55,George Bernard Shaw,Pygmalion,7
+474,1900 to present,56,J R R Tolkien,The Lord of the Rings,7
+475,1900 to present,57,Edith Wharton,The House of Mirth,7
+476,1900 to present,58,Edith Wharton,The Age of Innocence,7
+477,1900 to present,59,James Agee,Let Us Now Praise Famous Men,6
+478,1900 to present,60,Margaret Atwood,The Handmaid's Tale,6
+479,1900 to present,61,Jorge Luis Borges,Ficciones,6
+480,1900 to present,62,Jorge Luis Borges,Labyrinths,6
+481,1900 to present,63,Joseph Conrad,Nostromo,6
+482,1900 to present,64,Albert Einstein,Relativity,6
+483,1900 to present,65,F Scott Fitzgerald,Tender Is the Night,6
+484,1900 to present,66,James George Frazer,The Golden Bough,6
+485,1900 to present,67,William Golding,Lord of the Flies,6
+486,1900 to present,68,Günter Grass,The Tin Drum,6
+487,1900 to present,69,Ernest Hemingway,A Farewell to Arms,6
+488,1900 to present,70,Henry James,The Golden Bowl,6
+489,1900 to present,71,Thomas Mann,Buddenbrooks,6
+490,1900 to present,72,Arthur Miller,Death of a Salesman,6
+491,1900 to present,73,Boris Pasternak,Doctor Zhivago,6
+492,1900 to present,74,Erich Maria Remarque,All Quiet on the Western Front,6
+493,1900 to present,75,Jean-Paul Sartre,No Exit,6
+494,1900 to present,76,Virginia Woolf,The Waves,6
+495,1900 to present,77,William Butler Yeats,The Wind Among the Reeds,6
+496,1900 to present,78,William Butler Yeats,The Shadowy Waters,6
+497,1900 to present,79,William Butler Yeats,Michael Robartes and the Dancer,6
+498,1900 to present,80,William Butler Yeats,The Tower,6
+499,1900 to present,81,William Butler Yeats,The Winding Stair,6
+500,1900 to present,82,William Butler Yeats,New Poems [1938],6
+501,1900 to present,83,Henry Adams,Mont-Saint-Michel and Chartres,5
+502,1900 to present,84,Sherwood Anderson,"Winesburg, Ohio",5
+503,1900 to present,85,Maya Angelou,I Know Why the Caged Bird Sings,5
+504,1900 to present,86,Italo Calvino,If on a Winter's Night a Traveler,5
+505,1900 to present,87,Louis-Ferdinand Céline,Journey to the End of Night,5
+506,1900 to present,88,T S Eliot,Journey of the Magi,5
+507,1900 to present,89,T S Eliot,Marina,5
+508,1900 to present,90,Robert Graves,"I, Claudius",5
+509,1900 to present,91,Knut Hamsun,Hunger,5
+510,1900 to present,92,James Joyce,Finnegans Wake,5
+511,1900 to present,93,Franz Kafka,In the Penal Colony,5
+512,1900 to present,94,Jack Kerouac,On the Road,5
+513,1900 to present,95,Ken Kesey,One Flew Over the Cuckoo's Nest,5
+514,1900 to present,96,Thomas S Kuhn,The Structure of Scientific Revolutions,5
+515,1900 to present,97,Giuseppe Tomasi di Lampedusa,The Leopard,5
+516,1900 to present,98,D H Lawrence,Women in Love,5
+517,1900 to present,99,Harper Lee,To Kill a Mockingbird,5
+518,1900 to present,100,Sinclair Lewis,Babbitt,5
+519,1900 to present,101,André Malraux,Man's Fate,5
+520,1900 to present,102,Daphne du Maurier,Rebecca,5
+521,1900 to present,103,Toni Morrison,Song of Solomon,5
+522,1900 to present,104,Robert Musil,The Man Without Qualities,5
+523,1900 to present,105,Sylvia Plath,The Bell Jar,5
+524,1900 to present,106,Rainer Maria Rilke,Duino Elegies,5
+525,1900 to present,107,J K Rowling,Harry Potter and the Sorcerer's Stone,5
+526,1900 to present,108,Antoine de Saint-Exupéry,The Little Prince,5
+527,1900 to present,109,Jean-Paul Sartre,Being and Nothingness,5
+528,1900 to present,110,Upton Sinclair,The Jungle,5
+529,1900 to present,111,Alexander Solzhenitsyn,A Day in the Life of Ivan Denisovich,5
+530,1900 to present,112,Robert Louis Stevenson,Treasure Island,5
+531,1900 to present,113,Robert Penn Warren,All the King's Men,5
+532,1900 to present,114,H G Wells,The Time Machine,5
+533,1900 to present,115,Edith Wharton,Ethan Frome,5
+534,1900 to present,116,Thornton Wilder,Our Town,5
+535,1900 to present,117,Tennessee Williams,The Glass Menagerie,5
+536,1900 to present,118,Tennessee Williams,A Streetcar Name Desire,5
+537,1900 to present,119,William Carlos Williams,Paterson,5
+538,1900 to present,120,Virginia Woolf,A Room of One's Own,5
+539,1900 to present,121,William Butler Yeats,Poems,5
+540,1900 to present,122,William Butler Yeats,The Collected Poems of W B Yeats,5
