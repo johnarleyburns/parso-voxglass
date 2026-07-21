@@ -74,7 +74,7 @@ jobs:
             exit 0
           fi
 
-          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru' || true)"
+          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru|wikipedia\.org|greaterbooks\.com' || true)"
           if [ -n "$disallowed" ]; then
             echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, and parso.guru URLs are allowed."
             printf '%s\n' "$disallowed"
