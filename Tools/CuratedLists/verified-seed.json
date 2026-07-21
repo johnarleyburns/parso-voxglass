@@ -1,0 +1,292 @@
+[
+  {
+    "workID": "homer-the-iliad",
+    "author": "Homer",
+    "title": "The Iliad",
+    "underlyingRow": 2,
+    "recordingTitle": "The Iliad",
+    "identifier": "illiad_0801_librivox3",
+    "librivoxURL": "https://librivox.org/the-iliad-by-homer-translated-by-samuel-butler/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-iliad",
+    "author": "Homer",
+    "title": "The Iliad",
+    "underlyingRow": 2,
+    "recordingTitle": "The Iliad (Version 2)",
+    "identifier": "iliadv2_2407_librivox",
+    "librivoxURL": "https://librivox.org/the-iliad-version-2-by-homer/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-iliad",
+    "author": "Homer",
+    "title": "The Iliad",
+    "underlyingRow": 2,
+    "recordingTitle": "The Iliad of Homer",
+    "identifier": "iliad_of_homer_1011_librivox",
+    "librivoxURL": "https://librivox.org/the-iliad-of-homer-by-homer/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-iliad",
+    "author": "Homer",
+    "title": "The Iliad",
+    "underlyingRow": 2,
+    "recordingTitle": "The Iliad (Pope Translation)",
+    "identifier": "iliad_popetranslation_1506_librivox",
+    "librivoxURL": "https://librivox.org/the-iliad-pope-translation-by-homer/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-odyssey",
+    "author": "Homer",
+    "title": "The Odyssey",
+    "underlyingRow": 3,
+    "recordingTitle": "The Odyssey",
+    "identifier": "odyssey_butler_librivox",
+    "librivoxURL": "https://librivox.org/the-odyssey-by-homer/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-odyssey",
+    "author": "Homer",
+    "title": "The Odyssey",
+    "underlyingRow": 3,
+    "recordingTitle": "The Odyssey (Version 3)",
+    "identifier": "odyssey_ver_3_1909_librivox",
+    "librivoxURL": "https://librivox.org/the-odyssey-version-3-by-homer/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-odyssey",
+    "author": "Homer",
+    "title": "The Odyssey",
+    "underlyingRow": 3,
+    "recordingTitle": "The Odyssey (Version 4)",
+    "identifier": "odyssey_2409_librivox",
+    "librivoxURL": "https://librivox.org/the-odyssey-version-4-by-homer/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "homer-the-odyssey",
+    "author": "Homer",
+    "title": "The Odyssey",
+    "underlyingRow": 3,
+    "recordingTitle": "The Odysseys of Homer",
+    "identifier": "odysseysofhomer_1511_librivox",
+    "librivoxURL": "https://librivox.org/the-odysseys-of-homer-by-homer-and-chapman/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "aeschylus-plays",
+    "author": "Aeschylus",
+    "title": "Plays",
+    "underlyingRow": 4,
+    "recordingTitle": "The Oresteia",
+    "identifier": "oresteia_1002_librivox",
+    "librivoxURL": "https://librivox.org/the-oresteia-by-aeschylus/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "aeschylus-plays",
+    "author": "Aeschylus",
+    "title": "Plays",
+    "underlyingRow": 4,
+    "recordingTitle": "Agamemnon (Morshead Translation)",
+    "identifier": "agamemnon_morshead_translation_1511_librivox",
+    "librivoxURL": "https://librivox.org/agamemnon-morshead-translation-by-aeschylus/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "aeschylus-plays",
+    "author": "Aeschylus",
+    "title": "Plays",
+    "underlyingRow": 4,
+    "recordingTitle": "Agamemnon (Browning Translation)",
+    "identifier": "agamemnon_1511_librivox",
+    "librivoxURL": "https://librivox.org/agamemnon-by-aeschylus/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "sophocles-plays",
+    "author": "Sophocles",
+    "title": "Plays",
+    "underlyingRow": 5,
+    "recordingTitle": "Oedipus Rex (Storr Translation)",
+    "identifier": "oedipus_rex_1008_librivox",
+    "librivoxURL": "https://librivox.org/oedipus-rex-by-sophocles/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "sophocles-plays",
+    "author": "Sophocles",
+    "title": "Plays",
+    "underlyingRow": 5,
+    "recordingTitle": "Oedipus Rex (Murray Translation)",
+    "identifier": "oedipusrex_1507_librivox",
+    "librivoxURL": "https://librivox.org/oedipus-rex-by-sophocles-2/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "sophocles-plays",
+    "author": "Sophocles",
+    "title": "Plays",
+    "underlyingRow": 5,
+    "recordingTitle": "Antigone",
+    "identifier": "antigone_1009_librivox",
+    "librivoxURL": "https://librivox.org/antigone-by-sophocles/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "sophocles-plays",
+    "author": "Sophocles",
+    "title": "Plays",
+    "underlyingRow": 5,
+    "recordingTitle": "Antigone (Plumptre Translation)",
+    "identifier": "antigone_1507_librivox",
+    "librivoxURL": "https://librivox.org/antigone-plumptre-translation-by-sophocles/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "euripides-plays",
+    "author": "Euripides",
+    "title": "Plays",
+    "underlyingRow": 6,
+    "recordingTitle": "Medea",
+    "identifier": "medea_1204_librivox",
+    "librivoxURL": "https://librivox.org/medea-by-euripides/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "euripides-plays",
+    "author": "Euripides",
+    "title": "Plays",
+    "underlyingRow": 6,
+    "recordingTitle": "Alcestis",
+    "identifier": "alcestis_1303_librivox",
+    "librivoxURL": "https://librivox.org/alcestis-by-euripides/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "euripides-plays",
+    "author": "Euripides",
+    "title": "Plays",
+    "underlyingRow": 6,
+    "recordingTitle": "Andromache",
+    "identifier": "andromache_2310_librivox",
+    "librivoxURL": "https://librivox.org/andromache-by-euripides/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "aristophanes-plays",
+    "author": "Aristophanes",
+    "title": "Plays",
+    "underlyingRow": 7,
+    "recordingTitle": "The Clouds",
+    "identifier": "clouds_1506_librivox",
+    "librivoxURL": "https://librivox.org/the-clouds-by-aristophanes/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "herodotus-the-history-of-the-persian-wars",
+    "author": "Herodotus",
+    "title": "The History of the Persian Wars",
+    "underlyingRow": 8,
+    "recordingTitle": "Herodotus' Histories Vol. 1",
+    "identifier": "herodotus_histories1_0811_librivox1",
+    "librivoxURL": "https://librivox.org/herodotus-histories-vol-1/",
+    "matchClass": "Exact multipart"
+  },
+  {
+    "workID": "herodotus-the-history-of-the-persian-wars",
+    "author": "Herodotus",
+    "title": "The History of the Persian Wars",
+    "underlyingRow": 8,
+    "recordingTitle": "Herodotus' Histories Vol. 2",
+    "identifier": "herodotus_histories_2_0906_librivox2",
+    "librivoxURL": "https://librivox.org/herodotus-histories-vol-2/",
+    "matchClass": "Exact multipart"
+  },
+  {
+    "workID": "thucydides-the-history-of-the-peloponnesian-war",
+    "author": "Thucydides",
+    "title": "The History of the Peloponnesian War",
+    "underlyingRow": 9,
+    "recordingTitle": "The History of the Peloponnesian War",
+    "identifier": "history_peloponnesian_war_librivox",
+    "librivoxURL": "https://librivox.org/the-history-of-the-peloponnesian-war-by-thucydides",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "thucydides-the-history-of-the-peloponnesian-war",
+    "author": "Thucydides",
+    "title": "The History of the Peloponnesian War",
+    "underlyingRow": 9,
+    "recordingTitle": "The History of the Peloponnesian War (Version 2)",
+    "identifier": "historyofthepeloponnesianwar2_2603_librivox",
+    "librivoxURL": "https://librivox.org/history-of-the-peloponnesian-war2-thucydides/",
+    "matchClass": "Exact"
+  },
+  {
+    "workID": "plato-dialogues",
+    "author": "Plato",
+    "title": "Dialogues",
+    "underlyingRow": 10,
+    "recordingTitle": "Plato's Republic",
+    "identifier": "platos_republic_0902_librivox1",
+    "librivoxURL": "https://librivox.org/platos_republic/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "plato-the-seventh-letter",
+    "author": "Plato",
+    "title": "The Seventh Letter",
+    "underlyingRow": 11,
+    "recordingTitle": "No exact completed recording located in this pass",
+    "identifier": "",
+    "librivoxURL": "",
+    "matchClass": "No exact match"
+  },
+  {
+    "workID": "aristotle-works",
+    "author": "Aristotle",
+    "title": "Works",
+    "underlyingRow": 12,
+    "recordingTitle": "Poetics",
+    "identifier": "poetics_librivox",
+    "librivoxURL": "https://librivox.org/poetics-by-aristotle/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "aristotle-works",
+    "author": "Aristotle",
+    "title": "Works",
+    "underlyingRow": 12,
+    "recordingTitle": "The Nicomachean Ethics",
+    "identifier": "nicomachean_ethics_ge_librivox",
+    "librivoxURL": "https://librivox.org/the-nicomachean-ethics-by-aristotle/",
+    "matchClass": "Exact constituent"
+  },
+  {
+    "workID": "hippocrates-works",
+    "author": "Hippocrates",
+    "title": "Works",
+    "underlyingRow": 13,
+    "recordingTitle": "The Oath and Law of Hippocrates — Short Nonfiction Collection Vol. 002",
+    "identifier": "nonfiction002_librivox",
+    "librivoxURL": "https://librivox.org/librivox-short-nonfiction-collection-vol-002/",
+    "matchClass": "Exact excerpt/collection"
+  },
+  {
+    "workID": "hippocrates-works",
+    "author": "Hippocrates",
+    "title": "Works",
+    "underlyingRow": 13,
+    "recordingTitle": "The Oath and Law of Hippocrates — Short Nonfiction Collection Vol. 008",
+    "identifier": "short_nonfiction_008_librivox",
+    "librivoxURL": "https://librivox.org/short-nonfiction-collection-008-by-various/",
+    "matchClass": "Exact excerpt/collection"
+  }
+]

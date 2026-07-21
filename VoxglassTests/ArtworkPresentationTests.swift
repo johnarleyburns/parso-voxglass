@@ -95,19 +95,27 @@ final class ArtworkPresentationTests: XCTestCase {
 
     func testEveryExploreCollectionHasBundledAsset() {
         let assetCatalog = repoRoot.appendingPathComponent("Voxglass/Resources/Assets.xcassets", isDirectory: true)
+        // Per-language Great Books variants share the "collection-great-books" artwork.
+        let shareGreatBooksArtwork: Set<String> = [
+            "great-books-spa", "great-books-deu", "great-books-ita", "great-books-grc"
+        ]
 
         for collection in IACollectionStore.collections(for: []) {
-            let expected = "collection-\(collection.id)"
-            XCTAssertEqual(collection.assetName, expected, collection.id)
+            if shareGreatBooksArtwork.contains(collection.id) {
+                XCTAssertEqual(collection.assetName, "collection-great-books", collection.id)
+            } else {
+                let expected = "collection-\(collection.id)"
+                XCTAssertEqual(collection.assetName, expected, collection.id)
 
-            let imageset = assetCatalog.appendingPathComponent("\(expected).imageset", isDirectory: true)
-            let contents = imageset.appendingPathComponent("Contents.json")
-            XCTAssertTrue(FileManager.default.fileExists(atPath: contents.path), "\(expected) is missing Contents.json")
+                let imageset = assetCatalog.appendingPathComponent("\(expected).imageset", isDirectory: true)
+                let contents = imageset.appendingPathComponent("Contents.json")
+                XCTAssertTrue(FileManager.default.fileExists(atPath: contents.path), "\(expected) is missing Contents.json")
 
-            let imageExists = ["jpg", "jpeg", "png"].contains { ext in
-                FileManager.default.fileExists(atPath: imageset.appendingPathComponent("\(expected).\(ext)").path)
+                let imageExists = ["jpg", "jpeg", "png"].contains { ext in
+                    FileManager.default.fileExists(atPath: imageset.appendingPathComponent("\(expected).\(ext)").path)
+                }
+                XCTAssertTrue(imageExists, "\(expected) is missing an image file")
             }
-            XCTAssertTrue(imageExists, "\(expected) is missing an image file")
         }
     }
 

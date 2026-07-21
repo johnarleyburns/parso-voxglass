@@ -63,3 +63,6 @@ fastlane/test_output
 
 .DS_Store
 *.voxglassbackup
+
+# Curated lists generator cache
+Tools/CuratedLists/.cache/

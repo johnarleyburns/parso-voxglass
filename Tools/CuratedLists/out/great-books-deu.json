@@ -1,0 +1,226 @@
+[
+  {
+    "author" : "Homer",
+    "identifier" : "ilias_0810_librivox",
+    "language" : "deu",
+    "rank" : 1,
+    "title" : "Ilias",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "odyssee_0811_librivox",
+    "language" : "deu",
+    "rank" : 2,
+    "title" : "Odyssee",
+    "workID" : "homer-the-odyssey"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigenie_in_aulis_1010_librivox",
+    "language" : "deu",
+    "rank" : 3,
+    "title" : "Iphigenie in Aulis",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Thucydides",
+    "identifier" : "peloponnesischenkriegs_1404_librivox",
+    "language" : "deu",
+    "rank" : 4,
+    "title" : "Geschichte des Peloponnesischen Kriegs",
+    "workID" : "thucydides-the-history-of-the-peloponnesian-war"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "kriton_0911_librivox",
+    "language" : "deu",
+    "rank" : 5,
+    "title" : "Kriton",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "sokrates_verteidigung_r_librivox",
+    "language" : "deu",
+    "rank" : 6,
+    "title" : "Des Sokrates Verteidigung",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Desiderius Erasmus",
+    "identifier" : "lob_der_narrheit_1503_librivox",
+    "language" : "deu",
+    "rank" : 7,
+    "title" : "Das Lob der Narrheit",
+    "workID" : "desiderius-erasmus-praise-of-folly"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "don_quixote_band_1_1805_librivox",
+    "language" : "deu",
+    "rank" : 8,
+    "title" : "Leben und Taten des scharfsinnigen Edlen Don Quixote von la Mancha, Band 1",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Jonathan Swift",
+    "identifier" : "gullivers_reisen_2004_librivox",
+    "language" : "deu",
+    "rank" : 9,
+    "title" : "Gullivers Reisen",
+    "workID" : "jonathan-swift-gullivers-travels"
+  },
+  {
+    "author" : "Voltaire",
+    "identifier" : "kandid_oder_die_beste_welt_ak_librivox",
+    "language" : "deu",
+    "rank" : 10,
+    "title" : "Kandid oder die beste Welt",
+    "workID" : "voltaire-candide"
+  },
+  {
+    "author" : "Immanuel Kant",
+    "identifier" : "zum_ewigen_frieden_ak_librivox",
+    "language" : "deu",
+    "rank" : 11,
+    "title" : "Zum ewigen Frieden. Ein philosophischer Entwurf",
+    "workID" : "immanuel-kant-groundwork-of-the-metaphysics-of-morals"
+  },
+  {
+    "author" : "Friedrich Nietzsche",
+    "identifier" : "goetzendaemmerung_ry_librivox",
+    "language" : "deu",
+    "rank" : 12,
+    "title" : "Götzendämmerung",
+    "workID" : "friedrich-nietzsche-beyond-good-and-evil"
+  },
+  {
+    "author" : "Friedrich Nietzsche",
+    "identifier" : "antichrist_1504_librivox",
+    "language" : "deu",
+    "rank" : 13,
+    "title" : "Der Antichrist",
+    "workID" : "friedrich-nietzsche-beyond-good-and-evil"
+  },
+  {
+    "author" : "Friedrich Nietzsche",
+    "identifier" : "tolle_mensch_librivox",
+    "language" : "deu",
+    "rank" : 14,
+    "title" : "Der tolle Mensch",
+    "workID" : "friedrich-nietzsche-beyond-good-and-evil"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "faust1_1012_librivox",
+    "language" : "deu",
+    "rank" : 15,
+    "title" : "Faust - Der Tragödie erster Teil",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "leiden_werther_librivox",
+    "language" : "deu",
+    "rank" : 16,
+    "title" : "Die Leiden des jungen Werther",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "faust1teil_1412_librivox",
+    "language" : "deu",
+    "rank" : 17,
+    "title" : "Faust: Der Tragödie erster Teil",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "faust2_1008_librivox",
+    "language" : "deu",
+    "rank" : 18,
+    "title" : "Faust, Der Tragödie zweiter Teil",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "querkopf_wilson_2209_librivox",
+    "language" : "deu",
+    "rank" : 19,
+    "title" : "Querkopf Wilson",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "huckleberryfinn_2607_librivox",
+    "language" : "deu",
+    "rank" : 20,
+    "title" : "Abenteuer und Fahrten des Huckleberry Finn",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "tomsawyers_2606_librivox",
+    "language" : "deu",
+    "rank" : 21,
+    "title" : "Die Abenteuer Tom Sawyers (version 2)",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "tomsawyer_crow_librivox",
+    "language" : "deu",
+    "rank" : 22,
+    "title" : "Die Abenteuer Tom Sawyers",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Karl Marx; Friedrich Engels",
+    "identifier" : "manifestkommunistischen_librivox",
+    "language" : "deu",
+    "rank" : 23,
+    "title" : "Manifest der Kommunistischen Partei, von Karl Marx und Friedrich Engels",
+    "workID" : "karl-marx-friedrich-engels-manifesto-of-the-communist-party"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "herr_und_knecht_1406_librivox",
+    "language" : "deu",
+    "rank" : 24,
+    "title" : "Herr und Knecht",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "anna_karenina_deutsch_1610_librivox",
+    "language" : "deu",
+    "rank" : 25,
+    "title" : "Anna Karenina",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Sigmund Freud",
+    "identifier" : "ueber_psychoanalyse_1109_librivox",
+    "language" : "deu",
+    "rank" : 26,
+    "title" : "Über Psychoanalyse",
+    "workID" : "sigmund-freud-a-general-introduction-to-psychoanalysis"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "verwandlung_mw_0811_librivox",
+    "language" : "deu",
+    "rank" : 27,
+    "title" : "Die Verwandlung",
+    "workID" : "franz-kafka-the-metamorphosis"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "der_prozess_ava_librivox",
+    "language" : "deu",
+    "rank" : 28,
+    "title" : "Der Prozess",
+    "workID" : "franz-kafka-the-metamorphosis"
+  }
+]

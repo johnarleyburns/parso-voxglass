@@ -1,0 +1,266 @@
+[
+  {
+    "author" : "Homer",
+    "identifier" : "iliada_2504_librivox",
+    "language" : "spa",
+    "rank" : 1,
+    "title" : "La Ilíada (version 2)",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "iliada_1505_librivox",
+    "language" : "spa",
+    "rank" : 2,
+    "title" : "La Ilíada",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "electra_spanish_2605_librivox",
+    "language" : "spa",
+    "rank" : 3,
+    "title" : "Electra",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "tragediassofocles_1606_librivox",
+    "language" : "spa",
+    "rank" : 4,
+    "title" : "Las Siete Tragedias de Sófocles",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "medea_2602_librivox",
+    "language" : "spa",
+    "rank" : 5,
+    "title" : "Medea",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "orestes_2606_librivox",
+    "language" : "spa",
+    "rank" : 6,
+    "title" : "Orestes",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Herodotus",
+    "identifier" : "librovidelahistoriadeherodoto_1604_librivox",
+    "language" : "spa",
+    "rank" : 7,
+    "title" : "Libro VI de la Historia de Heródoto",
+    "workID" : "herodotus-the-history-of-the-persian-wars"
+  },
+  {
+    "author" : "Herodotus",
+    "identifier" : "historiaherodoto4_1508_librivox",
+    "language" : "spa",
+    "rank" : 8,
+    "title" : "Libro IV de la Historia de Heródoto",
+    "workID" : "herodotus-the-history-of-the-persian-wars"
+  },
+  {
+    "author" : "Herodotus",
+    "identifier" : "libro_ix_historia_herodoto_1812_librivox",
+    "language" : "spa",
+    "rank" : 9,
+    "title" : "Libro IX de la Historia de Heródoto",
+    "workID" : "herodotus-the-history-of-the-persian-wars"
+  },
+  {
+    "author" : "Herodotus",
+    "identifier" : "historiaherodoto5_1601_librivox",
+    "language" : "spa",
+    "rank" : 10,
+    "title" : "Libro V de la Historia de Heródoto",
+    "workID" : "herodotus-the-history-of-the-persian-wars"
+  },
+  {
+    "author" : "Herodotus",
+    "identifier" : "historiadeherodoto7_1712_librivox",
+    "language" : "spa",
+    "rank" : 11,
+    "title" : "Libro VII de la Historia de Heródoto",
+    "workID" : "herodotus-the-history-of-the-persian-wars"
+  },
+  {
+    "author" : "Herodotus",
+    "identifier" : "libro_viii_historia_de_herodoto_1801_librivox",
+    "language" : "spa",
+    "rank" : 12,
+    "title" : "Libro VIII de la Historia de Heródoto",
+    "workID" : "herodotus-the-history-of-the-persian-wars"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "criton_1601_librivox",
+    "language" : "spa",
+    "rank" : 13,
+    "title" : "Critón o el deber",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Marcus Aurelius",
+    "identifier" : "meditaciones_2210_librivox",
+    "language" : "spa",
+    "rank" : 14,
+    "title" : "Meditaciones",
+    "workID" : "marcus-aurelius-meditations"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "la_divina_comedia_infierno_2007_librivox",
+    "language" : "spa",
+    "rank" : 15,
+    "title" : "La Divina Comedia - Infierno",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divinacomedia_1501_librivox",
+    "language" : "spa",
+    "rank" : 16,
+    "title" : "La Divina Comedia",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Niccolò Machiavelli",
+    "identifier" : "elprincipe_2601_librivox",
+    "language" : "spa",
+    "rank" : 17,
+    "title" : "El príncipe",
+    "workID" : "niccolo-machiavelli-the-prince"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "hamlet_vv_2501_librivox",
+    "language" : "spa",
+    "rank" : 18,
+    "title" : "Hamlet (Spanish)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "macbeth_1608_librivox",
+    "language" : "spa",
+    "rank" : 19,
+    "title" : "Macbeth",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "mercaderdevenecia_1810_librivox",
+    "language" : "spa",
+    "rank" : 20,
+    "title" : "El Mercader de Venecia",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "romeoyjulieta_2303_librivox",
+    "language" : "spa",
+    "rank" : 21,
+    "title" : "Romeo y Julieta",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "don_quijote_2_1001_librivox",
+    "language" : "spa",
+    "rank" : 22,
+    "title" : "Don Quijote, Volume 2",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "donquijote_2507_librivox",
+    "language" : "spa",
+    "rank" : 23,
+    "title" : "El ingenioso hidalgo Don Quijote de la Mancha",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "don_quijote_vol1_0706_librivox",
+    "language" : "spa",
+    "rank" : 24,
+    "title" : "Don Quijote, Volume 1",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Voltaire",
+    "identifier" : "candido_2604_librivox",
+    "language" : "spa",
+    "rank" : 25,
+    "title" : "Cándido o el optimismo",
+    "workID" : "voltaire-candide"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "fausto_primera_parte_2006_librivox",
+    "language" : "spa",
+    "rank" : 26,
+    "title" : "Fausto. Primera parte",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Charles Dickens",
+    "identifier" : "cantico_de_navidad_2112_librivox",
+    "language" : "spa",
+    "rank" : 27,
+    "title" : "El Cántico de Navidad",
+    "workID" : "charles-dickens-little-dorrit"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "aventurashuck_2408_librivox",
+    "language" : "spa",
+    "rank" : 28,
+    "title" : "Aventuras de Huck",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "sonataakreutzer_2210_librivox",
+    "language" : "spa",
+    "rank" : 29,
+    "title" : "La sonata a Kreutzer",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "muertedeivanilitch_2107_librivox",
+    "language" : "spa",
+    "rank" : 30,
+    "title" : "La muerte de Ivan Ilitch",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Joseph Conrad",
+    "identifier" : "huespedsecreto_2112_librivox",
+    "language" : "spa",
+    "rank" : 31,
+    "title" : "El huésped secreto",
+    "workID" : "joseph-conrad-heart-of-darkness"
+  },
+  {
+    "author" : "Marcel Proust",
+    "identifier" : "porelcaminodeswanntomoi_2402_librivox",
+    "language" : "spa",
+    "rank" : 32,
+    "title" : "Por el camino de Swann Tomo I",
+    "workID" : "marcel-proust-swann-in-love"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "lametamorfosis_2101_librivox",
+    "language" : "spa",
+    "rank" : 33,
+    "title" : "La metamorfosis",
+    "workID" : "franz-kafka-the-metamorphosis"
+  }
+]

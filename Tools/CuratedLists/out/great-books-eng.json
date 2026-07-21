@@ -1,0 +1,3242 @@
+[
+  {
+    "author" : "Homer",
+    "identifier" : "iliad_of_homer_1011_librivox",
+    "language" : "eng",
+    "rank" : 1,
+    "title" : "The Iliad of Homer",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "illiad_0801_librivox3",
+    "language" : "eng",
+    "rank" : 2,
+    "title" : "The Iliad",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "iliad_popetranslation_1506_librivox",
+    "language" : "eng",
+    "rank" : 3,
+    "title" : "The Iliad (Pope Translation)",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "iliadsofhomer_2510_librivox",
+    "language" : "eng",
+    "rank" : 4,
+    "title" : "The Iliads of Homer",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "iliadv2_2407_librivox",
+    "language" : "eng",
+    "rank" : 5,
+    "title" : "The Iliad (Version 2)",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "iliad_1403_librivox",
+    "language" : "eng",
+    "rank" : 6,
+    "title" : "The Iliad of Homer, Rendered into English Blank Verse",
+    "workID" : "homer-the-iliad"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "odyssey_2409_librivox",
+    "language" : "eng",
+    "rank" : 7,
+    "title" : "The Odyssey",
+    "workID" : "homer-the-odyssey"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "odyssey_butler_librivox",
+    "language" : "eng",
+    "rank" : 8,
+    "title" : "The Odyssey",
+    "workID" : "homer-the-odyssey"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "odysseysofhomer_1511_librivox",
+    "language" : "eng",
+    "rank" : 9,
+    "title" : "The Odysseys of Homer",
+    "workID" : "homer-the-odyssey"
+  },
+  {
+    "author" : "Homer",
+    "identifier" : "odyssey_ver_3_1909_librivox",
+    "language" : "eng",
+    "rank" : 10,
+    "title" : "The Odyssey, Version 3",
+    "workID" : "homer-the-odyssey"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "agamemnon_1511_librivox",
+    "language" : "eng",
+    "rank" : 11,
+    "title" : "Agamemnon (Browning Translation)",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "prometheusbound_2408_librivox",
+    "language" : "eng",
+    "rank" : 12,
+    "title" : "Prometheus Bound",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "furies_1511_librivox",
+    "language" : "eng",
+    "rank" : 13,
+    "title" : "The Furies (Morshead Translation)",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "oresteia_1002_librivox",
+    "language" : "eng",
+    "rank" : 14,
+    "title" : "The Oresteia",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "thepersians_1404_librivox",
+    "language" : "eng",
+    "rank" : 15,
+    "title" : "The Persians",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "agamemnon_morshead_translation_1511_librivox",
+    "language" : "eng",
+    "rank" : 16,
+    "title" : "Agamemnon (Morshead Translation)",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "prometheusbound_1507_librivox",
+    "language" : "eng",
+    "rank" : 17,
+    "title" : "Prometheus Bound (Thoreau Translation)",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "prometheus_bound_1302_librivox",
+    "language" : "eng",
+    "rank" : 18,
+    "title" : "Prometheus Bound",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "thepersians_1507_librivox",
+    "language" : "eng",
+    "rank" : 19,
+    "title" : "The Persians (version 2)",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "sevenagainstthebes_way_1512_librivox",
+    "language" : "eng",
+    "rank" : 20,
+    "title" : "Seven Against Thebes",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "suppliantmaidens_1512_librivox",
+    "language" : "eng",
+    "rank" : 21,
+    "title" : "The Suppliant Maidens",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "prometheus_bound_1506_librivox",
+    "language" : "eng",
+    "rank" : 22,
+    "title" : "Prometheus Bound (Browning Translation)",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Aeschylus",
+    "identifier" : "seven_against_thebes_1210_librivox",
+    "language" : "eng",
+    "rank" : 23,
+    "title" : "Seven Against Thebes",
+    "workID" : "aeschylus-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "electra_1012_librivox",
+    "language" : "eng",
+    "rank" : 24,
+    "title" : "Electra",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "antigone_1009_librivox",
+    "language" : "eng",
+    "rank" : 25,
+    "title" : "Antigone",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "trachiniai_campbell_translation_1512_librivox",
+    "language" : "eng",
+    "rank" : 26,
+    "title" : "Trachiniai (Campbell Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "oedipusatcolonus_1507_librivox",
+    "language" : "eng",
+    "rank" : 27,
+    "title" : "Oedipus at Colonus (Jebb Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "electra_murray_translation_1506_librivox",
+    "language" : "eng",
+    "rank" : 28,
+    "title" : "Electra (Murray Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "philoctetes_1205_librivox",
+    "language" : "eng",
+    "rank" : 29,
+    "title" : "Philoctetes",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "ajax_campbell_translation_1512_librivox",
+    "language" : "eng",
+    "rank" : 30,
+    "title" : "Ajax (Campbell Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "oedipusatcolonus_1009_librivox",
+    "language" : "eng",
+    "rank" : 31,
+    "title" : "Oedipus at Colonus",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "oedipusrex_1507_librivox",
+    "language" : "eng",
+    "rank" : 32,
+    "title" : "Oedipus Rex (Murray Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "oedipus_rex_1008_librivox",
+    "language" : "eng",
+    "rank" : 33,
+    "title" : "Oedipus Rex",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "electra_1506_librivox",
+    "language" : "eng",
+    "rank" : 34,
+    "title" : "Electra (Storr Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "philoctetes_campbell_translation_1512_librivox",
+    "language" : "eng",
+    "rank" : 35,
+    "title" : "Philoctetes (Campbell Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Sophocles",
+    "identifier" : "antigone_1507_librivox",
+    "language" : "eng",
+    "rank" : 36,
+    "title" : "Antigone (Plumptre Translation)",
+    "workID" : "sophocles-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "medea_way_translation_1601_librivox",
+    "language" : "eng",
+    "rank" : 37,
+    "title" : "Medea (Way Translation)",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigenia_in_aulis_1308_librivox",
+    "language" : "eng",
+    "rank" : 38,
+    "title" : "Iphigenia in Aulis",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "medea_1204_librivox",
+    "language" : "eng",
+    "rank" : 39,
+    "title" : "Medea",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigeniaintauris_1510_librivox",
+    "language" : "eng",
+    "rank" : 40,
+    "title" : "Iphigenia in Tauris",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigeniaintauris_2507_librivox",
+    "language" : "eng",
+    "rank" : 41,
+    "title" : "Iphigenia in Tauris",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "alcestis_1303_librivox",
+    "language" : "eng",
+    "rank" : 42,
+    "title" : "Alcestis",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "thetrojanwomen_1008_librivox",
+    "language" : "eng",
+    "rank" : 43,
+    "title" : "The Trojan Women",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "hecuba_1503_librivox",
+    "language" : "eng",
+    "rank" : 44,
+    "title" : "Hecuba",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "hippolytus_1209_librivox",
+    "language" : "eng",
+    "rank" : 45,
+    "title" : "Hippolytus",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "alcestis_way_translation_1601_librivox",
+    "language" : "eng",
+    "rank" : 46,
+    "title" : "Alcestis (Way Translation)",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigenia_tauris_murray_translation_1506_librivox",
+    "language" : "eng",
+    "rank" : 47,
+    "title" : "Iphigenia in Tauris (Murray Translation)",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "trojan_women_1507_librivox",
+    "language" : "eng",
+    "rank" : 48,
+    "title" : "The Trojan Women (Coleridge Translation)",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "andromache_2310_librivox",
+    "language" : "eng",
+    "rank" : 49,
+    "title" : "Andromache",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "iphigenia_in_aulis_1506_librivox",
+    "language" : "eng",
+    "rank" : 50,
+    "title" : "Iphigenia in Aulis (Way translation)",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "andromache_2008_librivox",
+    "language" : "eng",
+    "rank" : 51,
+    "title" : "Andromache",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "ion_spz_librivox",
+    "language" : "eng",
+    "rank" : 52,
+    "title" : "Ion",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Euripides",
+    "identifier" : "orestes_1505_librivox",
+    "language" : "eng",
+    "rank" : 53,
+    "title" : "Orestes",
+    "workID" : "euripides-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "birds_2303_librivox",
+    "language" : "eng",
+    "rank" : 54,
+    "title" : "The Birds",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "lysistrata_1709_librivox",
+    "language" : "eng",
+    "rank" : 55,
+    "title" : "Lysistrata (version 2)",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "acharnians_billson_translation_1506_librivox",
+    "language" : "eng",
+    "rank" : 56,
+    "title" : "The Acharnians (Billson Translation)",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "clouds_1506_librivox",
+    "language" : "eng",
+    "rank" : 57,
+    "title" : "The Clouds",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "lysistrata_version_3_1809_librivox",
+    "language" : "eng",
+    "rank" : 58,
+    "title" : "Lysistrata (version 3)",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "lysistrata_1012_librivox",
+    "language" : "eng",
+    "rank" : 59,
+    "title" : "Lysistrata",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "the_frogs_1310_librivox",
+    "language" : "eng",
+    "rank" : 60,
+    "title" : "The Frogs",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Aristophanes",
+    "identifier" : "peace_2202_librivox",
+    "language" : "eng",
+    "rank" : 61,
+    "title" : "Peace",
+    "workID" : "aristophanes-plays"
+  },
+  {
+    "author" : "Thucydides",
+    "identifier" : "historyofthepeloponnesianwar2_2603_librivox",
+    "language" : "eng",
+    "rank" : 62,
+    "title" : "The History of the Peloponnesian War (Version 2)",
+    "workID" : "thucydides-the-history-of-the-peloponnesian-war"
+  },
+  {
+    "author" : "Thucydides",
+    "identifier" : "history_peloponnesian_war_librivox",
+    "language" : "eng",
+    "rank" : 63,
+    "title" : "The History of the Peloponnesian War",
+    "workID" : "thucydides-the-history-of-the-peloponnesian-war"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "apology_plato_bn_librivox",
+    "language" : "eng",
+    "rank" : 64,
+    "title" : "Apology",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "meno_cc_librivox",
+    "language" : "eng",
+    "rank" : 65,
+    "title" : "Meno",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "apologyversion2_1412_librivox",
+    "language" : "eng",
+    "rank" : 66,
+    "title" : "Apology (version 2)",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "euthydemus_ge_1403_librivox",
+    "language" : "eng",
+    "rank" : 67,
+    "title" : "Euthydemus",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "laws_1209_librivox",
+    "language" : "eng",
+    "rank" : 68,
+    "title" : "Laws",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "laches_ge_1402_librivox",
+    "language" : "eng",
+    "rank" : 69,
+    "title" : "Laches",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "statesman_ge_1312_librivox",
+    "language" : "eng",
+    "rank" : 70,
+    "title" : "Statesman",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "critias_1301_librivox",
+    "language" : "eng",
+    "rank" : 71,
+    "title" : "Critias",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "sophist_1311_librivox",
+    "language" : "eng",
+    "rank" : 72,
+    "title" : "Sophist",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "lysis_1402_librivox",
+    "language" : "eng",
+    "rank" : 73,
+    "title" : "Lysis",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "gorgias_1211",
+    "language" : "eng",
+    "rank" : 74,
+    "title" : "Gorgias",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "phaedo_1105_librivox",
+    "language" : "eng",
+    "rank" : 75,
+    "title" : "Phaedo",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "euthyphro_librivox",
+    "language" : "eng",
+    "rank" : 76,
+    "title" : "Euthyphro",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "symposium_1403_librivox",
+    "language" : "eng",
+    "rank" : 77,
+    "title" : "The Symposium",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "platos_republic_0902_librivox1",
+    "language" : "eng",
+    "rank" : 78,
+    "title" : "Plato's Republic",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "apology_rz_librivox",
+    "language" : "eng",
+    "rank" : 79,
+    "title" : "The Apology of Socrates",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "protagoras_1303_librivox",
+    "language" : "eng",
+    "rank" : 80,
+    "title" : "Protagoras",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "laws_1801_librivox",
+    "language" : "eng",
+    "rank" : 81,
+    "title" : "Laws (version 2)",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "philebus_ge_1401_librivox",
+    "language" : "eng",
+    "rank" : 82,
+    "title" : "Philebus",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "timaeus_1003_librivox",
+    "language" : "eng",
+    "rank" : 83,
+    "title" : "Timaeus",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "phaedrus_1005_librivox",
+    "language" : "eng",
+    "rank" : 84,
+    "title" : "Phaedrus",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "parmenides_1310_librivox",
+    "language" : "eng",
+    "rank" : 85,
+    "title" : "Parmenides",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "republic_version_2_1310_librivox",
+    "language" : "eng",
+    "rank" : 86,
+    "title" : "The Republic (version 2)",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "cratylus_ge_1407_librivox",
+    "language" : "eng",
+    "rank" : 87,
+    "title" : "Cratylus",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "symposium_0909_librivox",
+    "language" : "eng",
+    "rank" : 88,
+    "title" : "The Symposium",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "charmides_ge_1401_librivox",
+    "language" : "eng",
+    "rank" : 89,
+    "title" : "Charmides",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Plato",
+    "identifier" : "theaetetus_1311_librivox",
+    "language" : "eng",
+    "rank" : 90,
+    "title" : "Theaetetus",
+    "workID" : "plato-dialogues"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "nicomachean_ethics_ge_librivox",
+    "language" : "eng",
+    "rank" : 91,
+    "title" : "The Nicomachean Ethics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "on_interpretation_1005_librivox",
+    "language" : "eng",
+    "rank" : 92,
+    "title" : "On Interpretation",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "on_the_parts_of_animals_1901_librivox",
+    "language" : "eng",
+    "rank" : 93,
+    "title" : "On the Parts of Animals",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "generation_of_animals_2207_librivox",
+    "language" : "eng",
+    "rank" : 94,
+    "title" : "Generation of Animals",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "rhetoric_virtues_and_vices_2212_librivox",
+    "language" : "eng",
+    "rank" : 95,
+    "title" : "Rhetoric to Alexander & On Virtues and Vices",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "metaphysics_1108_librivox",
+    "language" : "eng",
+    "rank" : 96,
+    "title" : "Metaphysics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "politics_0802_librivox",
+    "language" : "eng",
+    "rank" : 97,
+    "title" : "Politics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "de_anima_ge_librivox",
+    "language" : "eng",
+    "rank" : 98,
+    "title" : "De Anima",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "prior_analytics_ge_librivox",
+    "language" : "eng",
+    "rank" : 99,
+    "title" : "Prior Analytics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "ongeneration_1203_librivox",
+    "language" : "eng",
+    "rank" : 100,
+    "title" : "On Generation and Corruption",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "physics_1303_librivox",
+    "language" : "eng",
+    "rank" : 101,
+    "title" : "Physics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "poetics_librivox",
+    "language" : "eng",
+    "rank" : 102,
+    "title" : "Poetics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "rhetoric_ge_librivox",
+    "language" : "eng",
+    "rank" : 103,
+    "title" : "Rhetoric",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "posterior_analytics_ge_librivox",
+    "language" : "eng",
+    "rank" : 104,
+    "title" : "Posterior Analytics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "history_of_animals_2202_librivox",
+    "language" : "eng",
+    "rank" : 105,
+    "title" : "History of Animals",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "meteorology_universe_breath_2211_librivox",
+    "language" : "eng",
+    "rank" : 106,
+    "title" : "Meteorology, On the Universe & On Breath",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "categories_1004_librivox",
+    "language" : "eng",
+    "rank" : 107,
+    "title" : "Categories",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "parva_naturalia_1111_librivox",
+    "language" : "eng",
+    "rank" : 108,
+    "title" : "Parva Naturalia",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "ontheheavens_1202_librivox",
+    "language" : "eng",
+    "rank" : 109,
+    "title" : "On the Heavens",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Aristotle",
+    "identifier" : "topics_1101_librivox",
+    "language" : "eng",
+    "rank" : 110,
+    "title" : "Topics",
+    "workID" : "aristotle-works"
+  },
+  {
+    "author" : "Epictetus",
+    "identifier" : "discourses_of_epictetus_2211_librivox",
+    "language" : "eng",
+    "rank" : 111,
+    "title" : "Discourses of Epictetus",
+    "workID" : "epictetus-discourses"
+  },
+  {
+    "author" : "Epictetus",
+    "identifier" : "selection_discourses_with_encheiridion_2203_librivox",
+    "language" : "eng",
+    "rank" : 112,
+    "title" : "A Selection from the Discourses of Epictetus with the Encheiridion",
+    "workID" : "epictetus-discourses"
+  },
+  {
+    "author" : "Marcus Aurelius",
+    "identifier" : "meditations_0708_librivox",
+    "language" : "eng",
+    "rank" : 113,
+    "title" : "Meditations",
+    "workID" : "marcus-aurelius-meditations"
+  },
+  {
+    "author" : "Marcus Aurelius",
+    "identifier" : "themeditationsofmarcusaurelius_1801_librivox",
+    "language" : "eng",
+    "rank" : 114,
+    "title" : "The Meditations of the Emperor Marcus Aurelius Antoninus",
+    "workID" : "marcus-aurelius-meditations"
+  },
+  {
+    "author" : "Plotinus",
+    "identifier" : "enneads_-plotinus_1806_librivox",
+    "language" : "eng",
+    "rank" : 115,
+    "title" : "Enneads",
+    "workID" : "plotinus-the-six-enneads"
+  },
+  {
+    "author" : "Virgil",
+    "identifier" : "georgics_2009_librivox",
+    "language" : "eng",
+    "rank" : 116,
+    "title" : "Georgics",
+    "workID" : "virgil-georgics"
+  },
+  {
+    "author" : "Virgil",
+    "identifier" : "the_georgics_2110_librivox",
+    "language" : "eng",
+    "rank" : 117,
+    "title" : "The Georgics: A Poem of the Land",
+    "workID" : "virgil-georgics"
+  },
+  {
+    "author" : "Virgil",
+    "identifier" : "the_aeneid_prose_1405_librivox",
+    "language" : "eng",
+    "rank" : 118,
+    "title" : "The Aeneid, prose translation",
+    "workID" : "virgil-the-aeneid"
+  },
+  {
+    "author" : "Virgil",
+    "identifier" : "aeneid_of_virgil_1708_librivox",
+    "language" : "eng",
+    "rank" : 119,
+    "title" : "The Aeneid of Virgil",
+    "workID" : "virgil-the-aeneid"
+  },
+  {
+    "author" : "Tacitus",
+    "identifier" : "tacitus_annals_cb_vol2_0809_librivox1",
+    "language" : "eng",
+    "rank" : 120,
+    "title" : "Tacitus' Annals Vol 2",
+    "workID" : "tacitus-the-annals"
+  },
+  {
+    "author" : "Tacitus",
+    "identifier" : "tacitus_annals_cb_vol3_0809_librivox1",
+    "language" : "eng",
+    "rank" : 121,
+    "title" : "Tacitus' Annals Vol 3",
+    "workID" : "tacitus-the-annals"
+  },
+  {
+    "author" : "Tacitus",
+    "identifier" : "tacitus_histories_0905_librivox1",
+    "language" : "eng",
+    "rank" : 122,
+    "title" : "Tacitus' Histories",
+    "workID" : "tacitus-the-histories"
+  },
+  {
+    "author" : "Saint Augustine",
+    "identifier" : "confessions_augustine_0911_librivox",
+    "language" : "eng",
+    "rank" : 123,
+    "title" : "Confessions",
+    "workID" : "saint-augustine-the-confessions"
+  },
+  {
+    "author" : "Saint Augustine",
+    "identifier" : "confessions_1510_librivox",
+    "language" : "eng",
+    "rank" : 124,
+    "title" : "The Confessions (Pusey translation)",
+    "workID" : "saint-augustine-the-confessions"
+  },
+  {
+    "author" : "Saint Augustine",
+    "identifier" : "city_of_god_ds_librivox",
+    "language" : "eng",
+    "rank" : 125,
+    "title" : "The City of God",
+    "workID" : "saint-augustine-the-city-of-god"
+  },
+  {
+    "author" : "Saint Augustine",
+    "identifier" : "treatiseonthecityofgod_2407_librivox",
+    "language" : "eng",
+    "rank" : 126,
+    "title" : "St Augustine's Treatise on the City of God",
+    "workID" : "saint-augustine-the-city-of-god"
+  },
+  {
+    "author" : "Saint Augustine",
+    "identifier" : "christiandoctrine_1911_librivox",
+    "language" : "eng",
+    "rank" : 127,
+    "title" : "On Christian Doctrine",
+    "workID" : "saint-augustine-on-christian-doctrine"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica07_1503_librivox",
+    "language" : "eng",
+    "rank" : 128,
+    "title" : "Summa Theologica - 07 Pars Prima Secundae, Treatise on the Passions",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summa_1_04_1312_librivox",
+    "language" : "eng",
+    "rank" : 129,
+    "title" : "Summa Theologica - 04 Pars Prima, On Man",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica09_1601_librivox",
+    "language" : "eng",
+    "rank" : 130,
+    "title" : "Summa Theologica - 09 Pars Prima Secundae, Treatise on Law and Grace",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summa_1_05_1405_librivox",
+    "language" : "eng",
+    "rank" : 131,
+    "title" : "Summa Theologica - 05 Pars Prima, On the Divine Government",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica06_1507_librivox",
+    "language" : "eng",
+    "rank" : 132,
+    "title" : "Summa Theologica - 06 Pars Prima Secundae, On the Last End, On Human Acts",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica12_1504_librivox",
+    "language" : "eng",
+    "rank" : 133,
+    "title" : "Summa Theologica - 12 Pars Secunda Secundae, Treatise on Gratuitous Graces and the States of Life",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica13_1907_librivox",
+    "language" : "eng",
+    "rank" : 134,
+    "title" : "Summa Theologica - 13 Tertia Pars, The Saviour: His Incarnation and His Salvific Acts",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica14_2101_librivox",
+    "language" : "eng",
+    "rank" : 135,
+    "title" : "Summa Theologica - 14 Tertia Pars, The Sacraments",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica10_1509_librivox",
+    "language" : "eng",
+    "rank" : 136,
+    "title" : "Summa Theologica - 10 Pars Secunda Secundae, Treatise on the Theological Virtues: Faith, Hope, Charity",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summa_1_01_jr_0901_librivox",
+    "language" : "eng",
+    "rank" : 137,
+    "title" : "Summa Theologica, Prima Pars, Initial Questions",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summa_1_02_jr_0907_librivox",
+    "language" : "eng",
+    "rank" : 138,
+    "title" : "Summa Theologica, Prima Pars, Trinity and Creation",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica08_1603_librivox",
+    "language" : "eng",
+    "rank" : 139,
+    "title" : "Summa Theologica - 08 Pars Prima Secundae, Treatise on Habits, Virtues and Vices",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summatheologica11_1909_librivox",
+    "language" : "eng",
+    "rank" : 140,
+    "title" : "Summa Theologica - 11 Pars Secunda Secundae, Treatise on the Cardinal Virtues: Prudence, Justice, Fortitude, Temperance",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "compendiumsummatheologica_2405_librivox",
+    "language" : "eng",
+    "rank" : 141,
+    "title" : "Compendium of the Summa Theologica of St Thomas Aquinas: Pars Prima",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Thomas Aquinas",
+    "identifier" : "summa_1_03_1112_librivox",
+    "language" : "eng",
+    "rank" : 142,
+    "title" : "Summa Theologica - 03 Pars Prima, The Angels and the Six Days",
+    "workID" : "thomas-aquinas-summa-theologica"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divine_comedy_librivox",
+    "language" : "eng",
+    "rank" : 143,
+    "title" : "The Divine Comedy",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divinecomedy2dramatic_1509_librivox",
+    "language" : "eng",
+    "rank" : 144,
+    "title" : "The Divine Comedy (version 2 Dramatic Reading)",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Geoffrey Chaucer",
+    "identifier" : "canterburytales_2401_librivox",
+    "language" : "eng",
+    "rank" : 145,
+    "title" : "The Canterbury Tales and Other Poems",
+    "workID" : "geoffrey-chaucer-the-canterbury-tales"
+  },
+  {
+    "author" : "Geoffrey Chaucer",
+    "identifier" : "canterburytales_librivox",
+    "language" : "eng",
+    "rank" : 146,
+    "title" : "The Canterbury Tales",
+    "workID" : "geoffrey-chaucer-the-canterbury-tales"
+  },
+  {
+    "author" : "John Calvin",
+    "identifier" : "institutes_christian_religion1_0909_librivox",
+    "language" : "eng",
+    "rank" : 147,
+    "title" : "Institutes of the Christian Religion, Book One",
+    "workID" : "john-calvin-institutes-of-the-christian-religion"
+  },
+  {
+    "author" : "John Calvin",
+    "identifier" : "institutes_christian_religion4_1107_librivox",
+    "language" : "eng",
+    "rank" : 148,
+    "title" : "Institutes of the Christian Religion, Book 4",
+    "workID" : "john-calvin-institutes-of-the-christian-religion"
+  },
+  {
+    "author" : "John Calvin",
+    "identifier" : "institutes_christian_religion2_1003_librivox",
+    "language" : "eng",
+    "rank" : 149,
+    "title" : "Institutes of the Christian Religion, Book Two",
+    "workID" : "john-calvin-institutes-of-the-christian-religion"
+  },
+  {
+    "author" : "John Calvin",
+    "identifier" : "institutes_of_christian_religion_1-4_allen_2207_librivox",
+    "language" : "eng",
+    "rank" : 150,
+    "title" : "Institutes of the Christian Religion, Books 1-4 (Allen Translation)",
+    "workID" : "john-calvin-institutes-of-the-christian-religion"
+  },
+  {
+    "author" : "John Calvin",
+    "identifier" : "institutes_christian_religion_1010_librivox",
+    "language" : "eng",
+    "rank" : 151,
+    "title" : "Institutes of the Christian Religion, Book 3",
+    "workID" : "john-calvin-institutes-of-the-christian-religion"
+  },
+  {
+    "author" : "John Calvin",
+    "identifier" : "institutes1_2203_librivox",
+    "language" : "eng",
+    "rank" : 152,
+    "title" : "Institutes Of The Christian Religion Book 1 (Allen Translation)",
+    "workID" : "john-calvin-institutes-of-the-christian-religion"
+  },
+  {
+    "author" : "Niccolò Machiavelli",
+    "identifier" : "prince_pa_librivox",
+    "language" : "eng",
+    "rank" : 153,
+    "title" : "The Prince",
+    "workID" : "niccolo-machiavelli-the-prince"
+  },
+  {
+    "author" : "Niccolò Machiavelli",
+    "identifier" : "theprincever4_1501_librivox",
+    "language" : "eng",
+    "rank" : 154,
+    "title" : "The Prince (Version 4)",
+    "workID" : "niccolo-machiavelli-the-prince"
+  },
+  {
+    "author" : "Niccolò Machiavelli",
+    "identifier" : "prince_bn_librivox",
+    "language" : "eng",
+    "rank" : 155,
+    "title" : "The Prince",
+    "workID" : "niccolo-machiavelli-the-prince"
+  },
+  {
+    "author" : "Thomas Hobbes",
+    "identifier" : "leviathan_3_4_0812_librivox",
+    "language" : "eng",
+    "rank" : 156,
+    "title" : "Leviathan, or The Matter, Forme and Power of a Common Wealth Ecclesiasticall and Civil, Books III and IV",
+    "workID" : "thomas-hobbes-leviathan"
+  },
+  {
+    "author" : "Thomas Hobbes",
+    "identifier" : "leviathan_1_2_0802_librivox",
+    "language" : "eng",
+    "rank" : 157,
+    "title" : "Leviathan (Books I and II)",
+    "workID" : "thomas-hobbes-leviathan"
+  },
+  {
+    "author" : "François Rabelais",
+    "identifier" : "gargantua_pantagruel_iii_2102_librivox",
+    "language" : "eng",
+    "rank" : 158,
+    "title" : "Gargantua and Pantagruel, Book III",
+    "workID" : "francois-rabelais-gargantua-and-pantagruel"
+  },
+  {
+    "author" : "François Rabelais",
+    "identifier" : "gargantuaandpantagruel_1007_librivox",
+    "language" : "eng",
+    "rank" : 159,
+    "title" : "Gargantua and Pantagruel, Book I",
+    "workID" : "francois-rabelais-gargantua-and-pantagruel"
+  },
+  {
+    "author" : "François Rabelais",
+    "identifier" : "gargantuaandpantagruelbookv_2508_librivox",
+    "language" : "eng",
+    "rank" : 160,
+    "title" : "Gargantua and Pantagruel, Book V",
+    "workID" : "francois-rabelais-gargantua-and-pantagruel"
+  },
+  {
+    "author" : "François Rabelais",
+    "identifier" : "gargantuaandpantagrueliv_2407_librivox",
+    "language" : "eng",
+    "rank" : 161,
+    "title" : "Gargantua and Pantagruel, Book IV",
+    "workID" : "francois-rabelais-gargantua-and-pantagruel"
+  },
+  {
+    "author" : "François Rabelais",
+    "identifier" : "gargantuapantagruel2_1308_librivox",
+    "language" : "eng",
+    "rank" : 162,
+    "title" : "Gargantua and Pantagruel, Book II",
+    "workID" : "francois-rabelais-gargantua-and-pantagruel"
+  },
+  {
+    "author" : "Desiderius Erasmus",
+    "identifier" : "folly_erasmus_0811_librivox",
+    "language" : "eng",
+    "rank" : 163,
+    "title" : "The Praise of Folly",
+    "workID" : "desiderius-erasmus-praise-of-folly"
+  },
+  {
+    "author" : "Michel de Montaigne",
+    "identifier" : "essays_book2_1301_librivox",
+    "language" : "eng",
+    "rank" : 164,
+    "title" : "Essays, Book 2",
+    "workID" : "michel-de-montaigne-essays"
+  },
+  {
+    "author" : "Michel de Montaigne",
+    "identifier" : "essays_book3_1306_librivox",
+    "language" : "eng",
+    "rank" : 165,
+    "title" : "Essays, book 3",
+    "workID" : "michel-de-montaigne-essays"
+  },
+  {
+    "author" : "Michel de Montaigne",
+    "identifier" : "selected_essays_of_michel_de_montaigne_2310_librivox",
+    "language" : "eng",
+    "rank" : 166,
+    "title" : "Selected Essays of Michel de Montaigne",
+    "workID" : "michel-de-montaigne-essays"
+  },
+  {
+    "author" : "Michel de Montaigne",
+    "identifier" : "essays_book1_1204_librivox",
+    "language" : "eng",
+    "rank" : 167,
+    "title" : "Essays, Book 1",
+    "workID" : "michel-de-montaigne-essays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "thewinterstale_1008_librivox",
+    "language" : "eng",
+    "rank" : 168,
+    "title" : "The Winter's Tale",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "merry_wives_windsor_1108_librivox",
+    "language" : "eng",
+    "rank" : 169,
+    "title" : "The Merry Wives of Windsor",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "troilus_and_cressida_version_2_1810_librivox",
+    "language" : "eng",
+    "rank" : 170,
+    "title" : "The History of Troilus and Cressida (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "as_you_like_it_0902_librivox",
+    "language" : "eng",
+    "rank" : 171,
+    "title" : "As You Like It",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "romeoandjuliet_ss_0901_librivox",
+    "language" : "eng",
+    "rank" : 172,
+    "title" : "Romeo and Juliet",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "king_john_1106_librivox",
+    "language" : "eng",
+    "rank" : 173,
+    "title" : "The Life and Death of King John",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "allswellthatendswell_1008_librivox",
+    "language" : "eng",
+    "rank" : 174,
+    "title" : "All's Well That Ends Well",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "juliuscaesar_1002_librivox",
+    "language" : "eng",
+    "rank" : 175,
+    "title" : "The Tragedy of Julius Caesar",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tragedyofhamletprinceofdenmark_2602_librivox",
+    "language" : "eng",
+    "rank" : 176,
+    "title" : "The Tragedy of Hamlet, Prince of Denmark (version 4)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tempest_version_2_1901_librivox",
+    "language" : "eng",
+    "rank" : 177,
+    "title" : "The Tempest (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tragedy_of_king_richard_ii_version_2_2007_librivox",
+    "language" : "eng",
+    "rank" : 178,
+    "title" : "The Tragedy of King Richard II (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tempest_1002_librivox",
+    "language" : "eng",
+    "rank" : 179,
+    "title" : "The Tempest",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "2henryIV_0909_librivox",
+    "language" : "eng",
+    "rank" : 180,
+    "title" : "King Henry IV, Part 2",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "henryv_1101_librivox",
+    "language" : "eng",
+    "rank" : 181,
+    "title" : "Henry V",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "midsummernightsdream_1201_librivox",
+    "language" : "eng",
+    "rank" : 182,
+    "title" : "A Midsummer Night's Dream (Version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "kinglear_1209_librivox",
+    "language" : "eng",
+    "rank" : 183,
+    "title" : "King Lear (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "measure_for_measure_version_3_1907_librivox",
+    "language" : "eng",
+    "rank" : 184,
+    "title" : "Measure for Measure version3",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "coriolanus_1202_librivox",
+    "language" : "eng",
+    "rank" : 185,
+    "title" : "Coriolanus",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "measureformeasure_1608_librivox",
+    "language" : "eng",
+    "rank" : 186,
+    "title" : "Measure For Measure",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "othello_2108_librivox",
+    "language" : "eng",
+    "rank" : 187,
+    "title" : "Othello",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "hamlet2_1206_librivox",
+    "language" : "eng",
+    "rank" : 188,
+    "title" : "Hamlet Version 2",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "othello_1005_librivox",
+    "language" : "eng",
+    "rank" : 189,
+    "title" : "Othello",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "measure_for_measure_1006_librivox",
+    "language" : "eng",
+    "rank" : 190,
+    "title" : "Measure For Measure",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "winter_1001_librivox",
+    "language" : "eng",
+    "rank" : 191,
+    "title" : "Winter",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "hamlet_0911_librivox",
+    "language" : "eng",
+    "rank" : 192,
+    "title" : "The Tragedy of Hamlet, Prince of Denmark",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "merchant_of_venice_1005_librivox",
+    "language" : "eng",
+    "rank" : 193,
+    "title" : "The Merchant of Venice",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tamingoftheshrew_1604_librivox",
+    "language" : "eng",
+    "rank" : 194,
+    "title" : "The Taming of the Shrew",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "midsummer_nights_dream_0806_librivox",
+    "language" : "eng",
+    "rank" : 195,
+    "title" : "A Midsummer Night's Dream",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "alls_well_that_ends_well_2_1603_librivox",
+    "language" : "eng",
+    "rank" : 196,
+    "title" : "All's Well That Ends Well (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "firstpartofkinghenryvi_2607_librivox",
+    "language" : "eng",
+    "rank" : 197,
+    "title" : "The First Part of King Henry VI (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "cymbeline_version2_1707_librivox",
+    "language" : "eng",
+    "rank" : 198,
+    "title" : "Cymbeline (Version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tragedy_macbeth_1305_librivox",
+    "language" : "eng",
+    "rank" : 199,
+    "title" : "The Tragedy of MacBeth",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "cymbeline_1101_librivox",
+    "language" : "eng",
+    "rank" : 200,
+    "title" : "Cymbeline",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "tamingoftheshrew_1009_librivox",
+    "language" : "eng",
+    "rank" : 201,
+    "title" : "The Taming of the Shrew",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "romeo_and_juliet_librivox",
+    "language" : "eng",
+    "rank" : 202,
+    "title" : "Romeo and Juliet",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "king_lear_librivox",
+    "language" : "eng",
+    "rank" : 203,
+    "title" : "King Lear",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "romeo_juliet_1001_librivox",
+    "language" : "eng",
+    "rank" : 204,
+    "title" : "Romeo and Juliet (LibriVox Version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "comedyoferrors_1603_librivox",
+    "language" : "eng",
+    "rank" : 205,
+    "title" : "The Comedy of Errors (version 3)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "twelfth_night_0906_librivox",
+    "language" : "eng",
+    "rank" : 206,
+    "title" : "Twelfth Night",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "comedyoferrors_1011_librivox",
+    "language" : "eng",
+    "rank" : 207,
+    "title" : "The Comedy of Errors",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "life_of_king_henry_v_version_2_2306_librivox",
+    "language" : "eng",
+    "rank" : 208,
+    "title" : "The Life of King Henry V (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "loves_labours_lost_2312_librivox",
+    "language" : "eng",
+    "rank" : 209,
+    "title" : "Love's Labour's Lost (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "henryvipart3_1102_librivox",
+    "language" : "eng",
+    "rank" : 210,
+    "title" : "Henry VI Part 3",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "twelfth_night_3_1608_librivox",
+    "language" : "eng",
+    "rank" : 211,
+    "title" : "Twelfth Night (version 3)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "titusandronicus_1102_librivox",
+    "language" : "eng",
+    "rank" : 212,
+    "title" : "Titus Andronicus",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "hamlet_1209_librivox",
+    "language" : "eng",
+    "rank" : 213,
+    "title" : "Hamlet (version 3)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "merry_wives_of_windsor_version_2_2208_librivox",
+    "language" : "eng",
+    "rank" : 214,
+    "title" : "The Merry Wives of Windsor (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "asyoulikeit_1211_librivox",
+    "language" : "eng",
+    "rank" : 215,
+    "title" : "As You Like It (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "richard_ii_group_librivox",
+    "language" : "eng",
+    "rank" : 216,
+    "title" : "The Tragedy of King Richard II",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "romeojuliet_v4_1502_librivox",
+    "language" : "eng",
+    "rank" : 217,
+    "title" : "Romeo and Juliet (version 4)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "juliuscaesar_1605_librivox",
+    "language" : "eng",
+    "rank" : 218,
+    "title" : "Julius Caesar (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "pericles_1202_librivox",
+    "language" : "eng",
+    "rank" : 219,
+    "title" : "Pericles, Prince of Tyre",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "macbeth_0810_librivox",
+    "language" : "eng",
+    "rank" : 220,
+    "title" : "The Tragedy of Macbeth",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "midsummer_nights_dream4_1604_librivox",
+    "language" : "eng",
+    "rank" : 221,
+    "title" : "A Midsummer Night's Dream (version 4)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "as_you_like_it_version_3_2012_librivox",
+    "language" : "eng",
+    "rank" : 222,
+    "title" : "As You Like It (version 3)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "richard_iii_1006_librivox",
+    "language" : "eng",
+    "rank" : 223,
+    "title" : "Richard III",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "winterstale_1710_librivox",
+    "language" : "eng",
+    "rank" : 224,
+    "title" : "The Winter's Tale (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "antony_cleopatra_1109_librivox",
+    "language" : "eng",
+    "rank" : 225,
+    "title" : "Antony and Cleopatra",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "the_tragedy_of_king_lear_version_3_1803_librivox",
+    "language" : "eng",
+    "rank" : 226,
+    "title" : "The Tragedy of King Lear (version 3)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "twogentlemenofverona_1103_librivox",
+    "language" : "eng",
+    "rank" : 227,
+    "title" : "The Two Gentlemen of Verona",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "henryvipart1_1012_librivox",
+    "language" : "eng",
+    "rank" : 228,
+    "title" : "Henry VI Part 1",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "troilusandcressida_1104_librivox",
+    "language" : "eng",
+    "rank" : 229,
+    "title" : "Troilus and Cressida",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "midsummernightsdream3_1401_librivox",
+    "language" : "eng",
+    "rank" : 230,
+    "title" : "A Midsummer Night's Dream (version 3)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "henryvipart2_1012_librivox",
+    "language" : "eng",
+    "rank" : 231,
+    "title" : "Henry VI Part 2",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "loves_labours_lost_1008_librivox",
+    "language" : "eng",
+    "rank" : 232,
+    "title" : "Love's Labour's Lost",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "comedyoferrors_ver2_1403_librivox",
+    "language" : "eng",
+    "rank" : 233,
+    "title" : "The Comedy of Errors (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "titusandronicus_2501_librivox",
+    "language" : "eng",
+    "rank" : 234,
+    "title" : "The Tragedy of Titus Andronicus (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "henryviii_1104_librivox",
+    "language" : "eng",
+    "rank" : 235,
+    "title" : "Henry VIII",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "twelfthnight_1208_librivox",
+    "language" : "eng",
+    "rank" : 236,
+    "title" : "Twelfth Night (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "muchadoaboutnothing_1003_librivox",
+    "language" : "eng",
+    "rank" : 237,
+    "title" : "Much Ado About Nothing",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "much_ado_about_nothing_1312_librivox",
+    "language" : "eng",
+    "rank" : 238,
+    "title" : "Much Ado About Nothing (version 2)",
+    "workID" : "william-shakespeare-plays"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "sonnets_etk_librivox",
+    "language" : "eng",
+    "rank" : 239,
+    "title" : "The Sonnets",
+    "workID" : "william-shakespeare-sonnets"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "sonnets_librivox",
+    "language" : "eng",
+    "rank" : 240,
+    "title" : "Sonnets, by William Shakespeare",
+    "workID" : "william-shakespeare-sonnets"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "sonnets_ss_librivox",
+    "language" : "eng",
+    "rank" : 241,
+    "title" : "Shakespeare's Sonnets (version 3)",
+    "workID" : "william-shakespeare-sonnets"
+  },
+  {
+    "author" : "William Shakespeare",
+    "identifier" : "shakespeare_sonnets_ch",
+    "language" : "eng",
+    "rank" : 242,
+    "title" : "Shakespeare's Sonnets",
+    "workID" : "william-shakespeare-sonnets"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "donquixote_2508_librivox",
+    "language" : "eng",
+    "rank" : 243,
+    "title" : "Don Quixote",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "donquixotel_1_ormsby_1702_librivox",
+    "language" : "eng",
+    "rank" : 244,
+    "title" : "Don Quixote, Vol. 1 (Ormsby Translation)",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "don_quixote_vol1_librivox",
+    "language" : "eng",
+    "rank" : 245,
+    "title" : "Don Quixote, Volume 1",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "donquixotevol2_ormsby_1704_librivox",
+    "language" : "eng",
+    "rank" : 246,
+    "title" : "Don Quixote, Vol. 2 (Ormsby Translation)",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Miguel de Cervantes",
+    "identifier" : "don_quixote_2_0902_librivox",
+    "language" : "eng",
+    "rank" : 247,
+    "title" : "Don Quixote Volume 2",
+    "workID" : "miguel-de-cervantes-don-quixote"
+  },
+  {
+    "author" : "Francis Bacon",
+    "identifier" : "newatlantis_1111_librivox",
+    "language" : "eng",
+    "rank" : 248,
+    "title" : "The New Atlantis",
+    "workID" : "francis-bacon-new-atlantis"
+  },
+  {
+    "author" : "René Descartes",
+    "identifier" : "discourse_method_librivox",
+    "language" : "eng",
+    "rank" : 249,
+    "title" : "Discourse on the Method of Rightly Conducting One's Reason and of Seeking Truth in the Sciences",
+    "workID" : "rene-descartes-discourse-on-the-method"
+  },
+  {
+    "author" : "René Descartes",
+    "identifier" : "meditations_descartes_dew_librivox",
+    "language" : "eng",
+    "rank" : 250,
+    "title" : "Meditations on First Philosophy",
+    "workID" : "rene-descartes-meditations-on-first-philosophy"
+  },
+  {
+    "author" : "Baruch Spinoza",
+    "identifier" : "ethics_1010_librivox",
+    "language" : "eng",
+    "rank" : 251,
+    "title" : "The Ethics",
+    "workID" : "baruch-spinoza-ethics"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "paradiselost_1411_librivox",
+    "language" : "eng",
+    "rank" : 252,
+    "title" : "Paradise Lost",
+    "workID" : "john-milton-paradise-lost"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "paradise_lost_08083_librivox",
+    "language" : "eng",
+    "rank" : 253,
+    "title" : "Paradise Lost",
+    "workID" : "john-milton-paradise-lost"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "samsonagonistes_2306_librivox",
+    "language" : "eng",
+    "rank" : 254,
+    "title" : "Samson Agonistes",
+    "workID" : "john-milton-samson-agonistes"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "samson_agonistes_0912_librivox",
+    "language" : "eng",
+    "rank" : 255,
+    "title" : "Samson Agonistes",
+    "workID" : "john-milton-samson-agonistes"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "areopagitica_0806_librivox",
+    "language" : "eng",
+    "rank" : 256,
+    "title" : "Areopagitica",
+    "workID" : "john-milton-areopagitica"
+  },
+  {
+    "author" : "John Milton",
+    "identifier" : "areopagitica_1304_librivox",
+    "language" : "eng",
+    "rank" : 257,
+    "title" : "Areopagitica",
+    "workID" : "john-milton-areopagitica"
+  },
+  {
+    "author" : "Blaise Pascal",
+    "identifier" : "pensees_0906_dx_librivox1",
+    "language" : "eng",
+    "rank" : 258,
+    "title" : "Pensées",
+    "workID" : "blaise-pascal-pensees"
+  },
+  {
+    "author" : "Molière",
+    "identifier" : "schoolforwives_1705_librivox",
+    "language" : "eng",
+    "rank" : 259,
+    "title" : "The School for Wives",
+    "workID" : "moliere-the-school-for-wives"
+  },
+  {
+    "author" : "Molière",
+    "identifier" : "tartuffe_1206_librivox",
+    "language" : "eng",
+    "rank" : 260,
+    "title" : "Tartuffe",
+    "workID" : "moliere-tartuffe"
+  },
+  {
+    "author" : "Molière",
+    "identifier" : "don_juan_2007_librivox",
+    "language" : "eng",
+    "rank" : 261,
+    "title" : "Don Juan, or The Feast with the Statue",
+    "workID" : "moliere-don-juan"
+  },
+  {
+    "author" : "Molière",
+    "identifier" : "miser_1305_librivox",
+    "language" : "eng",
+    "rank" : 262,
+    "title" : "The Miser",
+    "workID" : "moliere-the-miser"
+  },
+  {
+    "author" : "Jean Racine",
+    "identifier" : "berenice_2102_librivox",
+    "language" : "eng",
+    "rank" : 263,
+    "title" : "Berenice",
+    "workID" : "jean-racine-berenice"
+  },
+  {
+    "author" : "Jean Racine",
+    "identifier" : "phaedra_1306_librivox",
+    "language" : "eng",
+    "rank" : 264,
+    "title" : "Phaedra",
+    "workID" : "jean-racine-phaedra"
+  },
+  {
+    "author" : "Isaac Newton",
+    "identifier" : "opticks_1203_librivox",
+    "language" : "eng",
+    "rank" : 265,
+    "title" : "Opticks",
+    "workID" : "isaac-newton-opticks"
+  },
+  {
+    "author" : "Christiaan Huygens",
+    "identifier" : "treatise_light_ava_librivox",
+    "language" : "eng",
+    "rank" : 266,
+    "title" : "Treatise on Light",
+    "workID" : "christiaan-huygens-treatise-on-light"
+  },
+  {
+    "author" : "John Locke",
+    "identifier" : "letter_concerning_toleration_librivox",
+    "language" : "eng",
+    "rank" : 267,
+    "title" : "A Letter Concerning Toleration",
+    "workID" : "john-locke-a-letter-concerning-toleration"
+  },
+  {
+    "author" : "John Locke",
+    "identifier" : "human_understanding_iv_2003_librivox",
+    "language" : "eng",
+    "rank" : 268,
+    "title" : "An Essay Concerning Human Understanding Book IV",
+    "workID" : "john-locke-an-essay-concerning-human-understanding"
+  },
+  {
+    "author" : "John Locke",
+    "identifier" : "essay_concerning_human_understanding2_1904_librivox",
+    "language" : "eng",
+    "rank" : 269,
+    "title" : "An Essay Concerning Human Understanding Book II",
+    "workID" : "john-locke-an-essay-concerning-human-understanding"
+  },
+  {
+    "author" : "John Locke",
+    "identifier" : "human_understanding_iii_1909_librivox",
+    "language" : "eng",
+    "rank" : 270,
+    "title" : "An Essay Concerning Human Understanding Book III",
+    "workID" : "john-locke-an-essay-concerning-human-understanding"
+  },
+  {
+    "author" : "George Berkeley",
+    "identifier" : "treatise_0905_librivox",
+    "language" : "eng",
+    "rank" : 271,
+    "title" : "A Treatise Concerning the Principles of Human Knowledge, Part 1",
+    "workID" : "george-berkeley-a-treatise-concerning-the-principles-of-human-knowledge"
+  },
+  {
+    "author" : "George Berkeley",
+    "identifier" : "human_knowledge_1809_librivox",
+    "language" : "eng",
+    "rank" : 272,
+    "title" : "A Treatise Concerning the Principles of Human Knowledge",
+    "workID" : "george-berkeley-a-treatise-concerning-the-principles-of-human-knowledge"
+  },
+  {
+    "author" : "David Hume",
+    "identifier" : "human_understanding_0711_lv_2",
+    "language" : "eng",
+    "rank" : 273,
+    "title" : "An Enquiry Concerning Human Understanding",
+    "workID" : "david-hume-an-enquiry-concerning-human-understanding"
+  },
+  {
+    "author" : "Jonathan Swift",
+    "identifier" : "gulliver_ld_librivox",
+    "language" : "eng",
+    "rank" : 274,
+    "title" : "Gulliver's Travels",
+    "workID" : "jonathan-swift-gullivers-travels"
+  },
+  {
+    "author" : "Jonathan Swift",
+    "identifier" : "gulliverstravels_v2_2406_librivox",
+    "language" : "eng",
+    "rank" : 275,
+    "title" : "Gulliver's Travels (Version 2)",
+    "workID" : "jonathan-swift-gullivers-travels"
+  },
+  {
+    "author" : "Jonathan Swift",
+    "identifier" : "gulliverstravelsvers3_2504_librivox",
+    "language" : "eng",
+    "rank" : 276,
+    "title" : "Gulliver's Travels (Version 3)",
+    "workID" : "jonathan-swift-gullivers-travels"
+  },
+  {
+    "author" : "Voltaire",
+    "identifier" : "candide01_librivox",
+    "language" : "eng",
+    "rank" : 277,
+    "title" : "Candide",
+    "workID" : "voltaire-candide"
+  },
+  {
+    "author" : "Voltaire",
+    "identifier" : "candide_librivox",
+    "language" : "eng",
+    "rank" : 278,
+    "title" : "Candide",
+    "workID" : "voltaire-candide"
+  },
+  {
+    "author" : "Voltaire",
+    "identifier" : "candide_1806_librivox",
+    "language" : "eng",
+    "rank" : 279,
+    "title" : "Candide",
+    "workID" : "voltaire-candide"
+  },
+  {
+    "author" : "Denis Diderot",
+    "identifier" : "rameaus_nephew_bb3_librivox",
+    "language" : "eng",
+    "rank" : 280,
+    "title" : "Rameau's Nephew",
+    "workID" : "denis-diderot-rameaus-nephew"
+  },
+  {
+    "author" : "Montesquieu",
+    "identifier" : "spirit_laws_01_1212",
+    "language" : "eng",
+    "rank" : 281,
+    "title" : "The Spirit of Laws (Volume 1)",
+    "workID" : "montesquieu-the-spirit-of-laws"
+  },
+  {
+    "author" : "Jean-Jacques Rousseau",
+    "identifier" : "the_social_contract_1004_librivox",
+    "language" : "eng",
+    "rank" : 282,
+    "title" : "The Social Contract",
+    "workID" : "jean-jacques-rousseau-the-social-contract"
+  },
+  {
+    "author" : "Adam Smith",
+    "identifier" : "wealth_nations02-03_smith_se_librivox",
+    "language" : "eng",
+    "rank" : 283,
+    "title" : "The Wealth of Nations, Books 2 and 3",
+    "workID" : "adam-smith-the-wealth-of-nations"
+  },
+  {
+    "author" : "Adam Smith",
+    "identifier" : "wealth_of_nations_1104_librivox",
+    "language" : "eng",
+    "rank" : 284,
+    "title" : "The Wealth of Nations, Book 5",
+    "workID" : "adam-smith-the-wealth-of-nations"
+  },
+  {
+    "author" : "Adam Smith",
+    "identifier" : "wealth_nations01_se",
+    "language" : "eng",
+    "rank" : 285,
+    "title" : "The Wealth of Nations - Book 1",
+    "workID" : "adam-smith-the-wealth-of-nations"
+  },
+  {
+    "author" : "Adam Smith",
+    "identifier" : "wealth_nations04_1001_librivox",
+    "language" : "eng",
+    "rank" : 286,
+    "title" : "The Wealth of Nations, Book 4",
+    "workID" : "adam-smith-the-wealth-of-nations"
+  },
+  {
+    "author" : "Edward Gibbon",
+    "identifier" : "decline_and_fall_2_0712_librivox",
+    "language" : "eng",
+    "rank" : 287,
+    "title" : "The History of the Decline and Fall of the Roman Empire, Vol. II",
+    "workID" : "edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire"
+  },
+  {
+    "author" : "Edward Gibbon",
+    "identifier" : "Decline_and_Fall6_0812_librivox1",
+    "language" : "eng",
+    "rank" : 288,
+    "title" : "The History of the Decline and Fall of the Roman Empire Vol. VI",
+    "workID" : "edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire"
+  },
+  {
+    "author" : "Edward Gibbon",
+    "identifier" : "decline_fall_roman_empire_5_0810_librivox1",
+    "language" : "eng",
+    "rank" : 289,
+    "title" : "History of the Decline and Fall of the Roman Empire Vol. V, The",
+    "workID" : "edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire"
+  },
+  {
+    "author" : "Edward Gibbon",
+    "identifier" : "decline_and_fall_3_librivox",
+    "language" : "eng",
+    "rank" : 290,
+    "title" : "The History of the Decline and Fall of the Roman Empire, Vol. III",
+    "workID" : "edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire"
+  },
+  {
+    "author" : "Edward Gibbon",
+    "identifier" : "decline_and_fall_4_librivox",
+    "language" : "eng",
+    "rank" : 291,
+    "title" : "The History of the Decline and Fall of the Roman Empire, Vol. IV",
+    "workID" : "edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire"
+  },
+  {
+    "author" : "Immanuel Kant",
+    "identifier" : "critique_pure_reason_0709_librivox",
+    "language" : "eng",
+    "rank" : 292,
+    "title" : "The Critique of Pure Reason",
+    "workID" : "immanuel-kant-critique-of-pure-reason"
+  },
+  {
+    "author" : "Immanuel Kant",
+    "identifier" : "critique_practical_0810_librivox",
+    "language" : "eng",
+    "rank" : 293,
+    "title" : "The Critique of Practical Reason",
+    "workID" : "immanuel-kant-critique-of-practical-reason"
+  },
+  {
+    "author" : "Alexander Hamilton; James Madison; John Jay",
+    "identifier" : "federalist_papers_librivox",
+    "language" : "eng",
+    "rank" : 294,
+    "title" : "The Federalist Papers",
+    "workID" : "alexander-hamilton-james-madison-john-jay-the-federalist-papers"
+  },
+  {
+    "author" : "Alexander Hamilton; James Madison; John Jay",
+    "identifier" : "federalistpapers_2202_librivox",
+    "language" : "eng",
+    "rank" : 295,
+    "title" : "The Federalist Papers",
+    "workID" : "alexander-hamilton-james-madison-john-jay-the-federalist-papers"
+  },
+  {
+    "author" : "John Stuart Mill",
+    "identifier" : "on_liberty_librivox",
+    "language" : "eng",
+    "rank" : 296,
+    "title" : "On Liberty",
+    "workID" : "john-stuart-mill-on-liberty"
+  },
+  {
+    "author" : "John Stuart Mill",
+    "identifier" : "onliberty_2505_librivox",
+    "language" : "eng",
+    "rank" : 297,
+    "title" : "On Liberty",
+    "workID" : "john-stuart-mill-on-liberty"
+  },
+  {
+    "author" : "John Stuart Mill",
+    "identifier" : "representativegovernment_1302_librivox",
+    "language" : "eng",
+    "rank" : 298,
+    "title" : "Considerations on Representative Government",
+    "workID" : "john-stuart-mill-considerations-on-representative-government"
+  },
+  {
+    "author" : "John Stuart Mill",
+    "identifier" : "utilitarianism_dew_librivox",
+    "language" : "eng",
+    "rank" : 299,
+    "title" : "Utilitarianism",
+    "workID" : "john-stuart-mill-utilitarianism"
+  },
+  {
+    "author" : "James Boswell",
+    "identifier" : "samuel_johnson_vol_ii_version_2_1504_librivox",
+    "language" : "eng",
+    "rank" : 300,
+    "title" : "The Life of Samuel Johnson, Vol. II (version 2)",
+    "workID" : "james-boswell-the-life-of-samuel-johnson"
+  },
+  {
+    "author" : "James Boswell",
+    "identifier" : "life_of_samuel_johnson_vol1_0808_librivox1",
+    "language" : "eng",
+    "rank" : 301,
+    "title" : "The Life of Samuel Johnson, Vol. 1",
+    "workID" : "james-boswell-the-life-of-samuel-johnson"
+  },
+  {
+    "author" : "James Boswell",
+    "identifier" : "life_of_samuel_johnson_iv_1406_librivox",
+    "language" : "eng",
+    "rank" : 302,
+    "title" : "The Life of Samuel Johnson, Vol. IV",
+    "workID" : "james-boswell-the-life-of-samuel-johnson"
+  },
+  {
+    "author" : "James Boswell",
+    "identifier" : "samueljohnson3_1302_librivox",
+    "language" : "eng",
+    "rank" : 303,
+    "title" : "The Life of Samuel Johnson, Vol. 3",
+    "workID" : "james-boswell-the-life-of-samuel-johnson"
+  },
+  {
+    "author" : "James Boswell",
+    "identifier" : "life_of_johnson_vol2_1009_librivox",
+    "language" : "eng",
+    "rank" : 304,
+    "title" : "The Life of Samuel Johnson, Vol. 2",
+    "workID" : "james-boswell-the-life-of-samuel-johnson"
+  },
+  {
+    "author" : "James Boswell",
+    "identifier" : "life_of_samuel_johnson_vol_i_1407_librivox",
+    "language" : "eng",
+    "rank" : 305,
+    "title" : "The Life of Samuel Johnson, Vol. I",
+    "workID" : "james-boswell-the-life-of-samuel-johnson"
+  },
+  {
+    "author" : "G. W. F. Hegel",
+    "identifier" : "intro_philosophy_history_dew_librivox",
+    "language" : "eng",
+    "rank" : 306,
+    "title" : "Introduction to the Philosophy of History",
+    "workID" : "g-w-f-hegel-the-philosophy-of-history"
+  },
+  {
+    "author" : "Søren Kierkegaard",
+    "identifier" : "fear_and_trembling_selections_2010_librivox",
+    "language" : "eng",
+    "rank" : 307,
+    "title" : "Fear and Trembling (selections)",
+    "workID" : "sren-kierkegaard-fear-and-trembling"
+  },
+  {
+    "author" : "Friedrich Nietzsche",
+    "identifier" : "beyond_good_and_evil_librivox",
+    "language" : "eng",
+    "rank" : 308,
+    "title" : "Beyond Good and Evil",
+    "workID" : "friedrich-nietzsche-beyond-good-and-evil"
+  },
+  {
+    "author" : "Friedrich Nietzsche",
+    "identifier" : "beyondgoodandevil_1910_librivox",
+    "language" : "eng",
+    "rank" : 309,
+    "title" : "Beyond Good and Evil: Prelude to a Philosophy of the Future",
+    "workID" : "friedrich-nietzsche-beyond-good-and-evil"
+  },
+  {
+    "author" : "Alexis de Tocqueville",
+    "identifier" : "democracy_america_vol1_0709",
+    "language" : "eng",
+    "rank" : 310,
+    "title" : "Democracy in America Vol. I",
+    "workID" : "alexis-de-tocqueville-democracy-in-america"
+  },
+  {
+    "author" : "Alexis de Tocqueville",
+    "identifier" : "democracy_in_america_vol2_0808_librivox1",
+    "language" : "eng",
+    "rank" : 311,
+    "title" : "Democracy in America Volume II",
+    "workID" : "alexis-de-tocqueville-democracy-in-america"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "faust2_1307_librivox",
+    "language" : "eng",
+    "rank" : 312,
+    "title" : "Faust II",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Johann Wolfgang von Goethe",
+    "identifier" : "faust1_1111_librivox",
+    "language" : "eng",
+    "rank" : 313,
+    "title" : "Faust, Part 1",
+    "workID" : "johann-wolfgang-von-goethe-faust"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_version_5_1002_librivox",
+    "language" : "eng",
+    "rank" : 314,
+    "title" : "Emma",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_1303_librivox",
+    "language" : "eng",
+    "rank" : 315,
+    "title" : "Emma (dramatic reading)",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_v4_1207_librivox",
+    "language" : "eng",
+    "rank" : 316,
+    "title" : "Emma (version 4)",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_solo_librivox",
+    "language" : "eng",
+    "rank" : 317,
+    "title" : "Emma",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_sd_librivox",
+    "language" : "eng",
+    "rank" : 318,
+    "title" : "Emma",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_ver03_ek_librivox",
+    "language" : "eng",
+    "rank" : 319,
+    "title" : "Emma (version 3)",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "Jane Austen",
+    "identifier" : "emma_mt_librivox",
+    "language" : "eng",
+    "rank" : 320,
+    "title" : "Emma",
+    "workID" : "jane-austen-emma"
+  },
+  {
+    "author" : "George Eliot",
+    "identifier" : "middlemarch_version2_1310_librivox",
+    "language" : "eng",
+    "rank" : 321,
+    "title" : "Middlemarch (version 2)",
+    "workID" : "george-eliot-middlemarch"
+  },
+  {
+    "author" : "George Eliot",
+    "identifier" : "middlemarch_0810_librivox",
+    "language" : "eng",
+    "rank" : 322,
+    "title" : "Middlemarch",
+    "workID" : "george-eliot-middlemarch"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "theadventuresofhuckleberryfinn_version_6_1703_librivox",
+    "language" : "eng",
+    "rank" : 323,
+    "title" : "The Adventures of Huckleberry Finn (Version 6)",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "huckleberry_finn_0908_librivox",
+    "language" : "eng",
+    "rank" : 324,
+    "title" : "Adventures of Huckleberry Finn (Tom Sawyer's Comrade)",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "huckleberry_finn7_1904_librivox",
+    "language" : "eng",
+    "rank" : 325,
+    "title" : "Adventures of Huckleberry Finn (version 7)",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "huckleberry_mfs_librivox",
+    "language" : "eng",
+    "rank" : 326,
+    "title" : "Adventures of Huckleberry Finn (version 02)",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Mark Twain",
+    "identifier" : "huck_finn_librivox",
+    "language" : "eng",
+    "rank" : 327,
+    "title" : "Adventures of Huckleberry Finn",
+    "workID" : "mark-twain-adventures-of-huckleberry-finn"
+  },
+  {
+    "author" : "Charles Darwin",
+    "identifier" : "origin_species_librivox",
+    "language" : "eng",
+    "rank" : 328,
+    "title" : "On the Origin of Species by Means of Natural Selection",
+    "workID" : "charles-darwin-on-the-origin-of-species"
+  },
+  {
+    "author" : "Charles Darwin",
+    "identifier" : "descent_man_3_1012_librivox",
+    "language" : "eng",
+    "rank" : 329,
+    "title" : "The Descent of Man and Selection in Relation to Sex, 3",
+    "workID" : "charles-darwin-the-descent-of-man"
+  },
+  {
+    "author" : "Charles Darwin",
+    "identifier" : "descent_man_2_1101_librivox",
+    "language" : "eng",
+    "rank" : 330,
+    "title" : "The Descent of Man and Selection in Relation to Sex Part 2",
+    "workID" : "charles-darwin-the-descent-of-man"
+  },
+  {
+    "author" : "Charles Darwin",
+    "identifier" : "descent_man_1_1011_librivox",
+    "language" : "eng",
+    "rank" : 331,
+    "title" : "The Descent of Man and Selection in Relation to Sex Part 1",
+    "workID" : "charles-darwin-the-descent-of-man"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_14_1003_librivox",
+    "language" : "eng",
+    "rank" : 332,
+    "title" : "War and Peace, Book 14: 1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_04_0802_librivox",
+    "language" : "eng",
+    "rank" : 333,
+    "title" : "War and Peace, Book 04: 1806",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_01_librivox",
+    "language" : "eng",
+    "rank" : 334,
+    "title" : "War and Peace, Book 01: 1805",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_11_0909",
+    "language" : "eng",
+    "rank" : 335,
+    "title" : "War and Peace, Book 11: 1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_vol2_dole_1512_librivox",
+    "language" : "eng",
+    "rank" : 336,
+    "title" : "War and Peace Vol. 2 (Dole Translation)",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_08_0810_librivox",
+    "language" : "eng",
+    "rank" : 337,
+    "title" : "War and Peace, Book 08: 1811-1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_02_0801_librivox",
+    "language" : "eng",
+    "rank" : 338,
+    "title" : "War and Peace, Book 02: 1805",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_peace1_maude_translation_2212_librivox",
+    "language" : "eng",
+    "rank" : 339,
+    "title" : "War and Peace, Volume 1 (Maude translation)",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_03_0712_librivox",
+    "language" : "eng",
+    "rank" : 340,
+    "title" : "War and Peace, Book 03: 1805",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_17_1105_librivox",
+    "language" : "eng",
+    "rank" : 341,
+    "title" : "War and Peace, Book 17: Second Epilogue",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_peace_3_maude_translation_2305_librivox",
+    "language" : "eng",
+    "rank" : 342,
+    "title" : "War and Peace, Volume 3 (Maude Translation)",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_16_1105_librivox",
+    "language" : "eng",
+    "rank" : 343,
+    "title" : "War and Peace, Book 16: First Epilogue 1813-1820",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_4_maude_translation_2306_librivox",
+    "language" : "eng",
+    "rank" : 344,
+    "title" : "War and Peace, Volume 4 (Maude Translation)",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_15_1105_librivox",
+    "language" : "eng",
+    "rank" : 345,
+    "title" : "War and Peace, Book 15: 1812-1813",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_09_0811_librivox",
+    "language" : "eng",
+    "rank" : 346,
+    "title" : "War and Peace, Book 09: 1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_07_0808_librivox",
+    "language" : "eng",
+    "rank" : 347,
+    "title" : "War and Peace, Book 07: 1810-1811",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_06_0808_librivox",
+    "language" : "eng",
+    "rank" : 348,
+    "title" : "War and Peace, Book 06: 1808-1810",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_peace_2_maude_translation_2302_librivox",
+    "language" : "eng",
+    "rank" : 349,
+    "title" : "War and Peace, Volume 2 (Maude Translation)",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_13_0912_librivox",
+    "language" : "eng",
+    "rank" : 350,
+    "title" : "War and Peace, Book 13: 1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_12_0911_librivox",
+    "language" : "eng",
+    "rank" : 351,
+    "title" : "War and Peace, Book 12: 1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_10_0904_librivox",
+    "language" : "eng",
+    "rank" : 352,
+    "title" : "War and Peace, Book 10: 1812",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_vol1_dole_mas_librivox",
+    "language" : "eng",
+    "rank" : 353,
+    "title" : "War and Peace Vol. 1 (1805-1806)",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Leo Tolstoy",
+    "identifier" : "war_and_peace_05_0805_librivox",
+    "language" : "eng",
+    "rank" : 354,
+    "title" : "War and Peace, Book 05: 1806-1807",
+    "workID" : "leo-tolstoy-war-and-peace"
+  },
+  {
+    "author" : "Fyodor Dostoevsky",
+    "identifier" : "brothers_karamazov_1002_librivox",
+    "language" : "eng",
+    "rank" : 355,
+    "title" : "The Brothers Karamazov",
+    "workID" : "fyodor-dostoevsky-the-brothers-karamazov"
+  },
+  {
+    "author" : "Fyodor Dostoevsky",
+    "identifier" : "brothers_karamazov_v3_2002_librivox",
+    "language" : "eng",
+    "rank" : 356,
+    "title" : "The Brothers Karamazov (version 3)",
+    "workID" : "fyodor-dostoevsky-the-brothers-karamazov"
+  },
+  {
+    "author" : "Fyodor Dostoevsky",
+    "identifier" : "brotherskaramazov2_1606_librivox",
+    "language" : "eng",
+    "rank" : 357,
+    "title" : "The Brothers Karamazov",
+    "workID" : "fyodor-dostoevsky-the-brothers-karamazov"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "a_dolls_house_2104_librivox",
+    "language" : "eng",
+    "rank" : 358,
+    "title" : "A Doll's House",
+    "workID" : "henrik-ibsen-a-dolls-house"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "dolls_house_0812_librivox",
+    "language" : "eng",
+    "rank" : 359,
+    "title" : "A Doll's House",
+    "workID" : "henrik-ibsen-a-dolls-house"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "wild_duck_1202_librivox",
+    "language" : "eng",
+    "rank" : 360,
+    "title" : "The Wild Duck",
+    "workID" : "henrik-ibsen-the-wild-duck"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "hedda_gabler_1002_librivox",
+    "language" : "eng",
+    "rank" : 361,
+    "title" : "Hedda Gabler",
+    "workID" : "henrik-ibsen-hedda-gabler"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "hedda_gabler_2_1603_librivox",
+    "language" : "eng",
+    "rank" : 362,
+    "title" : "Hedda Gabler (version 2)",
+    "workID" : "henrik-ibsen-hedda-gabler"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "heddagabler_2402_librivox",
+    "language" : "eng",
+    "rank" : 363,
+    "title" : "Hedda Gabler",
+    "workID" : "henrik-ibsen-hedda-gabler"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "masterbuilder_1611_librivox",
+    "language" : "eng",
+    "rank" : 364,
+    "title" : "The Master Builder (Gosse & Archer Translation)",
+    "workID" : "henrik-ibsen-the-master-builder"
+  },
+  {
+    "author" : "Henrik Ibsen",
+    "identifier" : "masterbuilder_1104_librivox",
+    "language" : "eng",
+    "rank" : 365,
+    "title" : "The Master Builder",
+    "workID" : "henrik-ibsen-the-master-builder"
+  },
+  {
+    "author" : "Sigmund Freud",
+    "identifier" : "interpretationofdreams_1401_librivox",
+    "language" : "eng",
+    "rank" : 366,
+    "title" : "The Interpretation of Dreams",
+    "workID" : "sigmund-freud-the-interpretation-of-dreams"
+  },
+  {
+    "author" : "Sigmund Freud",
+    "identifier" : "general_intro_psychoanalysis_1403_librivox",
+    "language" : "eng",
+    "rank" : 367,
+    "title" : "A General Introduction to Psychoanalysis",
+    "workID" : "sigmund-freud-a-general-introduction-to-psychoanalysis"
+  },
+  {
+    "author" : "William James",
+    "identifier" : "pragmatism_1006_librivox",
+    "language" : "eng",
+    "rank" : 368,
+    "title" : "Pragmatism",
+    "workID" : "william-james-pragmatism"
+  },
+  {
+    "author" : "Henri Bergson",
+    "identifier" : "introduction_to_metaphysics_0909_librivox",
+    "language" : "eng",
+    "rank" : 369,
+    "title" : "An Introduction to Metaphysics",
+    "workID" : "henri-bergson-an-introduction-to-metaphysics"
+  },
+  {
+    "author" : "Alfred North Whitehead",
+    "identifier" : "scienceandthemodernworld_2411_librivox",
+    "language" : "eng",
+    "rank" : 370,
+    "title" : "Science and the Modern World",
+    "workID" : "alfred-north-whitehead-science-and-the-modern-world"
+  },
+  {
+    "author" : "Bertrand Russell",
+    "identifier" : "problemsofphilosophy_1706_librivox",
+    "language" : "eng",
+    "rank" : 371,
+    "title" : "The Problems of Philosophy",
+    "workID" : "bertrand-russell-the-problems-of-philosophy"
+  },
+  {
+    "author" : "Bertrand Russell",
+    "identifier" : "problems_of_philosophy_librivox",
+    "language" : "eng",
+    "rank" : 372,
+    "title" : "The Problems of Philosophy",
+    "workID" : "bertrand-russell-the-problems-of-philosophy"
+  },
+  {
+    "author" : "Bertrand Russell",
+    "identifier" : "philosophy_2501_librivox",
+    "language" : "eng",
+    "rank" : 373,
+    "title" : "Philosophy",
+    "workID" : "bertrand-russell-the-problems-of-philosophy"
+  },
+  {
+    "author" : "Henri Poincaré",
+    "identifier" : "science_and_hypothesis_librivox",
+    "language" : "eng",
+    "rank" : 374,
+    "title" : "Science and Hypothesis",
+    "workID" : "henri-poincare-science-and-hypothesis"
+  },
+  {
+    "author" : "Thorstein Veblen",
+    "identifier" : "theory_leisureclass_0911_librivox",
+    "language" : "eng",
+    "rank" : 375,
+    "title" : "The Theory of the Leisure Class",
+    "workID" : "thorstein-veblen-the-theory-of-the-leisure-class"
+  },
+  {
+    "author" : "Johan Huizinga",
+    "identifier" : "waning_of_the_middle_ages_2110_librivox",
+    "language" : "eng",
+    "rank" : 376,
+    "title" : "The waning of the middle ages",
+    "workID" : "johan-huizinga-the-waning-of-the-middle-ages"
+  },
+  {
+    "author" : "Henry James",
+    "identifier" : "beast_in_the_jungle_2_1607_librivox",
+    "language" : "eng",
+    "rank" : 377,
+    "title" : "The Beast in the Jungle (version 2)",
+    "workID" : "henry-james-the-beast-in-the-jungle"
+  },
+  {
+    "author" : "Henry James",
+    "identifier" : "beast_in_jungle_1012_librivox",
+    "language" : "eng",
+    "rank" : 378,
+    "title" : "The Beast in the Jungle",
+    "workID" : "henry-james-the-beast-in-the-jungle"
+  },
+  {
+    "author" : "George Bernard Shaw",
+    "identifier" : "saint_joan_preface_2001_librivox",
+    "language" : "eng",
+    "rank" : 379,
+    "title" : "Saint Joan: Preface",
+    "workID" : "george-bernard-shaw-saint-joan"
+  },
+  {
+    "author" : "Joseph Conrad",
+    "identifier" : "heart_of_darkness_ver4_2110_librivox",
+    "language" : "eng",
+    "rank" : 380,
+    "title" : "Heart of Darkness (version 4)",
+    "workID" : "joseph-conrad-heart-of-darkness"
+  },
+  {
+    "author" : "Joseph Conrad",
+    "identifier" : "heartofdarkness3_2009_librivox",
+    "language" : "eng",
+    "rank" : 381,
+    "title" : "Heart of Darkness (version 3)",
+    "workID" : "joseph-conrad-heart-of-darkness"
+  },
+  {
+    "author" : "Joseph Conrad",
+    "identifier" : "heart_of_darkness_1203_librivox",
+    "language" : "eng",
+    "rank" : 382,
+    "title" : "Heart of Darkness (version 2)",
+    "workID" : "joseph-conrad-heart-of-darkness"
+  },
+  {
+    "author" : "Joseph Conrad",
+    "identifier" : "heart_of_darkness",
+    "language" : "eng",
+    "rank" : 383,
+    "title" : "Heart of Darkness",
+    "workID" : "joseph-conrad-heart-of-darkness"
+  },
+  {
+    "author" : "Anton Chekhov",
+    "identifier" : "uncle_vanya_1006_librivox",
+    "language" : "eng",
+    "rank" : 384,
+    "title" : "Uncle Vanya",
+    "workID" : "anton-chekhov-uncle-vanya"
+  },
+  {
+    "author" : "Luigi Pirandello",
+    "identifier" : "sixcharacters_1108_librivox",
+    "language" : "eng",
+    "rank" : 385,
+    "title" : "Six Characters in Search of an Author",
+    "workID" : "luigi-pirandello-six-characters-in-search-of-an-author"
+  },
+  {
+    "author" : "Thomas Mann",
+    "identifier" : "death_in_venice_ls_2109_librivox",
+    "language" : "eng",
+    "rank" : 386,
+    "title" : "Death in Venice",
+    "workID" : "thomas-mann-death-in-venice"
+  },
+  {
+    "author" : "James Joyce",
+    "identifier" : "portrait_artist_pb_librivox",
+    "language" : "eng",
+    "rank" : 387,
+    "title" : "A Portrait of the Artist as a Young Man",
+    "workID" : "james-joyce-a-portrait-of-the-artist-as-a-young-man"
+  },
+  {
+    "author" : "James Joyce",
+    "identifier" : "portraitartist_1402_librivox",
+    "language" : "eng",
+    "rank" : 388,
+    "title" : "A Portrait of the Artist as a Young Man (version 2)",
+    "workID" : "james-joyce-a-portrait-of-the-artist-as-a-young-man"
+  },
+  {
+    "author" : "Virginia Woolf",
+    "identifier" : "to_the_lighthouse_version_3_2306_librivox",
+    "language" : "eng",
+    "rank" : 389,
+    "title" : "To the Lighthouse (Version 3)",
+    "workID" : "virginia-woolf-to-the-lighthouse"
+  },
+  {
+    "author" : "Virginia Woolf",
+    "identifier" : "tothelighthouse_2303_librivox",
+    "language" : "eng",
+    "rank" : 390,
+    "title" : "To The Lighthouse",
+    "workID" : "virginia-woolf-to-the-lighthouse"
+  },
+  {
+    "author" : "Virginia Woolf",
+    "identifier" : "to_the_lighthouse_2303_librivox",
+    "language" : "eng",
+    "rank" : 391,
+    "title" : "To the Lighthouse (Version 2)",
+    "workID" : "virginia-woolf-to-the-lighthouse"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "metamorphosis_1401_librivox",
+    "language" : "eng",
+    "rank" : 392,
+    "title" : "The Metamorphosis",
+    "workID" : "franz-kafka-the-metamorphosis"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "metamorphosisv5_2005_librivox",
+    "language" : "eng",
+    "rank" : 393,
+    "title" : "The Metamorphosis (version 5)",
+    "workID" : "franz-kafka-the-metamorphosis"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "metamorphosis_1203_librivox",
+    "language" : "eng",
+    "rank" : 394,
+    "title" : "The Metamorphosis",
+    "workID" : "franz-kafka-the-metamorphosis"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "themetamorphosis_version_4_1706_librivox",
+    "language" : "eng",
+    "rank" : 395,
+    "title" : "The Metamorphosis (version 4)",
+    "workID" : "franz-kafka-the-metamorphosis"
+  },
+  {
+    "author" : "Franz Kafka",
+    "identifier" : "metamorphosis_librivox",
+    "language" : "eng",
+    "rank" : 396,
+    "title" : "The Metamorphosis",
+    "workID" : "franz-kafka-the-metamorphosis"
+  },
+  {
+    "author" : "D. H. Lawrence",
+    "identifier" : "prussian_officer_cb_librivox",
+    "language" : "eng",
+    "rank" : 397,
+    "title" : "The Prussian Officer and Other Stories",
+    "workID" : "d-h-lawrence-the-prussian-officer"
+  },
+  {
+    "author" : "T. S. Eliot",
+    "identifier" : "wasteland_etk_librivox",
+    "language" : "eng",
+    "rank" : 398,
+    "title" : "The Waste Land (version 3)",
+    "workID" : "t-s-eliot-the-waste-land"
+  },
+  {
+    "author" : "T. S. Eliot",
+    "identifier" : "wasteland_0808_librivox",
+    "language" : "eng",
+    "rank" : 399,
+    "title" : "The Waste Land",
+    "workID" : "t-s-eliot-the-waste-land"
+  },
+  {
+    "author" : "T. S. Eliot",
+    "identifier" : "waste_land_librivox",
+    "language" : "eng",
+    "rank" : 400,
+    "title" : "The Waste Land",
+    "workID" : "t-s-eliot-the-waste-land"
+  },
+  {
+    "author" : "F. Scott Fitzgerald",
+    "identifier" : "greatgatsby_2109_librivox",
+    "language" : "eng",
+    "rank" : 401,
+    "title" : "The Great Gatsby (version 2)",
+    "workID" : "f-scott-fitzgerald-the-great-gatsby"
+  },
+  {
+    "author" : "F. Scott Fitzgerald",
+    "identifier" : "greatgatsby5_2510_librivox",
+    "language" : "eng",
+    "rank" : 402,
+    "title" : "The Great Gatsby (Version 5 Dramatic Reading)",
+    "workID" : "f-scott-fitzgerald-the-great-gatsby"
+  },
+  {
+    "author" : "F. Scott Fitzgerald",
+    "identifier" : "thegreatgatsbyversion4_2402_librivox",
+    "language" : "eng",
+    "rank" : 403,
+    "title" : "The Great Gatsby",
+    "workID" : "f-scott-fitzgerald-the-great-gatsby"
+  },
+  {
+    "author" : "F. Scott Fitzgerald",
+    "identifier" : "great_gatsby_2305_librivox",
+    "language" : "eng",
+    "rank" : 404,
+    "title" : "The Great Gatsby (Version 3)",
+    "workID" : "f-scott-fitzgerald-the-great-gatsby"
+  },
+  {
+    "author" : "F. Scott Fitzgerald",
+    "identifier" : "greatgatsby_2101_librivox",
+    "language" : "eng",
+    "rank" : 405,
+    "title" : "The Great Gatsby",
+    "workID" : "f-scott-fitzgerald-the-great-gatsby"
+  }
+]

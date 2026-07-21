@@ -11,6 +11,7 @@ struct BrowseView: View {
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
     @State private var isDescriptionExpanded = false
+    @State private var showDownloadAllAlert = false
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
@@ -85,6 +86,7 @@ struct BrowseView: View {
                 sortPicker
                 if selectedCollection?.isCurated == true {
                     curatedStatusBanner
+                    downloadAllButton
                 }
                 if let collection = selectedCollection, collection.hasDescription {
                     collectionDescriptionView(collection)
@@ -176,6 +178,68 @@ struct BrowseView: View {
             "Sorted by author"
         case .recordedDate:
             "Sorted by date"
+        }
+    }
+
+    private var downloadAllButton: some View {
+        VStack(spacing: 8) {
+            if let progress = catalogStore.batchProgress {
+                VStack(spacing: 4) {
+                    ProgressView(value: Double(progress.completed), total: Double(progress.total)) {
+                        HStack {
+                            Text("Downloading \(progress.completed) of \(progress.total)")
+                                .scaledFont(size: 12, weight: .medium)
+                                .foregroundStyle(Palette.ink2)
+                            Spacer()
+                            Button("Cancel") {
+                                catalogStore.cancelBatchDownload()
+                            }
+                            .scaledFont(size: 12, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                        }
+                    }
+                    .tint(Palette.brass)
+                }
+                .padding(.vertical, 4)
+            }
+
+            if !catalogStore.isBatchDownloading {
+                let manifestCount = catalogStore.activeCuratedManifest.count
+                if manifestCount > 0 {
+                    Button {
+                        showDownloadAllAlert = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .scaledFont(size: 14)
+                            Text("Download All (\(manifestCount) items)")
+                                .scaledFont(size: 13, weight: .semibold)
+                        }
+                        .foregroundStyle(Palette.brass)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .glassSurface(cornerRadius: 10, fill: Color.white.opacity(0.05))
+                    }
+                    .buttonStyle(.plain)
+                    .confirmationDialog(
+                        "Download All",
+                        isPresented: $showDownloadAllAlert,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Download \(manifestCount) items", role: .destructive) {
+                            Task { await catalogStore.downloadAllCurated(into: libraryStore) }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("""
+                            This will download all \(manifestCount) audiobooks in this collection. \
+                            Estimated total: ~\(CatalogStore.formattedBatchSize(entryCount: manifestCount)). \
+                            Downloading over cellular may incur data charges. \
+                            Are you sure you want to continue?
+                            """)
+                    }
+                }
+            }
         }
     }
 

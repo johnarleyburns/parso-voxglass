@@ -77,8 +77,10 @@ public enum IACollectionStore {
         browseCollections + curated
     }
 
-    /// Hand-curated canon collections ported from the Parso Radio catalog.
-    /// These use broad creator-based Internet Archive queries against LibriVox.
+    /// Curated canon collections generated via enumerated Internet Archive creator queries
+    /// against the LibriVox catalog. The set of works is drawn from the
+    /// Great Books of the Western World (2nd ed., 1990). Each collection is scoped to
+    /// a single language to keep browsing results predictable.
     public static let greatBooks = IACollection(
         id: "great-books",
         title: "Great Books",
@@ -88,15 +90,91 @@ public enum IACollectionStore {
         assetName: "collection-great-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "iliad_popetranslation_1506_librivox"),
         curatedListName: "great-books",
-        summaryLine: "A hand-picked selection of 90 essential works from the Great Books of the Western World, with LibriVox recordings.",
+        summaryLine: "405 LibriVox recordings spanning 102 works from the Great Books of the Western World, in English.",
         description: """
             This curated collection traces the intellectual and literary foundations of the Western tradition through a selection of works drawn from the [Great Books of the Western World](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (second edition, 1990), the 60-volume canon assembled by Mortimer Adler and a team of scholars at the University of Chicago.
 
             The Great Books set spans nearly three millennia of thought: from Homer\u{2019}s epic poems and the tragedies of Aeschylus, Sophocles, and Euripides, through the philosophy of Plato and Aristotle, the histories of Herodotus and Thucydides, the natural science of Hippocrates, Galen, and Archimedes, and on into the medieval and Renaissance syntheses of Augustine, Aquinas, Dante, and Chaucer. It continues through the scientific revolution with Copernicus, Kepler, Galileo, Bacon, Descartes, and Newton; the Enlightenment with Locke, Hume, Montesquieu, Rousseau, Smith, and Kant; the American founding documents and \u{201c}The Federalist Papers\u{201d}; and the 19th and early 20th centuries with Goethe, Austen, Darwin, Marx, Tolstoy, Dostoevsky, Nietzsche, William James, Freud, and Einstein, among others.
 
-            Each entry in this Voxglass collection links to a specific LibriVox recording of the work. Where no LibriVox recording yet exists for a required Great Books work (e.g. the mathematical treatises of Euclid, Archimedes, and Apollonius, or certain scientific works of Ptolemy, Copernicus, and Kepler), that work is noted but omitted from the listening list. When you browse by Curation Order, entries appear in roughly the sequence of the 10-volume Syntopicon, which Adler organized conceptually rather than chronologically.
+            Each entry in this collection links to a specific LibriVox recording of the work. Where no LibriVox recording yet exists for a required Great Books work (e.g. the mathematical treatises of Euclid, Archimedes, and Apollonius, or certain scientific works of Ptolemy, Copernicus, and Kepler), that work is noted but omitted from the listening list.
 
-            The LibriVox volunteer community has recorded many of these works multiple times, in different translations and by different readers. The hand-picked identifiers used here favor readable translations and well-reviewed solo or collaborative recordings, but you can always search the broader Great Books collection for alternate versions.
+            The LibriVox volunteer community has recorded many of these works multiple times, in different translations and by different readers. This English-language collection is the most comprehensive, but companion collections for Spanish, German, Italian, and Ancient Greek are also available.
+            """
+    )
+
+    public static let greatBooksSpanish = IACollection(
+        id: "great-books-spa",
+        title: "Grandes Libros",
+        subtitle: "Los autores del canon occidental leídos por voluntarios de LibriVox",
+        archiveQuery: CuratedQueries.greatBooks,
+        systemImage: "books.vertical",
+        assetName: "collection-great-books",
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "donquijote_2507_librivox"),
+        curatedListName: "great-books-spa",
+        summaryLine: "33 grabaciones de LibriVox de 18 obras de los Grandes Libros del Mundo Occidental, en español.",
+        description: """
+            Esta colección recorre los fundamentos intelectuales y literarios de la tradición occidental a través de una selección de obras extraídas de los [Grandes Libros del Mundo Occidental](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (segunda edición, 1990).
+
+            Incluye grabaciones en español de Homero, Sófocles, Eurípides, Heródoto, Platón, Marco Aurelio, Dante, Maquiavelo, Shakespeare, Cervantes, Voltaire, Goethe, Dickens, Mark Twain, Tolstói, Conrad, Proust y Kafka.
+
+            La comunidad de voluntarios de LibriVox ha grabado muchas de estas obras en múltiples versiones y traducciones. Esta colección en español complementa la colección principal en inglés.
+            """
+    )
+
+    public static let greatBooksGerman = IACollection(
+        id: "great-books-deu",
+        title: "Große Bücher",
+        subtitle: "Die kanonischen Autoren der westlichen Tradition, gelesen von LibriVox-Freiwilligen",
+        archiveQuery: CuratedQueries.greatBooks,
+        systemImage: "books.vertical",
+        assetName: "collection-great-books",
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "faust1_1012_librivox"),
+        curatedListName: "great-books-deu",
+        summaryLine: "28 LibriVox-Aufnahmen aus 17 Werken der Great Books of the Western World, auf Deutsch.",
+        description: """
+            Diese Sammlung zeichnet die geistigen und literarischen Grundlagen der westlichen Tradition nach, basierend auf den [Great Books of the Western World](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (2. Auflage, 1990).
+
+            Enthält deutschsprachige Aufnahmen von Homer, Euripides, Thukydides, Platon, Erasmus, Cervantes, Swift, Voltaire, Goethe, Kant, Marx, Nietzsche, Mark Twain, Tolstoi, Freud und Kafka.
+
+            Die LibriVox-Gemeinschaft hat viele dieser Werke in verschiedenen Übersetzungen eingelesen. Diese deutschsprachige Sammlung ergänzt die englische Hauptsammlung.
+            """
+    )
+
+    public static let greatBooksItalian = IACollection(
+        id: "great-books-ita",
+        title: "Grandi Libri",
+        subtitle: "Gli autori canonici della tradizione occidentale letti dai volontari di LibriVox",
+        archiveQuery: CuratedQueries.greatBooks,
+        systemImage: "books.vertical",
+        assetName: "collection-great-books",
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "divina_commedia_librivox"),
+        curatedListName: "great-books-ita",
+        summaryLine: "13 registrazioni LibriVox da 4 opere dei Grandi Libri del Mondo Occidentale, in italiano.",
+        description: """
+            Questa collezione ripercorre le fondamenta intellettuali e letterarie della tradizione occidentale attraverso una selezione di opere tratte dai [Grandi Libri del Mondo Occidentale](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (seconda edizione, 1990).
+
+            Include registrazioni in italiano di Dante Alighieri, Niccolò Machiavelli, Galileo Galilei e Luigi Pirandello.
+
+            La comunità di volontari di LibriVox ha registrato molte di queste opere in versioni multiple. Questa collezione in italiano integra la collezione principale in inglese.
+            """
+    )
+
+    public static let greatBooksGreek = IACollection(
+        id: "great-books-grc",
+        title: "Μεγάλα Βιβλία",
+        subtitle: "Οι κανονικοί συγγραφείς της δυτικής παράδοσης από εθελοντές του LibriVox",
+        archiveQuery: CuratedQueries.greatBooks,
+        systemImage: "books.vertical",
+        assetName: "collection-great-books",
+        remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey01_1711_librivox"),
+        curatedListName: "great-books-grc",
+        summaryLine: "30 LibriVox recordings from 3 works of the Great Books of the Western World, in Ancient Greek.",
+        description: """
+            This collection presents works from the [Great Books of the Western World](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (2nd edition, 1990) in their original Ancient Greek.
+
+            Includes recordings of Homer's Odyssey (all 24 books), Thucydides' Histories (books 1–7), and Plato's Apology and Definitions.
+
+            LibriVox volunteers have contributed these recordings in the original language, making them a valuable resource for students and scholars of classical Greek. This collection complements the English-language Great Books collection.
             """
     )
 
@@ -119,7 +197,10 @@ public enum IACollectionStore {
             """
     )
 
-    public static let curated: [IACollection] = [greatBooks, greaterBooks]
+    public static let curated: [IACollection] = [
+        greatBooks, greatBooksSpanish, greatBooksGerman, greatBooksItalian, greatBooksGreek,
+        greaterBooks
+    ]
 
     public static func collections(for selectedIDs: Set<String>) -> [IACollection] {
         // Popular LibriVox always first, then the two curated collections,

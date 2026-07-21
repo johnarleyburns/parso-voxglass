@@ -1,0 +1,170 @@
+[
+  {
+    "rank": 1,
+    "title": "Ilias",
+    "author": "Homer",
+    "identifier": "ilias_0810_librivox"
+  },
+  {
+    "rank": 2,
+    "title": "Odyssee",
+    "author": "Homer",
+    "identifier": "odyssee_0811_librivox"
+  },
+  {
+    "rank": 3,
+    "title": "Iphigenie in Aulis",
+    "author": "Euripides",
+    "identifier": "iphigenie_in_aulis_1010_librivox"
+  },
+  {
+    "rank": 4,
+    "title": "Geschichte des Peloponnesischen Kriegs",
+    "author": "Thucydides",
+    "identifier": "peloponnesischenkriegs_1404_librivox"
+  },
+  {
+    "rank": 5,
+    "title": "Kriton",
+    "author": "Plato",
+    "identifier": "kriton_0911_librivox"
+  },
+  {
+    "rank": 6,
+    "title": "Des Sokrates Verteidigung",
+    "author": "Plato",
+    "identifier": "sokrates_verteidigung_r_librivox"
+  },
+  {
+    "rank": 7,
+    "title": "Das Lob der Narrheit",
+    "author": "Desiderius Erasmus",
+    "identifier": "lob_der_narrheit_1503_librivox"
+  },
+  {
+    "rank": 8,
+    "title": "Leben und Taten des scharfsinnigen Edlen Don Quixote von la Mancha, Band 1",
+    "author": "Miguel de Cervantes",
+    "identifier": "don_quixote_band_1_1805_librivox"
+  },
+  {
+    "rank": 9,
+    "title": "Gullivers Reisen",
+    "author": "Jonathan Swift",
+    "identifier": "gullivers_reisen_2004_librivox"
+  },
+  {
+    "rank": 10,
+    "title": "Kandid oder die beste Welt",
+    "author": "Voltaire",
+    "identifier": "kandid_oder_die_beste_welt_ak_librivox"
+  },
+  {
+    "rank": 11,
+    "title": "Zum ewigen Frieden. Ein philosophischer Entwurf",
+    "author": "Immanuel Kant",
+    "identifier": "zum_ewigen_frieden_ak_librivox"
+  },
+  {
+    "rank": 12,
+    "title": "Götzendämmerung",
+    "author": "Friedrich Nietzsche",
+    "identifier": "goetzendaemmerung_ry_librivox"
+  },
+  {
+    "rank": 13,
+    "title": "Der Antichrist",
+    "author": "Friedrich Nietzsche",
+    "identifier": "antichrist_1504_librivox"
+  },
+  {
+    "rank": 14,
+    "title": "Der tolle Mensch",
+    "author": "Friedrich Nietzsche",
+    "identifier": "tolle_mensch_librivox"
+  },
+  {
+    "rank": 15,
+    "title": "Faust - Der Tragödie erster Teil",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "faust1_1012_librivox"
+  },
+  {
+    "rank": 16,
+    "title": "Die Leiden des jungen Werther",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "leiden_werther_librivox"
+  },
+  {
+    "rank": 17,
+    "title": "Faust: Der Tragödie erster Teil",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "faust1teil_1412_librivox"
+  },
+  {
+    "rank": 18,
+    "title": "Faust, Der Tragödie zweiter Teil",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "faust2_1008_librivox"
+  },
+  {
+    "rank": 19,
+    "title": "Querkopf Wilson",
+    "author": "Mark Twain",
+    "identifier": "querkopf_wilson_2209_librivox"
+  },
+  {
+    "rank": 20,
+    "title": "Abenteuer und Fahrten des Huckleberry Finn",
+    "author": "Mark Twain",
+    "identifier": "huckleberryfinn_2607_librivox"
+  },
+  {
+    "rank": 21,
+    "title": "Die Abenteuer Tom Sawyers (version 2)",
+    "author": "Mark Twain",
+    "identifier": "tomsawyers_2606_librivox"
+  },
+  {
+    "rank": 22,
+    "title": "Die Abenteuer Tom Sawyers",
+    "author": "Mark Twain",
+    "identifier": "tomsawyer_crow_librivox"
+  },
+  {
+    "rank": 23,
+    "title": "Manifest der Kommunistischen Partei, von Karl Marx und Friedrich Engels",
+    "author": "Karl Marx; Friedrich Engels",
+    "identifier": "manifestkommunistischen_librivox"
+  },
+  {
+    "rank": 24,
+    "title": "Herr und Knecht",
+    "author": "Leo Tolstoy",
+    "identifier": "herr_und_knecht_1406_librivox"
+  },
+  {
+    "rank": 25,
+    "title": "Anna Karenina",
+    "author": "Leo Tolstoy",
+    "identifier": "anna_karenina_deutsch_1610_librivox"
+  },
+  {
+    "rank": 26,
+    "title": "Über Psychoanalyse",
+    "author": "Sigmund Freud",
+    "identifier": "ueber_psychoanalyse_1109_librivox"
+  },
+  {
+    "rank": 27,
+    "title": "Die Verwandlung",
+    "author": "Franz Kafka",
+    "identifier": "verwandlung_mw_0811_librivox"
+  },
+  {
+    "rank": 28,
+    "title": "Der Prozess",
+    "author": "Franz Kafka",
+    "identifier": "der_prozess_ava_librivox"
+  }
+]

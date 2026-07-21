@@ -10,6 +10,10 @@ public final class CatalogStore: ObservableObject {
     @Published public private(set) var hasMore = false
     @Published public var catalogError: String?
 
+    /// Batch-download state for curated collections.
+    @Published public var batchProgress: (completed: Int, total: Int)? = nil
+    @Published public var isBatchDownloading = false
+
     /// The user's search text, promoted to the store so it survives `SearchView`
     /// being recreated on tab changes (§3). `SearchView` binds its field to this.
     @Published public var query: String = ""
@@ -201,6 +205,73 @@ public final class CatalogStore: ObservableObject {
             catalogError = error.localizedDescription
             return nil
         }
+    }
+
+    /// Exposes the currently loaded curated manifest so "Download All" can
+    /// drive batch imports from the manifest entries rather than the paged results.
+    public var activeCuratedManifest: [CuratedManifestEntry] {
+        curatedManifest
+    }
+
+    /// Estimated total download size for a curated collection, in bytes.
+    /// Uses a conservative average of ~250 MB per LibriVox audiobook (MP3).
+    public static func estimatedBatchSize(entryCount: Int) -> Int64 {
+        Int64(entryCount) * 250_000_000
+    }
+
+    public static func formattedBatchSize(entryCount: Int) -> String {
+        let bytes = estimatedBatchSize(entryCount: entryCount)
+        let gb = Double(bytes) / 1_000_000_000.0
+        if gb >= 1.0 {
+            return String(format: "%.1f GB", gb)
+        }
+        return String(format: "%.0f MB", Double(bytes) / 1_000_000.0)
+    }
+
+    /// Downloads and imports all items in the curated collection.
+    /// - Parameter libraryStore: The library to import items into.
+    /// Skips items that fail metadata fetch and continues.
+    public func downloadAllCurated(into libraryStore: LibraryStore) async {
+        guard !curatedManifest.isEmpty, !isBatchDownloading else { return }
+
+        isBatchDownloading = true
+        batchProgress = (0, curatedManifest.count)
+        defer {
+            isBatchDownloading = false
+            batchProgress = nil
+        }
+
+        var completed = 0
+        for entry in curatedManifest {
+            guard isBatchDownloading else { break }  // allow cancellation
+
+            do {
+                let result = try await fetchResult(for: entry)
+                let _ = await importResult(result, into: libraryStore)
+            } catch {
+                // Skip items that can't be fetched; continue with remaining.
+            }
+
+            completed += 1
+            batchProgress = (completed, curatedManifest.count)
+        }
+    }
+
+    /// Cancels an ongoing batch download.
+    public func cancelBatchDownload() {
+        isBatchDownloading = false
+        batchProgress = nil
+    }
+
+    /// Resolves a single result for a manifest entry by querying the archive.
+    private func fetchResult(for entry: CuratedManifestEntry) async throws -> InternetArchiveSearchResult {
+        let query = "identifier:\"\(entry.identifier)\""
+        let page = try await client.searchAdvancedPage(query: query, rows: 1, page: 1, sort: .popularity)
+        guard let result = page.results.first else {
+            throw NSError(domain: "curated-lists", code: 404,
+                          userInfo: [NSLocalizedDescriptionKey: "identifier not found: \(entry.identifier)"])
+        }
+        return result
     }
 
     private func runSearch(query: String, sort: CatalogSort) async {

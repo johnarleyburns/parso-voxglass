@@ -53,6 +53,51 @@ struct CuratedManifestTests {
         #expect(first?.author.localizedCaseInsensitiveContains("Homer") == true)
     }
 
+    // MARK: - Per-language manifest validation
+
+    @Test func spanishManifestIsNonEmpty() {
+        let manifest = CuratedManifest.load(named: "great-books-spa")
+        #expect(!manifest.isEmpty, "Spanish Great Books manifest should be non-empty")
+    }
+
+    @Test func germanManifestIsNonEmpty() {
+        let manifest = CuratedManifest.load(named: "great-books-deu")
+        #expect(!manifest.isEmpty, "German Great Books manifest should be non-empty")
+    }
+
+    @Test func italianManifestIsNonEmpty() {
+        let manifest = CuratedManifest.load(named: "great-books-ita")
+        #expect(!manifest.isEmpty, "Italian Great Books manifest should be non-empty")
+    }
+
+    @Test func greekManifestIsNonEmpty() {
+        let manifest = CuratedManifest.load(named: "great-books-grc")
+        #expect(!manifest.isEmpty, "Greek Great Books manifest should be non-empty")
+    }
+
+    @Test func perLanguageManifestsHaveUniqueIdentifiers() {
+        for name in ["great-books-spa", "great-books-deu", "great-books-ita", "great-books-grc"] {
+            let manifest = CuratedManifest.load(named: name)
+            let ids = manifest.map(\.identifier)
+            #expect(Set(ids).count == ids.count, "\(name): identifiers should be unique")
+        }
+    }
+
+    @Test func perLanguageManifestRanksAreIncreasing() {
+        for name in ["great-books-spa", "great-books-deu", "great-books-ita", "great-books-grc"] {
+            let manifest = CuratedManifest.load(named: name)
+            let ranks = manifest.map(\.rank)
+            #expect(ranks == ranks.sorted(), "\(name): ranks should be in ascending order")
+        }
+    }
+
+    @Test func perLanguageCuratedCollectionsDefaultToCuration() {
+        #expect(CatalogSort.defaultSort(for: IACollectionStore.greatBooksSpanish) == .curation)
+        #expect(CatalogSort.defaultSort(for: IACollectionStore.greatBooksGerman) == .curation)
+        #expect(CatalogSort.defaultSort(for: IACollectionStore.greatBooksItalian) == .curation)
+        #expect(CatalogSort.defaultSort(for: IACollectionStore.greatBooksGreek) == .curation)
+    }
+
     // MARK: - CuratedPager
 
     @Test func pagerSliceFirstPage() {

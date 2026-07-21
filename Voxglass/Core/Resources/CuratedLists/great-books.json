@@ -1,542 +1,2432 @@
 [
   {
     "rank": 1,
-    "title": "The Odyssey",
+    "title": "The Iliad of Homer",
     "author": "Homer",
-    "identifier": "odyssey_butler_librivox"
+    "identifier": "iliad_of_homer_1011_librivox"
   },
   {
     "rank": 2,
-    "title": "The Oresteia",
-    "author": "Aeschylus",
-    "identifier": "oresteia_1002_librivox"
-  },
-  {
-    "rank": 3,
-    "title": "Las Siete Tragedias de S\u00f3focles",
-    "author": "Sophocles",
-    "identifier": "tragediassofocles_1606_librivox"
-  },
-  {
-    "rank": 4,
-    "title": "Iphigenia in Aulis",
-    "author": "Euripides",
-    "identifier": "iphigenia_in_aulis_1308_librivox"
-  },
-  {
-    "rank": 5,
-    "title": "The Clouds",
-    "author": "Aristophanes",
-    "identifier": "clouds_1506_librivox"
-  },
-  {
-    "rank": 6,
-    "title": "Libro IV de la Historia de Her\u00f3doto",
-    "author": "Herodotus",
-    "identifier": "historiaherodoto4_1508_librivox"
-  },
-  {
-    "rank": 7,
-    "title": "The History of the Peloponnesian War",
-    "author": "Thucydides",
-    "identifier": "history_peloponnesian_war_librivox"
-  },
-  {
-    "rank": 8,
-    "title": "Alcibiades I",
-    "author": "Plato",
-    "identifier": "alcibiades1_1212_librivox"
-  },
-  {
-    "rank": 9,
-    "title": "Politics",
-    "author": "Aristotle",
-    "identifier": "politics_0802_librivox"
-  },
-  {
-    "rank": 10,
-    "title": "The Oath and Law of Hippocrates",
-    "author": "Hippocrates",
-    "identifier": "nonfiction002_librivox"
-  },
-  {
-    "rank": 16,
-    "title": "On the Nature of Things (Watson translation)",
-    "author": "Lucretius",
-    "identifier": "on_the_nature_of_things_1001_librivox"
-  },
-  {
-    "rank": 17,
-    "title": "The Enchiridion",
-    "author": "Epictetus",
-    "identifier": "enchiridion_librivox"
-  },
-  {
-    "rank": 18,
-    "title": "Meditations",
-    "author": "Marcus Aurelius",
-    "identifier": "meditations_0708_librivox"
-  },
-  {
-    "rank": 19,
-    "title": "The Aeneid, prose translation",
-    "author": "Virgil",
-    "identifier": "the_aeneid_prose_1405_librivox"
-  },
-  {
-    "rank": 20,
-    "title": "The Morals (Moralia), Book 2",
-    "author": "Plutarch",
-    "identifier": "morals2_26_1506_librivox"
-  },
-  {
-    "rank": 21,
-    "title": "Las Germanias",
-    "author": "Tacitus",
-    "identifier": "las_germanias_2203_librivox"
-  },
-  {
-    "rank": 25,
-    "title": "Enneads",
-    "author": "Plotinus",
-    "identifier": "enneads_-plotinus_1806_librivox"
-  },
-  {
-    "rank": 26,
-    "title": "Confessions",
-    "author": "Augustine of Hippo",
-    "identifier": "confessions_augustine_0911_librivox"
-  },
-  {
-    "rank": 27,
-    "title": "Summa Theologica, Prima Pars, Initial Questions",
-    "author": "Thomas Aquinas",
-    "identifier": "summa_1_01_jr_0901_librivox"
-  },
-  {
-    "rank": 28,
-    "title": "The Divine Comedy",
-    "author": "Dante Alighieri",
-    "identifier": "divine_comedy_librivox"
-  },
-  {
-    "rank": 29,
-    "title": "The Canterbury Tales",
-    "author": "Geoffrey Chaucer",
-    "identifier": "canterburytales_librivox"
-  },
-  {
-    "rank": 30,
-    "title": "Il Principe",
-    "author": "Niccol\u00f2 Machiavelli",
-    "identifier": "il_principe_1711_librivox"
-  },
-  {
-    "rank": 31,
-    "title": "Das Lob der Narrheit",
-    "author": "Erasmus",
-    "identifier": "lob_der_narrheit_1503_librivox"
-  },
-  {
-    "rank": 32,
-    "title": "Institutes of the Christian Religion, Book One",
-    "author": "John Calvin",
-    "identifier": "institutes_christian_religion1_0909_librivox"
-  },
-  {
-    "rank": 33,
-    "title": "Leviathan (Books I and II)",
-    "author": "Thomas Hobbes",
-    "identifier": "leviathan_1_2_0802_librivox"
-  },
-  {
-    "rank": 34,
-    "title": "Gargantua and Pantagruel, Book II",
-    "author": "Fran\u00e7ois Rabelais",
-    "identifier": "gargantuapantagruel2_1308_librivox"
-  },
-  {
-    "rank": 35,
-    "title": "Essays, Book 1",
-    "author": "Michel de Montaigne",
-    "identifier": "essays_book1_1204_librivox"
-  },
-  {
-    "rank": 36,
-    "title": "Romeo and Juliet",
-    "author": "William Shakespeare",
-    "identifier": "romeo_and_juliet_librivox"
-  },
-  {
-    "rank": 37,
-    "title": "Dialogo dei Massimi Sistemi",
-    "author": "Galileo Galilei",
-    "identifier": "dialogo_dei_massimi_sistemi_2009_librivox"
-  },
-  {
-    "rank": 39,
-    "title": "Don Quijote, Volume 1",
-    "author": "Miguel de Cervantes",
-    "identifier": "don_quijote_vol1_0706_librivox"
-  },
-  {
-    "rank": 40,
-    "title": "The Essays of Francis Bacon",
-    "author": "Francis Bacon",
-    "identifier": "essays_francis_bacon_cv3_librivox"
-  },
-  {
-    "rank": 41,
-    "title": "Meditations on First Philosophy",
-    "author": "Ren\u00e9 Descartes",
-    "identifier": "meditations_descartes_dew_librivox"
-  },
-  {
-    "rank": 42,
-    "title": "The Ethics",
-    "author": "Baruch Spinoza",
-    "identifier": "ethics_1010_librivox"
-  },
-  {
-    "rank": 43,
-    "title": "Paradise Lost",
-    "author": "John Milton",
-    "identifier": "paradise_lost_08083_librivox"
-  },
-  {
-    "rank": 44,
-    "title": "La Comtesse d'Escarbagnas",
-    "author": "Moli\u00e8re",
-    "identifier": "comtesse_escarbagnas_0809_librivox"
-  },
-  {
-    "rank": 45,
-    "title": "Esther",
-    "author": "Jean Racine",
-    "identifier": "esther_2505_librivox"
-  },
-  {
-    "rank": 46,
-    "title": "Pens\u00e9es",
-    "author": "Blaise Pascal",
-    "identifier": "pensees_0906_dx_librivox1"
-  },
-  {
-    "rank": 47,
-    "title": "Treatise on Light",
-    "author": "Christiaan Huygens",
-    "identifier": "treatise_light_ava_librivox"
-  },
-  {
-    "rank": 48,
-    "title": "Opticks",
-    "author": "Isaac Newton",
-    "identifier": "opticks_1203_librivox"
-  },
-  {
-    "rank": 49,
-    "title": "Two Treatises of Civil Government",
-    "author": "John Locke",
-    "identifier": "two_treatises_0902_librivox"
-  },
-  {
-    "rank": 50,
-    "title": "A Treatise Concerning the Principles of Human Knowledge, Part 1",
-    "author": "George Berkeley",
-    "identifier": "treatise_0905_librivox"
-  },
-  {
-    "rank": 51,
-    "title": "An Enquiry Concerning Human Understanding",
-    "author": "David Hume",
-    "identifier": "human_understanding_0711_lv_2"
-  },
-  {
-    "rank": 52,
-    "title": "Candide",
-    "author": "Voltaire",
-    "identifier": "candide_librivox"
-  },
-  {
-    "rank": 53,
-    "title": "Gulliver's Travels",
-    "author": "Jonathan Swift",
-    "identifier": "gulliver_ld_librivox"
-  },
-  {
-    "rank": 54,
-    "title": "De l'esprit des lois, livres 01-13",
-    "author": "Montesquieu",
-    "identifier": "delespritdeslois_anlo_1004_librivox"
-  },
-  {
-    "rank": 55,
-    "title": "The Life and Opinions of Tristram Shandy, Gentleman, Vol. 4",
-    "author": "Laurence Sterne",
-    "identifier": "tristramshandy4_1008_librivox"
-  },
-  {
-    "rank": 56,
-    "title": "The History of Tom Jones, A Foundling",
-    "author": "Henry Fielding",
-    "identifier": "tomjones_0811_librivox"
-  },
-  {
-    "rank": 57,
-    "title": "Regrets sur ma vieille robe de chambre",
-    "author": "Denis Diderot",
-    "identifier": "regrets_sur_ma_vieille_robe_de_chambre_enko_0808_librivox"
-  },
-  {
-    "rank": 58,
-    "title": "A Discourse Upon the Origin and the Foundation of the Inequality Among Mankind",
-    "author": "Jean-Jacques Rousseau",
-    "identifier": "discourse_inequality_ej_librivox"
-  },
-  {
-    "rank": 59,
-    "title": "The Wealth of Nations - Book 1",
-    "author": "Adam Smith",
-    "identifier": "wealth_nations01_se"
-  },
-  {
-    "rank": 60,
-    "title": "The Critique of Pure Reason",
-    "author": "Immanuel Kant",
-    "identifier": "critique_pure_reason_0709_librivox"
-  },
-  {
-    "rank": 61,
-    "title": "The Decline and Fall of the Roman Empire Vol. I",
-    "author": "Edward Gibbon",
-    "identifier": "decline_fall_1_0707_librivox"
-  },
-  {
-    "rank": 62,
-    "title": "The Federalist Papers",
-    "author": "Alexander Hamilton; James Madison; John Jay",
-    "identifier": "federalist_papers_librivox"
-  },
-  {
-    "rank": 63,
-    "title": "On Liberty",
-    "author": "John Stuart Mill",
-    "identifier": "on_liberty_librivox"
-  },
-  {
-    "rank": 64,
-    "title": "Democracy in America Vol. I",
-    "author": "Alexis de Tocqueville",
-    "identifier": "democracy_america_vol1_0709"
-  },
-  {
-    "rank": 65,
-    "title": "The Life of Samuel Johnson, Vol. II (version 2)",
-    "author": "James Boswell",
-    "identifier": "samuel_johnson_vol_ii_version_2_1504_librivox"
-  },
-  {
-    "rank": 66,
-    "title": "Die Leiden des jungen Werther",
-    "author": "Johann Wolfgang von Goethe",
-    "identifier": "leiden_werther_librivox"
-  },
-  {
-    "rank": 67,
-    "title": "Introduction to the Philosophy of History",
-    "author": "Georg Wilhelm Friedrich Hegel",
-    "identifier": "intro_philosophy_history_dew_librivox"
-  },
-  {
-    "rank": 68,
-    "title": "Pride and Prejudice",
-    "author": "Jane Austen",
-    "identifier": "pride_and_prejudice_librivox"
-  },
-  {
-    "rank": 69,
-    "title": "Letters of Two Brides",
-    "author": "Honor\u00e9 de Balzac",
-    "identifier": "letters_brides_0709_librivox"
-  },
-  {
-    "rank": 70,
-    "title": "\"Fear and Trembling (selections)\"",
-    "author": "S\u00f8ren Kierkegaard",
-    "identifier": "fear_and_trembling_selections_2010_librivox"
-  },
-  {
-    "rank": 71,
-    "title": "On the Origin of Species by Means of Natural Selection",
-    "author": "Charles Darwin",
-    "identifier": "origin_species_librivox"
-  },
-  {
-    "rank": 72,
-    "title": "A Tale of Two Cities",
-    "author": "Charles Dickens",
-    "identifier": "tale_two_cities_librivox"
-  },
-  {
-    "rank": 73,
-    "title": "Moby Dick, or the Whale",
-    "author": "Herman Melville",
-    "identifier": "moby_dick_librivox"
-  },
-  {
-    "rank": 74,
-    "title": "Middlemarch (version 2)",
-    "author": "George Eliot",
-    "identifier": "middlemarch_version2_1310_librivox"
-  },
-  {
-    "rank": 75,
-    "title": "The Communist Manifesto, by Karl Marx and Friedrich Engels",
-    "author": "Karl Marx",
-    "identifier": "communistmanifesto_librivox"
-  },
-  {
-    "rank": 76,
-    "title": "War and Peace, Book 01: 1805",
-    "author": "Leo Tolstoy",
-    "identifier": "war_and_peace_01_librivox"
-  },
-  {
-    "rank": 77,
-    "title": "The Adventures of Tom Sawyer",
-    "author": "Mark Twain",
-    "identifier": "tom_sawyer_librivox"
-  },
-  {
-    "rank": 78,
-    "title": "Beyond Good and Evil",
-    "author": "Friedrich Nietzsche",
-    "identifier": "beyond_good_and_evil_librivox"
-  },
-  {
-    "rank": 79,
-    "title": "\u0411\u0435\u043b\u044b\u0435 \u043d\u043e\u0447\u0438 - White Nights",
-    "author": "Fyodor Dostoevsky",
-    "identifier": "white_nights_librivox"
-  },
-  {
-    "rank": 80,
-    "title": "A Doll's House",
-    "author": "Henrik Ibsen",
-    "identifier": "dolls_house_0812_librivox"
-  },
-  {
-    "rank": 81,
-    "title": "Varieties of Religious Experience",
-    "author": "William James",
-    "identifier": "religious_experience_1008_librivox"
-  },
-  {
-    "rank": 82,
-    "title": "Dream Psychology",
-    "author": "Sigmund Freud",
-    "identifier": "dream_psychology_librivox"
-  },
-  {
-    "rank": 85,
-    "title": "The Chemical History of a Candle",
-    "author": "Michael Faraday",
-    "identifier": "chemical_history_candle_ava_librivox"
-  },
-  {
-    "rank": 86,
     "title": "The Iliad",
     "author": "Homer",
     "identifier": "illiad_0801_librivox3"
   },
   {
+    "rank": 3,
+    "title": "The Iliad (Pope Translation)",
+    "author": "Homer",
+    "identifier": "iliad_popetranslation_1506_librivox"
+  },
+  {
+    "rank": 4,
+    "title": "The Iliads of Homer",
+    "author": "Homer",
+    "identifier": "iliadsofhomer_2510_librivox"
+  },
+  {
+    "rank": 5,
+    "title": "The Iliad (Version 2)",
+    "author": "Homer",
+    "identifier": "iliadv2_2407_librivox"
+  },
+  {
+    "rank": 6,
+    "title": "The Iliad of Homer, Rendered into English Blank Verse",
+    "author": "Homer",
+    "identifier": "iliad_1403_librivox"
+  },
+  {
+    "rank": 7,
+    "title": "The Odyssey",
+    "author": "Homer",
+    "identifier": "odyssey_2409_librivox"
+  },
+  {
+    "rank": 8,
+    "title": "The Odyssey",
+    "author": "Homer",
+    "identifier": "odyssey_butler_librivox"
+  },
+  {
+    "rank": 9,
+    "title": "The Odysseys of Homer",
+    "author": "Homer",
+    "identifier": "odysseysofhomer_1511_librivox"
+  },
+  {
+    "rank": 10,
+    "title": "The Odyssey, Version 3",
+    "author": "Homer",
+    "identifier": "odyssey_ver_3_1909_librivox"
+  },
+  {
+    "rank": 11,
+    "title": "Agamemnon (Browning Translation)",
+    "author": "Aeschylus",
+    "identifier": "agamemnon_1511_librivox"
+  },
+  {
+    "rank": 12,
+    "title": "Prometheus Bound",
+    "author": "Aeschylus",
+    "identifier": "prometheusbound_2408_librivox"
+  },
+  {
+    "rank": 13,
+    "title": "The Furies (Morshead Translation)",
+    "author": "Aeschylus",
+    "identifier": "furies_1511_librivox"
+  },
+  {
+    "rank": 14,
+    "title": "The Oresteia",
+    "author": "Aeschylus",
+    "identifier": "oresteia_1002_librivox"
+  },
+  {
+    "rank": 15,
+    "title": "The Persians",
+    "author": "Aeschylus",
+    "identifier": "thepersians_1404_librivox"
+  },
+  {
+    "rank": 16,
+    "title": "Agamemnon (Morshead Translation)",
+    "author": "Aeschylus",
+    "identifier": "agamemnon_morshead_translation_1511_librivox"
+  },
+  {
+    "rank": 17,
+    "title": "Prometheus Bound (Thoreau Translation)",
+    "author": "Aeschylus",
+    "identifier": "prometheusbound_1507_librivox"
+  },
+  {
+    "rank": 18,
+    "title": "Prometheus Bound",
+    "author": "Aeschylus",
+    "identifier": "prometheus_bound_1302_librivox"
+  },
+  {
+    "rank": 19,
+    "title": "The Persians (version 2)",
+    "author": "Aeschylus",
+    "identifier": "thepersians_1507_librivox"
+  },
+  {
+    "rank": 20,
+    "title": "Seven Against Thebes",
+    "author": "Aeschylus",
+    "identifier": "sevenagainstthebes_way_1512_librivox"
+  },
+  {
+    "rank": 21,
+    "title": "The Suppliant Maidens",
+    "author": "Aeschylus",
+    "identifier": "suppliantmaidens_1512_librivox"
+  },
+  {
+    "rank": 22,
+    "title": "Prometheus Bound (Browning Translation)",
+    "author": "Aeschylus",
+    "identifier": "prometheus_bound_1506_librivox"
+  },
+  {
+    "rank": 23,
+    "title": "Seven Against Thebes",
+    "author": "Aeschylus",
+    "identifier": "seven_against_thebes_1210_librivox"
+  },
+  {
+    "rank": 24,
+    "title": "Electra",
+    "author": "Sophocles",
+    "identifier": "electra_1012_librivox"
+  },
+  {
+    "rank": 25,
+    "title": "Antigone",
+    "author": "Sophocles",
+    "identifier": "antigone_1009_librivox"
+  },
+  {
+    "rank": 26,
+    "title": "Trachiniai (Campbell Translation)",
+    "author": "Sophocles",
+    "identifier": "trachiniai_campbell_translation_1512_librivox"
+  },
+  {
+    "rank": 27,
+    "title": "Oedipus at Colonus (Jebb Translation)",
+    "author": "Sophocles",
+    "identifier": "oedipusatcolonus_1507_librivox"
+  },
+  {
+    "rank": 28,
+    "title": "Electra (Murray Translation)",
+    "author": "Sophocles",
+    "identifier": "electra_murray_translation_1506_librivox"
+  },
+  {
+    "rank": 29,
+    "title": "Philoctetes",
+    "author": "Sophocles",
+    "identifier": "philoctetes_1205_librivox"
+  },
+  {
+    "rank": 30,
+    "title": "Ajax (Campbell Translation)",
+    "author": "Sophocles",
+    "identifier": "ajax_campbell_translation_1512_librivox"
+  },
+  {
+    "rank": 31,
+    "title": "Oedipus at Colonus",
+    "author": "Sophocles",
+    "identifier": "oedipusatcolonus_1009_librivox"
+  },
+  {
+    "rank": 32,
+    "title": "Oedipus Rex (Murray Translation)",
+    "author": "Sophocles",
+    "identifier": "oedipusrex_1507_librivox"
+  },
+  {
+    "rank": 33,
+    "title": "Oedipus Rex",
+    "author": "Sophocles",
+    "identifier": "oedipus_rex_1008_librivox"
+  },
+  {
+    "rank": 34,
+    "title": "Electra (Storr Translation)",
+    "author": "Sophocles",
+    "identifier": "electra_1506_librivox"
+  },
+  {
+    "rank": 35,
+    "title": "Philoctetes (Campbell Translation)",
+    "author": "Sophocles",
+    "identifier": "philoctetes_campbell_translation_1512_librivox"
+  },
+  {
+    "rank": 36,
+    "title": "Antigone (Plumptre Translation)",
+    "author": "Sophocles",
+    "identifier": "antigone_1507_librivox"
+  },
+  {
+    "rank": 37,
+    "title": "Medea (Way Translation)",
+    "author": "Euripides",
+    "identifier": "medea_way_translation_1601_librivox"
+  },
+  {
+    "rank": 38,
+    "title": "Iphigenia in Aulis",
+    "author": "Euripides",
+    "identifier": "iphigenia_in_aulis_1308_librivox"
+  },
+  {
+    "rank": 39,
+    "title": "Medea",
+    "author": "Euripides",
+    "identifier": "medea_1204_librivox"
+  },
+  {
+    "rank": 40,
+    "title": "Iphigenia in Tauris",
+    "author": "Euripides",
+    "identifier": "iphigeniaintauris_1510_librivox"
+  },
+  {
+    "rank": 41,
+    "title": "Iphigenia in Tauris",
+    "author": "Euripides",
+    "identifier": "iphigeniaintauris_2507_librivox"
+  },
+  {
+    "rank": 42,
+    "title": "Alcestis",
+    "author": "Euripides",
+    "identifier": "alcestis_1303_librivox"
+  },
+  {
+    "rank": 43,
+    "title": "The Trojan Women",
+    "author": "Euripides",
+    "identifier": "thetrojanwomen_1008_librivox"
+  },
+  {
+    "rank": 44,
+    "title": "Hecuba",
+    "author": "Euripides",
+    "identifier": "hecuba_1503_librivox"
+  },
+  {
+    "rank": 45,
+    "title": "Hippolytus",
+    "author": "Euripides",
+    "identifier": "hippolytus_1209_librivox"
+  },
+  {
+    "rank": 46,
+    "title": "Alcestis (Way Translation)",
+    "author": "Euripides",
+    "identifier": "alcestis_way_translation_1601_librivox"
+  },
+  {
+    "rank": 47,
+    "title": "Iphigenia in Tauris (Murray Translation)",
+    "author": "Euripides",
+    "identifier": "iphigenia_tauris_murray_translation_1506_librivox"
+  },
+  {
+    "rank": 48,
+    "title": "The Trojan Women (Coleridge Translation)",
+    "author": "Euripides",
+    "identifier": "trojan_women_1507_librivox"
+  },
+  {
+    "rank": 49,
+    "title": "Andromache",
+    "author": "Euripides",
+    "identifier": "andromache_2310_librivox"
+  },
+  {
+    "rank": 50,
+    "title": "Iphigenia in Aulis (Way translation)",
+    "author": "Euripides",
+    "identifier": "iphigenia_in_aulis_1506_librivox"
+  },
+  {
+    "rank": 51,
+    "title": "Andromache",
+    "author": "Euripides",
+    "identifier": "andromache_2008_librivox"
+  },
+  {
+    "rank": 52,
+    "title": "Ion",
+    "author": "Euripides",
+    "identifier": "ion_spz_librivox"
+  },
+  {
+    "rank": 53,
+    "title": "Orestes",
+    "author": "Euripides",
+    "identifier": "orestes_1505_librivox"
+  },
+  {
+    "rank": 54,
+    "title": "The Birds",
+    "author": "Aristophanes",
+    "identifier": "birds_2303_librivox"
+  },
+  {
+    "rank": 55,
+    "title": "Lysistrata (version 2)",
+    "author": "Aristophanes",
+    "identifier": "lysistrata_1709_librivox"
+  },
+  {
+    "rank": 56,
+    "title": "The Acharnians (Billson Translation)",
+    "author": "Aristophanes",
+    "identifier": "acharnians_billson_translation_1506_librivox"
+  },
+  {
+    "rank": 57,
+    "title": "The Clouds",
+    "author": "Aristophanes",
+    "identifier": "clouds_1506_librivox"
+  },
+  {
+    "rank": 58,
+    "title": "Lysistrata (version 3)",
+    "author": "Aristophanes",
+    "identifier": "lysistrata_version_3_1809_librivox"
+  },
+  {
+    "rank": 59,
+    "title": "Lysistrata",
+    "author": "Aristophanes",
+    "identifier": "lysistrata_1012_librivox"
+  },
+  {
+    "rank": 60,
+    "title": "The Frogs",
+    "author": "Aristophanes",
+    "identifier": "the_frogs_1310_librivox"
+  },
+  {
+    "rank": 61,
+    "title": "Peace",
+    "author": "Aristophanes",
+    "identifier": "peace_2202_librivox"
+  },
+  {
+    "rank": 62,
+    "title": "The History of the Peloponnesian War (Version 2)",
+    "author": "Thucydides",
+    "identifier": "historyofthepeloponnesianwar2_2603_librivox"
+  },
+  {
+    "rank": 63,
+    "title": "The History of the Peloponnesian War",
+    "author": "Thucydides",
+    "identifier": "history_peloponnesian_war_librivox"
+  },
+  {
+    "rank": 64,
+    "title": "Apology",
+    "author": "Plato",
+    "identifier": "apology_plato_bn_librivox"
+  },
+  {
+    "rank": 65,
+    "title": "Meno",
+    "author": "Plato",
+    "identifier": "meno_cc_librivox"
+  },
+  {
+    "rank": 66,
+    "title": "Apology (version 2)",
+    "author": "Plato",
+    "identifier": "apologyversion2_1412_librivox"
+  },
+  {
+    "rank": 67,
+    "title": "Euthydemus",
+    "author": "Plato",
+    "identifier": "euthydemus_ge_1403_librivox"
+  },
+  {
+    "rank": 68,
+    "title": "Laws",
+    "author": "Plato",
+    "identifier": "laws_1209_librivox"
+  },
+  {
+    "rank": 69,
+    "title": "Laches",
+    "author": "Plato",
+    "identifier": "laches_ge_1402_librivox"
+  },
+  {
+    "rank": 70,
+    "title": "Statesman",
+    "author": "Plato",
+    "identifier": "statesman_ge_1312_librivox"
+  },
+  {
+    "rank": 71,
+    "title": "Critias",
+    "author": "Plato",
+    "identifier": "critias_1301_librivox"
+  },
+  {
+    "rank": 72,
+    "title": "Sophist",
+    "author": "Plato",
+    "identifier": "sophist_1311_librivox"
+  },
+  {
+    "rank": 73,
+    "title": "Lysis",
+    "author": "Plato",
+    "identifier": "lysis_1402_librivox"
+  },
+  {
+    "rank": 74,
+    "title": "Gorgias",
+    "author": "Plato",
+    "identifier": "gorgias_1211"
+  },
+  {
+    "rank": 75,
+    "title": "Phaedo",
+    "author": "Plato",
+    "identifier": "phaedo_1105_librivox"
+  },
+  {
+    "rank": 76,
+    "title": "Euthyphro",
+    "author": "Plato",
+    "identifier": "euthyphro_librivox"
+  },
+  {
+    "rank": 77,
+    "title": "The Symposium",
+    "author": "Plato",
+    "identifier": "symposium_1403_librivox"
+  },
+  {
+    "rank": 78,
+    "title": "Plato's Republic",
+    "author": "Plato",
+    "identifier": "platos_republic_0902_librivox1"
+  },
+  {
+    "rank": 79,
+    "title": "The Apology of Socrates",
+    "author": "Plato",
+    "identifier": "apology_rz_librivox"
+  },
+  {
+    "rank": 80,
+    "title": "Protagoras",
+    "author": "Plato",
+    "identifier": "protagoras_1303_librivox"
+  },
+  {
+    "rank": 81,
+    "title": "Laws (version 2)",
+    "author": "Plato",
+    "identifier": "laws_1801_librivox"
+  },
+  {
+    "rank": 82,
+    "title": "Philebus",
+    "author": "Plato",
+    "identifier": "philebus_ge_1401_librivox"
+  },
+  {
+    "rank": 83,
+    "title": "Timaeus",
+    "author": "Plato",
+    "identifier": "timaeus_1003_librivox"
+  },
+  {
+    "rank": 84,
+    "title": "Phaedrus",
+    "author": "Plato",
+    "identifier": "phaedrus_1005_librivox"
+  },
+  {
+    "rank": 85,
+    "title": "Parmenides",
+    "author": "Plato",
+    "identifier": "parmenides_1310_librivox"
+  },
+  {
+    "rank": 86,
+    "title": "The Republic (version 2)",
+    "author": "Plato",
+    "identifier": "republic_version_2_1310_librivox"
+  },
+  {
     "rank": 87,
-    "title": "Hamlet",
-    "author": "William Shakespeare",
-    "identifier": "hamlet_librivox"
+    "title": "Cratylus",
+    "author": "Plato",
+    "identifier": "cratylus_ge_1407_librivox"
   },
   {
     "rank": 88,
-    "title": "Macbeth",
-    "author": "William Shakespeare",
-    "identifier": "macbeth_librivox"
+    "title": "The Symposium",
+    "author": "Plato",
+    "identifier": "symposium_0909_librivox"
   },
   {
     "rank": 89,
+    "title": "Charmides",
+    "author": "Plato",
+    "identifier": "charmides_ge_1401_librivox"
+  },
+  {
+    "rank": 90,
+    "title": "Theaetetus",
+    "author": "Plato",
+    "identifier": "theaetetus_1311_librivox"
+  },
+  {
+    "rank": 91,
+    "title": "The Nicomachean Ethics",
+    "author": "Aristotle",
+    "identifier": "nicomachean_ethics_ge_librivox"
+  },
+  {
+    "rank": 92,
+    "title": "On Interpretation",
+    "author": "Aristotle",
+    "identifier": "on_interpretation_1005_librivox"
+  },
+  {
+    "rank": 93,
+    "title": "On the Parts of Animals",
+    "author": "Aristotle",
+    "identifier": "on_the_parts_of_animals_1901_librivox"
+  },
+  {
+    "rank": 94,
+    "title": "Generation of Animals",
+    "author": "Aristotle",
+    "identifier": "generation_of_animals_2207_librivox"
+  },
+  {
+    "rank": 95,
+    "title": "Rhetoric to Alexander & On Virtues and Vices",
+    "author": "Aristotle",
+    "identifier": "rhetoric_virtues_and_vices_2212_librivox"
+  },
+  {
+    "rank": 96,
+    "title": "Metaphysics",
+    "author": "Aristotle",
+    "identifier": "metaphysics_1108_librivox"
+  },
+  {
+    "rank": 97,
+    "title": "Politics",
+    "author": "Aristotle",
+    "identifier": "politics_0802_librivox"
+  },
+  {
+    "rank": 98,
+    "title": "De Anima",
+    "author": "Aristotle",
+    "identifier": "de_anima_ge_librivox"
+  },
+  {
+    "rank": 99,
+    "title": "Prior Analytics",
+    "author": "Aristotle",
+    "identifier": "prior_analytics_ge_librivox"
+  },
+  {
+    "rank": 100,
+    "title": "On Generation and Corruption",
+    "author": "Aristotle",
+    "identifier": "ongeneration_1203_librivox"
+  },
+  {
+    "rank": 101,
+    "title": "Physics",
+    "author": "Aristotle",
+    "identifier": "physics_1303_librivox"
+  },
+  {
+    "rank": 102,
+    "title": "Poetics",
+    "author": "Aristotle",
+    "identifier": "poetics_librivox"
+  },
+  {
+    "rank": 103,
+    "title": "Rhetoric",
+    "author": "Aristotle",
+    "identifier": "rhetoric_ge_librivox"
+  },
+  {
+    "rank": 104,
+    "title": "Posterior Analytics",
+    "author": "Aristotle",
+    "identifier": "posterior_analytics_ge_librivox"
+  },
+  {
+    "rank": 105,
+    "title": "History of Animals",
+    "author": "Aristotle",
+    "identifier": "history_of_animals_2202_librivox"
+  },
+  {
+    "rank": 106,
+    "title": "Meteorology, On the Universe & On Breath",
+    "author": "Aristotle",
+    "identifier": "meteorology_universe_breath_2211_librivox"
+  },
+  {
+    "rank": 107,
+    "title": "Categories",
+    "author": "Aristotle",
+    "identifier": "categories_1004_librivox"
+  },
+  {
+    "rank": 108,
+    "title": "Parva Naturalia",
+    "author": "Aristotle",
+    "identifier": "parva_naturalia_1111_librivox"
+  },
+  {
+    "rank": 109,
+    "title": "On the Heavens",
+    "author": "Aristotle",
+    "identifier": "ontheheavens_1202_librivox"
+  },
+  {
+    "rank": 110,
+    "title": "Topics",
+    "author": "Aristotle",
+    "identifier": "topics_1101_librivox"
+  },
+  {
+    "rank": 111,
+    "title": "Discourses of Epictetus",
+    "author": "Epictetus",
+    "identifier": "discourses_of_epictetus_2211_librivox"
+  },
+  {
+    "rank": 112,
+    "title": "A Selection from the Discourses of Epictetus with the Encheiridion",
+    "author": "Epictetus",
+    "identifier": "selection_discourses_with_encheiridion_2203_librivox"
+  },
+  {
+    "rank": 113,
+    "title": "Meditations",
+    "author": "Marcus Aurelius",
+    "identifier": "meditations_0708_librivox"
+  },
+  {
+    "rank": 114,
+    "title": "The Meditations of the Emperor Marcus Aurelius Antoninus",
+    "author": "Marcus Aurelius",
+    "identifier": "themeditationsofmarcusaurelius_1801_librivox"
+  },
+  {
+    "rank": 115,
+    "title": "Enneads",
+    "author": "Plotinus",
+    "identifier": "enneads_-plotinus_1806_librivox"
+  },
+  {
+    "rank": 116,
+    "title": "Georgics",
+    "author": "Virgil",
+    "identifier": "georgics_2009_librivox"
+  },
+  {
+    "rank": 117,
+    "title": "The Georgics: A Poem of the Land",
+    "author": "Virgil",
+    "identifier": "the_georgics_2110_librivox"
+  },
+  {
+    "rank": 118,
+    "title": "The Aeneid, prose translation",
+    "author": "Virgil",
+    "identifier": "the_aeneid_prose_1405_librivox"
+  },
+  {
+    "rank": 119,
+    "title": "The Aeneid of Virgil",
+    "author": "Virgil",
+    "identifier": "aeneid_of_virgil_1708_librivox"
+  },
+  {
+    "rank": 120,
+    "title": "Tacitus' Annals Vol 2",
+    "author": "Tacitus",
+    "identifier": "tacitus_annals_cb_vol2_0809_librivox1"
+  },
+  {
+    "rank": 121,
+    "title": "Tacitus' Annals Vol 3",
+    "author": "Tacitus",
+    "identifier": "tacitus_annals_cb_vol3_0809_librivox1"
+  },
+  {
+    "rank": 122,
+    "title": "Tacitus' Histories",
+    "author": "Tacitus",
+    "identifier": "tacitus_histories_0905_librivox1"
+  },
+  {
+    "rank": 123,
+    "title": "Confessions",
+    "author": "Saint Augustine",
+    "identifier": "confessions_augustine_0911_librivox"
+  },
+  {
+    "rank": 124,
+    "title": "The Confessions (Pusey translation)",
+    "author": "Saint Augustine",
+    "identifier": "confessions_1510_librivox"
+  },
+  {
+    "rank": 125,
+    "title": "The City of God",
+    "author": "Saint Augustine",
+    "identifier": "city_of_god_ds_librivox"
+  },
+  {
+    "rank": 126,
+    "title": "St Augustine's Treatise on the City of God",
+    "author": "Saint Augustine",
+    "identifier": "treatiseonthecityofgod_2407_librivox"
+  },
+  {
+    "rank": 127,
+    "title": "On Christian Doctrine",
+    "author": "Saint Augustine",
+    "identifier": "christiandoctrine_1911_librivox"
+  },
+  {
+    "rank": 128,
+    "title": "Summa Theologica - 07 Pars Prima Secundae, Treatise on the Passions",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica07_1503_librivox"
+  },
+  {
+    "rank": 129,
+    "title": "Summa Theologica - 04 Pars Prima, On Man",
+    "author": "Thomas Aquinas",
+    "identifier": "summa_1_04_1312_librivox"
+  },
+  {
+    "rank": 130,
+    "title": "Summa Theologica - 09 Pars Prima Secundae, Treatise on Law and Grace",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica09_1601_librivox"
+  },
+  {
+    "rank": 131,
+    "title": "Summa Theologica - 05 Pars Prima, On the Divine Government",
+    "author": "Thomas Aquinas",
+    "identifier": "summa_1_05_1405_librivox"
+  },
+  {
+    "rank": 132,
+    "title": "Summa Theologica - 06 Pars Prima Secundae, On the Last End, On Human Acts",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica06_1507_librivox"
+  },
+  {
+    "rank": 133,
+    "title": "Summa Theologica - 12 Pars Secunda Secundae, Treatise on Gratuitous Graces and the States of Life",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica12_1504_librivox"
+  },
+  {
+    "rank": 134,
+    "title": "Summa Theologica - 13 Tertia Pars, The Saviour: His Incarnation and His Salvific Acts",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica13_1907_librivox"
+  },
+  {
+    "rank": 135,
+    "title": "Summa Theologica - 14 Tertia Pars, The Sacraments",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica14_2101_librivox"
+  },
+  {
+    "rank": 136,
+    "title": "Summa Theologica - 10 Pars Secunda Secundae, Treatise on the Theological Virtues: Faith, Hope, Charity",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica10_1509_librivox"
+  },
+  {
+    "rank": 137,
+    "title": "Summa Theologica, Prima Pars, Initial Questions",
+    "author": "Thomas Aquinas",
+    "identifier": "summa_1_01_jr_0901_librivox"
+  },
+  {
+    "rank": 138,
+    "title": "Summa Theologica, Prima Pars, Trinity and Creation",
+    "author": "Thomas Aquinas",
+    "identifier": "summa_1_02_jr_0907_librivox"
+  },
+  {
+    "rank": 139,
+    "title": "Summa Theologica - 08 Pars Prima Secundae, Treatise on Habits, Virtues and Vices",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica08_1603_librivox"
+  },
+  {
+    "rank": 140,
+    "title": "Summa Theologica - 11 Pars Secunda Secundae, Treatise on the Cardinal Virtues: Prudence, Justice, Fortitude, Temperance",
+    "author": "Thomas Aquinas",
+    "identifier": "summatheologica11_1909_librivox"
+  },
+  {
+    "rank": 141,
+    "title": "Compendium of the Summa Theologica of St Thomas Aquinas: Pars Prima",
+    "author": "Thomas Aquinas",
+    "identifier": "compendiumsummatheologica_2405_librivox"
+  },
+  {
+    "rank": 142,
+    "title": "Summa Theologica - 03 Pars Prima, The Angels and the Six Days",
+    "author": "Thomas Aquinas",
+    "identifier": "summa_1_03_1112_librivox"
+  },
+  {
+    "rank": 143,
+    "title": "The Divine Comedy",
+    "author": "Dante Alighieri",
+    "identifier": "divine_comedy_librivox"
+  },
+  {
+    "rank": 144,
+    "title": "The Divine Comedy (version 2 Dramatic Reading)",
+    "author": "Dante Alighieri",
+    "identifier": "divinecomedy2dramatic_1509_librivox"
+  },
+  {
+    "rank": 145,
+    "title": "The Canterbury Tales and Other Poems",
+    "author": "Geoffrey Chaucer",
+    "identifier": "canterburytales_2401_librivox"
+  },
+  {
+    "rank": 146,
+    "title": "The Canterbury Tales",
+    "author": "Geoffrey Chaucer",
+    "identifier": "canterburytales_librivox"
+  },
+  {
+    "rank": 147,
+    "title": "Institutes of the Christian Religion, Book One",
+    "author": "John Calvin",
+    "identifier": "institutes_christian_religion1_0909_librivox"
+  },
+  {
+    "rank": 148,
+    "title": "Institutes of the Christian Religion, Book 4",
+    "author": "John Calvin",
+    "identifier": "institutes_christian_religion4_1107_librivox"
+  },
+  {
+    "rank": 149,
+    "title": "Institutes of the Christian Religion, Book Two",
+    "author": "John Calvin",
+    "identifier": "institutes_christian_religion2_1003_librivox"
+  },
+  {
+    "rank": 150,
+    "title": "Institutes of the Christian Religion, Books 1-4 (Allen Translation)",
+    "author": "John Calvin",
+    "identifier": "institutes_of_christian_religion_1-4_allen_2207_librivox"
+  },
+  {
+    "rank": 151,
+    "title": "Institutes of the Christian Religion, Book 3",
+    "author": "John Calvin",
+    "identifier": "institutes_christian_religion_1010_librivox"
+  },
+  {
+    "rank": 152,
+    "title": "Institutes Of The Christian Religion Book 1 (Allen Translation)",
+    "author": "John Calvin",
+    "identifier": "institutes1_2203_librivox"
+  },
+  {
+    "rank": 153,
+    "title": "The Prince",
+    "author": "Niccolò Machiavelli",
+    "identifier": "prince_pa_librivox"
+  },
+  {
+    "rank": 154,
+    "title": "The Prince (Version 4)",
+    "author": "Niccolò Machiavelli",
+    "identifier": "theprincever4_1501_librivox"
+  },
+  {
+    "rank": 155,
+    "title": "The Prince",
+    "author": "Niccolò Machiavelli",
+    "identifier": "prince_bn_librivox"
+  },
+  {
+    "rank": 156,
+    "title": "Leviathan, or The Matter, Forme and Power of a Common Wealth Ecclesiasticall and Civil, Books III and IV",
+    "author": "Thomas Hobbes",
+    "identifier": "leviathan_3_4_0812_librivox"
+  },
+  {
+    "rank": 157,
+    "title": "Leviathan (Books I and II)",
+    "author": "Thomas Hobbes",
+    "identifier": "leviathan_1_2_0802_librivox"
+  },
+  {
+    "rank": 158,
+    "title": "Gargantua and Pantagruel, Book III",
+    "author": "François Rabelais",
+    "identifier": "gargantua_pantagruel_iii_2102_librivox"
+  },
+  {
+    "rank": 159,
+    "title": "Gargantua and Pantagruel, Book I",
+    "author": "François Rabelais",
+    "identifier": "gargantuaandpantagruel_1007_librivox"
+  },
+  {
+    "rank": 160,
+    "title": "Gargantua and Pantagruel, Book V",
+    "author": "François Rabelais",
+    "identifier": "gargantuaandpantagruelbookv_2508_librivox"
+  },
+  {
+    "rank": 161,
+    "title": "Gargantua and Pantagruel, Book IV",
+    "author": "François Rabelais",
+    "identifier": "gargantuaandpantagrueliv_2407_librivox"
+  },
+  {
+    "rank": 162,
+    "title": "Gargantua and Pantagruel, Book II",
+    "author": "François Rabelais",
+    "identifier": "gargantuapantagruel2_1308_librivox"
+  },
+  {
+    "rank": 163,
+    "title": "The Praise of Folly",
+    "author": "Desiderius Erasmus",
+    "identifier": "folly_erasmus_0811_librivox"
+  },
+  {
+    "rank": 164,
+    "title": "Essays, Book 2",
+    "author": "Michel de Montaigne",
+    "identifier": "essays_book2_1301_librivox"
+  },
+  {
+    "rank": 165,
+    "title": "Essays, book 3",
+    "author": "Michel de Montaigne",
+    "identifier": "essays_book3_1306_librivox"
+  },
+  {
+    "rank": 166,
+    "title": "Selected Essays of Michel de Montaigne",
+    "author": "Michel de Montaigne",
+    "identifier": "selected_essays_of_michel_de_montaigne_2310_librivox"
+  },
+  {
+    "rank": 167,
+    "title": "Essays, Book 1",
+    "author": "Michel de Montaigne",
+    "identifier": "essays_book1_1204_librivox"
+  },
+  {
+    "rank": 168,
+    "title": "The Winter's Tale",
+    "author": "William Shakespeare",
+    "identifier": "thewinterstale_1008_librivox"
+  },
+  {
+    "rank": 169,
+    "title": "The Merry Wives of Windsor",
+    "author": "William Shakespeare",
+    "identifier": "merry_wives_windsor_1108_librivox"
+  },
+  {
+    "rank": 170,
+    "title": "The History of Troilus and Cressida (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "troilus_and_cressida_version_2_1810_librivox"
+  },
+  {
+    "rank": 171,
+    "title": "As You Like It",
+    "author": "William Shakespeare",
+    "identifier": "as_you_like_it_0902_librivox"
+  },
+  {
+    "rank": 172,
+    "title": "Romeo and Juliet",
+    "author": "William Shakespeare",
+    "identifier": "romeoandjuliet_ss_0901_librivox"
+  },
+  {
+    "rank": 173,
+    "title": "The Life and Death of King John",
+    "author": "William Shakespeare",
+    "identifier": "king_john_1106_librivox"
+  },
+  {
+    "rank": 174,
+    "title": "All's Well That Ends Well",
+    "author": "William Shakespeare",
+    "identifier": "allswellthatendswell_1008_librivox"
+  },
+  {
+    "rank": 175,
+    "title": "The Tragedy of Julius Caesar",
+    "author": "William Shakespeare",
+    "identifier": "juliuscaesar_1002_librivox"
+  },
+  {
+    "rank": 176,
+    "title": "The Tragedy of Hamlet, Prince of Denmark (version 4)",
+    "author": "William Shakespeare",
+    "identifier": "tragedyofhamletprinceofdenmark_2602_librivox"
+  },
+  {
+    "rank": 177,
+    "title": "The Tempest (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "tempest_version_2_1901_librivox"
+  },
+  {
+    "rank": 178,
+    "title": "The Tragedy of King Richard II (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "tragedy_of_king_richard_ii_version_2_2007_librivox"
+  },
+  {
+    "rank": 179,
+    "title": "The Tempest",
+    "author": "William Shakespeare",
+    "identifier": "tempest_1002_librivox"
+  },
+  {
+    "rank": 180,
+    "title": "King Henry IV, Part 2",
+    "author": "William Shakespeare",
+    "identifier": "2henryIV_0909_librivox"
+  },
+  {
+    "rank": 181,
+    "title": "Henry V",
+    "author": "William Shakespeare",
+    "identifier": "henryv_1101_librivox"
+  },
+  {
+    "rank": 182,
+    "title": "A Midsummer Night's Dream (Version 2)",
+    "author": "William Shakespeare",
+    "identifier": "midsummernightsdream_1201_librivox"
+  },
+  {
+    "rank": 183,
+    "title": "King Lear (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "kinglear_1209_librivox"
+  },
+  {
+    "rank": 184,
+    "title": "Measure for Measure version3",
+    "author": "William Shakespeare",
+    "identifier": "measure_for_measure_version_3_1907_librivox"
+  },
+  {
+    "rank": 185,
+    "title": "Coriolanus",
+    "author": "William Shakespeare",
+    "identifier": "coriolanus_1202_librivox"
+  },
+  {
+    "rank": 186,
+    "title": "Measure For Measure",
+    "author": "William Shakespeare",
+    "identifier": "measureformeasure_1608_librivox"
+  },
+  {
+    "rank": 187,
+    "title": "Othello",
+    "author": "William Shakespeare",
+    "identifier": "othello_2108_librivox"
+  },
+  {
+    "rank": 188,
+    "title": "Hamlet Version 2",
+    "author": "William Shakespeare",
+    "identifier": "hamlet2_1206_librivox"
+  },
+  {
+    "rank": 189,
+    "title": "Othello",
+    "author": "William Shakespeare",
+    "identifier": "othello_1005_librivox"
+  },
+  {
+    "rank": 190,
+    "title": "Measure For Measure",
+    "author": "William Shakespeare",
+    "identifier": "measure_for_measure_1006_librivox"
+  },
+  {
+    "rank": 191,
+    "title": "Winter",
+    "author": "William Shakespeare",
+    "identifier": "winter_1001_librivox"
+  },
+  {
+    "rank": 192,
+    "title": "The Tragedy of Hamlet, Prince of Denmark",
+    "author": "William Shakespeare",
+    "identifier": "hamlet_0911_librivox"
+  },
+  {
+    "rank": 193,
+    "title": "The Merchant of Venice",
+    "author": "William Shakespeare",
+    "identifier": "merchant_of_venice_1005_librivox"
+  },
+  {
+    "rank": 194,
+    "title": "The Taming of the Shrew",
+    "author": "William Shakespeare",
+    "identifier": "tamingoftheshrew_1604_librivox"
+  },
+  {
+    "rank": 195,
+    "title": "A Midsummer Night's Dream",
+    "author": "William Shakespeare",
+    "identifier": "midsummer_nights_dream_0806_librivox"
+  },
+  {
+    "rank": 196,
+    "title": "All's Well That Ends Well (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "alls_well_that_ends_well_2_1603_librivox"
+  },
+  {
+    "rank": 197,
+    "title": "The First Part of King Henry VI (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "firstpartofkinghenryvi_2607_librivox"
+  },
+  {
+    "rank": 198,
+    "title": "Cymbeline (Version 2)",
+    "author": "William Shakespeare",
+    "identifier": "cymbeline_version2_1707_librivox"
+  },
+  {
+    "rank": 199,
+    "title": "The Tragedy of MacBeth",
+    "author": "William Shakespeare",
+    "identifier": "tragedy_macbeth_1305_librivox"
+  },
+  {
+    "rank": 200,
+    "title": "Cymbeline",
+    "author": "William Shakespeare",
+    "identifier": "cymbeline_1101_librivox"
+  },
+  {
+    "rank": 201,
+    "title": "The Taming of the Shrew",
+    "author": "William Shakespeare",
+    "identifier": "tamingoftheshrew_1009_librivox"
+  },
+  {
+    "rank": 202,
+    "title": "Romeo and Juliet",
+    "author": "William Shakespeare",
+    "identifier": "romeo_and_juliet_librivox"
+  },
+  {
+    "rank": 203,
     "title": "King Lear",
     "author": "William Shakespeare",
     "identifier": "king_lear_librivox"
   },
   {
-    "rank": 90,
-    "title": "A Midsummer Night's Dream",
+    "rank": 204,
+    "title": "Romeo and Juliet (LibriVox Version 2)",
     "author": "William Shakespeare",
-    "identifier": "midsummer_nights_dream_librivox"
+    "identifier": "romeo_juliet_1001_librivox"
   },
   {
-    "rank": 91,
+    "rank": 205,
+    "title": "The Comedy of Errors (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "comedyoferrors_1603_librivox"
+  },
+  {
+    "rank": 206,
+    "title": "Twelfth Night",
+    "author": "William Shakespeare",
+    "identifier": "twelfth_night_0906_librivox"
+  },
+  {
+    "rank": 207,
+    "title": "The Comedy of Errors",
+    "author": "William Shakespeare",
+    "identifier": "comedyoferrors_1011_librivox"
+  },
+  {
+    "rank": 208,
+    "title": "The Life of King Henry V (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "life_of_king_henry_v_version_2_2306_librivox"
+  },
+  {
+    "rank": 209,
+    "title": "Love's Labour's Lost (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "loves_labours_lost_2312_librivox"
+  },
+  {
+    "rank": 210,
+    "title": "Henry VI Part 3",
+    "author": "William Shakespeare",
+    "identifier": "henryvipart3_1102_librivox"
+  },
+  {
+    "rank": 211,
+    "title": "Twelfth Night (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "twelfth_night_3_1608_librivox"
+  },
+  {
+    "rank": 212,
+    "title": "Titus Andronicus",
+    "author": "William Shakespeare",
+    "identifier": "titusandronicus_1102_librivox"
+  },
+  {
+    "rank": 213,
+    "title": "Hamlet (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "hamlet_1209_librivox"
+  },
+  {
+    "rank": 214,
+    "title": "The Merry Wives of Windsor (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "merry_wives_of_windsor_version_2_2208_librivox"
+  },
+  {
+    "rank": 215,
+    "title": "As You Like It (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "asyoulikeit_1211_librivox"
+  },
+  {
+    "rank": 216,
+    "title": "The Tragedy of King Richard II",
+    "author": "William Shakespeare",
+    "identifier": "richard_ii_group_librivox"
+  },
+  {
+    "rank": 217,
+    "title": "Romeo and Juliet (version 4)",
+    "author": "William Shakespeare",
+    "identifier": "romeojuliet_v4_1502_librivox"
+  },
+  {
+    "rank": 218,
+    "title": "Julius Caesar (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "juliuscaesar_1605_librivox"
+  },
+  {
+    "rank": 219,
+    "title": "Pericles, Prince of Tyre",
+    "author": "William Shakespeare",
+    "identifier": "pericles_1202_librivox"
+  },
+  {
+    "rank": 220,
+    "title": "The Tragedy of Macbeth",
+    "author": "William Shakespeare",
+    "identifier": "macbeth_0810_librivox"
+  },
+  {
+    "rank": 221,
+    "title": "A Midsummer Night's Dream (version 4)",
+    "author": "William Shakespeare",
+    "identifier": "midsummer_nights_dream4_1604_librivox"
+  },
+  {
+    "rank": 222,
+    "title": "As You Like It (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "as_you_like_it_version_3_2012_librivox"
+  },
+  {
+    "rank": 223,
+    "title": "Richard III",
+    "author": "William Shakespeare",
+    "identifier": "richard_iii_1006_librivox"
+  },
+  {
+    "rank": 224,
+    "title": "The Winter's Tale (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "winterstale_1710_librivox"
+  },
+  {
+    "rank": 225,
+    "title": "Antony and Cleopatra",
+    "author": "William Shakespeare",
+    "identifier": "antony_cleopatra_1109_librivox"
+  },
+  {
+    "rank": 226,
+    "title": "The Tragedy of King Lear (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "the_tragedy_of_king_lear_version_3_1803_librivox"
+  },
+  {
+    "rank": 227,
+    "title": "The Two Gentlemen of Verona",
+    "author": "William Shakespeare",
+    "identifier": "twogentlemenofverona_1103_librivox"
+  },
+  {
+    "rank": 228,
+    "title": "Henry VI Part 1",
+    "author": "William Shakespeare",
+    "identifier": "henryvipart1_1012_librivox"
+  },
+  {
+    "rank": 229,
+    "title": "Troilus and Cressida",
+    "author": "William Shakespeare",
+    "identifier": "troilusandcressida_1104_librivox"
+  },
+  {
+    "rank": 230,
+    "title": "A Midsummer Night's Dream (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "midsummernightsdream3_1401_librivox"
+  },
+  {
+    "rank": 231,
+    "title": "Henry VI Part 2",
+    "author": "William Shakespeare",
+    "identifier": "henryvipart2_1012_librivox"
+  },
+  {
+    "rank": 232,
+    "title": "Love's Labour's Lost",
+    "author": "William Shakespeare",
+    "identifier": "loves_labours_lost_1008_librivox"
+  },
+  {
+    "rank": 233,
+    "title": "The Comedy of Errors (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "comedyoferrors_ver2_1403_librivox"
+  },
+  {
+    "rank": 234,
+    "title": "The Tragedy of Titus Andronicus (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "titusandronicus_2501_librivox"
+  },
+  {
+    "rank": 235,
+    "title": "Henry VIII",
+    "author": "William Shakespeare",
+    "identifier": "henryviii_1104_librivox"
+  },
+  {
+    "rank": 236,
+    "title": "Twelfth Night (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "twelfthnight_1208_librivox"
+  },
+  {
+    "rank": 237,
+    "title": "Much Ado About Nothing",
+    "author": "William Shakespeare",
+    "identifier": "muchadoaboutnothing_1003_librivox"
+  },
+  {
+    "rank": 238,
+    "title": "Much Ado About Nothing (version 2)",
+    "author": "William Shakespeare",
+    "identifier": "much_ado_about_nothing_1312_librivox"
+  },
+  {
+    "rank": 239,
+    "title": "The Sonnets",
+    "author": "William Shakespeare",
+    "identifier": "sonnets_etk_librivox"
+  },
+  {
+    "rank": 240,
+    "title": "Sonnets, by William Shakespeare",
+    "author": "William Shakespeare",
+    "identifier": "sonnets_librivox"
+  },
+  {
+    "rank": 241,
+    "title": "Shakespeare's Sonnets (version 3)",
+    "author": "William Shakespeare",
+    "identifier": "sonnets_ss_librivox"
+  },
+  {
+    "rank": 242,
+    "title": "Shakespeare's Sonnets",
+    "author": "William Shakespeare",
+    "identifier": "shakespeare_sonnets_ch"
+  },
+  {
+    "rank": 243,
+    "title": "Don Quixote",
+    "author": "Miguel de Cervantes",
+    "identifier": "donquixote_2508_librivox"
+  },
+  {
+    "rank": 244,
+    "title": "Don Quixote, Vol. 1 (Ormsby Translation)",
+    "author": "Miguel de Cervantes",
+    "identifier": "donquixotel_1_ormsby_1702_librivox"
+  },
+  {
+    "rank": 245,
+    "title": "Don Quixote, Volume 1",
+    "author": "Miguel de Cervantes",
+    "identifier": "don_quixote_vol1_librivox"
+  },
+  {
+    "rank": 246,
+    "title": "Don Quixote, Vol. 2 (Ormsby Translation)",
+    "author": "Miguel de Cervantes",
+    "identifier": "donquixotevol2_ormsby_1704_librivox"
+  },
+  {
+    "rank": 247,
+    "title": "Don Quixote Volume 2",
+    "author": "Miguel de Cervantes",
+    "identifier": "don_quixote_2_0902_librivox"
+  },
+  {
+    "rank": 248,
+    "title": "The New Atlantis",
+    "author": "Francis Bacon",
+    "identifier": "newatlantis_1111_librivox"
+  },
+  {
+    "rank": 249,
+    "title": "Discourse on the Method of Rightly Conducting One's Reason and of Seeking Truth in the Sciences",
+    "author": "René Descartes",
+    "identifier": "discourse_method_librivox"
+  },
+  {
+    "rank": 250,
+    "title": "Meditations on First Philosophy",
+    "author": "René Descartes",
+    "identifier": "meditations_descartes_dew_librivox"
+  },
+  {
+    "rank": 251,
+    "title": "The Ethics",
+    "author": "Baruch Spinoza",
+    "identifier": "ethics_1010_librivox"
+  },
+  {
+    "rank": 252,
+    "title": "Paradise Lost",
+    "author": "John Milton",
+    "identifier": "paradiselost_1411_librivox"
+  },
+  {
+    "rank": 253,
+    "title": "Paradise Lost",
+    "author": "John Milton",
+    "identifier": "paradise_lost_08083_librivox"
+  },
+  {
+    "rank": 254,
+    "title": "Samson Agonistes",
+    "author": "John Milton",
+    "identifier": "samsonagonistes_2306_librivox"
+  },
+  {
+    "rank": 255,
+    "title": "Samson Agonistes",
+    "author": "John Milton",
+    "identifier": "samson_agonistes_0912_librivox"
+  },
+  {
+    "rank": 256,
+    "title": "Areopagitica",
+    "author": "John Milton",
+    "identifier": "areopagitica_0806_librivox"
+  },
+  {
+    "rank": 257,
+    "title": "Areopagitica",
+    "author": "John Milton",
+    "identifier": "areopagitica_1304_librivox"
+  },
+  {
+    "rank": 258,
+    "title": "Pensées",
+    "author": "Blaise Pascal",
+    "identifier": "pensees_0906_dx_librivox1"
+  },
+  {
+    "rank": 259,
+    "title": "The School for Wives",
+    "author": "Molière",
+    "identifier": "schoolforwives_1705_librivox"
+  },
+  {
+    "rank": 260,
+    "title": "Tartuffe",
+    "author": "Molière",
+    "identifier": "tartuffe_1206_librivox"
+  },
+  {
+    "rank": 261,
+    "title": "Don Juan, or The Feast with the Statue",
+    "author": "Molière",
+    "identifier": "don_juan_2007_librivox"
+  },
+  {
+    "rank": 262,
+    "title": "The Miser",
+    "author": "Molière",
+    "identifier": "miser_1305_librivox"
+  },
+  {
+    "rank": 263,
+    "title": "Berenice",
+    "author": "Jean Racine",
+    "identifier": "berenice_2102_librivox"
+  },
+  {
+    "rank": 264,
+    "title": "Phaedra",
+    "author": "Jean Racine",
+    "identifier": "phaedra_1306_librivox"
+  },
+  {
+    "rank": 265,
+    "title": "Opticks",
+    "author": "Isaac Newton",
+    "identifier": "opticks_1203_librivox"
+  },
+  {
+    "rank": 266,
+    "title": "Treatise on Light",
+    "author": "Christiaan Huygens",
+    "identifier": "treatise_light_ava_librivox"
+  },
+  {
+    "rank": 267,
+    "title": "A Letter Concerning Toleration",
+    "author": "John Locke",
+    "identifier": "letter_concerning_toleration_librivox"
+  },
+  {
+    "rank": 268,
+    "title": "An Essay Concerning Human Understanding Book IV",
+    "author": "John Locke",
+    "identifier": "human_understanding_iv_2003_librivox"
+  },
+  {
+    "rank": 269,
+    "title": "An Essay Concerning Human Understanding Book II",
+    "author": "John Locke",
+    "identifier": "essay_concerning_human_understanding2_1904_librivox"
+  },
+  {
+    "rank": 270,
+    "title": "An Essay Concerning Human Understanding Book III",
+    "author": "John Locke",
+    "identifier": "human_understanding_iii_1909_librivox"
+  },
+  {
+    "rank": 271,
+    "title": "A Treatise Concerning the Principles of Human Knowledge, Part 1",
+    "author": "George Berkeley",
+    "identifier": "treatise_0905_librivox"
+  },
+  {
+    "rank": 272,
+    "title": "A Treatise Concerning the Principles of Human Knowledge",
+    "author": "George Berkeley",
+    "identifier": "human_knowledge_1809_librivox"
+  },
+  {
+    "rank": 273,
+    "title": "An Enquiry Concerning Human Understanding",
+    "author": "David Hume",
+    "identifier": "human_understanding_0711_lv_2"
+  },
+  {
+    "rank": 274,
+    "title": "Gulliver's Travels",
+    "author": "Jonathan Swift",
+    "identifier": "gulliver_ld_librivox"
+  },
+  {
+    "rank": 275,
+    "title": "Gulliver's Travels (Version 2)",
+    "author": "Jonathan Swift",
+    "identifier": "gulliverstravels_v2_2406_librivox"
+  },
+  {
+    "rank": 276,
+    "title": "Gulliver's Travels (Version 3)",
+    "author": "Jonathan Swift",
+    "identifier": "gulliverstravelsvers3_2504_librivox"
+  },
+  {
+    "rank": 277,
+    "title": "Candide",
+    "author": "Voltaire",
+    "identifier": "candide01_librivox"
+  },
+  {
+    "rank": 278,
+    "title": "Candide",
+    "author": "Voltaire",
+    "identifier": "candide_librivox"
+  },
+  {
+    "rank": 279,
+    "title": "Candide",
+    "author": "Voltaire",
+    "identifier": "candide_1806_librivox"
+  },
+  {
+    "rank": 280,
+    "title": "Rameau's Nephew",
+    "author": "Denis Diderot",
+    "identifier": "rameaus_nephew_bb3_librivox"
+  },
+  {
+    "rank": 281,
+    "title": "The Spirit of Laws (Volume 1)",
+    "author": "Montesquieu",
+    "identifier": "spirit_laws_01_1212"
+  },
+  {
+    "rank": 282,
+    "title": "The Social Contract",
+    "author": "Jean-Jacques Rousseau",
+    "identifier": "the_social_contract_1004_librivox"
+  },
+  {
+    "rank": 283,
+    "title": "The Wealth of Nations, Books 2 and 3",
+    "author": "Adam Smith",
+    "identifier": "wealth_nations02-03_smith_se_librivox"
+  },
+  {
+    "rank": 284,
+    "title": "The Wealth of Nations, Book 5",
+    "author": "Adam Smith",
+    "identifier": "wealth_of_nations_1104_librivox"
+  },
+  {
+    "rank": 285,
+    "title": "The Wealth of Nations - Book 1",
+    "author": "Adam Smith",
+    "identifier": "wealth_nations01_se"
+  },
+  {
+    "rank": 286,
+    "title": "The Wealth of Nations, Book 4",
+    "author": "Adam Smith",
+    "identifier": "wealth_nations04_1001_librivox"
+  },
+  {
+    "rank": 287,
+    "title": "The History of the Decline and Fall of the Roman Empire, Vol. II",
+    "author": "Edward Gibbon",
+    "identifier": "decline_and_fall_2_0712_librivox"
+  },
+  {
+    "rank": 288,
+    "title": "The History of the Decline and Fall of the Roman Empire Vol. VI",
+    "author": "Edward Gibbon",
+    "identifier": "Decline_and_Fall6_0812_librivox1"
+  },
+  {
+    "rank": 289,
+    "title": "History of the Decline and Fall of the Roman Empire Vol. V, The",
+    "author": "Edward Gibbon",
+    "identifier": "decline_fall_roman_empire_5_0810_librivox1"
+  },
+  {
+    "rank": 290,
+    "title": "The History of the Decline and Fall of the Roman Empire, Vol. III",
+    "author": "Edward Gibbon",
+    "identifier": "decline_and_fall_3_librivox"
+  },
+  {
+    "rank": 291,
+    "title": "The History of the Decline and Fall of the Roman Empire, Vol. IV",
+    "author": "Edward Gibbon",
+    "identifier": "decline_and_fall_4_librivox"
+  },
+  {
+    "rank": 292,
+    "title": "The Critique of Pure Reason",
+    "author": "Immanuel Kant",
+    "identifier": "critique_pure_reason_0709_librivox"
+  },
+  {
+    "rank": 293,
+    "title": "The Critique of Practical Reason",
+    "author": "Immanuel Kant",
+    "identifier": "critique_practical_0810_librivox"
+  },
+  {
+    "rank": 294,
+    "title": "The Federalist Papers",
+    "author": "Alexander Hamilton; James Madison; John Jay",
+    "identifier": "federalist_papers_librivox"
+  },
+  {
+    "rank": 295,
+    "title": "The Federalist Papers",
+    "author": "Alexander Hamilton; James Madison; John Jay",
+    "identifier": "federalistpapers_2202_librivox"
+  },
+  {
+    "rank": 296,
+    "title": "On Liberty",
+    "author": "John Stuart Mill",
+    "identifier": "on_liberty_librivox"
+  },
+  {
+    "rank": 297,
+    "title": "On Liberty",
+    "author": "John Stuart Mill",
+    "identifier": "onliberty_2505_librivox"
+  },
+  {
+    "rank": 298,
+    "title": "Considerations on Representative Government",
+    "author": "John Stuart Mill",
+    "identifier": "representativegovernment_1302_librivox"
+  },
+  {
+    "rank": 299,
+    "title": "Utilitarianism",
+    "author": "John Stuart Mill",
+    "identifier": "utilitarianism_dew_librivox"
+  },
+  {
+    "rank": 300,
+    "title": "The Life of Samuel Johnson, Vol. II (version 2)",
+    "author": "James Boswell",
+    "identifier": "samuel_johnson_vol_ii_version_2_1504_librivox"
+  },
+  {
+    "rank": 301,
+    "title": "The Life of Samuel Johnson, Vol. 1",
+    "author": "James Boswell",
+    "identifier": "life_of_samuel_johnson_vol1_0808_librivox1"
+  },
+  {
+    "rank": 302,
+    "title": "The Life of Samuel Johnson, Vol. IV",
+    "author": "James Boswell",
+    "identifier": "life_of_samuel_johnson_iv_1406_librivox"
+  },
+  {
+    "rank": 303,
+    "title": "The Life of Samuel Johnson, Vol. 3",
+    "author": "James Boswell",
+    "identifier": "samueljohnson3_1302_librivox"
+  },
+  {
+    "rank": 304,
+    "title": "The Life of Samuel Johnson, Vol. 2",
+    "author": "James Boswell",
+    "identifier": "life_of_johnson_vol2_1009_librivox"
+  },
+  {
+    "rank": 305,
+    "title": "The Life of Samuel Johnson, Vol. I",
+    "author": "James Boswell",
+    "identifier": "life_of_samuel_johnson_vol_i_1407_librivox"
+  },
+  {
+    "rank": 306,
+    "title": "Introduction to the Philosophy of History",
+    "author": "G. W. F. Hegel",
+    "identifier": "intro_philosophy_history_dew_librivox"
+  },
+  {
+    "rank": 307,
+    "title": "Fear and Trembling (selections)",
+    "author": "Søren Kierkegaard",
+    "identifier": "fear_and_trembling_selections_2010_librivox"
+  },
+  {
+    "rank": 308,
+    "title": "Beyond Good and Evil",
+    "author": "Friedrich Nietzsche",
+    "identifier": "beyond_good_and_evil_librivox"
+  },
+  {
+    "rank": 309,
+    "title": "Beyond Good and Evil: Prelude to a Philosophy of the Future",
+    "author": "Friedrich Nietzsche",
+    "identifier": "beyondgoodandevil_1910_librivox"
+  },
+  {
+    "rank": 310,
+    "title": "Democracy in America Vol. I",
+    "author": "Alexis de Tocqueville",
+    "identifier": "democracy_america_vol1_0709"
+  },
+  {
+    "rank": 311,
+    "title": "Democracy in America Volume II",
+    "author": "Alexis de Tocqueville",
+    "identifier": "democracy_in_america_vol2_0808_librivox1"
+  },
+  {
+    "rank": 312,
+    "title": "Faust II",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "faust2_1307_librivox"
+  },
+  {
+    "rank": 313,
+    "title": "Faust, Part 1",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "faust1_1111_librivox"
+  },
+  {
+    "rank": 314,
     "title": "Emma",
     "author": "Jane Austen",
-    "identifier": "emma_librivox"
+    "identifier": "emma_version_5_1002_librivox"
   },
   {
-    "rank": 92,
-    "title": "Faust",
-    "author": "Johann Wolfgang von Goethe",
-    "identifier": "faust_librivox"
+    "rank": 315,
+    "title": "Emma (dramatic reading)",
+    "author": "Jane Austen",
+    "identifier": "emma_1303_librivox"
   },
   {
-    "rank": 93,
+    "rank": 316,
+    "title": "Emma (version 4)",
+    "author": "Jane Austen",
+    "identifier": "emma_v4_1207_librivox"
+  },
+  {
+    "rank": 317,
+    "title": "Emma",
+    "author": "Jane Austen",
+    "identifier": "emma_solo_librivox"
+  },
+  {
+    "rank": 318,
+    "title": "Emma",
+    "author": "Jane Austen",
+    "identifier": "emma_sd_librivox"
+  },
+  {
+    "rank": 319,
+    "title": "Emma (version 3)",
+    "author": "Jane Austen",
+    "identifier": "emma_ver03_ek_librivox"
+  },
+  {
+    "rank": 320,
+    "title": "Emma",
+    "author": "Jane Austen",
+    "identifier": "emma_mt_librivox"
+  },
+  {
+    "rank": 321,
+    "title": "Middlemarch (version 2)",
+    "author": "George Eliot",
+    "identifier": "middlemarch_version2_1310_librivox"
+  },
+  {
+    "rank": 322,
+    "title": "Middlemarch",
+    "author": "George Eliot",
+    "identifier": "middlemarch_0810_librivox"
+  },
+  {
+    "rank": 323,
+    "title": "The Adventures of Huckleberry Finn (Version 6)",
+    "author": "Mark Twain",
+    "identifier": "theadventuresofhuckleberryfinn_version_6_1703_librivox"
+  },
+  {
+    "rank": 324,
+    "title": "Adventures of Huckleberry Finn (Tom Sawyer's Comrade)",
+    "author": "Mark Twain",
+    "identifier": "huckleberry_finn_0908_librivox"
+  },
+  {
+    "rank": 325,
+    "title": "Adventures of Huckleberry Finn (version 7)",
+    "author": "Mark Twain",
+    "identifier": "huckleberry_finn7_1904_librivox"
+  },
+  {
+    "rank": 326,
+    "title": "Adventures of Huckleberry Finn (version 02)",
+    "author": "Mark Twain",
+    "identifier": "huckleberry_mfs_librivox"
+  },
+  {
+    "rank": 327,
     "title": "Adventures of Huckleberry Finn",
     "author": "Mark Twain",
-    "identifier": "huckleberry_finn_librivox"
+    "identifier": "huck_finn_librivox"
   },
   {
-    "rank": 94,
-    "title": "The Descent of Man",
+    "rank": 328,
+    "title": "On the Origin of Species by Means of Natural Selection",
     "author": "Charles Darwin",
-    "identifier": "descent_man_librivox"
+    "identifier": "origin_species_librivox"
   },
   {
-    "rank": 95,
-    "title": "Capital, Volume I",
-    "author": "Karl Marx",
-    "identifier": "capital_volume_1_librivox"
+    "rank": 329,
+    "title": "The Descent of Man and Selection in Relation to Sex, 3",
+    "author": "Charles Darwin",
+    "identifier": "descent_man_3_1012_librivox"
   },
   {
-    "rank": 96,
+    "rank": 330,
+    "title": "The Descent of Man and Selection in Relation to Sex Part 2",
+    "author": "Charles Darwin",
+    "identifier": "descent_man_2_1101_librivox"
+  },
+  {
+    "rank": 331,
+    "title": "The Descent of Man and Selection in Relation to Sex Part 1",
+    "author": "Charles Darwin",
+    "identifier": "descent_man_1_1011_librivox"
+  },
+  {
+    "rank": 332,
+    "title": "War and Peace, Book 14: 1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_14_1003_librivox"
+  },
+  {
+    "rank": 333,
+    "title": "War and Peace, Book 04: 1806",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_04_0802_librivox"
+  },
+  {
+    "rank": 334,
+    "title": "War and Peace, Book 01: 1805",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_01_librivox"
+  },
+  {
+    "rank": 335,
+    "title": "War and Peace, Book 11: 1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_11_0909"
+  },
+  {
+    "rank": 336,
+    "title": "War and Peace Vol. 2 (Dole Translation)",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_vol2_dole_1512_librivox"
+  },
+  {
+    "rank": 337,
+    "title": "War and Peace, Book 08: 1811-1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_08_0810_librivox"
+  },
+  {
+    "rank": 338,
+    "title": "War and Peace, Book 02: 1805",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_02_0801_librivox"
+  },
+  {
+    "rank": 339,
+    "title": "War and Peace, Volume 1 (Maude translation)",
+    "author": "Leo Tolstoy",
+    "identifier": "war_peace1_maude_translation_2212_librivox"
+  },
+  {
+    "rank": 340,
+    "title": "War and Peace, Book 03: 1805",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_03_0712_librivox"
+  },
+  {
+    "rank": 341,
+    "title": "War and Peace, Book 17: Second Epilogue",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_17_1105_librivox"
+  },
+  {
+    "rank": 342,
+    "title": "War and Peace, Volume 3 (Maude Translation)",
+    "author": "Leo Tolstoy",
+    "identifier": "war_peace_3_maude_translation_2305_librivox"
+  },
+  {
+    "rank": 343,
+    "title": "War and Peace, Book 16: First Epilogue 1813-1820",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_16_1105_librivox"
+  },
+  {
+    "rank": 344,
+    "title": "War and Peace, Volume 4 (Maude Translation)",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_4_maude_translation_2306_librivox"
+  },
+  {
+    "rank": 345,
+    "title": "War and Peace, Book 15: 1812-1813",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_15_1105_librivox"
+  },
+  {
+    "rank": 346,
+    "title": "War and Peace, Book 09: 1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_09_0811_librivox"
+  },
+  {
+    "rank": 347,
+    "title": "War and Peace, Book 07: 1810-1811",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_07_0808_librivox"
+  },
+  {
+    "rank": 348,
+    "title": "War and Peace, Book 06: 1808-1810",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_06_0808_librivox"
+  },
+  {
+    "rank": 349,
+    "title": "War and Peace, Volume 2 (Maude Translation)",
+    "author": "Leo Tolstoy",
+    "identifier": "war_peace_2_maude_translation_2302_librivox"
+  },
+  {
+    "rank": 350,
+    "title": "War and Peace, Book 13: 1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_13_0912_librivox"
+  },
+  {
+    "rank": 351,
+    "title": "War and Peace, Book 12: 1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_12_0911_librivox"
+  },
+  {
+    "rank": 352,
+    "title": "War and Peace, Book 10: 1812",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_10_0904_librivox"
+  },
+  {
+    "rank": 353,
+    "title": "War and Peace Vol. 1 (1805-1806)",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_vol1_dole_mas_librivox"
+  },
+  {
+    "rank": 354,
+    "title": "War and Peace, Book 05: 1806-1807",
+    "author": "Leo Tolstoy",
+    "identifier": "war_and_peace_05_0805_librivox"
+  },
+  {
+    "rank": 355,
     "title": "The Brothers Karamazov",
     "author": "Fyodor Dostoevsky",
-    "identifier": "brothers_karamazov_librivox"
+    "identifier": "brothers_karamazov_1002_librivox"
   },
   {
-    "rank": 97,
-    "title": "A Portrait of the Artist as a Young Man",
-    "author": "James Joyce",
-    "identifier": "portrait_artist_young_man_librivox"
+    "rank": 356,
+    "title": "The Brothers Karamazov (version 3)",
+    "author": "Fyodor Dostoevsky",
+    "identifier": "brothers_karamazov_v3_2002_librivox"
   },
   {
-    "rank": 98,
-    "title": "The Metamorphosis",
-    "author": "Franz Kafka",
-    "identifier": "metamorphosis_kafka_librivox"
+    "rank": 357,
+    "title": "The Brothers Karamazov",
+    "author": "Fyodor Dostoevsky",
+    "identifier": "brotherskaramazov2_1606_librivox"
   },
   {
-    "rank": 99,
+    "rank": 358,
+    "title": "A Doll's House",
+    "author": "Henrik Ibsen",
+    "identifier": "a_dolls_house_2104_librivox"
+  },
+  {
+    "rank": 359,
+    "title": "A Doll's House",
+    "author": "Henrik Ibsen",
+    "identifier": "dolls_house_0812_librivox"
+  },
+  {
+    "rank": 360,
+    "title": "The Wild Duck",
+    "author": "Henrik Ibsen",
+    "identifier": "wild_duck_1202_librivox"
+  },
+  {
+    "rank": 361,
+    "title": "Hedda Gabler",
+    "author": "Henrik Ibsen",
+    "identifier": "hedda_gabler_1002_librivox"
+  },
+  {
+    "rank": 362,
+    "title": "Hedda Gabler (version 2)",
+    "author": "Henrik Ibsen",
+    "identifier": "hedda_gabler_2_1603_librivox"
+  },
+  {
+    "rank": 363,
+    "title": "Hedda Gabler",
+    "author": "Henrik Ibsen",
+    "identifier": "heddagabler_2402_librivox"
+  },
+  {
+    "rank": 364,
+    "title": "The Master Builder (Gosse & Archer Translation)",
+    "author": "Henrik Ibsen",
+    "identifier": "masterbuilder_1611_librivox"
+  },
+  {
+    "rank": 365,
+    "title": "The Master Builder",
+    "author": "Henrik Ibsen",
+    "identifier": "masterbuilder_1104_librivox"
+  },
+  {
+    "rank": 366,
+    "title": "The Interpretation of Dreams",
+    "author": "Sigmund Freud",
+    "identifier": "interpretationofdreams_1401_librivox"
+  },
+  {
+    "rank": 367,
+    "title": "A General Introduction to Psychoanalysis",
+    "author": "Sigmund Freud",
+    "identifier": "general_intro_psychoanalysis_1403_librivox"
+  },
+  {
+    "rank": 368,
+    "title": "Pragmatism",
+    "author": "William James",
+    "identifier": "pragmatism_1006_librivox"
+  },
+  {
+    "rank": 369,
+    "title": "An Introduction to Metaphysics",
+    "author": "Henri Bergson",
+    "identifier": "introduction_to_metaphysics_0909_librivox"
+  },
+  {
+    "rank": 370,
+    "title": "Science and the Modern World",
+    "author": "Alfred North Whitehead",
+    "identifier": "scienceandthemodernworld_2411_librivox"
+  },
+  {
+    "rank": 371,
+    "title": "The Problems of Philosophy",
+    "author": "Bertrand Russell",
+    "identifier": "problemsofphilosophy_1706_librivox"
+  },
+  {
+    "rank": 372,
+    "title": "The Problems of Philosophy",
+    "author": "Bertrand Russell",
+    "identifier": "problems_of_philosophy_librivox"
+  },
+  {
+    "rank": 373,
+    "title": "Philosophy",
+    "author": "Bertrand Russell",
+    "identifier": "philosophy_2501_librivox"
+  },
+  {
+    "rank": 374,
+    "title": "Science and Hypothesis",
+    "author": "Henri Poincaré",
+    "identifier": "science_and_hypothesis_librivox"
+  },
+  {
+    "rank": 375,
+    "title": "The Theory of the Leisure Class",
+    "author": "Thorstein Veblen",
+    "identifier": "theory_leisureclass_0911_librivox"
+  },
+  {
+    "rank": 376,
+    "title": "The waning of the middle ages",
+    "author": "Johan Huizinga",
+    "identifier": "waning_of_the_middle_ages_2110_librivox"
+  },
+  {
+    "rank": 377,
+    "title": "The Beast in the Jungle (version 2)",
+    "author": "Henry James",
+    "identifier": "beast_in_the_jungle_2_1607_librivox"
+  },
+  {
+    "rank": 378,
+    "title": "The Beast in the Jungle",
+    "author": "Henry James",
+    "identifier": "beast_in_jungle_1012_librivox"
+  },
+  {
+    "rank": 379,
+    "title": "Saint Joan: Preface",
+    "author": "George Bernard Shaw",
+    "identifier": "saint_joan_preface_2001_librivox"
+  },
+  {
+    "rank": 380,
+    "title": "Heart of Darkness (version 4)",
+    "author": "Joseph Conrad",
+    "identifier": "heart_of_darkness_ver4_2110_librivox"
+  },
+  {
+    "rank": 381,
+    "title": "Heart of Darkness (version 3)",
+    "author": "Joseph Conrad",
+    "identifier": "heartofdarkness3_2009_librivox"
+  },
+  {
+    "rank": 382,
+    "title": "Heart of Darkness (version 2)",
+    "author": "Joseph Conrad",
+    "identifier": "heart_of_darkness_1203_librivox"
+  },
+  {
+    "rank": 383,
     "title": "Heart of Darkness",
     "author": "Joseph Conrad",
-    "identifier": "heart_of_darkness_librivox"
+    "identifier": "heart_of_darkness"
   },
   {
-    "rank": 100,
+    "rank": 384,
     "title": "Uncle Vanya",
     "author": "Anton Chekhov",
-    "identifier": "uncle_vanya_librivox"
+    "identifier": "uncle_vanya_1006_librivox"
   },
   {
-    "rank": 101,
-    "title": "Relativity: The Special and the General Theory",
-    "author": "Albert Einstein",
-    "identifier": "relativity_librivox"
+    "rank": 385,
+    "title": "Six Characters in Search of an Author",
+    "author": "Luigi Pirandello",
+    "identifier": "sixcharacters_1108_librivox"
+  },
+  {
+    "rank": 386,
+    "title": "Death in Venice",
+    "author": "Thomas Mann",
+    "identifier": "death_in_venice_ls_2109_librivox"
+  },
+  {
+    "rank": 387,
+    "title": "A Portrait of the Artist as a Young Man",
+    "author": "James Joyce",
+    "identifier": "portrait_artist_pb_librivox"
+  },
+  {
+    "rank": 388,
+    "title": "A Portrait of the Artist as a Young Man (version 2)",
+    "author": "James Joyce",
+    "identifier": "portraitartist_1402_librivox"
+  },
+  {
+    "rank": 389,
+    "title": "To the Lighthouse (Version 3)",
+    "author": "Virginia Woolf",
+    "identifier": "to_the_lighthouse_version_3_2306_librivox"
+  },
+  {
+    "rank": 390,
+    "title": "To The Lighthouse",
+    "author": "Virginia Woolf",
+    "identifier": "tothelighthouse_2303_librivox"
+  },
+  {
+    "rank": 391,
+    "title": "To the Lighthouse (Version 2)",
+    "author": "Virginia Woolf",
+    "identifier": "to_the_lighthouse_2303_librivox"
+  },
+  {
+    "rank": 392,
+    "title": "The Metamorphosis",
+    "author": "Franz Kafka",
+    "identifier": "metamorphosis_1401_librivox"
+  },
+  {
+    "rank": 393,
+    "title": "The Metamorphosis (version 5)",
+    "author": "Franz Kafka",
+    "identifier": "metamorphosisv5_2005_librivox"
+  },
+  {
+    "rank": 394,
+    "title": "The Metamorphosis",
+    "author": "Franz Kafka",
+    "identifier": "metamorphosis_1203_librivox"
+  },
+  {
+    "rank": 395,
+    "title": "The Metamorphosis (version 4)",
+    "author": "Franz Kafka",
+    "identifier": "themetamorphosis_version_4_1706_librivox"
+  },
+  {
+    "rank": 396,
+    "title": "The Metamorphosis",
+    "author": "Franz Kafka",
+    "identifier": "metamorphosis_librivox"
+  },
+  {
+    "rank": 397,
+    "title": "The Prussian Officer and Other Stories",
+    "author": "D. H. Lawrence",
+    "identifier": "prussian_officer_cb_librivox"
+  },
+  {
+    "rank": 398,
+    "title": "The Waste Land (version 3)",
+    "author": "T. S. Eliot",
+    "identifier": "wasteland_etk_librivox"
+  },
+  {
+    "rank": 399,
+    "title": "The Waste Land",
+    "author": "T. S. Eliot",
+    "identifier": "wasteland_0808_librivox"
+  },
+  {
+    "rank": 400,
+    "title": "The Waste Land",
+    "author": "T. S. Eliot",
+    "identifier": "waste_land_librivox"
+  },
+  {
+    "rank": 401,
+    "title": "The Great Gatsby (version 2)",
+    "author": "F. Scott Fitzgerald",
+    "identifier": "greatgatsby_2109_librivox"
+  },
+  {
+    "rank": 402,
+    "title": "The Great Gatsby (Version 5 Dramatic Reading)",
+    "author": "F. Scott Fitzgerald",
+    "identifier": "greatgatsby5_2510_librivox"
+  },
+  {
+    "rank": 403,
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "identifier": "thegreatgatsbyversion4_2402_librivox"
+  },
+  {
+    "rank": 404,
+    "title": "The Great Gatsby (Version 3)",
+    "author": "F. Scott Fitzgerald",
+    "identifier": "great_gatsby_2305_librivox"
+  },
+  {
+    "rank": 405,
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "identifier": "greatgatsby_2101_librivox"
   }
 ]

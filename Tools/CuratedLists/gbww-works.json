@@ -1,0 +1,1682 @@
+[
+  {
+    "workID": "homer-the-iliad",
+    "row": 2,
+    "author": "Homer",
+    "title": "The Iliad",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "homer-the-odyssey",
+    "row": 3,
+    "author": "Homer",
+    "title": "The Odyssey",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "aeschylus-plays",
+    "row": 4,
+    "author": "Aeschylus",
+    "title": "Plays",
+    "constituents": [
+      "Agamemnon",
+      "Choephoroe (The Libation Bearers)",
+      "Eumenides (The Furies)",
+      "The Suppliant Maidens",
+      "Prometheus Bound",
+      "The Seven Against Thebes",
+      "The Persians"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "sophocles-plays",
+    "row": 5,
+    "author": "Sophocles",
+    "title": "Plays",
+    "constituents": [
+      "Oedipus Rex",
+      "Oedipus at Colonus",
+      "Antigone",
+      "Electra",
+      "Ajax",
+      "Philoctetes",
+      "Trachiniae"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "euripides-plays",
+    "row": 6,
+    "author": "Euripides",
+    "title": "Plays",
+    "constituents": [
+      "Rhesus",
+      "Medea",
+      "Hippolytus",
+      "Alcestis",
+      "Heracleidae",
+      "The Suppliants",
+      "Trojan Women",
+      "Ion",
+      "Helen",
+      "Andromache",
+      "Electra",
+      "Bacchantes",
+      "Hecuba",
+      "Heracles Mad",
+      "Phoenician Women",
+      "Orestes",
+      "Iphigenia in Tauris",
+      "Iphigenia in Aulis",
+      "The Cyclops"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "aristophanes-plays",
+    "row": 7,
+    "author": "Aristophanes",
+    "title": "Plays",
+    "constituents": [
+      "The Acharnians",
+      "The Knights",
+      "The Clouds",
+      "The Wasps",
+      "Peace",
+      "The Birds",
+      "The Frogs",
+      "Lysistrata",
+      "Thesmophoriazusae",
+      "Ecclesiazusae",
+      "Plutus"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "herodotus-the-history-of-the-persian-wars",
+    "row": 8,
+    "author": "Herodotus",
+    "title": "The History of the Persian Wars",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "thucydides-the-history-of-the-peloponnesian-war",
+    "row": 9,
+    "author": "Thucydides",
+    "title": "The History of the Peloponnesian War",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "plato-dialogues",
+    "row": 10,
+    "author": "Plato",
+    "title": "Dialogues",
+    "constituents": [
+      "Charmides",
+      "Lysis",
+      "Laches",
+      "Protagoras",
+      "Euthydemus",
+      "Cratylus",
+      "Phaedrus",
+      "Ion",
+      "Symposium",
+      "Meno",
+      "Euthyphro",
+      "Apology",
+      "Crito",
+      "Phaedo",
+      "Gorgias",
+      "The Republic",
+      "Timaeus",
+      "Critias",
+      "Parmenides",
+      "Theaetetus",
+      "Sophist",
+      "Statesman",
+      "Philebus",
+      "Laws",
+      "The Seventh Letter"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "plato-the-seventh-letter",
+    "row": 11,
+    "author": "Plato",
+    "title": "The Seventh Letter",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "aristotle-works",
+    "row": 12,
+    "author": "Aristotle",
+    "title": "Works",
+    "constituents": [
+      "Categories",
+      "On Interpretation",
+      "Prior Analytics",
+      "Posterior Analytics",
+      "Topics",
+      "Sophistical Refutations",
+      "Physics",
+      "On the Heavens",
+      "On Generation and Corruption",
+      "Meteorology",
+      "Metaphysics",
+      "On the Soul",
+      "Parva Naturalia",
+      "History of Animals",
+      "Parts of Animals",
+      "Motion of Animals",
+      "Gait of Animals",
+      "Generation of Animals",
+      "Nicomachean Ethics",
+      "Politics",
+      "The Athenian Constitution",
+      "Rhetoric",
+      "Poetics"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "hippocrates-works",
+    "row": 13,
+    "author": "Hippocrates",
+    "title": "Works",
+    "constituents": [
+      "The Oath",
+      "On Ancient Medicine",
+      "On Airs, Waters, and Places",
+      "The Book of Prognostics",
+      "On Regimen in Acute Diseases",
+      "Of the Epidemics",
+      "On Injuries of the Head",
+      "On the Surgery",
+      "On Fractures",
+      "On the Articulations",
+      "Instruments of Reduction",
+      "Aphorisms",
+      "The Law",
+      "On Ulcers",
+      "On Fistulae",
+      "On Hemorrhoids",
+      "On the Sacred Disease"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "galen-on-the-natural-faculties",
+    "row": 14,
+    "author": "Galen",
+    "title": "On the Natural Faculties",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "euclid-elements",
+    "row": 15,
+    "author": "Euclid",
+    "title": "Elements",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "archimedes-works",
+    "row": 16,
+    "author": "Archimedes",
+    "title": "Works",
+    "constituents": [
+      "On the Sphere and Cylinder",
+      "Measurement of a Circle",
+      "On Conoids and Spheroids",
+      "On Spirals",
+      "On the Equilibrium of Planes",
+      "The Sand-Reckoner",
+      "Quadrature of the Parabola",
+      "On Floating Bodies",
+      "Book of Lemmas",
+      "The Method Treating of Mechanical Problems"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "nicomachus-introduction-to-arithmetic",
+    "row": 17,
+    "author": "Nicomachus",
+    "title": "Introduction to Arithmetic",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "lucretius-the-way-things-are-de-rerum-natura",
+    "row": 18,
+    "author": "Lucretius",
+    "title": "The Way Things Are (De rerum natura)",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "epictetus-discourses",
+    "row": 19,
+    "author": "Epictetus",
+    "title": "Discourses",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "marcus-aurelius-meditations",
+    "row": 20,
+    "author": "Marcus Aurelius",
+    "title": "Meditations",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "plotinus-the-six-enneads",
+    "row": 21,
+    "author": "Plotinus",
+    "title": "The Six Enneads",
+    "constituents": [
+      "First Ennead",
+      "Second Ennead",
+      "Third Ennead",
+      "Fourth Ennead",
+      "Fifth Ennead",
+      "Sixth Ennead"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "virgil-eclogues",
+    "row": 22,
+    "author": "Virgil",
+    "title": "Eclogues",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "virgil-georgics",
+    "row": 23,
+    "author": "Virgil",
+    "title": "Georgics",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "virgil-the-aeneid",
+    "row": 24,
+    "author": "Virgil",
+    "title": "The Aeneid",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "plutarch-the-lives-of-the-noble-grecians-and-romans",
+    "row": 25,
+    "author": "Plutarch",
+    "title": "The Lives of the Noble Grecians and Romans",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "tacitus-the-annals",
+    "row": 26,
+    "author": "Tacitus",
+    "title": "The Annals",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "tacitus-the-histories",
+    "row": 27,
+    "author": "Tacitus",
+    "title": "The Histories",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "ptolemy-the-almagest",
+    "row": 28,
+    "author": "Ptolemy",
+    "title": "The Almagest",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "nicolaus-copernicus-on-the-revolutions-of-the-heavenly-spheres",
+    "row": 29,
+    "author": "Nicolaus Copernicus",
+    "title": "On the Revolutions of the Heavenly Spheres",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "johannes-kepler-epitome-of-copernican-astronomy-books-ivv",
+    "row": 30,
+    "author": "Johannes Kepler",
+    "title": "Epitome of Copernican Astronomy (Books IV–V)",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "johannes-kepler-the-harmonies-of-the-world-book-v",
+    "row": 31,
+    "author": "Johannes Kepler",
+    "title": "The Harmonies of the World (Book V)",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "saint-augustine-the-confessions",
+    "row": 32,
+    "author": "Saint Augustine",
+    "title": "The Confessions",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "saint-augustine-the-city-of-god",
+    "row": 33,
+    "author": "Saint Augustine",
+    "title": "The City of God",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "saint-augustine-on-christian-doctrine",
+    "row": 34,
+    "author": "Saint Augustine",
+    "title": "On Christian Doctrine",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "thomas-aquinas-summa-theologica",
+    "row": 35,
+    "author": "Thomas Aquinas",
+    "title": "Summa Theologica",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "dante-alighieri-the-divine-comedy",
+    "row": 36,
+    "author": "Dante Alighieri",
+    "title": "The Divine Comedy",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "geoffrey-chaucer-troilus-and-criseyde",
+    "row": 37,
+    "author": "Geoffrey Chaucer",
+    "title": "Troilus and Criseyde",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "geoffrey-chaucer-the-canterbury-tales",
+    "row": 38,
+    "author": "Geoffrey Chaucer",
+    "title": "The Canterbury Tales",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-calvin-institutes-of-the-christian-religion",
+    "row": 39,
+    "author": "John Calvin",
+    "title": "Institutes of the Christian Religion",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "niccolo-machiavelli-the-prince",
+    "row": 40,
+    "author": "Niccolò Machiavelli",
+    "title": "The Prince",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "thomas-hobbes-leviathan",
+    "row": 41,
+    "author": "Thomas Hobbes",
+    "title": "Leviathan",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "francois-rabelais-gargantua-and-pantagruel",
+    "row": 42,
+    "author": "François Rabelais",
+    "title": "Gargantua and Pantagruel",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "desiderius-erasmus-praise-of-folly",
+    "row": 43,
+    "author": "Desiderius Erasmus",
+    "title": "Praise of Folly",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "michel-de-montaigne-essays",
+    "row": 44,
+    "author": "Michel de Montaigne",
+    "title": "Essays",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-shakespeare-plays",
+    "row": 45,
+    "author": "William Shakespeare",
+    "title": "Plays",
+    "constituents": [
+      "The First Part of King Henry the Sixth",
+      "The Second Part of King Henry the Sixth",
+      "The Third Part of King Henry the Sixth",
+      "The Tragedy of King Richard the Third",
+      "The Comedy of Errors",
+      "Titus Andronicus",
+      "The Taming of the Shrew",
+      "The Two Gentlemen of Verona",
+      "Love's Labour's Lost",
+      "Romeo and Juliet",
+      "The Tragedy of King Richard II",
+      "A Midsummer Night's Dream",
+      "The Life and Death of King John",
+      "The Merchant of Venice",
+      "The First Part of King Henry the Fourth",
+      "The Second Part of King Henry the Fourth",
+      "Much Ado About Nothing",
+      "The Life of King Henry the Fifth",
+      "Julius Caesar",
+      "As You Like It",
+      "Twelfth Night; or, What You Will",
+      "The Tragedy of Hamlet, Prince of Denmark",
+      "The Merry Wives of Windsor",
+      "Troilus and Cressida",
+      "All's Well That Ends Well",
+      "Measure for Measure",
+      "Othello, the Moor of Venice",
+      "King Lear",
+      "Macbeth",
+      "Antony and Cleopatra",
+      "Coriolanus",
+      "Timon of Athens",
+      "Pericles, Prince of Tyre",
+      "Cymbeline",
+      "The Winter's Tale",
+      "The Tempest",
+      "The Famous History of the Life of King Henry VIII"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "william-shakespeare-sonnets",
+    "row": 46,
+    "author": "William Shakespeare",
+    "title": "Sonnets",
+    "constituents": [
+      "Sonnets"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "william-gilbert-on-the-loadstone-and-magnetic-bodies",
+    "row": 47,
+    "author": "William Gilbert",
+    "title": "On the Loadstone and Magnetic Bodies",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "galileo-galilei-dialogues-concerning-two-new-sciences",
+    "row": 48,
+    "author": "Galileo Galilei",
+    "title": "Dialogues Concerning Two New Sciences",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-harvey-on-the-motion-of-the-heart-and-blood-in-animals",
+    "row": 49,
+    "author": "William Harvey",
+    "title": "On the Motion of the Heart and Blood in Animals",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-harvey-on-the-circulation-of-the-blood",
+    "row": 50,
+    "author": "William Harvey",
+    "title": "On the Circulation of the Blood",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-harvey-on-the-generation-of-animals",
+    "row": 51,
+    "author": "William Harvey",
+    "title": "On the Generation of Animals",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "miguel-de-cervantes-don-quixote",
+    "row": 52,
+    "author": "Miguel de Cervantes",
+    "title": "Don Quixote",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "francis-bacon-the-advancement-of-learning",
+    "row": 53,
+    "author": "Francis Bacon",
+    "title": "The Advancement of Learning",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "francis-bacon-novum-organum",
+    "row": 54,
+    "author": "Francis Bacon",
+    "title": "Novum Organum",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "francis-bacon-new-atlantis",
+    "row": 55,
+    "author": "Francis Bacon",
+    "title": "New Atlantis",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "rene-descartes-rules-for-the-direction-of-the-mind",
+    "row": 56,
+    "author": "René Descartes",
+    "title": "Rules for the Direction of the Mind",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "rene-descartes-discourse-on-the-method",
+    "row": 57,
+    "author": "René Descartes",
+    "title": "Discourse on the Method",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "rene-descartes-meditations-on-first-philosophy",
+    "row": 58,
+    "author": "René Descartes",
+    "title": "Meditations on First Philosophy",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "rene-descartes-objections-against-the-meditations-and-replies",
+    "row": 59,
+    "author": "René Descartes",
+    "title": "Objections Against the Meditations and Replies",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "rene-descartes-the-geometry",
+    "row": 60,
+    "author": "René Descartes",
+    "title": "The Geometry",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "baruch-spinoza-ethics",
+    "row": 61,
+    "author": "Baruch Spinoza",
+    "title": "Ethics",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-milton-english-minor-poems",
+    "row": 62,
+    "author": "John Milton",
+    "title": "English Minor Poems",
+    "constituents": [
+      "On the Morning of Christ's Nativity",
+      "A Paraphrase on Psalm 114",
+      "Psalm 136",
+      "The Passion",
+      "On Time",
+      "Upon the Circumcision",
+      "At a Solemn Musick",
+      "An Epitaph on the Marchioness of Winchester",
+      "Song on May Morning",
+      "On Shakespeare",
+      "On the University Carrier",
+      "Another on the Same",
+      "L'Allegro",
+      "Il Penseroso",
+      "Sonnet to the Nightingale",
+      "Sonnet on His Having Arrived at the Age of Twenty-Three",
+      "Sonnet to the Lord General Cromwell",
+      "Sonnet to Sir Henry Vane the Younger",
+      "Sonnet on the Late Massacre in Piedmont",
+      "Sonnet on His Blindness",
+      "Sonnet to Cyriack Skinner",
+      "Sonnet to the Memory of His Second Wife",
+      "Arcades",
+      "Comus",
+      "Lycidas"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "john-milton-paradise-lost",
+    "row": 63,
+    "author": "John Milton",
+    "title": "Paradise Lost",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-milton-samson-agonistes",
+    "row": 64,
+    "author": "John Milton",
+    "title": "Samson Agonistes",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-milton-areopagitica",
+    "row": 65,
+    "author": "John Milton",
+    "title": "Areopagitica",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "blaise-pascal-the-provincial-letters",
+    "row": 66,
+    "author": "Blaise Pascal",
+    "title": "The Provincial Letters",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "blaise-pascal-pensees",
+    "row": 67,
+    "author": "Blaise Pascal",
+    "title": "Pensées",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "blaise-pascal-scientific-treatises",
+    "row": 68,
+    "author": "Blaise Pascal",
+    "title": "Scientific Treatises",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-the-school-for-wives",
+    "row": 69,
+    "author": "Molière",
+    "title": "The School for Wives",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-the-critique-of-the-school-for-wives",
+    "row": 70,
+    "author": "Molière",
+    "title": "The Critique of the School for Wives",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-tartuffe",
+    "row": 71,
+    "author": "Molière",
+    "title": "Tartuffe",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-don-juan",
+    "row": 72,
+    "author": "Molière",
+    "title": "Don Juan",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-the-miser",
+    "row": 73,
+    "author": "Molière",
+    "title": "The Miser",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-the-would-be-gentleman",
+    "row": 74,
+    "author": "Molière",
+    "title": "The Would-Be Gentleman",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "moliere-the-would-be-invalid",
+    "row": 75,
+    "author": "Molière",
+    "title": "The Would-Be Invalid",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "jean-racine-berenice",
+    "row": 76,
+    "author": "Jean Racine",
+    "title": "Berenice",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "jean-racine-phaedra",
+    "row": 77,
+    "author": "Jean Racine",
+    "title": "Phaedra",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "isaac-newton-mathematical-principles-of-natural-philosophy",
+    "row": 78,
+    "author": "Isaac Newton",
+    "title": "Mathematical Principles of Natural Philosophy",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "isaac-newton-opticks",
+    "row": 79,
+    "author": "Isaac Newton",
+    "title": "Opticks",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "christiaan-huygens-treatise-on-light",
+    "row": 80,
+    "author": "Christiaan Huygens",
+    "title": "Treatise on Light",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-locke-a-letter-concerning-toleration",
+    "row": 81,
+    "author": "John Locke",
+    "title": "A Letter Concerning Toleration",
+    "constituents": [
+      "A Letter Concerning Toleration"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "john-locke-second-treatise-of-government",
+    "row": 82,
+    "author": "John Locke",
+    "title": "Second Treatise of Government",
+    "constituents": [
+      "Second Treatise of Government"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "john-locke-an-essay-concerning-human-understanding",
+    "row": 83,
+    "author": "John Locke",
+    "title": "An Essay Concerning Human Understanding",
+    "constituents": [
+      "An Essay Concerning Human Understanding"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "george-berkeley-a-treatise-concerning-the-principles-of-human-knowledge",
+    "row": 84,
+    "author": "George Berkeley",
+    "title": "A Treatise Concerning the Principles of Human Knowledge",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "david-hume-an-enquiry-concerning-human-understanding",
+    "row": 85,
+    "author": "David Hume",
+    "title": "An Enquiry Concerning Human Understanding",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "jonathan-swift-gullivers-travels",
+    "row": 86,
+    "author": "Jonathan Swift",
+    "title": "Gulliver’s Travels",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "voltaire-candide",
+    "row": 87,
+    "author": "Voltaire",
+    "title": "Candide",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "denis-diderot-rameaus-nephew",
+    "row": 88,
+    "author": "Denis Diderot",
+    "title": "Rameau’s Nephew",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "montesquieu-the-spirit-of-laws",
+    "row": 89,
+    "author": "Montesquieu",
+    "title": "The Spirit of Laws",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "jean-jacques-rousseau-discourse-on-the-origin-of-inequality",
+    "row": 90,
+    "author": "Jean-Jacques Rousseau",
+    "title": "Discourse on the Origin of Inequality",
+    "constituents": [
+      "A Discourse on the Origin of Inequality"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "jean-jacques-rousseau-discourse-on-political-economy",
+    "row": 91,
+    "author": "Jean-Jacques Rousseau",
+    "title": "Discourse on Political Economy",
+    "constituents": [
+      "A Discourse on Political Economy"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "jean-jacques-rousseau-the-social-contract",
+    "row": 92,
+    "author": "Jean-Jacques Rousseau",
+    "title": "The Social Contract",
+    "constituents": [
+      "The Social Contract"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "adam-smith-the-wealth-of-nations",
+    "row": 93,
+    "author": "Adam Smith",
+    "title": "The Wealth of Nations",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire",
+    "row": 94,
+    "author": "Edward Gibbon",
+    "title": "The History of the Decline and Fall of the Roman Empire",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "immanuel-kant-critique-of-pure-reason",
+    "row": 95,
+    "author": "Immanuel Kant",
+    "title": "Critique of Pure Reason",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "immanuel-kant-groundwork-of-the-metaphysics-of-morals",
+    "row": 96,
+    "author": "Immanuel Kant",
+    "title": "Groundwork of the Metaphysics of Morals",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "immanuel-kant-critique-of-practical-reason",
+    "row": 97,
+    "author": "Immanuel Kant",
+    "title": "Critique of Practical Reason",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "immanuel-kant-the-metaphysics-of-morals",
+    "row": 98,
+    "author": "Immanuel Kant",
+    "title": "The Metaphysics of Morals",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "immanuel-kant-critique-of-judgment",
+    "row": 99,
+    "author": "Immanuel Kant",
+    "title": "Critique of Judgment",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "united-states-declaration-of-independence",
+    "row": 100,
+    "author": "United States",
+    "title": "Declaration of Independence",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "united-states-articles-of-confederation",
+    "row": 101,
+    "author": "United States",
+    "title": "Articles of Confederation",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "united-states-constitution-of-the-united-states",
+    "row": 102,
+    "author": "United States",
+    "title": "Constitution of the United States",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "alexander-hamilton-james-madison-john-jay-the-federalist-papers",
+    "row": 103,
+    "author": "Alexander Hamilton; James Madison; John Jay",
+    "title": "The Federalist Papers",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-stuart-mill-on-liberty",
+    "row": 104,
+    "author": "John Stuart Mill",
+    "title": "On Liberty",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-stuart-mill-considerations-on-representative-government",
+    "row": 105,
+    "author": "John Stuart Mill",
+    "title": "Considerations on Representative Government",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-stuart-mill-utilitarianism",
+    "row": 106,
+    "author": "John Stuart Mill",
+    "title": "Utilitarianism",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "james-boswell-the-life-of-samuel-johnson",
+    "row": 107,
+    "author": "James Boswell",
+    "title": "The Life of Samuel Johnson",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "antoine-lavoisier-elements-of-chemistry",
+    "row": 108,
+    "author": "Antoine Lavoisier",
+    "title": "Elements of Chemistry",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "michael-faraday-experimental-researches-in-electricity",
+    "row": 109,
+    "author": "Michael Faraday",
+    "title": "Experimental Researches in Electricity",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "g-w-f-hegel-the-philosophy-of-right",
+    "row": 110,
+    "author": "G. W. F. Hegel",
+    "title": "The Philosophy of Right",
+    "constituents": [
+      "The Philosophy of Right"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "g-w-f-hegel-the-philosophy-of-history",
+    "row": 111,
+    "author": "G. W. F. Hegel",
+    "title": "The Philosophy of History",
+    "constituents": [
+      "The Philosophy of History"
+    ],
+    "constituentsSource": "GBWW second-edition contents (hardcoded)"
+  },
+  {
+    "workID": "sren-kierkegaard-fear-and-trembling",
+    "row": 112,
+    "author": "Søren Kierkegaard",
+    "title": "Fear and Trembling",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "friedrich-nietzsche-beyond-good-and-evil",
+    "row": 113,
+    "author": "Friedrich Nietzsche",
+    "title": "Beyond Good and Evil",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "alexis-de-tocqueville-democracy-in-america",
+    "row": 114,
+    "author": "Alexis de Tocqueville",
+    "title": "Democracy in America",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "johann-wolfgang-von-goethe-faust",
+    "row": 115,
+    "author": "Johann Wolfgang von Goethe",
+    "title": "Faust",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "honore-de-balzac-cousin-bette",
+    "row": 116,
+    "author": "Honoré de Balzac",
+    "title": "Cousin Bette",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "jane-austen-emma",
+    "row": 117,
+    "author": "Jane Austen",
+    "title": "Emma",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "george-eliot-middlemarch",
+    "row": 118,
+    "author": "George Eliot",
+    "title": "Middlemarch",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "charles-dickens-little-dorrit",
+    "row": 119,
+    "author": "Charles Dickens",
+    "title": "Little Dorrit",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "herman-melville-moby-dick",
+    "row": 120,
+    "author": "Herman Melville",
+    "title": "Moby-Dick",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "mark-twain-adventures-of-huckleberry-finn",
+    "row": 121,
+    "author": "Mark Twain",
+    "title": "Adventures of Huckleberry Finn",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "charles-darwin-on-the-origin-of-species",
+    "row": 122,
+    "author": "Charles Darwin",
+    "title": "On the Origin of Species",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "charles-darwin-the-descent-of-man",
+    "row": 123,
+    "author": "Charles Darwin",
+    "title": "The Descent of Man",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "karl-marx-friedrich-engels-manifesto-of-the-communist-party",
+    "row": 124,
+    "author": "Karl Marx; Friedrich Engels",
+    "title": "Manifesto of the Communist Party",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "karl-marx-capital-volume-i",
+    "row": 125,
+    "author": "Karl Marx",
+    "title": "Capital, Volume I",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "leo-tolstoy-war-and-peace",
+    "row": 126,
+    "author": "Leo Tolstoy",
+    "title": "War and Peace",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "fyodor-dostoevsky-the-brothers-karamazov",
+    "row": 127,
+    "author": "Fyodor Dostoevsky",
+    "title": "The Brothers Karamazov",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henrik-ibsen-a-dolls-house",
+    "row": 128,
+    "author": "Henrik Ibsen",
+    "title": "A Doll’s House",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henrik-ibsen-the-wild-duck",
+    "row": 129,
+    "author": "Henrik Ibsen",
+    "title": "The Wild Duck",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henrik-ibsen-hedda-gabler",
+    "row": 130,
+    "author": "Henrik Ibsen",
+    "title": "Hedda Gabler",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henrik-ibsen-the-master-builder",
+    "row": 131,
+    "author": "Henrik Ibsen",
+    "title": "The Master Builder",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-james-the-principles-of-psychology",
+    "row": 132,
+    "author": "William James",
+    "title": "The Principles of Psychology",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "sigmund-freud-josef-breuer-selected-papers-on-hysteria",
+    "row": 133,
+    "author": "Sigmund Freud; Josef Breuer",
+    "title": "Selected Papers on Hysteria",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "sigmund-freud-the-interpretation-of-dreams",
+    "row": 134,
+    "author": "Sigmund Freud",
+    "title": "The Interpretation of Dreams",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "sigmund-freud-a-general-introduction-to-psychoanalysis",
+    "row": 135,
+    "author": "Sigmund Freud",
+    "title": "A General Introduction to Psychoanalysis",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "sigmund-freud-civilization-and-its-discontents",
+    "row": 136,
+    "author": "Sigmund Freud",
+    "title": "Civilization and Its Discontents",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "sigmund-freud-new-introductory-lectures-on-psychoanalysis",
+    "row": 137,
+    "author": "Sigmund Freud",
+    "title": "New Introductory Lectures on Psychoanalysis",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-james-pragmatism",
+    "row": 138,
+    "author": "William James",
+    "title": "Pragmatism",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henri-bergson-an-introduction-to-metaphysics",
+    "row": 139,
+    "author": "Henri Bergson",
+    "title": "An Introduction to Metaphysics",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-dewey-experience-and-education",
+    "row": 140,
+    "author": "John Dewey",
+    "title": "Experience and Education",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "alfred-north-whitehead-science-and-the-modern-world",
+    "row": 141,
+    "author": "Alfred North Whitehead",
+    "title": "Science and the Modern World",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "bertrand-russell-the-problems-of-philosophy",
+    "row": 142,
+    "author": "Bertrand Russell",
+    "title": "The Problems of Philosophy",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "martin-heidegger-what-is-metaphysics",
+    "row": 143,
+    "author": "Martin Heidegger",
+    "title": "What Is Metaphysics?",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "ludwig-wittgenstein-philosophical-investigations",
+    "row": 144,
+    "author": "Ludwig Wittgenstein",
+    "title": "Philosophical Investigations",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "karl-barth-the-word-of-god-and-the-word-of-man",
+    "row": 145,
+    "author": "Karl Barth",
+    "title": "The Word of God and the Word of Man",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henri-poincare-science-and-hypothesis",
+    "row": 146,
+    "author": "Henri Poincaré",
+    "title": "Science and Hypothesis",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "max-planck-scientific-autobiography-and-other-papers",
+    "row": 147,
+    "author": "Max Planck",
+    "title": "Scientific Autobiography and Other Papers",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "alfred-north-whitehead-an-introduction-to-mathematics",
+    "row": 148,
+    "author": "Alfred North Whitehead",
+    "title": "An Introduction to Mathematics",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "albert-einstein-relativity-the-special-and-the-general-theory",
+    "row": 149,
+    "author": "Albert Einstein",
+    "title": "Relativity: The Special and the General Theory",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "arthur-eddington-the-expanding-universe",
+    "row": 150,
+    "author": "Arthur Eddington",
+    "title": "The Expanding Universe",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "niels-bohr-atomic-theory-and-the-description-of-nature",
+    "row": 151,
+    "author": "Niels Bohr",
+    "title": "Atomic Theory and the Description of Nature",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "niels-bohr-discussion-with-einstein-on-epistemological-problems",
+    "row": 152,
+    "author": "Niels Bohr",
+    "title": "Discussion with Einstein on Epistemological Problems",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "g-h-hardy-a-mathematicians-apology",
+    "row": 153,
+    "author": "G. H. Hardy",
+    "title": "A Mathematician’s Apology",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "werner-heisenberg-physics-and-philosophy",
+    "row": 154,
+    "author": "Werner Heisenberg",
+    "title": "Physics and Philosophy",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "erwin-schrodinger-what-is-life",
+    "row": 155,
+    "author": "Erwin Schrödinger",
+    "title": "What Is Life?",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "theodosius-dobzhansky-genetics-and-the-origin-of-species",
+    "row": 156,
+    "author": "Theodosius Dobzhansky",
+    "title": "Genetics and the Origin of Species",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "c-h-waddington-the-nature-of-life",
+    "row": 157,
+    "author": "C. H. Waddington",
+    "title": "The Nature of Life",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "thorstein-veblen-the-theory-of-the-leisure-class",
+    "row": 158,
+    "author": "Thorstein Veblen",
+    "title": "The Theory of the Leisure Class",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "r-h-tawney-the-acquisitive-society",
+    "row": 159,
+    "author": "R. H. Tawney",
+    "title": "The Acquisitive Society",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "john-maynard-keynes-the-general-theory-of-employment-interest-and-money",
+    "row": 160,
+    "author": "John Maynard Keynes",
+    "title": "The General Theory of Employment, Interest and Money",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "james-george-frazer-the-golden-bough-selections",
+    "row": 161,
+    "author": "James George Frazer",
+    "title": "The Golden Bough (selections)",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "max-weber-essays-in-sociology-selections",
+    "row": 162,
+    "author": "Max Weber",
+    "title": "Essays in Sociology (selections)",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "johan-huizinga-the-waning-of-the-middle-ages",
+    "row": 163,
+    "author": "Johan Huizinga",
+    "title": "The Waning of the Middle Ages",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "claude-levi-strauss-structural-anthropology-selections",
+    "row": 164,
+    "author": "Claude Lévi-Strauss",
+    "title": "Structural Anthropology (selections)",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "henry-james-the-beast-in-the-jungle",
+    "row": 165,
+    "author": "Henry James",
+    "title": "The Beast in the Jungle",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "george-bernard-shaw-saint-joan",
+    "row": 166,
+    "author": "George Bernard Shaw",
+    "title": "Saint Joan",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "joseph-conrad-heart-of-darkness",
+    "row": 167,
+    "author": "Joseph Conrad",
+    "title": "Heart of Darkness",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "anton-chekhov-uncle-vanya",
+    "row": 168,
+    "author": "Anton Chekhov",
+    "title": "Uncle Vanya",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "luigi-pirandello-six-characters-in-search-of-an-author",
+    "row": 169,
+    "author": "Luigi Pirandello",
+    "title": "Six Characters in Search of an Author",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "marcel-proust-swann-in-love",
+    "row": 170,
+    "author": "Marcel Proust",
+    "title": "Swann in Love",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "willa-cather-a-lost-lady",
+    "row": 171,
+    "author": "Willa Cather",
+    "title": "A Lost Lady",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "thomas-mann-death-in-venice",
+    "row": 172,
+    "author": "Thomas Mann",
+    "title": "Death in Venice",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "james-joyce-a-portrait-of-the-artist-as-a-young-man",
+    "row": 173,
+    "author": "James Joyce",
+    "title": "A Portrait of the Artist as a Young Man",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "virginia-woolf-to-the-lighthouse",
+    "row": 174,
+    "author": "Virginia Woolf",
+    "title": "To the Lighthouse",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "franz-kafka-the-metamorphosis",
+    "row": 175,
+    "author": "Franz Kafka",
+    "title": "The Metamorphosis",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "d-h-lawrence-the-prussian-officer",
+    "row": 176,
+    "author": "D. H. Lawrence",
+    "title": "The Prussian Officer",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "t-s-eliot-the-waste-land",
+    "row": 177,
+    "author": "T. S. Eliot",
+    "title": "The Waste Land",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "eugene-oneill-mourning-becomes-electra",
+    "row": 178,
+    "author": "Eugene O’Neill",
+    "title": "Mourning Becomes Electra",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "f-scott-fitzgerald-the-great-gatsby",
+    "row": 179,
+    "author": "F. Scott Fitzgerald",
+    "title": "The Great Gatsby",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "william-faulkner-a-rose-for-emily",
+    "row": 180,
+    "author": "William Faulkner",
+    "title": "A Rose for Emily",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "bertolt-brecht-mother-courage-and-her-children",
+    "row": 181,
+    "author": "Bertolt Brecht",
+    "title": "Mother Courage and Her Children",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "ernest-hemingway-the-short-happy-life-of-francis-macomber",
+    "row": 182,
+    "author": "Ernest Hemingway",
+    "title": "The Short Happy Life of Francis Macomber",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "george-orwell-animal-farm",
+    "row": 183,
+    "author": "George Orwell",
+    "title": "Animal Farm",
+    "constituents": [],
+    "constituentsSource": ""
+  },
+  {
+    "workID": "samuel-beckett-waiting-for-godot",
+    "row": 184,
+    "author": "Samuel Beckett",
+    "title": "Waiting for Godot",
+    "constituents": [],
+    "constituentsSource": ""
+  }
+]

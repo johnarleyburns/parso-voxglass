@@ -1,0 +1,200 @@
+[
+  {
+    "rank": 1,
+    "title": "La Ilíada (version 2)",
+    "author": "Homer",
+    "identifier": "iliada_2504_librivox"
+  },
+  {
+    "rank": 2,
+    "title": "La Ilíada",
+    "author": "Homer",
+    "identifier": "iliada_1505_librivox"
+  },
+  {
+    "rank": 3,
+    "title": "Electra",
+    "author": "Sophocles",
+    "identifier": "electra_spanish_2605_librivox"
+  },
+  {
+    "rank": 4,
+    "title": "Las Siete Tragedias de Sófocles",
+    "author": "Sophocles",
+    "identifier": "tragediassofocles_1606_librivox"
+  },
+  {
+    "rank": 5,
+    "title": "Medea",
+    "author": "Euripides",
+    "identifier": "medea_2602_librivox"
+  },
+  {
+    "rank": 6,
+    "title": "Orestes",
+    "author": "Euripides",
+    "identifier": "orestes_2606_librivox"
+  },
+  {
+    "rank": 7,
+    "title": "Libro VI de la Historia de Heródoto",
+    "author": "Herodotus",
+    "identifier": "librovidelahistoriadeherodoto_1604_librivox"
+  },
+  {
+    "rank": 8,
+    "title": "Libro IV de la Historia de Heródoto",
+    "author": "Herodotus",
+    "identifier": "historiaherodoto4_1508_librivox"
+  },
+  {
+    "rank": 9,
+    "title": "Libro IX de la Historia de Heródoto",
+    "author": "Herodotus",
+    "identifier": "libro_ix_historia_herodoto_1812_librivox"
+  },
+  {
+    "rank": 10,
+    "title": "Libro V de la Historia de Heródoto",
+    "author": "Herodotus",
+    "identifier": "historiaherodoto5_1601_librivox"
+  },
+  {
+    "rank": 11,
+    "title": "Libro VII de la Historia de Heródoto",
+    "author": "Herodotus",
+    "identifier": "historiadeherodoto7_1712_librivox"
+  },
+  {
+    "rank": 12,
+    "title": "Libro VIII de la Historia de Heródoto",
+    "author": "Herodotus",
+    "identifier": "libro_viii_historia_de_herodoto_1801_librivox"
+  },
+  {
+    "rank": 13,
+    "title": "Critón o el deber",
+    "author": "Plato",
+    "identifier": "criton_1601_librivox"
+  },
+  {
+    "rank": 14,
+    "title": "Meditaciones",
+    "author": "Marcus Aurelius",
+    "identifier": "meditaciones_2210_librivox"
+  },
+  {
+    "rank": 15,
+    "title": "La Divina Comedia - Infierno",
+    "author": "Dante Alighieri",
+    "identifier": "la_divina_comedia_infierno_2007_librivox"
+  },
+  {
+    "rank": 16,
+    "title": "La Divina Comedia",
+    "author": "Dante Alighieri",
+    "identifier": "divinacomedia_1501_librivox"
+  },
+  {
+    "rank": 17,
+    "title": "El príncipe",
+    "author": "Niccolò Machiavelli",
+    "identifier": "elprincipe_2601_librivox"
+  },
+  {
+    "rank": 18,
+    "title": "Hamlet (Spanish)",
+    "author": "William Shakespeare",
+    "identifier": "hamlet_vv_2501_librivox"
+  },
+  {
+    "rank": 19,
+    "title": "Macbeth",
+    "author": "William Shakespeare",
+    "identifier": "macbeth_1608_librivox"
+  },
+  {
+    "rank": 20,
+    "title": "El Mercader de Venecia",
+    "author": "William Shakespeare",
+    "identifier": "mercaderdevenecia_1810_librivox"
+  },
+  {
+    "rank": 21,
+    "title": "Romeo y Julieta",
+    "author": "William Shakespeare",
+    "identifier": "romeoyjulieta_2303_librivox"
+  },
+  {
+    "rank": 22,
+    "title": "Don Quijote, Volume 2",
+    "author": "Miguel de Cervantes",
+    "identifier": "don_quijote_2_1001_librivox"
+  },
+  {
+    "rank": 23,
+    "title": "El ingenioso hidalgo Don Quijote de la Mancha",
+    "author": "Miguel de Cervantes",
+    "identifier": "donquijote_2507_librivox"
+  },
+  {
+    "rank": 24,
+    "title": "Don Quijote, Volume 1",
+    "author": "Miguel de Cervantes",
+    "identifier": "don_quijote_vol1_0706_librivox"
+  },
+  {
+    "rank": 25,
+    "title": "Cándido o el optimismo",
+    "author": "Voltaire",
+    "identifier": "candido_2604_librivox"
+  },
+  {
+    "rank": 26,
+    "title": "Fausto. Primera parte",
+    "author": "Johann Wolfgang von Goethe",
+    "identifier": "fausto_primera_parte_2006_librivox"
+  },
+  {
+    "rank": 27,
+    "title": "El Cántico de Navidad",
+    "author": "Charles Dickens",
+    "identifier": "cantico_de_navidad_2112_librivox"
+  },
+  {
+    "rank": 28,
+    "title": "Aventuras de Huck",
+    "author": "Mark Twain",
+    "identifier": "aventurashuck_2408_librivox"
+  },
+  {
+    "rank": 29,
+    "title": "La sonata a Kreutzer",
+    "author": "Leo Tolstoy",
+    "identifier": "sonataakreutzer_2210_librivox"
+  },
+  {
+    "rank": 30,
+    "title": "La muerte de Ivan Ilitch",
+    "author": "Leo Tolstoy",
+    "identifier": "muertedeivanilitch_2107_librivox"
+  },
+  {
+    "rank": 31,
+    "title": "El huésped secreto",
+    "author": "Joseph Conrad",
+    "identifier": "huespedsecreto_2112_librivox"
+  },
+  {
+    "rank": 32,
+    "title": "Por el camino de Swann Tomo I",
+    "author": "Marcel Proust",
+    "identifier": "porelcaminodeswanntomoi_2402_librivox"
+  },
+  {
+    "rank": 33,
+    "title": "La metamorfosis",
+    "author": "Franz Kafka",
+    "identifier": "lametamorfosis_2101_librivox"
+  }
+]

@@ -1,0 +1,106 @@
+[
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "inferno_2602_librivox",
+    "language" : "ita",
+    "rank" : 1,
+    "title" : "La Divina Commedia - Inferno (Versione 2)",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "vitanuova_1405_librivox",
+    "language" : "ita",
+    "rank" : 2,
+    "title" : "La Vita Nuova",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "rime_1901_librivox",
+    "language" : "ita",
+    "rank" : 3,
+    "title" : "Le Rime",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divina_commedia_inferno_2302_librivox",
+    "language" : "ita",
+    "rank" : 4,
+    "title" : "La Divina Commedia - L'Inferno",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "il_paradiso_2107_librivox",
+    "language" : "ita",
+    "rank" : 5,
+    "title" : "La Divina Commedia - Il Paradiso",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divinacommediailpurgatorio_2406_librivox",
+    "language" : "ita",
+    "rank" : 6,
+    "title" : "La Divina Commedia - Il Purgatorio",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "purgatorio_2510_librivox",
+    "language" : "ita",
+    "rank" : 7,
+    "title" : "La Divina Commedia - Il Purgatorio (Versione 2)",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Dante Alighieri",
+    "identifier" : "divina_commedia_librivox",
+    "language" : "ita",
+    "rank" : 8,
+    "title" : "La Divina Commedia",
+    "workID" : "dante-alighieri-the-divine-comedy"
+  },
+  {
+    "author" : "Niccolò Machiavelli",
+    "identifier" : "il_principe_1711_librivox",
+    "language" : "ita",
+    "rank" : 9,
+    "title" : "Il Principe",
+    "workID" : "niccolo-machiavelli-the-prince"
+  },
+  {
+    "author" : "Niccolò Machiavelli",
+    "identifier" : "mandragola_2108_librivox",
+    "language" : "ita",
+    "rank" : 10,
+    "title" : "La mandragola",
+    "workID" : "niccolo-machiavelli-the-prince"
+  },
+  {
+    "author" : "Galileo Galilei",
+    "identifier" : "dialogo_dei_massimi_sistemi_2009_librivox",
+    "language" : "ita",
+    "rank" : 11,
+    "title" : "Dialogo dei Massimi Sistemi",
+    "workID" : "galileo-galilei-dialogues-concerning-two-new-sciences"
+  },
+  {
+    "author" : "Luigi Pirandello",
+    "identifier" : "sei_personaggi_in_cerca_dautore_2102_librivox",
+    "language" : "ita",
+    "rank" : 12,
+    "title" : "Sei personaggi in cerca d'autore",
+    "workID" : "luigi-pirandello-six-characters-in-search-of-an-author"
+  },
+  {
+    "author" : "Luigi Pirandello",
+    "identifier" : "enricoiv_2308_librivox",
+    "language" : "ita",
+    "rank" : 13,
+    "title" : "Enrico IV",
+    "workID" : "luigi-pirandello-six-characters-in-search-of-an-author"
+  }
+]

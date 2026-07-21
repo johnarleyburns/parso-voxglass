@@ -136,8 +136,12 @@ final class InternetArchiveCatalogTests: XCTestCase {
 
     func testCuratedCollectionsUseBroadCreatorQueries() {
         XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books"))
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-spa"))
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-deu"))
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-ita"))
+        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-grc"))
         XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("greater-books"))
-        XCTAssertEqual(IACollectionStore.curated.count, 2)
+        XCTAssertEqual(IACollectionStore.curated.count, 6)
 
         XCTAssertTrue(CuratedQueries.greatBooks.contains(LibriVoxCatalogScope.query))
         XCTAssertTrue(CuratedQueries.greatBooks.contains("creator:\"Homer\""))
