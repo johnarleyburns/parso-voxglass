@@ -49,8 +49,29 @@ final class ArtworkPresentationTests: XCTestCase {
             XCTAssertTrue(text.contains("VoxglassListDivider()"))
             XCTAssertTrue(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
             XCTAssertTrue(text.contains("Button {"))
-            XCTAssertTrue(text.contains("Task { await playResult(result) }"))
+            XCTAssertTrue(text.contains("Task { await presentResult(result) }"))
         }
+    }
+
+    func testRemoteCatalogResultHandlersPresentPausedNowPlaying() throws {
+        let paths = [
+            "Voxglass/Features/Discover/DiscoverView.swift",
+            "Voxglass/Features/Search/SearchView.swift",
+            "Voxglass/Features/Listen/ListenView.swift",
+            "Voxglass/Features/Player/CatalogDiscoveryView.swift"
+        ]
+
+        for path in paths {
+            let text = try source(path)
+            XCTAssertTrue(text.contains("private func presentResult"), path)
+            XCTAssertTrue(text.contains("await playback.present(imported)"), path)
+            XCTAssertTrue(text.contains("showingNowPlaying = true"), path)
+            XCTAssertFalse(text.contains("await playback.play(imported)"), path)
+        }
+
+        let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
+        XCTAssertTrue(settings.contains("await playback.present(imported)"))
+        XCTAssertFalse(settings.contains("await playback.play(imported)"))
     }
 
     func testCatalogResultRowsUseNavigationAccessoryWithoutMetadata() throws {

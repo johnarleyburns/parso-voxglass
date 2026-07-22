@@ -180,8 +180,10 @@ public final class PlaybackCoordinator: ObservableObject {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
             return false
         }
+        guard !Task.isCancelled else { return false }
         do {
             try await engine.load(url: url, startTime: session.position)
+            guard !Task.isCancelled else { return false }
             applyStoredRate(forBookID: session.book.id)
             isEngineLoaded = true
             let bwc = BookWithChapters(book: session.book, chapters: session.chapters)
@@ -242,29 +244,28 @@ public final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    public func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
-        let chapter: Chapter
-        let startTime: TimeInterval
-        var savedDuration: TimeInterval?
+    public func present(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
+        guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }
 
-        if let requestedChapter {
-            chapter = requestedChapter
-            let saved = try? await positionStore.position(for: book.book.id, chapterID: requestedChapter.id)
-            startTime = saved?.position ?? 0
-            savedDuration = saved?.duration
-        } else {
-            let row = try? await positionStore.latestPosition(forBookID: book.book.id)
-            let saved = Self.preferredPosition(
-                row: row ?? nil,
-                snapshot: snapshotStore.position(forBookID: book.book.id)
-            )
-            guard let target = Self.resolveResume(chapters: book.chapters, saved: saved) else { return }
-            chapter = target.chapter
-            startTime = target.startTime
-            if saved?.chapterID == target.chapter.id {
-                savedDuration = saved?.duration
-            }
-        }
+        await prepareForPausedPresentation()
+        applyStoredRate(forBookID: book.book.id)
+        updateArtwork(for: book.book)
+        currentSession = PlaybackSession(
+            book: book.book,
+            chapters: book.chapters,
+            chapter: target.chapter,
+            position: target.startTime,
+            duration: target.savedDuration ?? target.chapter.duration,
+            isPlaying: false
+        )
+        isEngineLoaded = false
+        updateNowPlayingInfo()
+    }
+
+    public func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
+        guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }
+        let chapter = target.chapter
+        let startTime = target.startTime
 
         guard let playableURL = chapter.resolvedPlayableURL() else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
@@ -283,7 +284,7 @@ public final class PlaybackCoordinator: ObservableObject {
                 chapters: book.chapters,
                 chapter: chapter,
                 position: startTime,
-                duration: savedDuration ?? chapter.duration ?? engine.duration,
+                duration: target.savedDuration ?? chapter.duration ?? engine.duration,
                 isPlaying: true
             )
             startProgressLoop()
@@ -302,6 +303,67 @@ public final class PlaybackCoordinator: ObservableObject {
             isEngineLoaded = false
             playbackError = error.localizedDescription
         }
+    }
+
+    private struct PresentationTarget {
+        let chapter: Chapter
+        let startTime: TimeInterval
+        let savedDuration: TimeInterval?
+    }
+
+    private func presentationTarget(
+        for book: BookWithChapters,
+        chapter requestedChapter: Chapter?
+    ) async -> PresentationTarget? {
+        if let requestedChapter {
+            let row = try? await positionStore.position(for: book.book.id, chapterID: requestedChapter.id)
+            let snapshot = snapshotStore.position(forBookID: book.book.id)
+                .flatMap { $0.chapterID == requestedChapter.id ? $0 : nil }
+            let saved = Self.preferredPosition(row: row ?? nil, snapshot: snapshot)
+            guard let target = Self.resolveResume(chapters: [requestedChapter], saved: saved) else { return nil }
+            return PresentationTarget(
+                chapter: target.chapter,
+                startTime: target.startTime,
+                savedDuration: saved?.chapterID == target.chapter.id ? saved?.duration : nil
+            )
+        }
+
+        let row = try? await positionStore.latestPosition(forBookID: book.book.id)
+        let saved = Self.preferredPosition(
+            row: row ?? nil,
+            snapshot: snapshotStore.position(forBookID: book.book.id)
+        )
+        guard let target = Self.resolveResume(chapters: book.chapters, saved: saved) else { return nil }
+        return PresentationTarget(
+            chapter: target.chapter,
+            startTime: target.startTime,
+            savedDuration: saved?.chapterID == target.chapter.id ? saved?.duration : nil
+        )
+    }
+
+    private func prepareForPausedPresentation() async {
+        engineLoadTask?.cancel()
+        engineLoadTask = nil
+        progressTask?.cancel()
+        progressTask = nil
+        resetSilenceBoost()
+
+        if let bookID = currentSession?.book.id {
+            flushListening(bookID: bookID)
+        }
+        lastListenTick = nil
+
+        if isEngineLoaded {
+            saveCurrentSnapshot()
+            if engine.isPlaying {
+                engine.pause()
+            }
+            await persistCurrentPosition(reason: .pause)
+        } else if engine.isPlaying {
+            engine.pause()
+        }
+
+        isEngineLoaded = false
     }
 
     private func chapterIndex(in book: BookWithChapters, for chapter: Chapter) -> Int {

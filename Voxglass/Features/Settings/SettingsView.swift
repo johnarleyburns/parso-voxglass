@@ -392,7 +392,7 @@ struct SourcesView: View {
     private func addArchiveURL() async {
         if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
             archiveURL = ""
-            await playback.play(imported)
+            await playback.present(imported)
             showingNowPlaying = true
         }
         await libraryStore.refresh()
@@ -1032,4 +1032,3 @@ private struct BackupImportSheet: View {
         }
     }
 }
-

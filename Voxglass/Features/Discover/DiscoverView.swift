@@ -119,7 +119,7 @@ struct BrowseView: View {
                     ForEach(results.indices, id: \.self) { index in
                         let result = results[index]
                         Button {
-                            Task { await playResult(result) }
+                            Task { await presentResult(result) }
                         } label: {
                             InternetArchiveResultRow(
                                 result: result,
@@ -286,12 +286,12 @@ struct BrowseView: View {
         Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
     }
 
-    private func playResult(_ result: InternetArchiveSearchResult) async {
+    private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
-            await playback.play(imported)
+            await playback.present(imported)
             showingNowPlaying = true
         }
     }

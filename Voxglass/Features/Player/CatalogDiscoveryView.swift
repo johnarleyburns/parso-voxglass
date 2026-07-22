@@ -5,8 +5,8 @@ import VoxglassCore
 /// discovery links ("More by this Author / Narrator / Genre"). It owns its own
 /// `InternetArchiveClient` fetch and results state so it never clobbers the
 /// shared `CatalogStore` that drives the Explore/Search tabs. Rows reuse
-/// `InternetArchiveResultRow`; tapping a row opens a catalog Book View, and that
-/// view imports/plays only when its Play button is tapped.
+/// `InternetArchiveResultRow`; tapping a row imports metadata, presents the
+/// unified book page, and leaves playback paused.
 struct CatalogDiscoveryView: View {
     let title: String
     let archiveQuery: String
@@ -65,7 +65,7 @@ struct CatalogDiscoveryView: View {
                         ForEach(results.indices, id: \.self) { index in
                             let result = results[index]
                             Button {
-                                Task { await playResult(result) }
+                                Task { await presentResult(result) }
                             } label: {
                                 InternetArchiveResultRow(
                                     result: result,
@@ -100,12 +100,12 @@ struct CatalogDiscoveryView: View {
         }
     }
 
-    private func playResult(_ result: InternetArchiveSearchResult) async {
+    private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
 
         if let imported = await store.importResult(result, into: libraryStore) {
-            await playback.play(imported)
+            await playback.present(imported)
             showingNowPlaying = true
             dismiss()
         }
