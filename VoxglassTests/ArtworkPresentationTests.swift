@@ -48,8 +48,8 @@ final class ArtworkPresentationTests: XCTestCase {
             XCTAssertTrue(text.contains("style: .grouped"))
             XCTAssertTrue(text.contains("VoxglassListDivider()"))
             XCTAssertTrue(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
-            XCTAssertTrue(text.contains("NavigationLink {"))
-            XCTAssertTrue(text.contains("CatalogBookDetailView("))
+            XCTAssertTrue(text.contains("Button {"))
+            XCTAssertTrue(text.contains("Task { await playResult(result) }"))
         }
     }
 

@@ -4,6 +4,7 @@ import VoxglassCore
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
+    @EnvironmentObject private var playback: PlaybackCoordinator
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
     @State private var collectionSort: CatalogSort = .popularity
@@ -12,6 +13,7 @@ struct BrowseView: View {
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
+    @State private var importingIdentifier: String?
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
@@ -116,13 +118,8 @@ struct BrowseView: View {
                 VStack(spacing: 0) {
                     ForEach(results.indices, id: \.self) { index in
                         let result = results[index]
-                        NavigationLink {
-                            CatalogBookDetailView(
-                                result: result,
-                                showingNowPlaying: $showingNowPlaying
-                            ) { result, libraryStore in
-                                await catalogStore.importResult(result, into: libraryStore)
-                            }
+                        Button {
+                            Task { await playResult(result) }
                         } label: {
                             InternetArchiveResultRow(
                                 result: result,
@@ -130,7 +127,7 @@ struct BrowseView: View {
                             )
                         }
                         .buttonStyle(.plain)
-                        .disabled(catalogStore.isSearching)
+                        .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
 
                         if index < results.count - 1 {
                             VoxglassListDivider()
@@ -287,6 +284,16 @@ struct BrowseView: View {
         let defaultSort = CatalogSort.defaultSort(for: collection)
         collectionSort = defaultSort
         Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
+    }
+
+    private func playResult(_ result: InternetArchiveSearchResult) async {
+        importingIdentifier = result.identifier
+        defer { importingIdentifier = nil }
+
+        if let imported = await catalogStore.importResult(result, into: libraryStore) {
+            await playback.play(imported)
+            showingNowPlaying = true
+        }
     }
 
     @ViewBuilder

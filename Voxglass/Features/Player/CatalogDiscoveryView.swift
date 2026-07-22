@@ -13,8 +13,10 @@ struct CatalogDiscoveryView: View {
     @Binding var showingNowPlaying: Bool
 
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var playback: PlaybackCoordinator
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
+    @State private var importingIdentifier: String?
 
     var body: some View {
         ZStack {
@@ -62,15 +64,8 @@ struct CatalogDiscoveryView: View {
                     VStack(spacing: 0) {
                         ForEach(results.indices, id: \.self) { index in
                             let result = results[index]
-                            NavigationLink {
-                                CatalogBookDetailView(
-                                    result: result,
-                                    showingNowPlaying: $showingNowPlaying
-                                ) { result, libraryStore in
-                                    await store.importResult(result, into: libraryStore)
-                                } onPlaybackStarted: {
-                                    dismiss()
-                                }
+                            Button {
+                                Task { await playResult(result) }
                             } label: {
                                 InternetArchiveResultRow(
                                     result: result,
@@ -78,6 +73,7 @@ struct CatalogDiscoveryView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .disabled(importingIdentifier == result.identifier)
 
                             if index < results.count - 1 {
                                 VoxglassListDivider()
@@ -101,6 +97,17 @@ struct CatalogDiscoveryView: View {
                 store.error = nil
                 libraryStore.importError = nil
             }
+        }
+    }
+
+    private func playResult(_ result: InternetArchiveSearchResult) async {
+        importingIdentifier = result.identifier
+        defer { importingIdentifier = nil }
+
+        if let imported = await store.importResult(result, into: libraryStore) {
+            await playback.play(imported)
+            showingNowPlaying = true
+            dismiss()
         }
     }
 }

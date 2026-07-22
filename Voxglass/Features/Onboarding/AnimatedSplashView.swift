@@ -1,17 +1,11 @@
 import SwiftUI
 import VoxglassCore
 
-/// Launch splash ported from the radio app's `SplashView`: spring fade-in,
-/// 1.5 s hold, 0.35 s ease-out handoff via `isPresented`. Distinct from the
-/// onboarding `SplashView`, which is the "Get Started" welcome screen.
-///
-/// Background is the `splash` imageset; the foreground is the periodic-table
-/// tile for V (Vanadium), mirroring `scripts/make_icon.py`.
 struct AnimatedSplashView: View {
     @Binding var isPresented: Bool
 
     @State private var opacity: Double = 0
-    @State private var scale: CGFloat = 0.82
+    @State private var scale: Double = 0.82
     @State private var tileScale: CGFloat = 0.7
 
     var body: some View {
@@ -22,15 +16,11 @@ struct AnimatedSplashView: View {
                 .resizable()
                 .scaledToFill()
 
-            LinearGradient(stops: [
-                .init(color: Color.black.opacity(0.42), location: 0),
-                .init(color: Color.black.opacity(0.58), location: 0.55),
-                .init(color: Color.black.opacity(0.74), location: 1)
-            ], startPoint: .top, endPoint: .bottom)
+            Color.black.opacity(0.45)
         }
         .ignoresSafeArea()
         .overlay {
-            VStack(spacing: 22) {
+            VStack(spacing: 16) {
                 PeriodicTileView(
                     atomicNumber: "23",
                     symbol: "V",
@@ -41,7 +31,7 @@ struct AnimatedSplashView: View {
 
                 Text("Public-domain audiobooks, private by default.")
                     .scaledFont(size: 15)
-                    .foregroundStyle(Palette.ink2)
+                    .foregroundStyle(.white.opacity(0.85))
                     .scaleEffect(scale)
             }
             .accessibilityElement(children: .ignore)
@@ -63,9 +53,6 @@ struct AnimatedSplashView: View {
     }
 }
 
-/// Periodic-table element tile matching the app icon: atomic number top-left,
-/// large element symbol, app name, and atomic weight on a dark field with a
-/// brass radial glow.
 struct PeriodicTileView: View {
     let atomicNumber: String
     let symbol: String
@@ -76,45 +63,38 @@ struct PeriodicTileView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(atomicNumber)
-                    .scaledFont(size: 26, weight: .bold)
-                    .foregroundStyle(Palette.ink)
+                    .scaledFont(size: 14, weight: .bold)
+                    .foregroundStyle(.white)
                 Spacer()
             }
 
             Spacer(minLength: 0)
 
             Text(symbol)
-                .scaledFont(size: 88, weight: .bold)
-                .foregroundStyle(Palette.ink)
+                .scaledFont(size: 42, weight: .bold)
+                .foregroundStyle(.white)
 
             Spacer(minLength: 0)
 
             Text(name)
-                .scaledFont(size: 17)
-                .foregroundStyle(Palette.ink)
+                .scaledFont(size: 11, weight: .semibold)
+                .foregroundStyle(.white)
 
             Text(atomicWeight)
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.ink2)
-                .padding(.top, 3)
+                .scaledFont(size: 10, weight: .medium)
+                .foregroundStyle(.white.opacity(0.82))
+                .padding(.top, 2)
         }
-        .padding(22)
-        .frame(width: 224, height: 224)
+        .padding(10)
+        .frame(width: 110, height: 120)
         .background {
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: 0x12141A), Color(hex: 0x0A0B0D)],
-                                     startPoint: .top, endPoint: .bottom))
-                .overlay {
-                    RadialGradient(colors: [Palette.brass.opacity(0.30), .clear],
-                                   center: UnitPoint(x: 0.28, y: 0.08),
-                                   startRadius: 0, endRadius: 250)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-                .shadow(color: Color.black.opacity(0.45), radius: 26, y: 14)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.black.opacity(0.32))
+                .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .strokeBorder(Palette.brass.opacity(0.32), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(.white.opacity(0.82), lineWidth: 1.5)
         }
     }
 }

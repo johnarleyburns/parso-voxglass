@@ -6,6 +6,9 @@ struct LibraryView: View {
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @Binding var showingNowPlaying: Bool
     @State private var pendingDeletion: BookWithChapters?
+    @State private var showSearch = false
+    @State private var searchText = ""
+    @State private var searchScope: LibrarySearchScope = .all
 
     var body: some View {
         VoxglassScreen(title: "My Books") {
@@ -39,6 +42,7 @@ struct LibraryView: View {
             Text("This deletes the book and its cached audio from this device.")
         }
         .task {
+            libraryStore.sort = .recent
             await libraryStore.refresh()
             await libraryStore.refreshRecentlyPlayed()
         }
@@ -54,11 +58,15 @@ struct LibraryView: View {
                     systemImage: "books.vertical"
                 )
             } else {
-                filterSortBar
-                let visibleBooks = libraryStore.visibleBooks
+                filterBar
+                if showSearch {
+                    searchBar
+                }
+
+                let books = filteredBooks
                 VStack(spacing: 0) {
-                    ForEach(visibleBooks.indices, id: \.self) { index in
-                        let book = visibleBooks[index]
+                    ForEach(books.indices, id: \.self) { index in
+                        let book = books[index]
                         NavigationLink {
                             BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
                         } label: {
@@ -75,7 +83,7 @@ struct LibraryView: View {
                                 pendingDeletion = book
                             }
                         }
-                        if index < visibleBooks.count - 1 {
+                        if index < books.count - 1 {
                             VoxglassListDivider()
                         }
                     }
@@ -85,8 +93,8 @@ struct LibraryView: View {
         }
     }
 
-    private var filterSortBar: some View {
-        VStack(spacing: 10) {
+    private var filterBar: some View {
+        HStack(spacing: 10) {
             Picker("Filter", selection: Binding<LibraryBookFilter>(
                 get: { libraryStore.filter },
                 set: { libraryStore.filter = $0 }
@@ -99,17 +107,82 @@ struct LibraryView: View {
             .pickerStyle(.segmented)
             .tint(Palette.brass)
 
-            Picker("Sort", selection: Binding<LibrarySort>(
-                get: { libraryStore.sort },
-                set: { libraryStore.sort = $0 }
-            )) {
-                Text("Recent").tag(LibrarySort.recent)
-                Text("Title").tag(LibrarySort.title)
-                Text("Author").tag(LibrarySort.author)
-                Text("Narrator").tag(LibrarySort.narrator)
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showSearch.toggle()
+                    if !showSearch {
+                        searchText = ""
+                        searchScope = .all
+                    }
+                }
+            } label: {
+                Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
+                    .scaledFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+                    .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.08))
+            }
+            .accessibilityLabel(showSearch ? "Close search" : "Search my books")
+        }
+    }
+
+    private var searchBar: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Palette.ink3)
+
+                TextField("", text: $searchText, prompt: Text("Search my books").foregroundStyle(Palette.ink3))
+                    .foregroundStyle(Palette.ink)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Palette.ink3)
+                            .frame(width: 32, height: 32)
+                    }
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .scaledFont(size: 14)
+            .padding(.horizontal, 14)
+            .frame(height: 40)
+            .contentShape(Rectangle())
+            .glassSurface(cornerRadius: 18)
+
+            Picker("Scope", selection: $searchScope) {
+                ForEach(LibrarySearchScope.allCases) { scope in
+                    Text(scope.title).tag(scope)
+                }
             }
             .pickerStyle(.segmented)
             .tint(Palette.brass)
+        }
+    }
+
+    private var filteredBooks: [BookWithChapters] {
+        var books = libraryStore.visibleBooks
+
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return books }
+
+        return books.filter { book in
+            switch searchScope {
+            case .all:
+                return book.book.title.localizedCaseInsensitiveContains(query)
+                    || book.book.authors.contains { $0.localizedCaseInsensitiveContains(query) }
+                    || book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
+            case .title:
+                return book.book.title.localizedCaseInsensitiveContains(query)
+            case .author:
+                return book.book.authors.contains { $0.localizedCaseInsensitiveContains(query) }
+            case .narrator:
+                return book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
+            }
         }
     }
 
@@ -130,6 +203,24 @@ struct LibraryView: View {
             if !isPresented {
                 libraryStore.importError = nil
             }
+        }
+    }
+}
+
+private enum LibrarySearchScope: CaseIterable, Identifiable, Hashable {
+    case all
+    case title
+    case author
+    case narrator
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .all: return "All"
+        case .title: return "Title"
+        case .author: return "Author"
+        case .narrator: return "Narrator"
         }
     }
 }
