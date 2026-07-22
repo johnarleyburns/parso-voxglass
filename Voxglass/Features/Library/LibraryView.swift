@@ -60,7 +60,7 @@ struct LibraryView: View {
                     ForEach(visibleBooks.indices, id: \.self) { index in
                         let book = visibleBooks[index]
                         NavigationLink {
-                            BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                            BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
                         } label: {
                             CompactBookRowView(
                                 book: book,

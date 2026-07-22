@@ -78,7 +78,7 @@ struct ListenView: View {
                     HStack(spacing: 12) {
                         ForEach(libraryStore.recentlyPlayed) { book in
                             NavigationLink {
-                                BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                                BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
                             } label: {
                                 ListenBookCard(
                                     book: book,
@@ -108,7 +108,7 @@ struct ListenView: View {
                     HStack(spacing: 12) {
                         ForEach(recentlyAddedBooks) { book in
                             NavigationLink {
-                                BookDetailView(book: book, showingNowPlaying: $showingNowPlaying)
+                                BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
                             } label: {
                                 ListenBookCard(
                                     book: book,

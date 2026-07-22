@@ -71,7 +71,7 @@ struct RootView: View {
             .environmentObject(playback)
         }
         .sheet(isPresented: $showingNowPlaying) {
-            NowPlayingView()
+            BookPageView(book: nil, showingNowPlaying: $showingNowPlaying)
                 .environmentObject(playback)
                 .environmentObject(libraryStore)
                 .environmentObject(offlineDownloadManager)

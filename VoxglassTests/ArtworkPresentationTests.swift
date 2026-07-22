@@ -72,13 +72,14 @@ final class ArtworkPresentationTests: XCTestCase {
     }
 
     func testBookDetailHeaderShowsNarratorLineNearTop() throws {
-        let detail = try source("Voxglass/Features/Library/BookDetailView.swift")
+        let detail = try source("Voxglass/Features/Player/BookPageView.swift")
 
-        XCTAssertTrue(detail.contains("if let narratorLine = currentBook.book.narratorLine"))
-        XCTAssertTrue(detail.contains("Text(narratorLine)"))
+        XCTAssertTrue(detail.contains("if let narratorLine = resolved.book.narratorLine"))
+        XCTAssertTrue(detail.contains("narratorsLink(resolved, narratorLine: narratorLine)"))
+        XCTAssertTrue(detail.contains("chapterLine(resolved)"))
         XCTAssertLessThan(
-            try XCTUnwrap(detail.range(of: "Text(narratorLine)")?.lowerBound),
-            try XCTUnwrap(detail.range(of: "Text(currentBook.libraryDetailLine")?.lowerBound)
+            try XCTUnwrap(detail.range(of: "narratorsLink(resolved, narratorLine: narratorLine)")?.lowerBound),
+            try XCTUnwrap(detail.range(of: "chapterLine(resolved)")?.lowerBound)
         )
     }
 
