@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass — plan mockups</title>
+<style>
+:root{--ink:#f7f0e6;--muted:#b0a79c;--line:rgba(255,255,255,.14);--panel:rgba(30,36,39,.66);--gold:#d8ad67;--gold2:#f0ce8a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:56px 26px;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#262d31 0%,#020406 46%,#000 100%);color:var(--ink)}
+.wrap{max-width:860px;margin:0 auto}
+h1{font-size:32px;font-weight:850;letter-spacing:-.035em;margin:0 0 8px}
+p.lede{color:var(--muted);font-size:14.5px;line-height:1.6;margin:0 0 32px}
+a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);
+border-radius:18px;padding:18px 20px;margin-bottom:14px;backdrop-filter:blur(18px);transition:border-color .15s,transform .15s}
+a.card:hover{border-color:rgba(216,173,103,.5);transform:translateY(-2px)}
+.n{font-size:11px;font-weight:850;letter-spacing:.1em;color:var(--gold2);text-transform:uppercase}
+.t{font-size:18px;font-weight:800;margin:6px 0 5px;letter-spacing:-.02em}
+.d{font-size:13px;color:var(--muted);line-height:1.55}
+.plan{font-size:12px;color:var(--gold);margin-top:9px;font-family:ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Voxglass — plan mockups</h1>
+<p class="lede">Five plans written 22 July 2026. Each mockup file is self-contained — open it directly, no server needed.
+Phone frames are 390 × 844 pt; the watch frames are true 45 mm (198 × 242 pt) shown at 1.5×.</p>
+
+<a class="card" href="unified-book-page.html">
+  <div class="n">Plan 1</div>
+  <div class="t">Unified Book Page — Now Playing ∪ Book Details</div>
+  <div class="d">One screen replaces both. Author and narrator always visible, description clamped to one line with
+  “Show more” above the chapters, every full-width button reduced to a 40 pt icon, AirPlay added, long tail behind ⋯.</div>
+  <div class="plan">docs/UNIFIED_BOOK_PAGE_PLAN.md</div>
+</a>
+
+<a class="card" href="watch-app.html">
+  <div class="n">Plan 2</div>
+  <div class="t">Voxglass for Apple Watch — standalone player</div>
+  <div class="d">Nine screens: now playing, library, local + remote search, book page with a readable description,
+  chapters, on-watch storage, speed &amp; sleep, complications.</div>
+  <div class="plan">docs/WATCH_APP_PLAN.md</div>
+</a>
+
+<a class="card" href="intents-live-activity-siri.html">
+  <div class="n">Plan 3</div>
+  <div class="t">App Intents, Live Activity &amp; Siri</div>
+  <div class="d">Lock-screen Live Activity, Dynamic Island, Siri phrases that never open the app, Shortcuts / Spotlight /
+  Action button, widgets and Control Center controls — all through one intent layer.</div>
+  <div class="plan">docs/INTENTS_LIVE_ACTIVITY_SIRI_PLAN.md</div>
+</a>
+
+<a class="card" href="voxglass-studio-store.html">
+  <div class="n">Plan 4</div>
+  <div class="t">Voxglass Studio — paid AI-narrated titles</div>
+  <div class="d">$1.99–$2.99 non-consumable IAPs for classics LibriVox has never recorded. Store catalogue and a product
+  page with a free chapter-1 sample and synthetic-narration disclosure.</div>
+  <div class="plan">docs/AI_NARRATION_STORE_PLAN.md</div>
+</a>
+
+<a class="card" href="narration-feedback.html">
+  <div class="n">Plan 5</div>
+  <div class="t">Narration Markers, Loading Feedback &amp; Tactile Taps</div>
+  <div class="d">Solo Narration becomes a conservative book signal across lists, cards and detail pages. Remote imports show
+  per-row or per-card loading state immediately, and tappable app actions get light tactile feedback.</div>
+  <div class="plan">docs/NARRATION_AND_TACTILE_FEEDBACK_PLAN.md</div>
+</a>
+</div>
+</body>
+</html>

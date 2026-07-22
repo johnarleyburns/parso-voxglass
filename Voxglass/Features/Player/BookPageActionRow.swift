@@ -57,6 +57,7 @@ struct BookPageActionRow: View {
         Menu {
             ForEach(PlaybackRate.menuLadder, id: \.self) { rate in
                 Button {
+                    TactileFeedback.tap()
                     playback.setPlaybackRate(rate)
                 } label: {
                     if playback.playbackRate == rate {
@@ -79,18 +80,21 @@ struct BookPageActionRow: View {
     private var sleepTimerButton: some View {
         Menu {
             Button {
+                TactileFeedback.tap()
                 playback.setSleepTimer(.off)
             } label: {
                 sleepMenuLabel("Off", active: playback.sleepMode == .off)
             }
             ForEach([5, 10, 15, 30, 45, 60], id: \.self) { minutes in
                 Button {
+                    TactileFeedback.tap()
                     playback.setSleepTimer(.duration(TimeInterval(minutes * 60)))
                 } label: {
                     sleepMenuLabel("\(minutes) minutes", active: playback.sleepMode == .duration(TimeInterval(minutes * 60)))
                 }
             }
             Button {
+                TactileFeedback.tap()
                 playback.setSleepTimer(.endOfChapter)
             } label: {
                 sleepMenuLabel("End of chapter", active: playback.sleepMode == .endOfChapter)
@@ -156,8 +160,7 @@ struct BookPageActionRow: View {
 
     private var bookmarkButton: some View {
         Button {
-            let impact = UIImpactFeedbackGenerator(style: .medium)
-            impact.impactOccurred()
+            TactileFeedback.tap()
             playback.addBookmark()
             showingBookmarks = true
         } label: {
@@ -172,6 +175,7 @@ struct BookPageActionRow: View {
     private var favoriteButton: some View {
         let favorited = isFavorite
         return Button {
+            TactileFeedback.tap()
             Task { await libraryStore.setFavorite(!favorited, for: book.book.id) }
         } label: {
             Image(systemName: favorited ? "heart.fill" : "heart")
@@ -272,6 +276,7 @@ struct BookPageActionRow: View {
 
     private var overflowButton: some View {
         Button {
+            TactileFeedback.tap()
             showingOverflow = true
         } label: {
             Image(systemName: "ellipsis")

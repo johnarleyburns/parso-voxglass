@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass - Narration Markers, Loading Feedback, And Tactile Taps</title>
+<style>
+:root{--bgA:#0b0f12;--bgB:#171d20;--ink:#f7f0e6;--ink2:#cfc4b6;--muted:#b9afa4;--faint:rgba(255,255,255,.09);
+--line:rgba(255,255,255,.13);--panel:rgba(30,36,39,.62);--gold:#d8ad67;--gold2:#f0ce8a;--green:#8fd0a2;--red:#e2705f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#283034 0%,#020406 44%,#000 100%);color:var(--ink)}
+.board{padding:34px 26px 64px;max-width:1900px;margin:0 auto}
+.board h1{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:0 0 6px}
+.board p.lede{color:var(--muted);font-size:14px;max-width:850px;margin:0 0 26px;line-height:1.55}
+.screens{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.stage{display:grid;gap:10px;justify-items:center}
+.stage .label{font-weight:800;color:#f4e2bf;font-size:14px;text-align:center}
+.stage .note{color:var(--muted);font-size:11.5px;max-width:390px;text-align:center;line-height:1.5}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,var(--bgA),var(--bgB));
+border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.glow{position:absolute;inset:0;background:radial-gradient(circle at 50% -4%,rgba(138,90,36,.34),transparent 58%);pointer-events:none}
+.status{height:54px;padding:17px 25px 0;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;position:relative;z-index:2}
+.screen{height:calc(100% - 54px);padding:8px 20px 18px;overflow:hidden;position:relative;z-index:2}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.title{font-size:28px;font-weight:900;letter-spacing:-.035em;line-height:1}
+.subhead{font-size:12.5px;color:var(--muted);font-weight:650;margin-top:4px}
+.chevbtn,.iconbtn{width:34px;height:34px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:14px;font-weight:800}
+.searchbox{height:42px;border-radius:13px;background:rgba(255,255,255,.08);border:1px solid var(--line);display:flex;align-items:center;gap:8px;
+padding:0 12px;color:var(--ink2);font-size:13px;margin-bottom:10px}
+.filterbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.pill{height:31px;border-radius:99px;background:var(--panel);border:1px solid var(--line);display:inline-flex;align-items:center;gap:7px;padding:0 11px;
+font-size:12px;font-weight:800;color:var(--ink2);white-space:nowrap}
+.check{width:16px;height:16px;border-radius:5px;border:1px solid rgba(216,173,103,.65);background:rgba(216,173,103,.18);display:grid;place-items:center;color:var(--gold2);font-size:11px}
+.muted{color:var(--muted)}
+.section{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
+.list{background:var(--panel);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(18px);overflow:hidden}
+.row{display:flex;align-items:center;gap:11px;padding:12px 13px;min-height:74px;position:relative}
+.row+.row{border-top:1px solid var(--line)}
+.cover{width:50px;height:58px;border-radius:8px;background:linear-gradient(145deg,#2b3c41,#b98d50);border:1px solid rgba(255,255,255,.14);box-shadow:0 8px 18px rgba(0,0,0,.3);flex:0 0 auto}
+.cover.blue{background:linear-gradient(145deg,#1e4052,#91b5bf)}
+.cover.green{background:linear-gradient(145deg,#293d2d,#c0b46f)}
+.cover.red{background:linear-gradient(145deg,#4e2427,#d08b77)}
+.cover.big{width:190px;height:190px;border-radius:17px;margin:6px auto 17px;display:grid;place-items:center;text-align:center;font-weight:900;font-size:22px;
+line-height:1.08;color:#fff3d9;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.stack{min-width:0;flex:1}
+.row .t{font-size:14px;font-weight:830;line-height:1.18;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .a{font-size:12px;color:var(--ink2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .n{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 7px;border-radius:99px;background:rgba(216,173,103,.13);
+border:1px solid rgba(216,173,103,.38);color:var(--gold2);font-size:9.5px;font-weight:900;letter-spacing:.03em;text-transform:uppercase}
+.badge:before{content:"";width:5px;height:5px;border-radius:50%;background:var(--gold2);box-shadow:0 0 8px rgba(240,206,138,.8)}
+.accessory{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--gold2);font-size:18px;flex:0 0 auto}
+.row.loading{background:rgba(216,173,103,.08)}
+.spinner{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:var(--gold2);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rail{display:flex;gap:12px;overflow:hidden;padding:2px 0 4px}
+.bookcard{width:142px;min-width:142px;position:relative}
+.poster{height:176px;border-radius:14px;background:linear-gradient(150deg,#233740,#c5a061);border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 26px rgba(0,0,0,.35);
+display:grid;place-items:end start;padding:10px;font-size:13px;font-weight:900;line-height:1.05;color:#fff2cf;text-shadow:0 1px 7px rgba(0,0,0,.75);overflow:hidden}
+.poster.blue{background:linear-gradient(150deg,#19384a,#94bec8)}
+.poster.red{background:linear-gradient(150deg,#4a2023,#d79b80)}
+.bookcard .ct{font-size:12.5px;font-weight:820;line-height:1.17;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bookcard .ca{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overlay{position:absolute;top:0;left:0;width:142px;height:176px;border-radius:14px;background:rgba(5,7,9,.48);display:grid;place-items:center;border:1px solid rgba(216,173,103,.42)}
+.tabs{position:absolute;left:20px;right:20px;bottom:18px;height:54px;border-radius:20px;background:rgba(20,25,28,.92);border:1px solid var(--line);
+display:grid;grid-template-columns:repeat(4,1fr);align-items:center;box-shadow:0 16px 42px rgba(0,0,0,.45)}
+.tab{text-align:center;font-size:10px;color:var(--muted);font-weight:750}.tab b{display:block;color:var(--gold2);font-size:15px;margin-bottom:2px}
+.meta{text-align:center;padding:0 8px}.meta .bt{font-size:22px;font-weight:900;letter-spacing:-.025em;line-height:1.12}.meta .ba{font-size:14px;color:var(--gold2);font-weight:800;margin-top:6px}
+.meta .bn{font-size:12.5px;color:var(--ink2);margin-top:4px}.meta .soloText{font-size:11px;color:var(--gold2);font-weight:900;letter-spacing:.07em;text-transform:uppercase;margin-top:7px}
+.scrub{margin:18px 4px 0}.bar{height:7px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}.bar i{display:block;height:100%;border-radius:99px;background:rgba(255,255,255,.9)}
+.times{display:flex;justify-content:space-between;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);margin-top:7px}
+.transport{display:flex;align-items:center;justify-content:space-between;margin:16px 4px 0}.tbtn{width:52px;height:52px;border-radius:26px;background:rgba(255,255,255,.12);
+border:1px solid var(--line);display:grid;place-items:center;font-size:16px;font-weight:850}.tbtn.main{width:66px;height:66px;border-radius:33px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;border:0;font-size:22px}
+.smallcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:18px;padding:13px;backdrop-filter:blur(18px)}
+.smallcard .txt{font-size:12.5px;line-height:1.48;color:var(--ink2)}
+.tapdot{position:absolute;right:14px;top:12px;width:28px;height:28px;border-radius:50%;background:rgba(216,173,103,.2);border:1px solid rgba(216,173,103,.5);display:grid;place-items:center;color:var(--gold2);font-size:13px;font-weight:900}
+</style>
+</head>
+<body>
+<div class="board">
+<h1>Narration Markers, Loading Feedback, And Tactile Taps</h1>
+<p class="lede">Four review frames for the solo-narration marker, conservative solo filter, visible remote import loading state, and tactile acknowledgement on tappable app surfaces. Each phone frame is 390 x 844 pt and this file opens directly from disk.</p>
+
+<div class="screens">
+  <div class="stage">
+    <div class="label">A - Search results with solo filter and importing row</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| Wi-Fi ▰</span></div>
+      <main class="screen">
+        <div class="topbar"><div><div class="title">Search</div><div class="subhead">Internet Archive + LibriVox</div></div><div class="iconbtn">...</div></div>
+        <div class="searchbox"><span>⌕</span><span>jane austen</span></div>
+        <div class="filterbar">
+          <div class="pill"><span class="check">✓</span><span>Solo Narration</span></div>
+          <div class="pill muted">Author</div>
+        </div>
+        <div class="section">Results</div>
+        <div class="list">
+          <div class="row loading">
+            <div class="cover"></div>
+            <div class="stack"><div class="t">Pride and Prejudice</div><div class="a">Jane Austen</div><div class="n">Read by Elizabeth Klett</div><div class="badge">Solo Narration</div></div>
+            <div class="accessory"><div class="spinner"></div></div>
+            <div class="tapdot">✓</div>
+          </div>
+          <div class="row">
+            <div class="cover blue"></div>
+            <div class="stack"><div class="t">Emma</div><div class="a">Jane Austen</div><div class="n">Read by Moira Fogarty</div><div class="badge">Solo Narration</div></div>
+            <div class="accessory">+</div>
+          </div>
+          <div class="row">
+            <div class="cover red"></div>
+            <div class="stack"><div class="t">Sense and Sensibility</div><div class="a">Jane Austen</div><div class="n">Read by LibriVox volunteers</div></div>
+            <div class="accessory">+</div>
+          </div>
+        </div>
+        <div class="section">Explore</div>
+        <div class="list">
+          <div class="row"><div class="cover green"></div><div class="stack"><div class="t">Persuasion</div><div class="a">Jane Austen</div><div class="n">Reader unknown</div></div><div class="accessory">+</div></div>
+        </div>
+        <nav class="tabs"><div class="tab"><b>⌂</b>Listen</div><div class="tab"><b>⌕</b>Search</div><div class="tab"><b>▤</b>Books</div><div class="tab"><b>☷</b>More</div></nav>
+      </main>
+    </article>
+    <div class="note">The tapped remote result is the only disabled item and shows a spinner immediately while metadata imports. The tap acknowledgement is represented by the small brass check.</div>
+  </div>
+
+  <div class="stage">
+    <div class="label">B - Listen rail with importing recommendation card</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| Wi-Fi ▰</span></div>
+      <main class="screen">
+        <div class="topbar"><div><div class="title">Listen</div><div class="subhead">For your next session</div></div><div class="iconbtn">⚙</div></div>
+        <div class="filterbar">
+          <div class="pill"><span class="check">✓</span><span>Solo Narration</span></div>
+          <div class="pill muted">Shorter than 10h</div>
+        </div>
+        <div class="section">Recommended</div>
+        <div class="rail">
+          <div class="bookcard">
+            <div class="poster">The Secret Garden</div>
+            <div class="overlay"><div class="spinner"></div></div>
+            <div class="tapdot">✓</div>
+            <div class="ct">The Secret Garden</div><div class="ca">Frances Hodgson Burnett</div><div class="badge">Solo Narration</div>
+          </div>
+          <div class="bookcard">
+            <div class="poster blue">Treasure Island</div>
+            <div class="ct">Treasure Island</div><div class="ca">Robert Louis Stevenson</div><div class="badge">Solo Narration</div>
+          </div>
+        </div>
+        <div class="section">Because you finished Austen</div>
+        <div class="rail">
+          <div class="bookcard"><div class="poster red">Jane Eyre</div><div class="ct">Jane Eyre</div><div class="ca">Charlotte Bronte</div><div class="badge">Solo Narration</div></div>
+          <div class="bookcard"><div class="poster">A Little Princess</div><div class="ct">A Little Princess</div><div class="ca">Frances Hodgson Burnett</div><div class="badge">Solo Narration</div></div>
+        </div>
+        <div class="smallcard"><div class="txt">Solo filter keeps cards whose catalog metadata resolves to one reliable reader. Unknown, cast, volunteer, and group recordings are excluded while the filter is on.</div></div>
+        <nav class="tabs"><div class="tab"><b>⌂</b>Listen</div><div class="tab"><b>⌕</b>Search</div><div class="tab"><b>▤</b>Books</div><div class="tab"><b>☷</b>More</div></nav>
+      </main>
+    </article>
+    <div class="note">Horizontal cards get the same per-identifier loading treatment: dim overlay, spinner, and haptic tap acknowledgement.</div>
+  </div>
+
+  <div class="stage">
+    <div class="label">C - My Books list with solo badges</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| Wi-Fi ▰</span></div>
+      <main class="screen">
+        <div class="topbar"><div><div class="title">My Books</div><div class="subhead">24 titles</div></div><div class="iconbtn">+</div></div>
+        <div class="searchbox"><span>⌕</span><span>Search library</span></div>
+        <div class="filterbar">
+          <div class="pill"><span class="check">✓</span><span>Solo Narration</span></div>
+          <div class="pill muted">Recent</div>
+        </div>
+        <div class="list">
+          <div class="row">
+            <div class="cover"></div>
+            <div class="stack"><div class="t">Pride and Prejudice</div><div class="a">Jane Austen</div><div class="n">Read by Elizabeth Klett</div><div class="badge">Solo Narration</div></div>
+            <div class="accessory">›</div>
+          </div>
+          <div class="row">
+            <div class="cover blue"></div>
+            <div class="stack"><div class="t">The War of the Worlds</div><div class="a">H. G. Wells</div><div class="n">Read by Rebecca Dittman</div><div class="badge">Solo Narration</div></div>
+            <div class="accessory">›</div>
+          </div>
+          <div class="row">
+            <div class="cover red"></div>
+            <div class="stack"><div class="t">Short Story Collection</div><div class="a">Various authors</div><div class="n">Read by multiple readers</div></div>
+            <div class="accessory">›</div>
+          </div>
+          <div class="row">
+            <div class="cover green"></div>
+            <div class="stack"><div class="t">The Importance of Being Earnest</div><div class="a">Oscar Wilde</div><div class="n">Dramatic reading</div></div>
+            <div class="accessory">›</div>
+          </div>
+        </div>
+        <div class="section">Narrators</div>
+        <div class="list">
+          <div class="row"><div class="cover blue"></div><div class="stack"><div class="t">More read by Elizabeth Klett</div><div class="a">8 library titles</div><div class="badge">Solo Narration</div></div><div class="accessory">›</div></div>
+        </div>
+        <nav class="tabs"><div class="tab"><b>⌂</b>Listen</div><div class="tab"><b>⌕</b>Search</div><div class="tab"><b>▤</b>Books</div><div class="tab"><b>☷</b>More</div></nav>
+      </main>
+    </article>
+    <div class="note">Local library filtering uses imported narrator arrays. Unmarked rows remain valid books; they simply are not confidently solo.</div>
+  </div>
+
+  <div class="stage">
+    <div class="label">D - Now Playing / Book Page metadata</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| Wi-Fi ▰</span></div>
+      <main class="screen">
+        <div class="topbar"><div class="chevbtn">⌄</div><div class="subhead">My Books</div><div class="iconbtn">...</div></div>
+        <div class="cover big">PRIDE<br>AND<br>PREJUDICE</div>
+        <div class="meta">
+          <div class="bt">Pride and Prejudice</div>
+          <div class="ba">Jane Austen ›</div>
+          <div class="bn">Read by Elizabeth Klett ›</div>
+          <div class="soloText">Solo Narration</div>
+        </div>
+        <div class="scrub"><div class="bar"><i style="width:42%"></i></div><div class="times"><span>32:18</span><span>6h 44m left</span><span>-21:05</span></div></div>
+        <div class="transport"><div class="tbtn">⏮</div><div class="tbtn">↺15</div><div class="tbtn main">▶</div><div class="tbtn">↻30</div><div class="tbtn">⏭</div></div>
+        <div class="section">About</div>
+        <div class="smallcard"><div class="txt">A classic comedy of manners following Elizabeth Bennet, her sisters, and Mr. Darcy.</div></div>
+        <div class="section">Chapters</div>
+        <div class="list">
+          <div class="row"><div class="accessory">▶</div><div class="stack"><div class="t">Chapter 12</div><div class="n">Elizabeth Klett</div></div><div class="n">34:18</div></div>
+          <div class="row"><div class="accessory">▷</div><div class="stack"><div class="t">Chapter 13</div><div class="n">Elizabeth Klett</div></div><div class="n">28:42</div></div>
+        </div>
+      </main>
+    </article>
+    <div class="note">The detail page uses plain text near the narrator line rather than a distant genre/storage chip, so narration is visible at the decision point.</div>
+  </div>
+</div>
+</div>
+</body>
+</html>

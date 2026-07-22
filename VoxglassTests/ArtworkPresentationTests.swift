@@ -77,7 +77,7 @@ final class ArtworkPresentationTests: XCTestCase {
     func testCatalogResultRowsUseNavigationAccessoryWithoutMetadata() throws {
         let search = try source("Voxglass/Features/Search/SearchView.swift")
 
-        XCTAssertTrue(search.contains("accessory: .navigation"))
+        XCTAssertTrue(search.contains("accessory: isLoading ? .loading : .navigation"))
         XCTAssertTrue(search.contains("metadata: nil"))
         XCTAssertFalse(search.contains("IADateFormatting.humanReadable(result.date)"))
         XCTAssertFalse(search.contains("Recorded \\(date)"))

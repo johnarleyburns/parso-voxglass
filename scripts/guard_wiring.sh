@@ -225,6 +225,74 @@ check_xcodeproj_drift() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# Rule 8 — Narration & tactile feedback guards
+# Ensures the narration markers, loading feedback, and tactile
+# tap wiring surface stays consistent.
+# ──────────────────────────────────────────────────────────────
+check_narration_tactile_guards() {
+  local had_failure=0
+
+  # Loading feedback: every remote import surface must pass isLoading
+  # when disabling a row, so the user sees feedback immediately.
+  for file in Voxglass/Features/Search/SearchView.swift Voxglass/Features/Discover/DiscoverView.swift Voxglass/Features/Player/CatalogDiscoveryView.swift; do
+    if [ -f "$file" ]; then
+      if grep -q 'disabled(importingIdentifier' "$file" 2>/dev/null; then
+        if ! grep -q 'isLoading: importingIdentifier' "$file" 2>/dev/null; then
+          echo "::error title=Narration-loading guard::$file disables an importing row but does not pass isLoading."
+          had_failure=1
+        fi
+      fi
+    fi
+  done
+
+  # Solo Narration toggle must exist on every applicable surface
+  local solo_toggle_surfaces=(
+    "Voxglass/Features/Search/SearchView.swift"
+    "Voxglass/Features/Discover/DiscoverView.swift"
+    "Voxglass/Features/Player/CatalogDiscoveryView.swift"
+    "Voxglass/Features/Listen/ListenView.swift"
+    "Voxglass/Features/Library/LibraryView.swift"
+  )
+  for file in "${solo_toggle_surfaces[@]}"; do
+    if [ -f "$file" ]; then
+      if ! grep -q 'Solo Narration' "$file" 2>/dev/null; then
+        echo "::error title=Narration-solo-toggle guard::$file does not contain a Solo Narration filter toggle."
+        had_failure=1
+      fi
+    fi
+  done
+
+  # BookPageView must show Solo Narration text when applicable
+  if [ -f "Voxglass/Features/Player/BookPageView.swift" ]; then
+    if ! grep -q 'narrationKind == .solo' "Voxglass/Features/Player/BookPageView.swift" 2>/dev/null; then
+      echo "::error title=Narration-bookpage guard::BookPageView must show 'Solo Narration' label near narrator metadata."
+      had_failure=1
+    fi
+  fi
+
+  # Bookmark haptic must use TactileFeedback, not raw UIImpactFeedbackGenerator
+  if [ -f "Voxglass/Features/Player/BookPageActionRow.swift" ]; then
+    if grep -q 'UIImpactFeedbackGenerator' "Voxglass/Features/Player/BookPageActionRow.swift" 2>/dev/null && \
+       ! grep -q 'TactileFeedback.tap()' "Voxglass/Features/Player/BookPageActionRow.swift" 2>/dev/null; then
+      echo "::error title=Narration-haptic guard::BookPageActionRow should use TactileFeedback.tap() instead of raw UIImpactFeedbackGenerator."
+      had_failure=1
+    fi
+  fi
+
+  # FilterChip must have tactileTap()
+  if [ -f "Voxglass/DesignSystem/VoxglassComponents.swift" ]; then
+    if grep -q 'struct FilterChip' "Voxglass/DesignSystem/VoxglassComponents.swift" 2>/dev/null; then
+      if ! awk '/struct FilterChip/,/^}$/' "Voxglass/DesignSystem/VoxglassComponents.swift" 2>/dev/null | grep -q 'tactileTap()'; then
+        echo "::error title=Narration-haptic guard::FilterChip must include .tactileTap() for tactile acknowledgment."
+        had_failure=1
+      fi
+    fi
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────
 
@@ -255,6 +323,7 @@ run_check "dead placeholder rows"   check_dead_placeholders
 run_check "Dynamic Type"            check_dynamic_type
 run_check "target membership"       check_xcodeproj_membership
 run_check "xcodeproj drift"         check_xcodeproj_drift
+run_check "narration feedback guards" check_narration_tactile_guards
 
 echo ""
 echo "=== Summary ==="

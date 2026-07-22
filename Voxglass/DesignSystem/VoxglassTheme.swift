@@ -129,4 +129,16 @@ extension View {
     func glassPanel() -> some View {
         modifier(GlassSurface())
     }
+
+    func tactileTap() -> some View {
+        simultaneousGesture(TapGesture().onEnded { TactileFeedback.tap() })
+    }
+}
+
+public enum TactileFeedback {
+    public static func tap() {
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
+    }
 }

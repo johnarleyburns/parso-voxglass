@@ -10,6 +10,7 @@ struct ListenView: View {
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @State private var importingIdentifier: String?
+    @State private var soloOnly = false
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
@@ -129,6 +130,13 @@ struct ListenView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Recommended for You")
 
+            HStack(spacing: 8) {
+                FilterChip(title: "Solo Narration", isSelected: soloOnly) {
+                    soloOnly.toggle()
+                }
+            }
+            .padding(.bottom, 2)
+
             if recommendations.recommendations.isEmpty {
                 EmptyStatePanel(
                     title: "Finding LibriVox Picks",
@@ -136,27 +144,50 @@ struct ListenView: View {
                     systemImage: "sparkles"
                 )
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(recommendations.recommendations) { result in
-                            Button {
-                                Task { await presentResult(result) }
-                            } label: {
-                                HorizontalCatalogCard(result: result)
+                let visibleResults = soloOnly
+                    ? recommendations.recommendations.filter { $0.narrationKind == .solo }
+                    : recommendations.recommendations
+
+                if visibleResults.isEmpty {
+                    EmptyStatePanel(
+                        title: "No Solo Narration Picks",
+                        message: "Try turning off the solo filter to see more recommendations.",
+                        systemImage: "mic"
+                    )
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(visibleResults) { result in
+                                Button {
+                                    Task { await presentResult(result) }
+                                } label: {
+                                    HorizontalCatalogCard(result: result)
+                                }
+                                .buttonStyle(.plain)
+                                .tactileTap()
+                                .accessibilityLabel("\(result.title) by \(result.authorLine)")
+                                .disabled(importingIdentifier == result.identifier)
+                                .overlay {
+                                    if importingIdentifier == result.identifier {
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .fill(Color.black.opacity(0.48))
+                                            .overlay {
+                                                ProgressView()
+                                                    .tint(Palette.brass)
+                                            }
+                                    }
+                                }
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("\(result.title) by \(result.authorLine)")
-                            .disabled(importingIdentifier == result.identifier)
                         }
+                        .padding(.horizontal, 2)
                     }
-                    .padding(.horizontal, 2)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if recommendations.isRefreshing {
-                        ProgressView()
-                            .padding(8)
-                            .glassSurface(cornerRadius: 18)
-                            .padding(4)
+                    .overlay(alignment: .topTrailing) {
+                        if recommendations.isRefreshing {
+                            ProgressView()
+                                .padding(8)
+                                .glassSurface(cornerRadius: 18)
+                                .padding(4)
+                        }
                     }
                 }
             }
@@ -210,6 +241,10 @@ struct ListenBookCard: View {
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)
+            if book.narrationKind == .solo {
+                SoloNarrationBadge()
+                    .padding(.top, 4)
+            }
         }
         .frame(width: 132)
     }

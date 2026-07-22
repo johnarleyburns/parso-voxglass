@@ -8,12 +8,14 @@ struct SearchView: View {
     @Binding var showingNowPlaying: Bool
     @State private var importingIdentifier: String?
     @State private var searchScope: SearchScope = .all
+    @State private var soloOnly = false
 
     var body: some View {
         VoxglassScreen(title: "Search") {
             VStack(alignment: .leading, spacing: 18) {
                 searchPanel
                 scopePicker
+                filterBar
                 archiveResults
             }
             .padding(.top, 12)
@@ -82,6 +84,14 @@ struct SearchView: View {
         .tint(Palette.brass)
     }
 
+    private var filterBar: some View {
+        HStack(spacing: 8) {
+            FilterChip(title: "Solo Narration", isSelected: soloOnly) {
+                soloOnly.toggle()
+            }
+        }
+    }
+
     @ViewBuilder
     private var archiveResults: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -108,27 +118,38 @@ struct SearchView: View {
                     systemImage: "magnifyingglass"
                 )
             } else {
-                let results = catalogStore.results
-                VStack(spacing: 0) {
-                    ForEach(results.indices, id: \.self) { index in
-                        let result = results[index]
-                        Button {
-                            Task { await presentResult(result) }
-                        } label: {
-                            InternetArchiveResultRow(
-                                result: result,
-                                style: .grouped
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(importingIdentifier == result.identifier)
+                let results = soloOnly
+                    ? catalogStore.results.filter { $0.narrationKind == .solo }
+                    : catalogStore.results
+                if results.isEmpty {
+                    EmptyStatePanel(
+                        title: "No Solo Narration Results",
+                        message: "Try turning off the solo filter or using different search terms.",
+                        systemImage: "mic"
+                    )
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(results.indices, id: \.self) { index in
+                            let result = results[index]
+                            Button {
+                                Task { await presentResult(result) }
+                            } label: {
+                                InternetArchiveResultRow(
+                                    result: result,
+                                    style: .grouped,
+                                    isLoading: importingIdentifier == result.identifier
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(importingIdentifier == result.identifier)
 
-                        if index < results.count - 1 {
-                            VoxglassListDivider()
+                            if index < results.count - 1 {
+                                VoxglassListDivider()
+                            }
                         }
                     }
+                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
                 }
-                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
             }
         }
     }
@@ -207,6 +228,7 @@ private enum SearchScope: CaseIterable, Identifiable, Hashable {
 struct InternetArchiveResultRow: View {
     var result: InternetArchiveSearchResult
     var style: BookListRowStyle = .card
+    var isLoading: Bool = false
 
     var body: some View {
         BookListRow(
@@ -215,9 +237,10 @@ struct InternetArchiveResultRow: View {
             tertiary: result.narratorLine,
             metadata: nil,
             coverURL: result.coverURL,
-            accessory: .navigation,
+            accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: "\(result.title) by \(result.authorLine)"
+            accessibilityLabel: "\(result.title) by \(result.authorLine)",
+            showSoloBadge: result.narrationKind == .solo
         )
     }
 }

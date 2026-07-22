@@ -1,5 +1,10 @@
 import Foundation
 
+public enum NarrationKind: String, Codable, Equatable, Sendable {
+    case solo
+    case mixedOrUnknown
+}
+
 public struct Book: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var title: String
@@ -42,6 +47,10 @@ public struct Book: Identifiable, Codable, Equatable, Sendable {
 
     public var narratorLine: String? {
         narrators.isEmpty ? nil : "Read by \(narrators.joined(separator: ", "))"
+    }
+
+    public var narrationKind: NarrationKind {
+        NarrationClassifier.classify(narrators: narrators)
     }
 }
 
@@ -144,6 +153,10 @@ public struct BookWithChapters: Identifiable, Equatable, Sendable {
         let durations = chapters.compactMap(\.duration)
         guard !durations.isEmpty else { return nil }
         return durations.reduce(0, +)
+    }
+
+    public var narrationKind: NarrationKind {
+        book.narrationKind
     }
 }
 

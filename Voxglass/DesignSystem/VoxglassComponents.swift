@@ -61,6 +61,7 @@ struct FilterChip: View {
             }
         }
         .buttonStyle(.plain)
+        .tactileTap()
     }
 }
 
@@ -99,6 +100,31 @@ struct VoxglassListDivider: View {
     }
 }
 
+struct SoloNarrationBadge: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(Palette.brass)
+                .frame(width: 4, height: 4)
+            Text("Solo Narration")
+                .scaledFont(size: 9.5, weight: .bold)
+                .kerning(0.3)
+        }
+        .foregroundStyle(Palette.brass)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(
+            Capsule()
+                .fill(Palette.brass.opacity(0.12))
+        )
+        .overlay(
+            Capsule()
+                .stroke(Palette.brass.opacity(0.35), lineWidth: 1)
+        )
+        .accessibilityLabel("Solo Narration")
+    }
+}
+
 enum RowAccessory {
     case navigation
     case play
@@ -121,6 +147,7 @@ struct BookListRow: View {
     var accessory: RowAccessory = .navigation
     var style: BookListRowStyle = .card
     var accessibilityLabel: String?
+    var showSoloBadge: Bool = false
 
     var body: some View {
         styledRow
@@ -167,6 +194,10 @@ struct BookListRow: View {
                         .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
+                }
+                if showSoloBadge {
+                    SoloNarrationBadge()
+                        .padding(.top, 2)
                 }
             }
             .layoutPriority(1)
@@ -329,6 +360,7 @@ struct PrimaryActionButton: View {
                 }
         }
         .buttonStyle(.plain)
+        .tactileTap()
     }
 }
 
@@ -351,6 +383,7 @@ struct SecondaryActionButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+        .tactileTap()
     }
 }
 
@@ -369,7 +402,8 @@ struct CompactBookRowView: View {
             coverURL: book.book.coverURL,
             accessory: accessory,
             style: style,
-            accessibilityLabel: "\(book.book.title) by \(book.book.authorLine)"
+            accessibilityLabel: "\(book.book.title) by \(book.book.authorLine)",
+            showSoloBadge: book.narrationKind == .solo
         )
     }
 }

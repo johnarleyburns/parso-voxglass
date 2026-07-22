@@ -14,6 +14,7 @@ struct BrowseView: View {
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
+    @State private var soloOnly = false
 
     var body: some View {
         VoxglassScreen(title: "Explore") {
@@ -86,6 +87,12 @@ struct BrowseView: View {
             SectionTitle(title: selectedCollection?.title ?? "Explore Results")
             if selectedCollection != nil {
                 sortPicker
+                HStack(spacing: 8) {
+                    FilterChip(title: "Solo Narration", isSelected: soloOnly) {
+                        soloOnly.toggle()
+                    }
+                }
+                .padding(.bottom, 2)
                 if selectedCollection?.isCurated == true {
                     curatedStatusBanner
                     downloadAllButton
@@ -114,28 +121,39 @@ struct BrowseView: View {
                     )
                 }
             } else {
-                let results = catalogStore.results
-                VStack(spacing: 0) {
-                    ForEach(results.indices, id: \.self) { index in
-                        let result = results[index]
-                        Button {
-                            Task { await presentResult(result) }
-                        } label: {
-                            InternetArchiveResultRow(
-                                result: result,
-                                style: .grouped
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
+                let results = soloOnly
+                    ? catalogStore.results.filter { $0.narrationKind == .solo }
+                    : catalogStore.results
+                if results.isEmpty && soloOnly {
+                    EmptyStatePanel(
+                        title: "No Solo Narration Results",
+                        message: "Try turning off the solo filter to see more audiobooks.",
+                        systemImage: "mic"
+                    )
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(results.indices, id: \.self) { index in
+                            let result = results[index]
+                            Button {
+                                Task { await presentResult(result) }
+                            } label: {
+                                InternetArchiveResultRow(
+                                    result: result,
+                                    style: .grouped,
+                                    isLoading: importingIdentifier == result.identifier
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
 
-                        if index < results.count - 1 {
-                            VoxglassListDivider()
+                            if index < results.count - 1 {
+                                VoxglassListDivider()
+                            }
                         }
                     }
+                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                    .opacity(catalogStore.isSearching ? 0.5 : 1.0)
                 }
-                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
-                .opacity(catalogStore.isSearching ? 0.5 : 1.0)
 
                 if catalogStore.hasMore {
                     loadMoreButton

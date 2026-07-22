@@ -17,6 +17,7 @@ struct CatalogDiscoveryView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
     @State private var importingIdentifier: String?
+    @State private var soloOnly = false
 
     var body: some View {
         ZStack {
@@ -60,27 +61,45 @@ struct CatalogDiscoveryView: View {
                         systemImage: "magnifyingglass"
                     )
                 } else {
-                    let results = store.results
-                    VStack(spacing: 0) {
-                        ForEach(results.indices, id: \.self) { index in
-                            let result = results[index]
-                            Button {
-                                Task { await presentResult(result) }
-                            } label: {
-                                InternetArchiveResultRow(
-                                    result: result,
-                                    style: .grouped
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(importingIdentifier == result.identifier)
-
-                            if index < results.count - 1 {
-                                VoxglassListDivider()
-                            }
+                    HStack(spacing: 8) {
+                        FilterChip(title: "Solo Narration", isSelected: soloOnly) {
+                            soloOnly.toggle()
                         }
                     }
-                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                    .padding(.bottom, 4)
+
+                    let results = soloOnly
+                        ? store.results.filter { $0.narrationKind == .solo }
+                        : store.results
+                    if results.isEmpty {
+                        EmptyStatePanel(
+                            title: "No Solo Narration Results",
+                            message: "Try turning off the solo filter to see more results.",
+                            systemImage: "mic"
+                        )
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(results.indices, id: \.self) { index in
+                                let result = results[index]
+                                Button {
+                                    Task { await presentResult(result) }
+                                } label: {
+                                    InternetArchiveResultRow(
+                                        result: result,
+                                        style: .grouped,
+                                        isLoading: importingIdentifier == result.identifier
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(importingIdentifier == result.identifier)
+
+                                if index < results.count - 1 {
+                                    VoxglassListDivider()
+                                }
+                            }
+                        }
+                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                    }
                 }
             }
             .padding(.horizontal, 18)

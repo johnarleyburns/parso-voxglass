@@ -226,6 +226,11 @@ struct HorizontalCatalogCard: View {
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)
+
+            if result.narrationKind == .solo {
+                SoloNarrationBadge()
+                    .padding(.top, 4)
+            }
         }
         .frame(width: 132)
         .onAppear {

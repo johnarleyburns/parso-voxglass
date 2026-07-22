@@ -264,6 +264,14 @@ struct BookPageView: View {
                 narratorsLink(resolved, narratorLine: narratorLine)
             }
 
+            if resolved.narrationKind == .solo {
+                Text("Solo Narration")
+                    .scaledFont(size: 11, weight: .bold)
+                    .kerning(0.7)
+                    .foregroundStyle(Palette.brass)
+                    .padding(.top, 2)
+            }
+
             chapterLine(resolved)
         }
         .padding(.horizontal, 16)

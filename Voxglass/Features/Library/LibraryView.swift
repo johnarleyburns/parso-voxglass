@@ -9,6 +9,7 @@ struct LibraryView: View {
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
+    @State private var soloOnly = false
 
     var body: some View {
         VoxglassScreen(title: "My Books") {
@@ -94,7 +95,7 @@ struct LibraryView: View {
     }
 
     private var filterBar: some View {
-        HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Picker("Filter", selection: Binding<LibraryBookFilter>(
                 get: { libraryStore.filter },
                 set: { libraryStore.filter = $0 }
@@ -107,22 +108,27 @@ struct LibraryView: View {
             .pickerStyle(.segmented)
             .tint(Palette.brass)
 
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showSearch.toggle()
-                    if !showSearch {
-                        searchText = ""
-                        searchScope = .all
-                    }
+            HStack(spacing: 8) {
+                FilterChip(title: "Solo Narration", isSelected: soloOnly) {
+                    soloOnly.toggle()
                 }
-            } label: {
-                Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                    .scaledFont(size: 18, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-                    .frame(width: 36, height: 36)
-                    .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.08))
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showSearch.toggle()
+                        if !showSearch {
+                            searchText = ""
+                            searchScope = .all
+                        }
+                    }
+                } label: {
+                    Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
+                        .scaledFont(size: 18, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                        .frame(width: 36, height: 36)
+                        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.08))
+                }
+                .accessibilityLabel(showSearch ? "Close search" : "Search my books")
             }
-            .accessibilityLabel(showSearch ? "Close search" : "Search my books")
         }
     }
 
@@ -166,6 +172,10 @@ struct LibraryView: View {
 
     private var filteredBooks: [BookWithChapters] {
         var books = libraryStore.visibleBooks
+
+        if soloOnly {
+            books = books.filter { $0.narrationKind == .solo }
+        }
 
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return books }

@@ -50,6 +50,10 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
         return names.isEmpty ? nil : "Read by \(names.joined(separator: ", "))"
     }
 
+    public var narrationKind: NarrationKind {
+        NarrationClassifier.classify(description: description)
+    }
+
     public var sourceKind: SourceKind {
         collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
             ? .librivox
