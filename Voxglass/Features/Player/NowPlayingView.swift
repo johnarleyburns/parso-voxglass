@@ -4,11 +4,14 @@ import VoxglassCore
 struct NowPlayingView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @Environment(\.dismiss) private var dismiss
     @State private var scrubPosition: Double = 0
     @State private var isScrubbing = false
     @State private var showingEQ = false
     @State private var showingBookmarks = false
+    @State private var showCellularPrompt = false
+    @State private var showRemoveOfflineConfirm = false
     @State private var genre: LibriVoxBrowseCategory?
 
     /// Favorite state derived from the live library store (source of truth),
@@ -91,11 +94,44 @@ struct NowPlayingView: View {
             }
             .presentationDragIndicator(.visible)
         }
+        .confirmationDialog(
+            "You're on cellular data",
+            isPresented: $showCellularPrompt,
+            titleVisibility: .visible
+        ) {
+            Button("Cache now on cellular") {
+                Task { await startOffline(allowCellular: true) }
+            }
+            Button("Wait for Wi-Fi", role: .cancel) {}
+        } message: {
+            Text("Caching a whole book can use significant cellular data.")
+        }
+        .confirmationDialog(
+            "Remove the offline copy?",
+            isPresented: $showRemoveOfflineConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Remove offline copy", role: .destructive) {
+                Task {
+                    guard let book = currentBook else { return }
+                    await offlineManager.removeOffline(book: book)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The book stays in My Books; only the downloaded audio is freed.")
+        }
     }
 
     private func loadGenre(for session: PlaybackSession) async {
         let subjects = await libraryStore.bookSubjects(for: session.book.id)
         genre = LibriVoxBrowseCategory.category(forSubjects: subjects)
+    }
+
+    private var currentBook: BookWithChapters? {
+        guard let session = playback.currentSession else { return nil }
+        return libraryStore.book(withID: session.book.id)
+            ?? BookWithChapters(book: session.book, chapters: session.chapters)
     }
 
     private var grabber: some View {
@@ -291,11 +327,7 @@ struct NowPlayingView: View {
 
             Spacer(minLength: 0)
 
-            ShareLink(item: "\(session.book.title) by \(session.book.authorLine)") {
-                Image(systemName: "square.and.arrow.up")
-                    .scaledFont(size: 16)
-                    .frame(width: 44, height: 44)
-            }
+            offlineButton(session)
         }
         .frame(maxWidth: 320)
         .frame(maxWidth: .infinity)
@@ -432,6 +464,83 @@ struct NowPlayingView: View {
         .accessibilityLabel(favorited ? "Unfavorite" : "Favorite")
         .accessibilityIdentifier("nowplaying.favorite")
         .accessibilityAddTraits(favorited ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private func offlineButton(_ session: PlaybackSession) -> some View {
+        switch offlineManager.state(for: session.book.id) {
+        case .notCached:
+            Button {
+                Task { await requestOffline() }
+            } label: {
+                Image(systemName: "arrow.down.circle")
+                    .scaledFont(size: 17)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Download book")
+            .accessibilityIdentifier("nowplaying.download")
+        case .downloading(let progress):
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
+                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "arrow.down")
+                    .scaledFont(size: 9, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+            }
+            .frame(width: 22, height: 22)
+            .frame(width: 44, height: 44)
+            .accessibilityElement()
+            .accessibilityLabel("Downloading book")
+            .accessibilityValue("\(Int((progress * 100).rounded())) percent")
+            .accessibilityIdentifier("nowplaying.download")
+        case .cached:
+            Menu {
+                Button("Remove offline copy", role: .destructive) {
+                    showRemoveOfflineConfirm = true
+                }
+            } label: {
+                Image(systemName: "checkmark.circle.fill")
+                    .scaledFont(size: 17, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Downloaded")
+            .accessibilityIdentifier("nowplaying.download")
+        case .failed:
+            Button {
+                Task { await requestOffline() }
+            } label: {
+                Image(systemName: "exclamationmark.arrow.circlepath")
+                    .scaledFont(size: 17)
+                    .foregroundStyle(Palette.danger)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Retry download")
+            .accessibilityIdentifier("nowplaying.download")
+        }
+    }
+
+    private func requestOffline() async {
+        await startOffline(allowCellular: false)
+    }
+
+    private func startOffline(allowCellular: Bool) async {
+        guard let book = currentBook else { return }
+        let decision = await offlineManager.makeAvailableOffline(
+            book: book,
+            isCellular: NetworkMonitor.shared.isCellular,
+            allowCellularOverride: allowCellular
+        )
+        switch decision {
+        case .needsCellularConfirmation:
+            showCellularPrompt = true
+        case .start:
+            break
+        }
     }
 
     @ViewBuilder

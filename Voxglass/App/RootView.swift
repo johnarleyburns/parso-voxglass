@@ -4,6 +4,7 @@ import VoxglassCore
 struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var playback: PlaybackCoordinator
+    @EnvironmentObject private var offlineDownloadManager: OfflineDownloadManager
     @State private var selectedTab: VoxglassTab = .launchDefault
     @State private var showingNowPlaying = false
     @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-VoxglassDisableAnimatedSplash")
@@ -73,6 +74,7 @@ struct RootView: View {
             NowPlayingView()
                 .environmentObject(playback)
                 .environmentObject(libraryStore)
+                .environmentObject(offlineDownloadManager)
                 .presentationDragIndicator(.visible)
         }
         .task {
