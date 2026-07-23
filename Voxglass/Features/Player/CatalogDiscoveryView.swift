@@ -17,7 +17,7 @@ struct CatalogDiscoveryView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
     @State private var importingIdentifier: String?
-    @State private var soloOnly = false
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
         ZStack {

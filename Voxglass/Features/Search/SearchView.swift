@@ -8,7 +8,7 @@ struct SearchView: View {
     @Binding var showingNowPlaying: Bool
     @State private var importingIdentifier: String?
     @State private var searchScope: SearchScope = .all
-    @State private var soloOnly = false
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
         VoxglassScreen(title: "Search") {

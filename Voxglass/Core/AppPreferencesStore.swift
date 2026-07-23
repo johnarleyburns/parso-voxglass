@@ -15,12 +15,14 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let skipSilenceEnabled = "voxglass.skipSilence.enabled"
         public static let volumeNormalizationEnabled = "voxglass.volumeNormalization.enabled"
         public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
+        public static let soloOnlyEnabled = "voxglass.soloOnlyEnabled"
     }
 
     @AppStorage(Keys.hasCompletedSplash) public var hasCompletedSplash = false
     @AppStorage(Keys.hasCompletedOnboarding) public var hasCompletedOnboarding = false
     @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
+    @AppStorage(Keys.soloOnlyEnabled) public var soloOnlyEnabled = true
 
     public var selectedCollectionIDs: Set<String> {
         get { Self.decodeCollectionIDs(selectedCollectionIDsRaw) }

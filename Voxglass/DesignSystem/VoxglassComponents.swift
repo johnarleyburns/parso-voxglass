@@ -198,6 +198,10 @@ struct BookListRow: View {
                 if showSoloBadge {
                     SoloNarrationBadge()
                         .padding(.top, 2)
+                } else {
+                    SoloNarrationBadge()
+                        .opacity(0)
+                        .padding(.top, 2)
                 }
             }
             .layoutPriority(1)

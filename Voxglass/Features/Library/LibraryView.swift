@@ -9,7 +9,7 @@ struct LibraryView: View {
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
-    @State private var soloOnly = false
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
         VoxglassScreen(title: "My Books") {

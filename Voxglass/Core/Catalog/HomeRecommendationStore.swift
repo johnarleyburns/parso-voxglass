@@ -52,7 +52,7 @@ public final class HomeRecommendationStore: ObservableObject {
         engineReady = true
     }
 
-    public func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection) async {
+    public func load(selectedCollectionIDs: Set<String>, selectedLanguages: Set<String> = LibriVoxLanguage.defaultSelection, soloOnly: Bool = false) async {
         if recommendations.isEmpty {
             recommendations = Self.coldStartRecommendations(for: selectedCollectionIDs)
             visibleShelfSource = .popularColdStart
@@ -65,7 +65,8 @@ public final class HomeRecommendationStore: ObservableObject {
 
         let shelf = await engine.fetchRecommendationShelf(
             selectedCollectionIDs: selectedCollectionIDs,
-            selectedLanguages: selectedLanguages
+            selectedLanguages: selectedLanguages,
+            soloOnly: soloOnly
         )
         guard !shelf.results.isEmpty else { return }
 

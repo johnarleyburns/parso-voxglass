@@ -10,8 +10,8 @@ struct ListenView: View {
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @State private var importingIdentifier: String?
-    @State private var soloOnly = false
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
     var body: some View {
@@ -34,16 +34,16 @@ struct ListenView: View {
         }
         .task {
             await libraryStore.refreshRecentlyPlayed()
-            await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+            await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages, soloOnly: soloOnly)
         }
         .onChange(of: selectedCollectionIDsRaw) { _, _ in
             Task {
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages, soloOnly: soloOnly)
             }
         }
         .onChange(of: selectedLanguagesRaw) { _, _ in
             Task {
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages, soloOnly: soloOnly)
             }
         }
         .onChange(of: showingNowPlaying) { wasShowing, isShowing in
@@ -53,7 +53,12 @@ struct ListenView: View {
             guard wasShowing, !isShowing else { return }
             Task {
                 await libraryStore.refreshRecentlyPlayed()
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages, soloOnly: soloOnly)
+            }
+        }
+        .onChange(of: soloOnly) { _, _ in
+            Task {
+                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages, soloOnly: soloOnly)
             }
         }
     }
@@ -243,6 +248,10 @@ struct ListenBookCard: View {
                 .padding(.top, 1)
             if book.narrationKind == .solo {
                 SoloNarrationBadge()
+                    .padding(.top, 4)
+            } else {
+                SoloNarrationBadge()
+                    .opacity(0)
                     .padding(.top, 4)
             }
         }

@@ -14,7 +14,7 @@ struct BrowseView: View {
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
-    @State private var soloOnly = false
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
         VoxglassScreen(title: "Explore") {

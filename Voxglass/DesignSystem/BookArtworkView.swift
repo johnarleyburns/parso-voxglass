@@ -230,6 +230,10 @@ struct HorizontalCatalogCard: View {
             if result.narrationKind == .solo {
                 SoloNarrationBadge()
                     .padding(.top, 4)
+            } else {
+                SoloNarrationBadge()
+                    .opacity(0)
+                    .padding(.top, 4)
             }
         }
         .frame(width: 132)

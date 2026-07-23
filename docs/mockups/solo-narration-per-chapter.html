@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass — Solo Narration &amp; Per-Chapter Narrator Improvements</title>
+<style>
+:root{--bgA:#0b0f12;--bgB:#171d20;--ink:#f7f0e6;--ink2:#cfc4b6;--muted:#b9afa4;--faint:rgba(255,255,255,.09);
+--line:rgba(255,255,255,.13);--panel:rgba(30,36,39,.62);--gold:#d8ad67;--gold2:#f0ce8a;--danger:#e2705f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#283034 0%,#020406 44%,#000 100%);color:var(--ink)}
+.board{padding:34px 26px 64px;max-width:1900px;margin:0 auto}
+.board h1{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:0 0 6px}
+.board p.lede{color:var(--muted);font-size:14px;max-width:860px;margin:0 0 26px;line-height:1.55}
+.screens{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.stage{display:grid;gap:10px;justify-items:center}
+.stage .label{font-weight:800;color:#f4e2bf;font-size:14px;text-align:center}
+.stage .note{color:var(--muted);font-size:11.5px;max-width:390px;text-align:center;line-height:1.5}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;
+background:linear-gradient(155deg,var(--bgA),var(--bgB));border:10px solid #090b0d;
+box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:54px;padding:17px 25px 0;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;position:relative;z-index:2}
+.screen{height:calc(100% - 54px);padding:0 20px 16px;overflow-y:auto;position:relative;z-index:2}
+
+/* Listen Tab cards */
+.hero{font-size:31px;font-weight:850;margin:12px 0 8px;letter-spacing:-.02em}
+.hero-sub{font-size:14px;color:var(--ink2);margin-bottom:18px}
+.sec-title{font-size:18px;font-weight:800;margin:18px 0 10px}
+.card-row{display:flex;gap:12px;flex-wrap:nowrap;margin-bottom:8px}
+.card{width:132px;flex:0 0 auto}
+.card img.cover{width:132px;height:132px;border-radius:14px;display:block;object-fit:cover}
+.card-cover-placeholder{width:132px;height:132px;border-radius:14px;background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#2a1c3e,#4a2c6a 42%,#d3b477);display:grid;place-items:center}
+.card .t{font-size:12.5px;font-weight:650;margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .a{font-size:11px;color:var(--ink2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Solo badge - always reserved */
+.solo-badge{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:9.5px;font-weight:800;letter-spacing:.03em;color:var(--gold);padding:3px 7px;border-radius:99px;
+background:rgba(216,173,103,.12);border:1px solid rgba(216,173,103,.35);width:fit-content;height:19px}
+.solo-badge::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--gold);flex:0 0 auto}
+.solo-badge.reserved{visibility:hidden}
+.card-note{font-size:9.5px;color:rgba(185,175,164,.55);margin-top:3px;text-align:center}
+
+/* Filter chip row */
+.chip-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.chip{display:flex;align-items:center;font-size:12.5px;font-weight:650;padding:0 14px;height:44px;border-radius:99px;color:var(--ink);border:1px solid var(--line);background:rgba(255,255,255,.08);cursor:pointer}
+.chip.selected{background:var(--gold);color:#21170b;border-color:var(--gold);font-weight:750}
+
+/* Now Playing - metadata section */
+.np-cover{width:180px;height:180px;border-radius:16px;margin:8px auto 14px;background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#172229,#262a2c 42%,#d3b477);display:grid;place-items:center;font-weight:900;font-size:16px;text-align:center;color:#f8e8c7;text-shadow:0 1px 6px rgba(0,0,0,.7);box-shadow:0 18px 38px rgba(0,0,0,.5)}
+.np-title{font-size:17px;font-weight:800;text-align:center;letter-spacing:-.01em}
+.np-author{font-size:14px;color:var(--gold);text-align:center;margin-top:4px}
+.np-narrator{font-size:13px;color:var(--gold);text-align:center}
+.np-solo{font-size:11px;font-weight:800;letter-spacing:.07em;color:var(--gold);text-align:center;margin-top:2px}
+
+/* Per-chapter narrator on now-playing chapter line */
+.np-chapter-label{font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-top:5px}
+.np-chapter-narrator{font-size:11px;color:rgba(255,255,255,.38);text-align:center;margin-top:1px}
+
+.highlight-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:12px;font-size:11.5px;color:var(--ink2);line-height:1.5}
+.highlight-box strong{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="board">
+
+<h1>Solo Narration &amp; Per-Chapter Narrator Improvements</h1>
+<p class="lede">
+<strong>Left:</strong> Listen Tab cards now <strong>reserve vertical space</strong> for the Solo Narration badge, so layout doesn't shift between solo (badge visible) and collaborative (badge hidden but space reserved) cards. Solo Narration chip is <strong>selected by default</strong> and persists across app restarts. When selected, recommendations show only solo recordings (still 18 cards).
+<strong>Right:</strong> Book/Now Playing view now shows the <strong>per-chapter narrator</strong> beneath the chapter title when the book has multiple narrators (e.g. dramatic readings).
+</p>
+
+<div class="screens">
+
+<!-- Screen 1: Listen Tab with reserved badge space + persistent solo filter -->
+<div class="stage">
+  <div class="label">Listen Tab &mdash; Reserved Badge Space</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span style="opacity:.55">▮▮▮ WiFi ▮▮▮</span></div>
+    <div class="screen">
+      <div class="hero">Good listening</div>
+      <div class="hero-sub">Public-domain audiobooks, private by default.</div>
+
+      <div class="sec-title">Jump Back In</div>
+      <div class="card-row">
+        <div class="card">
+          <div class="card-cover-placeholder" style="background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#1e2a30,#38444a 42%,#d3b477)">SOLO</div>
+          <div class="t">Pride and Prejudice</div>
+          <div class="a">Jane Austen</div>
+          <div class="solo-badge">Solo Narration</div>
+        </div>
+        <div class="card">
+          <div class="card-cover-placeholder" style="background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#361616,#5a2828 42%,#d3b477)">COLL</div>
+          <div class="t">Dracula (version 2)</div>
+          <div class="a">Bram Stoker</div>
+          <div class="solo-badge reserved">Solo Narration</div>
+          <div class="card-note">← space reserved, no shift</div>
+        </div>
+      </div>
+
+      <div class="sec-title">Recently Added</div>
+      <div class="card-row">
+        <div class="card">
+          <div class="card-cover-placeholder" style="background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#2e1f1f,#5a3d3d 42%,#d3b477)">SOLO</div>
+          <div class="t">The Art of War</div>
+          <div class="a">Sun Tzu</div>
+          <div class="solo-badge">Solo Narration</div>
+        </div>
+        <div class="card">
+          <div class="card-cover-placeholder" style="background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#1e2a30,#38444a 42%,#d3b477)">COLL</div>
+          <div class="t">Short Story Collection</div>
+          <div class="a">Various</div>
+          <div class="solo-badge reserved">Solo Narration</div>
+          <div class="card-note">← space reserved, no shift</div>
+        </div>
+      </div>
+
+      <div class="sec-title">Recommended for You</div>
+      <div class="chip-row">
+        <div class="chip selected">Solo Narration</div>
+      </div>
+      <div class="card-row">
+        <div class="card">
+          <div class="card-cover-placeholder" style="background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#172229,#262a2c 42%,#d3b477)">SOLO</div>
+          <div class="t">Frankenstein</div>
+          <div class="a">Mary W. Shelley</div>
+          <div class="solo-badge">Solo Narration</div>
+        </div>
+        <div class="card">
+          <div class="card-cover-placeholder" style="background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#2a1c3e,#4a2c6a 42%,#d3b477)">SOLO</div>
+          <div class="t">Jane Eyre</div>
+          <div class="a">Charlotte Brontë</div>
+          <div class="solo-badge">Solo Narration</div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <strong>Solo Narration</strong> filter is <strong>ON by default</strong> and persisted across restarts. All 18 recommendation slots are filled with <strong>only</strong> solo recordings — no mixed/dramatic readings appear when this chip is selected. Turning it off shows the full mix.
+      </div>
+    </div>
+  </div>
+  <div class="note">Cards for collaborative/dramatic readings keep the same height &mdash; the badge region is always present, just invisible. No layout jitter.</div>
+</div>
+
+<!-- Screen 2: Now Playing with per-chapter narrator -->
+<div class="stage">
+  <div class="label">Book Page &mdash; Per-Chapter Narrator</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span style="opacity:.55">▮▮▮ WiFi ▮▮▮</span></div>
+    <div class="screen">
+      <div class="np-cover" style="margin-top:12px">DRACULA</div>
+
+      <div class="np-title">Dracula (version 2)</div>
+      <div class="np-author">Bram Stoker</div>
+      <div class="np-narrator">Read by mb, Elizabeth Klett, Arielle Lipshaw, Denny Sayers, Eric Zetterlund, Brett W. Downey, and 11 others</div>
+      <div class="np-solo">Solo Narration</div>
+
+      <!-- NOW SHOWING: per-chapter narrator beneath chapter title -->
+      <div class="np-chapter-label">Chapter 5</div>
+      <div class="np-chapter-narrator">Denny Sayers (d. 2015), Elizabeth Klett, Arielle Lipshaw, Brett W. Downey, Eric Zetterlund</div>
+
+      <div style="margin:14px 2px 0">
+        <div class="bar" style="height:7px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden">
+          <i style="display:block;height:100%;border-radius:99px;background:rgba(255,255,255,.9);width:38%"></i>
+        </div>
+        <div class="times" style="display:flex;justify-content:space-between;font-size:11px;font-family:monospace;color:var(--muted);margin-top:7px">
+          <span>07:42</span><span>−12:31</span>
+        </div>
+      </div>
+
+      <!-- Transport -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 4px 0">
+        <span style="font-size:17px;opacity:.8">⏮</span>
+        <span style="font-size:15px;opacity:.8">⏪&nbsp;15</span>
+        <span style="font-size:26px;font-weight:800;width:66px;height:66px;border-radius:33px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;display:grid;place-items:center">▶</span>
+        <span style="font-size:15px;opacity:.8">30&nbsp;⏩</span>
+        <span style="font-size:17px;opacity:.8">⏭</span>
+      </div>
+
+      <div class="highlight-box">
+        <strong>Per-chapter narrator</strong> is now shown directly beneath the chapter title in the metadata section when the book has multiple narrators (using the same <code>NarratorDisplay.chapterLine()</code> logic already used in the chapter list below).
+      </div>
+    </div>
+  </div>
+  <div class="note">When playing a multi-narrator audiobook (e.g. dramatic reading), the current chapter's narrator(s) appear below the chapter name. For solo narrations, this line is hidden.</div>
+</div>
+
+</div><!-- /screens -->
+
+</div><!-- /board -->
+</body>
+</html>

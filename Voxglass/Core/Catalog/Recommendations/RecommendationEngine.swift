@@ -34,38 +34,51 @@ public final class RecommendationEngine {
 
     public func fetchRecommendations(
         selectedCollectionIDs: Set<String>,
-        selectedLanguages: Set<String>
+        selectedLanguages: Set<String>,
+        soloOnly: Bool = false
     ) async -> [InternetArchiveSearchResult] {
         await fetchRecommendationShelf(
             selectedCollectionIDs: selectedCollectionIDs,
-            selectedLanguages: selectedLanguages
+            selectedLanguages: selectedLanguages,
+            soloOnly: soloOnly
         ).results
     }
 
     public func fetchRecommendationShelf(
         selectedCollectionIDs _: Set<String>,
-        selectedLanguages: Set<String>
+        selectedLanguages: Set<String>,
+        soloOnly: Bool = false
     ) async -> RecommendationShelf {
         let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
         let excludeKeys = await buildExcludeKeys()
+        let soloMultiplier = soloOnly ? 2 : 1
+        let shelfTarget = 18
 
         let profile = await profileStore.fetchProfile()
         guard !profile.isEmpty else {
+            let coldResults = RecommendationPipeline.filterExcluded(
+                HomeRecommendationStore.bundledPopularSeeds,
+                excludeKeys: excludeKeys
+            )
+            let finalResults = soloOnly
+                ? coldResults.filter { $0.narrationKind == .solo }
+                : coldResults
             return RecommendationShelf(
-                results: RecommendationPipeline.filterExcluded(
-                    HomeRecommendationStore.bundledPopularSeeds,
-                    excludeKeys: excludeKeys
-                ),
+                results: Array(finalResults.prefix(shelfTarget)),
                 source: .popularColdStart
             )
         }
 
         let popularFallback = {
-            RecommendationShelf(
-                results: RecommendationPipeline.filterExcluded(
-                    HomeRecommendationStore.bundledPopularSeeds,
-                    excludeKeys: excludeKeys
-                ),
+            let fbResults = RecommendationPipeline.filterExcluded(
+                HomeRecommendationStore.bundledPopularSeeds,
+                excludeKeys: excludeKeys
+            )
+            let finalResults = soloOnly
+                ? fbResults.filter { $0.narrationKind == .solo }
+                : fbResults
+            return RecommendationShelf(
+                results: finalResults,
                 source: RecommendationShelfSource.popularFallback
             )
         }
@@ -83,8 +96,9 @@ public final class RecommendationEngine {
         var candidates: [InternetArchiveSearchResult] = []
         for query in queries.prefix(6) {
             do {
+                let rows = query.requestedCount * soloMultiplier
                 let results = try await withTimeout(15) { [client] in
-                    try await client.searchAdvanced(query: query.iaQuery, rows: query.requestedCount)
+                    try await client.searchAdvanced(query: query.iaQuery, rows: rows)
                 }
                 candidates.append(contentsOf: results)
             } catch {
@@ -133,13 +147,19 @@ public final class RecommendationEngine {
             guard !fallbackRanked.isEmpty else {
                 return popularFallback()
             }
-            let shelfSlice = Array(fallbackRanked.prefix(18))
+            let soloFilteredFallback = soloOnly
+                ? fallbackRanked.filter { $0.narrationKind == .solo }
+                : fallbackRanked
+            let shelfSlice = Array(soloFilteredFallback.prefix(18))
             let shelfKeys = shelfSlice.flatMap { Array(RecommendationPipeline.identityKeys(for: $0)) }
             await profileStore.pushSurfaced(shelfKeys)
             return RecommendationShelf(results: shelfSlice, source: .personalized)
         }
 
-        let shelfSlice = Array(filtered.prefix(18))
+        let soloFiltered = soloOnly
+            ? filtered.filter { $0.narrationKind == .solo }
+            : filtered
+        let shelfSlice = Array(soloFiltered.prefix(18))
         let shelfKeys = shelfSlice.flatMap { Array(RecommendationPipeline.identityKeys(for: $0)) }
         await profileStore.pushSurfaced(shelfKeys)
 

@@ -326,10 +326,18 @@ struct BookPageView: View {
     @ViewBuilder
     private func chapterLine(_ resolved: BookWithChapters) -> some View {
         if isActiveSession, let session = playback.currentSession {
-            Text(session.chapter.title)
-                .scaledFont(size: 12)
-                .foregroundStyle(Color.white.opacity(0.50))
-                .lineLimit(1)
+            VStack(spacing: 2) {
+                Text(session.chapter.title)
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Color.white.opacity(0.50))
+                    .lineLimit(1)
+                if let narratorLine = NarratorDisplay.chapterLine(chapter: session.chapter, bookNarrators: resolved.book.narrators) {
+                    Text(narratorLine)
+                        .scaledFont(size: 11)
+                        .foregroundStyle(Color.white.opacity(0.38))
+                        .lineLimit(1)
+                }
+            }
         } else if let resumeChapter = resumeChapterTitle(for: resolved) {
             Text("Resume · \(resumeChapter)")
                 .scaledFont(size: 12)
