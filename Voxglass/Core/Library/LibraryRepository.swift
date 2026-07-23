@@ -583,6 +583,18 @@ public final class LibraryRepository {
                 [.string(bookIDString), .string(language.lowercased())]
             )
         }
+        for narrator in book.narrators {
+            let trimmed = narrator.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty,
+                  trimmed.lowercased() != "unknown",
+                  trimmed.lowercased() != "various",
+                  trimmed.lowercased() != "anonymous",
+                  trimmed.lowercased() != "unknown reader" else { continue }
+            try? await database.execute(
+                "INSERT OR IGNORE INTO book_taste (book_id, axis, term) VALUES (?, 'narrator', ?)",
+                [.string(bookIDString), .string(trimmed.lowercased())]
+            )
+        }
 
         return BookWithChapters(book: book, chapters: chapters)
     }

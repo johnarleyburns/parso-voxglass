@@ -373,12 +373,146 @@ final class RecommendationPipelineTests: XCTestCase {
         }
     }
 
+    // MARK: - Narrator axis
+
+    func testNarratorsAppearInProfileBucket() {
+        let entry = ListeningHistoryEntry(
+            authors: ["Jane Austen"],
+            subjects: [],
+            narrators: ["Karen Savage"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+        XCTAssertFalse(profile.isEmpty)
+        XCTAssertFalse(profile.narratorTerms.isEmpty, "narrator should appear in profile")
+        XCTAssertEqual(profile.narratorTerms.first?.term, "karen savage")
+    }
+
+    func testNarratorTermsFlowIntoAllTerms() {
+        let entry = ListeningHistoryEntry(
+            authors: ["Jane Austen"],
+            subjects: [],
+            narrators: ["Karen Savage"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+        let allTerms = profile.allTerms()
+        let narratorInAll = allTerms.filter { $0.axis == "narrator" }
+        XCTAssertFalse(narratorInAll.isEmpty, "narrator terms should appear in allTerms()")
+        XCTAssertTrue(narratorInAll.contains { $0.term == "karen savage" })
+    }
+
+    func testTopNarratorsReturnsWeightedNarrators() {
+        let entries: [ListeningHistoryEntry] = [
+            ListeningHistoryEntry(narrators: ["Karen Savage"], listenedSeconds: 7200),
+            ListeningHistoryEntry(narrators: ["Elizabeth Klett"], listenedSeconds: 3600),
+            ListeningHistoryEntry(narrators: ["Karen Savage"], listenedSeconds: 7200)
+        ]
+        let profile = RecommendationPipeline.buildProfile(history: entries)
+        XCTAssertFalse(profile.narratorTerms.isEmpty)
+        let savage = profile.narratorTerms.first { $0.term == "karen savage" }
+        let klett = profile.narratorTerms.first { $0.term == "elizabeth klett" }
+        if let savage, let klett {
+            XCTAssertGreaterThan(savage.weight, klett.weight, "Karen Savage appears twice and should have higher weight")
+        }
+    }
+
+    func testUnknownNarratorDroppedFromProfile() {
+        let entry = ListeningHistoryEntry(
+            authors: [],
+            subjects: [],
+            narrators: ["Unknown", "Various", "Karen Savage"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+        let narrators = profile.narratorTerms.map(\.term)
+        XCTAssertFalse(narrators.contains("unknown"))
+        XCTAssertFalse(narrators.contains("various"))
+        XCTAssertTrue(narrators.contains("karen savage"))
+    }
+
+    func testExtractTokensIncludesNarrators() {
+        let result = candidate(
+            "test",
+            "Test Title",
+            "Author One",
+            description: "Read by Karen Savage",
+            subjects: ["Fiction"]
+        )
+        let tokens = Set(RecommendationPipeline.extractTokens(result))
+        XCTAssertTrue(tokens.contains("karen savage"), "narrator should be extracted from description")
+    }
+
+    func testNarratorExploitQueryGenerated() {
+        let entry = ListeningHistoryEntry(
+            authors: [],
+            subjects: [],
+            narrators: ["Karen Savage"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+        let queries = RecommendationQueryBuilder.generateQueries(
+            profile: profile,
+            dateSeed: "2026-01-01",
+            languageClause: ""
+        )
+        let hasNarratorQuery = queries.contains { $0.iaQuery.contains("description:\"karen savage\"") }
+        XCTAssertTrue(hasNarratorQuery, "exploit query should include narrator-based description search")
+    }
+
+    // MARK: - Solo narration boost
+
+    func testSoloNarrationGetsDoubleScore() {
+        let entry = ListeningHistoryEntry(
+            authors: ["Jane Austen"],
+            subjects: ["Fiction"],
+            listenedSeconds: 7200
+        )
+        let profile = RecommendationPipeline.buildProfile(history: [entry])
+
+        let soloResult = candidate(
+            "solo1",
+            "Pride and Prejudice",
+            "Jane Austen",
+            description: "Read by Karen Savage",
+            subjects: ["Fiction"]
+        )
+        let collabResult = candidate(
+            "collab1",
+            "Pride and Prejudice (Dramatic)",
+            "Jane Austen",
+            description: "Read by Various Readers",
+            subjects: ["Fiction"]
+        )
+
+        let scored = RecommendationPipeline.scoreCandidates(
+            [soloResult, collabResult],
+            profile: profile
+        )
+
+        XCTAssertEqual(scored.count, 2)
+
+        let soloScore = scored.first { $0.result.identifier == "solo1" }?.score ?? 0
+        let collabScore = scored.first { $0.result.identifier == "collab1" }?.score ?? 0
+
+        XCTAssertGreaterThan(soloScore, collabScore,
+                         "solo narration should score higher than collaborative with same creator match")
+    }
+
+    func testSoloBoostConstantIsDefined() {
+        XCTAssertEqual(RecommendationConstants.soloNarrationBoost, 2.0, accuracy: 0.001,
+                       "solo narration boost must be 2.0")
+        XCTAssertGreaterThan(RecommendationConstants.soloNarrationBoost, 1.0,
+                             "solo boost must be greater than 1.0 to give advantage")
+    }
+
     // MARK: - Helpers
 
     private func candidate(
         _ identifier: String,
         _ title: String,
         _ creator: String,
+        description: String? = nil,
         downloads: Int? = nil,
         subjects: [String] = [],
         collections: [String] = ["librivoxaudio"]
@@ -387,7 +521,7 @@ final class RecommendationPipelineTests: XCTestCase {
             identifier: identifier,
             title: title,
             creators: [creator],
-            description: nil,
+            description: description,
             collections: collections,
             downloads: downloads,
             date: nil,

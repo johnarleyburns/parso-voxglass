@@ -44,6 +44,18 @@ public enum RecommendationQueryBuilder {
             }
         }
 
+        // NARRATOR EXPLOIT: same narrator the user enjoys
+        let exploitNarrators = profile.topNarrators
+        if !exploitNarrators.isEmpty, exploitAlloc > 0 {
+            let perNarrator = max(2, exploitAlloc / max(exploitNarrators.count, 1))
+            for narrator in exploitNarrators {
+                let escaped = escapeSolr(narrator)
+                let query = "(description:\"\(escaped)\")\(scopeClause)"
+                queries.append(CandidateQuery(iaQuery: query, anchorTerm: narrator,
+                                               noveltyClass: .exploit, requestedCount: perNarrator))
+            }
+        }
+
         // EXPLORE: subject co-occurrence
         let exploreSubjects = profile.topSubjects
         if !exploreSubjects.isEmpty, exploreAlloc > 0 {

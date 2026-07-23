@@ -13,6 +13,8 @@ public enum RecommendationConstants {
     public static let onboardingSeedWeight: Double = 1.75
     public static let recoSurfacedCap: Int = 500
     public static let downloadFloor: Int = 200
+    /// Solo narration titles get this multiplier applied to their affinity score.
+    public static let soloNarrationBoost: Double = 2.0
     /// Minimum fraction of a book that must be listened to before playback
     /// contributes to the taste profile (unless the book is finished).
     public static let meaningfulListenCompletion: Double = 0.20

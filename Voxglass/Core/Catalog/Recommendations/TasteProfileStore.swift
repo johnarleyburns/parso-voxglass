@@ -11,25 +11,29 @@ public struct ProfileBucket: Equatable {
     public let creatorTerms: [TasteTerm]
     public let subjectTerms: [TasteTerm]
     public let languageTerms: [TasteTerm]
+    public let narratorTerms: [TasteTerm]
 
     public init(
         bucket: String,
         creatorTerms: [TasteTerm],
         subjectTerms: [TasteTerm],
-        languageTerms: [TasteTerm] = []
+        languageTerms: [TasteTerm] = [],
+        narratorTerms: [TasteTerm] = []
     ) {
         self.bucket = bucket
         self.creatorTerms = creatorTerms
         self.subjectTerms = subjectTerms
         self.languageTerms = languageTerms
+        self.narratorTerms = narratorTerms
     }
 
     public var topCreators: [String] { creatorTerms.prefix(5).map(\.term) }
     public var topSubjects: [String] { subjectTerms.prefix(8).map(\.term) }
+    public var topNarrators: [String] { narratorTerms.prefix(5).map(\.term) }
 
-    public var isEmpty: Bool { creatorTerms.isEmpty && subjectTerms.isEmpty && languageTerms.isEmpty }
+    public var isEmpty: Bool { creatorTerms.isEmpty && subjectTerms.isEmpty && languageTerms.isEmpty && narratorTerms.isEmpty }
 
-    public func allTerms() -> [TasteTerm] { creatorTerms + subjectTerms + languageTerms }
+    public func allTerms() -> [TasteTerm] { creatorTerms + subjectTerms + languageTerms + narratorTerms }
 }
 
 public actor TasteProfileStore {
@@ -89,6 +93,18 @@ public actor TasteProfileStore {
         let trimmed = language.lowercased().trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         await upsertTerm(axis: "language", term: trimmed, increment: increment)
+    }
+
+    public func seedNarrator(_ narrator: String, increment: Double = 1.0) async {
+        let trimmed = narrator.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty,
+              trimmed.lowercased() != "unknown",
+              trimmed.lowercased() != "various",
+              trimmed.lowercased() != "anonymous",
+              trimmed.lowercased() != "unknown reader" else {
+            return
+        }
+        await upsertTerm(axis: "narrator", term: trimmed, increment: increment)
     }
 
     // MARK: - Live signal capture (thresholded, delta-based)
@@ -264,7 +280,7 @@ public actor TasteProfileStore {
             try await database.prepare()
             let rows = try await database.query("""
             SELECT axis, term, weight FROM taste_profile_terms
-            WHERE axis IN ('author', 'subject', 'language')
+            WHERE axis IN ('author', 'subject', 'language', 'narrator')
             ORDER BY weight DESC
             LIMIT 200
             """)
@@ -328,7 +344,7 @@ public actor TasteProfileStore {
             GROUP BY book_id
         ) pp ON pp.book_id = bt.book_id
         LEFT JOIN taste_signal_state tss ON tss.book_id = bt.book_id
-        WHERE bt.axis IN ('author', 'subject', 'language')
+        WHERE bt.axis IN ('author', 'subject', 'language', 'narrator')
           AND (
               COALESCE(le.event_count, 0) > 0
               OR COALESCE(pp.total_seconds, 0) > 0
@@ -337,13 +353,13 @@ public actor TasteProfileStore {
           )
         """)
 
-        var groups: [String: (listened: Double, signal: Double, favorite: Bool, authors: Set<String>, subjects: Set<String>, langs: Set<String>)] = [:]
+        var groups: [String: (listened: Double, signal: Double, favorite: Bool, authors: Set<String>, subjects: Set<String>, langs: Set<String>, narrators: Set<String>)] = [:]
 
         for row in rows {
             guard let bookID = row.string("book_id"),
                   let axis = row.string("axis"),
                   let term = row.string("term") else { continue }
-            var entry = groups[bookID] ?? (listened: 0, signal: 0, favorite: false, authors: [], subjects: [], langs: [])
+            var entry = groups[bookID] ?? (listened: 0, signal: 0, favorite: false, authors: [], subjects: [], langs: [], narrators: [])
             entry.listened = row.double("listened_seconds") ?? 0
             entry.signal = row.double("applied_increment") ?? 0
             entry.favorite = entry.favorite || (row.bool("is_favorite") ?? false)
@@ -352,6 +368,7 @@ public actor TasteProfileStore {
             case "author": entry.authors.insert(lowerTerm)
             case "subject": entry.subjects.insert(lowerTerm)
             case "language": entry.langs.insert(lowerTerm)
+            case "narrator": entry.narrators.insert(lowerTerm)
             default: continue
             }
             groups[bookID] = entry
@@ -362,6 +379,7 @@ public actor TasteProfileStore {
                 authors: Array(entry.authors),
                 subjects: Array(entry.subjects),
                 languages: Array(entry.langs),
+                narrators: Array(entry.narrators),
                 listenedSeconds: entry.listened,
                 capturedSignalIncrement: entry.signal,
                 isFavorite: entry.favorite

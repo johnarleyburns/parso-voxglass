@@ -4,6 +4,7 @@ public struct ListeningHistoryEntry: Equatable {
     public var authors: [String]
     public var subjects: [String]
     public var languages: [String]
+    public var narrators: [String]
     public var listenedSeconds: Double
     public var capturedSignalIncrement: Double
     public var isFavorite: Bool
@@ -12,6 +13,7 @@ public struct ListeningHistoryEntry: Equatable {
         authors: [String] = [],
         subjects: [String] = [],
         languages: [String] = [],
+        narrators: [String] = [],
         listenedSeconds: Double = 0,
         capturedSignalIncrement: Double = 0,
         isFavorite: Bool = false
@@ -19,6 +21,7 @@ public struct ListeningHistoryEntry: Equatable {
         self.authors = authors
         self.subjects = subjects
         self.languages = languages
+        self.narrators = narrators
         self.listenedSeconds = listenedSeconds
         self.capturedSignalIncrement = capturedSignalIncrement
         self.isFavorite = isFavorite
@@ -78,6 +81,11 @@ public enum RecommendationPipeline {
                 guard let normalized = Self.normalizedTerm(axis: "language", term: language) else { continue }
                 weights[TermKey(axis: "language", term: normalized), default: 0] += contribution
             }
+            let dedupedNarrators = Set(entry.narrators.map { $0.lowercased().trimmingCharacters(in: .whitespaces) })
+            for narrator in dedupedNarrators {
+                guard let normalized = Self.normalizedTerm(axis: "narrator", term: narrator) else { continue }
+                weights[TermKey(axis: "narrator", term: normalized), default: 0] += contribution
+            }
         }
 
         for seed in OnboardingTasteSeeds.seeds(for: onboardingSelectionIDs) {
@@ -99,6 +107,7 @@ public enum RecommendationPipeline {
         var authors: [TasteTerm] = []
         var subjects: [TasteTerm] = []
         var languages: [TasteTerm] = []
+        var narrators: [TasteTerm] = []
 
         let subjectWeights = rawTerms.filter { $0.axis == "subject" }
         let distinctSubjectCount = Set(subjectWeights.map(\.term)).count
@@ -123,6 +132,7 @@ public enum RecommendationPipeline {
             case "author": authors.append(term)
             case "subject": subjects.append(term)
             case "language": languages.append(term)
+            case "narrator": narrators.append(term)
             default: break
             }
         }
@@ -130,12 +140,14 @@ public enum RecommendationPipeline {
         authors.sort { $0.weight > $1.weight }
         subjects.sort { $0.weight > $1.weight }
         languages.sort { $0.weight > $1.weight }
+        narrators.sort { $0.weight > $1.weight }
 
         return ProfileBucket(
             bucket: "audiobooks",
             creatorTerms: authors,
             subjectTerms: subjects,
-            languageTerms: languages
+            languageTerms: languages,
+            narratorTerms: narrators
         )
     }
 
@@ -217,7 +229,12 @@ public enum RecommendationPipeline {
 
             let score = RecommendationConstants.wAffinity * affinity
                       + RecommendationConstants.wPop * pop
-            scored.append((result, score))
+
+            let adjustedScore = result.narrationKind == .solo
+                ? score * RecommendationConstants.soloNarrationBoost
+                : score
+
+            scored.append((result, adjustedScore))
         }
         return scored.sorted { $0.score > $1.score }
     }
@@ -233,6 +250,12 @@ public enum RecommendationPipeline {
         for lang in result.languages {
             let l = lang.lowercased().trimmingCharacters(in: .whitespaces)
             if !l.isEmpty { tokens.append(l) }
+        }
+        for narrator in result.narrators {
+            let n = narrator.lowercased().trimmingCharacters(in: .whitespaces)
+            if !n.isEmpty, n != "unknown", n != "various", n != "anonymous", n != "unknown reader" {
+                tokens.append(n)
+            }
         }
         for subject in result.subjects {
             let split = subject.contains(";")
@@ -353,6 +376,9 @@ public enum RecommendationPipeline {
                   !isCollectionLikeSubject(term) else { return nil }
             return term
         case "language":
+            return term
+        case "narrator":
+            guard term != "unknown", term != "various", term != "anonymous", term != "unknown reader" else { return nil }
             return term
         default:
             return nil
