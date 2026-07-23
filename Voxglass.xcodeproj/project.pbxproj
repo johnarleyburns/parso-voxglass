@@ -28,6 +28,7 @@
 		256E7C55F8DC198BDA19F19A /* railway_children_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9C9E2D966DCE8E13DEC2C112 /* railway_children_librivox.jpg */; };
 		268DF6E92D1B683B9DADBACB /* anne_of_green_gables_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A78625CC8B97CB25ACD9C251 /* anne_of_green_gables_librivox.jpg */; };
 		27807277577DFEC0FE17EAB4 /* odyssey_butler_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DC328A20FBE79B2C9ABFF3A1 /* odyssey_butler_librivox.jpg */; };
+		2807AFBF91D6322D059EE50C /* MiniPlayerPresentationRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3989C8BA86F0E54C896CBD /* MiniPlayerPresentationRouter.swift */; };
 		284A622C4B69B7ADE7400D31 /* count_monte_cristo_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FFE080C02F84A3F3C3C682AC /* count_monte_cristo_0711_librivox.jpg */; };
 		293A63007EB15E38F0842E29 /* BookArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2DBA8A509FFB154473301D /* BookArtworkView.swift */; };
 		2A4888B85BC0DAF92BCA1393 /* RoutePickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8EC154B42BBE347C24283E9 /* RoutePickerButton.swift */; };
@@ -326,6 +327,7 @@
 		E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassTheme.swift; sourceTree = "<group>"; };
 		E967226D4468771DC77D2A02 /* pride_prejudice_krs_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = pride_prejudice_krs_librivox.jpg; sourceTree = "<group>"; };
 		EB9DEA4B373912453B25F866 /* grimm_fairy_tales_1202_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = grimm_fairy_tales_1202_librivox.jpg; sourceTree = "<group>"; };
+		EC3989C8BA86F0E54C896CBD /* MiniPlayerPresentationRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerPresentationRouter.swift; sourceTree = "<group>"; };
 		ED05E4824CBB1D2D7D9CA849 /* uncle_toms_cabin_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = uncle_toms_cabin_librivox.jpg; sourceTree = "<group>"; };
 		F0CAA54FADE549D2158FAB93 /* secret_garden_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = secret_garden_librivox.jpg; sourceTree = "<group>"; };
 		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
@@ -513,6 +515,7 @@
 				0F48A6F704ECEB52D975C945 /* BookPageView.swift */,
 				CE26F9079A1C12E2BAD8E865 /* CatalogDiscoveryView.swift */,
 				40F8ACEE07BAD813F34C6DBE /* EQView.swift */,
+				EC3989C8BA86F0E54C896CBD /* MiniPlayerPresentationRouter.swift */,
 				63E0138B81F7532946A478D9 /* MiniPlayerView.swift */,
 				C8EC154B42BBE347C24283E9 /* RoutePickerButton.swift */,
 			);
@@ -943,6 +946,7 @@
 				F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */,
 				A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */,
 				4E85D43B3AC0834F16B06791 /* ListeningStatsView.swift in Sources */,
+				2807AFBF91D6322D059EE50C /* MiniPlayerPresentationRouter.swift in Sources */,
 				68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */,
 				CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */,
 				307531D63A9AD0EB05D94E43 /* PlaylistsView.swift in Sources */,

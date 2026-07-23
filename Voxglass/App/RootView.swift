@@ -6,7 +6,7 @@ struct RootView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @EnvironmentObject private var offlineDownloadManager: OfflineDownloadManager
     @State private var selectedTab: VoxglassTab = .launchDefault
-    @State private var showingNowPlaying = false
+    @StateObject private var miniPlayerRouter = MiniPlayerPresentationRouter()
     @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-VoxglassDisableAnimatedSplash")
     @AppStorage(AppPreferencesStore.Keys.hasCompletedSplash) private var hasCompletedSplash = false
     @AppStorage(AppPreferencesStore.Keys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
@@ -50,33 +50,34 @@ struct RootView: View {
                 switch selectedTab {
                 case .home:
                     ListenView(
-                        showingNowPlaying: $showingNowPlaying,
+                        showingNowPlaying: miniPlayerRouter.bindNowPlaying(),
                         selectLibrary: { selectedTab = .library }
                     )
                 case .library:
-                    LibraryView(showingNowPlaying: $showingNowPlaying)
+                    LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
                 case .browse:
-                    BrowseView(showingNowPlaying: $showingNowPlaying)
+                    BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
                 case .search:
-                    SearchView(showingNowPlaying: $showingNowPlaying)
+                    SearchView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
                 case .more:
-                    SettingsView(showingNowPlaying: $showingNowPlaying)
+                    SettingsView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
                 }
             }
 
             GlassDock(
                 selectedTab: $selectedTab,
-                showingNowPlaying: $showingNowPlaying
+                showingNowPlaying: miniPlayerRouter.bindNowPlaying()
             )
             .environmentObject(playback)
         }
-        .sheet(isPresented: $showingNowPlaying) {
-            BookPageView(book: nil, showingNowPlaying: $showingNowPlaying)
+        .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
+            BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
                 .environmentObject(playback)
                 .environmentObject(libraryStore)
                 .environmentObject(offlineDownloadManager)
                 .presentationDragIndicator(.visible)
         }
+        .environmentObject(miniPlayerRouter)
         .task {
             if libraryStore.books.isEmpty {
                 await libraryStore.refresh()

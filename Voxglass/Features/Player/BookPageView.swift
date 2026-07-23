@@ -5,9 +5,11 @@ struct BookPageView: View {
     @EnvironmentObject private var playback: PlaybackCoordinator
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
     @Environment(\.dismiss) private var dismiss
     var book: BookWithChapters?
     @Binding var showingNowPlaying: Bool
+    var presentationContext: BookPagePresentationContext = .pushedDetail
     @State private var scrubPosition: Double = 0
     @State private var isScrubbing = false
     @State private var showingEQ = false
@@ -79,6 +81,9 @@ struct BookPageView: View {
                     .toolbar(.hidden, for: .navigationBar)
                 }
                 .task(id: resolved.book.id) {
+                    if presentationContext == .pushedDetail {
+                        miniPlayerRouter.registerPushedBookPage(resolved.book.id)
+                    }
                     await loadGenre(for: resolved)
                 }
                 .task {
@@ -92,6 +97,14 @@ struct BookPageView: View {
                     )
                     if let session = playback.currentSession, session.book.id == resolved.book.id {
                         scrubPosition = session.position
+                    }
+                    if presentationContext == .pushedDetail {
+                        miniPlayerRouter.registerPushedBookPage(resolved.book.id)
+                    }
+                }
+                .onDisappear {
+                    if presentationContext == .pushedDetail {
+                        miniPlayerRouter.unregisterPushedBookPage(resolved.book.id)
                     }
                 }
                 .onChange(of: playback.currentSession?.position) { _, newValue in
@@ -461,6 +474,7 @@ struct BookPageView: View {
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
             .opacity(isActiveSession ? 1 : 0.42)
+            .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Previous chapter")
 
             Spacer(minLength: 0)
@@ -479,6 +493,7 @@ struct BookPageView: View {
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
             .opacity(isActiveSession ? 1 : 0.42)
+            .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Back \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15) seconds")
 
             Spacer(minLength: 0)
@@ -498,7 +513,6 @@ struct BookPageView: View {
                 Button {
                     Task {
                         await playback.play(resolved)
-                        showingNowPlaying = true
                     }
                 } label: {
                     Image(systemName: "play.fill")
@@ -532,6 +546,7 @@ struct BookPageView: View {
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
             .opacity(isActiveSession ? 1 : 0.42)
+            .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Forward \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30) seconds")
 
             Spacer(minLength: 0)
@@ -546,6 +561,7 @@ struct BookPageView: View {
                     .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
             }
             .opacity(isActiveSession ? 1 : 0.42)
+            .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Next chapter")
         }
         .frame(maxWidth: 360)
@@ -616,7 +632,6 @@ struct BookPageView: View {
                             }
                         } else {
                             await playback.play(resolved, chapter: chapter)
-                            showingNowPlaying = true
                         }
                     }
                 } label: {

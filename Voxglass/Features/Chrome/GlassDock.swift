@@ -3,14 +3,18 @@ import VoxglassCore
 
 struct GlassDock: View {
     @EnvironmentObject var playback: PlaybackCoordinator
+    @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
     @Binding var selectedTab: VoxglassTab
     @Binding var showingNowPlaying: Bool
 
     var body: some View {
         VStack(spacing: 9) {
-            if playback.currentSession != nil {
+            if let session = playback.currentSession,
+               miniPlayerRouter.shouldShowMiniPlayer(currentBookID: session.book.id) {
                 GlassMiniPlayer(showingNowPlaying: $showingNowPlaying)
-                    .onTapGesture { showingNowPlaying = true }
+                    .onTapGesture {
+                        miniPlayerRouter.presentNowPlayingFromMiniPlayer(currentBookID: session.book.id)
+                    }
             }
             GlassTabBar(selection: $selectedTab)
         }
