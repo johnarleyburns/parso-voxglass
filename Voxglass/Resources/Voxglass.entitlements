@@ -10,10 +10,5 @@
 	<array>
 		<string>iCloud.guru.parso.voxglass</string>
 	</array>
-	<key>com.apple.developer.icloud-services</key>
-	<array>
-		<string>CloudKit</string>
-		<string>KeyValueStore</string>
-	</array>
 </dict>
 </plist>

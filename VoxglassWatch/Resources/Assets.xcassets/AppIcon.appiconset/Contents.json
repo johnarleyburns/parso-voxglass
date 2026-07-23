@@ -1,96 +1,112 @@
 {
   "images" : [
     {
+      "filename" : "icon_44x44.png",
       "idiom" : "watch",
       "role" : "appLauncher",
       "size" : "44x44",
       "subtype" : "41mm"
     },
     {
+      "filename" : "icon_50x50.png",
       "idiom" : "watch",
       "role" : "appLauncher",
       "size" : "50x50",
       "subtype" : "44mm"
     },
     {
+      "filename" : "icon_49x49.png",
       "idiom" : "watch",
       "role" : "appLauncher",
       "size" : "49x49",
       "subtype" : "45mm"
     },
     {
+      "filename" : "icon_55x55.png",
       "idiom" : "watch",
       "role" : "appLauncher",
       "size" : "55x55",
       "subtype" : "49mm"
     },
     {
+      "filename" : "icon_94x94.png",
       "idiom" : "watch",
       "role" : "quickLook",
       "size" : "94x94",
       "subtype" : "41mm"
     },
     {
+      "filename" : "icon_102x102.png",
       "idiom" : "watch",
       "role" : "quickLook",
       "size" : "102x102",
       "subtype" : "44mm"
     },
     {
+      "filename" : "icon_108x108.png",
       "idiom" : "watch",
       "role" : "quickLook",
       "size" : "108x108",
       "subtype" : "45mm"
     },
     {
+      "filename" : "icon_117x117.png",
       "idiom" : "watch",
       "role" : "quickLook",
       "size" : "117x117",
       "subtype" : "49mm"
     },
     {
+      "filename" : "icon_33x33.png",
       "idiom" : "watch",
       "role" : "notificationCenter",
       "size" : "33x33",
       "subtype" : "41mm"
     },
     {
+      "filename" : "icon_36x36.png",
       "idiom" : "watch",
       "role" : "notificationCenter",
       "size" : "36x36",
       "subtype" : "44mm"
     },
     {
+      "filename" : "icon_36x36.png",
       "idiom" : "watch",
       "role" : "notificationCenter",
       "size" : "36x36",
       "subtype" : "45mm"
     },
     {
+      "filename" : "icon_40x40.png",
       "idiom" : "watch",
       "role" : "notificationCenter",
       "size" : "40x40",
       "subtype" : "49mm"
     },
     {
+      "filename" : "icon_87x87.png",
       "idiom" : "watch",
       "role" : "companionSettings",
       "size" : "87x87",
       "subtype" : "41mm"
     },
     {
+      "filename" : "icon_100x100.png",
       "idiom" : "watch",
       "role" : "companionSettings",
       "size" : "100x100",
       "subtype" : "44mm"
     },
     {
+      "filename" : "icon_100x100.png",
       "idiom" : "watch",
       "role" : "companionSettings",
       "size" : "100x100",
       "subtype" : "45mm"
     },
     {
+      "filename" : "icon_114x114.png",
       "idiom" : "watch",
       "role" : "companionSettings",
       "size" : "114x114",
