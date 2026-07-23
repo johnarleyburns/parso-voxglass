@@ -124,7 +124,7 @@ extension WatchConnectivitySession: WCSessionDelegate {
         switch action {
         case "transferStarted":
             if let requestID = message["requestID"] as? String,
-               let uuid = UUID(uuidString: requestID) {
+               UUID(uuidString: requestID) != nil {
                 // Transfer has begun
             }
         case "transferComplete":
@@ -134,7 +134,7 @@ extension WatchConnectivitySession: WCSessionDelegate {
             }
         case "transferFailed":
             if let requestID = message["requestID"] as? String,
-               let uuid = UUID(uuidString: requestID) {
+               UUID(uuidString: requestID) != nil {
                 // Mark as failed
             }
         default:
