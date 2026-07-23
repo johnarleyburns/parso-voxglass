@@ -103,6 +103,16 @@ targets:
       - sdk: libsqlite3.tbd
     info:
       path: VoxglassWatch/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Voxglass
+        CFBundleIconName: AppIcon
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        WKApplication: true
+        WKRunsIndependentlyOfCompanionApp: true
+        WKCompanionAppBundleIdentifier: guru.parso.voxglass
+        UIBackgroundModes:
+          - audio
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp
