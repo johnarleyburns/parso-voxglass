@@ -128,6 +128,7 @@ targets:
         INFOPLIST_KEY_WKApplication: true
         INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: true
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: guru.parso.voxglass
+        INFOPLIST_KEY_CFBundleIconName: AppIcon
       configs:
         Debug:
           CODE_SIGN_STYLE: Automatic
