@@ -136,6 +136,7 @@
 		CD5F9F386CBBD79CE6BB523B /* alice_wonderland_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CC9FC90F429E3A6FF0763EF3 /* alice_wonderland_0711_librivox.jpg */; };
 		CF5B708D0222E8900BB02D3D /* memoirs_holmes_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A863A5C2B74DE190C0ED26CB /* memoirs_holmes_0709_librivox.jpg */; };
 		CFFA9AD88269992EB457F35D /* gods_of_mars_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7CB5032639CF00041C20C04D /* gods_of_mars_librivox.jpg */; };
+		D09C07C43341A4B253DBE9D0 /* WatchConnectivitySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E94C4B641B17FFC70222845 /* WatchConnectivitySession.swift */; };
 		D1DB078A196600B28D4BD877 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC318EB68E5165403477C6D /* DiscoverView.swift */; };
 		D4505117C8D75D481294269A /* romeo_and_juliet_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2220F5BD5DBA4CE50C8E4459 /* romeo_and_juliet_librivox.jpg */; };
 		D4B0153F00DDC12926F54F68 /* anthem_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 532142CAFAA3305FE98E66A2 /* anthem_librivox.jpg */; };
@@ -313,6 +314,7 @@
 		7AEB9CCDB3E70DB0915C1CAA /* bequest_jg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bequest_jg_librivox.jpg; sourceTree = "<group>"; };
 		7CB5032639CF00041C20C04D /* gods_of_mars_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gods_of_mars_librivox.jpg; sourceTree = "<group>"; };
 		7D05BD54482E13A57D007AE1 /* little_princess_krs.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = little_princess_krs.jpg; sourceTree = "<group>"; };
+		7E94C4B641B17FFC70222845 /* WatchConnectivitySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivitySession.swift; sourceTree = "<group>"; };
 		7F3C6CF8BC84D0C8022933C5 /* WatchStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStorageManager.swift; sourceTree = "<group>"; };
 		7FFF648C1C68BCEA7325C2C9 /* fabulas_esopo_01_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fabulas_esopo_01_librivox.jpg; sourceTree = "<group>"; };
 		80C8886548A2D672DC6DD80A /* adventures_sherlock_holmes_rg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_sherlock_holmes_rg_librivox.jpg; sourceTree = "<group>"; };
@@ -444,6 +446,7 @@
 				04B66C3C492D866E4776DDF9 /* WatchAppServices.swift */,
 				6DEF7AEC3EC06D2401F4B097 /* WatchBookDetailView.swift */,
 				40B049FA17EAEFFE0E32458F /* WatchChaptersView.swift */,
+				7E94C4B641B17FFC70222845 /* WatchConnectivitySession.swift */,
 				2CE5E31FFA303A4831A66963 /* WatchFetchStatusView.swift */,
 				E472AB68F0B05BC2B6D85E9F /* WatchListeningView.swift */,
 				EF0934FA0F60D5D328F61320 /* WatchNowPlayingView.swift */,
@@ -1045,6 +1048,7 @@
 				8812DB70D6FB13C2A1B3C92A /* WatchAppServices.swift in Sources */,
 				F15464A41C029B457BC3D6D1 /* WatchBookDetailView.swift in Sources */,
 				BCDF05DD630417ED749B9E7A /* WatchChaptersView.swift in Sources */,
+				D09C07C43341A4B253DBE9D0 /* WatchConnectivitySession.swift in Sources */,
 				47673AABDD458924EBD693C3 /* WatchFetchStatusView.swift in Sources */,
 				4EEADBBCBB63CC7E6B7D250B /* WatchListeningView.swift in Sources */,
 				B00B93E335F230E935CAF426 /* WatchNowPlayingView.swift in Sources */,
