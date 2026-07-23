@@ -97,6 +97,7 @@ targets:
       - path: VoxglassWatch
         excludes:
           - Resources/Info.plist
+          - Resources/VoxglassWatch.entitlements
     dependencies:
       - package: VoxglassCore
       - sdk: AVFoundation.framework
@@ -118,6 +119,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp
         PRODUCT_NAME: VoxglassWatch
         INFOPLIST_FILE: VoxglassWatch/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: VoxglassWatch/Resources/VoxglassWatch.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "4"
         CFBundleIconName: AppIcon
