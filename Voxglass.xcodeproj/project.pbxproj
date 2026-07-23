@@ -1254,6 +1254,9 @@
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				INFOPLIST_FILE = VoxglassWatch/Resources/Info.plist;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = guru.parso.voxglass;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.watchkitapp;
 				PRODUCT_NAME = VoxglassWatch;
@@ -1261,9 +1264,6 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WKApplication = YES;
-				WKCompanionAppBundleIdentifier = guru.parso.voxglass;
-				WKRunsIndependentlyOfCompanionApp = YES;
 			};
 			name = Release;
 		};
@@ -1293,15 +1293,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				INFOPLIST_FILE = VoxglassWatch/Resources/Info.plist;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = guru.parso.voxglass;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.watchkitapp;
 				PRODUCT_NAME = VoxglassWatch;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WKApplication = YES;
-				WKCompanionAppBundleIdentifier = guru.parso.voxglass;
-				WKRunsIndependentlyOfCompanionApp = YES;
 			};
 			name = Debug;
 		};

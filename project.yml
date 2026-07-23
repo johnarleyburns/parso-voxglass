@@ -123,11 +123,11 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "4"
         CFBundleIconName: AppIcon
-        WKApplication: true
-        WKRunsIndependentlyOfCompanionApp: true
-        WKCompanionAppBundleIdentifier: guru.parso.voxglass
         MARKETING_VERSION: "$(MARKETING_VERSION)"
         CURRENT_PROJECT_VERSION: "$(CURRENT_PROJECT_VERSION)"
+        INFOPLIST_KEY_WKApplication: true
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: true
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: guru.parso.voxglass
       configs:
         Debug:
           CODE_SIGN_STYLE: Automatic
