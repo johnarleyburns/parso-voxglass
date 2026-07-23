@@ -246,11 +246,11 @@ check_narration_tactile_guards() {
   done
 
   # Solo Narration toggle must exist on every applicable surface
+  # ListenView intentionally omits the filter chip — solo titles get 2x scoring boost instead.
   local solo_toggle_surfaces=(
     "Voxglass/Features/Search/SearchView.swift"
     "Voxglass/Features/Discover/DiscoverView.swift"
     "Voxglass/Features/Player/CatalogDiscoveryView.swift"
-    "Voxglass/Features/Listen/ListenView.swift"
     "Voxglass/Features/Library/LibraryView.swift"
   )
   for file in "${solo_toggle_surfaces[@]}"; do
