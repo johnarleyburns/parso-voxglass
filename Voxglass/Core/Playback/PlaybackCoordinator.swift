@@ -375,8 +375,8 @@ public final class PlaybackCoordinator: ObservableObject {
     /// The chapter + offset a book should resume at. Pure result type so the
     /// resolver can be unit-tested with zero I/O (cf. `startDecision`).
     public struct ResumeTarget: Equatable {
-        let chapter: Chapter
-        let startTime: TimeInterval
+        public let chapter: Chapter
+        public let startTime: TimeInterval
     }
 
     /// Pure resume resolver. Given a book's chapters and the last saved position,
@@ -830,7 +830,7 @@ public final class PlaybackCoordinator: ObservableObject {
             let chapter = book.chapters[index]
             if let url = chapter.remoteURL,
                chapter.localURL == nil,
-               CachingResourceLoader.isRemoteCacheable(url) {
+               StreamCacheUtils.isRemoteCacheable(url) {
                 urls.append(url)
             }
             index += 1

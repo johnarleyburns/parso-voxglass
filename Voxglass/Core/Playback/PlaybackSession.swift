@@ -1,12 +1,28 @@
 import Foundation
 
-public struct PlaybackSession: Equatable {
+public struct PlaybackSession: Equatable, Sendable {
     public var book: Book
     public var chapters: [Chapter]
     public var chapter: Chapter
     public var position: TimeInterval
     public var duration: TimeInterval?
     public var isPlaying: Bool
+
+    public init(
+        book: Book,
+        chapters: [Chapter],
+        chapter: Chapter,
+        position: TimeInterval,
+        duration: TimeInterval? = nil,
+        isPlaying: Bool = false
+    ) {
+        self.book = book
+        self.chapters = chapters
+        self.chapter = chapter
+        self.position = position
+        self.duration = duration
+        self.isPlaying = isPlaying
+    }
 
     public var progress: Double {
         guard let duration, duration > 0 else { return 0 }

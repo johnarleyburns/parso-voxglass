@@ -29,7 +29,7 @@ public final class FolderWatchService: ObservableObject {
         self.repository = repository
         self.defaults = defaults
         reloadFolders()
-        #if canImport(UIKit)
+        #if canImport(UIKit) && !os(watchOS)
         // A foreground rescan keeps watched folders live; the notification is
         // iOS-only, so on the host (swift test) there is simply no rescan hook.
         foregroundObserver = NotificationCenter.default.addObserver(

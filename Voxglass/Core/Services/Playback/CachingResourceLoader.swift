@@ -1,3 +1,4 @@
+#if !os(watchOS)
 import Foundation
 import AVFoundation
 import CryptoKit
@@ -7,7 +8,7 @@ import UniformTypeIdentifiers
 /// from the network, writes it to a sparse on-disk cache, and serves cached bytes
 /// on subsequent plays without re-downloading.
 public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
-    public static let scheme = "voxglass-cache"
+    public static let scheme = StreamCacheUtils.scheme
 
     private let originalURL: URL
     private let cacheKey: String
@@ -20,7 +21,7 @@ public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegat
 
     public init(originalURL: URL) {
         self.originalURL = originalURL
-        self.cacheKey = CachingResourceLoader.key(for: originalURL)
+        self.cacheKey = StreamCacheUtils.key(for: originalURL)
         let cfg = URLSessionConfiguration.default
         cfg.timeoutIntervalForRequest = 30
         cfg.timeoutIntervalForResource = 3600
@@ -43,29 +44,13 @@ public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegat
         if let h = fileHandle { try? h.close(); fileHandle = nil }
     }
 
-    /// Stable cache key for `url`, derived from a SHA256 of its absolute string
-    /// (mirroring `ArtworkService.cacheKey`). This must be deterministic across
-    /// launches so key-based deletion (§6) and offline-completeness checks (§7)
-    /// are reliable — a per-process seeded `Hasher` is not. The trailing
-    /// extension is kept only as a debugging aid.
-    public static func key(for url: URL) -> String {
-        let digest = SHA256.hash(data: Data(url.absoluteString.utf8))
-        let hex = digest.map { String(format: "%02x", $0) }.joined()
-        let ext = (url.lastPathComponent as NSString).pathExtension.lowercased()
-        return ext.isEmpty ? hex : hex + "-" + ext
-    }
+    /// Stable cache key for `url`, derived from a SHA256 of its absolute string.
+    public static func key(for url: URL) -> String { StreamCacheUtils.key(for: url) }
 
     /// Returns true if this URL scheme should be routed through the cache.
-    public static func isRemoteCacheable(_ url: URL) -> Bool {
-        guard let scheme = url.scheme?.lowercased() else { return false }
-        return scheme == "http" || scheme == "https"
-    }
+    public static func isRemoteCacheable(_ url: URL) -> Bool { StreamCacheUtils.isRemoteCacheable(url) }
 
-    public static func cacheURL(for remote: URL) -> URL {
-        var comps = URLComponents(url: remote, resolvingAgainstBaseURL: false)!
-        comps.scheme = scheme
-        return comps.url ?? remote
-    }
+    public static func cacheURL(for remote: URL) -> URL { StreamCacheUtils.cacheURL(for: remote) }
 
     private var networkURL: URL {
         var comps = URLComponents(url: originalURL, resolvingAgainstBaseURL: false)!
@@ -259,3 +244,4 @@ public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegat
         try? handle.write(contentsOf: data)
     }
 }
+#endif

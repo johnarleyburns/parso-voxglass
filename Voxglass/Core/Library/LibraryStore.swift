@@ -160,10 +160,10 @@ public final class LibraryStore: ObservableObject {
         var keys: [String] = []
         for chapter in book.chapters {
             if let remoteURL = chapter.remoteURL {
-                keys.append(CachingResourceLoader.key(for: remoteURL))
+                keys.append(StreamCacheUtils.key(for: remoteURL))
             }
             if let opusURL = chapter.opusURL {
-                keys.append(CachingResourceLoader.key(for: opusURL))
+                keys.append(StreamCacheUtils.key(for: opusURL))
             }
         }
         if let coverURL = book.book.coverURL {

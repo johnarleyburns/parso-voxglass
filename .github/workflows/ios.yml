@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   compile:
-    name: Compile
+    name: Compile (iOS)
     runs-on: macos-latest
     timeout-minutes: 20
 
@@ -27,12 +27,20 @@ jobs:
           sudo xcode-select -s /Applications/$XCODE
           xcodebuild -version
 
-      - name: Build
+      - name: Build iOS
         run: |
           xcodebuild build \
             -project Voxglass.xcodeproj \
             -scheme Voxglass \
             -destination generic/platform=iOS \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build watchOS
+        run: |
+          xcodebuild build \
+            -project Voxglass.xcodeproj \
+            -scheme VoxglassWatch \
+            -destination 'generic/platform=watchOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
 
   logic-tests:
@@ -93,6 +101,7 @@ jobs:
       APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
       BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
       BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+      WATCH_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_PROVISIONING_PROFILE_BASE64 }}
       DEVELOPMENT_TEAM_ID: ${{ secrets.DEVELOPMENT_TEAM_ID }}
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
@@ -114,6 +123,7 @@ jobs:
             APP_STORE_CONNECT_API_KEY_P8_BASE64
             BUILD_CERTIFICATE_BASE64
             BUILD_PROVISION_PROFILE_BASE64
+            WATCH_PROVISIONING_PROFILE_BASE64
             DEVELOPMENT_TEAM_ID
             KEYCHAIN_PASSWORD
             P12_PASSWORD
@@ -211,11 +221,14 @@ jobs:
           set -euo pipefail
           certificate_path="$RUNNER_TEMP/build_certificate.p12"
           profile_path="$RUNNER_TEMP/build_profile.mobileprovision"
+          watch_profile_path="$RUNNER_TEMP/watch_profile.mobileprovision"
           profile_plist_path="$RUNNER_TEMP/build_profile.plist"
+          watch_profile_plist_path="$RUNNER_TEMP/watch_profile.plist"
           keychain_path="$RUNNER_TEMP/app-signing.keychain-db"
 
           printf '%s' "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
           printf '%s' "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$profile_path"
+          printf '%s' "$WATCH_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$watch_profile_path"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
           security set-keychain-settings -lut 21600 "$keychain_path"
@@ -224,21 +237,32 @@ jobs:
           security list-keychain -d user -s "$keychain_path"
 
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+
+          # Install iOS provisioning profile
           security cms -D -i "$profile_path" > "$profile_plist_path"
           profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist_path")"
           profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$profile_plist_path")"
           cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
           echo "profile_name=$profile_name" >> "$GITHUB_OUTPUT"
 
-          # The archive step relies on the app target's Release signing settings
-          # from project.yml (signing cannot be passed on the xcodebuild command
-          # line: global overrides leak onto the VoxglassCore SwiftPM target,
-          # which rejects provisioning profiles). Fail fast if the installed
-          # profile is not the one the project expects.
-          expected_profile="$(sed -n 's/.*PROVISIONING_PROFILE_SPECIFIER: "\(.*\)"/\1/p' project.yml)"
+          # Install watch provisioning profile
+          security cms -D -i "$watch_profile_path" > "$watch_profile_plist_path"
+          watch_profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$watch_profile_plist_path")"
+          watch_profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$watch_profile_plist_path")"
+          cp "$watch_profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$watch_profile_uuid.mobileprovision"
+          echo "watch_profile_name=$watch_profile_name" >> "$GITHUB_OUTPUT"
+
+          # Validate iOS profile name matches project.yml
+          expected_profile="$(sed -n 's/.*PROVISIONING_PROFILE_SPECIFIER: "\(.*\)"/\1/p' project.yml | head -1)"
           if [ "$profile_name" != "$expected_profile" ]; then
-            echo "::error title=Provisioning profile mismatch::Installed profile '$profile_name' does not match project.yml's PROVISIONING_PROFILE_SPECIFIER '$expected_profile'."
+            echo "::error title=Provisioning profile mismatch::Installed iOS profile '$profile_name' does not match project.yml's PROVISIONING_PROFILE_SPECIFIER '$expected_profile'."
             exit 1
+          fi
+
+          # Validate watch profile name
+          expected_watch_profile="Parso Voxglass Watch App Store"
+          if [ "$watch_profile_name" != "$expected_watch_profile" ]; then
+            echo "::warning title=Watch provisioning profile name::Installed watch profile '$watch_profile_name' does not match expected '$expected_watch_profile'."
           fi
 
       - name: Archive app
@@ -280,6 +304,8 @@ jobs:
             <dict>
               <key>${APP_BUNDLE_ID}</key>
               <string>${{ steps.signing.outputs.profile_name }}</string>
+              <key>guru.parso.voxglass.watchkitapp</key>
+              <string>${{ steps.signing.outputs.watch_profile_name }}</string>
             </dict>
             <key>signingCertificate</key>
             <string>Apple Distribution</string>

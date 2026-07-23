@@ -1,7 +1,10 @@
+#if !os(watchOS)
 import AudioToolbox
+#endif
 import AVFoundation
 import Foundation
 
+#if !os(watchOS)
 /// Applies a 10-band EQ to playback via one `MTAudioProcessingTap` per player
 /// item. One-tap-per-item (tracked by `EQTapRegistry`, keyed by object identity)
 /// is the fix for EQ silently dying on every gapless auto-advance: the preloaded
@@ -226,3 +229,4 @@ public final class EQAudioProcessor {
         playerItem.audioMix = audioMix
     }
 }
+#endif

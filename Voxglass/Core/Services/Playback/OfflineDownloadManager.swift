@@ -122,7 +122,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
             var completeFlags: [Bool] = []
             var fractions: [UUID: Double] = [:]
             for chapter in cacheable {
-                let key = CachingResourceLoader.key(for: chapter.url)
+                let key = StreamCacheUtils.key(for: chapter.url)
                 let complete = await cacheStore.isComplete(key)
                 completeFlags.append(complete)
                 fractions[chapter.chapter.id] = complete ? 1.0 : 0.0
@@ -158,7 +158,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     /// book in the library.
     public func removeOffline(book: BookWithChapters) async {
         await cancelTasks(forBookID: book.book.id)
-        let keys = cacheableChapters(of: book).map { CachingResourceLoader.key(for: $0.url) }
+        let keys = cacheableChapters(of: book).map { StreamCacheUtils.key(for: $0.url) }
         await cacheStore.unpin(keys)
         await cacheStore.remove(keys: keys)
         try? await repository.deleteDownloadRecords(forBookID: book.book.id)
@@ -188,7 +188,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         var toEnqueue: [(chapter: Chapter, url: URL, key: String)] = []
 
         for entry in cacheable {
-            let key = CachingResourceLoader.key(for: entry.url)
+            let key = StreamCacheUtils.key(for: entry.url)
             if await cacheStore.isComplete(key) {
                 await cacheStore.pin([key])
                 fractions[entry.chapter.id] = 1.0
@@ -313,7 +313,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private func cacheableChapters(of book: BookWithChapters) -> [CacheableChapter] {
         book.chapters.compactMap { chapter in
             guard let url = chapter.resolvedPlayableURL(),
-                  CachingResourceLoader.isRemoteCacheable(url) else { return nil }
+                  StreamCacheUtils.isRemoteCacheable(url) else { return nil }
             return CacheableChapter(chapter: chapter, url: url)
         }
     }

@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: guru.parso
   deploymentTarget:
     iOS: "17.0"
+    watchOS: "10.0"
   createIntermediateGroups: true
 packages:
   VoxglassCore:
@@ -29,6 +30,7 @@ targets:
         type: folder
     dependencies:
       - package: VoxglassCore
+      - target: VoxglassWatch
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
       - sdk: CarPlay.framework
@@ -88,6 +90,39 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass App Store"
+  VoxglassWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: VoxglassWatch
+        excludes:
+          - Resources/Info.plist
+    dependencies:
+      - package: VoxglassCore
+      - sdk: AVFoundation.framework
+      - sdk: libsqlite3.tbd
+    info:
+      path: VoxglassWatch/Resources/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp
+        PRODUCT_NAME: VoxglassWatch
+        INFOPLIST_FILE: VoxglassWatch/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "4"
+        CFBundleIconName: AppIcon
+        WKApplication: true
+        WKRunsIndependentlyOfCompanionApp: true
+        WKCompanionAppBundleIdentifier: guru.parso.voxglass
+        MARKETING_VERSION: "$(MARKETING_VERSION)"
+        CURRENT_PROJECT_VERSION: "$(CURRENT_PROJECT_VERSION)"
+      configs:
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass Watch App Store"
   VoxglassUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -123,3 +158,7 @@ schemes:
       targets:
         - VoxglassUITests
         - VoxglassCarPlaySmokeTests
+  VoxglassWatch:
+    build:
+      targets:
+        VoxglassWatch: all
