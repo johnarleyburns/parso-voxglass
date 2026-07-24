@@ -79,9 +79,6 @@ struct BookPageView: View {
                     .toolbar(.hidden, for: .navigationBar)
                 }
                 .task(id: resolved.book.id) {
-                    if presentationContext == .pushedDetail {
-                        miniPlayerRouter.registerPushedBookPage(resolved.book.id)
-                    }
                     await loadGenre(for: resolved)
                 }
                 .task {
@@ -94,10 +91,6 @@ struct BookPageView: View {
                         in: recentlyViewedRaw
                     )
                 }
-                .onDisappear {
-                    if presentationContext == .pushedDetail {
-                        miniPlayerRouter.unregisterPushedBookPage(resolved.book.id)
-                    }
                 }
                 .onChange(of: playback.bookmarkCount) { _, newValue in
                     bookmarkCount = newValue

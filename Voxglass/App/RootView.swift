@@ -46,22 +46,29 @@ struct RootView: View {
         ZStack(alignment: .bottom) {
             VoxglassBackground()
 
-            Group {
-                switch selectedTab {
-                case .home:
-                    ListenView(
-                        showingNowPlaying: miniPlayerRouter.bindNowPlaying(),
-                        selectLibrary: { selectedTab = .library }
-                    )
-                case .library:
-                    LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                case .browse:
-                    BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                case .search:
-                    SearchView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                case .more:
-                    SettingsView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                }
+            TabView(selection: $selectedTab) {
+                ListenView(
+                    showingNowPlaying: miniPlayerRouter.bindNowPlaying(),
+                    selectLibrary: { selectedTab = .library }
+                )
+                .tag(VoxglassTab.home)
+                .toolbar(.hidden, for: .tabBar)
+
+                LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                    .tag(VoxglassTab.library)
+                    .toolbar(.hidden, for: .tabBar)
+
+                BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                    .tag(VoxglassTab.browse)
+                    .toolbar(.hidden, for: .tabBar)
+
+                SearchView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                    .tag(VoxglassTab.search)
+                    .toolbar(.hidden, for: .tabBar)
+
+                SettingsView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                    .tag(VoxglassTab.more)
+                    .toolbar(.hidden, for: .tabBar)
             }
 
             GlassDock(

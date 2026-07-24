@@ -4,15 +4,15 @@ import XCTest
 
 final class MiniPlayerPresentationRoutingTests: XCTestCase {
 
-    func testMiniPlayerVisibleForDifferentVisibleBook() throws {
+    func testMiniPlayerVisibleForActiveSession() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
         XCTAssertTrue(scope.contains("guard let currentBookID"), "shouldShowMiniPlayer must guard against nil currentBookID")
-        XCTAssertTrue(scope.contains("!isNowPlayingPresented"), "shouldShowMiniPlayer must hide when sheet is presented")
-        XCTAssertTrue(scope.contains("visiblePushedBookID != currentBookID"), "shouldShowMiniPlayer must be true when visible book differs from current session")
+        // Simplified rule: show miniplayer when session exists and Now Playing not presented.
+        // Does not require lifecycle-based visiblePushedBookID.
     }
 
-    func testMiniPlayerHiddenForSameVisibleBook() throws {
+    func testMiniPlayerHiddenForNoSession() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
         XCTAssertTrue(scope.contains("return false"), "shouldShowMiniPlayer must return false early when conditions aren't met")
@@ -24,11 +24,11 @@ final class MiniPlayerPresentationRoutingTests: XCTestCase {
         XCTAssertTrue(scope.contains("!isNowPlayingPresented"), "shouldShowMiniPlayer must check isNowPlayingPresented")
     }
 
-    func testUnregisterDoesNotClearNewerVisibleBook() throws {
+    func testRouterHasNoLifecycleRegistration() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
-        let scope = sourceSlice(router, from: "func unregisterPushedBookPage", to: "func shouldShowMiniPlayer")
-        XCTAssertTrue(scope.contains("if visiblePushedBookID == id"), "unregister must only clear when IDs match")
-        XCTAssertTrue(scope.contains("visiblePushedBookID = nil"), "unregister must set visiblePushedBookID to nil on match")
+        XCTAssertFalse(router.contains("visiblePushedBookID"), "Router must not use lifecycle-based visiblePushedBookID")
+        XCTAssertFalse(router.contains("registerPushedBookPage"), "Router must not support lifecycle registration")
+        XCTAssertFalse(router.contains("unregisterPushedBookPage"), "Router must not support lifecycle unregistration")
     }
 
     func testBookPagePlayDoesNotPresentNowPlaying() throws {
@@ -80,8 +80,8 @@ final class MiniPlayerPresentationRoutingTests: XCTestCase {
     func testBookPageViewHasPresentationContext() throws {
         let detail = try source("Voxglass/Features/Player/BookPageView.swift")
         XCTAssertTrue(detail.contains("presentationContext: BookPagePresentationContext"))
-        XCTAssertTrue(detail.contains("registerPushedBookPage"))
-        XCTAssertTrue(detail.contains("unregisterPushedBookPage"))
+        // BookPageView no longer uses lifecycle registration for miniplayer visibility.
+        // Visibility is derived deterministically from session existence + Now Playing state.
     }
 
     func testBrowsingTransportControlsAreDisabled() throws {

@@ -8,7 +8,6 @@ enum BookPagePresentationContext {
 @MainActor
 final class MiniPlayerPresentationRouter: ObservableObject {
     @Published var isNowPlayingPresented = false
-    @Published private(set) var visiblePushedBookID: UUID?
 
     func bindNowPlaying() -> Binding<Bool> {
         Binding(
@@ -17,19 +16,11 @@ final class MiniPlayerPresentationRouter: ObservableObject {
         )
     }
 
-    func registerPushedBookPage(_ id: UUID) {
-        visiblePushedBookID = id
-    }
-
-    func unregisterPushedBookPage(_ id: UUID) {
-        if visiblePushedBookID == id {
-            visiblePushedBookID = nil
-        }
-    }
-
+    /// Show the miniplayer whenever a playback session exists and Now Playing
+    /// is not presented. Visibility is deterministic — no lifecycle callbacks.
     func shouldShowMiniPlayer(currentBookID: UUID?) -> Bool {
         guard let currentBookID, !isNowPlayingPresented else { return false }
-        return visiblePushedBookID != currentBookID
+        return true
     }
 
     func presentNowPlayingFromMiniPlayer(currentBookID: UUID?) {
