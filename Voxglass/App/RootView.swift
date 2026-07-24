@@ -3,7 +3,7 @@ import VoxglassCore
 
 struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var offlineDownloadManager: OfflineDownloadManager
     @State private var selectedTab: VoxglassTab = .launchDefault
     @StateObject private var miniPlayerRouter = MiniPlayerPresentationRouter()
@@ -68,11 +68,11 @@ struct RootView: View {
                 selectedTab: $selectedTab,
                 showingNowPlaying: miniPlayerRouter.bindNowPlaying()
             )
-            .environmentObject(playback)
+            .environment(playback)
         }
         .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
             BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
-                .environmentObject(playback)
+                .environment(playback)
                 .environmentObject(libraryStore)
                 .environmentObject(offlineDownloadManager)
                 .presentationDragIndicator(.visible)

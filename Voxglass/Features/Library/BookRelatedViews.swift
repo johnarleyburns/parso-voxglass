@@ -3,7 +3,7 @@ import VoxglassCore
 
 struct ChaptersView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     var book: BookWithChapters
     @Binding var showingNowPlaying: Bool
 

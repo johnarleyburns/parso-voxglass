@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct EQView: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @Environment(\.dismiss) private var dismiss
 
     @State private var gains: [Float] = Array(repeating: 0, count: 10)

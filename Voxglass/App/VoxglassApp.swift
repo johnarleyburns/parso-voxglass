@@ -12,7 +12,7 @@ struct VoxglassApp: App {
             RootView()
                 .environmentObject(services.libraryStore)
                 .environmentObject(services.catalogStore)
-                .environmentObject(services.playbackCoordinator)
+                .environment(services.playbackCoordinator)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
                 .environmentObject(services.cloudSync)

@@ -55,7 +55,7 @@ struct PlaylistsView: View {
 
 struct PlaylistDetailView: View {
     @EnvironmentObject private var playlistStore: PlaylistStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     let playlist: Playlist
     let repository: PlaylistRepository

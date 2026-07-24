@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct BookPageActionRow: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     let book: BookWithChapters

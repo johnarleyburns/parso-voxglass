@@ -325,7 +325,7 @@ private struct CacheSettingsCard: View {
 struct SourcesView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var archiveURL = ""
 
@@ -610,7 +610,7 @@ private struct SyncSettingsCard: View {
 }
 
 private struct EQSettingsRow: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @State private var showEQ = false
 
     var body: some View {
@@ -629,7 +629,7 @@ private struct EQSettingsRow: View {
         .accessibilityIdentifier("settings.eq")
         .sheet(isPresented: $showEQ) {
             NavigationStack {
-                EQView().environmentObject(playback)
+                EQView().environment(playback)
             }
             .presentationDragIndicator(.visible)
         }
@@ -683,7 +683,7 @@ private struct PrefetchDepthRow: View {
 }
 
 private struct SkipIntervalRow: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @AppStorage(AppPreferencesStore.Keys.skipForwardInterval) private var forward = 30
     @AppStorage(AppPreferencesStore.Keys.skipBackInterval) private var back = 15
 
@@ -768,7 +768,7 @@ private struct SkipSilenceRow: View {
 }
 
 private struct VolumeNormalizationRow: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @AppStorage(AppPreferencesStore.Keys.volumeNormalizationEnabled) private var volumeNormalizationEnabled = true
 
     var body: some View {

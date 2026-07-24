@@ -13,7 +13,7 @@ struct CatalogDiscoveryView: View {
     @Binding var showingNowPlaying: Bool
 
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
     @State private var importingIdentifier: String?

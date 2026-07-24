@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct MiniPlayerView: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
 
     var body: some View {

@@ -4,7 +4,7 @@ import VoxglassCore
 /// Lists bookmarks for the current book, grouped by chapter. Tap to jump,
 /// swipe to delete, tap note to edit.
 struct BookmarksView: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(\.dismiss) private var dismiss
 

@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct BookPageView: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
@@ -123,14 +123,14 @@ struct BookPageView: View {
         .sheet(isPresented: $showingEQ) {
             NavigationStack {
                 EQView()
-                    .environmentObject(playback)
+                    .environment(playback)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingBookmarks) {
             NavigationStack {
                 BookmarksView()
-                    .environmentObject(playback)
+                    .environment(playback)
                     .environmentObject(libraryStore)
             }
             .presentationDragIndicator(.visible)
@@ -143,7 +143,7 @@ struct BookPageView: View {
                 showRemoveConfirm: $showRemoveConfirm,
                 genre: genre
             )
-            .environmentObject(playback)
+            .environment(playback)
             .environmentObject(libraryStore)
             .environmentObject(offlineManager)
             .presentationDragIndicator(.visible)
@@ -579,7 +579,7 @@ struct BookPageView: View {
             showCellularPrompt: $showCellularPrompt,
             showRemoveOfflineConfirm: $showRemoveOfflineConfirm
         )
-        .environmentObject(playback)
+        .environment(playback)
         .environmentObject(libraryStore)
         .environmentObject(offlineManager)
         .foregroundStyle(Color.white.opacity(0.6))
@@ -758,7 +758,7 @@ struct BookPageView: View {
                 archiveQuery: query,
                 showingNowPlaying: $showingNowPlaying
             )
-            .environmentObject(playback)
+            .environment(playback)
             .environmentObject(libraryStore)
         } label: {
             HStack(spacing: 12) {

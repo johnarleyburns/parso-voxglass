@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct GlassDock: View {
-    @EnvironmentObject var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) var playback
     @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
     @Binding var selectedTab: VoxglassTab
     @Binding var showingNowPlaying: Bool
@@ -24,7 +24,7 @@ struct GlassDock: View {
 }
 
 struct GlassMiniPlayer: View {
-    @EnvironmentObject var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) var playback
     @Binding var showingNowPlaying: Bool
 
     var body: some View {

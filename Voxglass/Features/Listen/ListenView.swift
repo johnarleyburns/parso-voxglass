@@ -4,7 +4,7 @@ import VoxglassCore
 struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     var selectLibrary: () -> Void
 

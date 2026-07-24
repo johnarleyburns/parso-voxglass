@@ -2,7 +2,7 @@ import SwiftUI
 import VoxglassCore
 
 struct BookPageOverflowSheet: View {
-    @EnvironmentObject private var playback: PlaybackCoordinator
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     let book: BookWithChapters
@@ -57,7 +57,7 @@ struct BookPageOverflowSheet: View {
         .sheet(isPresented: $showingBookmarks) {
             NavigationStack {
                 BookmarksView()
-                    .environmentObject(playback)
+                    .environment(playback)
                     .environmentObject(libraryStore)
             }
             .presentationDragIndicator(.visible)
@@ -65,7 +65,7 @@ struct BookPageOverflowSheet: View {
         .sheet(isPresented: $showingEQ) {
             NavigationStack {
                 EQView()
-                    .environmentObject(playback)
+                    .environment(playback)
             }
             .presentationDragIndicator(.visible)
         }
@@ -135,7 +135,7 @@ struct BookPageOverflowSheet: View {
                             archiveQuery: BookPageView.authorQuery(author),
                             showingNowPlaying: $showingNowPlaying
                         )
-                        .environmentObject(playback)
+                        .environment(playback)
                         .environmentObject(libraryStore)
                     } label: {
                         overflowRow(icon: "person.fill", title: "More by \(author)")
@@ -148,7 +148,7 @@ struct BookPageOverflowSheet: View {
                             archiveQuery: BookPageView.narratorQuery(narrator),
                             showingNowPlaying: $showingNowPlaying
                         )
-                        .environmentObject(playback)
+                        .environment(playback)
                         .environmentObject(libraryStore)
                     } label: {
                         overflowRow(icon: "mic.fill", title: "More read by \(narrator)")
@@ -161,7 +161,7 @@ struct BookPageOverflowSheet: View {
                             archiveQuery: BookPageView.genreQuery(genre),
                             showingNowPlaying: $showingNowPlaying
                         )
-                        .environmentObject(playback)
+                        .environment(playback)
                         .environmentObject(libraryStore)
                     } label: {
                         overflowRow(icon: genre.systemImage, title: "More in \(genre.title)")
