@@ -90,6 +90,14 @@ struct BookPageView: View {
                         bookID: resolved.book.id,
                         in: recentlyViewedRaw
                     )
+                    if presentationContext == .pushedDetail {
+                        miniPlayerRouter.playerPushed()
+                    }
+                }
+                .onDisappear {
+                    if presentationContext == .pushedDetail {
+                        miniPlayerRouter.playerPopped()
+                    }
                 }
                 .onChange(of: playback.bookmarkCount) { _, newValue in
                     bookmarkCount = newValue

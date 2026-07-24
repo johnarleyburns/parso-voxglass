@@ -68,6 +68,10 @@ public final class PlaybackCoordinator {
     /// touches the engine); the first play/seek entry point loads the engine
     /// lazily at `session.position` via `ensureEngineLoaded()`.
     @ObservationIgnored private var isEngineLoaded = false
+    /// Guards against the 1 Hz progress loop overriding an explicit `isPlaying`
+    /// toggle before the engine has caught up. Set after `engine.play()` + `mutateSession`;
+    /// cleared on the next tick when the engine confirms play state.
+    @ObservationIgnored private var suppressNextIsPlayingSync = false
     /// De-duplicates concurrent lazy loads (e.g. a double-tapped play button):
     /// every caller awaits the same in-flight load instead of issuing a second.
     @ObservationIgnored private var engineLoadTask: Task<Bool, Never>?
@@ -640,6 +644,7 @@ public final class PlaybackCoordinator {
             guard await ensureEngineLoaded() else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
+            suppressNextIsPlayingSync = true
             playbackPhase = .playing
             startProgressLoop()
             updateNowPlayingInfo()
@@ -1281,15 +1286,20 @@ public final class PlaybackCoordinator {
         )
 
         if session.isPlaying != liveIsPlaying || durationChanged {
-            mutateSession {
-                $0.isPlaying = liveIsPlaying
+            if suppressNextIsPlayingSync && !liveIsPlaying {
+                suppressNextIsPlayingSync = false
+            } else {
+                mutateSession {
+                    $0.isPlaying = liveIsPlaying
 
-                if let engineDuration {
-                    $0.duration = engineDuration
+                    if let engineDuration {
+                        $0.duration = engineDuration
+                    }
                 }
-            }
 
-            playbackPhase = liveIsPlaying ? .playing : .paused
+                playbackPhase = liveIsPlaying ? .playing : .paused
+                suppressNextIsPlayingSync = false
+            }
         }
 
         saveCurrentSnapshot()
@@ -1454,6 +1464,7 @@ public final class PlaybackCoordinator {
             guard await ensureEngineLoaded() else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
+            suppressNextIsPlayingSync = true
             playbackPhase = .playing
             startProgressLoop()
             updateNowPlayingInfo()
@@ -1503,6 +1514,7 @@ public final class PlaybackCoordinator {
         isHandlingInterruption = false
         engine.play()
         mutateSession { $0.isPlaying = true }
+        suppressNextIsPlayingSync = true
         playbackPhase = .playing
         startProgressLoop()
         updateNowPlayingInfo()

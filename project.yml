@@ -161,6 +161,18 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass"
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGNING_ALLOWED: NO
+  VoxglassWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    sources:
+      - VoxglassWatchUITests
+    dependencies:
+      - target: VoxglassWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp.uitests
+        TEST_TARGET_NAME: VoxglassWatch
+        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
@@ -175,3 +187,7 @@ schemes:
     build:
       targets:
         VoxglassWatch: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - VoxglassWatchUITests
