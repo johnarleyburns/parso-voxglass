@@ -86,6 +86,8 @@ check_coordinator_callers() {
     resolveResume           # pure static resolver, called only from play(_:chapter:)
     snapshotWins            # pure static tie-break, called from reconcile/restore paths
     preferredPosition       # pure static merge, called from restore/resume paths
+    selectAndPlay           # new selection entry point; view call sites migrate to this
+    tickProgress            # internal (progress loop) + direct host-test calls
   )
 
   while IFS= read -r method_name; do
