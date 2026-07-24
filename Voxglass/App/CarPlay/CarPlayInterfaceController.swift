@@ -1,5 +1,6 @@
 import CarPlay
 import Combine
+import Observation
 import UIKit
 import VoxglassCore
 
@@ -16,6 +17,8 @@ final class CarPlayInterfaceController {
     private var cancellables: Set<AnyCancellable> = []
     private var tabBar: CPTabBarTemplate?
     private var tabTemplates: [CarPlayTabID: CPListTemplate] = [:]
+    private var coordinatorSignal: ObservationSubscription?
+    private let sessionIdentityPublisher = PassthroughSubject<Void, Never>()
 
     init(interfaceController: CPInterfaceController, services: AppServices) {
         self.interfaceController = interfaceController
@@ -34,6 +37,8 @@ final class CarPlayInterfaceController {
     }
 
     func stop() {
+        coordinatorSignal?.cancel()
+        coordinatorSignal = nil
         cancellables.removeAll()
         nowPlayingConfigurator = nil
         dispatcher = nil
@@ -159,15 +164,27 @@ final class CarPlayInterfaceController {
 
     private func subscribe() {
         let library = services.libraryStore
+        let coordinator = services.playbackCoordinator
+
+        // Track coordinator session identity via Observation (not Combine).
+        // The subscription fires when session book/chapter identity changes.
+        coordinatorSignal = ObservationSubscription(
+            track: {
+                _ = coordinator.currentSession?.book.id
+                _ = coordinator.currentSession?.chapter.id
+            },
+            onChange: { [weak self] in
+                self?.sessionIdentityPublisher.send()
+            }
+        )
+        // Perform initial refresh so a preexisting session is represented.
+        refreshTabs()
+
         let triggers: [AnyPublisher<Void, Never>] = [
             library.$books.map { _ in }.eraseToAnyPublisher(),
             library.$recentlyPlayed.map { _ in }.eraseToAnyPublisher(),
             library.$progressByBook.map { _ in }.eraseToAnyPublisher(),
-            services.playbackCoordinator.$currentSession
-                .map { ($0?.book.id, $0?.chapter.id, $0 != nil) }
-                .removeDuplicates { $0 == $1 }
-                .map { _ in }
-                .eraseToAnyPublisher(),
+            sessionIdentityPublisher.eraseToAnyPublisher(),
             services.offlineDownloadManager.$state.map { _ in }.eraseToAnyPublisher(),
             services.homeRecommendationStore.$recommendations.map { _ in }.eraseToAnyPublisher(),
             services.playlistStore.$playlists.map { _ in }.eraseToAnyPublisher()

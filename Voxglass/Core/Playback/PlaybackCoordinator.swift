@@ -23,6 +23,8 @@ public final class PlaybackCoordinator {
     /// Sleep timer state (P0-2), mirrored from `sleepTimer` so the UI updates.
     public private(set) var sleepMode: SleepTimer.Mode = .off
     public private(set) var sleepRemaining: TimeInterval?
+    /// Coarse minute-bucketed remaining sleep for CarPlay/coarse displays.
+    public private(set) var sleepDisplayMinute: Int?
 
     /// Called after a playback position is persisted for a taste-meaningful
     /// reason (periodic tick, pause, lifecycle events, chapter changes, and any
@@ -885,6 +887,7 @@ public final class PlaybackCoordinator {
         sleepTimer.arm(mode)
         sleepMode = mode
         sleepRemaining = sleepTimer.remaining
+        updateSleepDisplayMinute()
 
         switch mode {
         case .endOfChapter:
@@ -908,6 +911,7 @@ public final class PlaybackCoordinator {
                 guard let self else { return }
                 self.sleepTimer.tick()
                 self.sleepRemaining = self.sleepTimer.remaining
+                self.updateSleepDisplayMinute()
             }
         }
     }
@@ -920,8 +924,20 @@ public final class PlaybackCoordinator {
     private func handleSleepTimerFired() {
         sleepMode = .off
         sleepRemaining = nil
+        sleepDisplayMinute = nil
         stopSleepTask()
         Task { @MainActor in await fadeOutAndPause() }
+    }
+
+    /// Bucket the raw 2 Hz `sleepRemaining` into a coarse minute value so
+    /// CarPlay and other coarse display consumers don't invalidate at 2 Hz.
+    private func updateSleepDisplayMinute() {
+        let newMinute = sleepRemaining.map {
+            Int(ceil(max($0, 0) / 60))
+        }
+        if sleepDisplayMinute != newMinute {
+            sleepDisplayMinute = newMinute
+        }
     }
 
     /// Ramps volume to 0, pauses, then restores volume to 1.0 (or the next play

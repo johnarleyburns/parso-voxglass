@@ -1,18 +1,19 @@
 import CarPlay
-import Combine
+import Observation
 import UIKit
 import VoxglassCore
 
 /// Keeps `CPNowPlayingTemplate.shared` current: rate / sleep / bookmark custom
 /// buttons plus the built-in Up Next button wired to "Chapters"
 /// (docs/CARPLAY_DESIGN.md §5.2). Re-reads the pure
-/// `CarPlayNowPlayingModel.config(...)` on every coordinator change and
-/// re-applies the buttons.
+/// `CarPlayNowPlayingModel.config(...)` on every tracked coordinator change and
+/// re-applies the buttons. Uses Observation instead of Combine to avoid
+/// object-wide invalidation.
 @MainActor
 final class CarPlayNowPlayingConfigurator: NSObject {
     private let coordinator: PlaybackCoordinator
     private weak var dispatcher: CarPlayActionDispatcher?
-    private var cancellable: AnyCancellable?
+    private var subscription: ObservationSubscription?
     private var lastConfig: CarPlayNowPlayingConfig?
 
     init(coordinator: PlaybackCoordinator, dispatcher: CarPlayActionDispatcher) {
@@ -21,14 +22,27 @@ final class CarPlayNowPlayingConfigurator: NSObject {
         super.init()
         CPNowPlayingTemplate.shared.add(self)
         apply()
-        cancellable = coordinator.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+
+        subscription = ObservationSubscription(
+            track: { [weak self] in
+                guard let self, let coordinator = self?.coordinator else { return }
+                // Track only the properties the config actually depends on.
+                _ = coordinator.currentSession?.book.id
+                _ = coordinator.currentSession?.chapter.id
+                _ = coordinator.currentSession?.isPlaying
+                _ = coordinator.playbackRate
+                _ = coordinator.sleepMode
+                _ = coordinator.sleepDisplayMinute
+                _ = coordinator.bookmarkCount
+            },
+            onChange: { [weak self] in
                 self?.apply()
             }
+        )
     }
 
     deinit {
+        subscription?.cancel()
         MainActor.assumeIsolated {
             CPNowPlayingTemplate.shared.remove(self)
         }
