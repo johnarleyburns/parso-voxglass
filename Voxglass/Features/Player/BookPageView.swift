@@ -91,7 +91,6 @@ struct BookPageView: View {
                         in: recentlyViewedRaw
                     )
                 }
-                }
                 .onChange(of: playback.bookmarkCount) { _, newValue in
                     bookmarkCount = newValue
                 }
