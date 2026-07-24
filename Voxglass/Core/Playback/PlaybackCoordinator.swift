@@ -4,85 +4,91 @@ import Observation
 import SwiftUI
 
 @MainActor
-public final class PlaybackCoordinator: ObservableObject {
-    @Published public private(set) var currentSession: PlaybackSession?
-    @Published public var playbackError: String?
+@Observable
+public final class PlaybackCoordinator {
+    public private(set) var currentSession: PlaybackSession?
+    public var playbackError: String?
 
-    /// Selection-phase state. Under S1 it is @Published; S2 removes the wrapper.
-    @Published public private(set) var playbackPhase: PlaybackPhase = .idle
+    /// Selection-phase state. Tracked so the miniplayer can show preparing.
+    public private(set) var playbackPhase: PlaybackPhase = .idle
 
-    /// Current playback rate (P0-1). Published so the speed menu tracks it.
-    @Published public private(set) var playbackRate: Float = PlaybackRate.normal
+    /// Live chapter-relative position (1 Hz). Tracked so the scrubber updates.
+    public private(set) var playhead: TimeInterval = 0
+    /// Live duration for the current chapter. Tracked for scrubber math.
+    public private(set) var playheadDuration: TimeInterval?
+
+    /// Current playback rate (P0-1). Tracked so the speed menu reflects it.
+    public private(set) var playbackRate: Float = PlaybackRate.normal
 
     /// Sleep timer state (P0-2), mirrored from `sleepTimer` so the UI updates.
-    @Published public private(set) var sleepMode: SleepTimer.Mode = .off
-    @Published public private(set) var sleepRemaining: TimeInterval?
+    public private(set) var sleepMode: SleepTimer.Mode = .off
+    public private(set) var sleepRemaining: TimeInterval?
 
     /// Called after a playback position is persisted for a taste-meaningful
     /// reason (periodic tick, pause, lifecycle events, chapter changes, and any
     /// finished save — never a bare seek/skip). The recommendation layer uses
     /// the completion context to apply thresholded, delta-based profile updates.
-    public var onTasteSignal: ((PlaybackTasteSignal) -> Void)?
+    @ObservationIgnored public var onTasteSignal: ((PlaybackTasteSignal) -> Void)?
     /// Called when a bookmark is added, so the cloud sync layer can push it.
-    public var onBookmarkAdded: ((Bookmark) -> Void)?
+    @ObservationIgnored public var onBookmarkAdded: ((Bookmark) -> Void)?
 
-    public var bookmarkStore: BookmarkStore?
+    @ObservationIgnored public var bookmarkStore: BookmarkStore?
 
     /// Returns the count of live bookmarks for the current book, or nil when no
-    /// store is present. Published so the UI can update instantly after an add.
-    @Published public private(set) var bookmarkCount: Int?
+    /// store is present. Tracked so the UI can update instantly after an add.
+    public private(set) var bookmarkCount: Int?
 
     /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
     /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
 
     /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
     /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
-    public var listeningStatsStore: ListeningStatsStore?
-    private var listenedAccumulator: TimeInterval = 0
-    private var lastListenTick: Date?
+    @ObservationIgnored public var listeningStatsStore: ListeningStatsStore?
+    @ObservationIgnored private var listenedAccumulator: TimeInterval = 0
+    @ObservationIgnored private var lastListenTick: Date?
 
-    private let engine: AudioEngine
-    private let positionStore: PositionStore
-    private let snapshotStore: LastPlaybackSnapshotStore
-    private let rateStore: PlaybackRateStore
-    private let sleepTimer: SleepTimer
-    private var sleepTask: Task<Void, Never>?
+    @ObservationIgnored private let engine: AudioEngine
+    @ObservationIgnored private let positionStore: PositionStore
+    @ObservationIgnored private let snapshotStore: LastPlaybackSnapshotStore
+    @ObservationIgnored private let rateStore: PlaybackRateStore
+    @ObservationIgnored private let sleepTimer: SleepTimer
+    @ObservationIgnored private var sleepTask: Task<Void, Never>?
     /// Duration of the sleep-timer fade-out; small in tests.
-    public var fadeOutDuration: TimeInterval = 5
-    private let eqSettings = EQSettingsStore()
-    public let eqPresets = EQPresetStore()
-    private var progressTask: Task<Void, Never>?
-    private var lastPeriodicSave = Date.distantPast
-    private var isHandlingInterruption = false
+    @ObservationIgnored public var fadeOutDuration: TimeInterval = 5
+    @ObservationIgnored private let eqSettings = EQSettingsStore()
+    @ObservationIgnored public let eqPresets = EQPresetStore()
+    @ObservationIgnored private var progressTask: Task<Void, Never>?
+    @ObservationIgnored private var lastPeriodicSave = Date.distantPast
+    @ObservationIgnored private var isHandlingInterruption = false
 
     /// Whether the engine currently has the presented session's chapter loaded.
     /// Launch restore is presentation-only (`restorePresentedSession` never
     /// touches the engine); the first play/seek entry point loads the engine
     /// lazily at `session.position` via `ensureEngineLoaded()`.
-    private var isEngineLoaded = false
+    @ObservationIgnored private var isEngineLoaded = false
     /// De-duplicates concurrent lazy loads (e.g. a double-tapped play button):
     /// every caller awaits the same in-flight load instead of issuing a second.
-    private var engineLoadTask: Task<Bool, Never>?
+    @ObservationIgnored private var engineLoadTask: Task<Bool, Never>?
 
     /// Cancellation token for the active selection so stale requests cannot
-    /// overwrite state. Under S2 these become `@ObservationIgnored`.
-    private var selectionTask: Task<Void, Never>?
-    private var activeSelectionID: UUID?
+    /// overwrite state.
+    @ObservationIgnored private var selectionTask: Task<Void, Never>?
+    @ObservationIgnored private var activeSelectionID: UUID?
 
-    private var silenceBoosted = false
-    private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
+    @ObservationIgnored private var silenceBoosted = false
+    @ObservationIgnored private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
 
     /// Tracks which book's artwork is currently published, so the cover is fetched
     /// once per session load — never per 1s tick — keyed by book id. The concrete
     /// lock-screen artwork lives in the platform `bridge`.
-    private var currentArtworkBookID: UUID?
+    @ObservationIgnored private var currentArtworkBookID: UUID?
     /// Fetches cover art as raw image bytes; injectable so tests can count fetches
     /// without network. The app injects a provider backed by `ArtworkService`.
-    public var artworkProvider: (@MainActor (URL) async -> Data?)?
+    @ObservationIgnored public var artworkProvider: (@MainActor (URL) async -> Data?)?
 
     /// The platform boundary (Now Playing, remote commands, artwork, background
     /// tasks). Injected by the app; unit tests use `NoopPlaybackBridge`.
-    private let bridge: PlaybackPlatformBridge
+    @ObservationIgnored private let bridge: PlaybackPlatformBridge
 
     public init(
         engine: AudioEngine,
@@ -369,12 +375,6 @@ public final class PlaybackCoordinator: ObservableObject {
             isEngineLoaded = false
         }
     }
-
-    /// While the coordinator is still `ObservableObject`, `playhead` and
-    /// `playheadDuration` are internal temporary fields. Under S2 they become
-    /// tracked `@Observable` properties.
-    var playhead: TimeInterval = 0
-    var playheadDuration: TimeInterval?
 
     /// Replays every UserDefaults snapshot into SQLite (launch reconcile). LWW on
     /// `updatedAt`, with the durable-store tie-break: for the same (book, chapter)
@@ -666,24 +666,42 @@ public final class PlaybackCoordinator: ObservableObject {
     }
 
     public func seek(to position: TimeInterval) async {
-        guard currentSession != nil else { return }
+        guard let session = currentSession else { return }
         resetSilenceBoost()
+
+        let duration =
+            validTime(playheadDuration) ??
+            validTime(engine.duration) ??
+            validTime(session.duration)
+
+        let clamped = PlaybackMath.clampedPosition(
+            validTime(position) ?? 0,
+            duration: duration
+        )
+
+        // Publish optimistic playhead before the async engine seek.
+        playhead = clamped
+        playheadDuration = duration
+
         if isEngineLoaded {
-            await engine.seek(to: position)
+            await engine.seek(to: clamped)
         }
         // While unloaded, mutating the session is enough: the lazy engine load
         // starts from `session.position`, so the new offset is picked up there.
         mutateSession {
-            $0.position = PlaybackMath.clampedPosition(position, duration: $0.duration)
+            $0.position = clamped
             $0.duration = engine.duration ?? $0.duration
         }
         await persistCurrentPosition(reason: .seek)
-        updateNowPlayingInfo()
+        updateNowPlayingInfoIfNeeded(force: true)
     }
 
     public func skip(by delta: TimeInterval) async {
-        guard let currentSession else { return }
-        await seek(to: currentSession.position + delta)
+        guard let session = currentSession else { return }
+        let base: TimeInterval = isEngineLoaded
+            ? (validTime(engine.currentTime) ?? session.position)
+            : session.position
+        await seek(to: base + delta)
     }
 
     public func skipToNextChapter() async {
@@ -1217,26 +1235,73 @@ public final class PlaybackCoordinator: ObservableObject {
         }
     }
 
-    private func tickProgress() async {
-        guard currentSession != nil else { return }
+    func tickProgress() async {
+        guard let session = currentSession else { return }
+
         accumulateListening()
-        mutateSession {
-            $0.position = engine.currentTime
-            $0.duration = engine.duration ?? $0.duration
-            $0.isPlaying = engine.isPlaying
+
+        let livePosition =
+            validTime(engine.currentTime) ??
+            validTime(session.position) ??
+            0
+
+        let engineDuration = validTime(engine.duration)
+        let liveDuration =
+            engineDuration ??
+            validTime(session.duration)
+
+        if playhead != livePosition {
+            playhead = livePosition
         }
-        // Reconcile phase from engine state (handles gapless auto-advance, etc.)
-        if engine.isPlaying, playbackPhase != .playing {
-            playbackPhase = .playing
-        } else if !engine.isPlaying, playbackPhase == .playing {
-            playbackPhase = .paused
+
+        if playheadDuration != liveDuration {
+            playheadDuration = liveDuration
         }
+
+        let liveIsPlaying = engine.isPlaying
+        let durationChanged = materiallyDifferent(
+            validTime(session.duration),
+            engineDuration
+        )
+
+        if session.isPlaying != liveIsPlaying || durationChanged {
+            mutateSession {
+                $0.isPlaying = liveIsPlaying
+
+                if let engineDuration {
+                    $0.duration = engineDuration
+                }
+            }
+
+            playbackPhase = liveIsPlaying ? .playing : .paused
+        }
+
         saveCurrentSnapshot()
 
-        if engine.isPlaying, Date().timeIntervalSince(lastPeriodicSave) >= 5 {
+        if engine.isPlaying,
+           Date().timeIntervalSince(lastPeriodicSave) >= 5 {
             await persistCurrentPosition(reason: .periodic)
         }
-        updateNowPlayingInfo()
+
+        updateNowPlayingInfoIfNeeded()
+    }
+
+    // MARK: - Duration comparison
+
+    /// Avoids exact floating-point comparison for duration changes.
+    private func materiallyDifferent(
+        _ lhs: TimeInterval?,
+        _ rhs: TimeInterval?,
+        tolerance: TimeInterval = 0.25
+    ) -> Bool {
+        switch (lhs, rhs) {
+        case let (lhs?, rhs?):
+            return abs(lhs - rhs) > tolerance
+        case (nil, nil):
+            return false
+        default:
+            return true
+        }
     }
 
     private func accumulateListening() {
@@ -1447,6 +1512,52 @@ public final class PlaybackCoordinator: ObservableObject {
             duration: engine.duration ?? session.duration,
             rate: engine.rate,
             isPlaying: isEngineLoaded ? engine.isPlaying : false
+        ))
+    }
+
+    /// Tick-side variant: avoids rebuilding when identity, rate, and rate-based
+    /// state haven't changed. The system extrapolates elapsed time from position
+    /// plus playback rate for display.
+    @ObservationIgnored private var lastNowPlayingBookID: UUID?
+    @ObservationIgnored private var lastNowPlayingChapterID: UUID?
+    @ObservationIgnored private var lastNowPlayingIsPlaying: Bool?
+    @ObservationIgnored private var lastNowPlayingRate: Float?
+
+    private func updateNowPlayingInfoIfNeeded(force: Bool = false) {
+        guard let session = currentSession else {
+            bridge.updateNowPlaying(nil)
+            lastNowPlayingBookID = nil
+            lastNowPlayingChapterID = nil
+            lastNowPlayingIsPlaying = nil
+            lastNowPlayingRate = nil
+            return
+        }
+
+        let bookID = session.book.id
+        let chapterID = session.chapter.id
+        let isPlaying = isEngineLoaded && engine.isPlaying
+        let rate = engine.rate
+
+        guard force ||
+              lastNowPlayingBookID != bookID ||
+              lastNowPlayingChapterID != chapterID ||
+              lastNowPlayingIsPlaying != isPlaying ||
+              lastNowPlayingRate != rate else {
+            // Identity, playback state, and rate unchanged — system extrapolates.
+            return
+        }
+
+        lastNowPlayingBookID = bookID
+        lastNowPlayingChapterID = chapterID
+        lastNowPlayingIsPlaying = isPlaying
+        lastNowPlayingRate = rate
+
+        bridge.updateNowPlaying(Self.nowPlayingInfo(
+            session: session,
+            currentTime: isEngineLoaded ? engine.currentTime : session.position,
+            duration: engine.duration ?? session.duration,
+            rate: engine.rate,
+            isPlaying: isPlaying
         ))
     }
 
