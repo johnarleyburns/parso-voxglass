@@ -1,0 +1,53 @@
+/* Voxglass mockup kit — shared reference copy.
+   Each mockup HTML file embeds its own copy of this so the files stay
+   self-contained and openable straight from disk. Edit here first, then
+   sync into the <style> blocks. */
+
+:root {
+  --bgA: #0b0f12;
+  --bgB: #171d20;
+  --ink: #f7f0e6;
+  --ink2: #cfc4b6;
+  --muted: #b9afa4;
+  --faint: rgba(255, 255, 255, .09);
+  --line: rgba(255, 255, 255, .13);
+  --panel: rgba(30, 36, 39, .62);
+  --gold: #d8ad67;
+  --gold2: #f0ce8a;
+  --danger: #e2705f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  background: radial-gradient(circle at 18% 0%, #283034 0%, #020406 44%, #000 100%);
+  color: var(--ink);
+}
+
+.board { padding: 34px 26px 64px; max-width: 1900px; margin: 0 auto; }
+.board h1 { font-size: 26px; font-weight: 850; letter-spacing: -.03em; margin: 0 0 6px; }
+.board > p.lede { color: var(--muted); font-size: 14px; max-width: 760px; margin: 0 0 26px; line-height: 1.5; }
+.screens { display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-start; }
+.stage { display: grid; gap: 10px; justify-items: center; }
+.stage .label { font-weight: 750; color: #f4e2bf; font-size: 14px; text-align: center; }
+.stage .note { color: var(--muted); font-size: 11.5px; max-width: 390px; text-align: center; line-height: 1.45; }
+
+.phone {
+  position: relative; width: 390px; height: 844px; border-radius: 48px; overflow: hidden;
+  background: linear-gradient(155deg, var(--bgA), var(--bgB));
+  border: 10px solid #090b0d;
+  box-shadow: 0 26px 80px rgba(0, 0, 0, .52), inset 0 1px 0 rgba(255, 255, 255, .24);
+}
+.phone:before {
+  content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+  width: 112px; height: 34px; border-radius: 30px; background: #050505; z-index: 20;
+}
+.status { height: 54px; padding: 17px 25px 0; display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 800; }
+.screen { height: calc(100% - 54px); padding: 8px 20px 20px; overflow: hidden; position: relative; }
+
+.glass { background: var(--panel); border: 1px solid var(--line); box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.14); backdrop-filter: blur(18px); }
+.muted { color: var(--muted); }

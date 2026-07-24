@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voxglass Changes — Mockups</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif; background: #0A0B0D; color: #F2F4F6; padding: 24px; }
+  h1 { font-size: 24px; margin-bottom: 24px; color: #E3A44B; }
+  h2 { font-size: 18px; margin: 28px 0 12px; color: #E3A44B; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+  h3 { font-size: 14px; margin: 16px 0 8px; color: rgba(255,255,255,0.6); }
+  .mockup-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .mockup { border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); background: #101216; width: 320px; }
+  .mockup.wide { width: 500px; }
+  .mockup-header { padding: 10px 14px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; }
+  .mockup-body { padding: 18px; }
+  .phone { width: 320px; }
+  .phone-screen { background: #101216; border-radius: 24px; border: 2px solid rgba(255,255,255,0.1); overflow: hidden; min-height: 500px; position: relative; padding-bottom: 40px; }
+
+  /* Splash screen */
+  .splash-bg { position: relative; width: 100%; height: 200px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .splash-overlay-old { background: linear-gradient(180deg, rgba(0,0,0,0.42), rgba(0,0,0,0.74)); position: absolute; inset: 0; }
+  .splash-overlay-new { background: rgba(0,0,0,0.45); position: absolute; inset: 0; }
+  .tile-old { width: 100px; height: 100px; background: linear-gradient(180deg, #12141A, #0A0B0D); border-radius: 16px; border: 1.5px solid rgba(227,164,75,0.32); display: flex; flex-direction: column; justify-content: center; align-items: center; color: #F2F4F6; position: relative; z-index: 2; box-shadow: 0 12px 24px rgba(0,0,0,0.45); }
+  .tile-old::before { content: ''; position: absolute; top: 0; left: 20%; width: 60px; height: 60px; background: radial-gradient(circle, rgba(227,164,75,0.3), transparent); border-radius: 50%; }
+  .tile-new { width: 55px; height: 60px; background: rgba(0,0,0,0.32); border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.82); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; position: relative; z-index: 2; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }
+  .tile-sym-old { font-size: 36px; font-weight: 700; }
+  .tile-sym-new { font-size: 21px; font-weight: 700; }
+  .tile-num { font-size: 10px; font-weight: 600; opacity: 0.8; }
+  .tile-name { font-size: 8px; font-weight: 500; margin-top: 2px; }
+  .tile-weight { font-size: 7px; opacity: 0.6; }
+
+  /* Search bar */
+  .search-bar { background: rgba(255,255,255,0.08); border-radius: 20px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .search-bar .icon { opacity: 0.5; }
+
+  /* Segment control */
+  .segment { display: flex; gap: 4px; padding: 3px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+  .segment-item { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: default; }
+  .segment-item.active { background: #E3A44B; color: #1A1D22; }
+  .segment-item:not(.active) { color: rgba(255,255,255,0.5); }
+
+  /* Book row */
+  .book-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+  .book-row + .book-row { border-top: 1px solid rgba(255,255,255,0.06); }
+  .book-art { width: 36px; height: 48px; border-radius: 6px; background: linear-gradient(135deg, #2a2a35, #1a1a25); flex-shrink: 0; }
+  .book-info { flex: 1; min-width: 0; }
+  .book-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .book-sub { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .book-meta { font-size: 10px; color: #E3A44B; }
+
+  /* Now Playing mini */
+  .now-playing { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; text-align: center; }
+  .np-art { width: 120px; height: 120px; border-radius: 12px; background: linear-gradient(135deg, #3a3a45, #1a1a25); margin: 0 auto 10px; }
+  .np-title { font-size: 15px; font-weight: 700; }
+  .np-author { font-size: 12px; color: #E3A44B; margin-top: 4px; }
+  .np-progress { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 12px; }
+  .np-progress-fill { width: 35%; height: 100%; background: white; border-radius: 2px; }
+  .np-controls { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 10px; }
+  .np-btn { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .np-btn.play { width: 40px; height: 40px; background: white; color: #1A1D22; }
+
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .badge-removed { background: rgba(255,70,70,0.2); color: #ff5c5c; }
+  .badge-added { background: rgba(70,255,70,0.2); color: #5cff5c; }
+  .badge-changed { background: rgba(227,164,75,0.2); color: #E3A44B; }
+
+  .arrow { color: #E3A44B; font-weight: 700; margin: 0 6px; }
+  .diff { font-size: 11px; margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+  .diff-line { margin: 3px 0; }
+  .code { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; background: rgba(255,255,255,0.05); padding: 2px 5px; border-radius: 3px; }
+  p.desc { font-size: 12px; color: rgba(255,255,255,0.55); margin: 6px 0 12px; line-height: 1.5; }
+  .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.4); }
+</style>
+</head>
+<body>
+
+<h1>Voxglass — Planned Changes</h1>
+
+<!-- ============================================================ -->
+<h2>1. Delete "Book View" &mdash; Direct to Now Playing</h2>
+<p class="desc">
+  Currently: tapping a catalog result navigates to a <code>CatalogBookDetailView</code> ("Book" title, Play button, Summary, Discover More).
+  <br><strong>After:</strong> tapping a result immediately imports + plays, showing the Now Playing sheet.
+  <br>Affected: Explore tab, Search tab, CatalogDiscoveryView.
+</p>
+
+<div class="mockup-row">
+  <!-- BEFORE: Book View -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <span>BEFORE: CatalogBookDetailView</span>
+      <span class="badge badge-removed">REMOVED</span>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:12px;opacity:0.5;margin-bottom:8px;">← Search &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span style="font-weight:600;color:white;">Book</span></div>
+      <div style="display:flex; gap:12px; margin-bottom:10px;">
+        <div style="width:90px;height:110px;background:linear-gradient(135deg,#3a3a45,#1a1a25);border-radius:10px;flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;line-height:1.2;">Pride and Prejudice</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;">Jane Austen</div>
+          <div style="font-size:10px;color:#E3A44B;margin-top:2px;">Read by Karen Savage</div>
+        </div>
+      </div>
+      <div style="background:linear-gradient(180deg,#EEB35B,#CF8F34);border-radius:22px;padding:10px;text-align:center;font-size:13px;font-weight:600;color:#221503;">▶ Play</div>
+      <div style="margin-top:10px;font-size:11px;opacity:0.6;">Summary: A classic novel of manners...</div>
+      <div style="margin-top:8px;font-size:11px;opacity:0.5;">Discover More →</div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div style="display:flex;align-items:center;font-size:32px;color:#E3A44B;">→</div>
+
+  <!-- AFTER: Now Playing -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <span>AFTER: Now Playing</span>
+      <span class="badge badge-added">NEW FLOW</span>
+    </div>
+    <div class="mockup-body">
+      <div class="now-playing">
+        <div class="np-art"></div>
+        <div class="np-title">Pride and Prejudice</div>
+        <div class="np-author">Jane Austen</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;">Read by Karen Savage</div>
+        <div class="np-progress"><div class="np-progress-fill"></div></div>
+        <div class="np-controls">
+          <div class="np-btn">⏮</div>
+          <div class="np-btn">⏪</div>
+          <div class="np-btn play">▶</div>
+          <div class="np-btn">⏩</div>
+          <div class="np-btn">⏭</div>
+        </div>
+      </div>
+      <div class="diff" style="margin-top:12px;">
+        <div class="diff-line"><span class="badge badge-removed">REMOVED</span> <code class="code">CatalogBookDetailView</code> (~200 lines)</div>
+        <div class="diff-line"><span class="badge badge-changed">CHANGED</span> NavigationLink → Button that imports+plays</div>
+        <div class="diff-line"><span class="badge badge-removed">REMOVED</span> Intermediate "Book" screen with summary</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Splash Screen &mdash; White-contrast smaller overlay</h2>
+<p class="desc">
+  Match the workout app's style: uniform black 45% overlay, smaller white-bordered tile, white text, no brass glow.
+</p>
+
+<div class="mockup-row">
+  <!-- BEFORE -->
+  <div class="mockup phone">
+    <div class="mockup-header">
+      <span>BEFORE: AnimatedSplashView</span>
+      <span class="badge badge-changed">CHANGED</span>
+    </div>
+    <div class="splash-bg" style="background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 320 200%22><rect fill=%22%2312151a%22 width=%22320%22 height=%22200%22/></svg>');">
+      <div class="splash-overlay-old"></div>
+      <div class="tile-old" style="transform:scale(0.7);">
+        <span class="tile-num">23</span>
+        <span class="tile-sym-old">V</span>
+        <span class="tile-name">Voxglass</span>
+        <span class="tile-weight">50.942</span>
+      </div>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:12px;opacity:0.6;">← Gradient overlay (0.42→0.74)</div>
+      <div style="font-size:12px;opacity:0.6;">← 224×224 tile, brass border + glow</div>
+      <div style="font-size:12px;opacity:0.6;">← Near-white ink text</div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div style="display:flex;align-items:center;font-size:32px;color:#E3A44B;">→</div>
+
+  <!-- AFTER -->
+  <div class="mockup phone">
+    <div class="mockup-header">
+      <span>AFTER: AnimatedSplashView</span>
+      <span class="badge badge-added">NEW STYLE</span>
+    </div>
+    <div class="splash-bg" style="background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 320 200%22><rect fill=%22%2312151a%22 width=%22320%22 height=%22200%22/></svg>');">
+      <div class="splash-overlay-new"></div>
+      <div class="tile-new">
+        <div style="display:flex;width:100%;padding:0 6px;"><span class="tile-num">23</span></div>
+        <span class="tile-sym-new">V</span>
+        <span class="tile-name">Voxglass</span>
+        <span class="tile-weight">50.942</span>
+      </div>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:12px;opacity:0.6;">← Uniform black 45% overlay</div>
+      <div style="font-size:12px;opacity:0.6;">← ~110×120 tile, white border</div>
+      <div style="font-size:12px;color:#5cff5c;">← Pure white text</div>
+      <div style="font-size:12px;color:#5cff5c;">← No brass radial glow</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Search Page &mdash; All/Title/Author/Narrator filter</h2>
+<p class="desc">
+  Add a segmented scope picker below the search bar, defaulting to "All". Modifies the LibriVox query to scope searches by field.
+</p>
+
+<div class="mockup-row">
+  <!-- BEFORE -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <span>BEFORE: Search</span>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:18px;font-weight:700;margin-bottom:12px;">Search</div>
+      <div class="search-bar">
+        <span class="icon">🔍</span>
+        <span style="color:rgba(255,255,255,0.35);">pride and prejudice</span>
+        <span class="icon" style="margin-left:auto;">✕</span>
+      </div>
+      <div style="margin-top:12px;color:rgba(255,255,255,0.35);font-size:12px;text-align:center;">← No scope filter</div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div style="display:flex;align-items:center;font-size:32px;color:#E3A44B;">→</div>
+
+  <!-- AFTER -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <span>AFTER: Search</span>
+      <span class="badge badge-added">NEW</span>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:18px;font-weight:700;margin-bottom:12px;">Search</div>
+      <div class="search-bar">
+        <span class="icon">🔍</span>
+        <span style="color:rgba(255,255,255,0.35);">pride and prejudice</span>
+        <span class="icon" style="margin-left:auto;">✕</span>
+      </div>
+      <div class="segment" style="margin-top:10px;">
+        <div class="segment-item active">All</div>
+        <div class="segment-item">Title</div>
+        <div class="segment-item">Author</div>
+        <div class="segment-item">Narrator</div>
+      </div>
+      <div style="font-size:10px;opacity:0.5;margin-top:6px;">Default: All &nbsp;|&nbsp; Searches LibriVox by scope</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. My Books &mdash; Search + remove sort picker</h2>
+<p class="desc">
+  Add a search button that reveals a search bar with scope picker (All/Title/Author/Narrator).
+  Remove the Sort picker (Recent/Title/Author/Narrator) — always sort by recent.
+  Keep the Filter picker (All/Favorites/In Progress/Finished).
+</p>
+
+<div class="mockup-row">
+  <!-- BEFORE -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <span>BEFORE: My Books</span>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:18px;font-weight:700;margin-bottom:12px;">My Books</div>
+      <div style="font-size:11px;opacity:0.5;margin-bottom:6px;">Filter picker:</div>
+      <div class="segment">
+        <div class="segment-item active">All</div>
+        <div class="segment-item">Favorites</div>
+        <div class="segment-item">In Progress</div>
+        <div class="segment-item">Finished</div>
+      </div>
+      <div style="font-size:11px;opacity:0.5;margin:8px 0 6px;">Sort picker (REMOVED):</div>
+      <div class="segment">
+        <div class="segment-item active">Recent</div>
+        <div class="segment-item">Title</div>
+        <div class="segment-item">Author</div>
+        <div class="segment-item">Narrator</div>
+      </div>
+      <div class="badge badge-removed" style="margin-top:6px;">Sort picker removed</div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div style="display:flex;align-items:center;font-size:32px;color:#E3A44B;">→</div>
+
+  <!-- AFTER -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <span>AFTER: My Books</span>
+      <span class="badge badge-added">NEW</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:18px;font-weight:700;">My Books</div>
+        <div class="badge badge-added">🔍</div>
+      </div>
+
+      <!-- Search bar (visible when toggled) -->
+      <div style="border:1px dashed rgba(255,255,255,0.2);border-radius:10px;padding:8px;margin-bottom:8px;">
+        <div style="font-size:9px;opacity:0.5;margin-bottom:4px;">Search bar (toggle with 🔍)</div>
+      <div class="search-bar" style="margin-bottom:8px;">
+        <span class="icon">🔍</span>
+        <span style="color:rgba(255,255,255,0.35);">Search my books...</span>
+        <span class="icon" style="margin-left:auto;">✕</span>
+      </div>
+      <div class="segment">
+        <div class="segment-item active">All</div>
+        <div class="segment-item">Title</div>
+        <div class="segment-item">Author</div>
+        <div class="segment-item">Narrator</div>
+      </div>
+        </div>
+
+      <div style="font-size:11px;opacity:0.5;margin-bottom:6px;">Filter picker (kept):</div>
+      <div class="segment">
+        <div class="segment-item active">All</div>
+        <div class="segment-item">Favorites</div>
+        <div class="segment-item">In Progress</div>
+        <div class="segment-item">Finished</div>
+      </div>
+
+      <div class="diff" style="margin-top:10px;">
+        <div class="diff-line"><span class="badge badge-added">ADDED</span> Search button + search bar + scope picker</div>
+        <div class="diff-line"><span class="badge badge-removed">REMOVED</span> Sort picker (always sort by recent)</div>
+        <div class="diff-line"><span class="badge badge-changed">KEPT</span> Filter picker (All/Favorites/In Progress/Finished)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

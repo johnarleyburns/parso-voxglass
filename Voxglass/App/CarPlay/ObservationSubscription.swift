@@ -35,7 +35,7 @@ final class ObservationSubscription {
         }
     }
 
-    func cancel() {
+    nonisolated func cancel() {
         cancelled = true
     }
 

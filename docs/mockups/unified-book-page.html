@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass — Unified Book Page (Now Playing + Book Details)</title>
+<style>
+:root{--bgA:#0b0f12;--bgB:#171d20;--ink:#f7f0e6;--ink2:#cfc4b6;--muted:#b9afa4;--faint:rgba(255,255,255,.09);
+--line:rgba(255,255,255,.13);--panel:rgba(30,36,39,.62);--gold:#d8ad67;--gold2:#f0ce8a;--danger:#e2705f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#283034 0%,#020406 44%,#000 100%);color:var(--ink)}
+.board{padding:34px 26px 64px;max-width:1900px;margin:0 auto}
+.board h1{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:0 0 6px}
+.board p.lede{color:var(--muted);font-size:14px;max-width:820px;margin:0 0 26px;line-height:1.55}
+.screens{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.stage{display:grid;gap:10px;justify-items:center}
+.stage .label{font-weight:800;color:#f4e2bf;font-size:14px;text-align:center}
+.stage .note{color:var(--muted);font-size:11.5px;max-width:390px;text-align:center;line-height:1.5}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;
+background:linear-gradient(155deg,var(--bgA),var(--bgB));border:10px solid #090b0d;
+box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.glow{position:absolute;inset:0;background:radial-gradient(circle at 50% -4%,rgba(138,90,36,.34),transparent 58%);pointer-events:none}
+.status{height:54px;padding:17px 25px 0;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;position:relative;z-index:2}
+.screen{height:calc(100% - 54px);padding:0 20px 16px;overflow:hidden;position:relative;z-index:2}
+.grabber{width:36px;height:5px;border-radius:3px;background:rgba(255,255,255,.35);margin:0 auto 8px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chevbtn{width:32px;height:32px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:800}
+.crumb{font-size:11.5px;color:var(--muted);letter-spacing:.02em;text-transform:uppercase;font-weight:750}
+
+.cover{width:214px;height:214px;border-radius:16px;margin:2px auto 16px;display:grid;place-items:center;text-align:center;
+color:#f8e8c7;font-weight:900;font-size:21px;line-height:1.1;text-shadow:0 1px 8px rgba(0,0,0,.8);
+box-shadow:0 22px 44px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);position:relative}
+.cover.sm{width:150px;height:150px;font-size:16px;margin-bottom:12px}
+.hobbit{background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#172229,#384346 42%,#d3b477)}
+.hobbit:after{content:"THE\A HOBBIT";white-space:pre}
+.badge-prov{position:absolute;left:8px;bottom:8px;font-size:9px;font-weight:800;padding:3px 7px;border-radius:99px;
+background:rgba(10,12,14,.72);border:1px solid var(--line);color:var(--gold2);text-shadow:none;letter-spacing:.03em}
+.ring{position:absolute;right:-6px;bottom:-6px;width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--gold) 0 48%,rgba(255,255,255,.14) 48% 100%);
+display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.ring i{width:34px;height:34px;border-radius:50%;background:#12171a;display:grid;place-items:center;font-size:10px;font-style:normal;font-weight:850;color:var(--gold2)}
+
+.meta{text-align:center;padding:0 6px}
+.meta .t{font-size:19px;font-weight:850;letter-spacing:-.02em;line-height:1.18}
+.meta .a{font-size:13.5px;font-weight:700;color:var(--gold2);margin-top:5px}
+.meta .n{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.meta .c{font-size:11.5px;color:var(--muted);margin-top:5px}
+.chiprow{display:flex;gap:6px;justify-content:center;margin-top:9px;flex-wrap:wrap}
+.chip{font-size:10px;font-weight:800;padding:4px 9px;border-radius:99px;background:var(--faint);border:1px solid var(--line);color:var(--ink2)}
+.chip.gold{color:var(--gold2);border-color:rgba(216,173,103,.35);background:rgba(216,173,103,.12)}
+
+.scrub{margin:16px 2px 0}
+.bar{height:7px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:rgba(255,255,255,.9)}
+.bar.dim i{background:rgba(216,173,103,.85)}
+.times{display:flex;justify-content:space-between;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);margin-top:7px}
+
+.transport{display:flex;align-items:center;justify-content:space-between;margin:14px 4px 0}
+.tbtn{width:52px;height:52px;border-radius:26px;background:rgba(255,255,255,.12);border:1px solid var(--line);display:grid;place-items:center;font-size:17px;font-weight:800}
+.tbtn.main{width:66px;height:66px;border-radius:33px;background:rgba(255,255,255,.17);font-size:23px}
+.tbtn.play-primary{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;border:0;box-shadow:0 10px 26px rgba(170,112,40,.35)}
+.tbtn.ghost{opacity:.42}
+
+.iconrow{display:flex;align-items:center;justify-content:space-between;margin:16px 0 0;color:var(--muted)}
+.ib{width:40px;height:40px;border-radius:20px;display:grid;place-items:center;font-size:15px;position:relative}
+.ib.on{color:var(--gold2)}
+.ib b{font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:850}
+.ib .dl{position:absolute;inset:8px;border-radius:50%;background:conic-gradient(var(--gold) 0 62%,rgba(255,255,255,.18) 62% 100%)}
+.ib .dl b{position:relative;font-size:8px;color:#0d1114}
+.iconcaps{display:flex;justify-content:space-between;font-size:8.5px;color:rgba(185,175,164,.75);margin-top:2px;letter-spacing:.02em}
+.iconcaps span{width:40px;text-align:center}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(18px);overflow:hidden;margin-top:14px}
+.cardhead{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 4px 8px}
+.row{display:flex;align-items:center;gap:11px;padding:11px 13px;min-height:46px}
+.row+.row{border-top:1px solid var(--line)}
+.row .ic{width:26px;text-align:center;color:var(--gold);font-size:14px;flex:0 0 auto}
+.row .tx{font-size:13.5px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .dt{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+.row .chev{color:var(--muted);font-size:12px}
+.row.active{background:rgba(216,173,103,.14)}
+.row.active .tx{color:var(--gold2)}
+.row.danger .tx,.row.danger .ic{color:var(--danger)}
+.sub{font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stack{flex:1;min-width:0}
+
+.about{padding:12px 13px}
+.about .txt{font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.about .clamp{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.about .more{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:var(--gold2)}
+
+.sheet{position:absolute;left:0;right:0;bottom:0;background:rgba(20,25,28,.97);border-top:1px solid var(--line);
+border-radius:22px 22px 0 0;padding:8px 0 26px;box-shadow:0 -22px 60px rgba(0,0,0,.6);z-index:15}
+.sheet .grabber{margin-bottom:6px}
+.sheet .sh{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 20px 6px}
+.sheet .row{padding:11px 20px}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:10}
+.fadebottom{position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(transparent,rgba(9,12,14,.92));pointer-events:none;z-index:5}
+.callout{margin-top:8px;font-size:11px;color:var(--gold2);background:rgba(216,173,103,.1);border:1px solid rgba(216,173,103,.3);
+border-radius:10px;padding:8px 11px;max-width:390px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="board">
+<h1>Unified Book Page — Now Playing ∪ Book Details</h1>
+<p class="lede">One screen replaces both <code>NowPlayingView</code> and <code>BookDetailView</code>. Same layout in both states;
+only the transport block changes. Author and narrator are always visible under the title. The description is clamped to a single
+line and expands from a <b>Show more</b> control that sits immediately above the Chapters card. Every former full-width button
+(Share, Playlist, Favorite, Offline) is now a 40&nbsp;pt icon; AirPlay joins the row; the rest live behind the <b>⋯</b> overflow.</p>
+
+<div class="screens">
+
+  <!-- ============ A: PLAYING ============ -->
+  <div class="stage">
+    <div class="label">A · Playing state (presented as a sheet)</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+      <main class="screen">
+        <div class="grabber"></div>
+        <div class="topbar"><div class="chevbtn">⌄</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">⌄</div></div>
+
+        <div class="cover hobbit"><span class="badge-prov">LIBRIVOX</span></div>
+
+        <div class="meta">
+          <div class="t">The Hobbit</div>
+          <div class="a">J. R. R. Tolkien ›</div>
+          <div class="n">Read by Phil Chenevert ›</div>
+          <div class="c">5. Riddles in the Dark</div>
+          <div class="chiprow"><span class="chip gold">Fantasy</span><span class="chip">19 chapters</span><span class="chip">Downloaded</span></div>
+        </div>
+
+        <div class="scrub">
+          <div class="bar"><i style="width:48%"></i></div>
+          <div class="times"><span>17:43</span><span>6h 12m left in book</span><span>-22:17</span></div>
+        </div>
+
+        <div class="transport">
+          <div class="tbtn">⏮</div><div class="tbtn">↺15</div><div class="tbtn main">⏸</div><div class="tbtn">↻30</div><div class="tbtn">⏭</div>
+        </div>
+
+        <div class="iconrow">
+          <div class="ib"><b>1.0×</b></div>
+          <div class="ib">☾</div>
+          <div class="ib">🔖</div>
+          <div class="ib on">♥</div>
+          <div class="ib"><span class="dl"></span><b>62</b></div>
+          <div class="ib">􀉦</div>
+          <div class="ib">⋯</div>
+        </div>
+        <div class="iconcaps"><span>Speed</span><span>Sleep</span><span>Mark</span><span>Fave</span><span>Save</span><span>AirPlay</span><span>More</span></div>
+
+        <div class="cardhead">About</div>
+        <div class="card"><div class="about">
+          <div class="txt clamp">In a hole in the ground there lived a hobbit. Bilbo Baggins is swept into a quest to reclaim…</div>
+          <span class="more">Show more ⌄</span>
+        </div></div>
+
+        <div class="cardhead">Chapters · 19</div>
+        <div class="card">
+          <div class="row active"><span class="ic">􀊄</span><div class="stack"><div class="tx">5. Riddles in the Dark</div><div class="sub">Phil Chenevert</div></div><span class="dt">41:02</span></div>
+          <div class="row"><span class="ic">▷</span><div class="stack"><div class="tx">6. Out of the Frying-Pan</div><div class="sub">Phil Chenevert</div></div><span class="dt">28:19</span></div>
+        </div>
+        <div class="fadebottom"></div>
+      </main>
+    </article>
+    <div class="note">Author and narrator sit directly beneath the title and are tappable (Author / Narrator pages).
+    The offline icon doubles as its own progress ring — no separate download row.</div>
+  </div>
+
+  <!-- ============ B: NOT PLAYING ============ -->
+  <div class="stage">
+    <div class="label">B · Same page, book not currently playing (pushed from My Books)</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+      <main class="screen">
+        <div class="topbar"><div class="chevbtn">‹</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">⌄</div></div>
+
+        <div class="cover hobbit" style="width:190px;height:190px">
+          <span class="badge-prov">LIBRIVOX</span>
+          <span class="ring"><i>48%</i></span>
+        </div>
+
+        <div class="meta">
+          <div class="t">The Hobbit</div>
+          <div class="a">J. R. R. Tolkien ›</div>
+          <div class="n">Read by Phil Chenevert ›</div>
+          <div class="c">Resume · 5. Riddles in the Dark</div>
+          <div class="chiprow"><span class="chip gold">Fantasy</span><span class="chip">19 chapters</span><span class="chip">Public domain</span></div>
+        </div>
+
+        <div class="scrub">
+          <div class="bar dim"><i style="width:48%"></i></div>
+          <div class="times"><span>17:43</span><span>6h 12m left in book</span><span>-22:17</span></div>
+        </div>
+
+        <div class="transport">
+          <div class="tbtn ghost">⏮</div><div class="tbtn ghost">↺15</div><div class="tbtn main play-primary">▶</div><div class="tbtn ghost">↻30</div><div class="tbtn ghost">⏭</div>
+        </div>
+
+        <div class="iconrow">
+          <div class="ib"><b>1.0×</b></div>
+          <div class="ib">☾</div>
+          <div class="ib">🔖</div>
+          <div class="ib">♡</div>
+          <div class="ib">⤓</div>
+          <div class="ib">􀉦</div>
+          <div class="ib">⋯</div>
+        </div>
+        <div class="iconcaps"><span>Speed</span><span>Sleep</span><span>Mark</span><span>Fave</span><span>Save</span><span>AirPlay</span><span>More</span></div>
+
+        <div class="cardhead">About</div>
+        <div class="card"><div class="about">
+          <div class="txt clamp">In a hole in the ground there lived a hobbit. Bilbo Baggins is swept into a quest to reclaim…</div>
+          <span class="more">Show more ⌄</span>
+        </div></div>
+
+        <div class="cardhead">Chapters · 19</div>
+        <div class="card">
+          <div class="row"><span class="ic">▷</span><div class="stack"><div class="tx">1. An Unexpected Party</div><div class="sub">Phil Chenevert</div></div><span class="dt">38:44</span></div>
+          <div class="row"><span class="ic">▷</span><div class="stack"><div class="tx">2. Roast Mutton</div><div class="sub">Phil Chenevert</div></div><span class="dt">26:11</span></div>
+        </div>
+        <div class="fadebottom"></div>
+      </main>
+    </article>
+    <div class="note">Identical geometry, so there is no visual jump when playback starts. The big play button turns brass and the
+    scrubber is a resume indicator until the engine loads.</div>
+  </div>
+
+  <!-- ============ C: OVERFLOW ============ -->
+  <div class="stage">
+    <div class="label">C · ⋯ overflow (the “hamburger”)</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+      <main class="screen">
+        <div class="grabber"></div>
+        <div class="topbar"><div class="chevbtn">⌄</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">⌄</div></div>
+        <div class="cover hobbit"><span class="badge-prov">LIBRIVOX</span></div>
+        <div class="meta">
+          <div class="t">The Hobbit</div>
+          <div class="a">J. R. R. Tolkien ›</div>
+          <div class="n">Read by Phil Chenevert ›</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grabber"></div>
+          <div class="sh">This book</div>
+          <div class="row"><span class="ic">􀈂</span><div class="tx">Share</div></div>
+          <div class="row"><span class="ic">􀉂</span><div class="tx">Add to Playlist…</div></div>
+          <div class="row"><span class="ic">􀌪</span><div class="tx">Bookmarks</div><span class="dt">3</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">􀋲</span><div class="tx">All Chapters</div><span class="dt">19</span><span class="chev">›</span></div>
+          <div class="sh">Audio</div>
+          <div class="row"><span class="ic">􀊫</span><div class="tx">Equalizer</div><span class="dt">Off</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">􀊤</span><div class="tx">Volume normalization</div><span class="dt">On</span></div>
+          <div class="sh">Discover</div>
+          <div class="row"><span class="ic">􀉭</span><div class="tx">More by J. R. R. Tolkien</div><span class="chev">›</span></div>
+          <div class="row"><span class="ic">􀊰</span><div class="tx">More read by Phil Chenevert</div><span class="chev">›</span></div>
+          <div class="row"><span class="ic">􀉚</span><div class="tx">More in Fantasy</div><span class="chev">›</span></div>
+          <div class="sh">Manage</div>
+          <div class="row danger"><span class="ic">􀈑</span><div class="tx">Remove offline copy</div></div>
+          <div class="row danger"><span class="ic">􀈑</span><div class="tx">Remove from My Books</div></div>
+        </div>
+      </main>
+    </article>
+    <div class="note">Everything that used to be a 46&nbsp;pt full-width button or a second screen lives here. Destructive rows
+    keep their existing confirmation dialogs.</div>
+  </div>
+
+  <!-- ============ D: EXPANDED ============ -->
+  <div class="stage">
+    <div class="label">D · Scrolled down, description expanded</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+      <main class="screen">
+        <div class="topbar" style="margin-top:8px">
+          <div class="chevbtn">⌄</div>
+          <div style="display:flex;align-items:center;gap:9px;flex:1;margin:0 10px;overflow:hidden">
+            <div class="cover hobbit" style="width:34px;height:34px;margin:0;border-radius:7px;font-size:6px;box-shadow:none"></div>
+            <div style="min-width:0"><div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">The Hobbit</div>
+            <div class="sub">5. Riddles in the Dark · 1.0×</div></div>
+          </div>
+          <div class="chevbtn">⏸</div>
+        </div>
+
+        <div class="cardhead" style="margin-top:6px">About</div>
+        <div class="card"><div class="about">
+          <div class="txt">In a hole in the ground there lived a hobbit. Bilbo Baggins is swept out of his comfortable
+          hobbit-hole by Gandalf the wizard and a company of dwarves, on a quest to win a share of the treasure guarded by
+          Smaug the dragon. Along the way he encounters trolls, goblins, giant spiders, and — in the roots of the mountains —
+          a creature named Gollum and a ring of invisibility.</div>
+          <span class="more">Show less ⌃</span>
+        </div></div>
+
+        <div class="cardhead">Narrators</div>
+        <div class="card">
+          <div class="row"><span class="ic">􀊰</span><div class="stack"><div class="tx">Phil Chenevert</div><div class="sub">Solo · 19 of 19 chapters</div></div><span class="chev">›</span></div>
+        </div>
+
+        <div class="cardhead">Chapters · 19</div>
+        <div class="card">
+          <div class="row"><span class="ic">▷</span><div class="stack"><div class="tx">3. A Short Rest</div><div class="sub">Phil Chenevert</div></div><span class="dt">19:55</span></div>
+          <div class="row"><span class="ic">▷</span><div class="stack"><div class="tx">4. Over Hill and Under Hill</div><div class="sub">Phil Chenevert</div></div><span class="dt">22:07</span></div>
+          <div class="row active"><span class="ic">􀊄</span><div class="stack"><div class="tx">5. Riddles in the Dark</div><div class="sub">Phil Chenevert</div></div><span class="dt">41:02</span></div>
+          <div class="row"><span class="ic">▷</span><div class="stack"><div class="tx">6. Out of the Frying-Pan</div><div class="sub">Phil Chenevert</div></div><span class="dt">28:19</span></div>
+          <div class="row"><span class="ic">􀌪</span><div class="tx">Bookmarks</div><span class="dt">3</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">􀋲</span><div class="tx">All Chapters</div><span class="dt">19 total</span><span class="chev">›</span></div>
+        </div>
+
+        <div class="cardhead">Discover more</div>
+        <div class="card">
+          <div class="row"><span class="ic">􀉭</span><div class="tx">More by J. R. R. Tolkien</div><span class="chev">›</span></div>
+          <div class="row"><span class="ic">􀊰</span><div class="tx">More read by Phil Chenevert</div><span class="chev">›</span></div>
+        </div>
+        <div class="fadebottom"></div>
+      </main>
+    </article>
+    <div class="note">Once the cover scrolls away, the toolbar collapses into a compact title + play/pause bar so transport is never
+    more than one tap away.</div>
+  </div>
+
+</div>
+
+<div class="callout">Icon row order is fixed: <b>Speed · Sleep · Bookmark · Favorite · Offline · AirPlay · ⋯</b>. Under accessibility
+text sizes the row degrades with <code>ViewThatFits</code> to <b>Speed · Favorite · AirPlay · ⋯</b> and the dropped controls move
+into the overflow, so nothing ever shrinks below a 44&nbsp;pt hit target.</div>
+</div>
+</body>
+</html>

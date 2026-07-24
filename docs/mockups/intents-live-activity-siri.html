@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass — App Intents, Live Activity &amp; Siri mockups</title>
+<style>
+:root{--ink:#f7f0e6;--ink2:#cfc4b6;--muted:#b0a79c;--faint:rgba(255,255,255,.10);--line:rgba(255,255,255,.14);
+--panel:rgba(30,36,39,.66);--gold:#d8ad67;--gold2:#f0ce8a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#262d31 0%,#020406 46%,#000 100%);color:var(--ink)}
+.board{padding:34px 26px 64px;max-width:1900px;margin:0 auto}
+.board h1{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:0 0 6px}
+.board p.lede{color:var(--muted);font-size:14px;max-width:860px;margin:0 0 28px;line-height:1.55}
+.screens{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.stage{display:grid;gap:10px;justify-items:center}
+.stage .label{font-weight:800;color:#f4e2bf;font-size:14px;text-align:center}
+.stage .note{color:var(--muted);font-size:11.5px;max-width:390px;text-align:center;line-height:1.5}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;border:10px solid #090b0d;
+box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.22);background:#0b0f12}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:30}
+.wall{position:absolute;inset:0;background:
+radial-gradient(circle at 72% 12%,rgba(216,173,103,.30),transparent 46%),
+radial-gradient(circle at 20% 78%,rgba(60,110,140,.34),transparent 52%),
+linear-gradient(160deg,#0d1418,#1a1410 62%,#07090b)}
+.lockhead{position:relative;z-index:5;text-align:center;padding-top:62px}
+.lockhead .lk{font-size:15px;opacity:.85}
+.lockhead .dt{font-size:14px;font-weight:700;margin-top:6px;opacity:.9}
+.lockhead .cl{font-size:76px;font-weight:750;letter-spacing:-.05em;line-height:1;margin-top:2px}
+.status{position:absolute;top:0;left:0;right:0;height:54px;padding:17px 25px 0;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;z-index:6}
+.screen{position:relative;z-index:5;height:100%;padding:0 16px}
+
+.la{background:rgba(22,26,29,.82);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(24px);
+padding:12px 14px;box-shadow:0 18px 44px rgba(0,0,0,.5)}
+.la .top{display:flex;gap:11px;align-items:center}
+.cv{border-radius:9px;display:grid;place-items:center;text-align:center;color:#f8e8c7;font-weight:900;
+text-shadow:0 1px 4px #000;flex:0 0 auto;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+.hobbit{background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#172229,#384346 42%,#d3b477)}
+.hobbit:after{content:"THE HOBBIT"}
+.dracula{background:linear-gradient(160deg,#13080a,#80251f 48%,#14080b)}.dracula:after{content:"DRACULA"}
+.la .t{font-size:14px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.la .s{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.la .brand{font-size:9.5px;font-weight:850;letter-spacing:.1em;color:var(--gold2);text-transform:uppercase}
+.bar{height:5px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;margin:11px 0 5px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:99px}
+.tm{display:flex;justify-content:space-between;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:var(--muted)}
+.actions{display:flex;gap:9px;margin-top:12px}
+.act{flex:1;height:38px;border-radius:12px;background:rgba(255,255,255,.11);border:1px solid var(--line);
+display:grid;place-items:center;font-size:14px;font-weight:800}
+.act.main{background:#fff;color:#111;border:0}
+
+.di{position:absolute;top:11px;left:50%;transform:translateX(-50%);z-index:31;background:#050505;border-radius:30px}
+.di.compact{width:172px;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 9px}
+.di.compact .mini{width:22px;height:22px;border-radius:6px;font-size:3.5px;display:grid;place-items:center;text-align:center;color:#f8e8c7;font-weight:900}
+.di.compact .wave{display:flex;gap:2px;align-items:flex-end;height:14px;padding-right:3px}
+.di.compact .wave b{width:2.5px;border-radius:2px;background:var(--gold2);display:block}
+.di.expanded{width:352px;border-radius:38px;padding:14px 16px 16px;top:8px}
+
+.siricard{background:rgba(24,28,32,.9);border:1px solid var(--line);border-radius:22px;padding:14px;backdrop-filter:blur(24px)}
+.siriorb{width:78px;height:78px;border-radius:50%;margin:0 auto 16px;
+background:conic-gradient(from 20deg,#d8ad67,#7fb6d6,#c78ad0,#d8ad67);filter:blur(.4px);box-shadow:0 0 44px rgba(216,173,103,.42)}
+.utter{text-align:center;font-size:17px;font-weight:750;line-height:1.35;margin-bottom:16px;color:#fff}
+.reply{text-align:center;font-size:13px;color:var(--muted);margin-top:12px;line-height:1.45}
+
+.list{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:12px}
+.row{display:flex;align-items:center;gap:11px;padding:12px 13px;min-height:48px}
+.row+.row{border-top:1px solid var(--line)}
+.row .ic{width:28px;height:28px;border-radius:8px;background:rgba(216,173,103,.16);color:var(--gold2);
+display:grid;place-items:center;font-size:13px;flex:0 0 auto}
+.row .tx{font-size:13.5px;font-weight:650;flex:1}
+.row .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.row .chev{color:var(--muted);font-size:12px}
+.head{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 4px 6px}
+.navtitle{font-size:28px;font-weight:850;letter-spacing:-.03em;margin:16px 4px 2px}
+
+.widget{width:158px;height:158px;border-radius:24px;background:linear-gradient(160deg,#1b2226,#0e1215);
+border:1px solid var(--line);padding:12px;box-shadow:0 14px 34px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.widget.wide{width:338px}
+.ctrl{width:74px;height:74px;border-radius:20px;background:rgba(255,255,255,.14);border:1px solid var(--line);
+display:grid;place-items:center;gap:3px;font-size:10px;font-weight:750;text-align:center;color:var(--ink);backdrop-filter:blur(20px)}
+.ctrl .g{font-size:20px;color:var(--gold2)}
+.grid{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+.callout{margin-top:24px;font-size:12px;color:var(--gold2);background:rgba(216,173,103,.1);border:1px solid rgba(216,173,103,.3);
+border-radius:12px;padding:12px 15px;line-height:1.65;max-width:980px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.94em}
+</style>
+</head>
+<body>
+<div class="board">
+<h1>App Intents · Live Activity · Siri</h1>
+<p class="lede">Voxglass already owns the lock-screen <code>MPNowPlayingInfoCenter</code> surface. This layer adds the three things
+users actually ask an audiobook app for: a persistent Live Activity with a real progress bar and skip buttons, Siri phrases that
+work without opening the app (“resume my audiobook”, “sleep timer 20 minutes”), and App Intents that show up in Shortcuts,
+Spotlight, the Action button, widgets and Control Center.</p>
+
+<div class="screens">
+
+<!-- 1 LOCK SCREEN LIVE ACTIVITY -->
+<div class="stage">
+  <div class="label">1 · Lock Screen Live Activity</div>
+  <article class="phone"><div class="wall"></div><div class="island"></div>
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+    <div class="lockhead"><div class="lk">􀎡</div><div class="dt">Thursday, 22 July</div><div class="cl">9:41</div></div>
+    <div class="screen" style="height:auto;margin-top:150px">
+      <div class="la">
+        <div class="top">
+          <div class="cv hobbit" style="width:52px;height:52px;font-size:6px"></div>
+          <div style="min-width:0;flex:1">
+            <div class="brand">Voxglass</div>
+            <div class="t">The Hobbit</div>
+            <div class="s">5. Riddles in the Dark · Phil Chenevert</div>
+          </div>
+          <div style="text-align:right;font-size:10px;color:var(--gold2);font-weight:800">☾ 12m</div>
+        </div>
+        <div class="bar"><i style="width:48%"></i></div>
+        <div class="tm"><span>17:43</span><span>6h 12m left in book</span><span>-22:17</span></div>
+        <div class="actions">
+          <div class="act">↺15</div><div class="act main">⏸</div><div class="act">↻30</div><div class="act">☾</div>
+        </div>
+      </div>
+    </div>
+  </article>
+  <div class="note">Buttons are <code>Button(intent:)</code> App Intents, so taps run in-process without launching the app.
+  Sleep-timer countdown lives in the trailing corner and disappears when the timer is off.</div>
+</div>
+
+<!-- 2 DYNAMIC ISLAND -->
+<div class="stage">
+  <div class="label">2 · Dynamic Island — compact &amp; expanded</div>
+  <article class="phone">
+    <div class="wall" style="background:linear-gradient(165deg,#101619,#070a0c)"></div>
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+    <div class="di compact">
+      <div class="mini cv hobbit"></div>
+      <div class="wave"><b style="height:6px"></b><b style="height:12px"></b><b style="height:8px"></b><b style="height:14px"></b></div>
+    </div>
+    <div class="screen" style="padding-top:78px">
+      <div style="text-align:center;font-size:11.5px;color:var(--muted);margin-bottom:14px">▲ compact · minimal ▲</div>
+      <div class="di expanded" style="position:relative;left:auto;transform:none;margin:0 auto">
+        <div class="top" style="display:flex;gap:12px;align-items:center">
+          <div class="cv hobbit" style="width:56px;height:56px;font-size:6.5px"></div>
+          <div style="min-width:0;flex:1">
+            <div class="t">The Hobbit</div>
+            <div class="s">5. Riddles in the Dark</div>
+            <div class="s" style="color:var(--gold2)">Phil Chenevert · 1.0×</div>
+          </div>
+          <div style="width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:13px">􀪷</div>
+        </div>
+        <div class="bar"><i style="width:48%"></i></div>
+        <div class="tm"><span>17:43</span><span>-22:17</span></div>
+        <div class="actions"><div class="act">⏮</div><div class="act">↺15</div><div class="act main">⏸</div><div class="act">↻30</div><div class="act">⏭</div></div>
+      </div>
+      <div style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:14px">▲ long-press expanded ▲</div>
+      <div class="head">Also rendered</div>
+      <div class="list">
+        <div class="row"><span class="ic">􀐳</span><div><div class="tx">Minimal (another activity active)</div><div class="sub">Brass waveform glyph only</div></div></div>
+        <div class="row"><span class="ic">􀟒</span><div><div class="tx">StandBy / Always-On</div><div class="sub">Dimmed, progress only, no buttons</div></div></div>
+      </div>
+    </div>
+  </article>
+  <div class="note">Compact leading = cover thumbnail, trailing = animated waveform (static when paused). One
+  <code>ActivityAttributes</code> struct drives Live Activity, Dynamic Island and the watch Smart Stack.</div>
+</div>
+
+<!-- 3 SIRI -->
+<div class="stage">
+  <div class="label">3 · Siri — spoken, app never opens</div>
+  <article class="phone"><div class="wall"></div>
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+    <div class="island"></div>
+    <div class="screen" style="padding-top:250px">
+      <div class="siriorb"></div>
+      <div class="utter">“Resume my audiobook”</div>
+      <div class="siricard">
+        <div class="top" style="display:flex;gap:12px;align-items:center">
+          <div class="cv hobbit" style="width:54px;height:54px;font-size:6.5px"></div>
+          <div style="min-width:0"><div class="brand">Voxglass</div>
+            <div class="t">The Hobbit</div>
+            <div class="s">Resuming chapter 5 at 17:43</div></div>
+        </div>
+      </div>
+      <div class="reply">“Resuming <b>The Hobbit</b>, chapter 5, 6 hours 12 minutes left.”</div>
+
+      <div class="head">Other phrases that work</div>
+      <div class="list">
+        <div class="row"><span class="ic">􀊄</span><div><div class="tx">“Play Dracula on Voxglass”</div><div class="sub">PlayBookIntent · book entity lookup</div></div></div>
+        <div class="row"><span class="ic">􀓪</span><div><div class="tx">“Set a Voxglass sleep timer for 20 minutes”</div><div class="sub">SetSleepTimerIntent</div></div></div>
+        <div class="row"><span class="ic">􀊆</span><div><div class="tx">“Bookmark this in Voxglass”</div><div class="sub">AddBookmarkIntent</div></div></div>
+        <div class="row"><span class="ic">􀊫</span><div><div class="tx">“Speed up Voxglass”</div><div class="sub">SetPlaybackRateIntent</div></div></div>
+      </div>
+    </div>
+  </article>
+  <div class="note">Every phrase maps to an <code>AppIntent</code> with <code>openAppWhenRun = false</code> and a spoken
+  <code>IntentDialog</code>, so it works from HomePod, CarPlay and AirPods.</div>
+</div>
+
+<!-- 4 SHORTCUTS / SPOTLIGHT / ACTION BUTTON -->
+<div class="stage">
+  <div class="label">4 · Shortcuts, Spotlight &amp; Action button</div>
+  <article class="phone"><div class="wall" style="background:linear-gradient(165deg,#12181c,#080b0d)"></div>
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div><div class="island"></div>
+    <div class="screen" style="padding-top:64px">
+      <div class="navtitle">Voxglass</div>
+      <div style="font-size:12.5px;color:var(--muted);margin:0 4px 4px">App Shortcuts · always available</div>
+      <div class="list">
+        <div class="row"><span class="ic">􀊄</span><div style="flex:1"><div class="tx">Resume Listening</div><div class="sub">Picks up the most recent book</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="ic">􀊮</span><div style="flex:1"><div class="tx">Play Book…</div><div class="sub">Parameter: book from My Books</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="ic">􀓪</span><div style="flex:1"><div class="tx">Set Sleep Timer…</div><div class="sub">5 · 10 · 15 · 30 · 45 · 60 · end of chapter</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="ic">􀊆</span><div style="flex:1"><div class="tx">Bookmark Current Position</div><div class="sub">Returns the timestamp</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="ic">􀈄</span><div style="flex:1"><div class="tx">Download Book for Offline…</div><div class="sub">Runs in the background</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="ic">􀆉</span><div style="flex:1"><div class="tx">Skip Back / Forward</div><div class="sub">Uses the user’s configured interval</div></div><span class="chev">›</span></div>
+      </div>
+      <div class="head">Action button</div>
+      <div class="list"><div class="row"><span class="ic">􀛨</span><div style="flex:1"><div class="tx">Shortcut → Resume Listening</div>
+        <div class="sub">Press-and-hold starts the last book without unlocking</div></div></div></div>
+      <div class="head">Spotlight</div>
+      <div class="list"><div class="row"><span class="ic">􀊫</span><div style="flex:1"><div class="tx">“hobbit”</div>
+        <div class="sub">Voxglass — The Hobbit · Resume chapter 5</div></div><span class="chev">›</span></div></div>
+    </div>
+  </article>
+  <div class="note">Ten intents, one <code>AppShortcutsProvider</code>. Book parameters use an
+  <code>AppEntity</code> backed by <code>LibraryRepository</code>, which also gives Siri disambiguation for free.</div>
+</div>
+
+<!-- 5 WIDGETS + CONTROL CENTER -->
+<div class="stage">
+  <div class="label">5 · Widgets &amp; Control Center control</div>
+  <article class="phone"><div class="wall"></div>
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div><div class="island"></div>
+    <div class="screen" style="padding-top:70px">
+      <div style="display:flex;gap:14px;justify-content:center">
+        <div class="widget">
+          <div class="cv hobbit" style="width:44px;height:44px;font-size:5.5px"></div>
+          <div style="font-size:12.5px;font-weight:850;margin-top:8px;line-height:1.15">The Hobbit</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Ch. 5 · 6h 12m left</div>
+          <div class="bar" style="margin:9px 0 4px"><i style="width:48%"></i></div>
+          <div style="margin-top:auto;display:flex;gap:6px">
+            <div class="act" style="height:30px;font-size:12px">↺15</div>
+            <div class="act main" style="height:30px;font-size:12px">⏸</div>
+          </div>
+        </div>
+        <div class="widget" style="justify-content:space-between">
+          <div style="font-size:10px;font-weight:850;letter-spacing:.1em;color:var(--gold2)">CONTINUE</div>
+          <div style="display:flex;gap:6px">
+            <div class="cv hobbit" style="width:36px;height:36px;font-size:4.5px"></div>
+            <div class="cv dracula" style="width:36px;height:36px;font-size:5px"></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.4">Tap a cover to resume<br>exactly where you stopped</div>
+        </div>
+      </div>
+
+      <div class="head" style="text-align:center">Control Center controls (iOS 18+)</div>
+      <div class="grid">
+        <div class="ctrl"><span class="g">􀊄</span>Resume<br>Listening</div>
+        <div class="ctrl"><span class="g">􀓪</span>Sleep<br>Timer</div>
+        <div class="ctrl"><span class="g">􀊫</span>Speed<br>1.0×</div>
+        <div class="ctrl"><span class="g">􀊆</span>Bookmark</div>
+      </div>
+
+      <div class="head">Lock Screen widgets</div>
+      <div class="list">
+        <div class="row"><span class="ic">􀐫</span><div style="flex:1"><div class="tx">Circular · book progress ring</div></div></div>
+        <div class="row"><span class="ic">􀏅</span><div style="flex:1"><div class="tx">Rectangular · title + time left</div></div></div>
+        <div class="row"><span class="ic">􀋲</span><div style="flex:1"><div class="tx">Inline · “6h 12m left in The Hobbit”</div></div></div>
+      </div>
+    </div>
+  </article>
+  <div class="note">Widgets and controls are thin wrappers over the same intents, so there is exactly one place where
+  “resume the right book at the right offset” is implemented.</div>
+</div>
+
+</div>
+
+<div class="callout"><b>One rule holds all of this together:</b> every surface here mutates playback only through App Intents,
+and every intent resolves position through the existing <code>PlaybackCoordinator</code> +
+<code>PositionStore</code> path. Nothing gets a second, divergent notion of “where you were” — which is the constraint the
+release plan already treats as non-negotiable.</div>
+</div>
+</body>
+</html>

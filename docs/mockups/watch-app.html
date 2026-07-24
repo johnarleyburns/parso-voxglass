@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass Apple Watch - implementation mockups</title>
+<style>
+:root{
+  --ink:#fbf4e9;
+  --ink2:#d8cdbf;
+  --muted:#a79c8f;
+  --panel:#202529;
+  --panel2:#13171a;
+  --line:rgba(255,255,255,.14);
+  --soft:rgba(255,255,255,.08);
+  --gold:#d7a95f;
+  --gold2:#f3d28b;
+  --green:#78c77d;
+  --red:#ec7465;
+  --blue:#80b9ee;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  min-height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+  background:
+    radial-gradient(circle at 12% 0%,#323434 0,#13181b 34%,#050607 70%,#000 100%);
+  color:var(--ink);
+}
+.board{max-width:1880px;margin:0 auto;padding:34px 26px 64px}
+h1{font-size:26px;line-height:1.15;font-weight:850;letter-spacing:0;margin:0 0 8px}
+.lede{max-width:900px;margin:0 0 22px;color:var(--ink2);font-size:14px;line-height:1.55}
+.doctrine{
+  display:grid;
+  grid-template-columns:minmax(280px,1fr) minmax(320px,1.3fr) minmax(260px,.9fr);
+  gap:12px;
+  margin:0 0 28px;
+}
+.doc-card{
+  background:rgba(19,23,26,.82);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:13px 14px;
+}
+.doc-card h2{font-size:13px;margin:0 0 9px;color:var(--gold2);letter-spacing:0}
+.doc-card p,.doc-card li{font-size:12px;line-height:1.45;color:var(--ink2)}
+.doc-card ul{margin:0;padding-left:18px}
+.sizes{display:grid;gap:6px}
+.size-row{display:grid;grid-template-columns:88px 80px 1fr;gap:8px;font-size:12px;color:var(--ink2);align-items:center}
+.size-row b{color:#fff}
+.chipline{display:flex;flex-wrap:wrap;gap:5px}
+code,.chip{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:5px;
+  padding:2px 5px;
+  color:#fff;
+}
+.chip{font-size:10px}
+.screens{display:flex;flex-wrap:wrap;gap:26px 22px;align-items:flex-start}
+.stage{display:grid;gap:8px;justify-items:center;width:306px}
+.label{font-size:13px;font-weight:850;text-align:center;color:var(--gold2)}
+.note{font-size:11px;line-height:1.45;text-align:center;color:var(--muted);max-width:286px}
+.budget{
+  width:286px;
+  border:1px solid rgba(215,169,95,.26);
+  background:rgba(215,169,95,.08);
+  border-radius:8px;
+  padding:7px 8px;
+  font-size:10.5px;
+  line-height:1.42;
+  color:#ead7b5;
+}
+.ids{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;width:286px}
+.aid{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:9px;
+  line-height:1;
+  color:#dfefff;
+  background:rgba(128,185,238,.12);
+  border:1px solid rgba(128,185,238,.28);
+  border-radius:5px;
+  padding:4px 5px;
+}
+
+/* True Apple Watch 45 mm logical size is 198 x 242 pt; drawn 1:1 then scaled 1.5x. */
+.wrap{width:306px;height:378px;display:flex;justify-content:center}
+.watch{
+  width:198px;
+  height:242px;
+  transform:scale(1.5);
+  transform-origin:top center;
+  border-radius:44px;
+  background:#000;
+  border:6px solid #1a1d20;
+  box-shadow:0 18px 46px rgba(0,0,0,.62),inset 0 0 0 1px rgba(255,255,255,.08);
+  overflow:hidden;
+  position:relative;
+}
+.crown{position:absolute;right:-11px;top:66px;width:6px;height:26px;border-radius:3px;background:linear-gradient(180deg,#989da0,#4d5255)}
+.wscreen{position:absolute;inset:0;padding:6px 9px 8px;overflow:hidden}
+.wbar{height:16px;display:flex;align-items:center;justify-content:space-between;font-size:9px;font-weight:800;margin-bottom:3px}
+.back{color:var(--gold2);max-width:84px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.clock{color:#fff;opacity:.92}
+.wtitle{font-size:10px;font-weight:850;color:var(--gold2);letter-spacing:0}
+.subtle{font-size:8px;color:var(--muted);line-height:1.25}
+.row{
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 7px;
+  margin-bottom:5px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:rgba(32,37,41,.84);
+}
+.row.active{background:rgba(215,169,95,.16);border-color:rgba(215,169,95,.48)}
+.row .meta{min-width:0;flex:1}
+.t{font-size:9.2px;font-weight:850;line-height:1.18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s{font-size:7.7px;color:var(--muted);line-height:1.18;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv{
+  width:28px;
+  height:28px;
+  border-radius:6px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  color:#fce6bc;
+  font-size:4.8px;
+  font-weight:900;
+  text-shadow:0 1px 3px #000;
+  overflow:hidden;
+}
+.hobbit{background:radial-gradient(circle at 48% 15%,#f0d69b 0 4%,transparent 14%),linear-gradient(155deg,#172229,#384346 42%,#d3b477)}
+.hobbit:after{content:"HOBBIT"}
+.dracula{background:linear-gradient(160deg,#13080a,#80251f 48%,#14080b)}.dracula:after{content:"DRACULA"}
+.austen{background:linear-gradient(155deg,#11191e,#293542 40%,#c99b5f)}.austen:after{content:"P&P"}
+.holmes{background:linear-gradient(150deg,#201810,#6d593c 48%,#0d0d0e)}.holmes:after{content:"HOLMES"}
+.moby{background:linear-gradient(150deg,#0e171b,#2f5a6b 52%,#c6a165)}.moby:after{content:"MOBY"}
+.frank{background:linear-gradient(150deg,#191c14,#5a6b3f 52%,#0f1318)}.frank:after{content:"FRANK"}
+.dot,.dl,.errdot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.dot{background:var(--green)}.dl{background:var(--gold)}.errdot{background:var(--red)}
+.seg{display:flex;gap:3px;margin:5px 0 6px}
+.seg span{
+  flex:1;
+  min-width:0;
+  text-align:center;
+  font-size:7.7px;
+  font-weight:850;
+  padding:4px 0;
+  border-radius:99px;
+  background:var(--soft);
+  color:var(--muted);
+  white-space:nowrap;
+}
+.seg .on{background:#f7f0e6;color:#151719}
+.searchbox{
+  height:32px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:rgba(32,37,41,.86);
+  padding:0 9px;
+  color:var(--muted);
+  font-size:9px;
+}
+.card{
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:rgba(32,37,41,.86);
+  padding:7px 8px;
+  margin-bottom:5px;
+}
+.desc{
+  max-height:40px;
+  overflow:hidden;
+  font-size:8.1px;
+  line-height:1.35;
+  color:var(--ink2);
+}
+.btnwide{
+  height:32px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  font-size:9px;
+  font-weight:850;
+  border-radius:8px;
+  margin-bottom:5px;
+  white-space:nowrap;
+}
+.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#1f160a}
+.ghost{background:rgba(32,37,41,.86);border:1px solid var(--line);color:var(--ink)}
+.danger{background:rgba(236,116,101,.14);border:1px solid rgba(236,116,101,.4);color:#ffd5cf}
+.pair{display:flex;gap:5px}.pair .btnwide{flex:1}
+.npcover{
+  width:44px;
+  height:44px;
+  border-radius:9px;
+  margin:0 auto 5px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  color:#fce6bc;
+  font-size:6px;
+  font-weight:900;
+  text-shadow:0 1px 4px #000;
+  box-shadow:0 6px 14px rgba(0,0,0,.5);
+}
+.nptitle{
+  min-height:26px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  text-align:center;
+  font-size:10.5px;
+  font-weight:850;
+  line-height:1.18;
+}
+.npsub{font-size:8px;color:var(--muted);text-align:center;line-height:1.15;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barline{height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:7px 2px 4px;overflow:hidden}
+.barline i{display:block;height:100%;border-radius:99px;background:var(--gold)}
+.times{display:flex;justify-content:space-between;font-size:7.4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);margin:0 2px}
+.transport{height:44px;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:7px}
+.round{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  background:var(--soft);
+  color:var(--ink);
+  font-size:10px;
+  font-weight:900;
+}
+.round.side{width:44px;height:44px;font-size:9px}
+.round.main{background:#fff;color:#121212;border:0;font-size:15px}
+.tools{height:34px;display:flex;align-items:center;justify-content:space-around;margin-top:5px}
+.toolbtn{
+  width:36px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:rgba(255,255,255,.06);
+  font-size:8px;
+  color:var(--ink2);
+  text-align:center;
+}
+.status-icon{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  margin:2px auto 5px;
+  display:grid;
+  place-items:center;
+  background:rgba(215,169,95,.14);
+  border:1px solid rgba(215,169,95,.42);
+  color:var(--gold2);
+  font-weight:900;
+}
+.status-lines{display:grid;gap:4px;margin-bottom:7px}
+.line{
+  min-height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:4px 7px;
+  border-radius:7px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.09);
+  font-size:8px;
+  color:var(--ink2);
+}
+.line b{font-size:8.4px;color:#fff;white-space:nowrap}
+.storage{height:8px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;display:flex;margin:4px 0 4px}
+.storage i{height:100%;display:block}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;font-size:7.2px;color:var(--muted);line-height:1.2;margin-bottom:5px}
+.face{position:absolute;inset:0;background:radial-gradient(circle at 30% 22%,#25303a,#020303 70%);padding:10px}
+.faceclock{font-size:30px;font-weight:850;text-align:right;color:#edf5ff;margin-top:2px}
+.faceday{font-size:9px;font-weight:850;color:var(--gold2);text-align:right}
+.compl{position:absolute;display:grid;place-items:center;border-radius:50%;border:2px solid rgba(215,169,95,.55);width:38px;height:38px;font-size:7px;font-weight:850;color:var(--gold2);text-align:center;line-height:1.1}
+.stack{position:absolute;left:12px;right:12px;bottom:14px;background:rgba(32,37,41,.9);border:1px solid var(--line);border-radius:8px;padding:5px 7px;display:flex;gap:6px;align-items:center}
+@media (max-width:1000px){
+  .doctrine{grid-template-columns:1fr}
+  .board{padding-left:18px;padding-right:18px}
+}
+</style>
+</head>
+<body>
+<main class="board">
+  <h1>Voxglass Apple Watch - normative implementation mockups</h1>
+  <p class="lede">These screens are an implementation handoff for the standalone watch app. They include unhappy fetch states, fixed point budgets, and the accessibility identifiers expected by the local smoke test. Baseline panels are drawn at true 45 mm logical size, 198 &times; 242 pt, then shown at 1.5x.</p>
+
+  <section class="doctrine" aria-label="Layout Doctrine">
+    <div class="doc-card">
+      <h2>Layout Doctrine</h2>
+      <ul>
+        <li>Browsable roots use watch-native lists.</li>
+        <li>No nested scroll/geometry layout for simple screens.</li>
+        <li>Transport and action controls keep 44 pt tap targets.</li>
+        <li>Long sync/status text splits into stacked rows.</li>
+        <li>Async screens always show loading, empty, or error state.</li>
+      </ul>
+    </div>
+    <div class="doc-card">
+      <h2>Fixed Watch Sizes</h2>
+      <div class="sizes">
+        <div class="size-row"><b>Minimum</b><span>162 &times; 197</span><span>Fit gate for smallest supported simulator.</span></div>
+        <div class="size-row"><b>Baseline</b><span>198 &times; 242</span><span>All mockup watches on this page.</span></div>
+        <div class="size-row"><b>Large</b><span>205 &times; 251</span><span>Ultra-class check; use larger if local Xcode offers it.</span></div>
+      </div>
+    </div>
+    <div class="doc-card">
+      <h2>Smoke Anchors</h2>
+      <div class="chipline">
+        <span class="chip">root.listening</span><span class="chip">root.search</span><span class="chip">root.onWatch</span>
+        <span class="chip">book.detail</span><span class="chip">book.stream</span><span class="chip">book.add</span><span class="chip">book.fetch</span>
+        <span class="chip">np.playpause</span><span class="chip">np.back15</span><span class="chip">np.forward30</span>
+        <span class="chip">np.route</span><span class="chip">fetch.status</span><span class="chip">fetch.retry</span><span class="chip">fetch.cancel</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="screens">
+
+    <div class="stage">
+      <div class="label">1. Now Playing</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen">
+        <div class="wbar"><span class="back">&lsaquo; Books</span><span class="clock">9:41</span></div>
+        <div class="npcover hobbit"></div>
+        <div class="nptitle">The Hobbit</div>
+        <div class="npsub">5. Riddles in the Dark</div>
+        <div class="npsub" style="color:var(--gold2)">Phil Chenevert</div>
+        <div class="barline"><i style="width:48%"></i></div>
+        <div class="times"><span>17:43</span><span>-22:17</span></div>
+        <div class="transport">
+          <div class="round side" data-aid="np.back15">&larr;15</div>
+          <div class="round main" data-aid="np.playpause">&#10073;&#10073;</div>
+          <div class="round side" data-aid="np.forward30">30&rarr;</div>
+        </div>
+        <div class="tools">
+          <div class="toolbtn">1.0x</div><div class="toolbtn">Sleep</div><div class="toolbtn">List</div><div class="toolbtn" data-aid="np.route">Route</div>
+        </div>
+      </div></div></div>
+      <div class="budget">Point budget: nav 16 + cover 44 + title block 34 + progress 20 + transport 44 + tools 34 = 192 pt, leaving padding/slack inside 242 pt.</div>
+      <div class="ids"><span class="aid">np.playpause</span><span class="aid">np.back15</span><span class="aid">np.forward30</span><span class="aid">np.route</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">2. My Books Root</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen">
+        <div class="wbar"><span class="wtitle">Voxglass</span><span class="clock">9:41</span></div>
+        <div class="seg"><span class="on" data-aid="root.listening">Listening</span><span>All</span><span data-aid="root.onWatch">On Watch</span></div>
+        <div class="row active"><div class="cv hobbit"></div><div class="meta"><div class="t">The Hobbit</div><div class="s">48% complete</div><div class="s">6h 12m left</div></div><div class="dot"></div></div>
+        <div class="row"><div class="cv dracula"></div><div class="meta"><div class="t">Dracula</div><div class="s">12% complete</div><div class="s">13h left</div></div><div class="dot"></div></div>
+        <div class="row"><div class="cv holmes"></div><div class="meta"><div class="t">Sherlock Holmes</div><div class="s">Downloading 62%</div><div class="s">Phone transfer</div></div><div class="dl"></div></div>
+        <div class="row"><div class="meta"><div class="t" data-aid="root.search">Search</div><div class="s">My Books and LibriVox</div></div></div>
+      </div></div></div>
+      <div class="note">Rows split progress and status so small watches do not squeeze a long secondary line beside the dot.</div>
+      <div class="ids"><span class="aid">root.listening</span><span class="aid">root.search</span><span class="aid">root.onWatch</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">3. Search Entry</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen">
+        <div class="wbar"><span class="back">&lsaquo; Books</span><span class="clock">9:41</span></div>
+        <div class="wtitle" style="margin-bottom:6px">Search</div>
+        <div class="searchbox" data-aid="root.search">Dictate, scribble, or type</div>
+        <div class="seg" style="margin-top:7px"><span class="on">My Books</span><span>LibriVox</span></div>
+        <div class="card"><div class="subtle"><b style="color:#fff">Recent</b><br>tolkien<br>sherlock holmes<br>ghost stories</div></div>
+        <div class="btnwide ghost">Dictate</div>
+        <div class="card"><div class="subtle"><b style="color:#fff">Loading rule</b><br>Remote search shows a spinner row, then results or error.</div></div>
+      </div></div></div>
+      <div class="note">System text entry only. The app owns scope, loading, empty, and error states.</div>
+      <div class="ids"><span class="aid">root.search</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">4. LibriVox Results</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen">
+        <div class="wbar"><span class="back">&lsaquo; Search</span><span class="clock">9:41</span></div>
+        <div class="seg"><span>My Books</span><span class="on">LibriVox</span></div>
+        <div class="subtle" style="margin:0 2px 4px">"tolkien" - 6 results</div>
+        <div class="row"><div class="cv hobbit"></div><div class="meta"><div class="t">The Hobbit</div><div class="s">Chenevert</div><div class="s">11h 4m</div></div><div class="dot"></div></div>
+        <div class="row"><div class="cv frank"></div><div class="meta"><div class="t">Sir Gawain and the Green Knight</div><div class="s">Group</div><div class="s">3h 2m</div></div></div>
+        <div class="row"><div class="cv moby"></div><div class="meta"><div class="t">The Fall of Arthur</div><div class="s">Essays</div><div class="s">1h 51m</div></div></div>
+      </div></div></div>
+      <div class="note">Remote rows open Book Detail with Stream, Add, and Fetch actions. Query must stay LibriVox-scoped.</div>
+      <div class="ids"><span class="aid">book.detail</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">5. Book Detail</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen" data-aid="book.detail">
+        <div class="wbar"><span class="back">&lsaquo; Results</span><span class="clock">9:41</span></div>
+        <div style="display:flex;gap:7px;align-items:center;margin-bottom:5px">
+          <div class="cv hobbit" style="width:36px;height:36px;border-radius:8px;font-size:5px"></div>
+          <div style="min-width:0;flex:1"><div class="t" style="font-size:10px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">The Hobbit</div>
+          <div class="s">J. R. R. Tolkien</div><div class="s" style="color:var(--gold2)">Phil Chenevert</div></div>
+        </div>
+        <div class="btnwide gold" data-aid="book.stream">Stream Now</div>
+        <div class="pair"><div class="btnwide ghost" data-aid="book.add">Add</div><div class="btnwide ghost" data-aid="book.fetch">Fetch</div></div>
+        <div class="card"><div class="desc">Bilbo Baggins is swept out of his comfortable hobbit-hole by Gandalf and a company of dwarves. Full descriptions scroll with the Crown.</div></div>
+        <div class="row" style="min-height:34px"><div class="meta"><div class="t">Chapters</div><div class="s">19 chapters - 11h 4m</div></div></div>
+      </div></div></div>
+      <div class="budget">Point budget: header 40 + primary action 32 + secondary actions 32 + description viewport 40 + chapters row 34 = 178 pt plus nav/padding. On small watches, stack actions and preserve 44 pt taps.</div>
+      <div class="ids"><span class="aid">book.detail</span><span class="aid">book.stream</span><span class="aid">book.add</span><span class="aid">book.fetch</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">6. Fetch In Progress</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen" data-aid="fetch.status">
+        <div class="wbar"><span class="back">&lsaquo; Hobbit</span><span class="clock">9:41</span></div>
+        <div class="status-icon">62%</div>
+        <div class="wtitle" style="text-align:center;margin-bottom:5px">Fetching audio</div>
+        <div class="status-lines">
+          <div class="line"><b>Source</b><span>iPhone cache</span></div>
+          <div class="line"><b>Status</b><span>Ch. 5 transferring</span></div>
+        </div>
+        <div class="barline"><i style="width:62%"></i></div>
+        <div class="line"><b>Next</b><span>Now Playing</span></div>
+        <div class="pair" style="margin-top:7px"><div class="btnwide danger" data-aid="fetch.cancel">Cancel</div><div class="btnwide ghost">Hide</div></div>
+      </div></div></div>
+      <div class="note">A not-local tap pushes this immediately. The fetch state is not hidden inside another screen.</div>
+      <div class="ids"><span class="aid">fetch.status</span><span class="aid">fetch.cancel</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">7. iPhone Unreachable</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen" data-aid="fetch.status">
+        <div class="wbar"><span class="back">&lsaquo; Fetch</span><span class="clock">9:41</span></div>
+        <div class="status-icon" style="background:rgba(236,116,101,.14);border-color:rgba(236,116,101,.45);color:#ffd5cf">!</div>
+        <div class="wtitle" style="text-align:center;margin-bottom:5px;color:#ffd5cf">Phone unavailable</div>
+        <div class="status-lines">
+          <div class="line"><b>Phone</b><span>Not reachable</span></div>
+          <div class="line"><b>Choice</b><span>Retry or stream</span></div>
+        </div>
+        <div class="pair"><div class="btnwide gold" data-aid="fetch.retry">Retry</div><div class="btnwide danger" data-aid="fetch.cancel">Cancel</div></div>
+        <div class="btnwide ghost" data-aid="book.stream">Stream over Wi-Fi</div>
+      </div></div></div>
+      <div class="note">No silent `WCSession` return path. User sees why playback did not start and has clear recovery actions.</div>
+      <div class="ids"><span class="aid">fetch.retry</span><span class="aid">fetch.cancel</span><span class="aid">book.stream</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">8. Download Error</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen" data-aid="fetch.status">
+        <div class="wbar"><span class="back">&lsaquo; On Watch</span><span class="clock">9:41</span></div>
+        <div class="wtitle" style="margin-bottom:6px;color:#ffd5cf">Download stopped</div>
+        <div class="status-lines">
+          <div class="line"><b>Book</b><span>Dracula</span></div>
+          <div class="line"><b>Reason</b><span>Storage cap</span></div>
+        </div>
+        <div class="storage"><i style="width:82%;background:var(--gold)"></i><i style="width:8%;background:var(--red)"></i></div>
+        <div class="legend"><span>Books 1.8 GB</span><span>Failed 190 MB</span><span>Cap 2 GB</span><span>Free 310 MB</span></div>
+        <div class="pair"><div class="btnwide gold" data-aid="fetch.retry">Retry</div><div class="btnwide danger" data-aid="fetch.cancel">Remove</div></div>
+        <div class="row"><div class="meta"><div class="t">Eviction candidate</div><div class="s">Moby Dick</div><div class="s">Last played 42d ago</div></div><div class="errdot"></div></div>
+      </div></div></div>
+      <div class="note">Error copy is broken into rows. Retry/remove remain visible within the fixed screen budget.</div>
+      <div class="ids"><span class="aid">fetch.status</span><span class="aid">fetch.retry</span><span class="aid">fetch.cancel</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">9. Chapters</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen">
+        <div class="wbar"><span class="back">&lsaquo; Hobbit</span><span class="clock">9:41</span></div>
+        <div class="wtitle" style="margin-bottom:5px">19 chapters</div>
+        <div class="row"><div class="meta"><div class="t">3. A Short Rest</div><div class="s">19:55</div></div></div>
+        <div class="row"><div class="meta"><div class="t">4. Over Hill, Under Hill</div><div class="s">22:07</div></div></div>
+        <div class="row active"><div class="meta"><div class="t">5. Riddles in the Dark</div><div class="s">41:02</div><div class="s">Playing</div></div><div class="dot"></div></div>
+        <div class="row"><div class="meta"><div class="t">6. Out of the Frying-Pan</div><div class="s">28:19</div></div></div>
+      </div></div></div>
+      <div class="note">Current chapter opens in view. Tapping unavailable chapters goes to fetch status, not a silent no-op.</div>
+      <div class="ids"><span class="aid">chapters.list</span><span class="aid">fetch.status</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">10. On Watch Storage</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen" data-aid="root.onWatch">
+        <div class="wbar"><span class="back">&lsaquo; Books</span><span class="clock">9:41</span></div>
+        <div class="wtitle" style="margin-bottom:4px">On Watch - 2 of 5</div>
+        <div class="storage"><i style="width:34%;background:var(--gold)"></i><i style="width:12%;background:rgba(215,169,95,.48)"></i></div>
+        <div class="legend"><span>Books 1.6 GB</span><span>Queue 380 MB</span><span>Cap 2 GB</span><span>Free 3.1 GB</span></div>
+        <div class="row"><div class="cv hobbit"></div><div class="meta"><div class="t">The Hobbit</div><div class="s">19 chapters</div><div class="s">612 MB</div></div><div class="dot"></div></div>
+        <div class="row"><div class="cv dracula"></div><div class="meta"><div class="t">Dracula</div><div class="s">27 chapters</div><div class="s">980 MB</div></div><div class="dot"></div></div>
+        <div class="row"><div class="cv holmes"></div><div class="meta"><div class="t">Sherlock Holmes</div><div class="s">Downloading 62%</div><div class="s">Phone transfer</div></div><div class="dl"></div></div>
+      </div></div></div>
+      <div class="note">Watch storage is a separate manifest from the phone offline cache. Every mutation reports status back to the phone.</div>
+      <div class="ids"><span class="aid">root.onWatch</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">11. Speed And Sleep</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div><div class="wscreen">
+        <div class="wbar"><span class="back">&lsaquo; Playing</span><span class="clock">9:41</span></div>
+        <div class="wtitle" style="margin-bottom:6px">Speed</div>
+        <div class="card" style="text-align:center;padding:10px 8px">
+          <div style="font-size:25px;font-weight:850;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--gold2)">1.4x</div>
+          <div class="barline" style="margin:8px 4px 3px"><i style="width:55%"></i></div>
+          <div class="subtle">Crown - 0.5x to 3.0x</div>
+        </div>
+        <div class="wtitle" style="margin:6px 0 4px">Sleep timer</div>
+        <div class="seg"><span>Off</span><span class="on">15m</span><span>30m</span><span>Chapter</span></div>
+        <div class="row"><div class="meta"><div class="t">Skip silence</div><div class="s">On</div></div></div>
+      </div></div></div>
+      <div class="note">Uses Core display values. This screen is a pushed list/tool surface, not a modal sheet.</div>
+      <div class="ids"><span class="aid">playback.options</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="label">12. Complications Deferred</div>
+      <div class="wrap"><div class="watch"><div class="crown"></div>
+        <div class="face">
+          <div class="faceday">THU 22 JUL</div>
+          <div class="faceclock">9:41</div>
+          <div class="compl" style="left:14px;top:20px">Play<br>Hobbit</div>
+          <div class="compl" style="right:14px;top:20px;border-color:rgba(255,255,255,.3);color:#dfe7ee">48%<br>6h</div>
+          <div class="stack" data-aid="widget.resume">
+            <div class="cv hobbit" style="width:24px;height:24px;border-radius:6px;font-size:4px"></div>
+            <div style="min-width:0;flex:1"><div class="t">The Hobbit</div><div class="s">Riddles in the Dark</div></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:#fff;color:#111;display:grid;place-items:center;font-size:10px;font-weight:900">&#9654;</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="note">Widgets wait until playback, sync, and TestFlight install are reliable. Resume must use the same position model as the app.</div>
+      <div class="ids"><span class="aid">widget.resume</span></div>
+    </div>
+
+  </section>
+</main>
+</body>
+</html>

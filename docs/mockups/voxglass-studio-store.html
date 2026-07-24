@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass Studio — paid AI-narrated titles (store mockups)</title>
+<style>
+:root{--ink:#f7f0e6;--ink2:#cfc4b6;--muted:#b0a79c;--faint:rgba(255,255,255,.10);--line:rgba(255,255,255,.14);
+--panel:rgba(30,36,39,.66);--gold:#d8ad67;--gold2:#f0ce8a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#262d31 0%,#020406 46%,#000 100%);color:var(--ink)}
+.board{padding:34px 26px 64px;max-width:1900px;margin:0 auto}
+h1{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:0 0 6px}
+p.lede{color:var(--muted);font-size:14px;max-width:840px;margin:0 0 28px;line-height:1.55}
+.screens{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.stage{display:grid;gap:10px;justify-items:center}
+.stage .label{font-weight:800;color:#f4e2bf;font-size:14px}
+.stage .note{color:var(--muted);font-size:11.5px;max-width:390px;text-align:center;line-height:1.5}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;border:10px solid #090b0d;
+background:linear-gradient(155deg,#0b0f12,#171d20);box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.22)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:54px;padding:17px 25px 0;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800}
+.screen{height:calc(100% - 54px);padding:2px 20px 16px;overflow:hidden;position:relative}
+.navtitle{font-size:27px;font-weight:850;letter-spacing:-.03em;margin:8px 2px 2px}
+.sub{font-size:12px;color:var(--muted);margin:0 2px 12px;line-height:1.45}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:12px;backdrop-filter:blur(18px)}
+.row{display:flex;gap:11px;padding:11px 12px;align-items:center}
+.row+.row{border-top:1px solid var(--line)}
+.cv{border-radius:8px;display:grid;place-items:center;text-align:center;color:#f8e8c7;font-weight:900;
+text-shadow:0 1px 4px #000;flex:0 0 auto;box-shadow:0 6px 16px rgba(0,0,0,.4);font-size:6px;line-height:1.15}
+.chim{background:linear-gradient(150deg,#1b1410,#7a4a2c 52%,#12181c)}.chim:after{content:"THE SECRET\A OF CHIMNEYS";white-space:pre}
+.fury{background:linear-gradient(150deg,#141a14,#4d6046 50%,#c2a878)}.fury:after{content:"THE SOUND\A AND THE FURY";white-space:pre}
+.vic{background:linear-gradient(150deg,#101b1e,#3d5f66 50%,#d4b07a)}.vic:after{content:"MURDER AT\A THE VICARAGE";white-space:pre}
+.cim{background:linear-gradient(150deg,#1e1508,#a06a2c 55%,#0f1214)}.cim:after{content:"CIMARRON"}
+.civ{background:linear-gradient(150deg,#16161c,#4a4560 52%,#c9b184)}.civ:after{content:"CIVILIZATION\A AND ITS\A DISCONTENTS";white-space:pre}
+.wol{background:linear-gradient(150deg,#1a1218,#7c4058 52%,#d7bb8c)}.wol:after{content:"LOVE\A LETTERS";white-space:pre}
+.t{font-size:13.5px;font-weight:800;line-height:1.2}
+.s{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.35}
+.price{font-size:13px;font-weight:850;color:#15181a;background:linear-gradient(180deg,var(--gold2),var(--gold));
+border-radius:99px;padding:6px 12px;flex:0 0 auto}
+.price.owned{background:transparent;color:var(--gold2);border:1px solid rgba(216,173,103,.45)}
+.head{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 4px 7px}
+.hero{border-radius:18px;height:170px;margin:6px 0 14px;display:grid;place-items:center;font-size:22px;font-weight:900;
+color:#f8e8c7;text-shadow:0 2px 10px #000;box-shadow:0 18px 40px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.14)}
+.badge{display:inline-block;font-size:9.5px;font-weight:850;letter-spacing:.05em;padding:4px 9px;border-radius:99px;
+background:rgba(216,173,103,.16);border:1px solid rgba(216,173,103,.4);color:var(--gold2)}
+.buy{height:50px;border-radius:15px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;
+display:grid;place-items:center;font-size:15px;font-weight:850;box-shadow:0 12px 28px rgba(170,112,40,.32);margin:14px 0 8px}
+.ghost{height:44px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;
+font-size:13.5px;font-weight:800}
+.bar{height:5px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;margin:9px 0 5px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.tm{display:flex;justify-content:space-between;font-size:10.5px;font-family:ui-monospace,Menlo,monospace;color:var(--muted)}
+.disclose{font-size:10.5px;color:var(--muted);line-height:1.5;background:rgba(255,255,255,.05);border:1px solid var(--line);
+border-radius:12px;padding:10px 12px;margin-top:12px}
+.callout{margin-top:24px;font-size:12px;color:var(--gold2);background:rgba(216,173,103,.1);border:1px solid rgba(216,173,103,.3);
+border-radius:12px;padding:12px 15px;line-height:1.65;max-width:980px}
+</style>
+</head>
+<body>
+<div class="board">
+<h1>Voxglass Studio — the paid shelf</h1>
+<p class="lede">Non-consumable in-app purchases at $1.99–$2.99 for classics that LibriVox has never recorded. The free app is
+untouched; Studio is one extra shelf, always labelled as AI narration, always with a free sample before purchase.</p>
+
+<div class="screens">
+
+<div class="stage">
+  <div class="label">1 · Studio catalog</div>
+  <article class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+    <main class="screen">
+      <div class="navtitle">Voxglass Studio</div>
+      <div class="sub">Classics no volunteer has recorded — narrated in one consistent voice, yours to keep. Sample every
+      title free before you buy.</div>
+
+      <div class="head">New this month</div>
+      <div class="card">
+        <div class="row"><div class="cv chim" style="width:56px;height:74px"></div>
+          <div style="flex:1;min-width:0"><div class="t">The Secret of Chimneys</div>
+          <div class="s">Agatha Christie · 8h 12m · Clara (UK)</div>
+          <div class="s" style="color:var(--gold2)">No LibriVox recording exists</div></div>
+          <div class="price">$2.99</div></div>
+        <div class="row"><div class="cv vic" style="width:56px;height:74px"></div>
+          <div style="flex:1;min-width:0"><div class="t">The Murder at the Vicarage</div>
+          <div class="s">Agatha Christie · 7h 41m · Clara (UK)</div>
+          <div class="s" style="color:var(--gold2)">First Miss Marple · never recorded</div></div>
+          <div class="price">$2.99</div></div>
+        <div class="row"><div class="cv fury" style="width:56px;height:74px"></div>
+          <div style="flex:1;min-width:0"><div class="t">The Sound and the Fury</div>
+          <div class="s">William Faulkner · 9h 05m · Beau (US South)</div></div>
+          <div class="price owned">Owned</div></div>
+      </div>
+
+      <div class="head">Also available</div>
+      <div class="card">
+        <div class="row"><div class="cv cim" style="width:42px;height:56px"></div>
+          <div style="flex:1;min-width:0"><div class="t">Cimarron</div><div class="s">Edna Ferber · 10h 20m</div></div><div class="price">$2.99</div></div>
+        <div class="row"><div class="cv civ" style="width:42px;height:56px"></div>
+          <div style="flex:1;min-width:0"><div class="t">Civilization and Its Discontents</div><div class="s">Sigmund Freud · 3h 05m</div></div><div class="price">$1.99</div></div>
+        <div class="row"><div class="cv wol" style="width:42px;height:56px"></div>
+          <div style="flex:1;min-width:0"><div class="t">Love Letters to Gilbert Imlay</div><div class="s">Mary Wollstonecraft · 2h 40m</div></div><div class="price">$1.99</div></div>
+      </div>
+
+      <div class="head">Bundle</div>
+      <div class="card"><div class="row"><div style="flex:1"><div class="t">Studio Starter — any 3 titles</div>
+        <div class="s">Save 25% · mix and match</div></div><div class="price">$5.99</div></div></div>
+    </main>
+  </article>
+  <div class="note">Every row states the gap it fills. That line is the entire pitch: you are not being sold something
+  the free tab already has.</div>
+</div>
+
+<div class="stage">
+  <div class="label">2 · Product page with free sample</div>
+  <article class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+    <main class="screen">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px">
+        <div style="font-size:13px;color:var(--gold2);font-weight:750">‹ Studio</div><div style="font-size:15px">􀈂</div></div>
+      <div class="hero chim"></div>
+      <div style="text-align:center">
+        <span class="badge">AI NARRATION · CLARA (UK)</span>
+        <div style="font-size:21px;font-weight:850;margin-top:10px">The Secret of Chimneys</div>
+        <div style="font-size:13px;color:var(--gold2);margin-top:4px">Agatha Christie · 1925</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">8h 12m · 32 chapters · public domain in the US</div>
+      </div>
+
+      <div class="head">Listen to chapter 1 free</div>
+      <div class="card" style="padding:12px">
+        <div class="bar"><i style="width:22%"></i></div>
+        <div class="tm"><span>02:14</span><span>Sample · 9:48</span><span>-07:34</span></div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+          <div class="ghost" style="width:52px">↺15</div>
+          <div class="ghost" style="width:64px;background:#fff;color:#111;border:0;font-size:18px">⏸</div>
+          <div class="ghost" style="width:52px">↻30</div>
+        </div>
+      </div>
+
+      <div class="buy">Buy · $2.99</div>
+      <div class="ghost">Restore purchases</div>
+
+      <div class="disclose">Narrated by a synthetic voice, not a human reader. The text is in the public domain in the
+      United States; this recording is available for purchase in the US only. Downloads to your library, plays offline,
+      and stays yours — no subscription.</div>
+    </main>
+  </article>
+  <div class="note">Chapter 1 always streams free. Disclosure of synthetic narration and of the territory restriction
+  is on the product page, not buried in settings.</div>
+</div>
+
+</div>
+
+<div class="callout"><b>Store rules note:</b> these are non-consumable IAPs with content delivered from the developer’s own
+CDN after purchase validation, the same shape as any “unlock this book” product. The free LibriVox catalog stays completely
+untouched and is never gated.</div>
+</div>
+</body>
+</html>

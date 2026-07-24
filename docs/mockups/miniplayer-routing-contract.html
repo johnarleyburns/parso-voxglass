@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass - Mini-player Routing Contract</title>
+<style>
+:root{--bgA:#0b0f12;--bgB:#171d20;--ink:#f7f0e6;--ink2:#cfc4b6;--muted:#b9afa4;--faint:rgba(255,255,255,.09);
+--line:rgba(255,255,255,.13);--panel:rgba(30,36,39,.62);--gold:#d8ad67;--gold2:#f0ce8a;--danger:#e2705f;
+--ok:#62d28f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
+background:radial-gradient(circle at 18% 0%,#283034 0%,#020406 44%,#000 100%);color:var(--ink)}
+.board{padding:34px 26px 64px;max-width:1900px;margin:0 auto}
+h1{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:0 0 6px}
+.lede{color:var(--muted);font-size:14px;max-width:880px;margin:0 0 26px;line-height:1.55}
+.screens{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+.stage{display:grid;gap:10px;justify-items:center}
+.label{font-weight:800;color:#f4e2bf;font-size:14px;text-align:center}
+.note{color:var(--muted);font-size:11.5px;max-width:390px;text-align:center;line-height:1.5}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,var(--bgA),var(--bgB));
+border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:30}
+.glow{position:absolute;inset:0;background:radial-gradient(circle at 50% -4%,rgba(138,90,36,.34),transparent 58%);pointer-events:none}
+.status{height:54px;padding:17px 25px 0;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;position:relative;z-index:2}
+.screen{height:calc(100% - 54px);padding:0 20px 16px;overflow:hidden;position:relative;z-index:2}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chevbtn{width:32px;height:32px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:16px;font-weight:800}
+.crumb{font-size:11.5px;color:var(--muted);letter-spacing:.02em;text-transform:uppercase;font-weight:750}
+.grabber{width:36px;height:5px;border-radius:3px;background:rgba(255,255,255,.35);margin:0 auto 8px}
+.scroll{height:664px;overflow:hidden;padding-bottom:12px}
+.cover{width:190px;height:190px;border-radius:16px;margin:2px auto 16px;display:grid;place-items:center;text-align:center;
+color:#f8e8c7;font-weight:900;font-size:19px;line-height:1.1;text-shadow:0 1px 8px rgba(0,0,0,.8);
+box-shadow:0 22px 44px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);position:relative;letter-spacing:.01em}
+.cover.big{width:214px;height:214px;font-size:21px}
+.cover.mini{width:38px;height:38px;border-radius:9px;margin:0;font-size:7px;box-shadow:none;flex:0 0 auto}
+.hobbit{background:radial-gradient(circle at 50% 16%,#f0d69b 0 3%,transparent 13%),linear-gradient(155deg,#172229,#384346 42%,#d3b477)}
+.frank{background:radial-gradient(circle at 58% 24%,#d3e9cf 0 3%,transparent 14%),linear-gradient(155deg,#182421,#496657 42%,#b7c9a2)}
+.odyssey{background:radial-gradient(circle at 50% 21%,#f4d4a8 0 3%,transparent 13%),linear-gradient(155deg,#172333,#314b65 44%,#d4a969)}
+.badge-prov{position:absolute;left:8px;bottom:8px;font-size:9px;font-weight:800;padding:3px 7px;border-radius:99px;
+background:rgba(10,12,14,.72);border:1px solid var(--line);color:var(--gold2);text-shadow:none;letter-spacing:.03em}
+.ring{position:absolute;right:-6px;bottom:-6px;width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--gold) 0 36%,rgba(255,255,255,.14) 36% 100%);
+display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.ring i{width:34px;height:34px;border-radius:50%;background:#12171a;display:grid;place-items:center;font-size:10px;font-style:normal;font-weight:850;color:var(--gold2)}
+.meta{text-align:center;padding:0 6px}
+.meta .t{font-size:19px;font-weight:850;letter-spacing:-.02em;line-height:1.18}
+.meta .a{font-size:13.5px;font-weight:700;color:var(--gold2);margin-top:5px}
+.meta .n{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.meta .c{font-size:11.5px;color:var(--muted);margin-top:5px}
+.chiprow{display:flex;gap:6px;justify-content:center;margin-top:9px;flex-wrap:wrap}
+.chip{font-size:10px;font-weight:800;padding:4px 9px;border-radius:99px;background:var(--faint);border:1px solid var(--line);color:var(--ink2)}
+.chip.gold{color:var(--gold2);border-color:rgba(216,173,103,.35);background:rgba(216,173,103,.12)}
+.scrub{margin:16px 2px 0}
+.bar{height:7px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:rgba(255,255,255,.9)}
+.bar.dim i{background:rgba(216,173,103,.85)}
+.times{display:flex;justify-content:space-between;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);margin-top:7px}
+.transport{display:flex;align-items:center;justify-content:space-between;margin:14px 4px 0}
+.tbtn{width:52px;height:52px;border-radius:26px;background:rgba(255,255,255,.12);border:1px solid var(--line);display:grid;place-items:center;font-size:17px;font-weight:800}
+.tbtn.main{width:66px;height:66px;border-radius:33px;background:rgba(255,255,255,.17);font-size:23px}
+.tbtn.play-primary{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;border:0;box-shadow:0 10px 26px rgba(170,112,40,.35)}
+.tbtn.off{opacity:.32}
+.iconrow{display:flex;align-items:center;justify-content:space-between;margin:16px 0 0;color:var(--muted)}
+.ib{width:40px;height:40px;border-radius:20px;display:grid;place-items:center;font-size:15px;position:relative}
+.ib.on{color:var(--gold2)}
+.ib b{font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:850}
+.cardhead{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 4px 8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(18px);overflow:hidden;margin-top:0}
+.row{display:flex;align-items:center;gap:11px;padding:11px 13px;min-height:46px}
+.row+.row{border-top:1px solid var(--line)}
+.row .ic{width:26px;text-align:center;color:var(--gold);font-size:14px;flex:0 0 auto}
+.row .tx{font-size:13.5px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .dt{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+.row.active{background:rgba(216,173,103,.14)}
+.row.active .tx{color:var(--gold2)}
+.sub{font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stack{flex:1;min-width:0}
+.about{padding:12px 13px}
+.about .txt{font-size:12.5px;line-height:1.5;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.about .more{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:var(--gold2)}
+.dock{position:absolute;left:12px;right:12px;bottom:8px;z-index:18;display:grid;gap:9px}
+.mini{height:54px;border-radius:22px;background:rgba(30,36,39,.78);border:1px solid var(--line);backdrop-filter:blur(18px);
+display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;box-shadow:0 18px 46px rgba(0,0,0,.45)}
+.mini .txt{min-width:0;flex:1}
+.mini .title{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .detail{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.mini .ctl{display:flex;gap:15px;font-size:15px;font-weight:900}
+.tabs{height:66px;border-radius:26px;background:rgba(30,36,39,.76);border:1px solid var(--line);backdrop-filter:blur(18px);
+display:flex;align-items:center;justify-content:space-around;color:rgba(247,240,230,.52);font-size:9.5px;font-weight:700}
+.tab{display:grid;gap:3px;justify-items:center;min-width:54px}
+.tab i{font-style:normal;font-size:18px}
+.tab.on{color:var(--gold2);background:rgba(216,173,103,.14);border-radius:99px;padding:6px 10px}
+.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.44);z-index:12}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:764px;background:linear-gradient(155deg,#11171a,#1c2326);
+border-top:1px solid var(--line);border-radius:28px 28px 0 0;padding:8px 20px 18px;box-shadow:0 -22px 60px rgba(0,0,0,.62);z-index:16}
+.banner{margin:12px auto 0;max-width:322px;text-align:center;border:1px solid rgba(216,173,103,.34);background:rgba(216,173,103,.11);
+border-radius:14px;padding:9px 12px;color:var(--gold2);font-size:11.5px;font-weight:750;line-height:1.35}
+.guard{display:grid;place-items:center;margin:12px auto 0;width:78px;height:78px;border-radius:50%;border:1px solid rgba(98,210,143,.5);
+background:rgba(98,210,143,.12);color:var(--ok);font-size:34px;font-weight:900}
+.callout{margin-top:22px;font-size:11.5px;color:var(--gold2);background:rgba(216,173,103,.1);border:1px solid rgba(216,173,103,.3);
+border-radius:10px;padding:9px 11px;max-width:900px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="board">
+<h1>Mini-player Routing Contract</h1>
+<p class="lede">The mini-player belongs to the active playback session. A pushed book page belongs to the visible book.
+Only a mini-player tap expands Now Playing; detail-page Play starts that book in place.</p>
+
+<div class="screens">
+
+  <div class="stage">
+    <div class="label">A - Different-book detail keeps mini-player</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| 5G 87%</span></div>
+      <main class="screen">
+        <div class="topbar"><div class="chevbtn">&lsaquo;</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">&lsaquo;</div></div>
+        <div class="scroll">
+          <div class="cover frank">FRANKENSTEIN<span class="badge-prov">LIBRIVOX</span><span class="ring"><i>0%</i></span></div>
+          <div class="meta">
+            <div class="t">Frankenstein</div>
+            <div class="a">Mary Shelley &rsaquo;</div>
+            <div class="n">Read by Cori Samuel &rsaquo;</div>
+            <div class="c">24 chapters</div>
+            <div class="chiprow"><span class="chip gold">Horror</span><span class="chip">Unstarted</span><span class="chip">Public domain</span></div>
+          </div>
+          <div class="scrub"><div class="bar dim"><i style="width:0%"></i></div><div class="times"><span>0:00</span><span></span><span>-8:22:10</span></div></div>
+          <div class="transport"><div class="tbtn off">&#9198;</div><div class="tbtn off">-15</div><div class="tbtn main play-primary">&#9658;</div><div class="tbtn off">+30</div><div class="tbtn off">&#9197;</div></div>
+          <div class="iconrow"><div class="ib"><b>1x</b></div><div class="ib">&#9790;</div><div class="ib">&#9873;</div><div class="ib">&#9825;</div><div class="ib">&#8681;</div><div class="ib">&#8984;</div><div class="ib">&hellip;</div></div>
+          <div class="cardhead">About</div>
+          <div class="card"><div class="about"><div class="txt">A scientist creates a living being and faces the consequences of ambition...</div><span class="more">Show more</span></div></div>
+          <div class="cardhead">Chapters</div>
+          <div class="card"><div class="row"><span class="ic">&#9658;</span><div class="stack"><div class="tx">Letter 1</div><div class="sub">Cori Samuel</div></div><span class="dt">18:42</span></div><div class="row"><span class="ic">&#9658;</span><div class="stack"><div class="tx">Letter 2</div><div class="sub">Cori Samuel</div></div><span class="dt">16:31</span></div></div>
+        </div>
+        <div class="dock">
+          <div class="mini"><div class="cover mini hobbit">HOBBIT</div><div class="txt"><div class="title">The Hobbit</div><div class="detail">5. Riddles in the Dark - 17:43</div></div><div class="ctl"><span>&#10074;&#10074;</span><span>&#9197;</span></div></div>
+          <div class="tabs"><div class="tab on"><i>&#9835;</i><span>Listen</span></div><div class="tab"><i>&#128218;</i><span>My Books</span></div><div class="tab"><i>&#8981;</i><span>Search</span></div><div class="tab"><i>&hellip;</i><span>More</span></div></div>
+        </div>
+      </main>
+    </article>
+    <div class="note">Visible page is Frankenstein, active session is The Hobbit. The mini-player stays visible and represents The Hobbit.</div>
+  </div>
+
+  <div class="stage">
+    <div class="label">B - Play from detail stays on detail</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| 5G 87%</span></div>
+      <main class="screen">
+        <div class="topbar"><div class="chevbtn">&lsaquo;</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">&lsaquo;</div></div>
+        <div class="scroll">
+          <div class="cover big frank">FRANKENSTEIN<span class="badge-prov">LIBRIVOX</span></div>
+          <div class="meta">
+            <div class="t">Frankenstein</div>
+            <div class="a">Mary Shelley &rsaquo;</div>
+            <div class="n">Read by Cori Samuel &rsaquo;</div>
+            <div class="c">1. Letter 1</div>
+            <div class="chiprow"><span class="chip gold">Horror</span><span class="chip">24 chapters</span><span class="chip">Playing here</span></div>
+          </div>
+          <div class="scrub"><div class="bar"><i style="width:3%"></i></div><div class="times"><span>1:04</span><span>8h 21m left</span><span>-17:38</span></div></div>
+          <div class="transport"><div class="tbtn">&#9198;</div><div class="tbtn">-15</div><div class="tbtn main">&#10074;&#10074;</div><div class="tbtn">+30</div><div class="tbtn">&#9197;</div></div>
+          <div class="iconrow"><div class="ib"><b>1x</b></div><div class="ib">&#9790;</div><div class="ib">&#9873;</div><div class="ib on">&#9829;</div><div class="ib">&#8681;</div><div class="ib">&#8984;</div><div class="ib">&hellip;</div></div>
+          <div class="banner">Detail-origin Play does not set the Now Playing sheet flag.</div>
+          <div class="cardhead">Chapters</div>
+          <div class="card"><div class="row active"><span class="ic">&#10074;&#10074;</span><div class="stack"><div class="tx">Letter 1</div><div class="sub">Cori Samuel</div></div><span class="dt">18:42</span></div><div class="row"><span class="ic">&#9658;</span><div class="stack"><div class="tx">Letter 2</div><div class="sub">Cori Samuel</div></div><span class="dt">16:31</span></div></div>
+        </div>
+        <div class="dock">
+          <div class="tabs"><div class="tab on"><i>&#9835;</i><span>Listen</span></div><div class="tab"><i>&#128218;</i><span>My Books</span></div><div class="tab"><i>&#8981;</i><span>Search</span></div><div class="tab"><i>&hellip;</i><span>More</span></div></div>
+        </div>
+      </main>
+    </article>
+    <div class="note">After Play, the visible page and active session match. The mini-player is hidden instead of opening a duplicate sheet.</div>
+  </div>
+
+  <div class="stage">
+    <div class="label">C - Mini-player tap expands current session</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| 5G 87%</span></div>
+      <main class="screen">
+        <div class="topbar"><div class="chevbtn">&lsaquo;</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">&lsaquo;</div></div>
+        <div class="scroll" style="opacity:.42">
+          <div class="cover frank">FRANKENSTEIN<span class="badge-prov">LIBRIVOX</span></div>
+          <div class="meta"><div class="t">Frankenstein</div><div class="a">Mary Shelley &rsaquo;</div><div class="n">Read by Cori Samuel &rsaquo;</div><div class="c">24 chapters</div></div>
+          <div class="cardhead">About</div><div class="card"><div class="about"><div class="txt">A scientist creates a living being and faces the consequences of ambition...</div></div></div>
+        </div>
+        <div class="sheetbg"></div>
+        <section class="sheet">
+          <div class="grabber"></div>
+          <div class="topbar"><div class="chevbtn">&#8964;</div><div class="crumb">Now Playing</div><div class="chevbtn" style="opacity:0">&#8964;</div></div>
+          <div class="cover big hobbit">THE HOBBIT<span class="badge-prov">LIBRIVOX</span></div>
+          <div class="meta">
+            <div class="t">The Hobbit</div>
+            <div class="a">J. R. R. Tolkien &rsaquo;</div>
+            <div class="n">Read by Phil Chenevert &rsaquo;</div>
+            <div class="c">5. Riddles in the Dark</div>
+            <div class="chiprow"><span class="chip gold">Fantasy</span><span class="chip">19 chapters</span><span class="chip">Downloaded</span></div>
+          </div>
+          <div class="scrub"><div class="bar"><i style="width:48%"></i></div><div class="times"><span>17:43</span><span>6h 12m left</span><span>-22:17</span></div></div>
+          <div class="transport"><div class="tbtn">&#9198;</div><div class="tbtn">-15</div><div class="tbtn main">&#10074;&#10074;</div><div class="tbtn">+30</div><div class="tbtn">&#9197;</div></div>
+          <div class="iconrow"><div class="ib"><b>1x</b></div><div class="ib">&#9790;</div><div class="ib">&#9873;</div><div class="ib on">&#9829;</div><div class="ib">&#10003;</div><div class="ib">&#8984;</div><div class="ib">&hellip;</div></div>
+          <div class="cardhead">Chapters</div>
+          <div class="card"><div class="row active"><span class="ic">&#10074;&#10074;</span><div class="stack"><div class="tx">5. Riddles in the Dark</div><div class="sub">Phil Chenevert</div></div><span class="dt">41:02</span></div></div>
+        </section>
+      </main>
+    </article>
+    <div class="note">The pushed Frankenstein page remains underneath. The sheet resolves from currentSession, so it opens The Hobbit.</div>
+  </div>
+
+  <div class="stage">
+    <div class="label">D - Same-book guard suppresses duplicate mini-player</div>
+    <article class="phone"><div class="glow"></div>
+      <div class="status"><span>9:41</span><span>||| 5G 87%</span></div>
+      <main class="screen">
+        <div class="topbar"><div class="chevbtn">&lsaquo;</div><div class="crumb">My Books</div><div class="chevbtn" style="opacity:0">&lsaquo;</div></div>
+        <div class="scroll">
+          <div class="cover big hobbit">THE HOBBIT<span class="badge-prov">LIBRIVOX</span></div>
+          <div class="meta">
+            <div class="t">The Hobbit</div>
+            <div class="a">J. R. R. Tolkien &rsaquo;</div>
+            <div class="n">Read by Phil Chenevert &rsaquo;</div>
+            <div class="c">5. Riddles in the Dark</div>
+            <div class="chiprow"><span class="chip gold">Fantasy</span><span class="chip">19 chapters</span><span class="chip">Current session</span></div>
+          </div>
+          <div class="scrub"><div class="bar"><i style="width:48%"></i></div><div class="times"><span>17:43</span><span>6h 12m left</span><span>-22:17</span></div></div>
+          <div class="transport"><div class="tbtn">&#9198;</div><div class="tbtn">-15</div><div class="tbtn main">&#10074;&#10074;</div><div class="tbtn">+30</div><div class="tbtn">&#9197;</div></div>
+          <div class="guard">&#10003;</div>
+          <div class="banner">visiblePushedBookID == currentSession.book.id, so the dock row is suppressed.</div>
+          <div class="cardhead">About</div>
+          <div class="card"><div class="about"><div class="txt">Bilbo Baggins is swept into a quest to reclaim treasure guarded by a dragon...</div><span class="more">Show more</span></div></div>
+        </div>
+        <div class="dock">
+          <div class="tabs"><div class="tab on"><i>&#9835;</i><span>Listen</span></div><div class="tab"><i>&#128218;</i><span>My Books</span></div><div class="tab"><i>&#8981;</i><span>Search</span></div><div class="tab"><i>&hellip;</i><span>More</span></div></div>
+        </div>
+      </main>
+    </article>
+    <div class="note">A single visible book page carries transport, scrubber, and actions. The dock still returns when this page disappears.</div>
+  </div>
+</div>
+
+<div class="callout">Implementation contract: the router compares only two IDs - <b>visiblePushedBookID</b> and
+<b>currentSession.book.id</b>. Different IDs show the mini-player; matching IDs hide it; mini-player tap presents
+Now Playing for the current session.</div>
+</div>
+</body>
+</html>
