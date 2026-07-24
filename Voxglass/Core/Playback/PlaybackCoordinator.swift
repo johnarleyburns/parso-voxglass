@@ -1,11 +1,15 @@
 import Combine
 import Foundation
+import Observation
 import SwiftUI
 
 @MainActor
 public final class PlaybackCoordinator: ObservableObject {
     @Published public private(set) var currentSession: PlaybackSession?
     @Published public var playbackError: String?
+
+    /// Selection-phase state. Under S1 it is @Published; S2 removes the wrapper.
+    @Published public private(set) var playbackPhase: PlaybackPhase = .idle
 
     /// Current playback rate (P0-1). Published so the speed menu tracks it.
     @Published public private(set) var playbackRate: Float = PlaybackRate.normal
@@ -59,6 +63,11 @@ public final class PlaybackCoordinator: ObservableObject {
     /// De-duplicates concurrent lazy loads (e.g. a double-tapped play button):
     /// every caller awaits the same in-flight load instead of issuing a second.
     private var engineLoadTask: Task<Bool, Never>?
+
+    /// Cancellation token for the active selection so stale requests cannot
+    /// overwrite state. Under S2 these become `@ObservationIgnored`.
+    private var selectionTask: Task<Void, Never>?
+    private var activeSelectionID: UUID?
 
     private var silenceBoosted = false
     private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
@@ -134,6 +143,7 @@ public final class PlaybackCoordinator: ObservableObject {
         else { return }
         applyStoredRate(forBookID: book.book.id)
         updateArtwork(for: book.book)
+        playbackPhase = .paused
         currentSession = PlaybackSession(
             book: book.book,
             chapters: book.chapters,
@@ -178,6 +188,10 @@ public final class PlaybackCoordinator: ObservableObject {
         guard let session = currentSession,
               let url = session.chapter.resolvedPlayableURL() else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
+            playbackPhase = .failed(PlaybackFailure(
+                message: AudioEngineError.missingPlayableURL.localizedDescription,
+                isRetryable: false
+            ))
             return false
         }
         guard !Task.isCancelled else { return false }
@@ -192,10 +206,175 @@ public final class PlaybackCoordinator: ObservableObject {
             return true
         } catch {
             playbackError = error.localizedDescription
+            playbackPhase = .failed(PlaybackFailure(
+                message: error.localizedDescription,
+                isRetryable: true
+            ))
             isEngineLoaded = false
             return false
         }
     }
+
+    // MARK: - Selection (S1 — deterministic, latest-request-wins)
+
+    /// Time-validation helper: rejects NaN, infinity, and negative values.
+    private func validTime(_ value: TimeInterval?) -> TimeInterval? {
+        guard let value,
+              value.isFinite,
+              value >= 0 else {
+            return nil
+        }
+        return value
+    }
+
+    /// Synchronous entry point that owns cancellation. This is the recommended
+    /// call site for all new selection callers (book tap, chapter pick, etc.).
+    public func selectAndPlay(
+        _ book: BookWithChapters,
+        chapter requestedChapter: Chapter? = nil
+    ) {
+        if isPreparingSameSelection(book: book, chapter: requestedChapter) {
+            return
+        }
+
+        selectionTask?.cancel()
+        let requestID = UUID()
+        activeSelectionID = requestID
+
+        selectionTask = Task { [weak self] in
+            await self?.performSelection(book, chapter: requestedChapter, requestID: requestID)
+        }
+    }
+
+    private func isPreparingSameSelection(
+        book: BookWithChapters,
+        chapter requestedChapter: Chapter?
+    ) -> Bool {
+        guard playbackPhase == .preparing,
+              let session = currentSession,
+              session.book.id == book.book.id else { return false }
+        if let requestedChapter {
+            return session.chapter.id == requestedChapter.id
+        }
+        return true
+    }
+
+    /// The async body of a selection. Resolves position, publishes the preparing
+    /// session immediately, then loads the engine with request-token checks.
+    private func performSelection(
+        _ book: BookWithChapters,
+        chapter requestedChapter: Chapter?,
+        requestID: UUID
+    ) async {
+        // 1. Resolve chapter + position synchronously where possible.
+        let startTime: TimeInterval
+        let savedDuration: TimeInterval?
+        var targetChapter: Chapter
+
+        if let requestedChapter {
+            targetChapter = requestedChapter
+            let row = try? await positionStore.position(
+                for: book.book.id, chapterID: requestedChapter.id
+            )
+            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            let snapshot = snapshotStore.position(forBookID: book.book.id)
+                .flatMap { $0.chapterID == requestedChapter.id ? $0 : nil }
+            let saved = Self.preferredPosition(row: row ?? nil, snapshot: snapshot)
+            guard let target = Self.resolveResume(
+                chapters: [requestedChapter], saved: saved
+            ) else { return }
+            startTime = target.startTime
+            savedDuration = saved?.chapterID == target.chapter.id ? saved?.duration : nil
+        } else {
+            targetChapter = book.chapters.first!
+            let row = try? await positionStore.latestPosition(forBookID: book.book.id)
+            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            let saved = Self.preferredPosition(
+                row: row ?? nil,
+                snapshot: snapshotStore.position(forBookID: book.book.id)
+            )
+            guard let target = Self.resolveResume(
+                chapters: book.chapters, saved: saved
+            ) else { return }
+            targetChapter = target.chapter
+            startTime = target.startTime
+            savedDuration = saved?.chapterID == target.chapter.id ? saved?.duration : nil
+        }
+
+        // Recheck after potentially async position lookup.
+        guard !Task.isCancelled, activeSelectionID == requestID else { return }
+
+        // 2. Publish preparing session *before* engine load.
+        let duration = validTime(savedDuration ?? targetChapter.duration)
+        await prepareForPausedPresentation()
+        guard !Task.isCancelled, activeSelectionID == requestID else { return }
+        applyStoredRate(forBookID: book.book.id)
+        updateArtwork(for: book.book)
+        currentSession = PlaybackSession(
+            book: book.book,
+            chapters: book.chapters,
+            chapter: targetChapter,
+            position: startTime,
+            duration: duration,
+            isPlaying: false
+        )
+        playbackError = nil
+        playbackPhase = .preparing
+
+        // 3. Load the engine.
+        guard let playableURL = targetChapter.resolvedPlayableURL() else {
+            guard activeSelectionID == requestID else { return }
+            playbackError = AudioEngineError.missingPlayableURL.localizedDescription
+            playbackPhase = .failed(PlaybackFailure(
+                message: AudioEngineError.missingPlayableURL.localizedDescription,
+                isRetryable: false
+            ))
+            return
+        }
+
+        do {
+            try await engine.load(url: playableURL, startTime: startTime)
+            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            isEngineLoaded = true
+            applyStoredRate(forBookID: book.book.id)
+            engine.play()
+
+            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            mutateSession {
+                $0.isPlaying = true
+                if let engDuration = validTime(engine.duration) {
+                    $0.duration = engDuration
+                }
+            }
+            playhead = validTime(engine.currentTime) ?? startTime
+            playheadDuration = validTime(engine.duration) ?? duration
+            playbackPhase = .playing
+            startProgressLoop()
+            updateNowPlayingInfo()
+            prefetchNextChapter(from: book, currentChapter: targetChapter)
+            let nextIndex = chapterIndex(in: book, for: targetChapter) + 1
+            if book.chapters.indices.contains(nextIndex),
+               let nextURL = book.chapters[nextIndex].resolvedPlayableURL() {
+                engine.preloadNext(url: nextURL)
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            guard activeSelectionID == requestID else { return }
+            playbackError = error.localizedDescription
+            playbackPhase = .failed(PlaybackFailure(
+                message: error.localizedDescription,
+                isRetryable: true
+            ))
+            isEngineLoaded = false
+        }
+    }
+
+    /// While the coordinator is still `ObservableObject`, `playhead` and
+    /// `playheadDuration` are internal temporary fields. Under S2 they become
+    /// tracked `@Observable` properties.
+    var playhead: TimeInterval = 0
+    var playheadDuration: TimeInterval?
 
     /// Replays every UserDefaults snapshot into SQLite (launch reconcile). LWW on
     /// `updatedAt`, with the durable-store tie-break: for the same (book, chapter)
@@ -250,6 +429,8 @@ public final class PlaybackCoordinator: ObservableObject {
         await prepareForPausedPresentation()
         applyStoredRate(forBookID: book.book.id)
         updateArtwork(for: book.book)
+        playbackError = nil
+        playbackPhase = .paused
         currentSession = PlaybackSession(
             book: book.book,
             chapters: book.chapters,
@@ -267,26 +448,50 @@ public final class PlaybackCoordinator: ObservableObject {
         let chapter = target.chapter
         let startTime = target.startTime
 
+        // Publish preparing session *before* engine load.
+        await prepareForPausedPresentation()
+        guard !Task.isCancelled else { return }
+        applyStoredRate(forBookID: book.book.id)
+        updateArtwork(for: book.book)
+        playbackError = nil
+        playbackPhase = .preparing
+        currentSession = PlaybackSession(
+            book: book.book,
+            chapters: book.chapters,
+            chapter: chapter,
+            position: startTime,
+            duration: target.savedDuration ?? chapter.duration,
+            isPlaying: false
+        )
+        playhead = startTime
+        playheadDuration = validTime(target.savedDuration ?? chapter.duration)
+
         guard let playableURL = chapter.resolvedPlayableURL() else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
+            playbackPhase = .failed(PlaybackFailure(
+                message: AudioEngineError.missingPlayableURL.localizedDescription,
+                isRetryable: false
+            ))
             return
         }
 
         do {
             try await engine.load(url: playableURL, startTime: startTime)
+            guard !Task.isCancelled else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: book.book.id)
-            updateArtwork(for: book.book)
             engine.play()
 
-            currentSession = PlaybackSession(
-                book: book.book,
-                chapters: book.chapters,
-                chapter: chapter,
-                position: startTime,
-                duration: target.savedDuration ?? chapter.duration ?? engine.duration,
-                isPlaying: true
-            )
+            mutateSession {
+                $0.isPlaying = true
+                if let engDuration = validTime(engine.duration) {
+                    $0.duration = engDuration
+                }
+            }
+            playhead = validTime(engine.currentTime) ?? startTime
+            playheadDuration = validTime(engine.duration) ?? validTime(chapter.duration)
+            playbackPhase = .playing
+
             startProgressLoop()
             updateNowPlayingInfo()
 
@@ -299,9 +504,15 @@ public final class PlaybackCoordinator: ObservableObject {
                let nextURL = book.chapters[nextIndex].resolvedPlayableURL() {
                 engine.preloadNext(url: nextURL)
             }
+        } catch is CancellationError {
+            return
         } catch {
             isEngineLoaded = false
             playbackError = error.localizedDescription
+            playbackPhase = .failed(PlaybackFailure(
+                message: error.localizedDescription,
+                isRetryable: true
+            ))
         }
     }
 
@@ -423,9 +634,11 @@ public final class PlaybackCoordinator: ObservableObject {
             return
         }
         Task { @MainActor in
+            playbackPhase = .preparing
             guard await ensureEngineLoaded() else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
+            playbackPhase = .playing
             startProgressLoop()
             updateNowPlayingInfo()
         }
@@ -447,6 +660,7 @@ public final class PlaybackCoordinator: ObservableObject {
             $0.duration = engine.duration ?? $0.duration
             $0.isPlaying = false
         }
+        playbackPhase = .paused
         Task { await persistCurrentPosition(reason: .pause) }
         updateNowPlayingInfo()
     }
@@ -558,6 +772,7 @@ public final class PlaybackCoordinator: ObservableObject {
         progressTask = nil
         currentSession = nil
         isEngineLoaded = false
+        playbackPhase = .idle
         currentArtworkBookID = nil
         bridge.setArtwork(nil)
         snapshotStore.clear(bookID: bookID)
@@ -858,6 +1073,7 @@ public final class PlaybackCoordinator: ObservableObject {
                 isPlaying: shouldPlay
             )
             currentSession = newSession
+            playbackPhase = shouldPlay ? .playing : .paused
             // A durable row for the just-started chapter. `persistCurrentPosition`
             // would drop this write behind the anti-zero guard (the engine just
             // loaded and reports ~0), leaving the previous chapter as the newest
@@ -1009,6 +1225,12 @@ public final class PlaybackCoordinator: ObservableObject {
             $0.duration = engine.duration ?? $0.duration
             $0.isPlaying = engine.isPlaying
         }
+        // Reconcile phase from engine state (handles gapless auto-advance, etc.)
+        if engine.isPlaying, playbackPhase != .playing {
+            playbackPhase = .playing
+        } else if !engine.isPlaying, playbackPhase == .playing {
+            playbackPhase = .paused
+        }
         saveCurrentSnapshot()
 
         if engine.isPlaying, Date().timeIntervalSince(lastPeriodicSave) >= 5 {
@@ -1147,9 +1369,11 @@ public final class PlaybackCoordinator: ObservableObject {
     private func resume() {
         guard currentSession != nil else { return }
         Task { @MainActor in
+            playbackPhase = .preparing
             guard await ensureEngineLoaded() else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
+            playbackPhase = .playing
             startProgressLoop()
             updateNowPlayingInfo()
         }
@@ -1198,6 +1422,7 @@ public final class PlaybackCoordinator: ObservableObject {
         isHandlingInterruption = false
         engine.play()
         mutateSession { $0.isPlaying = true }
+        playbackPhase = .playing
         startProgressLoop()
         updateNowPlayingInfo()
     }

@@ -47,10 +47,40 @@ final class FakeAudioEngine: AudioEngine {
     /// failure path: the presented session must survive the error).
     var loadError: Error?
 
+    /// When true, `load` will suspend until `resumeSuspendedLoad()` or
+    /// `failSuspendedLoad(with:)` is called. Tests control completion order
+    /// of concurrent loads to assert latest-request-wins semantics.
+    var suspendLoads = false
+    private var pendingLoadContinuations: [CheckedContinuation<Void, Error>] = []
+
+    /// Resume the oldest suspended load as a success.
+    func resumeSuspendedLoad() {
+        guard !pendingLoadContinuations.isEmpty else { return }
+        pendingLoadContinuations.removeFirst().resume()
+    }
+
+    /// Fail the oldest suspended load with the given error.
+    func failSuspendedLoad(with error: Error) {
+        guard !pendingLoadContinuations.isEmpty else { return }
+        pendingLoadContinuations.removeFirst().resume(throwing: error)
+    }
+
+    /// Resolve all pending suspended loads as success.
+    func resumeAllSuspendedLoads() {
+        let all = pendingLoadContinuations
+        pendingLoadContinuations.removeAll()
+        for cont in all { cont.resume() }
+    }
+
     func configureAudioSession() { calls.append(.configureAudioSession) }
 
     func load(url: URL, startTime: TimeInterval) async throws {
         calls.append(.load(url: url, startTime: startTime))
+        if suspendLoads {
+            try await withCheckedThrowingContinuation { cont in
+                pendingLoadContinuations.append(cont)
+            }
+        }
         if let loadError { throw loadError }
         currentTime = startTime
     }
