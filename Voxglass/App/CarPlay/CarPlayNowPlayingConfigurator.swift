@@ -42,7 +42,6 @@ final class CarPlayNowPlayingConfigurator: NSObject {
     }
 
     deinit {
-        subscription?.cancel()
     }
 
     private func apply() {
