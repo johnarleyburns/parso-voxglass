@@ -44,11 +44,15 @@ public struct PlaybackSession: Equatable, Sendable {
     /// durations are unavailable. Counts down across chapter boundaries.
     public var bookRemaining: TimeInterval? {
         guard let total = totalBookDuration else { return nil }
-        let elapsedBefore = chapters[..<min(chapterIndex, chapters.count)]
+        let bookElapsed = elapsedBeforeCurrentChapter + position
+        return max(total - bookElapsed, 0)
+    }
+
+    /// Total duration of chapters before the current chapter.
+    public var elapsedBeforeCurrentChapter: TimeInterval {
+        chapters[..<min(chapterIndex, chapters.count)]
             .compactMap(\.duration)
             .reduce(0, +)
-        let bookElapsed = elapsedBefore + position
-        return max(total - bookElapsed, 0)
     }
 }
 

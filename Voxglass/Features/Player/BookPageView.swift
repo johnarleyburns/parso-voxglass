@@ -10,8 +10,6 @@ struct BookPageView: View {
     var book: BookWithChapters?
     @Binding var showingNowPlaying: Bool
     var presentationContext: BookPagePresentationContext = .pushedDetail
-    @State private var scrubPosition: Double = 0
-    @State private var isScrubbing = false
     @State private var showingEQ = false
     @State private var showingBookmarks = false
     @State private var showingOverflow = false
@@ -95,21 +93,10 @@ struct BookPageView: View {
                         bookID: resolved.book.id,
                         in: recentlyViewedRaw
                     )
-                    if let session = playback.currentSession, session.book.id == resolved.book.id {
-                        scrubPosition = session.position
-                    }
-                    if presentationContext == .pushedDetail {
-                        miniPlayerRouter.registerPushedBookPage(resolved.book.id)
-                    }
                 }
                 .onDisappear {
                     if presentationContext == .pushedDetail {
                         miniPlayerRouter.unregisterPushedBookPage(resolved.book.id)
-                    }
-                }
-                .onChange(of: playback.currentSession?.position) { _, newValue in
-                    if !isScrubbing, let newValue, playback.currentSession?.book.id == resolved.book.id {
-                        scrubPosition = newValue
                     }
                 }
                 .onChange(of: playback.bookmarkCount) { _, newValue in
@@ -403,63 +390,49 @@ struct BookPageView: View {
     }
 
     private func scrubber(_ resolved: BookWithChapters) -> some View {
-        VStack(spacing: 7) {
-            let session = playback.currentSession
-            let isActive = session?.book.id == resolved.book.id
-            let savedProgress = libraryStore.progressByBook[resolved.book.id]
-            let position = isActive ? (isScrubbing ? scrubPosition : (session?.position ?? 0)) : (savedProgress?.lastPosition ?? 0)
-            let duration: TimeInterval = {
-                if isActive, let d = session?.duration, d > 0 { return d }
-                if let total = resolved.totalDuration, total > 0 { return total }
-                return resolved.chapters.first?.duration ?? 1
-            }()
-            let progress = max(duration, 1) > 0 ? position / max(duration, 1) : 0
+        let session = playback.currentSession
+        let isActive = session?.book.id == resolved.book.id
+        let savedProgress = libraryStore.progressByBook[resolved.book.id]
 
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(Color.white.opacity(0.16))
-                        .frame(height: 7)
+        let chapterFallbackPosition: TimeInterval
+        let chapterFallbackDuration: TimeInterval
+        let elapsedBeforeChapter: TimeInterval
 
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(isActive ? Color.white.opacity(0.90) : Palette.brass.opacity(0.85))
-                        .frame(width: max(geometry.size.width * CGFloat(progress), 0), height: 7)
+        if let session, session.book.id == resolved.book.id {
+            chapterFallbackPosition = session.position
+            chapterFallbackDuration = session.chapter.duration ?? session.duration ?? 1
+            elapsedBeforeChapter = session.elapsedBeforeCurrentChapter
+        } else {
+            // For inactive books, derive chapter-relative values from saved progress
+            let savedPos = savedProgress?.lastPosition ?? 0
+            let sorted = resolved.chapters.naturallySorted()
+            var accumulator: TimeInterval = 0
+            var foundChapter = sorted.first
+            var foundElapsed: TimeInterval = 0
+            for ch in sorted {
+                guard let dur = ch.duration else { break }
+                if accumulator + dur > savedPos {
+                    foundChapter = ch
+                    foundElapsed = accumulator
+                    break
                 }
-                .frame(maxHeight: .infinity)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { val in
-                            guard isActive else { return }
-                            isScrubbing = true
-                            let ratio = val.location.x / geometry.size.width
-                            scrubPosition = max(0, min(duration, Double(ratio) * duration))
-                        }
-                        .onEnded { _ in
-                            guard isActive else { return }
-                            isScrubbing = false
-                            Task { await playback.seek(to: scrubPosition) }
-                        }
-                )
+                accumulator += dur
             }
-            .frame(height: 32)
-            .accessibilityLabel("Playback position")
-            .accessibilityValue(TimeFormatting.clock(position))
-
-            HStack {
-                Text(TimeFormatting.clock(position))
-                Spacer()
-                if let session = isActive ? session : nil, let bookRemaining = session.bookRemaining {
-                    Text("\(TimeFormatting.compactDuration(bookRemaining)) left in book")
-                    Spacer()
-                }
-                Text("-\(TimeFormatting.clock(max(duration - position, 0)))")
-            }
-            .scaledFont(size: 11, design: .monospaced)
-            .foregroundStyle(Color.white.opacity(0.55))
+            chapterFallbackPosition = max(0, savedPos - foundElapsed)
+            chapterFallbackDuration = foundChapter?.duration ?? sorted.first?.duration ?? 1
+            elapsedBeforeChapter = foundElapsed
         }
-        .padding(.horizontal, 2)
-        .padding(.top, 20)
+
+        return ScrubberView(
+            isActiveBook: isActive,
+            chapterFallbackPosition: chapterFallbackPosition,
+            chapterFallbackDuration: chapterFallbackDuration,
+            elapsedBeforeChapter: elapsedBeforeChapter,
+            totalBookDuration: session?.totalBookDuration ?? resolved.totalDuration,
+            onSeekChapterPosition: { target in
+                Task { await playback.seek(to: target) }
+            }
+        )
     }
 
     private func transportControls(_ resolved: BookWithChapters) -> some View {
