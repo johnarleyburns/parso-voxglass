@@ -350,7 +350,34 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     // MARK: - Local DB helpers
 
-    private func upsertSource(_ source: Source) async throws {}
+    private func upsertSource(_ source: Source) async throws {
+        let identity = sourceKindIdentity(for: source)
+        let sourceID = CloudKitRecordMapper.stableUUID(from: identity)
+        try await database.execute("""
+        INSERT OR REPLACE INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID.uuidString),
+            .string(source.kind.rawValue),
+            .string(source.title),
+            ModelMapping.databaseValue(source.url),
+            ModelMapping.databaseValue(source.createdAt)
+        ])
+    }
+
+    private func sourceKindIdentity(for source: Source) -> String {
+        switch source.kind {
+        case .librivox, .internetArchive, .internetArchiveURL:
+            if let url = source.url,
+               let i = url.pathComponents.firstIndex(of: "details"),
+               url.pathComponents.indices.contains(i + 1) {
+                return url.pathComponents[i + 1]
+            }
+            return source.title
+        case .localFiles:
+            return CloudKitRecordMapper.sha256First12(source.url?.absoluteString ?? source.title)
+        }
+    }
 
     private func upsertBook(_ book: Book, chapters: [Chapter], contentKey: String) async throws {
         let existing = try await database.query(
@@ -377,7 +404,17 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     private func importNewBook(_ book: Book, chapters: [Chapter], contentKey: String) async throws {
-        let sourceID = book.sourceID
+        let sourceID = book.sourceID.uuidString
+        try await database.execute("""
+        INSERT OR IGNORE INTO sources (id, kind, title, url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """, [
+            .string(sourceID),
+            .string("librivox"),
+            .string("Synced Source"),
+            .null,
+            .double(book.createdAt.timeIntervalSince1970)
+        ])
         try await database.execute("""
         INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

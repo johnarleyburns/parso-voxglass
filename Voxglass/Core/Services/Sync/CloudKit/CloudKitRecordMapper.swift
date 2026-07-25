@@ -80,6 +80,24 @@ public enum CloudKitRecordMapper {
         return record
     }
 
+    public static func sourceIdentity(from recordID: CKRecord.ID) -> String? {
+        let name = recordID.recordName
+        guard name.hasPrefix("source-") else { return nil }
+        return String(name.dropFirst(7))
+    }
+
+    public static func sourceIdentity(from sourceRef: CKRecord.Reference) -> String? {
+        sourceIdentity(from: sourceRef.recordID)
+    }
+
+    public static func stableUUID(from identity: String) -> UUID {
+        let hash = SHA256.hash(data: Data(identity.utf8))
+        return hash.withUnsafeBytes { ptr in
+            UUID(uuid: (ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7],
+                        ptr[8], ptr[9], ptr[10], ptr[11], ptr[12], ptr[13], ptr[14], ptr[15]))
+        }
+    }
+
     public static func source(from record: CKRecord) -> Source? {
         guard let kindRaw = record[Field.kind] as? String,
               let kind = SourceKind(rawValue: kindRaw),
@@ -150,12 +168,19 @@ public enum CloudKitRecordMapper {
         let narrators = (record[Field.narratorsJSON] as? String)
             .flatMap { $0.data(using: .utf8) }
             .flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []
+        let sourceID: UUID = {
+            if let ref = record[Field.sourceRef] as? CKRecord.Reference,
+               let identity = sourceIdentity(from: ref) {
+                return stableUUID(from: identity)
+            }
+            return UUID()
+        }()
         return Book(
             title: title,
             authors: authors,
             narrators: narrators,
             summary: record[Field.summary] as? String,
-            sourceID: UUID(),
+            sourceID: sourceID,
             coverURL: (record[Field.coverURL] as? String).flatMap(URL.init(string:)),
             createdAt: (record[Field.createdAt] as? Date) ?? Date(),
             updatedAt: (record[Field.updatedAt] as? Date) ?? Date(),
