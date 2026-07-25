@@ -3,14 +3,10 @@ import VoxglassCore
 
 struct WatchListeningView: View {
     @EnvironmentObject var services: WatchAppServices
-    @State private var books: [BookWithChapters] = []
-    @State private var isLoading = true
 
     var body: some View {
         Group {
-            if isLoading {
-                ProgressView("Loading")
-            } else if books.isEmpty {
+            if services.libraryStore.books.isEmpty {
                 VStack(spacing: 8) {
                     Text("No Books")
                         .font(.headline)
@@ -20,7 +16,7 @@ struct WatchListeningView: View {
                         .multilineTextAlignment(.center)
                 }
             } else {
-                List(books) { book in
+                List(services.libraryStore.books) { book in
                     NavigationLink {
                         WatchBookDetailView(book: book)
                             .accessibilityIdentifier(WatchAccessibilityID.bookDetail)
@@ -30,11 +26,6 @@ struct WatchListeningView: View {
                 }
                 .accessibilityIdentifier(WatchAccessibilityID.rootListening)
             }
-        }
-        .task {
-            await services.bootstrap()
-            books = services.libraryStore.books
-            isLoading = false
         }
     }
 }

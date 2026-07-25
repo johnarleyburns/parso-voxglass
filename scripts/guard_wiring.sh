@@ -295,6 +295,143 @@ check_narration_tactile_guards() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# Rule 9 — Watch data-plane wiring guard
+# Asserts WatchAppServices instantiates the CloudKit engine and
+# offlineManager.refresh() is called from watch bootstrap.
+# ──────────────────────────────────────────────────────────────
+check_watch_data_plane() {
+  local had_failure=0
+
+  if ! grep -q 'CloudKitSyncEngine\|syncEngine' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::WatchAppServices must instantiate CloudKitSyncEngine."
+    had_failure=1
+  fi
+
+  if ! grep -q 'offlineManager.refresh()' VoxglassWatch/WatchAppServices.swift 2>/dev/null && \
+     ! grep -q 'offlineManager.refresh()' VoxglassWatch/WatchRootView.swift 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::Watch bootstrap must call offlineManager.refresh()."
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 10 — Both targets start the engine guard
+# Asserts the engine type is referenced in both Voxglass/App/ and VoxglassWatch/.
+# ──────────────────────────────────────────────────────────────
+check_both_targets_engine() {
+  local had_failure=0
+
+  if ! grep -q 'CloudKitSyncEngine' Voxglass/App/AppServices.swift 2>/dev/null; then
+    echo "::error title=Both-targets-engine guard::Phone AppServices must reference CloudKitSyncEngine."
+    had_failure=1
+  fi
+
+  if ! grep -q 'CloudKitSyncEngine' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=Both-targets-engine guard::WatchAppServices must reference CloudKitSyncEngine."
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 11 — Search scope switchable guard
+# Asserts VoxglassWatch/WatchSearchView.swift has .searchScopes
+# ──────────────────────────────────────────────────────────────
+check_search_scope_switchable() {
+  local had_failure=0
+
+  if ! grep -q 'Picker' VoxglassWatch/WatchSearchView.swift 2>/dev/null || \
+     ! grep -q '\.myBooks\|\.librivox' VoxglassWatch/WatchSearchView.swift 2>/dev/null; then
+    echo "::error title=Search-scope guard::WatchSearchView must have a My Books/LibriVox scope switch."
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 12 — No dead placeholders in the watch guard
+# Fails on empty-closure buttons in VoxglassWatch/
+# ──────────────────────────────────────────────────────────────
+check_watch_dead_placeholders() {
+  local had_failure=0
+
+  local matches
+  matches=$(grep -rn 'Button {' VoxglassWatch --include='*.swift' 2>/dev/null | while read -r line; do
+    file=$(echo "$line" | cut -d: -f1)
+    lineno=$(echo "$line" | cut -d: -f2)
+    next_line=$((lineno + 1))
+    body=$(sed -n "${next_line}p" "$file" 2>/dev/null | tr -d ' ')
+    if [ "$body" = "//AddtoMyBooks" ] || [ "$body" = "//Stream" ] || [ "$body" = "//Initiatedownload/transfer" ] || [ "$body" = "//AddtoMyBooks(import)" ]; then
+      echo "$file:$lineno"
+    fi
+  done)
+
+  if [ -n "$matches" ]; then
+    echo "::error title=Watch-dead-placeholder guard::Watch target has empty-closure buttons."
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 13 — No new KVS writes guard
+# Fails on NSUbiquitousKeyValueStore .set( outside the migration shim.
+# ──────────────────────────────────────────────────────────────
+check_no_new_kvs_writes() {
+  local had_failure=0
+
+  local matches
+  matches=$(grep -rn 'NSUbiquitousKeyValueStore' Voxglass --include='*.swift' 2>/dev/null \
+    | grep '\.set(' | grep -v 'VoxglassCloudSync.swift' | grep -v 'KVSMigration' || true)
+
+  if [ -n "$matches" ]; then
+    echo "::error title=No-new-KVS-writes guard::New NSUbiquitousKeyValueStore writes found outside migration shim. Use CloudKit sync instead."
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 14 — Orphan removed guard
+# Fails if WatchConnectivitySession still exists.
+# ──────────────────────────────────────────────────────────────
+check_orphan_removed() {
+  local had_failure=0
+
+  if [ -f VoxglassWatch/WatchConnectivitySession.swift ]; then
+    echo "::error title=Orphan-removed guard::VoxglassWatch/WatchConnectivitySession.swift must be deleted."
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
+# Rule 15 — Watch target membership guard
+# Extends check_xcodeproj_membership to include VoxglassWatch.
+# ──────────────────────────────────────────────────────────────
+check_watch_target_membership() {
+  local pbxproj="Voxglass.xcodeproj/project.pbxproj"
+  local had_failure=0
+
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    if ! grep -q "$(basename "$file")" "$pbxproj"; then
+      echo "::error title=Watch-target-membership guard::$file is on disk but is not a member of any xcodeproj target. Run 'xcodegen generate' and commit the result."
+      had_failure=1
+    fi
+  done < <(find VoxglassWatch -name '*.swift' 2>/dev/null)
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────
 
@@ -318,14 +455,22 @@ run_check() {
   fi
 }
 
-run_check "preference-key writers"  check_pref_key_writers
-run_check "coordinator callers"     check_coordinator_callers
-run_check "dead placeholder rows"   check_dead_placeholders
+run_check "preference-key writers"     check_pref_key_writers
+run_check "coordinator callers"        check_coordinator_callers
+run_check "dead placeholder rows"      check_dead_placeholders
 
-run_check "Dynamic Type"            check_dynamic_type
-run_check "target membership"       check_xcodeproj_membership
-run_check "xcodeproj drift"         check_xcodeproj_drift
-run_check "narration feedback guards" check_narration_tactile_guards
+run_check "Dynamic Type"               check_dynamic_type
+run_check "target membership"          check_xcodeproj_membership
+run_check "xcodeproj drift"            check_xcodeproj_drift
+run_check "narration feedback guards"  check_narration_tactile_guards
+
+run_check "watch data-plane wiring"    check_watch_data_plane
+run_check "both targets engine"        check_both_targets_engine
+run_check "search scope switchable"    check_search_scope_switchable
+run_check "watch dead placeholders"    check_watch_dead_placeholders
+run_check "no new KVS writes"          check_no_new_kvs_writes
+run_check "orphan removed"             check_orphan_removed
+run_check "watch target membership"    check_watch_target_membership
 
 echo ""
 echo "=== Summary ==="

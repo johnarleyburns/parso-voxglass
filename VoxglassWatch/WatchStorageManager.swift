@@ -1,27 +1,19 @@
 import Foundation
 import VoxglassCore
 
-/// Manages on-watch book storage: tracks which books have cached audio chapters,
-/// enforces storage caps, handles LRU eviction, and provides the transfer state
-/// machine. Unlike the phone's `OfflineDownloadManager`, watch storage is a
-/// separate pool — the watch may have a book cached while the phone does not.
 @MainActor
 public final class WatchStorageManager: ObservableObject {
     @Published public private(set) var onWatchBooks: [UUID: WatchBookStorageInfo] = [:]
     @Published public private(set) var totalBytes: Int64 = 0
     @Published public private(set) var totalBookCount: Int = 0
 
-    /// ID of the book currently loading or playing — never evicted.
     public var currentBookID: UUID?
 
     private let repository: LibraryRepository
     private let positionStore: SQLitePositionStore
     private let cacheDir: URL
 
-    /// Maps bookID -> set of chapter indices that are cached locally.
     private var localChapters: [UUID: Set<Int>] = [:]
-
-    /// Maps bookID -> last playback time (for LRU).
     private var lastPlayed: [UUID: Date] = [:]
 
     public init(repository: LibraryRepository, positionStore: SQLitePositionStore) {
@@ -32,62 +24,115 @@ public final class WatchStorageManager: ObservableObject {
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
     }
 
-    // MARK: - Public API
-
     public func refresh() async {
-        // Scan cache directory for cached files
-        let files = (try? FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: [.fileSizeKey])) ?? []
-        var bytes: Int64 = 0
-        var bookChapters: [UUID: Set<Int>] = [:]
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: cacheDir, includingPropertiesForKeys: [.fileSizeKey]
+        ) else { return }
 
+        var bytes: Int64 = 0
+        var fileNameToSize: [String: Int64] = [:]
         for file in files {
-            let attrs = try? file.resourceValues(forKeys: [.fileSizeKey])
-            bytes += Int64(attrs?.fileSize ?? 0)
+            let attrs = (try? file.resourceValues(forKeys: [.fileSizeKey]))
+            let size = Int64(attrs?.fileSize ?? 0)
+            bytes += size
+            fileNameToSize[file.lastPathComponent] = size
         }
 
         totalBytes = bytes
-        totalBookCount = bookChapters.count
-        localChapters = bookChapters
 
-        // Rebuild storage info for UI
-        rebuildStorageInfo()
+        let library = (try? await repository.fetchLibrary()) ?? []
+        var bookChapters: [UUID: Set<Int>] = [:]
+        var bookByteCounts: [UUID: Int64] = [:]
+        var bookTotalChapters: [UUID: Int] = [:]
+
+        for bookWithChapters in library {
+            let bookID = bookWithChapters.book.id
+            let chapters = bookWithChapters.chapters
+            bookTotalChapters[bookID] = chapters.count
+            var cachedIndices = Set<Int>()
+            var cachedBytes: Int64 = 0
+            for chapter in chapters {
+                let remoteURL = chapter.remoteURL ?? chapter.opusURL
+                if let url = remoteURL {
+                    let key = StreamCacheUtils.key(for: url)
+                    if let size = fileNameToSize[key] {
+                        cachedIndices.insert(chapter.index)
+                        cachedBytes += size
+                    }
+                }
+            }
+            if !cachedIndices.isEmpty {
+                bookChapters[bookID] = cachedIndices
+                bookByteCounts[bookID] = cachedBytes
+            }
+        }
+
+        localChapters = bookChapters
+        totalBookCount = bookChapters.count
+
+        var storageInfo: [UUID: WatchBookStorageInfo] = [:]
+        for (bookID, indices) in bookChapters {
+            let total = bookTotalChapters[bookID] ?? indices.count
+            storageInfo[bookID] = WatchBookStorageInfo(
+                state: indices.count >= total ? .available : .available,
+                byteCount: bookByteCounts[bookID] ?? 0,
+                chapterCount: indices.count,
+                completeChapterCount: indices.count
+            )
+        }
+        onWatchBooks = storageInfo
     }
 
     public func storageInfo(for bookID: UUID) -> WatchBookStorageInfo {
         onWatchBooks[bookID] ?? WatchBookStorageInfo.notAvailable
     }
 
-    /// Returns true when a book's audio chapters are fully cached on-watch.
     public func isAvailableOffline(bookID: UUID) -> Bool {
         onWatchBooks[bookID]?.state == .available
     }
 
-    /// Returns the local file URL for a cached chapter, or nil if not cached.
     public func localURL(for chapter: Chapter) -> URL? {
-        let key = StreamCacheUtils.key(for: chapter.remoteURL ?? URL(fileURLWithPath: ""))
-        let url = cacheDir.appendingPathComponent(key)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        let remoteURL = chapter.remoteURL ?? chapter.opusURL
+        guard let url = remoteURL else { return nil }
+        let key = StreamCacheUtils.key(for: url)
+        let fileURL = cacheDir.appendingPathComponent(key)
+        return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
     }
 
-    /// Deletes a book's cached audio from watch storage.
     public func deleteOffline(bookID: UUID) async {
         guard let chapters = localChapters[bookID] else { return }
-        for idx in chapters {
-            // Remove cached files
+        let library = (try? await repository.fetchLibrary()) ?? []
+        guard let book = library.first(where: { $0.book.id == bookID }) else { return }
+
+        for chapter in book.chapters {
+            if chapters.contains(chapter.index) {
+                let remoteURL = chapter.remoteURL ?? chapter.opusURL
+                if let url = remoteURL {
+                    let key = StreamCacheUtils.key(for: url)
+                    let fileURL = cacheDir.appendingPathComponent(key)
+                    try? FileManager.default.removeItem(at: fileURL)
+                }
+            }
         }
-        localChapters.removeValue(forKey: bookID)
-        lastPlayed.removeValue(forKey: bookID)
-        onWatchBooks.removeValue(forKey: bookID)
-        await recalculateTotals()
+        await refresh()
     }
 
-    /// Records a book being played (updates LRU timestamp).
+    public func clearAllCache() async {
+        let files = (try? FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil)) ?? []
+        for file in files {
+            try? FileManager.default.removeItem(at: file)
+        }
+        localChapters = [:]
+        lastPlayed = [:]
+        onWatchBooks = [:]
+        totalBytes = 0
+        totalBookCount = 0
+    }
+
     public func markPlayed(bookID: UUID) {
         lastPlayed[bookID] = Date()
     }
 
-    /// Evicts the least recently played books until within storage limits,
-    /// excluding the currently playing/loading book.
     public func evictIfNeeded() async {
         let books = lastPlayed.map { (id: $0.key, lastPlayedAt: $0.value) }
         let evictionOrder = WatchEvictionPolicy.evictionOrder(books: books, currentBookID: currentBookID)
@@ -106,10 +151,12 @@ public final class WatchStorageManager: ObservableObject {
         WatchStoragePolicy.remainingBytes(currentBytes: totalBytes)
     }
 
-    /// Ingests a received transfer file for a specific chapter.
     public func ingestFile(at sourceURL: URL, for chapter: Chapter, bookID: UUID) async {
-        let key = StreamCacheUtils.key(for: chapter.remoteURL ?? URL(fileURLWithPath: ""))
+        let remoteURL = chapter.remoteURL ?? chapter.opusURL
+        guard let url = remoteURL else { return }
+        let key = StreamCacheUtils.key(for: url)
         let dest = cacheDir.appendingPathComponent(key)
+        try? FileManager.default.removeItem(at: dest)
         try? FileManager.default.moveItem(at: sourceURL, to: dest)
 
         var chapters = localChapters[bookID] ?? []
@@ -119,32 +166,27 @@ public final class WatchStorageManager: ObservableObject {
         let attrs = try? dest.resourceValues(forKeys: [.fileSizeKey])
         totalBytes += Int64(attrs?.fileSize ?? 0)
 
-        rebuildStorageInfo()
+        await refresh()
         await evictIfNeeded()
     }
 
-    // MARK: - Private
+    public func downloadChapter(_ chapter: Chapter, bookID: UUID) async throws {
+        let remoteURL = chapter.opusURL ?? chapter.remoteURL
+        guard let url = remoteURL else { throw URLError(.badURL) }
+        let key = StreamCacheUtils.key(for: url)
+        let dest = cacheDir.appendingPathComponent(key)
 
-    private func rebuildStorageInfo() {
-        for (bookID, indices) in localChapters {
-            let state: WatchTransferState = indices.isEmpty ? .notAvailable : .available
-            let info = WatchBookStorageInfo(
-                state: state,
-                byteCount: 0, // computed from actual files
-                chapterCount: indices.count,
-                completeChapterCount: indices.count
-            )
-            onWatchBooks[bookID] = info
-        }
-    }
+        guard !FileManager.default.fileExists(atPath: dest.path) else { return }
 
-    private func recalculateTotals() async {
-        let files = (try? FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: [.fileSizeKey])) ?? []
-        totalBytes = files.reduce(0) { sum, file in
-            let attrs = try? file.resourceValues(forKeys: [.fileSizeKey])
-            return sum + Int64(attrs?.fileSize ?? 0)
-        }
-        totalBookCount = localChapters.count
-        rebuildStorageInfo()
+        let (tempURL, _) = try await URLSession.shared.download(from: url)
+        try? FileManager.default.removeItem(at: dest)
+        try FileManager.default.moveItem(at: tempURL, to: dest)
+
+        var chapters = localChapters[bookID] ?? []
+        chapters.insert(chapter.index)
+        localChapters[bookID] = chapters
+        markPlayed(bookID: bookID)
+        await refresh()
+        await evictIfNeeded()
     }
 }

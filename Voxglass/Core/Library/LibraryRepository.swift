@@ -62,6 +62,7 @@ public struct LocalAudioImport: Equatable, Sendable {
 public final class LibraryRepository {
     private let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
+    public var mutationLog: SyncMutationLog?
 
     public init(database: AppDatabase, librivoxClient: LibriVoxCatalogClient? = nil) {
         self.database = database
@@ -202,6 +203,7 @@ public final class LibraryRepository {
             "DELETE FROM books WHERE id = ?",
             [ModelMapping.databaseValue(bookID)]
         )
+        try? await mutationLog?.enqueue(localID: bookID.uuidString, recordType: "Book", changeType: "delete")
 
         if let sourceID {
             let remaining = try await database.query(
@@ -229,6 +231,7 @@ public final class LibraryRepository {
             .bool(isFavorite),
             ModelMapping.databaseValue(bookID)
         ])
+        try? await mutationLog?.enqueue(localID: bookID.uuidString, recordType: "Book", changeType: "update")
         return try await bookWithChapters(forBookID: bookID)
     }
 
@@ -552,6 +555,8 @@ public final class LibraryRepository {
             chapters: chapters,
             bookContentKey: ContentKey.book(forInternetArchiveIdentifier: identifier)
         )
+
+        try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
 
         // Capture taste metadata for the recommendation engine
         let bookIDString = book.id.uuidString

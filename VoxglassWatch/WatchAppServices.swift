@@ -14,6 +14,7 @@ final class WatchAppServices: ObservableObject {
     let bookmarkStore: SQLiteBookmarkStore
     let playbackCoordinator: WatchPlaybackCoordinator
     let offlineManager: WatchStorageManager
+    let syncEngine: CloudKitSyncEngine?
 
     #if DEBUG
     var seededFixtures: [BookWithChapters] = []
@@ -22,8 +23,13 @@ final class WatchAppServices: ObservableObject {
     init() {
         let database = AppDatabase.makeApplicationDatabase()
         let libraryRepository = LibraryRepository(database: database)
-        let positionStore = SQLitePositionStore(database: database)
-        let bookmarkStore = SQLiteBookmarkStore(database: database)
+        var positionStore = SQLitePositionStore(database: database)
+        var bookmarkStore = SQLiteBookmarkStore(database: database)
+
+        let mutationLog = SyncMutationLog(stateStore: CloudSyncStateStore(database: database))
+        libraryRepository.mutationLog = mutationLog
+        positionStore.mutationLog = mutationLog
+        bookmarkStore.mutationLog = mutationLog
 
         self.database = database
         self.libraryRepository = libraryRepository
@@ -40,21 +46,56 @@ final class WatchAppServices: ObservableObject {
             repository: libraryRepository,
             positionStore: positionStore
         )
+        self.syncEngine = CloudKitSyncEngine(database: database)
+
+        WatchAudioRelay.shared.onFileReceived = { [weak self] url, chapterKey in
+            guard let self else { return }
+            Task { @MainActor in
+                // Find the chapter by matching the cache key
+                let library = try? await self.libraryRepository.fetchLibrary()
+                for book in library ?? [] {
+                    for chapter in book.chapters {
+                        let remoteURL = chapter.remoteURL ?? chapter.opusURL
+                        if let url = remoteURL,
+                           StreamCacheUtils.key(for: url) == chapterKey {
+                            await self.offlineManager.ingestFile(at: url, for: chapter, bookID: book.book.id)
+                            return
+                        }
+                    }
+                }
+            }
+        }
     }
 
     func bootstrap() async {
-        // Restore last session from CloudSync/persisted position
-        if let row = try? await positionStore.latestPosition(),
-           let book = libraryStore.books.first(where: { $0.book.id == row.bookID }) {
-            playbackCoordinator.present(book)
-        }
+        guard !didBootstrap else { return }
+        didBootstrap = true
+
         await libraryStore.refresh()
+        await offlineManager.refresh()
+
+        if let engine = syncEngine {
+            await engine.start()
+        }
+
+        restoreBookmark()
+
+        await libraryStore.refresh()
+
         #if DEBUG
         seedFixturesIfNeeded()
         #endif
     }
 
-    /// Restores position after iCloud pull arrives (same contract as phone).
+    func restoreBookmark() {
+        Task {
+            if let row = try? await positionStore.latestPosition(),
+               let book = libraryStore.books.first(where: { $0.book.id == row.bookID }) {
+                playbackCoordinator.present(book)
+            }
+        }
+    }
+
     func adoptCloudPosition() async {
         guard playbackCoordinator.currentSession?.isPlaying != true else { return }
         if let row = try? await positionStore.latestPosition(),
@@ -65,6 +106,8 @@ final class WatchAppServices: ObservableObject {
             }
         }
     }
+
+    private var didBootstrap = false
 
     #if DEBUG
     private func seedFixturesIfNeeded() {

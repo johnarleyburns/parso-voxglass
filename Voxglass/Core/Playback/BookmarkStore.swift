@@ -16,6 +16,7 @@ public protocol BookmarkStore: Sendable {
 
 public struct SQLiteBookmarkStore: BookmarkStore {
     private let database: AppDatabase
+    public var mutationLog: SyncMutationLog?
 
     public init(database: AppDatabase) {
         self.database = database
@@ -41,6 +42,7 @@ public struct SQLiteBookmarkStore: BookmarkStore {
             .double(now.timeIntervalSince1970),
             .bool(false)
         ])
+        try? await mutationLog?.enqueue(localID: b.id!.uuidString, recordType: "Bookmark", changeType: "update")
         return Bookmark(id: b.id!, bookID: b.bookID, chapterID: b.chapterID,
                          position: b.position, note: b.note,
                          createdAt: b.createdAt, updatedAt: now, isDeleted: false)
@@ -67,6 +69,7 @@ public struct SQLiteBookmarkStore: BookmarkStore {
         try await database.execute("""
         UPDATE bookmarks SET is_deleted = 1, updated_at = ? WHERE id = ?
         """, [.double(Date().timeIntervalSince1970), .string(id.uuidString)])
+        try? await mutationLog?.enqueue(localID: id.uuidString, recordType: "Bookmark", changeType: "update")
     }
 
     public func updateNote(_ note: String, id: UUID) async throws -> Bookmark? {

@@ -63,6 +63,7 @@ targets:
                 UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
         UIBackgroundModes:
           - audio
+          - remote-notification
         UILaunchScreen:
           UIColorName: LaunchScreenBackground
         UISupportedInterfaceOrientations:
@@ -114,6 +115,7 @@ targets:
         WKCompanionAppBundleIdentifier: guru.parso.voxglass
         UIBackgroundModes:
           - audio
+          - remote-notification
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp

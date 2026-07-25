@@ -9,6 +9,7 @@ public protocol PositionStore: Sendable {
 
 public struct SQLitePositionStore: PositionStore {
     private let database: AppDatabase
+    public var mutationLog: SyncMutationLog?
 
     public init(database: AppDatabase) {
         self.database = database
@@ -43,6 +44,7 @@ public struct SQLitePositionStore: PositionStore {
             ModelMapping.databaseValue(clamped.updatedAt),
             .bool(clamped.isFinished)
         ])
+        try? await mutationLog?.enqueue(localID: clamped.id.uuidString, recordType: "PlaybackPosition", changeType: "update")
     }
 
     public func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition? {

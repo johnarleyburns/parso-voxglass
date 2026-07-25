@@ -1,5 +1,6 @@
 import SwiftUI
 import VoxglassCore
+import CloudKit
 
 @main
 struct VoxglassApp: App {
@@ -31,9 +32,40 @@ struct VoxglassApp: App {
     }
 }
 
-/// Receives background `URLSession` relaunch events and hands the system
-/// completion handler to the offline download manager (§7).
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        application.registerForRemoteNotifications()
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        // Device token delivered; CloudKit handles the rest
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        // Non-fatal on simulator / missing entitlements
+    }
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        Task {
+            try? await AppServices.shared.cloudKitSyncEngine.fetchChanges()
+            completionHandler(.newData)
+        }
+    }
+
     func application(
         _ application: UIApplication,
         handleEventsForBackgroundURLSession identifier: String,

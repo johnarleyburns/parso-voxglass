@@ -9,7 +9,6 @@ struct WatchBookDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                // Cover placeholder
                 RoundedRectangle(cornerRadius: 8)
                     .fill(.secondary.opacity(0.3))
                     .frame(width: 40, height: 40)
@@ -35,7 +34,6 @@ struct WatchBookDetailView: View {
                         .lineLimit(10)
                 }
 
-                // Action buttons
                 VStack(spacing: 8) {
                     Button {
                         Task {
@@ -54,7 +52,10 @@ struct WatchBookDetailView: View {
                     if info.state == .notAvailable {
                         Button {
                             Task {
-                                // Initiate download/transfer
+                                for chapter in book.chapters {
+                                    guard services.offlineManager.localURL(for: chapter) == nil else { continue }
+                                    try? await services.offlineManager.downloadChapter(chapter, bookID: book.book.id)
+                                }
                             }
                         } label: {
                             HStack {
@@ -63,17 +64,18 @@ struct WatchBookDetailView: View {
                             }
                         }
                         .accessibilityIdentifier(WatchAccessibilityID.bookFetch)
-                    }
-
-                    Button {
-                        // Add to My Books (import)
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle")
-                            Text("Add to My Books")
+                    } else {
+                        Button {
+                            Task {
+                                await services.offlineManager.deleteOffline(bookID: book.book.id)
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash.circle")
+                                Text("Remove Download")
+                            }
                         }
                     }
-                    .accessibilityIdentifier(WatchAccessibilityID.bookAdd)
 
                     NavigationLink {
                         WatchChaptersView(book: book)

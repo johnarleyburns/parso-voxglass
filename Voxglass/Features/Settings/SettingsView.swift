@@ -30,6 +30,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Sync")
                     SyncSettingsCard()
+                    WatchSyncCard()
                 }
 
                 settingsGroup("Audio") {
@@ -602,6 +603,34 @@ private struct SyncSettingsCard: View {
                 }
                 .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
                 .accessibilityIdentifier("sync.now")
+            }
+        }
+        .padding(15)
+        .glassSurface(cornerRadius: 18)
+    }
+}
+
+private struct WatchSyncCard: View {
+    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "applewatch")
+                    .foregroundStyle(Palette.brass)
+                Text("Apple Watch & Sync")
+                    .scaledFont(size: 13, weight: .bold)
+                    .foregroundStyle(Palette.ink)
+            }
+
+            Text("Your library and progress sync to Apple Watch when iCloud is available. The watch also works on its own — search, stream, and download independently.")
+                .scaledFont(size: 11.5)
+                .foregroundStyle(Palette.ink3)
+
+            if !syncEnabled {
+                Text("iCloud Sync is off. Enable above to sync with Apple Watch.")
+                    .scaledFont(size: 11.5)
+                    .foregroundStyle(Palette.ink3)
             }
         }
         .padding(15)

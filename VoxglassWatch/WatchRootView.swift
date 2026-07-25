@@ -8,6 +8,7 @@ struct WatchRootView: View {
         case listening
         case onWatch
         case search
+        case settings
     }
 
     @State private var selectedTab: Tab = .listening
@@ -25,6 +26,14 @@ struct WatchRootView: View {
             WatchSearchView()
                 .tag(Tab.search)
                 .accessibilityIdentifier(WatchAccessibilityID.rootSearch)
+
+            NavigationStack {
+                WatchSettingsView()
+            }
+            .tag(Tab.settings)
+        }
+        .task {
+            await services.bootstrap()
         }
     }
 }

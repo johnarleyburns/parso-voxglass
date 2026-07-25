@@ -238,6 +238,37 @@ private struct DatabaseMigration {
                 )
                 """
             ]
+        ),
+        DatabaseMigration(
+            id: 9,
+            name: "cloudkit_sync",
+            statements: [
+                """
+                CREATE TABLE cloud_records (
+                    record_name TEXT PRIMARY KEY,
+                    record_type TEXT NOT NULL,
+                    local_id TEXT NOT NULL,
+                    system_fields BLOB,
+                    updated_at REAL NOT NULL
+                )
+                """,
+                """
+                CREATE TABLE sync_engine_state (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    state BLOB NOT NULL,
+                    updated_at REAL NOT NULL
+                )
+                """,
+                """
+                CREATE TABLE pending_sync (
+                    local_id TEXT NOT NULL,
+                    record_type TEXT NOT NULL,
+                    change_type TEXT NOT NULL,
+                    enqueued_at REAL NOT NULL,
+                    PRIMARY KEY (local_id, record_type)
+                )
+                """
+            ]
         )
     ]
 }
