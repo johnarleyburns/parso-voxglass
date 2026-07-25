@@ -321,6 +321,48 @@ public final class LibraryRepository {
         }
     }
 
+    /// Queues the current syncable library for CloudKit. This is the launch-time
+    /// bridge for books that predate the CloudKit mutation log.
+    @discardableResult
+    public func enqueueExistingLibraryForSync() async -> Int {
+        guard let mutationLog else { return 0 }
+
+        do {
+            try await database.prepare()
+            let rows = try await database.query("""
+            SELECT b.id
+            FROM books b
+            JOIN sources s ON s.id = b.source_id
+            WHERE b.content_key IS NOT NULL
+              AND (
+                (s.kind IN (?, ?, ?) AND s.url LIKE ?)
+                OR (s.kind = ? AND s.url IS NOT NULL)
+              )
+            ORDER BY b.updated_at ASC
+            """, [
+                .string(SourceKind.librivox.rawValue),
+                .string(SourceKind.internetArchive.rawValue),
+                .string(SourceKind.internetArchiveURL.rawValue),
+                .string("%/details/%"),
+                .string(SourceKind.localFiles.rawValue)
+            ])
+
+            var count = 0
+            for row in rows {
+                guard let bookID = row.string("id") else { continue }
+                try await mutationLog.enqueue(
+                    localID: bookID,
+                    recordType: CloudKitRecordMapper.RecordType.book.rawValue,
+                    changeType: "update"
+                )
+                count += 1
+            }
+            return count
+        } catch {
+            return 0
+        }
+    }
+
     /// Books imported before taste capture existed (2026-07-11) have no
     /// book_taste rows, so their listening history is invisible to the
     /// recommendation profile. Seed author terms from the locally stored

@@ -47,6 +47,8 @@ public final class CloudKitSyncEngine: ObservableObject {
             try await ensureZoneExists()
             try await fetchRecordZoneChanges()
             syncState = .idle
+            await sendChanges()
+            syncState = .idle
         } catch {
             syncState = .error
             syncError = error.localizedDescription
@@ -211,23 +213,28 @@ public final class CloudKitSyncEngine: ObservableObject {
                 configurationsByRecordZoneID: [zoneID: config]
             )
             var newToken: CKServerChangeToken?
+            let callbackLock = NSLock()
+            var changedRecords: [CKRecord] = []
+            var deletedRecordIDs: [CKRecord.ID] = []
 
-            operation.recordWasChangedBlock = { [weak self] recordID, result in
+            operation.recordWasChangedBlock = { _, result in
                 if case .success(let record) = result {
-                    Task { @MainActor [weak self] in
-                        try? await self?.importRecord(record)
-                    }
+                    callbackLock.lock()
+                    changedRecords.append(record)
+                    callbackLock.unlock()
                 }
             }
 
-            operation.recordWithIDWasDeletedBlock = { [weak self] recordID, recordType in
-                Task { @MainActor [weak self] in
-                    try? await self?.handleDeletion(recordID: recordID)
-                }
+            operation.recordWithIDWasDeletedBlock = { recordID, _ in
+                callbackLock.lock()
+                deletedRecordIDs.append(recordID)
+                callbackLock.unlock()
             }
 
             operation.recordZoneChangeTokensUpdatedBlock = { _, token, _ in
+                callbackLock.lock()
                 newToken = token
+                callbackLock.unlock()
             }
 
             operation.recordZoneFetchResultBlock = { [weak self] zoneID, result in
@@ -238,15 +245,35 @@ public final class CloudKitSyncEngine: ObservableObject {
                 }
             }
 
-            operation.fetchRecordZoneChangesResultBlock = { result in
-                if let token = newToken, let tokenData = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
-                    Task { @MainActor [weak self] in
-                        try? await self?.stateStore.saveEngineState(tokenData)
+            operation.fetchRecordZoneChangesResultBlock = { [weak self] result in
+                callbackLock.lock()
+                let recordsToImport = changedRecords
+                let deletionsToApply = deletedRecordIDs
+                let token = newToken
+                callbackLock.unlock()
+
+                Task { @MainActor [weak self] in
+                    guard let self else {
+                        continuation.resume()
+                        return
                     }
-                }
-                switch result {
-                case .success: continuation.resume()
-                case .failure(let error): continuation.resume(throwing: error)
+
+                    switch result {
+                    case .success:
+                        for record in recordsToImport {
+                            try? await self.importRecord(record)
+                        }
+                        for recordID in deletionsToApply {
+                            try? await self.handleDeletion(recordID: recordID)
+                        }
+                        if let token,
+                           let tokenData = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
+                            try? await self.stateStore.saveEngineState(tokenData)
+                        }
+                        continuation.resume()
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
 

@@ -77,6 +77,7 @@ final class WatchAppServices: ObservableObject {
 
         await libraryStore.refresh()
         await offlineManager.refresh()
+        await enqueueInitialLibraryForCloudKitIfNeeded()
 
         if let engine = syncEngine {
             await engine.start()
@@ -112,6 +113,13 @@ final class WatchAppServices: ObservableObject {
     }
 
     private var didBootstrap = false
+
+    private func enqueueInitialLibraryForCloudKitIfNeeded() async {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) else { return }
+        await libraryRepository.enqueueExistingLibraryForSync()
+        defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
+    }
 
     #if DEBUG
     private func seedFixturesIfNeeded() {

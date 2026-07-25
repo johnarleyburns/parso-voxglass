@@ -42,11 +42,11 @@ check_pref_key_writers() {
       fi
     done
 
-    # Approach B: the key NAME (constant) is used with @AppStorage on the same line
+    # Approach B: the key NAME (constant) is used with @AppStorage or .set on the same line
     if [ "$writer_found" -eq 0 ]; then
       for dir in Voxglass/Features Voxglass/App; do
         local matches
-        matches=$(grep -rnE "@AppStorage\(.*$key_name" "$dir" --include='*.swift' 2>/dev/null || true)
+        matches=$(grep -rnE "(@AppStorage\(.*$key_name|\.set\(.*forKey:.*$key_name)" "$dir" --include='*.swift' 2>/dev/null || true)
         if [ -n "$matches" ]; then
           writer_found=1
           break

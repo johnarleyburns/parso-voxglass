@@ -15,6 +15,37 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertEqual(favorites.map(\.book.id), [seeded.bookID])
     }
 
+    func testExistingLibraryCanBeQueuedAfterContentKeyBackfill() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "initial-cloudkit-enqueue")
+        let stateStore = CloudSyncStateStore(database: database)
+        let repository = LibraryRepository(database: database)
+        repository.mutationLog = SyncMutationLog(stateStore: stateStore)
+
+        let seeded = try await seedBook(
+            in: database,
+            title: "Legacy LibriVox Book",
+            sourceKind: .librivox,
+            sourceURL: URL(string: "https://archive.org/details/legacy_librivox_book"),
+            contentKey: nil
+        )
+
+        let backfilled = await repository.backfillContentKeysIfNeeded()
+        XCTAssertEqual(backfilled, 2)
+
+        let queued = await repository.enqueueExistingLibraryForSync()
+        XCTAssertEqual(queued, 1)
+
+        let pending = try await stateStore.dequeuePending(limit: 10)
+        XCTAssertEqual(pending.count, 1)
+        XCTAssertEqual(pending.first?.localID, seeded.bookID.uuidString)
+        XCTAssertEqual(pending.first?.recordType, CloudKitRecordMapper.RecordType.book.rawValue)
+        XCTAssertEqual(pending.first?.changeType, "update")
+
+        _ = await repository.enqueueExistingLibraryForSync()
+        let pendingCount = try await stateStore.pendingCount()
+        XCTAssertEqual(pendingCount, 1, "Queueing twice must not duplicate pending rows")
+    }
+
     func testFetchSourcesReturnsNewestFirst() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "source-fetch")
         let repository = LibraryRepository(database: database)

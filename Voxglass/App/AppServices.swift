@@ -107,6 +107,7 @@ final class AppServices: ObservableObject {
 
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
+        await enqueueInitialLibraryForCloudKitIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()
         await libraryRepository.resplitBookTasteSubjectsIfNeeded()
         await rebuildTasteHistory()
@@ -125,6 +126,13 @@ final class AppServices: ObservableObject {
         await folderWatchService.rescanAll()
 
         await cloudKitSyncEngine.start()
+    }
+
+    private func enqueueInitialLibraryForCloudKitIfNeeded() async {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) else { return }
+        await libraryRepository.enqueueExistingLibraryForSync()
+        defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
     }
 
     private func captureTasteSignal(_ signal: PlaybackTasteSignal) async {
