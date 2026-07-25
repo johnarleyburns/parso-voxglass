@@ -91,6 +91,7 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass App Store"
+          CODE_SIGN_ENTITLEMENTS: Voxglass/Resources/Voxglass-release.entitlements
   VoxglassWatch:
     type: application
     platform: watchOS
@@ -138,6 +139,7 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass Watch App Store"
+          CODE_SIGN_ENTITLEMENTS: VoxglassWatch/Resources/VoxglassWatch-release.entitlements
   VoxglassUITests:
     type: bundle.ui-testing
     platform: iOS
