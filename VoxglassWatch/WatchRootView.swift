@@ -3,6 +3,7 @@ import VoxglassCore
 
 struct WatchRootView: View {
     @EnvironmentObject var services: WatchAppServices
+    @Environment(\.scenePhase) private var scenePhase
 
     enum Tab: String, CaseIterable {
         case listening
@@ -34,6 +35,13 @@ struct WatchRootView: View {
         }
         .task {
             await services.bootstrap()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { @MainActor in
+                    await services.libraryStore.refresh()
+                }
+            }
         }
     }
 }

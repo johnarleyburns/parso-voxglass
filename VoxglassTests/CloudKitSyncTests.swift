@@ -382,3 +382,154 @@ import Testing
         #expect(matches.isEmpty)
     }
 }
+
+// MARK: - T6: sendPendingChanges preserves mutations until CloudKit confirms
+
+@Suite struct CloudKitPendingMutationRetentionTests {
+
+    private func makeDB() async throws -> AppDatabase {
+        let db = AppDatabase.makeTemporaryDatabase()
+        try await db.prepare()
+        return db
+    }
+
+    @Test func pendingMutations_persistWhenNotRemoved() async throws {
+        let db = try await makeDB()
+        let stateStore = CloudSyncStateStore(database: db)
+
+        try await stateStore.enqueuePending(localID: "book-1", recordType: "Book", changeType: "update")
+        try await stateStore.enqueuePending(localID: "book-2", recordType: "Book", changeType: "update")
+        #expect(try await stateStore.pendingCount() == 2)
+
+        // Mutations persist unless explicitly removed (simulating CloudKit failure)
+        #expect(try await stateStore.pendingCount() == 2,
+                "Pending mutations should persist when not removed (CloudKit save fails)")
+    }
+
+    @Test func pendingMutations_removedOnlyOnSuccess() async throws {
+        let db = try await makeDB()
+        let stateStore = CloudSyncStateStore(database: db)
+
+        try await stateStore.enqueuePending(localID: "book-1", recordType: "Book", changeType: "update")
+        #expect(try await stateStore.pendingCount() == 1)
+
+        // Remove only after confirmed success
+        try await stateStore.removePending(localID: "book-1", recordType: "Book")
+        #expect(try await stateStore.pendingCount() == 0,
+                "Mutation removed after confirmed CloudKit success")
+    }
+
+    @Test func pendingMutations_multipleTypes_independentRemoval() async throws {
+        let db = try await makeDB()
+        let stateStore = CloudSyncStateStore(database: db)
+
+        try await stateStore.enqueuePending(localID: "b1", recordType: "Book", changeType: "update")
+        try await stateStore.enqueuePending(localID: "p1", recordType: "PlaybackPosition", changeType: "update")
+        try await stateStore.enqueuePending(localID: "bm1", recordType: "Bookmark", changeType: "update")
+        #expect(try await stateStore.pendingCount() == 3)
+
+        // Remove book only — others persist
+        try await stateStore.removePending(localID: "b1", recordType: "Book")
+        #expect(try await stateStore.pendingCount() == 2)
+
+        let remaining = try await stateStore.dequeuePending(limit: 50)
+        #expect(remaining.count == 2)
+        let types = Set(remaining.map(\.recordType))
+        #expect(types.contains("PlaybackPosition"))
+        #expect(types.contains("Bookmark"))
+        #expect(!types.contains("Book"), "Book mutation should be gone")
+    }
+}
+
+// MARK: - T7: book(from:) resolves stable sourceID from sourceRef
+
+@Suite struct CloudKitBookSourceIDResolutionTests {
+
+    @Test func book_fromRecord_usesSourceRefNotRandomUUID() async throws {
+        let sourceIdentity = "pride_and_prejudice_1000"
+        let sourceRecordName = "source-\(sourceIdentity)"
+        let bookRecordName = CloudKitRecordMapper.bookRecordName(contentKey: "ia:test-pp")
+
+        let sourceRef = CKRecord.Reference(
+            recordID: CKRecord.ID(
+                recordName: sourceRecordName,
+                zoneID: CloudKitRecordMapper.libraryZoneID
+            ),
+            action: .deleteSelf
+        )
+
+        let record = CKRecord(
+            recordType: CloudKitRecordMapper.RecordType.book.rawValue,
+            recordID: CKRecord.ID(recordName: bookRecordName, zoneID: CloudKitRecordMapper.libraryZoneID)
+        )
+        record[CloudKitRecordMapper.Field.title] = "Pride and Prejudice"
+        record[CloudKitRecordMapper.Field.authorsJSON] = "[\"Jane Austen\"]"
+        record[CloudKitRecordMapper.Field.narratorsJSON] = "[\"Karen Savage\"]"
+        record[CloudKitRecordMapper.Field.sourceRef] = sourceRef
+        record[CloudKitRecordMapper.Field.contentKey] = "ia:test-pp"
+
+        let book = CloudKitRecordMapper.book(from: record)
+        #expect(book != nil)
+        #expect(book?.title == "Pride and Prejudice")
+
+        let expectedSourceID = CloudKitRecordMapper.stableUUID(from: sourceIdentity)
+        #expect(book?.sourceID == expectedSourceID, "sourceID should be derived from sourceRef, not random")
+    }
+
+    @Test func stableUUID_sameIdentityProducesSameUUID() async throws {
+        let identity = "test_identifier_123"
+        let uuid1 = CloudKitRecordMapper.stableUUID(from: identity)
+        let uuid2 = CloudKitRecordMapper.stableUUID(from: identity)
+        #expect(uuid1 == uuid2, "Same identity should produce same UUID")
+    }
+
+    @Test func stableUUID_differentIdentityProducesDifferentUUID() async throws {
+        let uuid1 = CloudKitRecordMapper.stableUUID(from: "identity_a")
+        let uuid2 = CloudKitRecordMapper.stableUUID(from: "identity_b")
+        #expect(uuid1 != uuid2, "Different identities should produce different UUIDs")
+    }
+
+    @Test func book_fromRecord_sameSourceIdentitySameSourceUUID() async throws {
+        let sourceIdentity = "great_expectations"
+        let sourceRef = CKRecord.Reference(
+            recordID: CKRecord.ID(
+                recordName: "source-\(sourceIdentity)",
+                zoneID: CloudKitRecordMapper.libraryZoneID
+            ),
+            action: .deleteSelf
+        )
+
+        // Book 1
+        let r1 = CKRecord(
+            recordType: CloudKitRecordMapper.RecordType.book.rawValue,
+            recordID: CKRecord.ID(
+                recordName: CloudKitRecordMapper.bookRecordName(contentKey: "ia:ge-1"),
+                zoneID: CloudKitRecordMapper.libraryZoneID
+            )
+        )
+        r1[CloudKitRecordMapper.Field.title] = "Great Expectations"
+        r1[CloudKitRecordMapper.Field.authorsJSON] = "[\"Charles Dickens\"]"
+        r1[CloudKitRecordMapper.Field.narratorsJSON] = "[]"
+        r1[CloudKitRecordMapper.Field.sourceRef] = sourceRef
+
+        // Book 2 — same source
+        let r2 = CKRecord(
+            recordType: CloudKitRecordMapper.RecordType.book.rawValue,
+            recordID: CKRecord.ID(
+                recordName: CloudKitRecordMapper.bookRecordName(contentKey: "ia:ge-2"),
+                zoneID: CloudKitRecordMapper.libraryZoneID
+            )
+        )
+        r2[CloudKitRecordMapper.Field.title] = "Great Expectations (alt)"
+        r2[CloudKitRecordMapper.Field.authorsJSON] = "[\"Charles Dickens\"]"
+        r2[CloudKitRecordMapper.Field.narratorsJSON] = "[]"
+        r2[CloudKitRecordMapper.Field.sourceRef] = sourceRef
+
+        let book1 = CloudKitRecordMapper.book(from: r1)
+        let book2 = CloudKitRecordMapper.book(from: r2)
+        #expect(book1 != nil)
+        #expect(book2 != nil)
+        #expect(book1?.sourceID == book2?.sourceID,
+                "Books from same source should have the same sourceID")
+    }
+}

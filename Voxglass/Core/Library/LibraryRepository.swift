@@ -638,6 +638,7 @@ public final class LibraryRepository {
                 chapters: [],
                 bookContentKey: ContentKey.book(forLocalFolderName: folderName)
             )
+            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
         }
 
         let knownURLs = Set((existing?.chapters ?? []).compactMap { $0.localURL?.absoluteString })
@@ -677,6 +678,10 @@ public final class LibraryRepository {
                 .string(ModelMapping.narratorsJSON(chapter.narrators)),
                 .string(chapterKey)
             ])
+        }
+
+        if !newFiles.isEmpty {
+            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
         }
 
         return try await bookWithChapters(forSourceID: source.id)

@@ -57,45 +57,62 @@ public final class CloudKitSyncEngine: ObservableObject {
         guard shouldSync, syncState != .initializing else { return }
         syncState = .syncing
         do {
-            let pending = try await stateStore.dequeuePending(limit: 50)
-            guard !pending.isEmpty else {
-                syncState = .idle
-                return
-            }
-
-            var recordsToSave: [CKRecord] = []
-            var recordIDsToDelete: [CKRecord.ID] = []
-
-            for item in pending {
-                switch item.recordType {
-                case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
-                    if let record = try? await positionRecord(localID: item.localID) {
-                        recordsToSave.append(record)
-                    }
-                case CloudKitRecordMapper.RecordType.bookmark.rawValue:
-                    if let record = try? await bookmarkRecord(localID: item.localID) {
-                        recordsToSave.append(record)
-                    }
-                case CloudKitRecordMapper.RecordType.book.rawValue where item.changeType == "delete":
-                    if let recordID = try? await bookDeleteRecordID(localID: item.localID) {
-                        recordIDsToDelete.append(recordID)
-                    }
-                default:
-                    if let record = try? await bookRecord(localID: item.localID) {
-                        recordsToSave.append(record)
-                    }
-                }
-                try? await stateStore.removePending(localID: item.localID, recordType: item.recordType)
-            }
-
-            if !recordsToSave.isEmpty || !recordIDsToDelete.isEmpty {
-                try await modifyRecords(save: recordsToSave, delete: recordIDsToDelete)
-            }
-
+            try await sendPendingChanges(modify: modifyRecords)
             syncState = .idle
             lastSyncDate = Date()
         } catch {
             syncError = error.localizedDescription
+        }
+    }
+
+    func sendPendingChanges(
+        modify: ([CKRecord], [CKRecord.ID]) async throws -> Void
+    ) async throws {
+        let pending = try await stateStore.dequeuePending(limit: 50)
+        guard !pending.isEmpty else {
+            syncState = .idle
+            return
+        }
+
+        var recordsToSave: [CKRecord] = []
+        var recordIDsToDelete: [CKRecord.ID] = []
+        var succeeded: [(localID: String, recordType: String)] = []
+
+        for item in pending {
+            var built = false
+            switch item.recordType {
+            case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
+                if let record = try? await positionRecord(localID: item.localID) {
+                    recordsToSave.append(record)
+                    built = true
+                }
+            case CloudKitRecordMapper.RecordType.bookmark.rawValue:
+                if let record = try? await bookmarkRecord(localID: item.localID) {
+                    recordsToSave.append(record)
+                    built = true
+                }
+            case CloudKitRecordMapper.RecordType.book.rawValue where item.changeType == "delete":
+                if let recordID = try? await bookDeleteRecordID(localID: item.localID) {
+                    recordIDsToDelete.append(recordID)
+                    built = true
+                }
+            default:
+                if let record = try? await bookRecord(localID: item.localID) {
+                    recordsToSave.append(record)
+                    built = true
+                }
+            }
+            if built {
+                succeeded.append((item.localID, item.recordType))
+            }
+        }
+
+        if !recordsToSave.isEmpty || !recordIDsToDelete.isEmpty {
+            try await modify(recordsToSave, recordIDsToDelete)
+        }
+
+        for item in succeeded {
+            try? await stateStore.removePending(localID: item.localID, recordType: item.recordType)
         }
     }
 

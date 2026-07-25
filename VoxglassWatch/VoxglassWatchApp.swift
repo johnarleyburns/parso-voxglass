@@ -33,8 +33,9 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
         _ userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (WKBackgroundFetchResult) -> Void
     ) {
-        Task {
+        Task { @MainActor in
             try? await WatchAppServices.shared.syncEngine?.fetchChanges()
+            await WatchAppServices.shared.libraryStore.refresh()
             completionHandler(.newData)
         }
     }

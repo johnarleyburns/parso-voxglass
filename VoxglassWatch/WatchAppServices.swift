@@ -48,6 +48,10 @@ final class WatchAppServices: ObservableObject {
         )
         self.syncEngine = CloudKitSyncEngine(database: database)
 
+        libraryStore.onBookImported = { [weak self] _ in
+            self?.syncEngine?.pushAfterMutation()
+        }
+
         WatchAudioRelay.shared.onFileReceived = { [weak self] url, chapterKey in
             guard let self else { return }
             Task { @MainActor in
