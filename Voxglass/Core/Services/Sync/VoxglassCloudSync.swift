@@ -48,7 +48,9 @@ public final class VoxglassCloudSync: ObservableObject {
                 await self?.handleExternalChange(notification)
             }
         }
-        store.synchronize()
+        Task { @MainActor [weak self] in
+            self?.store.synchronize()
+        }
     }
 
     deinit {

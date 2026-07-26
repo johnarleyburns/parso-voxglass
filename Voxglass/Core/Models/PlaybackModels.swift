@@ -1,5 +1,27 @@
 import Foundation
 
+public struct NavigationRecord: Codable, Equatable, Sendable {
+    public var bookID: UUID
+    public var chapterID: UUID
+    public var position: TimeInterval
+    public var duration: TimeInterval?
+    public var recordedAt: Date
+
+    public init(
+        bookID: UUID,
+        chapterID: UUID,
+        position: TimeInterval,
+        duration: TimeInterval? = nil,
+        recordedAt: Date = Date()
+    ) {
+        self.bookID = bookID
+        self.chapterID = chapterID
+        self.position = position
+        self.duration = duration
+        self.recordedAt = recordedAt
+    }
+}
+
 public struct PlaybackPosition: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var bookID: UUID

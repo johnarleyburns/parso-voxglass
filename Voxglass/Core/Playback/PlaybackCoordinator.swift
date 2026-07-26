@@ -51,6 +51,7 @@ public final class PlaybackCoordinator {
 
     @ObservationIgnored private let engine: AudioEngine
     @ObservationIgnored private let positionStore: PositionStore
+    @ObservationIgnored public var navigationHistory: NavigationHistoryStore
     @ObservationIgnored private let snapshotStore: LastPlaybackSnapshotStore
     @ObservationIgnored private let rateStore: PlaybackRateStore
     @ObservationIgnored private let sleepTimer: SleepTimer
@@ -81,6 +82,9 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var selectionTask: Task<Void, Never>?
     @ObservationIgnored private var activeSelectionID: UUID?
 
+    /// Suppresses the history push for one navigation (used by undo).
+    @ObservationIgnored private var suppressNextHistoryPush = false
+
     @ObservationIgnored private var silenceBoosted = false
     @ObservationIgnored private let isSkipSilenceEnabledKey = AppPreferencesStore.Keys.skipSilenceEnabled
 
@@ -102,11 +106,13 @@ public final class PlaybackCoordinator {
         snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
         rateStore: PlaybackRateStore = PlaybackRateStore(),
         sleepTimer: SleepTimer = SleepTimer(),
-        bridge: PlaybackPlatformBridge? = nil
+        bridge: PlaybackPlatformBridge? = nil,
+        navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore()
     ) {
         self.engine = engine
         self.positionStore = positionStore
         self.snapshotStore = snapshotStore
+        self.navigationHistory = navigationHistoryStore
         self.rateStore = rateStore
         self.sleepTimer = sleepTimer
         self.bridge = bridge ?? NoopPlaybackBridge()
@@ -239,12 +245,45 @@ public final class PlaybackCoordinator {
         return value
     }
 
+    /// Records the current session to the navigation history so accidental
+    /// book/chapter switches can be undone. Called before every navigation.
+    public func pushNavigationHistory() {
+        guard !suppressNextHistoryPush else { suppressNextHistoryPush = false; return }
+        guard let session = currentSession, isEngineLoaded else { return }
+        let record = NavigationRecord(
+            bookID: session.book.id,
+            chapterID: session.chapter.id,
+            position: engine.currentTime,
+            duration: engine.duration ?? session.duration,
+            recordedAt: Date()
+        )
+        navigationHistory.push(record)
+    }
+
+    /// Undoes the most recent navigation by restoring the previous session.
+    /// Returns true if there was a session to restore.
+    @discardableResult
+    public func undoLastNavigation(from books: [BookWithChapters]) -> Bool {
+        guard let record = navigationHistory.pop(),
+              let book = books.first(where: { $0.book.id == record.bookID }),
+              let chapter = book.chapters.first(where: { $0.id == record.chapterID })
+                  ?? book.chapters.first else { return false }
+        suppressNextHistoryPush = true
+        selectAndPlay(book, chapter: chapter)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            await self?.seek(to: record.position)
+        }
+        return true
+    }
+
     /// Synchronous entry point that owns cancellation. This is the recommended
     /// call site for all new selection callers (book tap, chapter pick, etc.).
     public func selectAndPlay(
         _ book: BookWithChapters,
         chapter requestedChapter: Chapter? = nil
     ) {
+        pushNavigationHistory()
         if isPreparingSameSelection(book: book, chapter: requestedChapter) {
             return
         }
@@ -430,6 +469,7 @@ public final class PlaybackCoordinator {
     }
 
     public func present(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
+        pushNavigationHistory()
         guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }
 
         await prepareForPausedPresentation()
@@ -718,6 +758,7 @@ public final class PlaybackCoordinator {
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else { return }
 
+        pushNavigationHistory()
         engine.cancelPreload()
 
         await loadChapter(session.chapters[nextIndex], in: session, startTime: 0, shouldPlay: engine.isPlaying)
@@ -737,6 +778,7 @@ public final class PlaybackCoordinator {
             return
         }
 
+        pushNavigationHistory()
         await persistCurrentPosition(reason: .skip)
         let previousIndex = session.chapterIndex - 1
         guard session.chapters.indices.contains(previousIndex) else { return }

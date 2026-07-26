@@ -83,19 +83,21 @@ final class WatchAppServices: ObservableObject {
             await engine.start()
         }
 
-        restoreBookmark()
-
         await libraryStore.refresh()
+        await restoreBookmark()
 
         #if DEBUG
         seedFixturesIfNeeded()
         #endif
     }
 
-    func restoreBookmark() {
-        Task {
-            if let row = try? await positionStore.latestPosition(),
-               let book = libraryStore.books.first(where: { $0.book.id == row.bookID }) {
+    func restoreBookmark() async {
+        if let row = try? await positionStore.latestPosition(),
+           let book = libraryStore.books.first(where: { $0.book.id == row.bookID }) {
+            let chapters = book.chapters.naturallySorted()
+            if let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: row) {
+                playbackCoordinator.present(book, chapter: target.chapter)
+            } else {
                 playbackCoordinator.present(book)
             }
         }

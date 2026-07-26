@@ -8,6 +8,8 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     @Published public private(set) var currentSession: PlaybackSession?
     @Published public var playbackError: String?
 
+    public var navigationHistory: NavigationHistoryStore
+
     private let engine: WatchPlaybackEngine
     private let positionStore: SQLitePositionStore
     private let snapshotStore: LastPlaybackSnapshotStore
@@ -16,14 +18,17 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     private var progressTask: Task<Void, Never>?
     private var lastPeriodicSave = Date.distantPast
     private var currentArtworkBookID: UUID?
+    private var suppressNextHistoryPush = false
 
     public init(
         positionStore: SQLitePositionStore,
-        snapshotStore: LastPlaybackSnapshotStore
+        snapshotStore: LastPlaybackSnapshotStore,
+        navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore()
     ) {
         self.engine = WatchPlaybackEngine()
         self.positionStore = positionStore
         self.snapshotStore = snapshotStore
+        self.navigationHistory = navigationHistoryStore
 
         engine.onPlaybackEnded = { [weak self] in
             Task { @MainActor in
@@ -35,7 +40,36 @@ public final class WatchPlaybackCoordinator: ObservableObject {
 
     // MARK: - Presentation & Play
 
+    public func pushNavigationHistory() {
+        guard !suppressNextHistoryPush else { suppressNextHistoryPush = false; return }
+        guard let session = currentSession, isEngineLoaded else { return }
+        let record = NavigationRecord(
+            bookID: session.book.id,
+            chapterID: session.chapter.id,
+            position: engine.currentTime,
+            duration: engine.duration ?? session.duration,
+            recordedAt: Date()
+        )
+        navigationHistory.push(record)
+    }
+
+    @discardableResult
+    public func undoLastNavigation(from books: [BookWithChapters]) -> Bool {
+        guard let record = navigationHistory.pop(),
+              let book = books.first(where: { $0.book.id == record.bookID }),
+              let chapter = book.chapters.first(where: { $0.id == record.chapterID })
+                  ?? book.chapters.first else { return false }
+        suppressNextHistoryPush = true
+        present(book, chapter: chapter)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            await self?.seek(to: record.position)
+        }
+        return true
+    }
+
     public func present(_ book: BookWithChapters, chapter: Chapter? = nil) {
+        pushNavigationHistory()
         let target = chapter ?? book.chapters.first
         guard let target else { return }
 
@@ -124,6 +158,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
 
     public func skipToChapter(_ chapter: Chapter, in book: BookWithChapters) async {
         guard let url = chapter.resolvedPlayableURL() else { return }
+        pushNavigationHistory()
         await persistCurrentPosition()
         do {
             try await engine.load(url: url, startTime: 0)

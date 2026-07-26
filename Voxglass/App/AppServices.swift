@@ -120,12 +120,16 @@ final class AppServices: ObservableObject {
         )
         await homeRecommendationStore.load(selectedCollectionIDs: selectedIDs, selectedLanguages: selectedLanguages)
         await offlineDownloadManager.refreshState(for: libraryStore.books)
-        await cloudSync.pullPlaybackPositions()
-        await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
-        await cloudSync.sync()
         await folderWatchService.rescanAll()
 
-        await cloudKitSyncEngine.start()
+        await cloudSync.pullPlaybackPositions()
+        await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
+
+        Task(priority: .background) { @MainActor [weak self] in
+            guard let self else { return }
+            await self.cloudSync.sync()
+            await self.cloudKitSyncEngine.start()
+        }
     }
 
     private func enqueueInitialLibraryForCloudKitIfNeeded() async {
