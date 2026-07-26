@@ -398,16 +398,16 @@ public final class LibraryRepository {
         }
     }
 
-    public func resplitBookTasteSubjectsIfNeeded() async -> Int {
+    public func resplitBookTasteSubjectsIfNeeded(defaults: UserDefaults = .standard) async -> Int {
         let flagKey = "voxglass.bookTasteSubjectResplitV1"
-        guard !UserDefaults.standard.bool(forKey: flagKey) else { return 0 }
+        guard !defaults.bool(forKey: flagKey) else { return 0 }
         do {
             try await database.prepare()
             let rows = try await database.query(
                 "SELECT book_id, term FROM book_taste WHERE axis = 'subject' AND term LIKE '%;%'"
             )
             guard !rows.isEmpty else {
-                UserDefaults.standard.set(true, forKey: flagKey)
+                defaults.set(true, forKey: flagKey)
                 return 0
             }
             var insertStatements: [(sql: String, bindings: [DatabaseValue])] = []
@@ -429,7 +429,7 @@ public final class LibraryRepository {
             }
             try await database.executeBatch(insertStatements)
             try? await database.execute("DELETE FROM reco_surfaced")
-            UserDefaults.standard.set(true, forKey: flagKey)
+            defaults.set(true, forKey: flagKey)
             return rows.count
         } catch {
             return 0

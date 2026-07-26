@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
-@Suite(.serialized) struct TasteProfileStoreTests {
+@Suite struct TasteProfileStoreTests {
 
     @Test func decayUpdateMatchesExponentialFormula() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-decay")
@@ -212,8 +212,9 @@ import Foundation
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-old-marker")
         let store = TasteProfileStore(database: database)
         let oldMarker = "voxglass.tasteHistoryBackfilledV1"
-        UserDefaults.standard.set(true, forKey: oldMarker)
-        defer { UserDefaults.standard.removeObject(forKey: oldMarker) }
+        let testDefaults = UserDefaults(suiteName: "test-taste-\(UUID().uuidString)")!
+        testDefaults.set(true, forKey: oldMarker)
+        defer { testDefaults.removeObject(forKey: oldMarker) }
         try await seedHistoryBook(
             in: database,
             title: "Hamlet",

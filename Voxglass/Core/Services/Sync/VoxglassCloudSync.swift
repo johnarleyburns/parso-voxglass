@@ -6,21 +6,21 @@ public final class VoxglassCloudSync: ObservableObject {
     @Published public private(set) var lastSyncDate: Date?
     @Published public var syncError: String?
 
-    private let store = NSUbiquitousKeyValueStore.default
+    private let store: NSUbiquitousKeyValueStore
+    private let userDefaults: UserDefaults
     private let database: AppDatabase
     private var bookmarkStore: (any BookmarkStore)?
     private var observer: NSObjectProtocol?
 
     public var isEnabled: Bool {
         get {
-            let defaults = UserDefaults.standard
-            if defaults.object(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled) == nil {
+            if userDefaults.object(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled) == nil {
                 return true
             }
-            return defaults.bool(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
+            return userDefaults.bool(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
+            userDefaults.set(newValue, forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
             if newValue {
                 Task { await sync() }
             }
@@ -35,8 +35,15 @@ public final class VoxglassCloudSync: ObservableObject {
         static let versionSuffix = ".v"
     }
 
-    public init(database: AppDatabase, bookmarkStore: (any BookmarkStore)? = nil) {
+    public init(
+        database: AppDatabase,
+        bookmarkStore: (any BookmarkStore)? = nil,
+        kvs: NSUbiquitousKeyValueStore = .default,
+        userDefaults: UserDefaults = .standard
+    ) {
         self.database = database
+        self.store = kvs
+        self.userDefaults = userDefaults
         self.bookmarkStore = bookmarkStore
         self.lastSyncDate = store.object(forKey: Key.lastSync) as? Date
         observer = NotificationCenter.default.addObserver(

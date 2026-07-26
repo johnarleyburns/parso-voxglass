@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
-@Suite(.serialized) struct LibraryRepositoryTests {
+@Suite struct LibraryRepositoryTests {
     @Test func setFavoritePersistsAndFilteredFetchReturnsFavoriteBooks() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "favorite-update")
         let repository = LibraryRepository(database: database)
@@ -490,8 +490,9 @@ import Foundation
 
     @Test func resplitBookTasteMigration() async throws {
         let flagKey = "voxglass.bookTasteSubjectResplitV1"
-        UserDefaults.standard.removeObject(forKey: flagKey)
-        defer { UserDefaults.standard.removeObject(forKey: flagKey) }
+        let testDefaults = UserDefaults(suiteName: "test-resplit-\(UUID().uuidString)")!
+        testDefaults.removeObject(forKey: flagKey)
+        defer { testDefaults.removeObject(forKey: flagKey) }
 
         let database = AppDatabase.makeTemporaryDatabase(named: "resplit-subject-test")
         let repository = LibraryRepository(database: database)
@@ -515,7 +516,7 @@ import Foundation
             [.string(bookID), .string("librivox; audiobooks;greek drama; aristophanes; greek comedy")]
         )
 
-        let count = await repository.resplitBookTasteSubjectsIfNeeded()
+        let count = await repository.resplitBookTasteSubjectsIfNeeded(defaults: testDefaults)
         #expect(count == 1)
 
         let rows = try await database.query(
@@ -529,7 +530,7 @@ import Foundation
         #expect(!(terms.contains { $0.contains(";") }))  // no term should contain semicolon after migration
 
         // Idempotent second run
-        let secondCount = await repository.resplitBookTasteSubjectsIfNeeded()
+        let secondCount = await repository.resplitBookTasteSubjectsIfNeeded(defaults: testDefaults)
         #expect(secondCount == 0)  // migration must be idempotent
 
         // Verify reco_surfaced was cleared
@@ -542,6 +543,7 @@ import Foundation
         let database = AppDatabase.makeTemporaryDatabase(named: "resplit-profile-rebuild")
         let repository = LibraryRepository(database: database)
         let profileStore = TasteProfileStore(database: database)
+        let testDefaults = UserDefaults(suiteName: "test-resplit-\(UUID().uuidString)")!
 
         // Create a real book + source + listening event connected to split book_taste
         let sourceID = UUID()
@@ -579,7 +581,7 @@ import Foundation
         )
 
         // Run the migration (idempotent; may be a no-op if already done)
-        _ = await repository.resplitBookTasteSubjectsIfNeeded()
+        _ = await repository.resplitBookTasteSubjectsIfNeeded(defaults: testDefaults)
 
         // Now insert the proper split subject terms (migration cleared semicolons; but we need to
         // insert them manually since we didn't have them pre-migration for this test book)

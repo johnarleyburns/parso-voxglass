@@ -366,9 +366,17 @@ public enum IADateFormatting {
             return monthYearFormatter.string(from: date)
         }
 
+        let parser: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = TimeZone(identifier: "UTC")
+            formatter.isLenient = false
+            return formatter
+        }()
+
         for (format, isYearOnly) in Self.parseFormats {
-            parseFormatter.dateFormat = format
-            if let date = parseFormatter.date(from: trimmed) {
+            parser.dateFormat = format
+            if let date = parser.date(from: trimmed) {
                 return isYearOnly
                     ? yearFormatter.string(from: date)
                     : monthYearFormatter.string(from: date)
@@ -385,14 +393,6 @@ public enum IADateFormatting {
     ]
 
     private static let isoFormatter = ISO8601DateFormatter()
-
-    private static let parseFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        formatter.isLenient = false
-        return formatter
-    }()
 
     private static let monthYearFormatter: DateFormatter = {
         let formatter = DateFormatter()

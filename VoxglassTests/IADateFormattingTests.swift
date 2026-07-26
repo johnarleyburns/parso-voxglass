@@ -1,7 +1,7 @@
 import Testing
 @testable import VoxglassCore
 
-@Suite(.serialized) struct IADateFormattingTests {
+@Suite struct IADateFormattingTests {
     @Test func iSO8601Timestamp() {
         #expect(IADateFormatting.humanReadable("2005-08-01T00:00:00Z") == "Aug 2005")
     }

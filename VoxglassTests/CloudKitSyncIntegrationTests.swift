@@ -173,14 +173,14 @@ import Testing
 
 // MARK: - T9: Relay message contract tests
 
-@Suite(.serialized) struct RelayMessageContractTests {
+@Suite struct RelayMessageContractTests {
 
     @Test func contentKeyAndStreamCacheKey_forSameURL_match() async throws {
         let url = URL(string: "https://archive.org/download/test/chapter.mp3")!
         let chapterKey = StreamCacheUtils.key(for: url)
 
         // Simulate the relay check: file exists at cacheDir/chapterKey
-        let cacheDir = FileManager.default.temporaryDirectory.appendingPathComponent("voxglass-cache-relay-test")
+        let cacheDir = FileManager.default.temporaryDirectory.appendingPathComponent("voxglass-cache-relay-test-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         let fileURL = cacheDir.appendingPathComponent(chapterKey)
 
