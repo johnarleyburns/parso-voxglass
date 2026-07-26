@@ -13,6 +13,7 @@ struct WatchRootView: View {
     }
 
     @State private var selectedTab: Tab = .listening
+    @State private var lastForegroundFetch: Date = .distantPast
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -39,6 +40,12 @@ struct WatchRootView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 Task { @MainActor in
+                    // Pull remote changes when foregrounded (throttled), then
+                    // refresh the local library the UI reads from.
+                    if Date().timeIntervalSince(lastForegroundFetch) > 30 {
+                        lastForegroundFetch = Date()
+                        await services.syncEngine?.fetchChanges()
+                    }
                     await services.libraryStore.refresh()
                 }
             }

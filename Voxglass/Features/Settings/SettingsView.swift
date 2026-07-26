@@ -612,6 +612,8 @@ private struct SyncSettingsCard: View {
 
 private struct WatchSyncCard: View {
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
+    @EnvironmentObject private var syncEngine: CloudKitSyncEngine
+    @State private var isSyncingLibrary = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -621,6 +623,10 @@ private struct WatchSyncCard: View {
                 Text("Apple Watch & Sync")
                     .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
+                Spacer()
+                if isSyncingLibrary {
+                    ProgressView().scaleEffect(0.8)
+                }
             }
 
             Text("Your library and progress sync to Apple Watch when iCloud is available. The watch also works on its own — search, stream, and download independently.")
@@ -631,6 +637,30 @@ private struct WatchSyncCard: View {
                 Text("iCloud Sync is off. Enable above to sync with Apple Watch.")
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
+            } else {
+                Text("iCloud: \(syncEngine.accountStatusText) · Pending \(syncEngine.pendingCount) · Pushed \(syncEngine.lastUploadedCount)")
+                    .scaledFont(size: 11)
+                    .foregroundStyle(Palette.ink3)
+                if let error = syncEngine.syncError {
+                    Text(error)
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.danger)
+                        .accessibilityIdentifier("watchsync.error")
+                }
+
+                Button {
+                    Task {
+                        isSyncingLibrary = true
+                        await syncEngine.start()
+                        isSyncingLibrary = false
+                    }
+                } label: {
+                    Text(isSyncingLibrary ? "Syncing Library…" : "Sync Library Now")
+                        .scaledFont(size: 12, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                }
+                .disabled(isSyncingLibrary)
+                .accessibilityIdentifier("watchsync.now")
             }
         }
         .padding(15)

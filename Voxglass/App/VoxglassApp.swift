@@ -17,6 +17,7 @@ struct VoxglassApp: App {
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
                 .environmentObject(services.cloudSync)
+                .environmentObject(services.cloudKitSyncEngine)
                 .environmentObject(services.listeningStatsStore)
                 .environmentObject(services.folderWatchService)
                 .environmentObject(services.playlistStore)

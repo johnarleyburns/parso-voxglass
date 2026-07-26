@@ -81,6 +81,9 @@ final class WatchAppServices: ObservableObject {
 
         if let engine = syncEngine {
             await engine.start()
+            if engine.lastUploadedCount > 0 {
+                UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+            }
         }
 
         await libraryStore.refresh()
@@ -118,9 +121,20 @@ final class WatchAppServices: ObservableObject {
 
     private func enqueueInitialLibraryForCloudKitIfNeeded() async {
         let defaults = UserDefaults.standard
-        guard !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) else { return }
-        await libraryRepository.enqueueExistingLibraryForSync()
-        defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
+
+        if !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) {
+            await libraryRepository.enqueueExistingLibraryForSync()
+            defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
+            return
+        }
+
+        // Self-heal: re-enqueue any locally-added books that were never confirmed
+        // uploaded when nothing is currently queued.
+        let uploadConfirmed = defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+        let pending = (try? await CloudSyncStateStore(database: database).pendingCount()) ?? 0
+        if !uploadConfirmed && pending == 0 {
+            _ = await libraryRepository.enqueueExistingLibraryForSync()
+        }
     }
 
     #if DEBUG

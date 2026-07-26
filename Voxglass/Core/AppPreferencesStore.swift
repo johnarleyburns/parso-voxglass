@@ -16,6 +16,7 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let volumeNormalizationEnabled = "voxglass.volumeNormalization.enabled"
         public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
         public static let cloudKitInitialLibraryEnqueued = "voxglass.cloudKit.initialLibraryEnqueued.v1"
+        public static let cloudKitLibraryUploadConfirmed = "voxglass.cloudKit.libraryUploadConfirmed.v1"
         public static let soloOnlyEnabled = "voxglass.soloOnlyEnabled"
     }
 

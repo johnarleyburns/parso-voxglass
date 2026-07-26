@@ -4,6 +4,7 @@ import VoxglassCore
 struct WatchSettingsView: View {
     @EnvironmentObject var services: WatchAppServices
     @State private var isClearingCache = false
+    @State private var isRefreshing = false
 
     var body: some View {
         ScrollView {
@@ -60,11 +61,36 @@ struct WatchSettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    if let error = services.syncEngine?.syncError {
-                        Text(error)
-                            .font(.caption2)
-                            .foregroundStyle(.red)
-                            .lineLimit(2)
+                    if let engine = services.syncEngine {
+                        syncDetail("Account", engine.accountStatusText)
+                        syncDetail("Pending", "\(engine.pendingCount)")
+                        syncDetail("Last pulled", "\(engine.lastFetchedCount)")
+                        syncDetail("Last pushed", "\(engine.lastUploadedCount)")
+                        if let error = engine.syncError {
+                            Text(error)
+                                .font(.caption2)
+                                .foregroundStyle(.red)
+                                .lineLimit(3)
+                        }
+                    }
+
+                    if isRefreshing {
+                        ProgressView("Refreshing…")
+                    } else {
+                        Button {
+                            Task {
+                                isRefreshing = true
+                                await services.syncEngine?.fetchChanges()
+                                await services.libraryStore.refresh()
+                                isRefreshing = false
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.clockwise.icloud")
+                                Text("Refresh from iCloud")
+                            }
+                        }
+                        .disabled(services.syncEngine == nil)
                     }
                 }
 
@@ -109,6 +135,17 @@ struct WatchSettingsView: View {
             .padding()
         }
         .navigationTitle("Settings")
+    }
+
+    @ViewBuilder
+    private func syncDetail(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text("\(label):")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption2)
+        }
     }
 
     private func downloadBook(_ book: BookWithChapters) async {

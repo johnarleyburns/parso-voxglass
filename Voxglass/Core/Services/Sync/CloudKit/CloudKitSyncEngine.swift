@@ -1,11 +1,17 @@
 import Foundation
 import CloudKit
+import os
 
 @MainActor
 public final class CloudKitSyncEngine: ObservableObject {
     @Published public private(set) var syncState: SyncState = .disconnected
     @Published public private(set) var lastSyncDate: Date?
     @Published public var syncError: String?
+    @Published public private(set) var lastUploadedCount: Int = 0
+    @Published public private(set) var lastFetchedCount: Int = 0
+    @Published public private(set) var pendingCount: Int = 0
+
+    private static let log = Logger(subsystem: "guru.parso.voxglass", category: "cloudkit-sync")
 
     public enum SyncState: Equatable {
         case disconnected
@@ -37,22 +43,31 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     public func start() async {
         await refreshAccountStatus()
+        Self.log.info("start: accountStatus=\(self.accountStatus.rawValue, privacy: .public) iCloudSyncEnabled=\(self.iCloudSyncEnabled, privacy: .public) shouldSync=\(self.shouldSync, privacy: .public)")
         guard shouldSync else {
             syncState = .disconnected
+            Self.log.notice("start: not syncing (standalone) — account unavailable or sync disabled")
             return
         }
         syncState = .initializing
         do {
             try await database.prepare()
             try await ensureZoneExists()
+            await ensureZoneSubscription()
             try await fetchRecordZoneChanges()
             syncState = .idle
             await sendChanges()
             syncState = .idle
+            await refreshPendingCount()
         } catch {
             syncState = .error
             syncError = error.localizedDescription
+            Self.log.error("start: failed — \(String(describing: error), privacy: .public)")
         }
+    }
+
+    private func refreshPendingCount() async {
+        pendingCount = (try? await stateStore.pendingCount()) ?? pendingCount
     }
 
     public func sendChanges() async {
@@ -62,9 +77,13 @@ public final class CloudKitSyncEngine: ObservableObject {
             try await sendPendingChanges(modify: modifyRecords)
             syncState = .idle
             lastSyncDate = Date()
+            syncError = nil
         } catch {
+            syncState = .error
             syncError = error.localizedDescription
+            Self.log.error("sendChanges: upload failed — \(String(describing: error), privacy: .public)")
         }
+        await refreshPendingCount()
     }
 
     func sendPendingChanges(
@@ -73,10 +92,13 @@ public final class CloudKitSyncEngine: ObservableObject {
         let pending = try await stateStore.dequeuePending(limit: 50)
         guard !pending.isEmpty else {
             syncState = .idle
+            lastUploadedCount = 0
             return
         }
 
-        var recordsToSave: [CKRecord] = []
+        // Dedupe saves by recordName: a Source record is shared across many books,
+        // and a batch must not contain the same record ID twice.
+        var recordsToSave: [String: CKRecord] = [:]
         var recordIDsToDelete: [CKRecord.ID] = []
         var succeeded: [(localID: String, recordType: String)] = []
 
@@ -85,12 +107,12 @@ public final class CloudKitSyncEngine: ObservableObject {
             switch item.recordType {
             case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
                 if let record = try? await positionRecord(localID: item.localID) {
-                    recordsToSave.append(record)
+                    recordsToSave[record.recordID.recordName] = record
                     built = true
                 }
             case CloudKitRecordMapper.RecordType.bookmark.rawValue:
                 if let record = try? await bookmarkRecord(localID: item.localID) {
-                    recordsToSave.append(record)
+                    recordsToSave[record.recordID.recordName] = record
                     built = true
                 }
             case CloudKitRecordMapper.RecordType.book.rawValue where item.changeType == "delete":
@@ -100,8 +122,14 @@ public final class CloudKitSyncEngine: ObservableObject {
                 }
             default:
                 if let record = try? await bookRecord(localID: item.localID) {
-                    recordsToSave.append(record)
+                    recordsToSave[record.recordID.recordName] = record
+                    // Publish the Book's Source too so the sourceRef isn't dangling.
+                    if let sourceRec = try? await sourceRecordForBook(localID: item.localID) {
+                        recordsToSave[sourceRec.recordID.recordName] = sourceRec
+                    }
                     built = true
+                } else {
+                    Self.log.notice("sendPendingChanges: could not build Book record for localID=\(item.localID, privacy: .public) (missing content_key or /details/ source URL)")
                 }
             }
             if built {
@@ -109,9 +137,12 @@ public final class CloudKitSyncEngine: ObservableObject {
             }
         }
 
-        if !recordsToSave.isEmpty || !recordIDsToDelete.isEmpty {
-            try await modify(recordsToSave, recordIDsToDelete)
+        let saves = Array(recordsToSave.values)
+        if !saves.isEmpty || !recordIDsToDelete.isEmpty {
+            Self.log.info("sendPendingChanges: saving \(saves.count, privacy: .public) records, deleting \(recordIDsToDelete.count, privacy: .public)")
+            try await modify(saves, recordIDsToDelete)
         }
+        lastUploadedCount = saves.count
 
         for item in succeeded {
             try? await stateStore.removePending(localID: item.localID, recordType: item.recordType)
@@ -134,6 +165,17 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     @Published public private(set) var accountStatus: CKAccountStatus = .couldNotDetermine
 
+    public var accountStatusText: String {
+        switch accountStatus {
+        case .available: return "Available"
+        case .noAccount: return "No iCloud Account"
+        case .restricted: return "Restricted"
+        case .temporarilyUnavailable: return "Temporarily Unavailable"
+        case .couldNotDetermine: return "Unknown"
+        @unknown default: return "Unknown"
+        }
+    }
+
     public func refreshAccountStatus() async {
         #if DEBUG
         if let forced = testForceAccountAvailable {
@@ -155,13 +197,22 @@ public final class CloudKitSyncEngine: ObservableObject {
     // MARK: - CloudKit operations
 
     public func fetchChanges() async {
-        guard shouldSync else { return }
+        await refreshAccountStatus()
+        guard shouldSync else {
+            Self.log.notice("fetchChanges: skipped (standalone / not syncing)")
+            return
+        }
         do {
             try await ensureZoneExists()
+            await ensureZoneSubscription()
             try await fetchRecordZoneChanges()
+            syncError = nil
         } catch {
+            syncState = .error
             syncError = error.localizedDescription
+            Self.log.error("fetchChanges: failed — \(String(describing: error), privacy: .public)")
         }
+        await refreshPendingCount()
     }
 
     private func ensureZoneExists() async throws {
@@ -188,6 +239,41 @@ public final class CloudKitSyncEngine: ObservableObject {
                 }
             }
             db.add(operation)
+        }
+    }
+
+    private static let zoneSubscriptionID = "library-zone-subscription"
+    private static let zoneSubscribedDefaultsKey = "voxglass.cloudKit.zoneSubscribed.v1"
+
+    /// Registers a silent-push subscription on the Library zone so CloudKit
+    /// notifies this device of remote changes. Without it, the app only ever
+    /// pulls at cold-launch. Idempotent: only re-attempts until it succeeds once.
+    private func ensureZoneSubscription() async {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: Self.zoneSubscribedDefaultsKey) else { return }
+
+        let subscription = CKRecordZoneSubscription(zoneID: zoneID, subscriptionID: Self.zoneSubscriptionID)
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true
+        subscription.notificationInfo = info
+
+        let db = container.privateCloudDatabase
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let op = CKModifySubscriptionsOperation(
+                subscriptionsToSave: [subscription],
+                subscriptionIDsToDelete: nil
+            )
+            op.modifySubscriptionsResultBlock = { result in
+                switch result {
+                case .success:
+                    defaults.set(true, forKey: Self.zoneSubscribedDefaultsKey)
+                    Self.log.info("zone subscription registered")
+                case .failure(let error):
+                    Self.log.error("zone subscription failed — \(String(describing: error), privacy: .public)")
+                }
+                continuation.resume()
+            }
+            db.add(op)
         }
     }
 
@@ -260,18 +346,27 @@ public final class CloudKitSyncEngine: ObservableObject {
 
                     switch result {
                     case .success:
+                        var imported = 0
                         for record in recordsToImport {
-                            try? await self.importRecord(record)
+                            do {
+                                try await self.importRecord(record)
+                                imported += 1
+                            } catch {
+                                Self.log.error("fetch: import failed for \(record.recordType, privacy: .public) — \(String(describing: error), privacy: .public)")
+                            }
                         }
                         for recordID in deletionsToApply {
                             try? await self.handleDeletion(recordID: recordID)
                         }
+                        self.lastFetchedCount = imported
+                        Self.log.info("fetch: received \(recordsToImport.count, privacy: .public) records, imported \(imported, privacy: .public), deleted \(deletionsToApply.count, privacy: .public)")
                         if let token,
                            let tokenData = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
                             try? await self.stateStore.saveEngineState(tokenData)
                         }
                         continuation.resume()
                     case .failure(let error):
+                        Self.log.error("fetch: zone changes failed — \(String(describing: error), privacy: .public)")
                         continuation.resume(throwing: error)
                     }
                 }
@@ -311,6 +406,25 @@ public final class CloudKitSyncEngine: ObservableObject {
             contentKey: contentKey,
             sourceKey: sourceKey
         )
+    }
+
+    private func sourceRecordForBook(localID: String) async throws -> CKRecord? {
+        let rows = try? await database.query(
+            "SELECT s.url, s.kind, s.title, s.created_at FROM sources s JOIN books b ON b.source_id = s.id WHERE b.id = ? LIMIT 1",
+            [.string(localID)]
+        )
+        guard let row = rows?.first else { return nil }
+        let url = ModelMapping.url(row, "url")
+        let kind = SourceKind(rawValue: row.string("kind") ?? "") ?? .librivox
+        guard let sourceRecordName = CloudKitRecordMapper.sourceRecordName(sourceURL: url, kind: kind) else { return nil }
+        let key = sourceRecordName.replacingOccurrences(of: "source-", with: "")
+        let source = Source(
+            kind: kind,
+            title: row.string("title") ?? "",
+            url: url,
+            createdAt: ModelMapping.date(row, "created_at")
+        )
+        return CloudKitRecordMapper.sourceRecord(from: source, sourceKey: key)
     }
 
     private func bookDeleteRecordID(localID: String) async throws -> CKRecord.ID? {

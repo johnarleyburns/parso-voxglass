@@ -129,14 +129,30 @@ final class AppServices: ObservableObject {
             guard let self else { return }
             await self.cloudSync.sync()
             await self.cloudKitSyncEngine.start()
+            if self.cloudKitSyncEngine.lastUploadedCount > 0 {
+                UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+            }
         }
     }
 
     private func enqueueInitialLibraryForCloudKitIfNeeded() async {
         let defaults = UserDefaults.standard
-        guard !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) else { return }
-        await libraryRepository.enqueueExistingLibraryForSync()
-        defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
+
+        // First run of a sync-capable build: enqueue the existing backlog once.
+        if !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) {
+            await libraryRepository.enqueueExistingLibraryForSync()
+            defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
+            return
+        }
+
+        // Self-heal: the one-time enqueue already ran, but nothing is queued and
+        // no upload has ever been confirmed — the library was likely stranded
+        // (e.g. enqueue matched nothing, or every push failed). Re-enqueue.
+        let uploadConfirmed = defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+        let pending = (try? await CloudSyncStateStore(database: database).pendingCount()) ?? 0
+        if !uploadConfirmed && pending == 0 {
+            _ = await libraryRepository.enqueueExistingLibraryForSync()
+        }
     }
 
     private func captureTasteSignal(_ signal: PlaybackTasteSignal) async {
