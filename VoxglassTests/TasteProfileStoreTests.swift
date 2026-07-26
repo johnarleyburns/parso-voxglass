@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
-@Suite struct TasteProfileStoreTests {
+@Suite(.serialized) struct TasteProfileStoreTests {
 
     @Test func decayUpdateMatchesExponentialFormula() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-decay")

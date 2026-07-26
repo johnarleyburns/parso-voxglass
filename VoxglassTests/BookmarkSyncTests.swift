@@ -4,7 +4,7 @@ import Foundation
 
 /// Pure LWW tombstone tests (P0-3). The merge logic is extracted as a pure
 /// function so the tombstone behaviour is tested with no iCloud, no SQLite.
-@Suite struct BookmarkSyncTests {
+@Suite(.serialized) struct BookmarkSyncTests {
 
     /// Pure LWW tombstone tests (P0-3). The merge logic is extracted as a pure
     /// function so the tombstone behaviour is tested with no iCloud, no SQLite.

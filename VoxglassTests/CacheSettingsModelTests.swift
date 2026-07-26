@@ -1,7 +1,7 @@
 import Testing
 @testable import VoxglassCore
 
-@Suite struct CacheSettingsModelTests {
+@Suite(.serialized) struct CacheSettingsModelTests {
 
     @Test func clearCacheEmptiesTheStore() async {
         await StreamCacheStore.shared.registerArtwork(key: "art_test_clear", bytes: 1024)

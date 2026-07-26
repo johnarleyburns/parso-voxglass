@@ -23,7 +23,7 @@ fi
 
 echo ""
 echo "--- swift test (unit tests) ---"
-swift test --no-parallel
+swift test
 
 echo ""
 echo "--- simulator test suite ---"

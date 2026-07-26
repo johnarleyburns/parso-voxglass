@@ -173,7 +173,7 @@ import Testing
 
 // MARK: - T9: Relay message contract tests
 
-@Suite struct RelayMessageContractTests {
+@Suite(.serialized) struct RelayMessageContractTests {
 
     @Test func contentKeyAndStreamCacheKey_forSameURL_match() async throws {
         let url = URL(string: "https://archive.org/download/test/chapter.mp3")!

@@ -51,7 +51,7 @@ echo "=== Voxglass watch smoke test (simulator) ==="
 
 # Auto-detect the first available Apple Watch simulator if none was requested.
 if [ -z "$WATCH_DEVICE_NAME" ]; then
-  WATCH_DEVICE_NAME=$(xcrun simctl list devices available | grep "Apple Watch" | head -1 | sed 's/ (.*//' || true)
+  WATCH_DEVICE_NAME=$(xcrun simctl list devices available | grep -E "Apple Watch|Watch-" | head -1 | sed 's/ (.*//' || true)
   if [ -z "$WATCH_DEVICE_NAME" ]; then
     echo "WARNING: No Apple Watch simulator found — skipping watch smoke test."
     exit 0
