@@ -73,7 +73,6 @@ jobs:
       - name: Run wiring guards
         run: bash scripts/guard_wiring.sh
 
-
       - name: Guard runtime network endpoints
         run: |
           set -euo pipefail
@@ -252,14 +251,12 @@ jobs:
           cp "$watch_profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$watch_profile_uuid.mobileprovision"
           echo "watch_profile_name=$watch_profile_name" >> "$GITHUB_OUTPUT"
 
-          # Validate iOS profile name matches project.yml
           expected_profile="$(sed -n 's/.*PROVISIONING_PROFILE_SPECIFIER: "\(.*\)"/\1/p' project.yml | head -1)"
           if [ "$profile_name" != "$expected_profile" ]; then
             echo "::error title=Provisioning profile mismatch::Installed iOS profile '$profile_name' does not match project.yml's PROVISIONING_PROFILE_SPECIFIER '$expected_profile'."
             exit 1
           fi
 
-          # Validate watch profile name
           expected_watch_profile="Parso Voxglass Watch App Store"
           if [ "$watch_profile_name" != "$expected_watch_profile" ]; then
             echo "::warning title=Watch provisioning profile name::Installed watch profile '$watch_profile_name' does not match expected '$expected_watch_profile'."
@@ -269,10 +266,6 @@ jobs:
         if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          # Signing identity/style/profile come from the Voxglass target's
-          # Release config in project.yml, NOT command-line overrides — CLI
-          # build settings apply to every target, including the VoxglassCore
-          # package, and "VoxglassCore does not support provisioning profiles".
           xcodebuild \
             -project Voxglass.xcodeproj \
             -scheme Voxglass \
