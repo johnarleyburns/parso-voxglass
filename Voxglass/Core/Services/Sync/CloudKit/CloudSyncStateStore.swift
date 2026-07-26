@@ -18,6 +18,11 @@ public final class CloudSyncStateStore {
         ])
     }
 
+    public func clearEngineState() async throws {
+        try await database.prepare()
+        try await database.execute("DELETE FROM sync_engine_state WHERE id = 1")
+    }
+
     public func loadEngineState() async throws -> Data? {
         try await database.prepare()
         let rows = try await database.query(

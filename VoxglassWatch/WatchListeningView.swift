@@ -14,6 +14,16 @@ struct WatchListeningView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+                    if let error = services.syncEngine?.syncError {
+                        Divider()
+                        Label("Sync error", systemImage: "exclamationmark.icloud")
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                        Text(error)
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                    }
                 }
             } else {
                 List(services.libraryStore.books) { book in

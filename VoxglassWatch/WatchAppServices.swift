@@ -1,9 +1,12 @@
 import Foundation
+import Combine
 import VoxglassCore
 
 @MainActor
 final class WatchAppServices: ObservableObject {
     static let shared = WatchAppServices()
+
+    private var cancellables = Set<AnyCancellable>()
 
     let database: AppDatabase
     let libraryStore: LibraryStore
@@ -51,6 +54,14 @@ final class WatchAppServices: ObservableObject {
         libraryStore.onBookImported = { [weak self] _ in
             self?.syncEngine?.pushAfterMutation()
         }
+
+        // Re-publish the sync engine's state (syncError, counts) through this
+        // container so views observing WatchAppServices update live — otherwise
+        // errors would only appear after an unrelated re-render.
+        syncEngine?.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
 
         WatchAudioRelay.shared.onFileReceived = { [weak self] url, chapterKey in
             guard let self else { return }

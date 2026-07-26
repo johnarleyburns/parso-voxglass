@@ -277,7 +277,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         }
     }
 
-    private func fetchRecordZoneChanges() async throws {
+    private func fetchRecordZoneChanges(retryOnExpiredToken: Bool = true) async throws {
         guard shouldSync else { return }
         let db = container.privateCloudDatabase
 
@@ -299,6 +299,7 @@ public final class CloudKitSyncEngine: ObservableObject {
                 configurationsByRecordZoneID: [zoneID: config]
             )
             var newToken: CKServerChangeToken?
+            var needsTokenReset = false
             let callbackLock = NSLock()
             var changedRecords: [CKRecord] = []
             var deletedRecordIDs: [CKRecord.ID] = []
@@ -325,6 +326,12 @@ public final class CloudKitSyncEngine: ObservableObject {
 
             operation.recordZoneFetchResultBlock = { [weak self] zoneID, result in
                 if case .failure(let error) = result {
+                    if let ckError = error as? CKError,
+                       ckError.code == .changeTokenExpired || ckError.code == .zoneNotFound {
+                        callbackLock.lock()
+                        needsTokenReset = true
+                        callbackLock.unlock()
+                    }
                     Task { @MainActor [weak self] in
                         self?.syncError = error.localizedDescription
                     }
@@ -336,11 +343,27 @@ public final class CloudKitSyncEngine: ObservableObject {
                 let recordsToImport = changedRecords
                 let deletionsToApply = deletedRecordIDs
                 let token = newToken
+                let mustReset = needsTokenReset
                 callbackLock.unlock()
 
                 Task { @MainActor [weak self] in
                     guard let self else {
                         continuation.resume()
+                        return
+                    }
+
+                    // Stored change token is stale (zone recreated / history
+                    // truncated). Drop it and re-pull the whole zone from scratch.
+                    if mustReset, retryOnExpiredToken {
+                        Self.log.notice("fetch: change token expired — resetting and re-pulling from scratch")
+                        try? await self.stateStore.clearEngineState()
+                        do {
+                            try await self.fetchRecordZoneChanges(retryOnExpiredToken: false)
+                            self.syncError = nil
+                            continuation.resume()
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
                         return
                     }
 
@@ -384,13 +407,44 @@ public final class CloudKitSyncEngine: ObservableObject {
                 recordIDsToDelete: delete.isEmpty ? nil : delete
             )
             operation.savePolicy = .changedKeys
+            // Custom-zone operations are atomic by default: one conflicting record
+            // would sink the whole batch. We want best-effort — new records save
+            // even if some already exist on the server (creation-wins by contentKey).
+            operation.isAtomic = false
             operation.modifyRecordsResultBlock = { result in
                 switch result {
-                case .success: continuation.resume()
-                case .failure(let error): continuation.resume(throwing: error)
+                case .success:
+                    continuation.resume()
+                case .failure(let error):
+                    // A record already on the server (serverRecordChanged) is not a
+                    // real failure for our creation-wins model — the record is there,
+                    // which is all the other device needs. Only surface genuine errors.
+                    if Self.isBenignSaveFailure(error) {
+                        Self.log.notice("upload: benign conflict (records already present) — treating as success")
+                        continuation.resume()
+                    } else {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
             db.add(operation)
+        }
+    }
+
+    /// True when a modify failure is a partial failure whose sub-errors are all
+    /// benign for our sync model (record already exists / already deleted).
+    private static func isBenignSaveFailure(_ error: Error) -> Bool {
+        guard let ckError = error as? CKError, ckError.code == .partialFailure,
+              let partials = ckError.partialErrorsByItemID as? [CKRecord.ID: Error],
+              !partials.isEmpty else { return false }
+        return partials.values.allSatisfy { sub in
+            guard let subCK = sub as? CKError else { return false }
+            switch subCK.code {
+            case .serverRecordChanged, .unknownItem, .batchRequestFailed:
+                return true
+            default:
+                return false
+            }
         }
     }
 
