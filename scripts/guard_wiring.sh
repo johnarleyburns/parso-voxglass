@@ -88,6 +88,8 @@ check_coordinator_callers() {
     preferredPosition       # pure static merge, called from restore/resume paths
     selectAndPlay           # new selection entry point; view call sites migrate to this
     tickProgress            # internal (progress loop) + direct host-test calls
+    pushNavigationHistory   # called before every navigation; internal + view undo callers
+    undoLastNavigation      # undo accidental navigation; view call sites wire this
   )
 
   while IFS= read -r method_name; do
