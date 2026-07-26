@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class ModelBehaviorTests: XCTestCase {
-    func testPlaybackPositionClampsToDuration() {
+@Suite struct ModelBehaviorTests {
+    @Test func playbackPositionClampsToDuration() {
         let position = PlaybackPosition(
             bookID: UUID(),
             chapterID: UUID(),
@@ -10,10 +11,10 @@ final class ModelBehaviorTests: XCTestCase {
             duration: 30
         )
 
-        XCTAssertEqual(position.position, 30)
+        #expect(position.position == 30)
     }
 
-    func testPlaybackPositionDoesNotGoNegative() {
+    @Test func playbackPositionDoesNotGoNegative() {
         let position = PlaybackPosition(
             bookID: UUID(),
             chapterID: UUID(),
@@ -21,10 +22,10 @@ final class ModelBehaviorTests: XCTestCase {
             duration: 30
         )
 
-        XCTAssertEqual(position.position, 0)
+        #expect(position.position == 0)
     }
 
-    func testChaptersUseNaturalOrderWithinIndex() {
+    @Test func chaptersUseNaturalOrderWithinIndex() {
         let bookID = UUID()
         let chapters = [
             Chapter(bookID: bookID, title: "Chapter 10", index: 0),
@@ -32,13 +33,13 @@ final class ModelBehaviorTests: XCTestCase {
             Chapter(bookID: bookID, title: "Chapter 1", index: 0)
         ]
 
-        XCTAssertEqual(chapters.naturallySorted().map(\.title), ["Chapter 1", "Chapter 2", "Chapter 10"])
+        #expect(chapters.naturallySorted().map(\.title) == ["Chapter 1", "Chapter 2", "Chapter 10"])
     }
 
-    func testBookAuthorLineFallsBackWhenMissing() {
+    @Test func bookAuthorLineFallsBackWhenMissing() {
         let book = Book(title: "Test Book", authors: [], sourceID: UUID())
 
-        XCTAssertEqual(book.authorLine, "Unknown author")
+        #expect(book.authorLine == "Unknown author")
     }
 }
 

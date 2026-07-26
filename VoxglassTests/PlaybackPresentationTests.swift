@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class PlaybackPresentationTests: XCTestCase {
+@Suite struct PlaybackPresentationTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -90,7 +91,7 @@ final class PlaybackPresentationTests: XCTestCase {
         return false
     }
 
-    func testPresentBookCreatesPausedSessionAtResolvedResumePosition() async throws {
+    @Test func presentBookCreatesPausedSessionAtResolvedResumePosition() async throws {
         let h = makeHarness()
         let book = makeBook()
         let chapter = book.chapters[1]
@@ -111,15 +112,15 @@ final class PlaybackPresentationTests: XCTestCase {
 
         await h.coordinator.present(book)
 
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, book.book.id)
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapter.id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 73, accuracy: 0.001)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
-        XCTAssertEqual(h.bridge.lastNowPlaying?.elapsed ?? -1, 73, accuracy: 0.001)
-        XCTAssertEqual(h.bridge.lastNowPlaying?.reportedRate ?? -1, 0)
+        #expect(h.coordinator.currentSession?.book.id == book.book.id)
+        #expect(h.coordinator.currentSession?.chapter.id == chapter.id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (73)) <= 0.001)
+        #expect(h.coordinator.currentSession?.isPlaying == false)
+        #expect(abs((h.bridge.lastNowPlaying?.elapsed ?? -1) - (73)) <= 0.001)
+        #expect(h.bridge.lastNowPlaying?.reportedRate ?? -1 == 0)
     }
 
-    func testPresentBookDoesNotLoadPlayWarmCacheOrPreload() async {
+    @Test func presentBookDoesNotLoadPlayWarmCacheOrPreload() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.reset()
@@ -127,10 +128,10 @@ final class PlaybackPresentationTests: XCTestCase {
         await h.coordinator.present(book)
 
         let forbidden = h.engine.calls.filter(isForbiddenPresentationEffect)
-        XCTAssertTrue(forbidden.isEmpty, "Paused presentation must not touch playback or warmup effects: \(forbidden)")
+        #expect(forbidden.isEmpty)  // Paused presentation must not touch playback or warmup effects: \(forbidden)
     }
 
-    func testToggleAfterPresentLoadsOnceAtPresentedOffsetAndStartsPlayback() async throws {
+    @Test func toggleAfterPresentLoadsOnceAtPresentedOffsetAndStartsPlayback() async throws {
         let h = makeHarness()
         let book = makeBook()
         try await h.store.save(PlaybackPosition(
@@ -145,14 +146,14 @@ final class PlaybackPresentationTests: XCTestCase {
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertEqual(h.engine.loadCalls.count, 1)
-        XCTAssertEqual(h.engine.loadCalls.first?.url, book.chapters[1].localURL)
-        XCTAssertEqual(h.engine.loadCalls.first?.startTime ?? -1, 42, accuracy: 0.001)
-        XCTAssertTrue(h.engine.calls.contains(.play))
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, true)
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.engine.loadCalls.first?.url == book.chapters[1].localURL)
+        #expect(abs((h.engine.loadCalls.first?.startTime ?? -1) - (42)) <= 0.001)
+        #expect(h.engine.calls.contains(.play))
+        #expect(h.coordinator.currentSession?.isPlaying == true)
     }
 
-    func testPresentRequestedChapterUsesSavedChapterPositionOrZero() async throws {
+    @Test func presentRequestedChapterUsesSavedChapterPositionOrZero() async throws {
         let h = makeHarness()
         let book = makeBook()
         try await h.store.save(PlaybackPosition(
@@ -164,18 +165,18 @@ final class PlaybackPresentationTests: XCTestCase {
 
         await h.coordinator.present(book, chapter: book.chapters[2])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, book.chapters[2].id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 66, accuracy: 0.001)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
+        #expect(h.coordinator.currentSession?.chapter.id == book.chapters[2].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (66)) <= 0.001)
+        #expect(h.coordinator.currentSession?.isPlaying == false)
 
         await h.coordinator.present(book, chapter: book.chapters[0])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, book.chapters[0].id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 0, accuracy: 0.001)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
+        #expect(h.coordinator.currentSession?.chapter.id == book.chapters[0].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (0)) <= 0.001)
+        #expect(h.coordinator.currentSession?.isPlaying == false)
     }
 
-    func testPresentDifferentBookOverwritesSessionAndNextToggleReloadsNewBook() async {
+    @Test func presentDifferentBookOverwritesSessionAndNextToggleReloadsNewBook() async {
         let h = makeHarness()
         let first = makeBook(title: "First")
         let second = makeBook(title: "Second")
@@ -186,16 +187,16 @@ final class PlaybackPresentationTests: XCTestCase {
 
         await h.coordinator.present(second)
 
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, second.book.id)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
-        XCTAssertFalse(h.engine.isPlaying)
+        #expect(h.coordinator.currentSession?.book.id == second.book.id)
+        #expect(h.coordinator.currentSession?.isPlaying == false)
+        #expect(!(h.engine.isPlaying))
 
         h.engine.reset()
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertEqual(h.engine.loadCalls.count, 1)
-        XCTAssertEqual(h.engine.loadCalls.first?.url, second.chapters[0].localURL)
-        XCTAssertTrue(h.engine.calls.contains(.play))
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.engine.loadCalls.first?.url == second.chapters[0].localURL)
+        #expect(h.engine.calls.contains(.play))
     }
 }

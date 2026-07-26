@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class PositionStoreTests: XCTestCase {
-    func testPositionRoundTripsThroughSQLite() async throws {
+@Suite struct PositionStoreTests {
+    @Test func positionRoundTripsThroughSQLite() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "position-round-trip")
         let ids = try await seedBook(in: database)
         let store = SQLitePositionStore(database: database)
@@ -17,16 +18,16 @@ final class PositionStoreTests: XCTestCase {
 
         try await store.save(saved)
         let fetchedOptional = try await store.position(for: ids.bookID, chapterID: ids.chapterID)
-        let fetched = try XCTUnwrap(fetchedOptional)
+        let fetched = try try #require(fetchedOptional)
 
-        XCTAssertEqual(fetched.bookID, ids.bookID)
-        XCTAssertEqual(fetched.chapterID, ids.chapterID)
-        XCTAssertEqual(fetched.position, 42.5, accuracy: 0.001)
-        XCTAssertEqual(fetched.duration ?? 0, 300, accuracy: 0.001)
-        XCTAssertEqual(fetched.isFinished, false)
+        #expect(fetched.bookID == ids.bookID)
+        #expect(fetched.chapterID == ids.chapterID)
+        #expect(abs((fetched.position) - (42.5)) <= 0.001)
+        #expect(abs((fetched.duration ?? 0) - (300)) <= 0.001)
+        #expect(fetched.isFinished == false)
     }
 
-    func testLatestPositionReturnsMostRecentlyUpdatedRecord() async throws {
+    @Test func latestPositionReturnsMostRecentlyUpdatedRecord() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "latest-position")
         let first = try await seedBook(in: database, title: "First")
         let second = try await seedBook(in: database, title: "Second")
@@ -48,10 +49,10 @@ final class PositionStoreTests: XCTestCase {
         ))
 
         let latestOptional = try await store.latestPosition()
-        let latest = try XCTUnwrap(latestOptional)
+        let latest = try try #require(latestOptional)
 
-        XCTAssertEqual(latest.bookID, second.bookID)
-        XCTAssertEqual(latest.position, 7, accuracy: 0.001)
+        #expect(latest.bookID == second.bookID)
+        #expect(abs((latest.position) - (7)) <= 0.001)
     }
 
     private func seedBook(

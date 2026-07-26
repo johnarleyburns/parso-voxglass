@@ -1,32 +1,23 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Tests for the iCloud Sync enable/disable toggle added in Phase 3.
 @MainActor
-final class CloudSyncToggleTests: XCTestCase {
+@Suite(.serialized) struct CloudSyncToggleTests {
 
     private let enabledKey = AppPreferencesStore.Keys.iCloudSyncEnabled
 
-    override func setUp() {
-        super.setUp()
-        UserDefaults.standard.removeObject(forKey: enabledKey)
+    init() {UserDefaults.standard.removeObject(forKey: enabledKey)
     }
 
-    override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: enabledKey)
-        super.tearDown()
-    }
-
-    func testDefaultIsEnabled() {
+    @Test func defaultIsEnabled() {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-default-on")
         let cloudSync = VoxglassCloudSync(database: database)
-        XCTAssertTrue(
-            cloudSync.isEnabled,
-            "iCloud sync must default to enabled for existing users"
-        )
+        #expect(cloudSync.isEnabled)  // iCloud sync must default to enabled for existing users
     }
 
-    func testDisablingStopsSync() async throws {
+    @Test func disablingStopsSync() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-disabled")
         try await database.prepare()
 
@@ -36,15 +27,15 @@ final class CloudSyncToggleTests: XCTestCase {
 
         // With isEnabled = false, sync() should be a no-op.
         await cloudSync.sync()
-        XCTAssertNil(cloudSync.lastSyncDate, "sync() should not set lastSyncDate when disabled")
-        XCTAssertFalse(cloudSync.isSyncing)
+        #expect(cloudSync.lastSyncDate == nil)  // sync() should not set lastSyncDate when disabled
+        #expect(!(cloudSync.isSyncing))
 
         // pushPlaybackPositions should also be a no-op.
         await cloudSync.pushPlaybackPositions()
-        XCTAssertNil(cloudSync.lastSyncDate, "pushPlaybackPositions should not write when disabled")
+        #expect(cloudSync.lastSyncDate == nil)  // pushPlaybackPositions should not write when disabled
     }
 
-    func testReenablingTriggersSync() async throws {
+    @Test func reenablingTriggersSync() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-reenable")
         try await database.prepare()
 
@@ -107,6 +98,6 @@ final class CloudSyncToggleTests: XCTestCase {
         await cloudSync.pushPlaybackPositions()
 
         // Verify lastSyncDate is set (push succeeded).
-        XCTAssertNotNil(cloudSync.lastSyncDate, "pushPlaybackPositions should set lastSyncDate when enabled")
+        #expect(cloudSync.lastSyncDate != nil)  // pushPlaybackPositions should set lastSyncDate when enabled
     }
 }

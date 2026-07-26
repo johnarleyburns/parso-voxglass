@@ -1,39 +1,40 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Pure rate policy + per-book memory (P0-1). No AVFoundation.
-final class PlaybackRateTests: XCTestCase {
+@Suite struct PlaybackRateTests {
 
-    func testClampBounds() {
-        XCTAssertEqual(PlaybackRate.clamp(0.1), 0.5)
-        XCTAssertEqual(PlaybackRate.clamp(9.0), 3.5)
-        XCTAssertEqual(PlaybackRate.clamp(1.5), 1.5)
-        XCTAssertEqual(PlaybackRate.clamp(0.5), 0.5)
-        XCTAssertEqual(PlaybackRate.clamp(3.5), 3.5)
+    @Test func clampBounds() {
+        #expect(PlaybackRate.clamp(0.1) == 0.5)
+        #expect(PlaybackRate.clamp(9.0) == 3.5)
+        #expect(PlaybackRate.clamp(1.5) == 1.5)
+        #expect(PlaybackRate.clamp(0.5) == 0.5)
+        #expect(PlaybackRate.clamp(3.5) == 3.5)
     }
 
-    func testMenuLadderIsWithinBounds() {
+    @Test func menuLadderIsWithinBounds() {
         for rate in PlaybackRate.menuLadder {
-            XCTAssertEqual(PlaybackRate.clamp(rate), rate, "\(rate) must be a valid in-range rate")
+            #expect(PlaybackRate.clamp(rate) == rate)  // \(rate) must be a valid in-range rate
         }
-        XCTAssertEqual(PlaybackRate.menuLadder.first, 0.5)
-        XCTAssertEqual(PlaybackRate.menuLadder.last, 3.5)
+        #expect(PlaybackRate.menuLadder.first == 0.5)
+        #expect(PlaybackRate.menuLadder.last == 3.5)
     }
 
-    func testSystemLadderIsASubsetOfMenu() {
+    @Test func systemLadderIsASubsetOfMenu() {
         let menu = Set(PlaybackRate.systemLadder.map { PlaybackRate.clamp($0) })
         for rate in PlaybackRate.systemLadder {
-            XCTAssertTrue(menu.contains(rate))
+            #expect(menu.contains(rate))
         }
-        XCTAssertTrue(PlaybackRate.systemLadder.contains(1.0))
-        XCTAssertFalse(PlaybackRate.systemLadder.contains(3.5), "3.5× stays in-app only")
+        #expect(PlaybackRate.systemLadder.contains(1.0))
+        #expect(!(PlaybackRate.systemLadder.contains(3.5)))  // 3.5× stays in-app only
     }
 
-    func testLabelFormatting() {
-        XCTAssertEqual(PlaybackRate.label(1.0), "1×")
-        XCTAssertEqual(PlaybackRate.label(2.0), "2×")
-        XCTAssertEqual(PlaybackRate.label(1.5), "1.5×")
-        XCTAssertEqual(PlaybackRate.label(0.75), "0.75×")
+    @Test func labelFormatting() {
+        #expect(PlaybackRate.label(1.0) == "1×")
+        #expect(PlaybackRate.label(2.0) == "2×")
+        #expect(PlaybackRate.label(1.5) == "1.5×")
+        #expect(PlaybackRate.label(0.75) == "0.75×")
     }
 
     // MARK: - PlaybackRateStore per-book isolation + default fallback
@@ -42,23 +43,23 @@ final class PlaybackRateTests: XCTestCase {
         PlaybackRateStore(defaults: UserDefaults(suiteName: "rate-\(UUID().uuidString)")!)
     }
 
-    func testDefaultFallbackIsNormal() {
-        XCTAssertEqual(makeStore().rate(forBookID: UUID()), 1.0)
+    @Test func defaultFallbackIsNormal() {
+        #expect(makeStore().rate(forBookID: UUID()) == 1.0)
     }
 
-    func testPerBookIsolation() {
+    @Test func perBookIsolation() {
         let store = makeStore()
         let bookA = UUID()
         let bookB = UUID()
         store.setRate(1.5, forBookID: bookA)
-        XCTAssertEqual(store.rate(forBookID: bookA), 1.5)
-        XCTAssertEqual(store.rate(forBookID: bookB), 1.0, "Book B keeps the default")
+        #expect(store.rate(forBookID: bookA) == 1.5)
+        #expect(store.rate(forBookID: bookB) == 1.0)  // Book B keeps the default
     }
 
-    func testStoredRateIsClamped() {
+    @Test func storedRateIsClamped() {
         let store = makeStore()
         let book = UUID()
         store.setRate(99, forBookID: book)
-        XCTAssertEqual(store.rate(forBookID: book), 3.5)
+        #expect(store.rate(forBookID: book) == 3.5)
     }
 }

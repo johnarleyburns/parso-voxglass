@@ -1,69 +1,63 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class LibriVoxBrowseCategoryTests: XCTestCase {
+@Suite struct LibriVoxBrowseCategoryTests {
 
     // MARK: - category(withID:)
 
-    func testCategoryLookupByID() {
-        XCTAssertEqual(LibriVoxBrowseCategory.category(withID: "lv-poetry")?.id, "lv-poetry")
-        XCTAssertEqual(LibriVoxBrowseCategory.category(withID: "lv-drama-plays")?.id, "lv-drama-plays")
-        XCTAssertNil(LibriVoxBrowseCategory.category(withID: "popular-librivox"))
-        XCTAssertNil(LibriVoxBrowseCategory.category(withID: "not-a-category"))
+    @Test func categoryLookupByID() {
+        #expect(LibriVoxBrowseCategory.category(withID: "lv-poetry")?.id == "lv-poetry")
+        #expect(LibriVoxBrowseCategory.category(withID: "lv-drama-plays")?.id == "lv-drama-plays")
+        #expect(LibriVoxBrowseCategory.category(withID: "popular-librivox") == nil)
+        #expect(LibriVoxBrowseCategory.category(withID: "not-a-category") == nil)
     }
 
     // MARK: - subjects parsing
 
-    func testSubjectsExtractQuotedAndBareTerms() {
+    @Test func subjectsExtractQuotedAndBareTerms() {
         let subjects = LibriVoxBrowseCategory.dramaPlays.subjects.map { $0.lowercased() }
-        XCTAssertTrue(subjects.contains("plays"))
-        XCTAssertTrue(subjects.contains("dramatic readings"))
-        XCTAssertTrue(subjects.contains("drama"))
+        #expect(subjects.contains("plays"))
+        #expect(subjects.contains("dramatic readings"))
+        #expect(subjects.contains("drama"))
     }
 
-    func testSubjectsIgnoreNegatedClause() {
+    @Test func subjectsIgnoreNegatedClause() {
         // philosophyMind has an `AND NOT (subject:poetry OR ...)` tail — those
         // excluded subjects must never be harvested as representative subjects.
         let subjects = LibriVoxBrowseCategory.philosophyMind.subjects.map { $0.lowercased() }
-        XCTAssertTrue(subjects.contains("epistemology"))
-        XCTAssertFalse(subjects.contains("poetry"))
-        XCTAssertFalse(subjects.contains("romance"))
+        #expect(subjects.contains("epistemology"))
+        #expect(!(subjects.contains("poetry")))
+        #expect(!(subjects.contains("romance")))
     }
 
-    func testRepresentativeSubjectsAreLimitedAndNonEmpty() {
+    @Test func representativeSubjectsAreLimitedAndNonEmpty() {
         let reps = LibriVoxBrowseCategory.horrorGothic.representativeSubjects
-        XCTAssertFalse(reps.isEmpty)
-        XCTAssertLessThanOrEqual(reps.count, 3)
+        #expect(!(reps.isEmpty))
+        #expect(reps.count <= 3)
     }
 
     // MARK: - category(forSubjects:)
 
-    func testGenreMappingExactMatch() {
-        XCTAssertEqual(
-            LibriVoxBrowseCategory.category(forSubjects: ["Science Fiction"])?.id,
-            "lv-science-fiction"
-        )
+    @Test func genreMappingExactMatch() {
+        #expect(LibriVoxBrowseCategory.category(forSubjects: ["Science Fiction"])?.id == "lv-science-fiction")
     }
 
-    func testGenreMappingDramaFromGreekPlay() {
+    @Test func genreMappingDramaFromGreekPlay() {
         // A Greek tragedy imported from archive.org typically carries "plays".
-        XCTAssertEqual(
-            LibriVoxBrowseCategory.category(forSubjects: ["Plays", "Tragedy", "Greek"])?.id,
-            "lv-drama-plays"
-        )
+        #expect(LibriVoxBrowseCategory.category(forSubjects: ["Plays", "Tragedy", "Greek"])?.id == "lv-drama-plays")
     }
 
-    func testGenreMappingReturnsNilForEmpty() {
-        XCTAssertNil(LibriVoxBrowseCategory.category(forSubjects: []))
+    @Test func genreMappingReturnsNilForEmpty() {
+        #expect(LibriVoxBrowseCategory.category(forSubjects: []) == nil)
     }
 
-    func testGenreMappingReturnsNilForUnrelatedSubjects() {
-        XCTAssertNil(LibriVoxBrowseCategory.category(forSubjects: ["zzxqywv nonsense token"]))
+    @Test func genreMappingReturnsNilForUnrelatedSubjects() {
+        #expect(LibriVoxBrowseCategory.category(forSubjects: ["zzxqywv nonsense token"]) == nil)
     }
 
     // MARK: - Discovery queries
 
-    func testWeakCategoryQueriesUseStrictLibriVoxAudioScope() {
+    @Test func weakCategoryQueriesUseStrictLibriVoxAudioScope() {
         let queries = [
             LibriVoxBrowseCategory.ancientWorld.archiveQuery,
             LibriVoxBrowseCategory.dramaPlays.archiveQuery,
@@ -73,53 +67,53 @@ final class LibriVoxBrowseCategoryTests: XCTestCase {
         ]
 
         for query in queries {
-            XCTAssertTrue(query.contains(LibriVoxCatalogScope.collectionClause))
-            XCTAssertTrue(query.contains("mediatype:audio"))
-            XCTAssertFalse(query.contains("audio_bookspoetry"))
+            #expect(query.contains(LibriVoxCatalogScope.collectionClause))
+            #expect(query.contains("mediatype:audio"))
+            #expect(!(query.contains("audio_bookspoetry")))
         }
     }
 
-    func testDramaAndAncientWorldQueriesIncludeSubjectCreatorAndTitleExpansion() {
+    @Test func dramaAndAncientWorldQueriesIncludeSubjectCreatorAndTitleExpansion() {
         let drama = LibriVoxBrowseCategory.dramaPlays.archiveQuery
-        XCTAssertTrue(drama.contains("subject:Drama"))
-        XCTAssertTrue(drama.contains("creator:\"William Shakespeare\""))
-        XCTAssertTrue(drama.contains("title:tragedy"))
+        #expect(drama.contains("subject:Drama"))
+        #expect(drama.contains("creator:\"William Shakespeare\""))
+        #expect(drama.contains("title:tragedy"))
 
         let ancient = LibriVoxBrowseCategory.ancientWorld.archiveQuery
-        XCTAssertTrue(ancient.contains("subject:\"Ancient History\""))
-        XCTAssertTrue(ancient.contains("creator:Plato"))
-        XCTAssertTrue(ancient.contains("creator:Sappho"))
-        XCTAssertFalse(ancient.contains("title:ancient"))
-        XCTAssertFalse(ancient.contains("title:roman"))
+        #expect(ancient.contains("subject:\"Ancient History\""))
+        #expect(ancient.contains("creator:Plato"))
+        #expect(ancient.contains("creator:Sappho"))
+        #expect(!(ancient.contains("title:ancient")))
+        #expect(!(ancient.contains("title:roman")))
     }
 
-    func testGeneralFictionMysteryAndEssaysQueriesIncludeBroaderExpansions() {
+    @Test func generalFictionMysteryAndEssaysQueriesIncludeBroaderExpansions() {
         let general = LibriVoxBrowseCategory.generalFiction.archiveQuery
-        XCTAssertTrue(general.contains("subject:\"General Fiction\""))
-        XCTAssertTrue(general.contains("creator:\"Charles Dickens\""))
-        XCTAssertTrue(general.contains(LibriVoxCatalogScope.query))
-        XCTAssertFalse(general.contains("subject:Fiction"))
-        XCTAssertFalse(general.contains("title:novel"))
+        #expect(general.contains("subject:\"General Fiction\""))
+        #expect(general.contains("creator:\"Charles Dickens\""))
+        #expect(general.contains(LibriVoxCatalogScope.query))
+        #expect(!(general.contains("subject:Fiction")))
+        #expect(!(general.contains("title:novel")))
 
         let mystery = LibriVoxBrowseCategory.mysteryCrime.archiveQuery
-        XCTAssertTrue(mystery.contains("subject:Mystery"))
-        XCTAssertTrue(mystery.contains("title:murder"))
-        XCTAssertTrue(mystery.contains("creator:\"Arthur Conan Doyle\""))
-        XCTAssertTrue(mystery.contains(LibriVoxCatalogScope.query))
+        #expect(mystery.contains("subject:Mystery"))
+        #expect(mystery.contains("title:murder"))
+        #expect(mystery.contains("creator:\"Arthur Conan Doyle\""))
+        #expect(mystery.contains(LibriVoxCatalogScope.query))
 
         let essays = LibriVoxBrowseCategory.essaysIdeas.archiveQuery
-        XCTAssertTrue(essays.contains("subject:Essays"))
-        XCTAssertTrue(essays.contains("creator:\"Ralph Waldo Emerson\""))
-        XCTAssertTrue(essays.contains(LibriVoxCatalogScope.query))
-        XCTAssertFalse(essays.contains("title:lectures"))
-        XCTAssertFalse(essays.contains("subject:\"Philosophy\""))
+        #expect(essays.contains("subject:Essays"))
+        #expect(essays.contains("creator:\"Ralph Waldo Emerson\""))
+        #expect(essays.contains(LibriVoxCatalogScope.query))
+        #expect(!(essays.contains("title:lectures")))
+        #expect(!(essays.contains("subject:\"Philosophy\"")))
     }
 
     // MARK: - History backfill weighting
 
-    func testHistoryIncrementFloorsAndCaps() {
-        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 60), RecommendationConstants.minListenIncrement, accuracy: 0.0001)
-        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 3600), 1.0, accuracy: 0.0001)
-        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 3600 * 100), 12.0, accuracy: 0.0001)
+    @Test func historyIncrementFloorsAndCaps() {
+        #expect(abs((RecommendationPipeline.historyIncrement(forSeconds: 60)) - (RecommendationConstants.minListenIncrement)) <= 0.0001)
+        #expect(abs((RecommendationPipeline.historyIncrement(forSeconds: 3600)) - (1.0)) <= 0.0001)
+        #expect(abs((RecommendationPipeline.historyIncrement(forSeconds: 3600 * 100)) - (12.0)) <= 0.0001)
     }
 }

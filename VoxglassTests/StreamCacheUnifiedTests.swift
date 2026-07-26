@@ -1,34 +1,29 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class StreamCacheUnifiedTests: XCTestCase {
+@Suite struct StreamCacheUnifiedTests {
     private var directory: URL!
     private var store: StreamCacheStore!
 
-    override func setUpWithError() throws {
+    init() throws {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-cache-tests-\(UUID().uuidString)", isDirectory: true)
         store = StreamCacheStore(directory: directory)
     }
 
-    override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(at: directory)
-        store = nil
-        directory = nil
-    }
-
-    func testRegisterArtworkCountsIntoBytesButNotTrackCount() async {
+    @Test func registerArtworkCountsIntoBytesButNotTrackCount() async {
         await store.registerArtwork(key: "art_a", bytes: 400)
         await store.registerArtwork(key: "art_b", bytes: 600)
 
         let bytes = await store.totalCachedBytes()
         let count = await store.cachedTrackCount()
 
-        XCTAssertEqual(bytes, 1000)
-        XCTAssertEqual(count, 0, "Artwork must not be counted as cached tracks")
+        #expect(bytes == 1000)
+        #expect(count == 0)  // Artwork must not be counted as cached tracks
     }
 
-    func testCompletedAudioCountsAsTrackAlongsideArtworkBytes() async {
+    @Test func completedAudioCountsAsTrackAlongsideArtworkBytes() async {
         await store.setContentLength(100, for: "audio1")
         await store.recordWrite(range: 0..<100, for: "audio1")
         await store.registerArtwork(key: "art_a", bytes: 250)
@@ -36,11 +31,11 @@ final class StreamCacheUnifiedTests: XCTestCase {
         let bytes = await store.totalCachedBytes()
         let count = await store.cachedTrackCount()
 
-        XCTAssertEqual(bytes, 350)
-        XCTAssertEqual(count, 1)
+        #expect(bytes == 350)
+        #expect(count == 1)
     }
 
-    func testLRUEvictsAcrossKindsByLastAccess() async throws {
+    @Test func lRUEvictsAcrossKindsByLastAccess() async throws {
         await store.setLimit(250)
 
         await store.registerArtwork(key: "art_old", bytes: 100)
@@ -60,12 +55,12 @@ final class StreamCacheUnifiedTests: XCTestCase {
         let hasAudioMid = await store.contains("audio_mid")
         let hasArtNew = await store.contains("art_new")
 
-        XCTAssertTrue(hasArtOld)
-        XCTAssertFalse(hasAudioMid, "Oldest untouched entry should be evicted regardless of kind")
-        XCTAssertTrue(hasArtNew)
+        #expect(hasArtOld)
+        #expect(!(hasAudioMid))  // Oldest untouched entry should be evicted regardless of kind
+        #expect(hasArtNew)
     }
 
-    func testClearAllWipesBothDirectories() async throws {
+    @Test func clearAllWipesBothDirectories() async throws {
         await store.setContentLength(10, for: "audio1")
         await store.recordWrite(range: 0..<10, for: "audio1")
         await store.registerArtwork(key: "art_a", bytes: 20)
@@ -81,16 +76,16 @@ final class StreamCacheUnifiedTests: XCTestCase {
         await store.clearAll()
 
         let bytes = await store.totalCachedBytes()
-        XCTAssertEqual(bytes, 0)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: audioURL.path))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: artURL.path))
-        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: audioDir.path).count, 0)
-        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: artDir.path).count, 0)
+        #expect(bytes == 0)
+        #expect(!(FileManager.default.fileExists(atPath: audioURL.path)))
+        #expect(!(FileManager.default.fileExists(atPath: artURL.path)))
+        #expect(try FileManager.default.contentsOfDirectory(atPath: audioDir.path).count == 0)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: artDir.path).count == 0)
     }
 
     // MARK: - §6/§7 remove, pin, ingest
 
-    func testRemoveKeysTargetsOnlyGivenKeys() async {
+    @Test func removeKeysTargetsOnlyGivenKeys() async {
         await store.setContentLength(100, for: "audio_keep")
         await store.recordWrite(range: 0..<100, for: "audio_keep")
         await store.setContentLength(100, for: "audio_drop")
@@ -100,11 +95,11 @@ final class StreamCacheUnifiedTests: XCTestCase {
 
         let keep = await store.contains("audio_keep")
         let drop = await store.contains("audio_drop")
-        XCTAssertTrue(keep)
-        XCTAssertFalse(drop)
+        #expect(keep)
+        #expect(!(drop))
     }
 
-    func testIngestCompleteFileMarksCompleteAndPins() async throws {
+    @Test func ingestCompleteFileMarksCompleteAndPins() async throws {
         let source = directory.appendingPathComponent("ingest-source-\(UUID().uuidString).bin")
         try Data(repeating: 7, count: 100).write(to: source)
 
@@ -113,13 +108,13 @@ final class StreamCacheUnifiedTests: XCTestCase {
         let complete = await store.isComplete("audio_offline")
         let pinned = await store.isPinned("audio_offline")
         let url = await store.fileURL(for: "audio_offline")
-        XCTAssertTrue(complete)
-        XCTAssertTrue(pinned)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
-        XCTAssertEqual(try Data(contentsOf: url).count, 100)
+        #expect(complete)
+        #expect(pinned)
+        #expect(FileManager.default.fileExists(atPath: url.path))
+        #expect(try Data(contentsOf: url).count == 100)
     }
 
-    func testPinnedKeysAreExcludedFromEviction() async throws {
+    @Test func pinnedKeysAreExcludedFromEviction() async throws {
         let source = directory.appendingPathComponent("pin-source-\(UUID().uuidString).bin")
         try Data(repeating: 1, count: 100).write(to: source)
         await store.ingestCompleteFile(at: source, key: "pinned_audio", totalBytes: 100)
@@ -133,11 +128,11 @@ final class StreamCacheUnifiedTests: XCTestCase {
 
         let pinned = await store.contains("pinned_audio")
         let unpinned = await store.contains("unpinned_audio")
-        XCTAssertTrue(pinned, "Pinned offline content must survive eviction")
-        XCTAssertFalse(unpinned, "Unpinned streaming content is evicted to fit budget")
+        #expect(pinned)  // Pinned offline content must survive eviction
+        #expect(!(unpinned))  // Unpinned streaming content is evicted to fit budget
     }
 
-    func testRemoveUnpinsKeys() async throws {
+    @Test func removeUnpinsKeys() async throws {
         let source = directory.appendingPathComponent("unpin-source-\(UUID().uuidString).bin")
         try Data(repeating: 2, count: 50).write(to: source)
         await store.ingestCompleteFile(at: source, key: "to_unpin", totalBytes: 50)
@@ -146,17 +141,17 @@ final class StreamCacheUnifiedTests: XCTestCase {
 
         let pinned = await store.isPinned("to_unpin")
         let contains = await store.contains("to_unpin")
-        XCTAssertFalse(pinned)
-        XCTAssertFalse(contains)
+        #expect(!(pinned))
+        #expect(!(contains))
     }
 
-    func testLegacyMetaWithoutKindDecodesAsAudio() throws {
+    @Test func legacyMetaWithoutKindDecodesAsAudio() throws {
         let json = """
         {"cachedBytes":123,"complete":true,"lastAccessedAt":0,"createdAt":0,"rangeMap":{"ranges":[]}}
         """
         let meta = try JSONDecoder().decode(StreamCacheStore.Meta.self, from: Data(json.utf8))
 
-        XCTAssertNil(meta.kind)
-        XCTAssertEqual(meta.effectiveKind, .audio)
+        #expect(meta.kind == nil)
+        #expect(meta.effectiveKind == .audio)
     }
 }

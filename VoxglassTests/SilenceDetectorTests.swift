@@ -1,35 +1,35 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class SilenceDetectorTests: XCTestCase {
+@Suite struct SilenceDetectorTests {
 
-    func testSingleSilentBufferDoesNotTrigger() {
+    @Test func singleSilentBufferDoesNotTrigger() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 5)
         _ = detector.process(rms: 0.0)
-        XCTAssertEqual(detector.state, .speech)
+        #expect(detector.state == .speech)
     }
 
-    func testConsecutiveSilentBuffersTrigger() {
+    @Test func consecutiveSilentBuffersTrigger() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 3)
         for _ in 0..<2 {
             _ = detector.process(rms: 0.0)
-            XCTAssertEqual(detector.state, .speech)
+            #expect(detector.state == .speech)
         }
         _ = detector.process(rms: 0.0)
-        XCTAssertEqual(detector.state, .silent)
+        #expect(detector.state == .silent)
     }
 
-    func testSpeechReturnsImmediately() {
+    @Test func speechReturnsImmediately() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 3)
         for _ in 0..<3 {
             _ = detector.process(rms: 0.0)
         }
-        XCTAssertEqual(detector.state, .silent)
+        #expect(detector.state == .silent)
         _ = detector.process(rms: 0.5)
-        XCTAssertEqual(detector.state, .speech)
+        #expect(detector.state == .speech)
     }
 
-    func testNoFlapping() {
+    @Test func noFlapping() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 3)
         _ = detector.process(rms: 0.0)
         _ = detector.process(rms: 0.5)
@@ -37,33 +37,33 @@ final class SilenceDetectorTests: XCTestCase {
         _ = detector.process(rms: 0.5)
         _ = detector.process(rms: 0.0)
         _ = detector.process(rms: 0.5)
-        XCTAssertEqual(detector.state, .speech)
+        #expect(detector.state == .speech)
     }
 
-    func testReset() {
+    @Test func reset() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 2)
         _ = detector.process(rms: 0.0)
         _ = detector.process(rms: 0.0)
-        XCTAssertEqual(detector.state, .silent)
+        #expect(detector.state == .silent)
         detector.reset()
-        XCTAssertEqual(detector.state, .speech)
+        #expect(detector.state == .speech)
         _ = detector.process(rms: 0.0)
-        XCTAssertEqual(detector.state, .speech)
+        #expect(detector.state == .speech)
     }
 
-    func testRealisticNoiseFloorReadsAsSilence() {
+    @Test func realisticNoiseFloorReadsAsSilence() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 5)
         for _ in 0..<5 {
             _ = detector.process(rms: 0.01)
         }
-        XCTAssertEqual(detector.state, .silent, "Hiss at ~0.01 should read as silence at the new 0.02 threshold")
+        #expect(detector.state == .silent)  // Hiss at ~0.01 should read as silence at the new 0.02 threshold
     }
 
-    func testSpeechLevelAboveNoiseFloorDoesNotTriggerSilence() {
+    @Test func speechLevelAboveNoiseFloorDoesNotTriggerSilence() {
         let detector = SilenceDetector(threshold: 0.02, consecutiveFramesRequired: 5)
         for _ in 0..<10 {
             _ = detector.process(rms: 0.05)
         }
-        XCTAssertEqual(detector.state, .speech, "Speech at ~0.05 should not trigger silence")
+        #expect(detector.state == .speech)  // Speech at ~0.05 should not trigger silence
     }
 }

@@ -1,22 +1,22 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class RecommendationPipelineTests: XCTestCase {
+@Suite struct RecommendationPipelineTests {
 
     // MARK: - Empty everything
 
-    func testEmptyEverythingReturnsBundledPopularSeeds() {
+    @Test func emptyEverythingReturnsBundledPopularSeeds() {
         let recs = RecommendationPipeline.recommendations(
             history: [],
             onboardingSelectionIDs: [],
             candidates: []
         )
         let seedIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
-        XCTAssertFalse(recs.isEmpty)
-        XCTAssertTrue(recs.allSatisfy { seedIDs.contains($0.identifier) }, "All recommendations should be from bundled popular seeds")
+        #expect(!(recs.isEmpty))
+        #expect(recs.allSatisfy { seedIDs.contains($0.identifier) })  // All recommendations should be from bundled popular seeds
     }
 
-    func testEmptyEverythingExcludesGivenKeys() {
+    @Test func emptyEverythingExcludesGivenKeys() {
         let excludeKeys: Set<String> = ["pride_and_prejudice_librivox", "ia:pride_and_prejudice_librivox"]
         let recs = RecommendationPipeline.recommendations(
             history: [],
@@ -24,24 +24,24 @@ final class RecommendationPipelineTests: XCTestCase {
             candidates: [],
             excludeKeys: excludeKeys
         )
-        XCTAssertFalse(recs.contains { $0.identifier == "pride_and_prejudice_librivox" })
-        XCTAssertFalse(recs.isEmpty)
+        #expect(!(recs.contains { $0.identifier == "pride_and_prejudice_librivox" }))
+        #expect(!(recs.isEmpty))
     }
 
     // MARK: - Early listener, one meaningful listen
 
-    func testOneMeaningfulListenTopsProfile() {
+    @Test func oneMeaningfulListenTopsProfile() {
         let entry = ListeningHistoryEntry(
             authors: ["Mary Shelley"],
             subjects: ["Gothic Fiction"],
             listenedSeconds: 7200
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertEqual(profile.topCreators.first, "mary shelley")
+        #expect(!(profile.isEmpty))
+        #expect(profile.topCreators.first == "mary shelley")
     }
 
-    func testOneMeaningfulListenGeneratesExploitQuery() {
+    @Test func oneMeaningfulListenGeneratesExploitQuery() {
         let entry = ListeningHistoryEntry(
             authors: ["Aristophanes"],
             subjects: ["Drama"],
@@ -53,10 +53,10 @@ final class RecommendationPipelineTests: XCTestCase {
             dateSeed: "2026-01-01",
             languageClause: ""
         )
-        XCTAssertTrue(queries.contains { $0.iaQuery.contains("creator:\"aristophanes\"") })
+        #expect(queries.contains { $0.iaQuery.contains("creator:\"aristophanes\"") })
     }
 
-    func testOneMeaningfulListenBeatsBundledFallback() {
+    @Test func oneMeaningfulListenBeatsBundledFallback() {
         let entry = ListeningHistoryEntry(
             authors: ["Mary Shelley"],
             subjects: ["Gothic Fiction"],
@@ -68,14 +68,14 @@ final class RecommendationPipelineTests: XCTestCase {
             onboardingSelectionIDs: [],
             candidates: [matched, candidate("other", "Other Book", "Someone Else")]
         )
-        XCTAssertFalse(recs.isEmpty)
-        XCTAssertFalse(recs.map(\.identifier) == HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
-        XCTAssertTrue(recs.contains { $0.identifier == "match" })
+        #expect(!(recs.isEmpty))
+        #expect(!(recs.map(\.identifier) == HomeRecommendationStore.bundledPopularSeeds.map(\.identifier)))
+        #expect(recs.contains { $0.identifier == "match" })
     }
 
     // MARK: - One listen + onboarding
 
-    func testListenedAuthorOutranksOnboardingAuthors() {
+    @Test func listenedAuthorOutranksOnboardingAuthors() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: ["Romance"],
@@ -86,48 +86,47 @@ final class RecommendationPipelineTests: XCTestCase {
             onboardingSelectionIDs: ["great-books"]
         )
         let creators = profile.creatorTerms
-        XCTAssertFalse(creators.isEmpty)
+        #expect(!(creators.isEmpty))
         let janeAusten = creators.first { $0.term == "jane austen" }
         let onboardingAuthors = creators.filter { $0.weight == RecommendationConstants.onboardingAuthorSeedWeight }
         if let ja = janeAusten {
             for oa in onboardingAuthors {
-                XCTAssertGreaterThan(ja.weight, oa.weight,
-                    "listened author should outrank onboarding authors (minListenIncrement > onboardingAuthorSeedWeight)")
+                #expect(ja.weight > oa.weight)
             }
         }
     }
 
     // MARK: - Onboarding-only
 
-    func testOnboardingOnlyBrowsePickProducesNonEmptyProfile() {
+    @Test func onboardingOnlyBrowsePickProducesNonEmptyProfile() {
         let profile = RecommendationPipeline.buildProfile(
             history: [],
             onboardingSelectionIDs: ["lv-mystery-crime"]
         )
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertFalse(profile.subjectTerms.isEmpty)
+        #expect(!(profile.isEmpty))
+        #expect(!(profile.subjectTerms.isEmpty))
     }
 
-    func testOnboardingOnlyCuratedPickProducesNonEmptyProfile() {
+    @Test func onboardingOnlyCuratedPickProducesNonEmptyProfile() {
         let profile = RecommendationPipeline.buildProfile(
             history: [],
             onboardingSelectionIDs: ["great-books"]
         )
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertFalse(profile.creatorTerms.isEmpty)
+        #expect(!(profile.isEmpty))
+        #expect(!(profile.creatorTerms.isEmpty))
     }
 
-    func testPopularLibrivoxOnlyOnboardingProducesEmptyProfile() {
+    @Test func popularLibrivoxOnlyOnboardingProducesEmptyProfile() {
         let profile = RecommendationPipeline.buildProfile(
             history: [],
             onboardingSelectionIDs: ["popular-librivox"]
         )
-        XCTAssertTrue(profile.isEmpty)
+        #expect(profile.isEmpty)
     }
 
     // MARK: - Long-time listener shape
 
-    func testLongTimeListenerProfileOrdersCorrectly() {
+    @Test func longTimeListenerProfileOrdersCorrectly() {
         let finished1 = ListeningHistoryEntry(
             authors: ["Homer"],
             subjects: ["Epic Poetry"],
@@ -161,12 +160,12 @@ final class RecommendationPipelineTests: XCTestCase {
         )
 
         let top3 = profile.topCreators.prefix(3)
-        XCTAssertTrue(top3.contains("homer"))
-        XCTAssertTrue(top3.contains("plato"))
-        XCTAssertTrue(top3.contains("sophocles"))
+        #expect(top3.contains("homer"))
+        #expect(top3.contains("plato"))
+        #expect(top3.contains("sophocles"))
     }
 
-    func testLongTimeListenerRecommendationsExcludeListened() {
+    @Test func longTimeListenerRecommendationsExcludeListened() {
         let finished1 = ListeningHistoryEntry(
             authors: ["Homer"],
             subjects: ["Epic Poetry"],
@@ -178,12 +177,12 @@ final class RecommendationPipelineTests: XCTestCase {
             onboardingSelectionIDs: [],
             candidates: [matched, candidate("other", "Other", "Someone Else", subjects: ["Cooking"])]
         )
-        XCTAssertFalse(recs.map(\.identifier) == HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
+        #expect(!(recs.map(\.identifier) == HomeRecommendationStore.bundledPopularSeeds.map(\.identifier)))
     }
 
     // MARK: - Upgrade/backfill shape (author-only terms)
 
-    func testBackfillShapeAuthorOnlyProfileNonEmpty() {
+    @Test func backfillShapeAuthorOnlyProfileNonEmpty() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: [],
@@ -191,14 +190,14 @@ final class RecommendationPipelineTests: XCTestCase {
             listenedSeconds: 3600
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertFalse(profile.creatorTerms.isEmpty)
-        XCTAssertTrue(profile.subjectTerms.isEmpty)
+        #expect(!(profile.isEmpty))
+        #expect(!(profile.creatorTerms.isEmpty))
+        #expect(profile.subjectTerms.isEmpty)
     }
 
     // MARK: - Favorites
 
-    func testUnlistenedFavoriteContributesBoost() {
+    @Test func unlistenedFavoriteContributesBoost() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: ["Fiction"],
@@ -207,15 +206,15 @@ final class RecommendationPipelineTests: XCTestCase {
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
         let authorTerm = profile.creatorTerms.first { $0.term == "jane austen" }
-        XCTAssertNotNil(authorTerm)
+        #expect(authorTerm != nil)
         if let authorTerm {
-            XCTAssertEqual(authorTerm.weight, RecommendationConstants.favoriteBoost, accuracy: 0.001)
+            #expect(abs((authorTerm.weight) - (RecommendationConstants.favoriteBoost)) <= 0.001)
         }
     }
 
     // MARK: - Junk resistance
 
-    func testStopListSubjectsAreDamped() {
+    @Test func stopListSubjectsAreDamped() {
         let entry = ListeningHistoryEntry(
             subjects: ["music", "thriller"],
             listenedSeconds: 3600
@@ -224,35 +223,35 @@ final class RecommendationPipelineTests: XCTestCase {
         let music = profile.subjectTerms.first { $0.term == "music" }
         let thriller = profile.subjectTerms.first { $0.term == "thriller" }
         if let music, let thriller {
-            XCTAssertLessThan(music.weight, thriller.weight * 0.1, "stop-list should be ×0.05")
+            #expect(music.weight < thriller.weight * 0.1)
         }
     }
 
-    func testUnknownAndVariousAuthorsAreDropped() {
+    @Test func unknownAndVariousAuthorsAreDropped() {
         let entry = ListeningHistoryEntry(
             authors: ["Unknown", "Various", "Jane Austen"],
             listenedSeconds: 3600
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
-        XCTAssertFalse(profile.creatorTerms.contains { $0.term == "unknown" })
-        XCTAssertFalse(profile.creatorTerms.contains { $0.term == "various" })
-        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "jane austen" })
+        #expect(!(profile.creatorTerms.contains { $0.term == "unknown" }))
+        #expect(!(profile.creatorTerms.contains { $0.term == "various" }))
+        #expect(profile.creatorTerms.contains { $0.term == "jane austen" })
     }
 
-    func testCollectionLikeSubjectsAreDropped() {
+    @Test func collectionLikeSubjectsAreDropped() {
         let entry = ListeningHistoryEntry(
             subjects: ["lv-mystery-crime", "great-books", "Detective Fiction"],
             listenedSeconds: 3600
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
-        XCTAssertFalse(profile.subjectTerms.contains { $0.term == "lv-mystery-crime" })
-        XCTAssertFalse(profile.subjectTerms.contains { $0.term == "great-books" })
-        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "detective fiction" })
+        #expect(!(profile.subjectTerms.contains { $0.term == "lv-mystery-crime" }))
+        #expect(!(profile.subjectTerms.contains { $0.term == "great-books" }))
+        #expect(profile.subjectTerms.contains { $0.term == "detective fiction" })
     }
 
     // MARK: - Determinism
 
-    func testPipelineIsDeterministic() {
+    @Test func pipelineIsDeterministic() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: ["Romance", "Fiction"],
@@ -270,12 +269,12 @@ final class RecommendationPipelineTests: XCTestCase {
             candidates: [candidate("a", "A", "Jane Austen", subjects: ["Romance"]),
                          candidate("b", "B", "Someone", subjects: ["Fiction"])]
         )
-        XCTAssertEqual(first.map(\.identifier), second.map(\.identifier))
+        #expect(first.map(\.identifier) == second.map(\.identifier))
     }
 
     // MARK: - Subject semicolon splitting
 
-    func testTermWeightsSplitsSemicolonSubjects() {
+    @Test func termWeightsSplitsSemicolonSubjects() {
         let entry = ListeningHistoryEntry(
             authors: [],
             subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"],
@@ -284,15 +283,15 @@ final class RecommendationPipelineTests: XCTestCase {
         let weights = RecommendationPipeline.termWeights(history: [entry])
         let subjectWeights = weights.filter { $0.axis == "subject" }
         let subjectTerms = Set(subjectWeights.map(\.term))
-        XCTAssertTrue(subjectTerms.contains("greek drama"))
-        XCTAssertTrue(subjectTerms.contains("aristophanes"))
-        XCTAssertTrue(subjectTerms.contains("greek comedy"))
-        XCTAssertFalse(subjectTerms.contains { $0.contains(";") })
-        XCTAssertFalse(subjectTerms.contains("librivox"))
-        XCTAssertFalse(subjectTerms.contains("audiobooks"))
+        #expect(subjectTerms.contains("greek drama"))
+        #expect(subjectTerms.contains("aristophanes"))
+        #expect(subjectTerms.contains("greek comedy"))
+        #expect(!(subjectTerms.contains { $0.contains(";") }))
+        #expect(!(subjectTerms.contains("librivox")))
+        #expect(!(subjectTerms.contains("audiobooks")))
     }
 
-    func testExtractTokensSplitsSemicolonSubjects() {
+    @Test func extractTokensSplitsSemicolonSubjects() {
         let result = candidate(
             "test",
             "Test",
@@ -300,15 +299,15 @@ final class RecommendationPipelineTests: XCTestCase {
             subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"]
         )
         let tokens = Set(RecommendationPipeline.extractTokens(result))
-        XCTAssertTrue(tokens.contains("greek drama"))
-        XCTAssertTrue(tokens.contains("aristophanes"))
-        XCTAssertTrue(tokens.contains("greek comedy"))
-        XCTAssertFalse(tokens.contains("librivox"), "stop-listed generic terms are dropped")
-        XCTAssertFalse(tokens.contains("audiobooks"), "stop-listed generic terms are dropped")
-        XCTAssertFalse(tokens.contains(";"))
+        #expect(tokens.contains("greek drama"))
+        #expect(tokens.contains("aristophanes"))
+        #expect(tokens.contains("greek comedy"))
+        #expect(!(tokens.contains("librivox")))  // stop-listed generic terms are dropped
+        #expect(!(tokens.contains("audiobooks")))  // stop-listed generic terms are dropped
+        #expect(!(tokens.contains(";")))
     }
 
-    func testScoreCandidatesMatchesSplitSubjects() {
+    @Test func scoreCandidatesMatchesSplitSubjects() {
         let entry = ListeningHistoryEntry(
             authors: [],
             subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"],
@@ -323,13 +322,13 @@ final class RecommendationPipelineTests: XCTestCase {
             subjects: ["greek drama", "comedy"]
         )
         let scored = RecommendationPipeline.scoreCandidates([cand], profile: profile)
-        XCTAssertEqual(scored.count, 1)
-        XCTAssertGreaterThan(scored[0].score, 0, "split subject profile should match individual subject tokens from search")
+        #expect(scored.count == 1)
+        #expect(scored[0].score > 0)
     }
 
     // MARK: - Query builder
 
-    func testGeneratedSubjectQueriesUseSingleTerms() {
+    @Test func generatedSubjectQueriesUseSingleTerms() {
         let entry = ListeningHistoryEntry(
             authors: [],
             subjects: ["librivox; audiobooks;greek drama; aristophanes; greek comedy"],
@@ -347,14 +346,14 @@ final class RecommendationPipelineTests: XCTestCase {
                 for clause in subjectClauses.dropFirst() {
                     let endQuote = clause.components(separatedBy: "\"")
                     if let term = endQuote.first {
-                        XCTAssertFalse(term.contains(";"), "generated query must not contain semicolon inside subject clause: '\(term)' in \(query.iaQuery)")
+                        #expect(!(term.contains(";")))  // generated query must not contain semicolon inside subject clause: '\(term)' in \(query.iaQuery)
                     }
                 }
             }
         }
     }
 
-    func testExploitRowsFloor() {
+    @Test func exploitRowsFloor() {
         let entries: [ListeningHistoryEntry] = (0..<10).map { i in
             ListeningHistoryEntry(
                 authors: ["Author\(i)"],
@@ -369,13 +368,13 @@ final class RecommendationPipelineTests: XCTestCase {
             languageClause: ""
         )
         for query in queries where query.noveltyClass == .exploit {
-            XCTAssertGreaterThanOrEqual(query.requestedCount, 4, "exploit query requestedCount must be at least 4")
+            #expect(query.requestedCount >= 4)
         }
     }
 
     // MARK: - Narrator axis
 
-    func testNarratorsAppearInProfileBucket() {
+    @Test func narratorsAppearInProfileBucket() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: [],
@@ -383,12 +382,12 @@ final class RecommendationPipelineTests: XCTestCase {
             listenedSeconds: 7200
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertFalse(profile.narratorTerms.isEmpty, "narrator should appear in profile")
-        XCTAssertEqual(profile.narratorTerms.first?.term, "karen savage")
+        #expect(!(profile.isEmpty))
+        #expect(!(profile.narratorTerms.isEmpty))  // narrator should appear in profile
+        #expect(profile.narratorTerms.first?.term == "karen savage")
     }
 
-    func testNarratorTermsFlowIntoAllTerms() {
+    @Test func narratorTermsFlowIntoAllTerms() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: [],
@@ -398,26 +397,26 @@ final class RecommendationPipelineTests: XCTestCase {
         let profile = RecommendationPipeline.buildProfile(history: [entry])
         let allTerms = profile.allTerms()
         let narratorInAll = allTerms.filter { $0.axis == "narrator" }
-        XCTAssertFalse(narratorInAll.isEmpty, "narrator terms should appear in allTerms()")
-        XCTAssertTrue(narratorInAll.contains { $0.term == "karen savage" })
+        #expect(!(narratorInAll.isEmpty))  // narrator terms should appear in allTerms()
+        #expect(narratorInAll.contains { $0.term == "karen savage" })
     }
 
-    func testTopNarratorsReturnsWeightedNarrators() {
+    @Test func topNarratorsReturnsWeightedNarrators() {
         let entries: [ListeningHistoryEntry] = [
             ListeningHistoryEntry(narrators: ["Karen Savage"], listenedSeconds: 7200),
             ListeningHistoryEntry(narrators: ["Elizabeth Klett"], listenedSeconds: 3600),
             ListeningHistoryEntry(narrators: ["Karen Savage"], listenedSeconds: 7200)
         ]
         let profile = RecommendationPipeline.buildProfile(history: entries)
-        XCTAssertFalse(profile.narratorTerms.isEmpty)
+        #expect(!(profile.narratorTerms.isEmpty))
         let savage = profile.narratorTerms.first { $0.term == "karen savage" }
         let klett = profile.narratorTerms.first { $0.term == "elizabeth klett" }
         if let savage, let klett {
-            XCTAssertGreaterThan(savage.weight, klett.weight, "Karen Savage appears twice and should have higher weight")
+            #expect(savage.weight > klett.weight)
         }
     }
 
-    func testUnknownNarratorDroppedFromProfile() {
+    @Test func unknownNarratorDroppedFromProfile() {
         let entry = ListeningHistoryEntry(
             authors: [],
             subjects: [],
@@ -426,12 +425,12 @@ final class RecommendationPipelineTests: XCTestCase {
         )
         let profile = RecommendationPipeline.buildProfile(history: [entry])
         let narrators = profile.narratorTerms.map(\.term)
-        XCTAssertFalse(narrators.contains("unknown"))
-        XCTAssertFalse(narrators.contains("various"))
-        XCTAssertTrue(narrators.contains("karen savage"))
+        #expect(!(narrators.contains("unknown")))
+        #expect(!(narrators.contains("various")))
+        #expect(narrators.contains("karen savage"))
     }
 
-    func testExtractTokensIncludesNarrators() {
+    @Test func extractTokensIncludesNarrators() {
         let result = candidate(
             "test",
             "Test Title",
@@ -440,10 +439,10 @@ final class RecommendationPipelineTests: XCTestCase {
             subjects: ["Fiction"]
         )
         let tokens = Set(RecommendationPipeline.extractTokens(result))
-        XCTAssertTrue(tokens.contains("karen savage"), "narrator should be extracted from description")
+        #expect(tokens.contains("karen savage"))  // narrator should be extracted from description
     }
 
-    func testNarratorExploitQueryGenerated() {
+    @Test func narratorExploitQueryGenerated() {
         let entry = ListeningHistoryEntry(
             authors: [],
             subjects: [],
@@ -457,12 +456,12 @@ final class RecommendationPipelineTests: XCTestCase {
             languageClause: ""
         )
         let hasNarratorQuery = queries.contains { $0.iaQuery.contains("description:\"karen savage\"") }
-        XCTAssertTrue(hasNarratorQuery, "exploit query should include narrator-based description search")
+        #expect(hasNarratorQuery)  // exploit query should include narrator-based description search
     }
 
     // MARK: - Solo narration boost
 
-    func testSoloNarrationGetsDoubleScore() {
+    @Test func soloNarrationGetsDoubleScore() {
         let entry = ListeningHistoryEntry(
             authors: ["Jane Austen"],
             subjects: ["Fiction"],
@@ -490,20 +489,17 @@ final class RecommendationPipelineTests: XCTestCase {
             profile: profile
         )
 
-        XCTAssertEqual(scored.count, 2)
+        #expect(scored.count == 2)
 
         let soloScore = scored.first { $0.result.identifier == "solo1" }?.score ?? 0
         let collabScore = scored.first { $0.result.identifier == "collab1" }?.score ?? 0
 
-        XCTAssertGreaterThan(soloScore, collabScore,
-                         "solo narration should score higher than collaborative with same creator match")
+        #expect(soloScore > collabScore)
     }
 
-    func testSoloBoostConstantIsDefined() {
-        XCTAssertEqual(RecommendationConstants.soloNarrationBoost, 2.0, accuracy: 0.001,
-                       "solo narration boost must be 2.0")
-        XCTAssertGreaterThan(RecommendationConstants.soloNarrationBoost, 1.0,
-                             "solo boost must be greater than 1.0 to give advantage")
+    @Test func soloBoostConstantIsDefined() {
+        #expect(abs((RecommendationConstants.soloNarrationBoost) - (2.0)) <= 0.001)  // solo narration boost must be 2.0
+        #expect(RecommendationConstants.soloNarrationBoost > 1.0)
     }
 
     // MARK: - Helpers

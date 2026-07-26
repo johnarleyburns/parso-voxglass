@@ -1,21 +1,21 @@
 import Foundation
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class BookPageUnificationTests: XCTestCase {
-    func testLegacyDetailAndNowPlayingViewsAreGone() throws {
+@Suite struct BookPageUnificationTests {
+    @Test func legacyDetailAndNowPlayingViewsAreGone() throws {
         let files = try swiftFiles(under: repoRoot.appendingPathComponent("Voxglass"))
 
         for file in files {
             let text = try String(contentsOf: file)
             let path = relativePath(file)
-            XCTAssertFalse(text.contains("struct NowPlayingView"), "\(path) should not contain struct NowPlayingView")
-            XCTAssertFalse(text.contains("struct BookDetailView"), "\(path) should not contain struct BookDetailView")
-            XCTAssertFalse(text.contains("BookDetailView(book:"), "\(path) should not contain BookDetailView(book:")
+            #expect(!(text.contains("struct NowPlayingView")))  // \(path) should not contain struct NowPlayingView
+            #expect(!(text.contains("struct BookDetailView")))  // \(path) should not contain struct BookDetailView
+            #expect(!(text.contains("BookDetailView(book:")))  // \(path) should not contain BookDetailView(book:
         }
     }
 
-    func testBookPageKeepsAccessibilityIdentifiers() throws {
+    @Test func bookPageKeepsAccessibilityIdentifiers() throws {
         let page = try source("Voxglass/Features/Player/BookPageView.swift")
         let actionRow = try source("Voxglass/Features/Player/BookPageActionRow.swift")
         let overflow = try source("Voxglass/Features/Player/BookPageOverflowSheet.swift")
@@ -31,31 +31,31 @@ final class BookPageUnificationTests: XCTestCase {
 
         for id in identifiers {
             let found = page.contains(id) || actionRow.contains(id) || overflow.contains(id)
-            XCTAssertTrue(found, "\(id) must be present in BookPageView, BookPageActionRow, or BookPageOverflowSheet")
+            #expect(found)  // \(id) must be present in BookPageView, BookPageActionRow, or BookPageOverflowSheet
         }
     }
 
-    func testBookPageExposesAirPlay() throws {
+    @Test func bookPageExposesAirPlay() throws {
         let button = try source("Voxglass/Features/Player/RoutePickerButton.swift")
         let actionRow = try source("Voxglass/Features/Player/BookPageActionRow.swift")
 
-        XCTAssertTrue(button.contains("AVRoutePickerView"), "RoutePickerButton must wrap AVRoutePickerView")
-        XCTAssertTrue(actionRow.contains("RoutePickerButton"), "Action row must reference RoutePickerButton")
+        #expect(button.contains("AVRoutePickerView"))  // RoutePickerButton must wrap AVRoutePickerView
+        #expect(actionRow.contains("RoutePickerButton"))  // Action row must reference RoutePickerButton
     }
 
-    func testActionRowUsesIconsNotFullWidthButtons() throws {
+    @Test func actionRowUsesIconsNotFullWidthButtons() throws {
         let actionRow = try source("Voxglass/Features/Player/BookPageActionRow.swift")
 
-        XCTAssertFalse(actionRow.contains("SecondaryActionButton"), "Action row must not contain SecondaryActionButton")
-        XCTAssertFalse(actionRow.contains("PrimaryActionButton"), "Action row must not contain PrimaryActionButton")
-        XCTAssertFalse(actionRow.contains(".frame(height: 46)"), "Action row must not use 46pt button height")
+        #expect(!(actionRow.contains("SecondaryActionButton")))  // Action row must not contain SecondaryActionButton
+        #expect(!(actionRow.contains("PrimaryActionButton")))  // Action row must not contain PrimaryActionButton
+        #expect(!(actionRow.contains(".frame(height: 46)")))  // Action row must not use 46pt button height
     }
 
-    func testDescriptionIsClampedWithShowMore() throws {
+    @Test func descriptionIsClampedWithShowMore() throws {
         let page = try source("Voxglass/Features/Player/BookPageView.swift")
 
-        XCTAssertTrue(page.contains("lineLimit(isDescriptionExpanded ? nil : 1)"), "Description must be clamped with show more")
-        XCTAssertTrue(page.contains("Show more"), "BookPageView must contain Show more")
+        #expect(page.contains("lineLimit(isDescriptionExpanded ? nil : 1)"))  // Description must be clamped with show more
+        #expect(page.contains("Show more"))  // BookPageView must contain Show more
     }
 
     private var repoRoot: URL {

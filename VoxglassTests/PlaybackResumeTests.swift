@@ -1,11 +1,12 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Phase 1 — resume where you actually were. The pure `resolveResume` rules are
 /// asserted with zero I/O; the through-the-coordinator cases run against the
 /// `FakeAudioEngine` + a real SQLite position store.
 @MainActor
-final class PlaybackResumeTests: XCTestCase {
+@Suite struct PlaybackResumeTests {
 
     private func makeChapters(_ count: Int, bookID: UUID = UUID(), duration: TimeInterval? = 100) -> [Chapter] {
         (0..<count).map { index in
@@ -18,73 +19,73 @@ final class PlaybackResumeTests: XCTestCase {
 
     // MARK: - Pure resolver
 
-    func testResolveResumeReturnsSavedChapterAtSavedOffset() {
+    @Test func resolveResumeReturnsSavedChapterAtSavedOffset() {
         let chapters = makeChapters(3)
         let saved = PlaybackPosition(
             bookID: chapters[1].bookID, chapterID: chapters[1].id,
             position: 60, duration: 100
         )
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: saved)
-        XCTAssertEqual(target?.chapter.id, chapters[1].id)
-        XCTAssertEqual(target?.startTime ?? -1, 60, accuracy: 0.001)
+        #expect(target?.chapter.id == chapters[1].id)
+        #expect(abs((target?.startTime ?? -1) - (60)) <= 0.001)
     }
 
-    func testResolveResumeWithNoSavedPositionStartsAtChapterOne() {
+    @Test func resolveResumeWithNoSavedPositionStartsAtChapterOne() {
         let chapters = makeChapters(3)
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: nil)
-        XCTAssertEqual(target?.chapter.id, chapters[0].id)
-        XCTAssertEqual(target?.startTime ?? -1, 0, accuracy: 0.001)
+        #expect(target?.chapter.id == chapters[0].id)
+        #expect(abs((target?.startTime ?? -1) - (0)) <= 0.001)
     }
 
-    func testResolveResumeWithMissingChapterFallsBackToChapterOne() {
+    @Test func resolveResumeWithMissingChapterFallsBackToChapterOne() {
         let chapters = makeChapters(3)
         let saved = PlaybackPosition(bookID: chapters[0].bookID, chapterID: UUID(), position: 40)
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: saved)
-        XCTAssertEqual(target?.chapter.id, chapters[0].id)
-        XCTAssertEqual(target?.startTime ?? -1, 0, accuracy: 0.001)
+        #expect(target?.chapter.id == chapters[0].id)
+        #expect(abs((target?.startTime ?? -1) - (0)) <= 0.001)
     }
 
-    func testResolveResumeFinishedChapterAdvancesToNextAtZero() {
+    @Test func resolveResumeFinishedChapterAdvancesToNextAtZero() {
         let chapters = makeChapters(3)
         let saved = PlaybackPosition(
             bookID: chapters[0].bookID, chapterID: chapters[0].id,
             position: 100, duration: 100, isFinished: true
         )
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: saved)
-        XCTAssertEqual(target?.chapter.id, chapters[1].id)
-        XCTAssertEqual(target?.startTime ?? -1, 0, accuracy: 0.001)
+        #expect(target?.chapter.id == chapters[1].id)
+        #expect(abs((target?.startTime ?? -1) - (0)) <= 0.001)
     }
 
-    func testResolveResumeFinishedLastChapterRestartsAtBookStart() {
+    @Test func resolveResumeFinishedLastChapterRestartsAtBookStart() {
         let chapters = makeChapters(3)
         let saved = PlaybackPosition(
             bookID: chapters[2].bookID, chapterID: chapters[2].id,
             position: 100, duration: 100, isFinished: true
         )
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: saved)
-        XCTAssertEqual(target?.chapter.id, chapters[0].id)
-        XCTAssertEqual(target?.startTime ?? -1, 0, accuracy: 0.001)
+        #expect(target?.chapter.id == chapters[0].id)
+        #expect(abs((target?.startTime ?? -1) - (0)) <= 0.001)
     }
 
-    func testResolveResumeWithinEndEpsilonTreatsChapterAsFinished() {
+    @Test func resolveResumeWithinEndEpsilonTreatsChapterAsFinished() {
         let chapters = makeChapters(2)
         let saved = PlaybackPosition(
             bookID: chapters[0].bookID, chapterID: chapters[0].id,
             position: 97, duration: 100, isFinished: false
         )
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: saved)
-        XCTAssertEqual(target?.chapter.id, chapters[1].id, "Within endEpsilon of the end advances to next")
+        #expect(target?.chapter.id == chapters[1].id)  // Within endEpsilon of the end advances to next
     }
 
-    func testResolveResumeBelowFloorStartsChapterAtZero() {
+    @Test func resolveResumeBelowFloorStartsChapterAtZero() {
         let chapters = makeChapters(2)
         let saved = PlaybackPosition(
             bookID: chapters[1].bookID, chapterID: chapters[1].id,
             position: 3, duration: 100
         )
         let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: saved)
-        XCTAssertEqual(target?.chapter.id, chapters[1].id)
-        XCTAssertEqual(target?.startTime ?? -1, 0, accuracy: 0.001)
+        #expect(target?.chapter.id == chapters[1].id)
+        #expect(abs((target?.startTime ?? -1) - (0)) <= 0.001)
     }
 
     // MARK: - Through the coordinator
@@ -131,7 +132,7 @@ final class PlaybackResumeTests: XCTestCase {
         }
     }
 
-    func testPlayBookWithoutChapterResumesLastPlayedChapter() async throws {
+    @Test func playBookWithoutChapterResumesLastPlayedChapter() async throws {
         let (coordinator, _, store, db) = makeCoordinator()
         let bookID = UUID()
         let chapters = makeChapters(6, bookID: bookID)
@@ -144,12 +145,11 @@ final class PlaybackResumeTests: XCTestCase {
         let book = BookWithChapters(book: Book(id: bookID, title: "Book", authors: ["A"], sourceID: UUID()), chapters: chapters)
         await coordinator.play(book)
 
-        XCTAssertEqual(coordinator.currentSession?.chapter.id, chapters[4].id,
-                       "Play with no chapter must resume the last played chapter, not chapter 1")
-        XCTAssertEqual(coordinator.currentSession?.position ?? -1, 750, accuracy: 0.001)
+        #expect(coordinator.currentSession?.chapter.id == chapters[4].id)  // Play with no chapter must resume the last played chapter, not chapter 1
+        #expect(abs((coordinator.currentSession?.position ?? -1) - (750)) <= 0.001)
     }
 
-    func testPlayBookResumesAtSavedOffsetNotChapterZero() async throws {
+    @Test func playBookResumesAtSavedOffsetNotChapterZero() async throws {
         let (coordinator, engine, store, db) = makeCoordinator()
         let bookID = UUID()
         let chapters = makeChapters(3, bookID: bookID)
@@ -162,11 +162,11 @@ final class PlaybackResumeTests: XCTestCase {
 
         await coordinator.play(book)
 
-        XCTAssertEqual(coordinator.currentSession?.chapter.id, chapters[1].id)
-        XCTAssertEqual(engine.loadCalls.last?.startTime ?? -1, 42, accuracy: 0.001)
+        #expect(coordinator.currentSession?.chapter.id == chapters[1].id)
+        #expect(abs((engine.loadCalls.last?.startTime ?? -1) - (42)) <= 0.001)
     }
 
-    func testEngineZeroTimeDoesNotOverwriteSavedPosition() async throws {
+    @Test func engineZeroTimeDoesNotOverwriteSavedPosition() async throws {
         let (coordinator, engine, store, db) = makeCoordinator()
         let bookID = UUID()
         let chapters = makeChapters(2, bookID: bookID)
@@ -186,7 +186,6 @@ final class PlaybackResumeTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 50_000_000)
 
         let saved = try await store.position(for: bookID, chapterID: chapters[0].id)
-        XCTAssertEqual(saved?.position ?? -1, 60, accuracy: 0.001,
-                       "A not-ready engine reporting 0 must never overwrite a good saved position")
+        #expect(abs((saved?.position ?? -1) - (60)) <= 0.001)  // A not-ready engine reporting 0 must never overwrite a good saved position
     }
 }

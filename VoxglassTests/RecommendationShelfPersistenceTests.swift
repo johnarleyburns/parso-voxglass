@@ -1,26 +1,18 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class RecommendationShelfPersistenceTests: XCTestCase {
+@Suite struct RecommendationShelfPersistenceTests {
 
     private var suiteName: String!
     private var defaults: UserDefaults!
 
-    override func setUp() {
-        super.setUp()
-        suiteName = "reco-shelf-persistence-\(UUID().uuidString)"
+    init() {suiteName = "reco-shelf-persistence-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
     }
 
-    override func tearDown() {
-        defaults.removePersistentDomain(forName: suiteName)
-        defaults = nil
-        suiteName = nil
-        super.tearDown()
-    }
-
-    func testColdLaunchHydratesPersistedPersonalizedShelf() async throws {
+    @Test func coldLaunchHydratesPersistedPersonalizedShelf() async throws {
         let personalized = [
             candidate(identifier: "persisted_frogs", title: "The Frogs", creator: "Aristophanes"),
             candidate(identifier: "persisted_birds", title: "The Birds", creator: "Aristophanes")
@@ -34,35 +26,25 @@ final class RecommendationShelfPersistenceTests: XCTestCase {
         let store = HomeRecommendationStore(client: client, defaults: defaults)
         let queryCount = await client.advancedQueryCount
 
-        XCTAssertEqual(
-            store.recommendations.map(\.identifier),
-            ["persisted_frogs", "persisted_birds"],
-            "a fresh store must hydrate the persisted personalized shelf, not bundled popular seeds"
-        )
-        XCTAssertEqual(queryCount, 0, "hydration must not touch the network")
+        #expect(store.recommendations.map(\.identifier) == ["persisted_frogs", "persisted_birds"])  // a fresh store must hydrate the persisted personalized shelf, not bundled popular seeds
+        #expect(queryCount == 0)  // hydration must not touch the network
     }
 
-    func testColdLaunchWithoutSnapshotFallsBackToBundledSeeds() {
+    @Test func coldLaunchWithoutSnapshotFallsBackToBundledSeeds() {
         let store = HomeRecommendationStore(client: ShelfFakeArchiveClient(responses: []), defaults: defaults)
 
-        XCTAssertEqual(
-            store.recommendations.map(\.identifier),
-            HomeRecommendationStore.bundledPopularSeeds.map(\.identifier)
-        )
+        #expect(store.recommendations.map(\.identifier) == HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
     }
 
-    func testCorruptSnapshotFallsBackToBundledSeeds() {
+    @Test func corruptSnapshotFallsBackToBundledSeeds() {
         defaults.set(Data("not json".utf8), forKey: HomeRecommendationStore.shelfSnapshotKey)
 
         let store = HomeRecommendationStore(client: ShelfFakeArchiveClient(responses: []), defaults: defaults)
 
-        XCTAssertEqual(
-            store.recommendations.map(\.identifier),
-            HomeRecommendationStore.bundledPopularSeeds.map(\.identifier)
-        )
+        #expect(store.recommendations.map(\.identifier) == HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
     }
 
-    func testPopularColdStartDoesNotReplaceVisiblePersonalizedShelf() async throws {
+    @Test func popularColdStartDoesNotReplaceVisiblePersonalizedShelf() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "shelf-guard-cold-start")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -85,19 +67,15 @@ final class RecommendationShelfPersistenceTests: XCTestCase {
         store.markEngineReady()
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
-        XCTAssertEqual(store.recommendations.map(\.identifier), ["aristophanes_frogs"])
+        #expect(store.recommendations.map(\.identifier) == ["aristophanes_frogs"])
 
         try await database.execute("DELETE FROM taste_profile_terms")
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
-        XCTAssertEqual(
-            store.recommendations.map(\.identifier),
-            ["aristophanes_frogs"],
-            "a visible personalized shelf must never be replaced by a popular cold-start shelf"
-        )
+        #expect(store.recommendations.map(\.identifier) == ["aristophanes_frogs"])  // a visible personalized shelf must never be replaced by a popular cold-start shelf
     }
 
-    func testPersonalizedShelfIsPersistedWhenLoaded() async throws {
+    @Test func personalizedShelfIsPersistedWhenLoaded() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "shelf-persist-on-load")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -120,17 +98,15 @@ final class RecommendationShelfPersistenceTests: XCTestCase {
         store.markEngineReady()
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
-        XCTAssertEqual(store.recommendations.map(\.identifier), ["aristophanes_frogs"])
+        #expect(store.recommendations.map(\.identifier) == ["aristophanes_frogs"])
 
-        let snapshot = try XCTUnwrap(
-            HomeRecommendationStore.loadSnapshot(from: defaults),
-            "loading a personalized shelf must persist a snapshot"
-        )
-        XCTAssertEqual(snapshot.source, .personalized)
-        XCTAssertEqual(snapshot.results.map(\.identifier), ["aristophanes_frogs"])
+        let snapshot = try try #require(HomeRecommendationStore.loadSnapshot(from: defaults),
+            "loading a personalized shelf must persist a snapshot")
+        #expect(snapshot.source == .personalized)
+        #expect(snapshot.results.map(\.identifier) == ["aristophanes_frogs"])
     }
 
-    func testPopularShelvesAreNotPersisted() async throws {
+    @Test func popularShelvesAreNotPersisted() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "shelf-no-persist-popular")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -146,10 +122,10 @@ final class RecommendationShelfPersistenceTests: XCTestCase {
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 
-        XCTAssertNil(HomeRecommendationStore.loadSnapshot(from: defaults))
+        #expect(HomeRecommendationStore.loadSnapshot(from: defaults) == nil)
     }
 
-    func testSnapshotRoundTripsThroughCodable() throws {
+    @Test func snapshotRoundTripsThroughCodable() throws {
         let snapshot = RecommendationShelfSnapshot(
             results: [candidate(identifier: "round_trip", title: "The Clouds", creator: "Aristophanes")],
             source: .personalized,
@@ -157,9 +133,9 @@ final class RecommendationShelfPersistenceTests: XCTestCase {
         )
 
         HomeRecommendationStore.saveSnapshot(snapshot, to: defaults)
-        let decoded = try XCTUnwrap(HomeRecommendationStore.loadSnapshot(from: defaults))
+        let decoded = try try #require(HomeRecommendationStore.loadSnapshot(from: defaults))
 
-        XCTAssertEqual(decoded, snapshot)
+        #expect(decoded == snapshot)
     }
 
     // MARK: - Helpers

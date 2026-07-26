@@ -1,12 +1,12 @@
 import Foundation
-import XCTest
+import Testing
 @testable import VoxglassCore
 
 @MainActor
-final class CollectionCoverStoreTests: XCTestCase {
-    func testLiveCollectionResultArtworkWinsOverStaticRemoteArtwork() async throws {
+@Suite struct CollectionCoverStoreTests {
+    @Test func liveCollectionResultArtworkWinsOverStaticRemoteArtwork() async throws {
         let defaultsName = "collection-cover-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
         defaults.removePersistentDomain(forName: defaultsName)
 
         let liveResult = InternetArchiveSearchResult(
@@ -38,16 +38,16 @@ final class CollectionCoverStoreTests: XCTestCase {
 
         await store.resolveCovers(for: [collection], languages: ["eng"])
 
-        XCTAssertEqual(store.coverURL(for: collection), liveResult.coverURL)
+        #expect(store.coverURL(for: collection) == liveResult.coverURL)
         let lastSort = await client.lastSort
         let lastQuery = await client.lastQuery ?? ""
-        XCTAssertEqual(lastSort, .popularity)
-        XCTAssertTrue(lastQuery.contains(LibriVoxCatalogScope.query))
+        #expect(lastSort == .popularity)
+        #expect(lastQuery.contains(LibriVoxCatalogScope.query))
     }
 
-    func testDefaultLanguageUsesBundledCountsWithoutNetwork() async throws {
+    @Test func defaultLanguageUsesBundledCountsWithoutNetwork() async throws {
         let defaultsName = "collection-bundled-count-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
         defaults.removePersistentDomain(forName: defaultsName)
 
         let collection = IACollection(
@@ -68,13 +68,13 @@ final class CollectionCoverStoreTests: XCTestCase {
         await store.resolveCounts(for: [collection], languages: ["eng"])
 
         let pageCount = await client.pageCallCount
-        XCTAssertEqual(pageCount, 0, "default English should use bundled counts, not query network")
-        XCTAssertEqual(store.count(for: collection), CollectionBundledCounts.counts["lv-mystery-crime"])
+        #expect(pageCount == 0)  // default English should use bundled counts, not query network
+        #expect(store.count(for: collection) == CollectionBundledCounts.counts["lv-mystery-crime"])
     }
 
-    func testNonDefaultLanguageStillQueriesNetwork() async throws {
+    @Test func nonDefaultLanguageStillQueriesNetwork() async throws {
         let defaultsName = "collection-non-default-lang-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
         defaults.removePersistentDomain(forName: defaultsName)
 
         let collection = IACollection(
@@ -95,24 +95,24 @@ final class CollectionCoverStoreTests: XCTestCase {
         await store.resolveCounts(for: [collection], languages: ["ger"])
 
         let pageCount = await client.pageCallCount
-        XCTAssertGreaterThan(pageCount, 0, "non-English should query network")
-        XCTAssertEqual(store.count(for: collection), 500)
+        #expect(pageCount > 0)
+        #expect(store.count(for: collection) == 500)
     }
 
-    func testEveryFeaturedCollectionHasBundledCount() {
+    @Test func everyFeaturedCollectionHasBundledCount() {
         let allIDs = Set(IACollectionStore.collections(for: []).map(\.id))
         for id in allIDs {
             let count = CollectionBundledCounts.counts[id]
-            XCTAssertNotNil(count, "missing bundled count for \(id)")
+            #expect(count != nil)  // missing bundled count for \(id)
             if let count {
-                XCTAssertGreaterThan(count, 0, "bundled count for \(id) should be > 0")
+                #expect(count > 0)
             }
         }
     }
 
-    func testResolvedArtworkIdentifierCacheSurvivesStoreRecreation() async throws {
+    @Test func resolvedArtworkIdentifierCacheSurvivesStoreRecreation() async throws {
         let defaultsName = "collection-cover-cache-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        let defaults = try try #require(UserDefaults(suiteName: defaultsName))
         defaults.removePersistentDomain(forName: defaultsName)
 
         let liveResult = InternetArchiveSearchResult(
@@ -147,7 +147,7 @@ final class CollectionCoverStoreTests: XCTestCase {
             defaults: defaults
         )
 
-        XCTAssertEqual(secondStore.coverURL(for: collection), liveResult.coverURL)
+        #expect(secondStore.coverURL(for: collection) == liveResult.coverURL)
     }
 }
 

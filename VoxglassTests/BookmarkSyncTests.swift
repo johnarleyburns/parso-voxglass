@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Pure LWW tombstone tests (P0-3). The merge logic is extracted as a pure
 /// function so the tombstone behaviour is tested with no iCloud, no SQLite.
-final class BookmarkSyncTests: XCTestCase {
+@Suite struct BookmarkSyncTests {
 
     /// Pure LWW tombstone tests (P0-3). The merge logic is extracted as a pure
     /// function so the tombstone behaviour is tested with no iCloud, no SQLite.
@@ -26,23 +27,23 @@ final class BookmarkSyncTests: XCTestCase {
                  isDeleted: deleted)
     }
 
-    func testRemoteDoesNotResurrectLocallyTombstonedBookmark() {
+    @Test func remoteDoesNotResurrectLocallyTombstonedBookmark() {
         // A locally-deleted bookmark (newer updatedAt) must not be resurrected by
         // a remote payload from a device that hasn't seen the tombstone yet.
         let local = [make(created: 100, updated: 300, deleted: true)]
         let remote = [make(created: 100, updated: 200, deleted: false)]
         let result = Self.merge(local: local, remote: remote)
-        XCTAssertEqual(result.first?.isDeleted, true, "Tombstone must survive a stale remote")
+        #expect(result.first?.isDeleted == true)  // Tombstone must survive a stale remote
     }
 
-    func testRemoteTombstoneOverwritesLocalLiveBookmark() {
+    @Test func remoteTombstoneOverwritesLocalLiveBookmark() {
         let local = [make(created: 100, updated: 200, deleted: false)]
         let remote = [make(created: 100, updated: 300, deleted: true)]
         let result = Self.merge(local: local, remote: remote)
-        XCTAssertEqual(result.first?.isDeleted, true, "A newer remote tombstone must be applied")
+        #expect(result.first?.isDeleted == true)  // A newer remote tombstone must be applied
     }
 
-    func testKVSBookmarkPayloadStaysUnderSizeLimit() throws {
+    @Test func kVSBookmarkPayloadStaysUnderSizeLimit() throws {
         // 50 bookmarks per book should be well under the 1 MB KVS per-key cap.
         var bookmarks: [[String: Any]] = []
         for _ in 0..<50 {
@@ -58,11 +59,11 @@ final class BookmarkSyncTests: XCTestCase {
         }
         let data = try JSONSerialization.data(withJSONObject: bookmarks)
         let descriptionLength = NSString(data: data, encoding: String.Encoding.utf8.rawValue)?.length ?? 0
-        XCTAssertLessThan(data.count, 1_000_000, "50-bookmark KVS payload must be under 1 MB")
-        XCTAssertLessThan(descriptionLength, 100_000, "With reasonable notes, the payload stays compact")
+        #expect(data.count < 1_000_000)
+        #expect(descriptionLength < 100_000)
     }
 
-    @MainActor func testPushWorksWithAnyBookmarkStoreConformer() {
+    @MainActor @Test func pushWorksWithAnyBookmarkStoreConformer() {
         // On today's main this crashes because of the `as! SQLiteBookmarkStore` force cast.
         // After the fix, any BookmarkStore conformer works.
         let database = AppDatabase.makeTemporaryDatabase(named: "sync-conformer-test")
@@ -70,7 +71,7 @@ final class BookmarkSyncTests: XCTestCase {
         let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: fakeStore)
         cloudSync.testForceAvailable = true
         // If we reach this point without a crash, the force cast has been removed.
-        XCTAssertTrue(true)
+        #expect(true)
     }
 }
 

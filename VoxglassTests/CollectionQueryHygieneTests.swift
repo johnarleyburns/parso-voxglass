@@ -1,7 +1,8 @@
-import XCTest
+import Foundation
+import Testing
 @testable import VoxglassCore
 
-final class CollectionQueryHygieneTests: XCTestCase {
+@Suite struct CollectionQueryHygieneTests {
 
     private static let denylistedBareSubjects: Set<String> = [
         "Fiction", "Science", "Nature", "War", "Military",
@@ -14,10 +15,10 @@ final class CollectionQueryHygieneTests: XCTestCase {
         "lv-religion", "lv-essays-ideas"
     ]
 
-    func testNoBareDenylistedSubjectTokensInAnyCategoryQuery() {
+    @Test func noBareDenylistedSubjectTokensInAnyCategoryQuery() {
         let barePattern = "subject:([A-Z][a-zA-Z]*)"
         guard let regex = try? NSRegularExpression(pattern: barePattern) else {
-            XCTFail("Could not create regex")
+            Issue.record("Could not create regex")
             return
         }
 
@@ -31,66 +32,66 @@ final class CollectionQueryHygieneTests: XCTestCase {
                       let swiftRange = Range(match.range(at: 1), in: positive) else { return }
                 let token = String(positive[swiftRange])
                 if Self.denylistedBareSubjects.contains(token) {
-                    XCTFail("Category '\(category.id)' contains bare denylisted subject token '\(token)'")
+                    Issue.record("Category '\(category.id)' contains bare denylisted subject token '\(token)'")
                 }
             }
         }
     }
 
-    func testNoTitleClausesInNonfictionCategoryQueries() {
+    @Test func noTitleClausesInNonfictionCategoryQueries() {
         for category in LibriVoxBrowseGroup.categories {
             guard Self.nonfictionCategoryIDs.contains(category.id) else { continue }
             let positive = positiveClause(of: category.archiveQuery)
             if positive.contains("title:") {
-                XCTFail("Nonfiction category '\(category.id)' contains a title: clause: \(category.archiveQuery)")
+                Issue.record("Nonfiction category '\(category.id)' contains a title: clause: \(category.archiveQuery)")
             }
         }
     }
 
-    func testScienceNatureQueryHasNoFictionSubjects() {
+    @Test func scienceNatureQueryHasNoFictionSubjects() {
         let query = LibriVoxBrowseCategory.scienceNature.archiveQuery
-        XCTAssertTrue(query.contains("subject:\"Life Sciences\""))
-        XCTAssertTrue(query.contains("subject:\"Astronomy, Physics & Mechanics\""))
-        XCTAssertFalse(query.contains("Nature & Animal Fiction"))
-        XCTAssertFalse(query.contains("subject:Science"))
-        XCTAssertFalse(query.contains("subject:Nature"))
+        #expect(query.contains("subject:\"Life Sciences\""))
+        #expect(query.contains("subject:\"Astronomy, Physics & Mechanics\""))
+        #expect(!(query.contains("Nature & Animal Fiction")))
+        #expect(!(query.contains("subject:Science")))
+        #expect(!(query.contains("subject:Nature")))
     }
 
-    func testEssaysIdeasQueryHasNoPhilosophyOrTitleClauses() {
+    @Test func essaysIdeasQueryHasNoPhilosophyOrTitleClauses() {
         let query = LibriVoxBrowseCategory.essaysIdeas.archiveQuery
         let positive = positiveClause(of: query)
-        XCTAssertFalse(positive.contains("subject:\"Philosophy\""))
-        XCTAssertFalse(positive.contains("title:essay"))
-        XCTAssertFalse(positive.contains("title:lectures"))
-        XCTAssertFalse(positive.contains("title:letters"))
+        #expect(!(positive.contains("subject:\"Philosophy\"")))
+        #expect(!(positive.contains("title:essay")))
+        #expect(!(positive.contains("title:lectures")))
+        #expect(!(positive.contains("title:letters")))
     }
 
-    func testWarMilitaryQueryUsesOnlyQuotedPhrases() {
+    @Test func warMilitaryQueryUsesOnlyQuotedPhrases() {
         let query = LibriVoxBrowseCategory.warMilitary.archiveQuery
         let positive = positiveClause(of: query)
-        XCTAssertTrue(positive.contains("subject:\"War & Military Fiction\""))
-        XCTAssertTrue(positive.contains("subject:\"World War, 1914-1918\""))
+        #expect(positive.contains("subject:\"War & Military Fiction\""))
+        #expect(positive.contains("subject:\"World War, 1914-1918\""))
         // Must not have bare subject:War or subject:Military (outside quotes).
-        XCTAssertFalse(positive.contains("subject:War "))
-        XCTAssertFalse(positive.contains("subject:Military "))
-        XCTAssertFalse(positive.contains("subject:Espionage"))
-        XCTAssertFalse(positive.contains("subject:Thrillers"))
+        #expect(!(positive.contains("subject:War ")))
+        #expect(!(positive.contains("subject:Military ")))
+        #expect(!(positive.contains("subject:Espionage")))
+        #expect(!(positive.contains("subject:Thrillers")))
     }
 
-    func testAncientWorldQueryHasNoTitleClauses() {
+    @Test func ancientWorldQueryHasNoTitleClauses() {
         let query = LibriVoxBrowseCategory.ancientWorld.archiveQuery
         let positive = positiveClause(of: query)
-        XCTAssertFalse(positive.contains("title:ancient"))
-        XCTAssertFalse(positive.contains("title:greece"))
-        XCTAssertFalse(positive.contains("title:greek"))
-        XCTAssertFalse(positive.contains("title:rome"))
-        XCTAssertFalse(positive.contains("title:roman"))
+        #expect(!(positive.contains("title:ancient")))
+        #expect(!(positive.contains("title:greece")))
+        #expect(!(positive.contains("title:greek")))
+        #expect(!(positive.contains("title:rome")))
+        #expect(!(positive.contains("title:roman")))
     }
 
-    func testLiteraryFictionIsNotInBrowseGroup() {
-        XCTAssertNil(LibriVoxBrowseCategory.category(withID: "lv-literary-fiction"))
+    @Test func literaryFictionIsNotInBrowseGroup() {
+        #expect(LibriVoxBrowseCategory.category(withID: "lv-literary-fiction") == nil)
         let allIDs = LibriVoxBrowseGroup.categories.map(\.id)
-        XCTAssertFalse(allIDs.contains("lv-literary-fiction"))
+        #expect(!(allIDs.contains("lv-literary-fiction")))
     }
 
     private func positiveClause(of query: String) -> String {

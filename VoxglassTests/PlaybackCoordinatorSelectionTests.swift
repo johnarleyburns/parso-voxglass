@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class PlaybackCoordinatorSelectionTests: XCTestCase {
+@Suite struct PlaybackCoordinatorSelectionTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -64,7 +65,7 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
 
     // MARK: - S1 tests
 
-    func testSessionAppearsBeforeEngineLoadCompletes() async {
+    @Test func sessionAppearsBeforeEngineLoadCompletes() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.suspendLoads = true
@@ -72,17 +73,17 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
 
-        XCTAssertNotNil(h.coordinator.currentSession, "Session must be visible before engine load completes")
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, book.book.id)
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing, "Phase must be preparing while load is suspended")
+        #expect(h.coordinator.currentSession != nil)  // Session must be visible before engine load completes
+        #expect(h.coordinator.currentSession?.book.id == book.book.id)
+        #expect(h.coordinator.playbackPhase == .preparing)  // Phase must be preparing while load is suspended
 
         h.engine.resumeAllSuspendedLoads()
         await drainMainQueue()
 
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing, "Phase must be playing after load completes")
+        #expect(h.coordinator.playbackPhase == .playing)  // Phase must be playing after load completes
     }
 
-    func testPhaseIsPreparingWhileEngineLoadIsSuspended() async {
+    @Test func phaseIsPreparingWhileEngineLoadIsSuspended() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.suspendLoads = true
@@ -90,17 +91,17 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
 
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing)
-        XCTAssertFalse(h.engine.isPlaying, "Engine must not be playing while load is suspended")
+        #expect(h.coordinator.playbackPhase == .preparing)
+        #expect(!(h.engine.isPlaying))  // Engine must not be playing while load is suspended
 
         h.engine.resumeSuspendedLoad()
         await drainMainQueue()
 
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
-        XCTAssertTrue(h.engine.isPlaying)
+        #expect(h.coordinator.playbackPhase == .playing)
+        #expect(h.engine.isPlaying)
     }
 
-    func testLatestSelectionWinsWhenEarlierLoadFinishesLast() async {
+    @Test func latestSelectionWinsWhenEarlierLoadFinishesLast() async {
         let h = makeHarness()
         let bookA = makeBook(title: "BookA")
         let bookB = makeBook(title: "BookB")
@@ -109,34 +110,34 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         // Start loading BookA
         h.coordinator.selectAndPlay(bookA)
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookA.book.id)
-        XCTAssertEqual(h.engine.loadCalls.count, 1)
+        #expect(h.coordinator.currentSession?.book.id == bookA.book.id)
+        #expect(h.engine.loadCalls.count == 1)
 
         // Select BookB before BookA finishes — cancels BookA load
         h.coordinator.selectAndPlay(bookB)
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookB.book.id, "Latest selection must win immediately")
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing)
-        XCTAssertEqual(h.engine.loadCalls.count, 2, "Must have issued load for BookB too")
+        #expect(h.coordinator.currentSession?.book.id == bookB.book.id)  // Latest selection must win immediately
+        #expect(h.coordinator.playbackPhase == .preparing)
+        #expect(h.engine.loadCalls.count == 2)  // Must have issued load for BookB too
 
         // Finish the stale BookA load — it must not overwrite
         h.engine.resumeSuspendedLoad() // BookA completes first
         await drainMainQueue()
         // After BookA finishes but BookB is still the latest selection, session must still be BookB
         guard let sessionB = h.coordinator.currentSession else {
-            XCTFail("Session must still exist"); return
+            Issue.record("Session must still exist"); return
         }
-        XCTAssertEqual(sessionB.book.id, bookB.book.id, "Stale BookA load must not overwrite BookB session")
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing, "BookB is still preparing")
+        #expect(sessionB.book.id == bookB.book.id)  // Stale BookA load must not overwrite BookB session
+        #expect(h.coordinator.playbackPhase == .preparing)  // BookB is still preparing
 
         // Finish BookB load
         h.engine.resumeSuspendedLoad() // BookB completes
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookB.book.id)
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
+        #expect(h.coordinator.currentSession?.book.id == bookB.book.id)
+        #expect(h.coordinator.playbackPhase == .playing)
     }
 
-    func testCancelledSelectionCannotPublishFailure() async {
+    @Test func cancelledSelectionCannotPublishFailure() async {
         let h = makeHarness()
         let bookA = makeBook(title: "BookA")
         let bookB = makeBook(title: "BookB")
@@ -144,7 +145,7 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
 
         h.coordinator.selectAndPlay(bookA)
         await drainMainQueue()
-        XCTAssertNil(h.coordinator.playbackError)
+        #expect(h.coordinator.playbackError == nil)
 
         // Cancel BookA by selecting BookB
         h.coordinator.selectAndPlay(bookB)
@@ -155,39 +156,39 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         await drainMainQueue()
 
         // BookA's failure must not appear — the selection was cancelled
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookB.book.id)
+        #expect(h.coordinator.currentSession?.book.id == bookB.book.id)
         // If load failures have a message, it must be nil (not BookA's failure)
         if let err = h.coordinator.playbackError {
-            XCTAssertFalse(err.contains("cancelled"), "Cancelled selection error must not leak: \(err)")
+            #expect(!(err.contains("cancelled")))  // Cancelled selection error must not leak: \(err)
         }
 
         // Finish BookB successfully
         h.engine.resumeSuspendedLoad()
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
-        XCTAssertNil(h.coordinator.playbackError)
+        #expect(h.coordinator.playbackPhase == .playing)
+        #expect(h.coordinator.playbackError == nil)
     }
 
-    func testRepeatedPlayOfSamePreparingSelectionDoesNotStartSecondLoad() async {
+    @Test func repeatedPlayOfSamePreparingSelectionDoesNotStartSecondLoad() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
-        XCTAssertEqual(h.engine.loadCalls.count, 1)
+        #expect(h.engine.loadCalls.count == 1)
 
         // Tap same book again while preparing — must be idempotent
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
-        XCTAssertEqual(h.engine.loadCalls.count, 1, "Duplicate tap on same preparing book must not start a second load")
+        #expect(h.engine.loadCalls.count == 1)  // Duplicate tap on same preparing book must not start a second load
 
         h.engine.resumeSuspendedLoad()
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
+        #expect(h.coordinator.playbackPhase == .playing)
     }
 
-    func testFailedLoadKeepsSelectedSessionVisible() async {
+    @Test func failedLoadKeepsSelectedSessionVisible() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.loadError = URLError(.notConnectedToInternet)
@@ -195,17 +196,17 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
 
-        XCTAssertNotNil(h.coordinator.currentSession, "Session must remain visible after load failure")
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, book.book.id)
-        XCTAssertNotNil(h.coordinator.playbackError)
+        #expect(h.coordinator.currentSession != nil)  // Session must remain visible after load failure
+        #expect(h.coordinator.currentSession?.book.id == book.book.id)
+        #expect(h.coordinator.playbackError != nil)
         if case .failed = h.coordinator.playbackPhase {
             // expected
         } else {
-            XCTFail("Phase must be .failed, got \(h.coordinator.playbackPhase)")
+            Issue.record("Phase must be .failed, got \(h.coordinator.playbackPhase)")
         }
     }
 
-    func testRetryUsesSelectedIdentity() async {
+    @Test func retryUsesSelectedIdentity() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.loadError = URLError(.notConnectedToInternet)
@@ -213,42 +214,42 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
 
-        XCTAssertEqual(h.engine.loadCalls.count, 1)
-        XCTAssertNotNil(h.coordinator.playbackError)
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.coordinator.playbackError != nil)
 
         // Retry: clear error, select again
         h.engine.loadError = nil
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
 
-        XCTAssertEqual(h.engine.loadCalls.count, 2, "Retry must issue a new load")
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
-        XCTAssertNil(h.coordinator.playbackError)
+        #expect(h.engine.loadCalls.count == 2)  // Retry must issue a new load
+        #expect(h.coordinator.playbackPhase == .playing)
+        #expect(h.coordinator.playbackError == nil)
     }
 
-    func testClearingPlaybackCancelsSelectionAndProgressTasks() async {
+    @Test func clearingPlaybackCancelsSelectionAndProgressTasks() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(book)
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing)
+        #expect(h.coordinator.playbackPhase == .preparing)
 
         // Clear playback by deleting book (stopPlayback)
         h.coordinator.stopPlayback(forDeletedBook: book.book.id)
         await drainMainQueue()
 
-        XCTAssertNil(h.coordinator.currentSession)
-        XCTAssertEqual(h.coordinator.playbackPhase, .idle)
+        #expect(h.coordinator.currentSession == nil)
+        #expect(h.coordinator.playbackPhase == .idle)
 
         // Resume the suspended load — it must not resurrect the session
         h.engine.resumeAllSuspendedLoads()
         await drainMainQueue()
-        XCTAssertNil(h.coordinator.currentSession, "Cleared session must not be resurrected by stale load")
+        #expect(h.coordinator.currentSession == nil)  // Cleared session must not be resurrected by stale load
     }
 
-    func testSelectAndPlayDifferentBookSupersedesPreparingRequest() async {
+    @Test func selectAndPlayDifferentBookSupersedesPreparingRequest() async {
         let h = makeHarness()
         let bookA = makeBook(title: "BookA")
         let bookB = makeBook(title: "BookB")
@@ -256,34 +257,34 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
 
         h.coordinator.selectAndPlay(bookA)
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookA.book.id)
+        #expect(h.coordinator.currentSession?.book.id == bookA.book.id)
 
         // Supersede with BookB — BookB must appear immediately, even before engine loads
         h.coordinator.selectAndPlay(bookB)
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookB.book.id)
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing)
+        #expect(h.coordinator.currentSession?.book.id == bookB.book.id)
+        #expect(h.coordinator.playbackPhase == .preparing)
 
         h.engine.resumeAllSuspendedLoads()
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, bookB.book.id)
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
+        #expect(h.coordinator.currentSession?.book.id == bookB.book.id)
+        #expect(h.coordinator.playbackPhase == .playing)
     }
 
-    func testPlaybackErrorIsClearedOnNewSelection() async {
+    @Test func playbackErrorIsClearedOnNewSelection() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.loadError = URLError(.notConnectedToInternet)
 
         await h.coordinator.play(book)
-        XCTAssertNotNil(h.coordinator.playbackError)
+        #expect(h.coordinator.playbackError != nil)
 
         h.engine.loadError = nil
         await h.coordinator.play(makeBook(title: "BookB"))
-        XCTAssertNil(h.coordinator.playbackError, "Error must be cleared on new selection")
+        #expect(h.coordinator.playbackError == nil)  // Error must be cleared on new selection
     }
 
-    func testPlayPublishesPreparingBeforeEngineLoad() async {
+    @Test func playPublishesPreparingBeforeEngineLoad() async {
         let h = makeHarness()
         let book = makeBook()
         h.engine.suspendLoads = true
@@ -294,14 +295,14 @@ final class PlaybackCoordinatorSelectionTests: XCTestCase {
         }
         await drainMainQueue()
 
-        XCTAssertNotNil(h.coordinator.currentSession, "Session must be visible before engine load")
-        XCTAssertEqual(h.coordinator.playbackPhase, .preparing)
+        #expect(h.coordinator.currentSession != nil)  // Session must be visible before engine load
+        #expect(h.coordinator.playbackPhase == .preparing)
 
         h.engine.resumeAllSuspendedLoads()
         await playTask.value
         await drainMainQueue()
 
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
-        XCTAssertNotNil(h.coordinator.currentSession)
+        #expect(h.coordinator.playbackPhase == .playing)
+        #expect(h.coordinator.currentSession != nil)
     }
 }

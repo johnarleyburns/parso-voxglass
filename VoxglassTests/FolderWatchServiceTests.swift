@@ -1,16 +1,13 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class FolderWatchServiceTests: XCTestCase {
-
-    override func tearDown() {
-        super.tearDown()
-    }
+@Suite struct FolderWatchServiceTests {
 
     // MARK: - Pure diff helper
 
-    func testNewAudioFilesFiltersByExtensionAndExcludesKnown() {
+    @Test func newAudioFilesFiltersByExtensionAndExcludesKnown() {
         let base = URL(fileURLWithPath: "/tmp/folder")
         let mp3 = base.appendingPathComponent("01.mp3")
         let flac = base.appendingPathComponent("02.flac")
@@ -23,16 +20,16 @@ final class FolderWatchServiceTests: XCTestCase {
             knownURLs: [known]
         )
 
-        XCTAssertTrue(result.contains(mp3))
-        XCTAssertTrue(result.contains(flac))
-        XCTAssertFalse(result.contains(txt))
-        XCTAssertFalse(result.contains(jpg))
-        XCTAssertFalse(result.contains(known), "Known files must be excluded")
+        #expect(result.contains(mp3))
+        #expect(result.contains(flac))
+        #expect(!(result.contains(txt)))
+        #expect(!(result.contains(jpg)))
+        #expect(!(result.contains(known)))  // Known files must be excluded
     }
 
     // MARK: - Repository idempotency
 
-    func testImportLocalFolderInsertsSourceBookAndChapters() async throws {
+    @Test func importLocalFolderInsertsSourceBookAndChapters() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "folder-import")
         let repository = LibraryRepository(database: database)
         let folder = URL(fileURLWithPath: "/tmp/watch-\(UUID().uuidString)")
@@ -46,16 +43,16 @@ final class FolderWatchServiceTests: XCTestCase {
             ]
         )
 
-        XCTAssertEqual(imported.book.title, "My Folder")
-        XCTAssertEqual(imported.chapters.count, 2)
-        XCTAssertTrue(imported.chapters.allSatisfy { $0.localURL != nil })
-        XCTAssertTrue(imported.chapters.allSatisfy { $0.remoteURL == nil })
+        #expect(imported.book.title == "My Folder")
+        #expect(imported.chapters.count == 2)
+        #expect(imported.chapters.allSatisfy { $0.localURL != nil })
+        #expect(imported.chapters.allSatisfy { $0.remoteURL == nil })
 
         let sources = try await repository.fetchSources()
-        XCTAssertEqual(sources.filter { $0.kind == .localFiles }.count, 1)
+        #expect(sources.filter { $0.kind == .localFiles }.count == 1)
     }
 
-    func testImportLocalFolderIsIdempotentAndAppendsNewFiles() async throws {
+    @Test func importLocalFolderIsIdempotentAndAppendsNewFiles() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "folder-idempotent")
         let repository = LibraryRepository(database: database)
         let folder = URL(fileURLWithPath: "/tmp/watch-\(UUID().uuidString)")
@@ -66,14 +63,14 @@ final class FolderWatchServiceTests: XCTestCase {
 
         _ = try await repository.importLocalFolder(folderURL: folder, folderName: "F", files: [f1, f2])
         let rescan = try await repository.importLocalFolder(folderURL: folder, folderName: "F", files: [f1, f2])
-        XCTAssertEqual(rescan.chapters.count, 2, "Re-scanning identical files must not duplicate chapters")
+        #expect(rescan.chapters.count == 2)  // Re-scanning identical files must not duplicate chapters
 
         let grown = try await repository.importLocalFolder(folderURL: folder, folderName: "F", files: [f1, f2, f3])
-        XCTAssertEqual(grown.chapters.count, 3, "A newly added file must append exactly one chapter")
+        #expect(grown.chapters.count == 3)  // A newly added file must append exactly one chapter
 
         let library = try await repository.fetchLibrary()
-        XCTAssertEqual(library.count, 1, "One book per folder")
+        #expect(library.count == 1)  // One book per folder
         let sources = try await repository.fetchSources()
-        XCTAssertEqual(sources.count, 1, "One source per folder")
+        #expect(sources.count == 1)  // One source per folder
     }
 }

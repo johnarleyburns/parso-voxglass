@@ -1,59 +1,53 @@
 import Foundation
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class ArtworkPresentationTests: XCTestCase {
-    func testExploreAndOnboardingCollectionArtworkFramesAreSquare() throws {
+@Suite struct ArtworkPresentationTests {
+    @Test func exploreAndOnboardingCollectionArtworkFramesAreSquare() throws {
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         let onboarding = try source("Voxglass/Features/Onboarding/OnboardingPreferencesView.swift")
 
-        XCTAssertTrue(discover.contains(".frame(width: 190, height: 190)"))
-        XCTAssertFalse(discover.contains(".frame(width: 190, height: 132)"))
-        XCTAssertTrue(onboarding.contains(".frame(width: 170, height: 170)"))
-        XCTAssertFalse(onboarding.contains(".frame(width: 170, height: 118)"))
+        #expect(discover.contains(".frame(width: 190, height: 190)"))
+        #expect(!(discover.contains(".frame(width: 190, height: 132)")))
+        #expect(onboarding.contains(".frame(width: 170, height: 170)"))
+        #expect(!(onboarding.contains(".frame(width: 170, height: 118)")))
     }
 
-    func testBookCoverUsesSharedPostFrameClippingWrapper() throws {
+    @Test func bookCoverUsesSharedPostFrameClippingWrapper() throws {
         let artwork = try source("Voxglass/DesignSystem/BookArtworkView.swift")
         let wrapperPattern = #"struct SquareBookCoverView[\s\S]*?BookCoverView\(title:[\s\S]*?\.frame\(width:\s*size,\s*height:\s*size\)[\s\S]*?\.clipShape\([\s\S]*?\.clipped\(\)"#
-        XCTAssertNotNil(
-            artwork.range(of: wrapperPattern, options: .regularExpression),
-            "SquareBookCoverView must apply clipping after the final square frame"
-        )
+        #expect(artwork.range(of: wrapperPattern, options: .regularExpression) != nil)  // SquareBookCoverView must apply clipping after the final square frame
 
         let files = try swiftFiles(under: repoRoot.appendingPathComponent("Voxglass"))
         for file in files where relativePath(file) != "Voxglass/DesignSystem/BookArtworkView.swift" {
             let text = try String(contentsOf: file)
-            XCTAssertFalse(
-                text.contains("BookCoverView("),
-                "\(relativePath(file)) should use BookArtworkView/SquareBookCoverView instead of framing BookCoverView directly"
-            )
+            #expect(!(text.contains("BookCoverView(")))  // \(relativePath(file)) should use BookArtworkView/SquareBookCoverView instead of framing BookCoverView directly
         }
     }
 
-    func testSharedBookListRowArtworkFrameIsSquareAndStable() throws {
+    @Test func sharedBookListRowArtworkFrameIsSquareAndStable() throws {
         let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
 
-        XCTAssertTrue(components.contains("BookArtworkView(title: title, size: 56"))
-        XCTAssertTrue(components.contains(".frame(width: 56, height: 56)"))
-        XCTAssertTrue(components.contains(".fixedSize()"))
+        #expect(components.contains("BookArtworkView(title: title, size: 56"))
+        #expect(components.contains(".frame(width: 56, height: 56)"))
+        #expect(components.contains(".fixedSize()"))
     }
 
-    func testVerticalCatalogResultListsUseGroupedRows() throws {
+    @Test func verticalCatalogResultListsUseGroupedRows() throws {
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         let search = try source("Voxglass/Features/Search/SearchView.swift")
         let discovery = try source("Voxglass/Features/Player/CatalogDiscoveryView.swift")
 
         for text in [discover, search, discovery] {
-            XCTAssertTrue(text.contains("style: .grouped"))
-            XCTAssertTrue(text.contains("VoxglassListDivider()"))
-            XCTAssertTrue(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
-            XCTAssertTrue(text.contains("Button {"))
-            XCTAssertTrue(text.contains("Task { await presentResult(result) }"))
+            #expect(text.contains("style: .grouped"))
+            #expect(text.contains("VoxglassListDivider()"))
+            #expect(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
+            #expect(text.contains("Button {"))
+            #expect(text.contains("Task { await presentResult(result) }"))
         }
     }
 
-    func testRemoteCatalogResultHandlersPresentPausedNowPlaying() throws {
+    @Test func remoteCatalogResultHandlersPresentPausedNowPlaying() throws {
         let paths = [
             "Voxglass/Features/Discover/DiscoverView.swift",
             "Voxglass/Features/Search/SearchView.swift",
@@ -63,59 +57,56 @@ final class ArtworkPresentationTests: XCTestCase {
 
         for path in paths {
             let text = try source(path)
-            XCTAssertTrue(text.contains("private func presentResult"), path)
-            XCTAssertTrue(text.contains("await playback.present(imported)"), path)
-            XCTAssertTrue(text.contains("showingNowPlaying = true"), path)
-            XCTAssertFalse(text.contains("await playback.play(imported)"), path)
+            #expect(text.contains("private func presentResult"))  // \(path)
+            #expect(text.contains("await playback.present(imported)"))  // \(path)
+            #expect(text.contains("showingNowPlaying = true"))  // \(path)
+            #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
 
         let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
-        XCTAssertTrue(settings.contains("await playback.present(imported)"))
-        XCTAssertFalse(settings.contains("await playback.play(imported)"))
+        #expect(settings.contains("await playback.present(imported)"))
+        #expect(!(settings.contains("await playback.play(imported)")))
     }
 
-    func testCatalogResultRowsUseNavigationAccessoryWithoutMetadata() throws {
+    @Test func catalogResultRowsUseNavigationAccessoryWithoutMetadata() throws {
         let search = try source("Voxglass/Features/Search/SearchView.swift")
 
-        XCTAssertTrue(search.contains("accessory: isLoading ? .loading : .navigation"))
-        XCTAssertTrue(search.contains("metadata: nil"))
-        XCTAssertFalse(search.contains("IADateFormatting.humanReadable(result.date)"))
-        XCTAssertFalse(search.contains("Recorded \\(date)"))
-        XCTAssertFalse(search.contains("isPlaying ? .loading : .play"))
+        #expect(search.contains("accessory: isLoading ? .loading : .navigation"))
+        #expect(search.contains("metadata: nil"))
+        #expect(!(search.contains("IADateFormatting.humanReadable(result.date)")))
+        #expect(!(search.contains("Recorded \\(date)")))
+        #expect(!(search.contains("isPlaying ? .loading : .play")))
     }
 
-    func testLocalBookRowsDoNotShowLibraryMetadataDetailLine() throws {
+    @Test func localBookRowsDoNotShowLibraryMetadataDetailLine() throws {
         let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
 
-        XCTAssertTrue(components.contains("struct CompactBookRowView: View"))
-        XCTAssertTrue(components.contains("metadata: nil"))
-        XCTAssertFalse(components.contains("metadata: book.libraryDetailLine"))
+        #expect(components.contains("struct CompactBookRowView: View"))
+        #expect(components.contains("metadata: nil"))
+        #expect(!(components.contains("metadata: book.libraryDetailLine")))
     }
 
-    func testBookDetailHeaderShowsNarratorLineNearTop() throws {
+    @Test func bookDetailHeaderShowsNarratorLineNearTop() throws {
         let detail = try source("Voxglass/Features/Player/BookPageView.swift")
 
-        XCTAssertTrue(detail.contains("if let narratorLine = resolved.book.narratorLine"))
-        XCTAssertTrue(detail.contains("narratorsLink(resolved, narratorLine: narratorLine)"))
-        XCTAssertTrue(detail.contains("chapterLine(resolved)"))
-        XCTAssertLessThan(
-            try XCTUnwrap(detail.range(of: "narratorsLink(resolved, narratorLine: narratorLine)")?.lowerBound),
-            try XCTUnwrap(detail.range(of: "chapterLine(resolved)")?.lowerBound)
-        )
+        #expect(detail.contains("if let narratorLine = resolved.book.narratorLine"))
+        #expect(detail.contains("narratorsLink(resolved, narratorLine: narratorLine)"))
+        #expect(detail.contains("chapterLine(resolved)"))
+        #expect((try #require(detail.range(of: "narratorsLink(resolved, narratorLine: narratorLine)")?.lowerBound)) < (try #require(detail.range(of: "chapterLine(resolved)")?.lowerBound)))
     }
 
-    func testListeningStatsLockIsReservedInsideDisclosureRow() throws {
+    @Test func listeningStatsLockIsReservedInsideDisclosureRow() throws {
         let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
 
-        let statsRange = try XCTUnwrap(settings.range(of: "private struct ListeningStatsRow"))
-        let nextRange = try XCTUnwrap(settings.range(of: "private struct FolderWatchRow"))
+        let statsRange = try #require(settings.range(of: "private struct ListeningStatsRow"))
+        let nextRange = try #require(settings.range(of: "private struct FolderWatchRow"))
         let statsBlock = String(settings[statsRange.lowerBound..<nextRange.lowerBound])
-        XCTAssertFalse(statsBlock.contains("ProLockBadge"))
-        XCTAssertFalse(statsBlock.contains("ProFeature"))
-        XCTAssertFalse(statsBlock.contains("showsLock"))
+        #expect(!(statsBlock.contains("ProLockBadge")))
+        #expect(!(statsBlock.contains("ProFeature")))
+        #expect(!(statsBlock.contains("showsLock")))
     }
 
-    func testEveryExploreCollectionHasBundledAsset() {
+    @Test func everyExploreCollectionHasBundledAsset() {
         let assetCatalog = repoRoot.appendingPathComponent("Voxglass/Resources/Assets.xcassets", isDirectory: true)
         // Per-language Great Books variants share the "collection-great-books" artwork.
         let shareGreatBooksArtwork: Set<String> = [
@@ -124,19 +115,19 @@ final class ArtworkPresentationTests: XCTestCase {
 
         for collection in IACollectionStore.collections(for: []) {
             if shareGreatBooksArtwork.contains(collection.id) {
-                XCTAssertEqual(collection.assetName, "collection-great-books", collection.id)
+                #expect(collection.assetName == "collection-great-books")
             } else {
                 let expected = "collection-\(collection.id)"
-                XCTAssertEqual(collection.assetName, expected, collection.id)
+                #expect(collection.assetName == expected)
 
                 let imageset = assetCatalog.appendingPathComponent("\(expected).imageset", isDirectory: true)
                 let contents = imageset.appendingPathComponent("Contents.json")
-                XCTAssertTrue(FileManager.default.fileExists(atPath: contents.path), "\(expected) is missing Contents.json")
+                #expect(FileManager.default.fileExists(atPath: contents.path))  // \(expected) is missing Contents.json
 
                 let imageExists = ["jpg", "jpeg", "png"].contains { ext in
                     FileManager.default.fileExists(atPath: imageset.appendingPathComponent("\(expected).\(ext)").path)
                 }
-                XCTAssertTrue(imageExists, "\(expected) is missing an image file")
+                #expect(imageExists)  // \(expected) is missing an image file
             }
         }
     }

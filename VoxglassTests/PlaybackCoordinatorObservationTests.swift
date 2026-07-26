@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class PlaybackCoordinatorObservationTests: XCTestCase {
+@Suite struct PlaybackCoordinatorObservationTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -64,7 +65,7 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
 
     // MARK: - Tick does not assign currentSession.position
 
-    func testTickDrivesPlayheadNotSessionPosition() async {
+    @Test func tickDrivesPlayheadNotSessionPosition() async {
         let h = makeHarness()
         let book = makeBook()
         await h.coordinator.play(book)
@@ -76,30 +77,30 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
         await drainMainQueue()
 
         // playhead should update
-        XCTAssertEqual(h.coordinator.playhead, 15, accuracy: 0.001)
+        #expect(abs((h.coordinator.playhead) - (15)) <= 0.001)
         // currentSession.position should NOT be the periodic tick value
         // (seek-to-commit can update it, but not the tick)
         let positionAfter = h.coordinator.currentSession?.position ?? -1
         if positionAfter == positionBefore {
             // The tick didn't touch session.position — good
         } else if positionAfter == 15 {
-            XCTFail("tickProgress must not assign currentSession.position to engine.currentTime")
+            Issue.record("tickProgress must not assign currentSession.position to engine.currentTime")
         }
     }
 
-    func testTickReconcilesPlayPauseTransition() async {
+    @Test func tickReconcilesPlayPauseTransition() async {
         let h = makeHarness()
         let book = makeBook()
         await h.coordinator.play(book)
-        XCTAssertEqual(h.coordinator.playbackPhase, .playing)
+        #expect(h.coordinator.playbackPhase == .playing)
 
         h.engine.isPlaying = false
         await h.coordinator.tickProgress()
 
-        XCTAssertEqual(h.coordinator.playbackPhase, .paused)
+        #expect(h.coordinator.playbackPhase == .paused)
     }
 
-    func testTickDoesNotRepublishSessionForDurationJitter() async {
+    @Test func tickDoesNotRepublishSessionForDurationJitter() async {
         let h = makeHarness()
         let book = makeBook()
         await h.coordinator.play(book)
@@ -117,10 +118,10 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
             }
         }
         // playhead should still update
-        XCTAssertEqual(h.coordinator.playhead, h.engine.currentTime, accuracy: 0.001)
+        #expect(abs((h.coordinator.playhead) - (h.engine.currentTime)) <= 0.001)
     }
 
-    func testTickRejectsNaNDuration() async {
+    @Test func tickRejectsNaNDuration() async {
         let h = makeHarness()
         let book = makeBook()
         await h.coordinator.play(book)
@@ -130,18 +131,18 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
         await h.coordinator.tickProgress()
 
         // playhead should NOT be infinity or NaN
-        XCTAssertFalse(h.coordinator.playhead.isNaN, "playhead must not be NaN")
-        XCTAssertFalse(h.coordinator.playhead.isInfinite, "playhead must not be infinite")
+        #expect(!(h.coordinator.playhead.isNaN))  // playhead must not be NaN
+        #expect(!(h.coordinator.playhead.isInfinite))  // playhead must not be infinite
         // playheadDuration should NOT be NaN
         if let dur = h.coordinator.playheadDuration {
-            XCTAssertFalse(dur.isNaN, "playheadDuration must not be NaN")
-            XCTAssertFalse(dur.isInfinite, "playheadDuration must not be infinite")
+            #expect(!(dur.isNaN))  // playheadDuration must not be NaN
+            #expect(!(dur.isInfinite))  // playheadDuration must not be infinite
         }
     }
 
     // MARK: - Skip uses engine time while loaded
 
-    func testSkipUsesEngineTimeWhileLoaded() async {
+    @Test func skipUsesEngineTimeWhileLoaded() async {
         let h = makeHarness()
         let book = makeBook()
         await h.coordinator.play(book)
@@ -152,12 +153,12 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
 
         // Should have seeked to engine.currentTime (50) + 10 = 60
         let expectedPosition: TimeInterval = 60
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, expectedPosition, accuracy: 0.001)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (expectedPosition)) <= 0.001)
     }
 
     // MARK: - Seek publishes optimistic playhead
 
-    func testSeekPublishesOptimisticPlayheadBeforeEngineCompletes() async {
+    @Test func seekPublishesOptimisticPlayheadBeforeEngineCompletes() async {
         let h = makeHarness()
         let book = makeBook()
         await h.coordinator.play(book)
@@ -172,15 +173,14 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
         // Allow the synchronous part to run
         await drainMainQueue()
 
-        XCTAssertEqual(h.coordinator.playhead, 42, accuracy: 0.001,
-                       "playhead must be set optimistically before engine.seek completes")
+        #expect(abs((h.coordinator.playhead) - (42)) <= 0.001)  // playhead must be set optimistically before engine.seek completes
 
         await seekTask.value
     }
 
     // MARK: - Paused presentation restores playhead
 
-    func testPausedPresentationRestoresPlayheadInsteadOfZero() async {
+    @Test func pausedPresentationRestoresPlayheadInsteadOfZero() async {
         let h = makeHarness()
         let book = makeBook()
 
@@ -192,7 +192,7 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
 
     // MARK: - Observation dependency tracking
 
-    func testObservationNotInvalidatedByImplementationDetail() {
+    @Test func observationNotInvalidatedByImplementationDetail() {
         // When playhead changes, currentSession should NOT be affected.
         // Observable properties have independent invalidation.
         let h = makeHarness()
@@ -203,12 +203,12 @@ final class PlaybackCoordinatorObservationTests: XCTestCase {
         _ = h.coordinator.playhead
         _ = h.coordinator.sleepRemaining
         // Just verify no crash on access
-        XCTAssertTrue(true)
+        #expect(true)
     }
 
-    func testCurrentSessionMutationDoesNotInvalidatePlayheadReader() {
+    @Test func currentSessionMutationDoesNotInvalidatePlayheadReader() {
         // Structural test: under @Observable, changing currentSession
         // should not invalidate a view that only reads playhead.
-        XCTAssertTrue(true)
+        #expect(true)
     }
 }

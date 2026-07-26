@@ -1,4 +1,5 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Miniplayer launch-restore (docs/MINIPLAYER_RESTORE_PLAN.md). Restore is a
@@ -7,7 +8,7 @@ import XCTest
 /// on the first play press. Asserted against the `FakeAudioEngine` call log +
 /// a real SQLite position store, following `PlaybackResumeTests`.
 @MainActor
-final class MiniplayerRestoreTests: XCTestCase {
+@Suite struct MiniplayerRestoreTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
@@ -89,7 +90,7 @@ final class MiniplayerRestoreTests: XCTestCase {
 
     // MARK: - §5.1 Engine-free presented restore
 
-    func testRestorePresentedSessionPresentsPausedSessionWithoutTouchingEngine() async throws {
+    @Test func restorePresentedSessionPresentsPausedSessionWithoutTouchingEngine() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -100,25 +101,24 @@ final class MiniplayerRestoreTests: XCTestCase {
 
         await h.coordinator.restorePresentedSession(from: [makeBook(chapters: chapters)])
 
-        XCTAssertEqual(h.coordinator.currentSession?.book.id, chapters[0].bookID)
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[1].id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 42, accuracy: 0.001)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
-        XCTAssertTrue(h.engine.loadCalls.isEmpty,
-                      "Presented restore must never call engine.load — the paused miniplayer needs only metadata")
-        XCTAssertNil(h.coordinator.playbackError)
+        #expect(h.coordinator.currentSession?.book.id == chapters[0].bookID)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (42)) <= 0.001)
+        #expect(h.coordinator.currentSession?.isPlaying == false)
+        #expect(h.engine.loadCalls.isEmpty)  // Presented restore must never call engine.load — the paused miniplayer needs only metadata
+        #expect(h.coordinator.playbackError == nil)
     }
 
-    func testRestorePresentedSessionWithNothingRestorableStaysEmptyWithoutError() async {
+    @Test func restorePresentedSessionWithNothingRestorableStaysEmptyWithoutError() async {
         let h = makeHarness()
         await h.coordinator.restorePresentedSession(from: [])
-        XCTAssertNil(h.coordinator.currentSession)
-        XCTAssertNil(h.coordinator.playbackError)
+        #expect(h.coordinator.currentSession == nil)
+        #expect(h.coordinator.playbackError == nil)
     }
 
     // MARK: - §5.2 Finished latest row advances (RC3)
 
-    func testRestoreAfterFinishedLatestRowPresentsNextChapterAtZero() async throws {
+    @Test func restoreAfterFinishedLatestRowPresentsNextChapterAtZero() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -129,15 +129,14 @@ final class MiniplayerRestoreTests: XCTestCase {
 
         await h.coordinator.restorePresentedSession(from: [makeBook(chapters: chapters)])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[1].id,
-                       "A finished newest row must restore the *next* chapter, not the finished one at its end")
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 0, accuracy: 0.001)
-        XCTAssertNil(h.coordinator.playbackError)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)  // A finished newest row must restore the *next* chapter, not the finished one at its end
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (0)) <= 0.001)
+        #expect(h.coordinator.playbackError == nil)
     }
 
     // MARK: - §5.3 Stale chapter id falls back, no error banner
 
-    func testRestoreWithStaleChapterIDFallsBackToBookStartWithoutError() async throws {
+    @Test func restoreWithStaleChapterIDFallsBackToBookStartWithoutError() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -148,14 +147,14 @@ final class MiniplayerRestoreTests: XCTestCase {
 
         await h.coordinator.restorePresentedSession(from: [makeBook(chapters: chapters)])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[0].id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 0, accuracy: 0.001)
-        XCTAssertNil(h.coordinator.playbackError, "Degrade to book start — never a dead-end error")
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[0].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (0)) <= 0.001)
+        #expect(h.coordinator.playbackError == nil)  // Degrade to book start — never a dead-end error
     }
 
     // MARK: - §5.4 First play lazily loads at the presented position
 
-    func testFirstTogglePlayLoadsEngineAtPresentedPositionThenSecondTogglePausesWithoutReload() async throws {
+    @Test func firstTogglePlayLoadsEngineAtPresentedPositionThenSecondTogglePausesWithoutReload() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -164,28 +163,28 @@ final class MiniplayerRestoreTests: XCTestCase {
             position: 42, duration: 100
         ))
         await h.coordinator.restorePresentedSession(from: [makeBook(chapters: chapters)])
-        XCTAssertTrue(h.engine.loadCalls.isEmpty)
+        #expect(h.engine.loadCalls.isEmpty)
 
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertEqual(h.engine.loadCalls.count, 1)
-        XCTAssertEqual(h.engine.loadCalls.last?.url, chapters[1].localURL)
-        XCTAssertEqual(h.engine.loadCalls.last?.startTime ?? -1, 42, accuracy: 0.001)
-        XCTAssertTrue(h.engine.isPlaying)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, true)
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.engine.loadCalls.last?.url == chapters[1].localURL)
+        #expect(abs((h.engine.loadCalls.last?.startTime ?? -1) - (42)) <= 0.001)
+        #expect(h.engine.isPlaying)
+        #expect(h.coordinator.currentSession?.isPlaying == true)
 
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertFalse(h.engine.isPlaying)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
-        XCTAssertEqual(h.engine.loadCalls.count, 1, "Pause and later resumes must not reload the engine")
+        #expect(!(h.engine.isPlaying))
+        #expect(h.coordinator.currentSession?.isPlaying == false)
+        #expect(h.engine.loadCalls.count == 1)  // Pause and later resumes must not reload the engine
     }
 
     // MARK: - §5.5 Load failure keeps the session (miniplayer must not vanish)
 
-    func testEngineLoadFailureOnFirstPlayKeepsSessionAndAllowsRetry() async throws {
+    @Test func engineLoadFailureOnFirstPlayKeepsSessionAndAllowsRetry() async throws {
         let h = makeHarness()
         let chapters = makeChapters(2)
         try await seedBook(in: h.db, chapters: chapters)
@@ -199,23 +198,23 @@ final class MiniplayerRestoreTests: XCTestCase {
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertNotNil(h.coordinator.playbackError)
-        XCTAssertNotNil(h.coordinator.currentSession, "The presented session must survive a failed lazy load")
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
-        XCTAssertFalse(h.engine.isPlaying)
+        #expect(h.coordinator.playbackError != nil)
+        #expect(h.coordinator.currentSession != nil)  // The presented session must survive a failed lazy load
+        #expect(h.coordinator.currentSession?.isPlaying == false)
+        #expect(!(h.engine.isPlaying))
 
         h.engine.loadError = nil
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertTrue(h.engine.isPlaying, "Retry after a failed load must work")
-        XCTAssertEqual(h.engine.loadCalls.count, 2)
-        XCTAssertEqual(h.engine.loadCalls.last?.startTime ?? -1, 30, accuracy: 0.001)
+        #expect(h.engine.isPlaying)  // Retry after a failed load must work
+        #expect(h.engine.loadCalls.count == 2)
+        #expect(abs((h.engine.loadCalls.last?.startTime ?? -1) - (30)) <= 0.001)
     }
 
     // MARK: - §5.6 Seek before first play
 
-    func testSeekBeforeFirstPlayMovesPresentedPositionPersistsAndLoadsAtNewOffset() async throws {
+    @Test func seekBeforeFirstPlayMovesPresentedPositionPersistsAndLoadsAtNewOffset() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -227,22 +226,20 @@ final class MiniplayerRestoreTests: XCTestCase {
 
         await h.coordinator.seek(to: 77)
 
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 77, accuracy: 0.001)
-        XCTAssertFalse(h.engine.calls.contains(.seek(77)), "No engine.seek while unloaded")
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (77)) <= 0.001)
+        #expect(!(h.engine.calls.contains(.seek(77))))  // No engine.seek while unloaded
         let persisted = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)
-        XCTAssertEqual(persisted?.position ?? -1, 77, accuracy: 0.001,
-                       "A pre-play seek must land durably while unloaded")
+        #expect(abs((persisted?.position ?? -1) - (77)) <= 0.001)  // A pre-play seek must land durably while unloaded
 
         h.coordinator.togglePlayPause()
         await drainMainQueue()
 
-        XCTAssertEqual(h.engine.loadCalls.last?.startTime ?? -1, 77, accuracy: 0.001,
-                       "The lazy load must pick up the seeked offset")
+        #expect(abs((h.engine.loadCalls.last?.startTime ?? -1) - (77)) <= 0.001)  // The lazy load must pick up the seeked offset
     }
 
     // MARK: - §5.7 Cloud-pull refresh
 
-    func testCloudPullRefreshAdoptsNewerPositionWhileUnplayed() async throws {
+    @Test func cloudPullRefreshAdoptsNewerPositionWhileUnplayed() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -252,7 +249,7 @@ final class MiniplayerRestoreTests: XCTestCase {
         ))
         let book = makeBook(chapters: chapters)
         await h.coordinator.restorePresentedSession(from: [book])
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[1].id)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)
 
         // The iCloud pull upserts a newer position from another device.
         try await h.store.save(PlaybackPosition(
@@ -261,13 +258,13 @@ final class MiniplayerRestoreTests: XCTestCase {
         ))
         await h.coordinator.refreshPresentedSessionAfterCloudPull(from: [book])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[2].id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 10, accuracy: 0.001)
-        XCTAssertEqual(h.coordinator.currentSession?.isPlaying, false)
-        XCTAssertTrue(h.engine.loadCalls.isEmpty)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[2].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (10)) <= 0.001)
+        #expect(h.coordinator.currentSession?.isPlaying == false)
+        #expect(h.engine.loadCalls.isEmpty)
     }
 
-    func testCloudPullRefreshNoopsOnceEngineIsLoaded() async throws {
+    @Test func cloudPullRefreshNoopsOnceEngineIsLoaded() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -288,17 +285,16 @@ final class MiniplayerRestoreTests: XCTestCase {
         ))
         await h.coordinator.refreshPresentedSessionAfterCloudPull(from: [book])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[1].id,
-                       "Local activity wins: once the engine loaded, the pull is presentation-irrelevant")
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)  // Local activity wins: once the engine loaded, the pull is presentation-irrelevant
     }
 
-    func testCloudPullRefreshPresentsSessionOnFreshInstallOncePullLands() async throws {
+    @Test func cloudPullRefreshPresentsSessionOnFreshInstallOncePullLands() async throws {
         let h = makeHarness()
         let chapters = makeChapters(2)
         try await seedBook(in: h.db, chapters: chapters)
         let book = makeBook(chapters: chapters)
         await h.coordinator.restorePresentedSession(from: [book])
-        XCTAssertNil(h.coordinator.currentSession)
+        #expect(h.coordinator.currentSession == nil)
 
         try await h.store.save(PlaybackPosition(
             bookID: chapters[0].bookID, chapterID: chapters[0].id,
@@ -306,43 +302,42 @@ final class MiniplayerRestoreTests: XCTestCase {
         ))
         await h.coordinator.refreshPresentedSessionAfterCloudPull(from: [book])
 
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[0].id)
-        XCTAssertEqual(h.coordinator.currentSession?.position ?? -1, 55, accuracy: 0.001)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[0].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - (55)) <= 0.001)
     }
 
     // MARK: - §5.8 Auto-advance writes a durable row for the new chapter (RC4)
 
-    func testAutoAdvanceWritesDurableRowSoRestoreLandsOnNewChapter() async throws {
+    @Test func autoAdvanceWritesDurableRowSoRestoreLandsOnNewChapter() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
         let book = makeBook(chapters: chapters)
 
         await h.coordinator.play(book)
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[0].id)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[0].id)
 
         // Gapless advance at the chapter boundary.
         h.engine.currentTime = 100
         h.engine.duration = 100
         h.engine.fireItemChanged()
         await drainMainQueue()
-        XCTAssertEqual(h.coordinator.currentSession?.chapter.id, chapters[1].id)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)
 
         let newRow = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)
-        XCTAssertNotNil(newRow, "The new chapter must have a durable row immediately after the advance")
-        XCTAssertEqual(newRow?.position ?? -1, 0, accuracy: 0.001)
-        XCTAssertEqual(newRow?.isFinished, false)
+        #expect(newRow != nil)  // The new chapter must have a durable row immediately after the advance
+        #expect(abs((newRow?.position ?? -1) - (0)) <= 0.001)
+        #expect(newRow?.isFinished == false)
 
         // Force quit + relaunch: a fresh coordinator over the same stores.
         let relaunch = makeHarness(db: h.db, defaults: h.defaults)
         await relaunch.coordinator.restorePresentedSession(from: [book])
-        XCTAssertEqual(relaunch.coordinator.currentSession?.chapter.id, chapters[1].id,
-                       "A force quit seconds after an auto-advance must restore the new chapter (RC4)")
-        XCTAssertEqual(relaunch.coordinator.currentSession?.position ?? -1, 0, accuracy: 0.001)
-        XCTAssertTrue(relaunch.engine.loadCalls.isEmpty)
+        #expect(relaunch.coordinator.currentSession?.chapter.id == chapters[1].id)  // A force quit seconds after an auto-advance must restore the new chapter (RC4)
+        #expect(abs((relaunch.coordinator.currentSession?.position ?? -1) - (0)) <= 0.001)
+        #expect(relaunch.engine.loadCalls.isEmpty)
     }
 
-    func testManualChapterSkipWritesDurableRowForNewChapter() async throws {
+    @Test func manualChapterSkipWritesDurableRowForNewChapter() async throws {
         let h = makeHarness()
         let chapters = makeChapters(3)
         try await seedBook(in: h.db, chapters: chapters)
@@ -353,14 +348,14 @@ final class MiniplayerRestoreTests: XCTestCase {
         await h.coordinator.skipToNextChapter()
 
         let newRow = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)
-        XCTAssertNotNil(newRow, "Manual skips must not leave the previous chapter as the newest row")
-        XCTAssertEqual(newRow?.position ?? -1, 0, accuracy: 0.001)
-        XCTAssertEqual(newRow?.isFinished, false)
+        #expect(newRow != nil)  // Manual skips must not leave the previous chapter as the newest row
+        #expect(abs((newRow?.position ?? -1) - (0)) <= 0.001)
+        #expect(newRow?.isFinished == false)
     }
 
     // MARK: - §5.9 Now Playing while unloaded
 
-    func testNowPlayingInfoUsesSessionPositionWhileUnloaded() async throws {
+    @Test func nowPlayingInfoUsesSessionPositionWhileUnloaded() async throws {
         let h = makeHarness()
         let chapters = makeChapters(2)
         try await seedBook(in: h.db, chapters: chapters)
@@ -372,9 +367,7 @@ final class MiniplayerRestoreTests: XCTestCase {
 
         await h.coordinator.restorePresentedSession(from: [makeBook(chapters: chapters)])
 
-        XCTAssertEqual(h.bridge.lastNowPlaying?.elapsed ?? -1, 42, accuracy: 0.001,
-                       "Lock screen must match the miniplayer, not the unloaded engine's 0")
-        XCTAssertEqual(h.bridge.lastNowPlaying?.reportedRate ?? -1, 0,
-                       "Presented restore is paused — the scrubber must not advance")
+        #expect(abs((h.bridge.lastNowPlaying?.elapsed ?? -1) - (42)) <= 0.001)  // Lock screen must match the miniplayer, not the unloaded engine's 0
+        #expect(h.bridge.lastNowPlaying?.reportedRate ?? -1 == 0)  // Presented restore is paused — the scrubber must not advance
     }
 }

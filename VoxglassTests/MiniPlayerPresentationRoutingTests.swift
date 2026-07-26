@@ -1,49 +1,47 @@
 import Foundation
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class MiniPlayerPresentationRoutingTests: XCTestCase {
+@Suite struct MiniPlayerPresentationRoutingTests {
 
-    func testMiniPlayerVisibleForActiveSession() throws {
+    @Test func miniPlayerVisibleForActiveSession() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
-        XCTAssertTrue(scope.contains("guard let currentBookID"), "shouldShowMiniPlayer must guard against nil currentBookID")
+        #expect(scope.contains("guard let currentBookID"))  // shouldShowMiniPlayer must guard against nil currentBookID
         // Simplified rule: show miniplayer when session exists and Now Playing not presented.
         // Does not require lifecycle-based visiblePushedBookID.
     }
 
-    func testMiniPlayerHiddenForNoSession() throws {
+    @Test func miniPlayerHiddenForNoSession() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
-        XCTAssertTrue(scope.contains("return false"), "shouldShowMiniPlayer must return false early when conditions aren't met")
+        #expect(scope.contains("return false"))  // shouldShowMiniPlayer must return false early when conditions aren't met
     }
 
-    func testMiniPlayerHiddenWhileSheetPresented() throws {
+    @Test func miniPlayerHiddenWhileSheetPresented() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
-        XCTAssertTrue(scope.contains("!isNowPlayingPresented"), "shouldShowMiniPlayer must check isNowPlayingPresented")
+        #expect(scope.contains("!isNowPlayingPresented"))  // shouldShowMiniPlayer must check isNowPlayingPresented
     }
 
-    func testRouterHasNoLifecycleRegistration() throws {
+    @Test func routerHasNoLifecycleRegistration() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
-        XCTAssertFalse(router.contains("visiblePushedBookID"), "Router must not use lifecycle-based visiblePushedBookID")
-        XCTAssertFalse(router.contains("registerPushedBookPage"), "Router must not support lifecycle registration")
-        XCTAssertFalse(router.contains("unregisterPushedBookPage"), "Router must not support lifecycle unregistration")
+        #expect(!(router.contains("visiblePushedBookID")))  // Router must not use lifecycle-based visiblePushedBookID
+        #expect(!(router.contains("registerPushedBookPage")))  // Router must not support lifecycle registration
+        #expect(!(router.contains("unregisterPushedBookPage")))  // Router must not support lifecycle unregistration
     }
 
-    func testBookPagePlayDoesNotPresentNowPlaying() throws {
+    @Test func bookPagePlayDoesNotPresentNowPlaying() throws {
         let detail = try source("Voxglass/Features/Player/BookPageView.swift")
 
         let transportSlice = sourceSlice(detail, from: "private func transportControls", to: "private func actionRow")
-        XCTAssertFalse(transportSlice.contains("showingNowPlaying = true"),
-            "transportControls must not set showingNowPlaying")
+        #expect(!(transportSlice.contains("showingNowPlaying = true")))  // transportControls must not set showingNowPlaying
 
         let chapterSlice = sourceSlice(detail, from: "private func chapterList", to: "private func discoveryLinks")
-        XCTAssertFalse(chapterSlice.contains("showingNowPlaying = true"),
-            "chapterList must not set showingNowPlaying")
+        #expect(!(chapterSlice.contains("showingNowPlaying = true")))  // chapterList must not set showingNowPlaying
     }
 
-    func testRemoteCatalogImportsStillPresentPausedNowPlaying() throws {
+    @Test func remoteCatalogImportsStillPresentPausedNowPlaying() throws {
         let paths = [
             "Voxglass/Features/Discover/DiscoverView.swift",
             "Voxglass/Features/Search/SearchView.swift",
@@ -53,42 +51,42 @@ final class MiniPlayerPresentationRoutingTests: XCTestCase {
 
         for path in paths {
             let text = try source(path)
-            XCTAssertTrue(text.contains("private func presentResult"), path)
-            XCTAssertTrue(text.contains("await playback.present(imported)"), "\(path) must use present(imported)")
-            XCTAssertTrue(text.contains("showingNowPlaying = true"), "\(path) must still set showingNowPlaying after import")
-            XCTAssertFalse(text.contains("await playback.play(imported)"), "\(path) must not call play(imported)")
+            #expect(text.contains("private func presentResult"))  // \(path)
+            #expect(text.contains("await playback.present(imported)"))  // \(path)
+            #expect(text.contains("showingNowPlaying = true"))  // \(path)
+            #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
 
         let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
-        XCTAssertTrue(settings.contains("await playback.present(imported)"))
-        XCTAssertFalse(settings.contains("await playback.play(imported)"))
+        #expect(settings.contains("await playback.present(imported)"))
+        #expect(!(settings.contains("await playback.play(imported)")))
     }
 
-    func testDockUsesRouterForMiniPlayerVisibility() throws {
+    @Test func dockUsesRouterForMiniPlayerVisibility() throws {
         let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
         let scope = sourceSlice(dock, from: "struct GlassDock", to: "struct GlassMiniPlayer")
-        XCTAssertTrue(scope.contains("shouldShowMiniPlayer"), "GlassDock must use router for mini-player visibility")
-        XCTAssertTrue(scope.contains("presentNowPlayingFromMiniPlayer"), "GlassDock must route mini-player tap through router")
+        #expect(scope.contains("shouldShowMiniPlayer"))  // GlassDock must use router for mini-player visibility
+        #expect(scope.contains("presentNowPlayingFromMiniPlayer"))  // GlassDock must route mini-player tap through router
     }
 
-    func testRootViewOwnsAndInjectsRouter() throws {
+    @Test func rootViewOwnsAndInjectsRouter() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        XCTAssertTrue(root.contains("StateObject private var miniPlayerRouter"))
-        XCTAssertTrue(root.contains(".environmentObject(miniPlayerRouter)"))
+        #expect(root.contains("StateObject private var miniPlayerRouter"))
+        #expect(root.contains(".environmentObject(miniPlayerRouter)"))
     }
 
-    func testBookPageViewHasPresentationContext() throws {
+    @Test func bookPageViewHasPresentationContext() throws {
         let detail = try source("Voxglass/Features/Player/BookPageView.swift")
-        XCTAssertTrue(detail.contains("presentationContext: BookPagePresentationContext"))
+        #expect(detail.contains("presentationContext: BookPagePresentationContext"))
         // BookPageView no longer uses lifecycle registration for miniplayer visibility.
         // Visibility is derived deterministically from session existence + Now Playing state.
     }
 
-    func testBrowsingTransportControlsAreDisabled() throws {
+    @Test func browsingTransportControlsAreDisabled() throws {
         let detail = try source("Voxglass/Features/Player/BookPageView.swift")
         let transportSlice = sourceSlice(detail, from: "private func transportControls", to: "private func actionRow")
         let hitTestingCount = transportSlice.components(separatedBy: ".allowsHitTesting(isActiveSession)").count - 1
-        XCTAssertGreaterThanOrEqual(hitTestingCount, 4, "All four side transport buttons must disable hit testing when not active")
+        #expect(hitTestingCount >= 4)
     }
 
     private var repoRoot: URL {

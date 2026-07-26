@@ -1,10 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Rate behaviour through the coordinator, asserted on the FakeAudioEngine call
 /// log (P0-1). No AVFoundation, no simulator audio.
 @MainActor
-final class PlaybackCoordinatorRateTests: XCTestCase {
+@Suite struct PlaybackCoordinatorRateTests {
 
     private func makeBook(title: String, chapters: Int = 2) -> BookWithChapters {
         let bookID = UUID()
@@ -39,29 +40,29 @@ final class PlaybackCoordinatorRateTests: XCTestCase {
         }
     }
 
-    func testRateIsRememberedPerBook() async {
+    @Test func rateIsRememberedPerBook() async {
         let (coordinator, engine) = makeCoordinator()
         let bookA = makeBook(title: "A")
         let bookB = makeBook(title: "B")
 
         await coordinator.play(bookA)
-        XCTAssertEqual(engine.rate, 1.0)
+        #expect(engine.rate == 1.0)
 
         coordinator.setPlaybackRate(1.5)
-        XCTAssertEqual(engine.rate, 1.5)
+        #expect(engine.rate == 1.5)
 
         engine.reset()
         await coordinator.play(bookB)
-        XCTAssertEqual(engine.rate, 1.0, "Book B has no stored rate → default 1.0×")
-        XCTAssertTrue(engine.rateCalls.contains(1.0))
+        #expect(engine.rate == 1.0)  // Book B has no stored rate → default 1.0×
+        #expect(engine.rateCalls.contains(1.0))
 
         engine.reset()
         await coordinator.play(bookA)
-        XCTAssertEqual(engine.rate, 1.5, "Reopening A restores 1.5×")
-        XCTAssertTrue(engine.rateCalls.contains(1.5))
+        #expect(engine.rate == 1.5)  // Reopening A restores 1.5×
+        #expect(engine.rateCalls.contains(1.5))
     }
 
-    func testRateIsReAssertedOnGaplessAdvance() async {
+    @Test func rateIsReAssertedOnGaplessAdvance() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook(title: "A", chapters: 3))
         coordinator.setPlaybackRate(2.0)
@@ -70,18 +71,18 @@ final class PlaybackCoordinatorRateTests: XCTestCase {
         engine.fireItemChanged()   // simulate AVQueuePlayer gapless advance
         await waitUntil { engine.rateCalls.contains(2.0) }
 
-        XCTAssertTrue(engine.rateCalls.contains(2.0), "Rate re-asserted after item change")
+        #expect(engine.rateCalls.contains(2.0))  // Rate re-asserted after item change
     }
 
-    func testSetPlaybackRateClampsAndPublishes() async {
+    @Test func setPlaybackRateClampsAndPublishes() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook(title: "A"))
         coordinator.setPlaybackRate(99)
-        XCTAssertEqual(engine.rate, 3.5)
-        XCTAssertEqual(coordinator.playbackRate, 3.5)
+        #expect(engine.rate == 3.5)
+        #expect(coordinator.playbackRate == 3.5)
     }
 
-    func testRateAppliedAfterLoadBeforePlay() async {
+    @Test func rateAppliedAfterLoadBeforePlay() async {
         let (coordinator, engine) = makeCoordinator()
         let book = makeBook(title: "A")
         // Pre-seed a stored rate by playing + setting, then replay.
@@ -92,8 +93,8 @@ final class PlaybackCoordinatorRateTests: XCTestCase {
         // setRate must appear before play in the log.
         let rateIndex = engine.calls.firstIndex { if case .setRate = $0 { return true } else { return false } }
         let playIndex = engine.calls.firstIndex(of: .play)
-        XCTAssertNotNil(rateIndex)
-        XCTAssertNotNil(playIndex)
-        XCTAssertLessThan(rateIndex ?? .max, playIndex ?? .min)
+        #expect(rateIndex != nil)
+        #expect(playIndex != nil)
+        #expect(rateIndex ?? .max < playIndex ?? .min)
     }
 }

@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class NarratorMatcherTests: XCTestCase {
+@Suite struct NarratorMatcherTests {
 
-    func testStemJoinMatchesMultiReaderChapters() throws {
+    @Test func stemJoinMatchesMultiReaderChapters() throws {
         let chapters: [Chapter] = [
             Chapter(id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
                     remoteURL: URL(string: "https://archive.org/download/test_identifier_4489/shortsf045_01_various_128kb.mp3")),
@@ -24,12 +25,12 @@ final class NarratorMatcherTests: XCTestCase {
 
         let result = NarratorMatcher.match(chapters: chapters, sections: sections, archiveIdentifier: "test_identifier_4489")
 
-        XCTAssertEqual(result[chapters[0].id], ["Mike Harris"])
-        XCTAssertEqual(result[chapters[1].id], ["Don W. Jenkins"])
-        XCTAssertEqual(result[chapters[2].id], ["Gregg Margarite"])
+        #expect(result[chapters[0].id] == ["Mike Harris"])
+        #expect(result[chapters[1].id] == ["Don W. Jenkins"])
+        #expect(result[chapters[2].id] == ["Gregg Margarite"])
     }
 
-    func testRejectsResponseWhoseIArchiveURLDoesNotMatchIdentifier() {
+    @Test func rejectsResponseWhoseIArchiveURLDoesNotMatchIdentifier() {
         let chapters: [Chapter] = [
             Chapter(id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
                     remoteURL: URL(string: "https://archive.org/download/test_identifier/good_chapter.mp3"))
@@ -46,11 +47,10 @@ final class NarratorMatcherTests: XCTestCase {
 
         let result = NarratorMatcher.match(chapters: chapters, sections: sections, archiveIdentifier: "test_identifier")
 
-        XCTAssertEqual(result[chapters[0].id], ["Correct Narrator"],
-                       "Should match only the section whose url_iarchive matches the identifier")
+        #expect(result[chapters[0].id] == ["Correct Narrator"])  // Should match only the section whose url_iarchive matches the identifier
     }
 
-    func testNullFileNameFallsBackToListenURL() {
+    @Test func nullFileNameFallsBackToListenURL() {
         let chapters: [Chapter] = [
             Chapter(id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
                     remoteURL: URL(string: "https://archive.org/download/test_identifier/old_book_chapter_1.mp3"))
@@ -68,10 +68,10 @@ final class NarratorMatcherTests: XCTestCase {
 
         let result = NarratorMatcher.match(chapters: chapters, sections: sections, archiveIdentifier: "test_identifier")
 
-        XCTAssertEqual(result[chapters[0].id], ["Old Reader"])
+        #expect(result[chapters[0].id] == ["Old Reader"])
     }
 
-    func testStemJoinStrips64kbAnd128kbSuffixes() {
+    @Test func stemJoinStrips64kbAnd128kbSuffixes() {
         let chapters: [Chapter] = [
             Chapter(id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
                     remoteURL: URL(string: "https://archive.org/download/test_identifier/chapter001_128kb.mp3"))
@@ -84,11 +84,10 @@ final class NarratorMatcherTests: XCTestCase {
 
         let result = NarratorMatcher.match(chapters: chapters, sections: sections, archiveIdentifier: "test_identifier")
 
-        XCTAssertEqual(result[chapters[0].id], ["A Reader"],
-                       "Should match despite different quality suffixes")
+        #expect(result[chapters[0].id] == ["A Reader"])  // Should match despite different quality suffixes
     }
 
-    func testBookLevelNarratorsCollectsUnique() {
+    @Test func bookLevelNarratorsCollectsUnique() {
         let sections: [LibriVoxSection] = [
             section(fileName: "ch1.mp3", sectionNumber: "1",
                     readers: [reader("Alice"), reader("Bob")], urlIArchive: "https://archive.org/details/test"),
@@ -98,31 +97,31 @@ final class NarratorMatcherTests: XCTestCase {
 
         let narrators = NarratorMatcher.bookLevelNarrators(from: sections)
 
-        XCTAssertEqual(narrators, ["Alice", "Bob", "Charlie"])
+        #expect(narrators == ["Alice", "Bob", "Charlie"])
     }
 
-    func testEmptyInputsReturnEmpty() {
+    @Test func emptyInputsReturnEmpty() {
         let chapters: [Chapter] = []
         let sections: [LibriVoxSection] = []
 
         let result = NarratorMatcher.match(chapters: chapters, sections: sections, archiveIdentifier: "test")
 
-        XCTAssertTrue(result.isEmpty)
+        #expect(result.isEmpty)
     }
 
-    func testSectionMatchesArchiveHandlesURLVariations() {
-        XCTAssertTrue(NarratorMatcher.sectionMatchesArchive(
+    @Test func sectionMatchesArchiveHandlesURLVariations() {
+        #expect(NarratorMatcher.sectionMatchesArchive(
             section: section(fileName: "x.mp3", sectionNumber: "1", readers: [], urlIArchive: "https://archive.org/details/my_book"),
             identifier: "my_book"
         ))
-        XCTAssertTrue(NarratorMatcher.sectionMatchesArchive(
+        #expect(NarratorMatcher.sectionMatchesArchive(
             section: section(fileName: "x.mp3", sectionNumber: "1", readers: [], urlIArchive: "https://archive.org/details/my_book/"),
             identifier: "my_book"
         ))
-        XCTAssertFalse(NarratorMatcher.sectionMatchesArchive(
+        #expect(!(NarratorMatcher.sectionMatchesArchive(
             section: section(fileName: "x.mp3", sectionNumber: "1", readers: [], urlIArchive: nil),
             identifier: "my_book"
-        ))
+        )))
     }
 
     // MARK: - Helpers

@@ -1,30 +1,30 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class IADateFormattingTests: XCTestCase {
-    func testISO8601Timestamp() {
-        XCTAssertEqual(IADateFormatting.humanReadable("2005-08-01T00:00:00Z"), "Aug 2005")
+@Suite(.serialized) struct IADateFormattingTests {
+    @Test func iSO8601Timestamp() {
+        #expect(IADateFormatting.humanReadable("2005-08-01T00:00:00Z") == "Aug 2005")
     }
 
-    func testYearMonthDay() {
-        XCTAssertEqual(IADateFormatting.humanReadable("2005-08-01"), "Aug 2005")
+    @Test func yearMonthDay() {
+        #expect(IADateFormatting.humanReadable("2005-08-01") == "Aug 2005")
     }
 
-    func testYearMonth() {
-        XCTAssertEqual(IADateFormatting.humanReadable("2005-08"), "Aug 2005")
+    @Test func yearMonth() {
+        #expect(IADateFormatting.humanReadable("2005-08") == "Aug 2005")
     }
 
-    func testYearOnly() {
-        XCTAssertEqual(IADateFormatting.humanReadable("2005"), "2005")
+    @Test func yearOnly() {
+        #expect(IADateFormatting.humanReadable("2005") == "2005")
     }
 
-    func testEmptyAndNil() {
-        XCTAssertNil(IADateFormatting.humanReadable(""))
-        XCTAssertNil(IADateFormatting.humanReadable("   "))
-        XCTAssertNil(IADateFormatting.humanReadable(nil))
+    @Test func emptyAndNil() {
+        #expect(IADateFormatting.humanReadable("") == nil)
+        #expect(IADateFormatting.humanReadable("   ") == nil)
+        #expect(IADateFormatting.humanReadable(nil) == nil)
     }
 
-    func testGarbageFallsBackToTrimmedRaw() {
-        XCTAssertEqual(IADateFormatting.humanReadable("  not a date  "), "not a date")
+    @Test func garbageFallsBackToTrimmedRaw() {
+        #expect(IADateFormatting.humanReadable("  not a date  ") == "not a date")
     }
 }

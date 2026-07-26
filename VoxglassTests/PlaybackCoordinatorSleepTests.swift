@@ -1,10 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// The hard sleep-timer interactions through the coordinator (P0-2), asserted on
 /// the FakeAudioEngine call log. No AVFoundation.
 @MainActor
-final class PlaybackCoordinatorSleepTests: XCTestCase {
+@Suite struct PlaybackCoordinatorSleepTests {
 
     private func makeBook(chapters: Int = 3) -> BookWithChapters {
         let bookID = UUID()
@@ -32,23 +33,23 @@ final class PlaybackCoordinatorSleepTests: XCTestCase {
         }
     }
 
-    func testEndOfChapterCancelsPreloadThenDoesNotRollIntoNextChapter() async {
+    @Test func endOfChapterCancelsPreloadThenDoesNotRollIntoNextChapter() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         engine.reset()
 
         coordinator.setSleepTimer(.endOfChapter)
-        XCTAssertTrue(engine.didCancelPreload, "Arming end-of-chapter cancels the gapless preload")
+        #expect(engine.didCancelPreload)  // Arming end-of-chapter cancels the gapless preload
 
         engine.reset()
         engine.firePlaybackEnded()      // chapter ends
         await waitUntil { engine.calls.contains(.pause) }
 
-        XCTAssertTrue(engine.calls.contains(.pause), "Playback pauses at chapter end")
-        XCTAssertTrue(engine.loadCalls.isEmpty, "It must NOT load the next chapter")
+        #expect(engine.calls.contains(.pause))  // Playback pauses at chapter end
+        #expect(engine.loadCalls.isEmpty)  // It must NOT load the next chapter
     }
 
-    func testCancellingEndOfChapterReArmsPreload() async {
+    @Test func cancellingEndOfChapterReArmsPreload() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         coordinator.setSleepTimer(.endOfChapter)
@@ -57,10 +58,10 @@ final class PlaybackCoordinatorSleepTests: XCTestCase {
         coordinator.setSleepTimer(.off)
 
         let preloaded = engine.calls.contains { if case .preloadNext = $0 { return true } else { return false } }
-        XCTAssertTrue(preloaded, "Cancelling end-of-chapter re-arms the gapless preload")
+        #expect(preloaded)  // Cancelling end-of-chapter re-arms the gapless preload
     }
 
-    func testFadeOutRampsVolumeDownAndRestoresToOne() async {
+    @Test func fadeOutRampsVolumeDownAndRestoresToOne() async {
         let (coordinator, engine) = makeCoordinator()
         await coordinator.play(makeBook())
         engine.reset()
@@ -70,19 +71,19 @@ final class PlaybackCoordinatorSleepTests: XCTestCase {
         let volumes: [Float] = engine.calls.compactMap {
             if case let .setVolume(v) = $0 { return v } else { return nil }
         }
-        XCTAssertFalse(volumes.isEmpty)
-        XCTAssertEqual(volumes.last, 1.0, "Volume must be restored to 1.0 or the next play is silent")
+        #expect(!(volumes.isEmpty))
+        #expect(volumes.last == 1.0)  // Volume must be restored to 1.0 or the next play is silent
         // A pause occurs before the final restore.
         let pauseIndex = engine.calls.firstIndex(of: .pause)
         let restoreIndex = engine.calls.lastIndex(of: .setVolume(1.0))
-        XCTAssertNotNil(pauseIndex)
-        XCTAssertNotNil(restoreIndex)
-        XCTAssertLessThan(pauseIndex ?? .max, restoreIndex ?? .min)
+        #expect(pauseIndex != nil)
+        #expect(restoreIndex != nil)
+        #expect(pauseIndex ?? .max < restoreIndex ?? .min)
         // The ramp reaches (near) zero before the restore.
-        XCTAssertTrue(volumes.contains(0.0), "The ramp reaches zero before pausing")
+        #expect(volumes.contains(0.0))  // The ramp reaches zero before pausing
     }
 
-    func testDurationTimerFireFadesAndPauses() async {
+    @Test func durationTimerFireFadesAndPauses() async {
         let db = AppDatabase.makeTemporaryDatabase(named: "sleep-fire-\(UUID().uuidString)")
         let engine = FakeAudioEngine()
         var current = Date(timeIntervalSince1970: 5_000)
@@ -100,8 +101,8 @@ final class PlaybackCoordinatorSleepTests: XCTestCase {
         timer.tick()   // deadline passed → onFire → fade + pause
 
         await waitUntil { engine.calls.last == .setVolume(1.0) }
-        XCTAssertTrue(engine.calls.contains(.pause))
-        XCTAssertEqual(engine.calls.last, .setVolume(1.0))
+        #expect(engine.calls.contains(.pause))
+        #expect(engine.calls.last == .setVolume(1.0))
     }
 
 

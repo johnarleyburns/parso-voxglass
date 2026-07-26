@@ -1,104 +1,90 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class OfflineDownloadManagerTests: XCTestCase {
+@Suite struct OfflineDownloadManagerTests {
 
     // MARK: - §7 cellular / Pro gate decision
 
-    func testStartDecisionPromptsOnCellularWhenToggleOff() {
+    @Test func startDecisionPromptsOnCellularWhenToggleOff() {
         let decision = OfflineDownloadManager.startDecision(
             isCellular: true, cacheOnCellular: false, allowCellularOverride: false
         )
-        XCTAssertEqual(decision, .needsCellularConfirmation)
+        #expect(decision == .needsCellularConfirmation)
     }
 
-    func testStartDecisionStartsOnCellularWhenToggleOn() {
+    @Test func startDecisionStartsOnCellularWhenToggleOn() {
         let decision = OfflineDownloadManager.startDecision(
             isCellular: true, cacheOnCellular: true, allowCellularOverride: false
         )
-        XCTAssertEqual(decision, .start)
+        #expect(decision == .start)
     }
 
-    func testStartDecisionStartsOnCellularWithOverride() {
+    @Test func startDecisionStartsOnCellularWithOverride() {
         let decision = OfflineDownloadManager.startDecision(
             isCellular: true, cacheOnCellular: false, allowCellularOverride: true
         )
-        XCTAssertEqual(decision, .start)
+        #expect(decision == .start)
     }
 
-    func testStartDecisionStartsOnWiFi() {
+    @Test func startDecisionStartsOnWiFi() {
         let decision = OfflineDownloadManager.startDecision(
             isCellular: false, cacheOnCellular: false, allowCellularOverride: false
         )
-        XCTAssertEqual(decision, .start)
+        #expect(decision == .start)
     }
 
     // MARK: - §7 state derivation
 
-    func testDerivedStateAllChaptersCompleteIsCached() {
-        XCTAssertEqual(
-            OfflineDownloadManager.derivedState(chapterComplete: [true, true, true], anyFailed: false),
-            .cached
-        )
+    @Test func derivedStateAllChaptersCompleteIsCached() {
+        #expect(OfflineDownloadManager.derivedState(chapterComplete: [true, true, true], anyFailed: false) == .cached)
     }
 
-    func testDerivedStatePartialIsDownloading() {
-        XCTAssertEqual(
-            OfflineDownloadManager.derivedState(chapterComplete: [true, false, false], anyFailed: false),
-            .downloading(progress: 1.0 / 3.0)
-        )
+    @Test func derivedStatePartialIsDownloading() {
+        #expect(OfflineDownloadManager.derivedState(chapterComplete: [true, false, false], anyFailed: false) == .downloading(progress: 1.0 / 3.0))
     }
 
-    func testDerivedStateNoneCompleteIsNotCached() {
-        XCTAssertEqual(
-            OfflineDownloadManager.derivedState(chapterComplete: [false, false], anyFailed: false),
-            .notCached
-        )
+    @Test func derivedStateNoneCompleteIsNotCached() {
+        #expect(OfflineDownloadManager.derivedState(chapterComplete: [false, false], anyFailed: false) == .notCached)
     }
 
-    func testDerivedStateEmptyIsNotCached() {
-        XCTAssertEqual(
-            OfflineDownloadManager.derivedState(chapterComplete: [], anyFailed: false),
-            .notCached
-        )
+    @Test func derivedStateEmptyIsNotCached() {
+        #expect(OfflineDownloadManager.derivedState(chapterComplete: [], anyFailed: false) == .notCached)
     }
 
-    func testDerivedStatePartialWithFailureIsFailed() {
-        XCTAssertEqual(
-            OfflineDownloadManager.derivedState(chapterComplete: [true, false], anyFailed: true),
-            .failed
-        )
+    @Test func derivedStatePartialWithFailureIsFailed() {
+        #expect(OfflineDownloadManager.derivedState(chapterComplete: [true, false], anyFailed: true) == .failed)
     }
 
     // MARK: - §A5 pin-count (call-site test — must exercise the real state filter)
 
-    func testPinCountCountsCachedAndDownloading() {
+    @Test func pinCountCountsCachedAndDownloading() {
         var states: [UUID: OfflineState] = [
             UUID(): .cached,
             UUID(): .downloading(progress: 0.5),
             UUID(): .failed,
             UUID(): .notCached
         ]
-        XCTAssertEqual(OfflineDownloadManager.pinCount(states: states), 2)
+        #expect(OfflineDownloadManager.pinCount(states: states) == 2)
     }
 
 
 
     // MARK: - §6/§7 stable cache keys
 
-    func testAudioCacheKeyIsStableAcrossCalls() {
+    @Test func audioCacheKeyIsStableAcrossCalls() {
         let url = URL(string: "https://archive.org/download/item/01%20Chapter.mp3")!
-        XCTAssertEqual(CachingResourceLoader.key(for: url), CachingResourceLoader.key(for: url))
+        #expect(CachingResourceLoader.key(for: url) == CachingResourceLoader.key(for: url))
     }
 
-    func testAudioCacheKeyIsSHA256Hex() {
+    @Test func audioCacheKeyIsSHA256Hex() {
         let url = URL(string: "https://archive.org/download/item/01%20Chapter.mp3")!
         let key = CachingResourceLoader.key(for: url)
-        XCTAssertTrue(key.hasSuffix("-mp3"))
+        #expect(key.hasSuffix("-mp3"))
         let hex = key.replacingOccurrences(of: "-mp3", with: "")
-        XCTAssertEqual(hex.count, 64, "SHA256 hex digest is 64 characters")
-        XCTAssertTrue(hex.allSatisfy { $0.isHexDigit })
-        XCTAssertFalse(key.hasPrefix("art_"), "Audio keys must not collide with artwork keys")
+        #expect(hex.count == 64)  // SHA256 hex digest is 64 characters
+        #expect(hex.allSatisfy { $0.isHexDigit })
+        #expect(!(key.hasPrefix("art_")))  // Audio keys must not collide with artwork keys
     }
 }

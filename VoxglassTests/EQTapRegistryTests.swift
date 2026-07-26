@@ -1,25 +1,26 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Tests the "which items have a tap" bookkeeping (Step 0b) with plain objects —
 /// no AVFoundation. Proves the current + preloaded items can both hold taps
 /// (the gapless-advance fix) and that item-changed evicts the old one.
-final class EQTapRegistryTests: XCTestCase {
+@Suite struct EQTapRegistryTests {
 
-    func testAttachCurrentAndPreloadedYieldsTwoLiveEntries() {
+    @Test func attachCurrentAndPreloadedYieldsTwoLiveEntries() {
         let registry = EQTapRegistry()
         let current = NSObject()
         let preloaded = NSObject()
 
-        XCTAssertTrue(registry.attach(current))
-        XCTAssertTrue(registry.attach(preloaded))
+        #expect(registry.attach(current))
+        #expect(registry.attach(preloaded))
 
-        XCTAssertEqual(registry.count, 2)
-        XCTAssertTrue(registry.isAttached(current))
-        XCTAssertTrue(registry.isAttached(preloaded))
+        #expect(registry.count == 2)
+        #expect(registry.isAttached(current))
+        #expect(registry.isAttached(preloaded))
     }
 
-    func testItemChangedEvictsTheOldOne() {
+    @Test func itemChangedEvictsTheOldOne() {
         let registry = EQTapRegistry()
         let previous = NSObject()
         let next = NSObject()
@@ -27,32 +28,32 @@ final class EQTapRegistryTests: XCTestCase {
         registry.attach(next)
 
         // Gapless auto-advance: the previous chapter's item leaves the queue.
-        XCTAssertTrue(registry.evict(previous))
+        #expect(registry.evict(previous))
 
-        XCTAssertEqual(registry.count, 1)
-        XCTAssertFalse(registry.isAttached(previous))
-        XCTAssertTrue(registry.isAttached(next), "The now-playing item keeps its tap")
+        #expect(registry.count == 1)
+        #expect(!(registry.isAttached(previous)))
+        #expect(registry.isAttached(next))  // The now-playing item keeps its tap
     }
 
-    func testAttachIsIdempotent() {
+    @Test func attachIsIdempotent() {
         let registry = EQTapRegistry()
         let item = NSObject()
-        XCTAssertTrue(registry.attach(item))
-        XCTAssertFalse(registry.attach(item), "Re-attaching an already-tapped item is a no-op")
-        XCTAssertEqual(registry.count, 1)
+        #expect(registry.attach(item))
+        #expect(!(registry.attach(item)))  // Re-attaching an already-tapped item is a no-op
+        #expect(registry.count == 1)
     }
 
-    func testEvictAllClears() {
+    @Test func evictAllClears() {
         let registry = EQTapRegistry()
         registry.attach(NSObject())
         registry.attach(NSObject())
         registry.evictAll()
-        XCTAssertTrue(registry.isEmpty)
-        XCTAssertEqual(registry.count, 0)
+        #expect(registry.isEmpty)
+        #expect(registry.count == 0)
     }
 
-    func testEvictNonMemberReturnsFalse() {
+    @Test func evictNonMemberReturnsFalse() {
         let registry = EQTapRegistry()
-        XCTAssertFalse(registry.evict(NSObject()))
+        #expect(!(registry.evict(NSObject())))
     }
 }

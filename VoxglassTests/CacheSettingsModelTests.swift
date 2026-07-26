@@ -1,21 +1,16 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class CacheSettingsModelTests: XCTestCase {
-    override func tearDown() async throws {
-        await CacheManager.shared.setPreset(.m500MB)
-        await StreamCacheStore.shared.clearAll()
-        try await super.tearDown()
-    }
+@Suite struct CacheSettingsModelTests {
 
-    func testClearCacheEmptiesTheStore() async {
+    @Test func clearCacheEmptiesTheStore() async {
         await StreamCacheStore.shared.registerArtwork(key: "art_test_clear", bytes: 1024)
         let before = await CacheManager.shared.currentCacheBytes()
-        XCTAssertGreaterThanOrEqual(before, 1024)
+        #expect(before >= 1024)
 
         await CacheManager.shared.clearCache()
 
         let after = await CacheManager.shared.currentCacheBytes()
-        XCTAssertEqual(after, 0)
+        #expect(after == 0)
     }
 }

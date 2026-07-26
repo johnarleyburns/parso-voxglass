@@ -1,23 +1,22 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class RecommendationEngineTests: XCTestCase {
+@Suite struct RecommendationEngineTests {
 
     // MARK: - Subjects through the search pipeline
 
-    func testAdvancedSearchURLRequestsSubjectField() throws {
-        let url = try XCTUnwrap(
-            InternetArchiveClient.advancedSearchURL(query: "collection:librivoxaudio", rows: 10, page: 1)
-        )
-        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+    @Test func advancedSearchURLRequestsSubjectField() throws {
+        let url = try try #require(InternetArchiveClient.advancedSearchURL(query: "collection:librivoxaudio", rows: 10, page: 1))
+        let components = try try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
         let fields = (components.queryItems ?? [])
             .filter { $0.name == "fl[]" }
             .compactMap(\.value)
-        XCTAssertTrue(fields.contains("subject"))
-        XCTAssertTrue(fields.contains("language"))
+        #expect(fields.contains("subject"))
+        #expect(fields.contains("language"))
     }
 
-    func testSearchDocumentDecodesSubjectAsStringOrArray() throws {
+    @Test func searchDocumentDecodesSubjectAsStringOrArray() throws {
         let json = """
         {
           "response": {
@@ -43,11 +42,11 @@ final class RecommendationEngineTests: XCTestCase {
             InternetArchiveSearchResponse.self,
             from: Data(json.utf8)
         )
-        XCTAssertEqual(response.results[0].subjects, ["Horror", "Gothic Fiction"])
-        XCTAssertEqual(response.results[1].subjects, ["Horror"])
+        #expect(response.results[0].subjects == ["Horror", "Gothic Fiction"])
+        #expect(response.results[1].subjects == ["Horror"])
     }
 
-    func testSearchDocumentDefaultsToEmptySubjects() throws {
+    @Test func searchDocumentDefaultsToEmptySubjects() throws {
         let json = """
         {"response": {"docs": [{"identifier": "no_subject_item"}]}}
         """
@@ -55,12 +54,12 @@ final class RecommendationEngineTests: XCTestCase {
             InternetArchiveSearchResponse.self,
             from: Data(json.utf8)
         )
-        XCTAssertEqual(response.results[0].subjects, [])
+        #expect(response.results[0].subjects == [])
     }
 
     // MARK: - Token extraction
 
-    func testExtractTokensIncludesNormalizedSubjectsAndSkipsStopList() {
+    @Test func extractTokensIncludesNormalizedSubjectsAndSkipsStopList() {
         let result = candidate(
             identifier: "frankenstein_librivox",
             title: "Frankenstein",
@@ -68,16 +67,16 @@ final class RecommendationEngineTests: XCTestCase {
             subjects: [" Gothic Fiction ", "LibriVox", "", "Horror"]
         )
         let tokens = Set(RecommendationPipeline.extractTokens(result))
-        XCTAssertTrue(tokens.contains("mary shelley"))
-        XCTAssertTrue(tokens.contains("gothic fiction"))
-        XCTAssertTrue(tokens.contains("horror"))
-        XCTAssertFalse(tokens.contains("librivox"), "subject stop-list terms are dropped")
-        XCTAssertFalse(tokens.contains(""))
+        #expect(tokens.contains("mary shelley"))
+        #expect(tokens.contains("gothic fiction"))
+        #expect(tokens.contains("horror"))
+        #expect(!(tokens.contains("librivox")))  // subject stop-list terms are dropped
+        #expect(!(tokens.contains("")))
     }
 
     // MARK: - Scoring
 
-    func testSharedProfileSubjectOutranksPopularityOnlyCandidate() {
+    @Test func sharedProfileSubjectOutranksPopularityOnlyCandidate() {
         let profile = ProfileBucket(
             bucket: "audiobooks",
             creatorTerms: [],
@@ -100,15 +99,15 @@ final class RecommendationEngineTests: XCTestCase {
 
         let scored = RecommendationPipeline.scoreCandidates([popularOnly, subjectMatch], profile: profile)
 
-        XCTAssertEqual(scored.first?.result.identifier, "match")
+        #expect(scored.first?.result.identifier == "match")
         let matchScore = scored.first { $0.result.identifier == "match" }?.score ?? 0
         let popScore = scored.first { $0.result.identifier == "popular" }?.score ?? 0
-        XCTAssertGreaterThan(matchScore, popScore)
+        #expect(matchScore > popScore)
     }
 
     // MARK: - MMR diversification
 
-    func testMMRDiversifiesNearDuplicateSameAuthorSubjectCandidates() {
+    @Test func mMRDiversifiesNearDuplicateSameAuthorSubjectCandidates() {
         let dupeA = candidate(
             identifier: "frankenstein_v1",
             title: "Frankenstein",
@@ -135,22 +134,21 @@ final class RecommendationEngineTests: XCTestCase {
         ]
         let picked = RecommendationPipeline.greedyMMR(scored, k: 2, lambda: RecommendationConstants.lambdaMMR)
 
-        XCTAssertEqual(picked.count, 2)
-        XCTAssertEqual(picked[0].identifier, "frankenstein_v1")
-        XCTAssertEqual(picked[1].identifier, "emma_librivox",
-                       "MMR must prefer the diverse candidate over the near-duplicate")
+        #expect(picked.count == 2)
+        #expect(picked[0].identifier == "frankenstein_v1")
+        #expect(picked[1].identifier == "emma_librivox")  // MMR must prefer the diverse candidate over the near-duplicate
     }
 
-    func testJaccardSimilarityIsSubjectAware() {
+    @Test func jaccardSimilarityIsSubjectAware() {
         let a = candidate(identifier: "a", title: "A", creator: "Author One", subjects: ["Horror"])
         let b = candidate(identifier: "b", title: "B", creator: "Author Two", subjects: ["Horror"])
-        XCTAssertGreaterThan(RecommendationPipeline.jaccardSimilarity(a, b), 0)
+        #expect(RecommendationPipeline.jaccardSimilarity(a, b) > 0)
     }
 
     // MARK: - Listened exclusions
 
     @MainActor
-    func testOnboardingOnlyProfileFetchesTunedRecommendations() async throws {
+@Test func onboardingOnlyProfileFetchesTunedRecommendations() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-onboarding-tuned")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -171,15 +169,15 @@ final class RecommendationEngineTests: XCTestCase {
         )
 
         let advancedQueryCount = await client.advancedQueryCount
-        XCTAssertGreaterThan(advancedQueryCount, 0, "onboarding-only profile should trigger engine queries")
+        #expect(advancedQueryCount > 0)
         let queries = await client.advancedQueries
         let hasSubjectQuery = queries.contains { $0.contains("subject:") }
-        XCTAssertTrue(hasSubjectQuery)
-        XCTAssertEqual(recs.map(\.identifier), ["personalized"])
+        #expect(hasSubjectQuery)
+        #expect(recs.map(\.identifier) == ["personalized"])
     }
 
     @MainActor
-    func testEngineTunesAfterSingleMeaningfulListen() async throws {
+@Test func engineTunesAfterSingleMeaningfulListen() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-single-meaningful-listen")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -200,12 +198,12 @@ final class RecommendationEngineTests: XCTestCase {
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
         let queries = await client.advancedQueries
 
-        XCTAssertTrue(queries.contains { $0.localizedCaseInsensitiveContains("creator:\"aristophanes\"") })
-        XCTAssertEqual(recs.map(\.identifier), [result.identifier])
+        #expect(queries.contains { $0.localizedCaseInsensitiveContains("creator:\"aristophanes\"") })
+        #expect(recs.map(\.identifier) == [result.identifier])
     }
 
     @MainActor
-    func testPositionOnlyJumpBackInHistoryPersonalizesRecommendations() async throws {
+@Test func positionOnlyJumpBackInHistoryPersonalizesRecommendations() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-position-only-jump-back")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -231,7 +229,7 @@ final class RecommendationEngineTests: XCTestCase {
         let profile = await profileStore.fetchProfile()
         await libraryStore.refresh()
 
-        let topAuthor = try XCTUnwrap(profile.topCreators.first)
+        let topAuthor = try try #require(profile.topCreators.first)
         let listenedAgain = candidate(
             identifier: "position_history_0",
             title: "Position History 0",
@@ -251,16 +249,16 @@ final class RecommendationEngineTests: XCTestCase {
         let queries = await client.advancedQueries
         let bundledPopularIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
 
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertEqual(libraryStore.recentlyPlayed.count, 12)
-        XCTAssertTrue(Set(profile.topCreators).isSubset(of: seededAuthorTerms))
-        XCTAssertTrue(queries.contains { $0.localizedCaseInsensitiveContains("creator:\"\(topAuthor)\"") })
-        XCTAssertEqual(recs.map(\.identifier), [personalized.identifier])
-        XCTAssertTrue(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))
+        #expect(!(profile.isEmpty))
+        #expect(libraryStore.recentlyPlayed.count == 12)
+        #expect(Set(profile.topCreators).isSubset(of: seededAuthorTerms))
+        #expect(queries.contains { $0.localizedCaseInsensitiveContains("creator:\"\(topAuthor)\"") })
+        #expect(recs.map(\.identifier) == [personalized.identifier])
+        #expect(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))
     }
 
     @MainActor
-    func testGeneratedTTSAndAudioBooksPoetryCandidatesAreExcluded() async throws {
+@Test func generatedTTSAndAudioBooksPoetryCandidatesAreExcluded() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-generated-tts-filter")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -288,14 +286,14 @@ final class RecommendationEngineTests: XCTestCase {
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
         let queries = await client.advancedQueries
 
-        XCTAssertFalse(recs.contains { $0.identifier == generated.identifier })
-        XCTAssertTrue(recs.contains { $0.identifier == fresh.identifier })
-        XCTAssertTrue(queries.allSatisfy { $0.contains("collection:librivoxaudio") })
-        XCTAssertTrue(queries.allSatisfy { !$0.contains("audio_bookspoetry") })
+        #expect(!(recs.contains { $0.identifier == generated.identifier }))
+        #expect(recs.contains { $0.identifier == fresh.identifier })
+        #expect(queries.allSatisfy { $0.contains("collection:librivoxaudio") })
+        #expect(queries.allSatisfy { !$0.contains("audio_bookspoetry") })
     }
 
     @MainActor
-    func testListenedIAIdentifierCandidateIsExcluded() async throws {
+@Test func listenedIAIdentifierCandidateIsExcluded() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-listened-ia")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -321,12 +319,12 @@ final class RecommendationEngineTests: XCTestCase {
 
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 
-        XCTAssertFalse(recs.contains { $0.identifier == "clouds_librivox" })
-        XCTAssertTrue(recs.contains(fresh))
+        #expect(!(recs.contains { $0.identifier == "clouds_librivox" }))
+        #expect(recs.contains(fresh))
     }
 
     @MainActor
-    func testListenedWorkKeyCandidateIsExcludedAcrossDifferentIAIdentifier() async throws {
+@Test func listenedWorkKeyCandidateIsExcludedAcrossDifferentIAIdentifier() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-listened-workkey")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -352,12 +350,12 @@ final class RecommendationEngineTests: XCTestCase {
 
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 
-        XCTAssertFalse(recs.contains { $0.identifier == "new_frankenstein_upload" })
-        XCTAssertTrue(recs.contains(fresh))
+        #expect(!(recs.contains { $0.identifier == "new_frankenstein_upload" }))
+        #expect(recs.contains(fresh))
     }
 
     @MainActor
-    func testJumpBackInAndRecommendationsDoNotShareAWork() async throws {
+@Test func jumpBackInAndRecommendationsDoNotShareAWork() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-jump-back-overlap")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -388,13 +386,13 @@ final class RecommendationEngineTests: XCTestCase {
             WorkKey.normalized(author: $0.authorLine, title: $0.title)
         })
 
-        XCTAssertEqual(libraryStore.recentlyPlayed.map(\.book.id), [listened.bookID])
-        XCTAssertTrue(jumpBackWorkKeys.isDisjoint(with: recommendationWorkKeys))
-        XCTAssertTrue(recs.contains { $0.identifier == "birds_fresh" })
+        #expect(libraryStore.recentlyPlayed.map(\.book.id) == [listened.bookID])
+        #expect(jumpBackWorkKeys.isDisjoint(with: recommendationWorkKeys))
+        #expect(recs.contains { $0.identifier == "birds_fresh" })
     }
 
     @MainActor
-    func testProfileFallbackUsesProfileCandidatesBeforeBundledPopularSeeds() async throws {
+@Test func profileFallbackUsesProfileCandidatesBeforeBundledPopularSeeds() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-profile-fallback")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -418,13 +416,13 @@ final class RecommendationEngineTests: XCTestCase {
         let bundledPopularIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
         let advancedQueryCount = await client.advancedQueryCount
 
-        XCTAssertEqual(recs.map(\.identifier), ["profile_fallback"])
-        XCTAssertTrue(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))
-        XCTAssertEqual(advancedQueryCount, 2)
+        #expect(recs.map(\.identifier) == ["profile_fallback"])
+        #expect(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))
+        #expect(advancedQueryCount == 2)
     }
 
     @MainActor
-    func testEngineFallsBackToBundledSeedsWhenGeneratedQueriesAreEmpty() async throws {
+@Test func engineFallsBackToBundledSeedsWhenGeneratedQueriesAreEmpty() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-empty-generated-queries")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -439,13 +437,13 @@ final class RecommendationEngineTests: XCTestCase {
         let advancedQueryCount = await client.advancedQueryCount
 
         let seedIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
-        XCTAssertFalse(recs.isEmpty)
-        XCTAssertTrue(recs.allSatisfy { seedIDs.contains($0.identifier) }, "All recommendations should be from bundled popular seeds")
-        XCTAssertEqual(advancedQueryCount, 0)
+        #expect(!(recs.isEmpty))
+        #expect(recs.allSatisfy { seedIDs.contains($0.identifier) })  // All recommendations should be from bundled popular seeds
+        #expect(advancedQueryCount == 0)
     }
 
     @MainActor
-    func testEngineFallsBackToBundledSeedsWhenNetworkCandidatesAreEmpty() async throws {
+@Test func engineFallsBackToBundledSeedsWhenNetworkCandidatesAreEmpty() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-empty-network-candidates")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -459,12 +457,12 @@ final class RecommendationEngineTests: XCTestCase {
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 
         let seedIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
-        XCTAssertFalse(recs.isEmpty)
-        XCTAssertTrue(recs.allSatisfy { seedIDs.contains($0.identifier) }, "All recommendations should be from bundled popular seeds")
+        #expect(!(recs.isEmpty))
+        #expect(recs.allSatisfy { seedIDs.contains($0.identifier) })  // All recommendations should be from bundled popular seeds
     }
 
     @MainActor
-    func testHomeRecommendationStorePreservesVisibleRecommendationsWhenRefreshReturnsEmpty() async throws {
+@Test func homeRecommendationStorePreservesVisibleRecommendationsWhenRefreshReturnsEmpty() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "home-reco-preserve-empty-refresh")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -488,11 +486,11 @@ final class RecommendationEngineTests: XCTestCase {
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
 
-        XCTAssertEqual(store.recommendations, original)
+        #expect(store.recommendations == original)
     }
 
     @MainActor
-    func testHomeRecommendationStorePreservesPersonalizedShelfWhenRefreshFallsBackToBundledPopular() async throws {
+@Test func homeRecommendationStorePreservesPersonalizedShelfWhenRefreshFallsBackToBundledPopular() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "home-reco-preserve-personalized")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -517,27 +515,24 @@ final class RecommendationEngineTests: XCTestCase {
         store.markEngineReady()
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
-        XCTAssertEqual(store.recommendations.map(\.identifier), ["aristophanes_personalized"])
+        #expect(store.recommendations.map(\.identifier) == ["aristophanes_personalized"])
 
         await store.load(selectedCollectionIDs: [], selectedLanguages: ["eng"])
-        XCTAssertEqual(store.recommendations.map(\.identifier), ["aristophanes_personalized"])
-        XCTAssertNotEqual(
-            store.recommendations.map(\.identifier),
-            HomeRecommendationStore.bundledPopularSeeds.map(\.identifier)
-        )
+        #expect(store.recommendations.map(\.identifier) == ["aristophanes_personalized"])
+        #expect(store.recommendations.map(\.identifier) != HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
     }
 
     // MARK: - WorkKey
 
-    func testWorkKeyCollapsesReuploadsOfTheSameWork() {
+    @Test func workKeyCollapsesReuploadsOfTheSameWork() {
         let base = WorkKey.normalized(author: "Mary Shelley", title: "Frankenstein")
-        XCTAssertEqual(WorkKey.normalized(author: "Mary  Shelley", title: "Frankenstein (version 2)"), base)
-        XCTAssertEqual(WorkKey.normalized(author: "mary shelley", title: "Frankenstein (Dramatic Reading)"), base)
-        XCTAssertNotEqual(WorkKey.normalized(author: "Mary Shelley", title: "The Last Man"), base)
+        #expect(WorkKey.normalized(author: "Mary  Shelley", title: "Frankenstein (version 2)") == base)
+        #expect(WorkKey.normalized(author: "mary shelley", title: "Frankenstein (Dramatic Reading)") == base)
+        #expect(WorkKey.normalized(author: "Mary Shelley", title: "The Last Man") != base)
     }
 
     @MainActor
-    func testFullySurfacedPoolStillReturnsPersonalized() async throws {
+@Test func fullySurfacedPoolStillReturnsPersonalized() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-surfaced-grace-degrade")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -579,13 +574,12 @@ final class RecommendationEngineTests: XCTestCase {
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
         let bundledPopularIDs = Set(HomeRecommendationStore.bundledPopularSeeds.map(\.identifier))
 
-        XCTAssertFalse(recs.isEmpty, "even with fully-surfaced ring, should return personalized re-rank, not empty")
-        XCTAssertTrue(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs),
-                      "should not fall back to bundled popular seeds when surfaced ring burns out")
+        #expect(!(recs.isEmpty))  // even with fully-surfaced ring, should return personalized re-rank, not empty
+        #expect(Set(recs.map(\.identifier)).isDisjoint(with: bundledPopularIDs))  // should not fall back to bundled popular seeds when surfaced ring burns out
     }
 
     @MainActor
-    func testFullySurfacedPoolExcludesLibraryOwnedBooks() async throws {
+@Test func fullySurfacedPoolExcludesLibraryOwnedBooks() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "reco-surfaced-library-exclude")
         let repository = LibraryRepository(database: database)
         let libraryStore = LibraryStore(repository: repository)
@@ -621,8 +615,7 @@ final class RecommendationEngineTests: XCTestCase {
         let engine = RecommendationEngine(client: client, profileStore: profileStore, libraryStore: libraryStore)
 
         let recs = await engine.fetchRecommendations(selectedCollectionIDs: [], selectedLanguages: ["eng"])
-        XCTAssertFalse(recs.contains { $0.identifier == libraryOwned.identifier },
-                       "library-owned books must remain excluded even when surfaced ring ignores them")
+        #expect(!(recs.contains { $0.identifier == libraryOwned.identifier }))  // library-owned books must remain excluded even when surfaced ring ignores them
     }
 
     // MARK: - Helpers

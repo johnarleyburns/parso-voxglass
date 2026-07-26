@@ -1,46 +1,41 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class NarratorDisplayTests: XCTestCase {
+@Suite struct NarratorDisplayTests {
 
-    func testChapterLineReturnsNilWhenBookHasOnlyOneNarrator() {
+    @Test func chapterLineReturnsNilWhenBookHasOnlyOneNarrator() {
         let chapter = Chapter(
             id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
             narrators: ["Alice"]
         )
 
-        XCTAssertNil(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice"]),
-                     "Should return nil when only one narrator reads the whole book")
+        #expect(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice"]) == nil)  // Should return nil when only one narrator reads the whole book
     }
 
-    func testChapterLineReturnsNarratorWhenMultiNarratorBook() {
+    @Test func chapterLineReturnsNarratorWhenMultiNarratorBook() {
         let chapter = Chapter(
             id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
             narrators: ["Alice"]
         )
 
-        XCTAssertEqual(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice", "Bob"]),
-                       "Alice",
-                       "Should return the chapter's narrator when book has multiple narrators")
+        #expect(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice", "Bob"]) == "Alice")  // Should return the chapter's narrator when book has multiple narrators
     }
 
-    func testChapterLineReturnsNilWhenChapterHasNoNarrators() {
+    @Test func chapterLineReturnsNilWhenChapterHasNoNarrators() {
         let chapter = Chapter(
             id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0
         )
 
-        XCTAssertNil(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice", "Bob"]),
-                     "Should return nil when chapter has no narrators regardless of book narrators")
+        #expect(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice", "Bob"]) == nil)  // Should return nil when chapter has no narrators regardless of book narrators
     }
 
-    func testChapterLineJoinsMultipleNarratorsForChapter() {
+    @Test func chapterLineJoinsMultipleNarratorsForChapter() {
         let chapter = Chapter(
             id: UUID(), bookID: UUID(), title: "Chapter 1", index: 0,
             narrators: ["Alice", "Bob"]
         )
 
-        XCTAssertEqual(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice", "Bob", "Charlie"]),
-                       "Alice, Bob",
-                       "Should join multiple chapter narrators with comma")
+        #expect(NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: ["Alice", "Bob", "Charlie"]) == "Alice, Bob")  // Should join multiple chapter narrators with comma
     }
 }

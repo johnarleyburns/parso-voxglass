@@ -1,10 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class LibraryBackupExportTests: XCTestCase {
+@Suite struct LibraryBackupExportTests {
 
-    func testExportToFileProducesNonEmptyFile() async throws {
+    @Test func exportToFileProducesNonEmptyFile() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "backup-export-nonempty")
         try await database.prepare()
 
@@ -84,46 +85,46 @@ final class LibraryBackupExportTests: XCTestCase {
         let service = LibraryBackupService(database: database)
 
         guard let url = await service.exportToFile() else {
-            XCTFail("exportToFile() returned nil")
+            Issue.record("exportToFile() returned nil")
             return
         }
 
         let fileManager = FileManager.default
-        XCTAssertTrue(fileManager.fileExists(atPath: url.path), "Exported file must exist")
+        #expect(fileManager.fileExists(atPath: url.path))  // Exported file must exist
         let attrs = try fileManager.attributesOfItem(atPath: url.path)
         let size = (attrs[.size] as? NSNumber)?.int64Value ?? 0
-        XCTAssertGreaterThan(size, 0, "Exported file must be non-empty (\(size) bytes)")
+        #expect(size > 0)
 
         // Import into a fresh database to verify round-trip.
         let freshDB = AppDatabase.makeTemporaryDatabase(named: "backup-import-fresh")
         try await freshDB.prepare()
         let importService = LibraryBackupService(database: freshDB)
         let importCount = await importService.importFromFile(url)
-        XCTAssertEqual(importCount, 1, "Round-trip import must restore the book")
+        #expect(importCount == 1)  // Round-trip import must restore the book
 
         let importedPayload = await importService.exportPayload()
-        XCTAssertNotNil(importedPayload)
-        XCTAssertEqual(importedPayload?.books.count, 1)
-        XCTAssertEqual(importedPayload?.books.first?.book.title, "Test Book")
-        XCTAssertEqual(importedPayload?.positions.count, 1)
-        XCTAssertEqual(importedPayload?.bookmarks.count, 1)
+        #expect(importedPayload != nil)
+        #expect(importedPayload?.books.count == 1)
+        #expect(importedPayload?.books.first?.book.title == "Test Book")
+        #expect(importedPayload?.positions.count == 1)
+        #expect(importedPayload?.bookmarks.count == 1)
 
         let payload = await service.exportPayload()
-        XCTAssertNotNil(payload)
-        XCTAssertEqual(payload?.books.count, 1)
-        XCTAssertEqual(payload?.books.first?.book.title, "Test Book")
-        XCTAssertEqual(payload?.positions.count, 1)
-        XCTAssertEqual(payload?.bookmarks.count, 1)
+        #expect(payload != nil)
+        #expect(payload?.books.count == 1)
+        #expect(payload?.books.first?.book.title == "Test Book")
+        #expect(payload?.positions.count == 1)
+        #expect(payload?.bookmarks.count == 1)
     }
 
-    func testExportEmptyLibraryProducesEmptyPayload() async throws {
+    @Test func exportEmptyLibraryProducesEmptyPayload() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "backup-export-empty")
         try await database.prepare()
 
         let service = LibraryBackupService(database: database)
         let payload = await service.exportPayload()
-        XCTAssertNotNil(payload)
-        XCTAssertEqual(payload?.books.count, 0)
-        XCTAssertEqual(payload?.positions.count, 0)
+        #expect(payload != nil)
+        #expect(payload?.books.count == 0)
+        #expect(payload?.positions.count == 0)
     }
 }

@@ -1,4 +1,5 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Phase D of docs/MINIPLAYER_RESTORE_PLAN.md — upgrade-proof local file URLs.
@@ -6,17 +7,17 @@ import XCTest
 /// persisted before the update go stale. The pure rebase helper re-anchors the
 /// suffix after the last well-known sandbox root onto the current container;
 /// the repository migration rewrites stale stored rows once per container move.
-final class ContainerPathRebaseTests: XCTestCase {
+@Suite struct ContainerPathRebaseTests {
 
     private var tempDir: URL!
 
-    override func setUpWithError() throws {
+    init() throws {
         tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("rebase-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
     }
 
-    override func tearDownWithError() throws {
+    func _cleanup() throws {
         try? FileManager.default.removeItem(at: tempDir)
     }
 
@@ -36,45 +37,45 @@ final class ContainerPathRebaseTests: XCTestCase {
 
     // MARK: - Pure helper
 
-    func testRebasesMissingFileOntoMatchingCurrentRoot() throws {
+    @Test func rebasesMissingFileOntoMatchingCurrentRoot() throws {
         let (root, file) = try makeNewDocuments(withFile: "Import/ch1.mp3")
         let rebased = ContainerPathRebase.rebase(
             staleURL("Import/ch1.mp3"),
             roots: [.init(marker: "/Documents/", base: root)]
         )
-        XCTAssertEqual(rebased.path, file.path)
+        #expect(rebased.path == file.path)
     }
 
-    func testKeepsURLWhenFileStillExists() throws {
+    @Test func keepsURLWhenFileStillExists() throws {
         let (root, file) = try makeNewDocuments(withFile: "Import/ch1.mp3")
         let rebased = ContainerPathRebase.rebase(
             file,
             roots: [.init(marker: "/Documents/", base: root)]
         )
-        XCTAssertEqual(rebased, file, "An existing file must never be rewritten")
+        #expect(rebased == file)  // An existing file must never be rewritten
     }
 
-    func testKeepsURLWhenNoRootMarkerMatches() throws {
+    @Test func keepsURLWhenNoRootMarkerMatches() throws {
         let (root, _) = try makeNewDocuments(withFile: "Import/ch1.mp3")
         let unrelated = URL(fileURLWithPath: "/var/tmp/elsewhere/ch1.mp3")
         let rebased = ContainerPathRebase.rebase(
             unrelated,
             roots: [.init(marker: "/Documents/", base: root)]
         )
-        XCTAssertEqual(rebased, unrelated)
+        #expect(rebased == unrelated)
     }
 
-    func testKeepsURLWhenRebasedCandidateIsMissingToo() throws {
+    @Test func keepsURLWhenRebasedCandidateIsMissingToo() throws {
         let (root, _) = try makeNewDocuments(withFile: "Import/ch1.mp3")
         let stale = staleURL("Import/other-file.mp3")
         let rebased = ContainerPathRebase.rebase(
             stale,
             roots: [.init(marker: "/Documents/", base: root)]
         )
-        XCTAssertEqual(rebased, stale, "No blind rewrites: the candidate must exist")
+        #expect(rebased == stale)  // No blind rewrites: the candidate must exist
     }
 
-    func testSplitsOnLastMarkerOccurrence() throws {
+    @Test func splitsOnLastMarkerOccurrence() throws {
         let (root, file) = try makeNewDocuments(withFile: "ch1.mp3")
         let nested = URL(fileURLWithPath:
             "/var/mobile/Containers/Data/Application/OLD-UUID/Documents/Backup/Documents/ch1.mp3")
@@ -82,36 +83,35 @@ final class ContainerPathRebaseTests: XCTestCase {
             nested,
             roots: [.init(marker: "/Documents/", base: root)]
         )
-        XCTAssertEqual(rebased.path, file.path,
-                       "The suffix after the *last* root component anchors the rebase")
+        #expect(rebased.path == file.path)  // The suffix after the *last* root component anchors the rebase
     }
 
-    func testIgnoresNonFileURLs() {
+    @Test func ignoresNonFileURLs() {
         let remote = URL(string: "https://archive.org/download/item/ch1.mp3")!
-        XCTAssertEqual(ContainerPathRebase.rebase(remote, roots: []), remote)
+        #expect(ContainerPathRebase.rebase(remote, roots: []) == remote)
     }
 
     // MARK: - Chapter.resolvedPlayableURL integration
 
-    func testResolvedPlayableURLPrefersRemoteWhenLocalMissingAndNoRebase() {
+    @Test func resolvedPlayableURLPrefersRemoteWhenLocalMissingAndNoRebase() {
         let chapter = Chapter(
             bookID: UUID(), title: "Ch", index: 0,
             remoteURL: URL(string: "https://archive.org/download/item/ch1.mp3"),
             localURL: URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString).mp3")
         )
-        XCTAssertEqual(chapter.resolvedPlayableURL(), chapter.remoteURL)
+        #expect(chapter.resolvedPlayableURL() == chapter.remoteURL)
     }
 
-    func testResolvedPlayableURLReturnsLocalWhenOnlyLocalEvenIfMissing() {
+    @Test func resolvedPlayableURLReturnsLocalWhenOnlyLocalEvenIfMissing() {
         let local = URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString).mp3")
         let chapter = Chapter(bookID: UUID(), title: "Ch", index: 0, localURL: local)
-        XCTAssertEqual(chapter.resolvedPlayableURL(), local)
+        #expect(chapter.resolvedPlayableURL() == local)
     }
 
     // MARK: - One-time migration (idempotent, once per container move)
 
     @MainActor
-    func testMigrationRewritesStaleChapterURLOnceAndShortCircuitsAfterMarker() async throws {
+@Test func migrationRewritesStaleChapterURLOnceAndShortCircuitsAfterMarker() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "rebase-\(UUID().uuidString)")
         let repository = LibraryRepository(database: db)
         let defaults = UserDefaults(suiteName: "rebase-\(UUID().uuidString)")!
@@ -142,22 +142,22 @@ final class ContainerPathRebaseTests: XCTestCase {
         let first = await repository.rebaseStaleLocalURLsIfNeeded(
             defaults: defaults, roots: roots, containerMarker: "container-A"
         )
-        XCTAssertEqual(first, 1)
+        #expect(first == 1)
 
         let rows = try await db.query(
             "SELECT local_url FROM chapters WHERE id = ?", [.string(chapterID.uuidString)]
         )
-        XCTAssertEqual(rows.first?.string("local_url"), URL(fileURLWithPath: file.path).absoluteString)
+        #expect(rows.first?.string("local_url") == URL(fileURLWithPath: file.path).absoluteString)
 
         let second = await repository.rebaseStaleLocalURLsIfNeeded(
             defaults: defaults, roots: roots, containerMarker: "container-A"
         )
-        XCTAssertEqual(second, 0, "Same container marker — the pass must short-circuit")
+        #expect(second == 0)  // Same container marker — the pass must short-circuit
 
         // A later container move (new marker) runs again but finds nothing stale.
         let third = await repository.rebaseStaleLocalURLsIfNeeded(
             defaults: defaults, roots: roots, containerMarker: "container-B"
         )
-        XCTAssertEqual(third, 0, "Rewritten rows resolve, so a rerun is a no-op")
+        #expect(third == 0)  // Rewritten rows resolve, so a rerun is a no-op
     }
 }

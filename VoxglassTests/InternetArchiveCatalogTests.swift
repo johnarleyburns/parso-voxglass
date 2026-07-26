@@ -1,34 +1,35 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class InternetArchiveCatalogTests: XCTestCase {
+@Suite struct InternetArchiveCatalogTests {
     private let decoder = JSONDecoder()
 
-    func testAdvancedSearchFixtureDecodesLibriVoxResults() throws {
+    @Test func advancedSearchFixtureDecodesLibriVoxResults() throws {
         let data = try fixtureData("advanced_search_librivox")
         let response = try decoder.decode(InternetArchiveSearchResponse.self, from: data)
 
-        XCTAssertEqual(response.results.count, 2)
-        XCTAssertEqual(response.results[0].identifier, "pride_and_prejudice_librivox")
-        XCTAssertEqual(response.results[0].title, "Pride and Prejudice")
-        XCTAssertEqual(response.results[0].authorLine, "Jane Austen")
-        XCTAssertEqual(response.results[0].sourceKind, .librivox)
-        XCTAssertEqual(response.results[1].creators, ["Various"])
-        XCTAssertEqual(response.results[1].downloads, 678)
+        #expect(response.results.count == 2)
+        #expect(response.results[0].identifier == "pride_and_prejudice_librivox")
+        #expect(response.results[0].title == "Pride and Prejudice")
+        #expect(response.results[0].authorLine == "Jane Austen")
+        #expect(response.results[0].sourceKind == .librivox)
+        #expect(response.results[1].creators == ["Various"])
+        #expect(response.results[1].downloads == 678)
     }
 
-    func testMetadataFixtureDeduplicatesAudioDerivativesByQuality() throws {
+    @Test func metadataFixtureDeduplicatesAudioDerivativesByQuality() throws {
         let metadata = try metadataFixture()
         let selected = metadata.selectedAudioFiles
 
-        XCTAssertEqual(selected.map(\.name), [
+        #expect(selected.map(\.name) == [
             "01 Chapter One.mp3",
             "02 Chapter Two_vbr.mp3",
             "10 Chapter Ten_64kb.mp3"
         ])
     }
 
-    func testMetadataFixtureBuildsNaturalChapterOrderAndDurations() throws {
+    @Test func metadataFixtureBuildsNaturalChapterOrderAndDurations() throws {
         let metadata = try metadataFixture()
         let chapters = metadata.selectedAudioFiles.enumerated().compactMap { index, file -> Chapter? in
             guard let remoteURL = metadata.fileURL(for: file) else { return nil }
@@ -42,46 +43,34 @@ final class InternetArchiveCatalogTests: XCTestCase {
             )
         }
 
-        XCTAssertEqual(chapters.map(\.title), ["Chapter 1", "Chapter 2", "Chapter 10"])
-        XCTAssertEqual(chapters.map(\.duration), [100, 200, 600])
-        XCTAssertEqual(chapters[0].remoteURL?.absoluteString, "https://archive.org/download/pride_and_prejudice_librivox/01%20Chapter%20One.mp3")
+        #expect(chapters.map(\.title) == ["Chapter 1", "Chapter 2", "Chapter 10"])
+        #expect(chapters.map(\.duration) == [100, 200, 600])
+        #expect(chapters[0].remoteURL?.absoluteString == "https://archive.org/download/pride_and_prejudice_librivox/01%20Chapter%20One.mp3")
     }
 
-    func testArchiveURLParserRecognizesItemMetadataDownloadAndSearchURLs() {
-        XCTAssertEqual(
-            InternetArchiveURLParser.parse("https://archive.org/details/pride_and_prejudice_librivox"),
-            .identifier("pride_and_prejudice_librivox")
-        )
-        XCTAssertEqual(
-            InternetArchiveURLParser.parse("archive.org/metadata/pride_and_prejudice_librivox"),
-            .identifier("pride_and_prejudice_librivox")
-        )
-        XCTAssertEqual(
-            InternetArchiveURLParser.parse("https://archive.org/download/pride_and_prejudice_librivox/01%20Chapter%20One.mp3"),
-            .identifier("pride_and_prejudice_librivox")
-        )
-        XCTAssertEqual(
-            InternetArchiveURLParser.parse("https://archive.org/advancedsearch.php?q=collection%3A%28librivoxaudio%29"),
-            .advancedSearch(query: "collection:(librivoxaudio)")
-        )
+    @Test func archiveURLParserRecognizesItemMetadataDownloadAndSearchURLs() {
+        #expect(InternetArchiveURLParser.parse("https://archive.org/details/pride_and_prejudice_librivox") == .identifier("pride_and_prejudice_librivox"))
+        #expect(InternetArchiveURLParser.parse("archive.org/metadata/pride_and_prejudice_librivox") == .identifier("pride_and_prejudice_librivox"))
+        #expect(InternetArchiveURLParser.parse("https://archive.org/download/pride_and_prejudice_librivox/01%20Chapter%20One.mp3") == .identifier("pride_and_prejudice_librivox"))
+        #expect(InternetArchiveURLParser.parse("https://archive.org/advancedsearch.php?q=collection%3A%28librivoxaudio%29") == .advancedSearch(query: "collection:(librivoxaudio)"))
     }
 
-    func testLibriVoxBrowseCategoriesUseSemanticArchiveQueries() {
+    @Test func libriVoxBrowseCategoriesUseSemanticArchiveQueries() {
         let categories = LibriVoxBrowseGroup.categories
         let ids = Set(categories.map(\.id))
 
-        XCTAssertEqual(categories.count, 20)
-        XCTAssertEqual(ids.count, categories.count)
-        XCTAssertEqual(LibriVoxBrowseGroup.all.map(\.title), ["Fiction", "Forms", "Ideas & Nonfiction"])
-        XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains(LibriVoxCatalogScope.collectionClause) })
-        XCTAssertTrue(categories.allSatisfy { !$0.archiveQuery.contains("audio_bookspoetry") })
-        XCTAssertTrue(categories.allSatisfy { $0.archiveQuery.contains("mediatype:audio") })
-        XCTAssertTrue(categories.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
-        XCTAssertTrue(LibriVoxBrowseCategory.scienceFiction.archiveQuery.contains("subject:\"Science Fiction\""))
-        XCTAssertTrue(LibriVoxBrowseCategory.philosophyMind.archiveQuery.contains("AND NOT"))
+        #expect(categories.count == 20)
+        #expect(ids.count == categories.count)
+        #expect(LibriVoxBrowseGroup.all.map(\.title) == ["Fiction", "Forms", "Ideas & Nonfiction"])
+        #expect(categories.allSatisfy { $0.archiveQuery.contains(LibriVoxCatalogScope.collectionClause) })
+        #expect(categories.allSatisfy { !$0.archiveQuery.contains("audio_bookspoetry") })
+        #expect(categories.allSatisfy { $0.archiveQuery.contains("mediatype:audio") })
+        #expect(categories.allSatisfy { !$0.archiveQuery.contains("http://") && !$0.archiveQuery.contains("https://") })
+        #expect(LibriVoxBrowseCategory.scienceFiction.archiveQuery.contains("subject:\"Science Fiction\""))
+        #expect(LibriVoxBrowseCategory.philosophyMind.archiveQuery.contains("AND NOT"))
     }
 
-    func testInternetArchiveImportRoundTripsAndDeduplicatesInDatabase() async throws {
+    @Test func internetArchiveImportRoundTripsAndDeduplicatesInDatabase() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "internet-archive-import")
         let repository = LibraryRepository(database: database)
         let metadata = try metadataFixture()
@@ -90,69 +79,69 @@ final class InternetArchiveCatalogTests: XCTestCase {
         let second = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
         let library = try await repository.fetchLibrary()
 
-        XCTAssertEqual(first.book.id, second.book.id)
-        XCTAssertEqual(library.count, 1)
-        XCTAssertEqual(library[0].book.title, "Pride and Prejudice")
-        XCTAssertEqual(library[0].book.authors, ["Jane Austen"])
-        XCTAssertEqual(library[0].chapters.map(\.title), ["Chapter 1", "Chapter 2", "Chapter 10"])
-        XCTAssertEqual(library[0].book.summary, "LibriVox recording & public-domain audiobook.")
+        #expect(first.book.id == second.book.id)
+        #expect(library.count == 1)
+        #expect(library[0].book.title == "Pride and Prejudice")
+        #expect(library[0].book.authors == ["Jane Austen"])
+        #expect(library[0].chapters.map(\.title) == ["Chapter 1", "Chapter 2", "Chapter 10"])
+        #expect(library[0].book.summary == "LibriVox recording & public-domain audiobook.")
     }
 
-    func testLibriVoxQueryBuilderScopesToLibriVoxWithBoostsAndPhraseClause() {
+    @Test func libriVoxQueryBuilderScopesToLibriVoxWithBoostsAndPhraseClause() {
         let query = InternetArchiveClient.libriVoxQuery(for: "sherlock holmes")
 
-        XCTAssertTrue(query.contains(LibriVoxCatalogScope.query))
+        #expect(query.contains(LibriVoxCatalogScope.query))
         // Whole-phrase boost clause across title/subject/description.
-        XCTAssertTrue(query.contains("title:\"sherlock holmes\"^8"))
-        XCTAssertTrue(query.contains("subject:\"sherlock holmes\"^6"))
-        XCTAssertTrue(query.contains("description:\"sherlock holmes\"^4"))
+        #expect(query.contains("title:\"sherlock holmes\"^8"))
+        #expect(query.contains("subject:\"sherlock holmes\"^6"))
+        #expect(query.contains("description:\"sherlock holmes\"^4"))
         // Per-token clause now includes subject + description fields.
-        XCTAssertTrue(query.contains("title:\"sherlock\"^4"))
-        XCTAssertTrue(query.contains("creator:\"sherlock\"^3"))
-        XCTAssertTrue(query.contains("subject:\"holmes\"^2"))
-        XCTAssertTrue(query.contains("description:\"holmes\"^1"))
-        XCTAssertTrue(query.contains("collection:librivoxaudio"))
-        XCTAssertFalse(query.contains("audio_bookspoetry"))
-        XCTAssertTrue(query.contains(") OR ("))
+        #expect(query.contains("title:\"sherlock\"^4"))
+        #expect(query.contains("creator:\"sherlock\"^3"))
+        #expect(query.contains("subject:\"holmes\"^2"))
+        #expect(query.contains("description:\"holmes\"^1"))
+        #expect(query.contains("collection:librivoxaudio"))
+        #expect(!(query.contains("audio_bookspoetry")))
+        #expect(query.contains(") OR ("))
     }
 
-    func testLibriVoxQueryBuilderHandlesEmptyInput() {
+    @Test func libriVoxQueryBuilderHandlesEmptyInput() {
         let query = InternetArchiveClient.libriVoxQuery(for: "   ")
-        XCTAssertEqual(query, LibriVoxCatalogScope.query)
+        #expect(query == LibriVoxCatalogScope.query)
     }
 
-    func testLibriVoxQueryBuilderAllowsSubjectAnchoredThematicSearch() {
+    @Test func libriVoxQueryBuilderAllowsSubjectAnchoredThematicSearch() {
         // Regression for §8: "greek plays" must be satisfiable via subject/
         // description (no mandatory title/creator-only anchor).
         let query = InternetArchiveClient.libriVoxQuery(for: "greek plays")
 
-        XCTAssertTrue(query.contains("subject:\"greek\"^2"))
-        XCTAssertTrue(query.contains("subject:\"plays\"^2"))
-        XCTAssertTrue(query.contains("title:\"greek plays\"^8"))
+        #expect(query.contains("subject:\"greek\"^2"))
+        #expect(query.contains("subject:\"plays\"^2"))
+        #expect(query.contains("title:\"greek plays\"^8"))
         // No bare (unboosted) title/creator-only mandatory clause remains.
-        XCTAssertFalse(query.contains("title:\"greek\" OR creator:\"greek\""))
-        XCTAssertFalse(query.contains("title:\"plays\" OR creator:\"plays\""))
+        #expect(!(query.contains("title:\"greek\" OR creator:\"greek\"")))
+        #expect(!(query.contains("title:\"plays\" OR creator:\"plays\"")))
     }
 
-    func testCuratedCollectionsUseBroadCreatorQueries() {
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books"))
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-spa"))
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-deu"))
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-ita"))
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("great-books-grc"))
-        XCTAssertTrue(IACollectionStore.curated.map(\.id).contains("greater-books"))
-        XCTAssertEqual(IACollectionStore.curated.count, 6)
+    @Test func curatedCollectionsUseBroadCreatorQueries() {
+        #expect(IACollectionStore.curated.map(\.id).contains("great-books"))
+        #expect(IACollectionStore.curated.map(\.id).contains("great-books-spa"))
+        #expect(IACollectionStore.curated.map(\.id).contains("great-books-deu"))
+        #expect(IACollectionStore.curated.map(\.id).contains("great-books-ita"))
+        #expect(IACollectionStore.curated.map(\.id).contains("great-books-grc"))
+        #expect(IACollectionStore.curated.map(\.id).contains("greater-books"))
+        #expect(IACollectionStore.curated.count == 6)
 
-        XCTAssertTrue(CuratedQueries.greatBooks.contains(LibriVoxCatalogScope.query))
-        XCTAssertTrue(CuratedQueries.greatBooks.contains("creator:\"Homer\""))
-        XCTAssertTrue(CuratedQueries.greatBooks.contains("AND NOT creator:\"William John Locke\""))
-        XCTAssertTrue(CuratedQueries.greaterBooks.contains("creator:\"Jane Austen\""))
+        #expect(CuratedQueries.greatBooks.contains(LibriVoxCatalogScope.query))
+        #expect(CuratedQueries.greatBooks.contains("creator:\"Homer\""))
+        #expect(CuratedQueries.greatBooks.contains("AND NOT creator:\"William John Locke\""))
+        #expect(CuratedQueries.greaterBooks.contains("creator:\"Jane Austen\""))
     }
 
-    func testStrictLibriVoxScopeExcludesGeneratedTTSCollections() {
-        XCTAssertEqual(LibriVoxCatalogScope.collectionClause, "collection:librivoxaudio")
-        XCTAssertEqual(LibriVoxCatalogScope.query, "collection:librivoxaudio AND mediatype:audio")
-        XCTAssertFalse(LibriVoxCatalogScope.query.contains("audio_bookspoetry"))
+    @Test func strictLibriVoxScopeExcludesGeneratedTTSCollections() {
+        #expect(LibriVoxCatalogScope.collectionClause == "collection:librivoxaudio")
+        #expect(LibriVoxCatalogScope.query == "collection:librivoxaudio AND mediatype:audio")
+        #expect(!(LibriVoxCatalogScope.query.contains("audio_bookspoetry")))
 
         let generated = InternetArchiveSearchResult(
             identifier: "synapseml_gutenberg_the_eleven_comedies_volume_1_by_aristoph",
@@ -163,7 +152,7 @@ final class InternetArchiveCatalogTests: XCTestCase {
             downloads: 10,
             date: nil
         )
-        XCTAssertFalse(generated.isStrictLibriVoxCatalogCandidate)
+        #expect(!(generated.isStrictLibriVoxCatalogCandidate))
 
         let librivox = InternetArchiveSearchResult(
             identifier: "clouds_librivox",
@@ -174,10 +163,10 @@ final class InternetArchiveCatalogTests: XCTestCase {
             downloads: 100,
             date: nil
         )
-        XCTAssertTrue(librivox.isStrictLibriVoxCatalogCandidate)
+        #expect(librivox.isStrictLibriVoxCatalogCandidate)
     }
 
-    func testCoverImageFilesRejectSpectrogramDerivatives() {
+    @Test func coverImageFilesRejectSpectrogramDerivatives() {
         let metadata = InternetArchiveMetadata(
             metadata: InternetArchiveItemMetadata(
                 identifier: "example_librivox",
@@ -214,10 +203,10 @@ final class InternetArchiveCatalogTests: XCTestCase {
             dir: nil
         )
 
-        XCTAssertEqual(metadata.coverImageFiles.map(\.name), ["cover.jpg"])
+        #expect(metadata.coverImageFiles.map(\.name) == ["cover.jpg"])
     }
 
-    func testAdvancedSearchURLUsesCatalogSortParameters() throws {
+    @Test func advancedSearchURLUsesCatalogSortParameters() throws {
         let expectations: [(CatalogSort, [String])] = [
             (.popularity, ["downloads desc"]),
             (.title, ["titleSorter asc", "title asc"]),
@@ -226,19 +215,17 @@ final class InternetArchiveCatalogTests: XCTestCase {
         ]
 
         for (sort, expectedSorts) in expectations {
-            let url = try XCTUnwrap(
-                InternetArchiveClient.advancedSearchURL(
+            let url = try try #require(InternetArchiveClient.advancedSearchURL(
                     query: LibriVoxCatalogScope.query,
                     rows: 10,
                     page: 1,
                     sort: sort
-                )
-            )
-            let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+                ))
+            let components = try try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
             let sorts = (components.queryItems ?? [])
                 .filter { $0.name == "sort[]" }
                 .compactMap(\.value)
-            XCTAssertEqual(sorts, expectedSorts, "Unexpected IA sort fields for \(sort)")
+            #expect(sorts == expectedSorts)  // Unexpected IA sort fields for \(sort)
         }
     }
 

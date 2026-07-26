@@ -1,16 +1,17 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Phase 2 — survive the crash and the force-quit. The per-book snapshot map and
 /// the durable-store tie-break are asserted directly (radio's I4, ported).
 @MainActor
-final class PositionDurabilityTests: XCTestCase {
+@Suite struct PositionDurabilityTests {
 
     private func makeSnapshotStore() -> LastPlaybackSnapshotStore {
         LastPlaybackSnapshotStore(defaults: UserDefaults(suiteName: "durability-\(UUID().uuidString)")!)
     }
 
-    func testSnapshotStoreKeepsAPositionPerBook() {
+    @Test func snapshotStoreKeepsAPositionPerBook() {
         let store = makeSnapshotStore()
         let bookA = UUID(), bookB = UUID()
         let posA = PlaybackPosition(bookID: bookA, chapterID: UUID(), position: 30, updatedAt: Date(timeIntervalSince1970: 100))
@@ -19,13 +20,12 @@ final class PositionDurabilityTests: XCTestCase {
         store.save(posA)
         store.save(posB)
 
-        XCTAssertEqual(store.position(forBookID: bookA)?.position ?? -1, 30, accuracy: 0.001,
-                       "Switching books must not discard the other book's snapshot")
-        XCTAssertEqual(store.position(forBookID: bookB)?.position ?? -1, 90, accuracy: 0.001)
-        XCTAssertEqual(store.latest()?.bookID, bookB)
+        #expect(abs((store.position(forBookID: bookA)?.position ?? -1) - (30)) <= 0.001)  // Switching books must not discard the other book's snapshot
+        #expect(abs((store.position(forBookID: bookB)?.position ?? -1) - (90)) <= 0.001)
+        #expect(store.latest()?.bookID == bookB)
     }
 
-    func testSnapshotStoreCapsAtFifty() {
+    @Test func snapshotStoreCapsAtFifty() {
         let store = makeSnapshotStore()
         for i in 0..<60 {
             store.save(PlaybackPosition(
@@ -33,10 +33,10 @@ final class PositionDurabilityTests: XCTestCase {
                 updatedAt: Date(timeIntervalSince1970: Double(i))
             ))
         }
-        XCTAssertLessThanOrEqual(store.all().count, LastPlaybackSnapshotStore.maxSnapshots)
+        #expect(store.all().count <= LastPlaybackSnapshotStore.maxSnapshots)
     }
 
-    func testRestorePrefersDurableSnapshotOverStaleDatabaseRow() {
+    @Test func restorePrefersDurableSnapshotOverStaleDatabaseRow() {
         // DB row @ 40 s, UserDefaults snapshot @ 137 s for the same (book, chapter):
         // the durable snapshot wins even though a lost SQLite write is why it is
         // ahead. Radio's I4 test, ported.
@@ -44,21 +44,20 @@ final class PositionDurabilityTests: XCTestCase {
         let row = PlaybackPosition(bookID: bookID, chapterID: chapterID, position: 40, updatedAt: Date(timeIntervalSince1970: 300))
         let snapshot = PlaybackPosition(bookID: bookID, chapterID: chapterID, position: 137, updatedAt: Date(timeIntervalSince1970: 100))
 
-        XCTAssertTrue(PlaybackCoordinator.snapshotWins(row: row, snapshot: snapshot),
-                      "The durable snapshot must beat the stale DB position even when the row's timestamp is newer")
+        #expect(PlaybackCoordinator.snapshotWins(row: row, snapshot: snapshot))  // The durable snapshot must beat the stale DB position even when the row's timestamp is newer
         let preferred = PlaybackCoordinator.preferredPosition(row: row, snapshot: snapshot)
-        XCTAssertEqual(preferred?.position ?? -1, 137, accuracy: 0.001)
+        #expect(abs((preferred?.position ?? -1) - (137)) <= 0.001)
     }
 
-    func testNewerDatabaseRowBeatsOlderSnapshotWithinEpsilon() {
+    @Test func newerDatabaseRowBeatsOlderSnapshotWithinEpsilon() {
         let bookID = UUID(), chapterID = UUID()
         let row = PlaybackPosition(bookID: bookID, chapterID: chapterID, position: 100, updatedAt: Date(timeIntervalSince1970: 300))
         let snapshot = PlaybackPosition(bookID: bookID, chapterID: chapterID, position: 99, updatedAt: Date(timeIntervalSince1970: 100))
-        XCTAssertFalse(PlaybackCoordinator.snapshotWins(row: row, snapshot: snapshot))
-        XCTAssertEqual(PlaybackCoordinator.preferredPosition(row: row, snapshot: snapshot)?.position ?? -1, 100, accuracy: 0.001)
+        #expect(!(PlaybackCoordinator.snapshotWins(row: row, snapshot: snapshot)))
+        #expect(abs((PlaybackCoordinator.preferredPosition(row: row, snapshot: snapshot)?.position ?? -1) - (100)) <= 0.001)
     }
 
-    func testReconcileReplaysSnapshotsIntoDatabaseOnLaunch() async throws {
+    @Test func reconcileReplaysSnapshotsIntoDatabaseOnLaunch() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "reconcile-\(UUID().uuidString)")
         let store = SQLitePositionStore(database: db)
         let defaults = UserDefaults(suiteName: "reconcile-\(UUID().uuidString)")!
@@ -80,8 +79,7 @@ final class PositionDurabilityTests: XCTestCase {
         await coordinator.reconcileSnapshots()
 
         let reconciled = try await store.position(for: bookID, chapterID: chapterID)
-        XCTAssertEqual(reconciled?.position ?? -1, 137, accuracy: 0.001,
-                       "Reconcile must replay the durable snapshot over the stale DB row")
+        #expect(abs((reconciled?.position ?? -1) - (137)) <= 0.001)  // Reconcile must replay the durable snapshot over the stale DB row
     }
 
     private func seedBook(in db: AppDatabase, bookID: UUID, chapterID: UUID) async throws {

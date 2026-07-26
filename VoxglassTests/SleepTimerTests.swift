@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Pure sleep-timer arithmetic (P0-2) with an injected clock — no `Task.sleep`.
 @MainActor
-final class SleepTimerTests: XCTestCase {
+@Suite struct SleepTimerTests {
 
     /// Mutable injectable clock.
     private final class Clock {
@@ -12,67 +13,67 @@ final class SleepTimerTests: XCTestCase {
         func advance(_ seconds: TimeInterval) { current.addTimeInterval(seconds) }
     }
 
-    func testRemainingCountsDownFromInjectedClock() {
+    @Test func remainingCountsDownFromInjectedClock() {
         let clock = Clock()
         let timer = SleepTimer(now: clock.now)
-        timer.arm(.duration(30 * 60))
+        timer.arm(.duration(TimeInterval(30 * 60)))
 
-        XCTAssertEqual(timer.remaining, 30 * 60)
-        clock.advance(10 * 60)
-        XCTAssertEqual(timer.remaining, 20 * 60)
-        clock.advance(25 * 60)
-        XCTAssertEqual(timer.remaining, 0, "Never negative")
+        #expect(timer.remaining == TimeInterval(30 * 60))
+        clock.advance(TimeInterval(10 * 60))
+        #expect(timer.remaining == TimeInterval(20 * 60))
+        clock.advance(TimeInterval(25 * 60))
+        #expect(timer.remaining == 0)  // Never negative
     }
 
-    func testFiresExactlyOnceAtDeadline() {
+    @Test func firesExactlyOnceAtDeadline() {
         let clock = Clock()
         let timer = SleepTimer(now: clock.now)
         var fireCount = 0
         timer.onFire = { fireCount += 1 }
-        timer.arm(.duration(60))
+        timer.arm(.duration(TimeInterval(60)))
 
         timer.tick()
-        XCTAssertEqual(fireCount, 0, "Before deadline: no fire")
+        #expect(fireCount == 0)  // Before deadline: no fire
 
-        clock.advance(61)
+        clock.advance(TimeInterval(61))
         timer.tick()
         timer.tick()   // idempotent
         timer.tick()
-        XCTAssertEqual(fireCount, 1, "Fires exactly once even across repeated ticks")
-        XCTAssertEqual(timer.mode, .off, "Mode resets to off after firing")
+        #expect(fireCount == 1)  // Fires exactly once even across repeated ticks
+        #expect(timer.mode == .off)  // Mode resets to off after firing
     }
 
-    func testPauseDoesNotSkewDeadline() {
+    @Test func pauseDoesNotSkewDeadline() {
         // The timer is wall-clock: only the injected clock advances it.
         let clock = Clock()
         let timer = SleepTimer(now: clock.now)
-        timer.arm(.duration(300))
-        clock.advance(100)   // "playback paused" for 100s of wall time
-        XCTAssertEqual(timer.remaining, 200)
+        timer.arm(.duration(TimeInterval(300)))
+        clock.advance(TimeInterval(100))   // "playback paused" for 100s of wall time
+        #expect(timer.remaining == 200)
     }
 
-    func testEndOfChapterHasNoRemaining() {
+    @Test func endOfChapterHasNoRemaining() {
         let timer = SleepTimer()
         timer.arm(.endOfChapter)
-        XCTAssertNil(timer.remaining)
-        XCTAssertTrue(timer.isArmed)
+        #expect(timer.remaining == nil)
+        #expect(timer.isArmed)
     }
 
-    func testCancelDisarms() {
+    @Test func cancelDisarms() {
         let timer = SleepTimer()
-        timer.arm(.duration(60))
+        timer.arm(.duration(TimeInterval(60)))
         timer.cancel()
-        XCTAssertEqual(timer.mode, .off)
-        XCTAssertNil(timer.remaining)
-        XCTAssertFalse(timer.isArmed)
+        #expect(timer.mode == .off)
+        #expect(timer.remaining == nil)
+        #expect(!(timer.isArmed))
     }
 
-    func testEndOfChapterNeverFiresViaTick() {
+    @Test func endOfChapterNeverFiresViaTick() {
         let timer = SleepTimer()
         var fired = false
         timer.onFire = { fired = true }
         timer.arm(.endOfChapter)
         timer.tick()
-        XCTAssertFalse(fired, "End-of-chapter is fired by the coordinator, not the tick")
+        #expect(!(fired))  // End-of-chapter is fired by the coordinator, not the tick
     }
 }

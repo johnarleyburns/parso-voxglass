@@ -1,30 +1,24 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
 @MainActor
-final class PrefetchDepthTests: XCTestCase {
+@Suite struct PrefetchDepthTests {
 
-    func testOnWiFiHonorsStoredDepth() {
-        XCTAssertEqual(
-            PlaybackCoordinator.resolvedPrefetchDepth(stored: 3, isCellular: false, wifiOnly: true), 3)
-        XCTAssertEqual(
-            PlaybackCoordinator.resolvedPrefetchDepth(stored: 999, isCellular: false, wifiOnly: true), 999)
+    @Test func onWiFiHonorsStoredDepth() {
+        #expect(PlaybackCoordinator.resolvedPrefetchDepth(stored: 3, isCellular: false, wifiOnly: true) == 3)
+        #expect(PlaybackCoordinator.resolvedPrefetchDepth(stored: 999, isCellular: false, wifiOnly: true) == 999)
     }
 
-    func testOnCellularWithWiFiOnlyClampsToOne() {
-        XCTAssertEqual(
-            PlaybackCoordinator.resolvedPrefetchDepth(stored: 3, isCellular: true, wifiOnly: true), 1)
+    @Test func onCellularWithWiFiOnlyClampsToOne() {
+        #expect(PlaybackCoordinator.resolvedPrefetchDepth(stored: 3, isCellular: true, wifiOnly: true) == 1)
     }
 
-    func testOnCellularWithoutWiFiOnlyHonorsStoredDepth() {
-        XCTAssertEqual(
-            PlaybackCoordinator.resolvedPrefetchDepth(stored: 3, isCellular: true, wifiOnly: false), 3)
+    @Test func onCellularWithoutWiFiOnlyHonorsStoredDepth() {
+        #expect(PlaybackCoordinator.resolvedPrefetchDepth(stored: 3, isCellular: true, wifiOnly: false) == 3)
     }
 
-    func testStoredDepthNeverGoesBelowOne() {
-        XCTAssertEqual(
-            PlaybackCoordinator.resolvedPrefetchDepth(stored: 0, isCellular: false, wifiOnly: true), 1)
-        XCTAssertEqual(
-            PlaybackCoordinator.resolvedPrefetchDepth(stored: -5, isCellular: false, wifiOnly: false), 1)
+    @Test func storedDepthNeverGoesBelowOne() {
+        #expect(PlaybackCoordinator.resolvedPrefetchDepth(stored: 0, isCellular: false, wifiOnly: true) == 1)
+        #expect(PlaybackCoordinator.resolvedPrefetchDepth(stored: -5, isCellular: false, wifiOnly: false) == 1)
     }
 }

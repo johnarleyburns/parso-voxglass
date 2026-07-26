@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class PlaybackCoordinatorBookmarkTests: XCTestCase {
+@Suite struct PlaybackCoordinatorBookmarkTests {
 
     private let bookID = UUID()
 
@@ -25,16 +26,16 @@ final class PlaybackCoordinatorBookmarkTests: XCTestCase {
         return (coordinator, engine, store)
     }
 
-    func testJumpToSameChapterSeeks() async {
+    @Test func jumpToSameChapterSeeks() async {
         let (coordinator, engine, _) = makeCoordinator()
         await coordinator.play(makeBook())
         engine.reset()
         let bookmark = Bookmark(bookID: bookID, chapterID: coordinator.currentChapterID!, position: 30)
         await coordinator.jump(to: bookmark)
-        XCTAssertTrue(engine.calls.contains(.seek(30)))
+        #expect(engine.calls.contains(.seek(30)))
     }
 
-    func testJumpToDifferentChapterLoads() async {
+    @Test func jumpToDifferentChapterLoads() async {
         let (coordinator, engine, _) = makeCoordinator()
         let book = makeBook()
         await coordinator.play(book)
@@ -43,7 +44,7 @@ final class PlaybackCoordinatorBookmarkTests: XCTestCase {
         let bookmark = Bookmark(bookID: bookID, chapterID: otherChapter.id, position: 55)
         await coordinator.jump(to: bookmark)
         let loads = engine.loadCalls
-        XCTAssertFalse(loads.isEmpty, "A load(...) call must be issued for the new chapter")
-        XCTAssertEqual(loads.first?.startTime, 55)
+        #expect(!(loads.isEmpty))  // A load(...) call must be issued for the new chapter
+        #expect(loads.first?.startTime == 55)
     }
 }

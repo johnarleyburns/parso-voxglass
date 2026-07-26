@@ -1,19 +1,20 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 @MainActor
-final class ListeningStatsStoreTests: XCTestCase {
+@Suite struct ListeningStatsStoreTests {
 
-    func testMigrationCreatesListeningEventsTable() async throws {
+    @Test func migrationCreatesListeningEventsTable() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "listening-migration")
         try await database.prepare()
         let rows = try await database.query(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='listening_events'"
         )
-        XCTAssertEqual(rows.first?.string("name"), "listening_events")
+        #expect(rows.first?.string("name") == "listening_events")
     }
 
-    func testRecordInsertsRowsAndTotalTimeSums() async throws {
+    @Test func recordInsertsRowsAndTotalTimeSums() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "listening-total")
         let store = ListeningStatsStore(database: database)
 
@@ -22,10 +23,10 @@ final class ListeningStatsStoreTests: XCTestCase {
         await store.record(bookID: nil, seconds: 0) // ignored
 
         let total = await store.totalTime()
-        XCTAssertEqual(total, 75, accuracy: 0.001)
+        #expect(abs((total) - (75)) <= 0.001)
     }
 
-    func testDailyTotalsBucketByDay() async throws {
+    @Test func dailyTotalsBucketByDay() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "listening-daily")
         let store = ListeningStatsStore(database: database)
         let calendar = Calendar.current
@@ -37,11 +38,11 @@ final class ListeningStatsStoreTests: XCTestCase {
         await store.record(bookID: nil, seconds: 30, at: yesterday)
 
         let totals = await store.dailyTotals(days: 7, calendar: calendar, now: now)
-        XCTAssertEqual(totals[calendar.startOfDay(for: now)] ?? 0, 180, accuracy: 0.001)
-        XCTAssertEqual(totals[calendar.startOfDay(for: yesterday)] ?? 0, 30, accuracy: 0.001)
+        #expect(abs((totals[calendar.startOfDay(for: now)] ?? 0) - (180)) <= 0.001)
+        #expect(abs((totals[calendar.startOfDay(for: yesterday)] ?? 0) - (30)) <= 0.001)
     }
 
-    func testTopAuthorsJoinsTasteTerms() async throws {
+    @Test func topAuthorsJoinsTasteTerms() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "listening-authors")
         try await database.prepare()
         let (bookID, _) = try await seedBook(in: database, title: "Stats Book")
@@ -53,24 +54,24 @@ final class ListeningStatsStoreTests: XCTestCase {
         await store.record(bookID: bookID, seconds: 300)
 
         let authors = await store.topAuthors(limit: 5)
-        XCTAssertEqual(authors.first?.term, "mark twain")
-        XCTAssertEqual(authors.first?.seconds ?? 0, 300, accuracy: 0.001)
+        #expect(authors.first?.term == "mark twain")
+        #expect(abs((authors.first?.seconds ?? 0) - (300)) <= 0.001)
     }
 
     // MARK: - Pure streak helper
 
-    func testStreakEmptyIsZero() {
-        XCTAssertEqual(ListeningStatsStore.currentStreak(dayTotals: [:]), 0)
+    @Test func streakEmptyIsZero() {
+        #expect(ListeningStatsStore.currentStreak(dayTotals: [:]) == 0)
     }
 
-    func testStreakSingleDayToday() {
+    @Test func streakSingleDayToday() {
         let calendar = Calendar.current
         let now = Date()
         let today = calendar.startOfDay(for: now)
-        XCTAssertEqual(ListeningStatsStore.currentStreak(dayTotals: [today: 100], calendar: calendar, now: now), 1)
+        #expect(ListeningStatsStore.currentStreak(dayTotals: [today: 100], calendar: calendar, now: now) == 1)
     }
 
-    func testStreakConsecutiveDays() {
+    @Test func streakConsecutiveDays() {
         let calendar = Calendar.current
         let now = Date()
         var totals: [Date: TimeInterval] = [:]
@@ -78,32 +79,32 @@ final class ListeningStatsStoreTests: XCTestCase {
             let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -offset, to: now)!)
             totals[day] = 60
         }
-        XCTAssertEqual(ListeningStatsStore.currentStreak(dayTotals: totals, calendar: calendar, now: now), 3)
+        #expect(ListeningStatsStore.currentStreak(dayTotals: totals, calendar: calendar, now: now) == 3)
     }
 
-    func testStreakGapBreaksCount() {
+    @Test func streakGapBreaksCount() {
         let calendar = Calendar.current
         let now = Date()
         let today = calendar.startOfDay(for: now)
         let threeDaysAgo = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -3, to: now)!)
         let totals: [Date: TimeInterval] = [today: 60, threeDaysAgo: 60]
-        XCTAssertEqual(ListeningStatsStore.currentStreak(dayTotals: totals, calendar: calendar, now: now), 1)
+        #expect(ListeningStatsStore.currentStreak(dayTotals: totals, calendar: calendar, now: now) == 1)
     }
 
-    func testStreakCountsFromYesterdayWhenNothingToday() {
+    @Test func streakCountsFromYesterdayWhenNothingToday() {
         let calendar = Calendar.current
         let now = Date()
         let yesterday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: now)!)
         let twoDaysAgo = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -2, to: now)!)
         let totals: [Date: TimeInterval] = [yesterday: 60, twoDaysAgo: 60]
-        XCTAssertEqual(ListeningStatsStore.currentStreak(dayTotals: totals, calendar: calendar, now: now), 2)
+        #expect(ListeningStatsStore.currentStreak(dayTotals: totals, calendar: calendar, now: now) == 2)
     }
 
-    func testStreakZeroWhenSecondsAreZero() {
+    @Test func streakZeroWhenSecondsAreZero() {
         let calendar = Calendar.current
         let now = Date()
         let today = calendar.startOfDay(for: now)
-        XCTAssertEqual(ListeningStatsStore.currentStreak(dayTotals: [today: 0], calendar: calendar, now: now), 0)
+        #expect(ListeningStatsStore.currentStreak(dayTotals: [today: 0], calendar: calendar, now: now) == 0)
     }
 
     private func seedBook(

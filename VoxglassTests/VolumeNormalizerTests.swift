@@ -1,14 +1,15 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class VolumeNormalizerTests: XCTestCase {
+@Suite struct VolumeNormalizerTests {
 
-    func testInitialGainIsUnity() {
+    @Test func initialGainIsUnity() {
         let normalizer = VolumeNormalizer()
-        XCTAssertEqual(normalizer.gain, 1.0)
+        #expect(normalizer.gain == 1.0)
     }
 
-    func testGainDoesNotChaseZeroCrossings() {
+    @Test func gainDoesNotChaseZeroCrossings() {
         let normalizer = VolumeNormalizer()
         let sampleRate: Float = 44100
         let frequency: Float = 440
@@ -26,10 +27,10 @@ final class VolumeNormalizerTests: XCTestCase {
         }
 
         let variance = gains.map { abs($0 - gains.first!) }.reduce(0, +) / Float(gains.count)
-        XCTAssertLessThan(variance, 0.05, "Gain should not chase zero crossings of a steady sine wave")
+        #expect(variance < 0.05)
     }
 
-    func testConvergesForQuietInput() {
+    @Test func convergesForQuietInput() {
         let normalizer = VolumeNormalizer()
         let amplitude: Float = 0.02  // well below targetRMS
 
@@ -37,11 +38,11 @@ final class VolumeNormalizerTests: XCTestCase {
             _ = normalizer.process(amplitude)
         }
 
-        XCTAssertGreaterThan(normalizer.gain, 1.0, "Gain should rise for quiet input")
-        XCTAssertLessThanOrEqual(normalizer.gain, 4.0)
+        #expect(normalizer.gain > 1.0)
+        #expect(normalizer.gain <= 4.0)
     }
 
-    func testLimiterNeverClips() {
+    @Test func limiterNeverClips() {
         let normalizer = VolumeNormalizer()
         var maxOutput: Float = 0
 
@@ -50,43 +51,43 @@ final class VolumeNormalizerTests: XCTestCase {
             maxOutput = max(maxOutput, abs(output))
         }
 
-        XCTAssertLessThanOrEqual(maxOutput, 1.0)
+        #expect(maxOutput <= 1.0)
     }
 
-    func testSilenceDoesNotWindGainUp() {
+    @Test func silenceDoesNotWindGainUp() {
         let normalizer = VolumeNormalizer()
         for _ in 0..<4096 {
             _ = normalizer.process(0)
         }
-        XCTAssertEqual(normalizer.gain, 1.0, "Gain should stay at unity on silence")
+        #expect(normalizer.gain == 1.0)  // Gain should stay at unity on silence
     }
 
-    func testResetRestoresUnity() {
+    @Test func resetRestoresUnity() {
         let normalizer = VolumeNormalizer()
         let amplitude: Float = 0.02
         for _ in 0..<4096 {
             _ = normalizer.process(amplitude)
         }
-        XCTAssertGreaterThan(normalizer.gain, 1.0)
+        #expect(normalizer.gain > 1.0)
 
         normalizer.reset()
-        XCTAssertEqual(normalizer.gain, 1.0)
+        #expect(normalizer.gain == 1.0)
     }
 
-    func testGainStaysWithinBounds() {
+    @Test func gainStaysWithinBounds() {
         let normalizer = VolumeNormalizer()
 
         for _ in 0..<4096 {
             _ = normalizer.process(0.00001)
         }
-        XCTAssertGreaterThanOrEqual(normalizer.gain, 0.25)
-        XCTAssertLessThanOrEqual(normalizer.gain, 4.0)
+        #expect(normalizer.gain >= 0.25)
+        #expect(normalizer.gain <= 4.0)
 
         normalizer.reset()
         for _ in 0..<4096 {
             _ = normalizer.process(0.99)
         }
-        XCTAssertGreaterThanOrEqual(normalizer.gain, 0.25)
-        XCTAssertLessThanOrEqual(normalizer.gain, 4.0)
+        #expect(normalizer.gain >= 0.25)
+        #expect(normalizer.gain <= 4.0)
     }
 }

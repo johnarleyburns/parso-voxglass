@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class BackupPayloadTests: XCTestCase {
+@Suite struct BackupPayloadTests {
 
-    func testRoundTripEncodeDecode() throws {
+    @Test func roundTripEncodeDecode() throws {
         let bookID = UUID()
         let sourceID = UUID()
         let chapterID = UUID()
@@ -88,22 +89,22 @@ final class BackupPayloadTests: XCTestCase {
         let decoder = JSONDecoder()
         let decoded = try decoder.decode(BackupPayload.self, from: data)
 
-        XCTAssertEqual(decoded.version, 1)
-        XCTAssertEqual(decoded.books.count, 1)
-        XCTAssertEqual(decoded.books[0].book.title, "Test Book")
-        XCTAssertEqual(decoded.books[0].chapters.count, 1)
-        XCTAssertEqual(decoded.books[0].source?.title, "LibriVox Source")
-        XCTAssertEqual(decoded.positions.count, 1)
-        XCTAssertEqual(decoded.positions[0].position, 42.5)
-        XCTAssertEqual(decoded.bookmarks.count, 1)
-        XCTAssertEqual(decoded.bookmarks[0].note, "Interesting passage")
-        XCTAssertEqual(decoded.playlists.count, 1)
-        XCTAssertEqual(decoded.playlists[0].playlist.title, "Favorites")
-        XCTAssertEqual(decoded.tasteTerms.count, 1)
-        XCTAssertEqual(decoded.tasteTerms[0].weight, 3.5)
+        #expect(decoded.version == 1)
+        #expect(decoded.books.count == 1)
+        #expect(decoded.books[0].book.title == "Test Book")
+        #expect(decoded.books[0].chapters.count == 1)
+        #expect(decoded.books[0].source?.title == "LibriVox Source")
+        #expect(decoded.positions.count == 1)
+        #expect(decoded.positions[0].position == 42.5)
+        #expect(decoded.bookmarks.count == 1)
+        #expect(decoded.bookmarks[0].note == "Interesting passage")
+        #expect(decoded.playlists.count == 1)
+        #expect(decoded.playlists[0].playlist.title == "Favorites")
+        #expect(decoded.tasteTerms.count == 1)
+        #expect(decoded.tasteTerms[0].weight == 3.5)
     }
 
-    func testEmptyPayloadRoundTrip() throws {
+    @Test func emptyPayloadRoundTrip() throws {
         let payload = BackupPayload(
             version: 1,
             exportDate: Date(),
@@ -117,11 +118,11 @@ final class BackupPayloadTests: XCTestCase {
         let data = try JSONEncoder().encode(payload)
         let decoded = try JSONDecoder().decode(BackupPayload.self, from: data)
 
-        XCTAssertEqual(decoded.books.count, 0)
-        XCTAssertEqual(decoded.positions.count, 0)
+        #expect(decoded.books.count == 0)
+        #expect(decoded.positions.count == 0)
     }
 
-    func testVersionMismatchIsRejected() {
+    @Test func versionMismatchIsRejected() {
         let payload = BackupPayload(
             version: 999,
             exportDate: Date(),
@@ -132,8 +133,7 @@ final class BackupPayloadTests: XCTestCase {
             tasteTerms: []
         )
         // Version 999 > currentVersion, so should be rejected during import.
-        XCTAssertGreaterThan(payload.version, BackupPayload.currentVersion,
-            "If a backup has a higher version than current, the import must reject it")
+        #expect(payload.version > BackupPayload.currentVersion)
     }
 }
 

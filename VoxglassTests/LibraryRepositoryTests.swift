@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class LibraryRepositoryTests: XCTestCase {
-    func testSetFavoritePersistsAndFilteredFetchReturnsFavoriteBooks() async throws {
+@Suite(.serialized) struct LibraryRepositoryTests {
+    @Test func setFavoritePersistsAndFilteredFetchReturnsFavoriteBooks() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "favorite-update")
         let repository = LibraryRepository(database: database)
         let seeded = try await seedBook(in: database, title: "Favorite Candidate")
@@ -10,12 +11,12 @@ final class LibraryRepositoryTests: XCTestCase {
         let updated = try await repository.setFavorite(true, for: seeded.bookID)
         let favorites = try await repository.fetchBooks(filteredBy: .favorites)
 
-        XCTAssertEqual(updated?.book.id, seeded.bookID)
-        XCTAssertEqual(updated?.book.isFavorite, true)
-        XCTAssertEqual(favorites.map(\.book.id), [seeded.bookID])
+        #expect(updated?.book.id == seeded.bookID)
+        #expect(updated?.book.isFavorite == true)
+        #expect(favorites.map(\.book.id) == [seeded.bookID])
     }
 
-    func testExistingLibraryCanBeQueuedAfterContentKeyBackfill() async throws {
+    @Test func existingLibraryCanBeQueuedAfterContentKeyBackfill() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "initial-cloudkit-enqueue")
         let stateStore = CloudSyncStateStore(database: database)
         let repository = LibraryRepository(database: database)
@@ -30,23 +31,23 @@ final class LibraryRepositoryTests: XCTestCase {
         )
 
         let backfilled = await repository.backfillContentKeysIfNeeded()
-        XCTAssertEqual(backfilled, 2)
+        #expect(backfilled == 2)
 
         let queued = await repository.enqueueExistingLibraryForSync()
-        XCTAssertEqual(queued, 1)
+        #expect(queued == 1)
 
         let pending = try await stateStore.dequeuePending(limit: 10)
-        XCTAssertEqual(pending.count, 1)
-        XCTAssertEqual(pending.first?.localID, seeded.bookID.uuidString)
-        XCTAssertEqual(pending.first?.recordType, CloudKitRecordMapper.RecordType.book.rawValue)
-        XCTAssertEqual(pending.first?.changeType, "update")
+        #expect(pending.count == 1)
+        #expect(pending.first?.localID == seeded.bookID.uuidString)
+        #expect(pending.first?.recordType == CloudKitRecordMapper.RecordType.book.rawValue)
+        #expect(pending.first?.changeType == "update")
 
         _ = await repository.enqueueExistingLibraryForSync()
         let pendingCount = try await stateStore.pendingCount()
-        XCTAssertEqual(pendingCount, 1, "Queueing twice must not duplicate pending rows")
+        #expect(pendingCount == 1)  // Queueing twice must not duplicate pending rows
     }
 
-    func testFetchSourcesReturnsNewestFirst() async throws {
+    @Test func fetchSourcesReturnsNewestFirst() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "source-fetch")
         let repository = LibraryRepository(database: database)
 
@@ -66,12 +67,12 @@ final class LibraryRepositoryTests: XCTestCase {
 
         let sources = try await repository.fetchSources()
 
-        XCTAssertEqual(sources.map(\.id), [newer.id, older.id])
-        XCTAssertEqual(sources.first?.kind, .librivox)
-        XCTAssertEqual(sources.first?.url?.absoluteString, "https://archive.org/details/newer")
+        #expect(sources.map(\.id) == [newer.id, older.id])
+        #expect(sources.first?.kind == .librivox)
+        #expect(sources.first?.url?.absoluteString == "https://archive.org/details/newer")
     }
 
-    func testDeleteBookCascadesAndRemovesOrphanSource() async throws {
+    @Test func deleteBookCascadesAndRemovesOrphanSource() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "delete-cascade")
         let repository = LibraryRepository(database: database)
         let seeded = try await seedBook(in: database, title: "Doomed Book")
@@ -99,22 +100,22 @@ final class LibraryRepositoryTests: XCTestCase {
         try await repository.deleteBook(seeded.bookID)
 
         let library = try await repository.fetchLibrary()
-        XCTAssertTrue(library.isEmpty)
+        #expect(library.isEmpty)
 
         let sources = try await repository.fetchSources()
-        XCTAssertTrue(sources.isEmpty, "Orphaned source should be removed")
+        #expect(sources.isEmpty)  // Orphaned source should be removed
 
         let chapters = try await database.query("SELECT id FROM chapters WHERE book_id = ?", [.string(seeded.bookID.uuidString)])
-        XCTAssertTrue(chapters.isEmpty, "Chapters should cascade-delete")
+        #expect(chapters.isEmpty)  // Chapters should cascade-delete
 
         let positions = try await database.query("SELECT id FROM playback_positions WHERE book_id = ?", [.string(seeded.bookID.uuidString)])
-        XCTAssertTrue(positions.isEmpty, "Playback positions should cascade-delete")
+        #expect(positions.isEmpty)  // Playback positions should cascade-delete
 
         let downloads = try await repository.fetchDownloadRecords(forBookID: seeded.bookID)
-        XCTAssertTrue(downloads.isEmpty, "Download records should cascade-delete")
+        #expect(downloads.isEmpty)  // Download records should cascade-delete
     }
 
-    func testDownloadRecordsDriveDownloadedFilter() async throws {
+    @Test func downloadRecordsDriveDownloadedFilter() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "downloaded-filter")
         let repository = LibraryRepository(database: database)
         let downloaded = try await seedBook(in: database, title: "Cached Book")
@@ -134,14 +135,14 @@ final class LibraryRepositoryTests: XCTestCase {
         ], forBookID: downloaded.bookID)
 
         let filtered = try await repository.fetchBooks(filteredBy: .downloaded)
-        XCTAssertEqual(filtered.map(\.book.id), [downloaded.bookID])
+        #expect(filtered.map(\.book.id) == [downloaded.bookID])
 
         try await repository.deleteDownloadRecords(forBookID: downloaded.bookID)
         let afterDelete = try await repository.fetchBooks(filteredBy: .downloaded)
-        XCTAssertTrue(afterDelete.isEmpty)
+        #expect(afterDelete.isEmpty)
     }
 
-    func testUpdateDownloadRecordChangesState() async throws {
+    @Test func updateDownloadRecordChangesState() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "download-update")
         let repository = LibraryRepository(database: database)
         let seeded = try await seedBook(in: database, title: "Progressing Book")
@@ -166,11 +167,11 @@ final class LibraryRepositoryTests: XCTestCase {
         )
 
         let records = try await repository.fetchDownloadRecords(forBookID: seeded.bookID)
-        XCTAssertEqual(records.count, 1)
-        XCTAssertEqual(records.first?.state, .complete)
+        #expect(records.count == 1)
+        #expect(records.first?.state == .complete)
     }
 
-    func testFetchRecentlyPlayedOrdersByLatestPlaybackPosition() async throws {
+    @Test func fetchRecentlyPlayedOrdersByLatestPlaybackPosition() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "recently-played")
         let repository = LibraryRepository(database: database)
         let first = try await seedBook(in: database, title: "First Book")
@@ -194,10 +195,10 @@ final class LibraryRepositoryTests: XCTestCase {
 
         let recentlyPlayed = try await repository.fetchRecentlyPlayed()
 
-        XCTAssertEqual(recentlyPlayed.map(\.book.id), [second.bookID, first.bookID])
+        #expect(recentlyPlayed.map(\.book.id) == [second.bookID, first.bookID])
     }
 
-    func testFetchListenedWorkExclusionKeysIncludesContentAndWorkKeys() async throws {
+    @Test func fetchListenedWorkExclusionKeysIncludesContentAndWorkKeys() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "listened-work-keys")
         let repository = LibraryRepository(database: database)
         let listened = try await seedBook(
@@ -227,15 +228,15 @@ final class LibraryRepositoryTests: XCTestCase {
 
         let keys = try await repository.fetchListenedWorkExclusionKeys()
 
-        XCTAssertTrue(keys.contains(listened.bookID.uuidString))
-        XCTAssertTrue(keys.contains("ia:clouds_librivox"))
-        XCTAssertTrue(keys.contains("clouds_librivox"))
-        XCTAssertTrue(keys.contains(WorkKey.normalized(author: "Aristophanes", title: "The Clouds (Version 2)")))
-        XCTAssertFalse(keys.contains(unplayed.bookID.uuidString))
-        XCTAssertFalse(keys.contains("unplayed_librivox"))
+        #expect(keys.contains(listened.bookID.uuidString))
+        #expect(keys.contains("ia:clouds_librivox"))
+        #expect(keys.contains("clouds_librivox"))
+        #expect(keys.contains(WorkKey.normalized(author: "Aristophanes", title: "The Clouds (Version 2)")))
+        #expect(!(keys.contains(unplayed.bookID.uuidString)))
+        #expect(!(keys.contains("unplayed_librivox")))
     }
 
-    func testBookIsFinishedOnlyWhenAllChaptersFinished() async throws {
+    @Test func bookIsFinishedOnlyWhenAllChaptersFinished() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "progress-finished")
         let repository = LibraryRepository(database: database)
         let seeded = try await seedBook(in: database, title: "Two Chapter Book")
@@ -252,10 +253,7 @@ final class LibraryRepositoryTests: XCTestCase {
         ))
 
         var progress = try await repository.fetchBookProgress()
-        XCTAssertEqual(
-            progress[seeded.bookID]?.isFinished, false,
-            "One finished chapter out of two must not mark the book finished"
-        )
+        #expect(progress[seeded.bookID]?.isFinished == false)  // One finished chapter out of two must not mark the book finished
 
         try await positionStore.save(PlaybackPosition(
             bookID: seeded.bookID,
@@ -267,10 +265,10 @@ final class LibraryRepositoryTests: XCTestCase {
         ))
 
         progress = try await repository.fetchBookProgress()
-        XCTAssertEqual(progress[seeded.bookID]?.isFinished, true)
+        #expect(progress[seeded.bookID]?.isFinished == true)
     }
 
-    func testBookProgressAccumulatesFinishedChapterDurations() async throws {
+    @Test func bookProgressAccumulatesFinishedChapterDurations() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "progress-cumulative")
         let repository = LibraryRepository(database: database)
         let seeded = try await seedBook(in: database, title: "Cumulative Book")
@@ -295,11 +293,8 @@ final class LibraryRepositoryTests: XCTestCase {
         ))
 
         let progress = try await repository.fetchBookProgress()
-        XCTAssertEqual(progress[seeded.bookID]?.isFinished, false)
-        XCTAssertEqual(
-            progress[seeded.bookID]?.lastPosition ?? 0, 150, accuracy: 0.001,
-            "Progress must be finished-chapter durations plus the current offset, not the max within-chapter offset"
-        )
+        #expect(progress[seeded.bookID]?.isFinished == false)
+        #expect(abs((progress[seeded.bookID]?.lastPosition ?? 0) - (150)) <= 0.001)  // Progress must be finished-chapter durations plus the current offset, not the max within-chapter offset
     }
 
     private func seedExtraChapter(
@@ -376,7 +371,7 @@ final class LibraryRepositoryTests: XCTestCase {
         return (source.id, bookID, chapterID)
     }
 
-    func testBackfillBookTasteSeedsAuthorsFromPreTasteCaptureBooks() async throws {
+    @Test func backfillBookTasteSeedsAuthorsFromPreTasteCaptureBooks() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "backfill-taste")
         let repository = LibraryRepository(database: database)
         let profileStore = TasteProfileStore(database: database)
@@ -434,17 +429,17 @@ final class LibraryRepositoryTests: XCTestCase {
         ])
 
         let first = await repository.backfillBookTasteIfNeeded()
-        XCTAssertEqual(first, 1)
+        #expect(first == 1)
 
         let second = await repository.backfillBookTasteIfNeeded()
-        XCTAssertEqual(second, 0, "idempotent")
+        #expect(second == 0)  // idempotent
 
         await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
         let profile = await profileStore.fetchProfile()
-        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "jane austen" })
+        #expect(profile.creatorTerms.contains { $0.term == "jane austen" })
     }
 
-    func testPositionOnlyBookContributesTasteTerms() async throws {
+    @Test func positionOnlyBookContributesTasteTerms() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "backfill-position-only-taste")
         let repository = LibraryRepository(database: database)
         let profileStore = TasteProfileStore(database: database)
@@ -467,36 +462,33 @@ final class LibraryRepositoryTests: XCTestCase {
         await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
 
         let profile = await profileStore.fetchProfile()
-        XCTAssertFalse(
-            profile.isEmpty,
-            "a played book with no usable authors and no book_taste rows must still contribute taste terms"
-        )
-        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "the mysterious island" })
+        #expect(!(profile.isEmpty))  // a played book with no usable authors and no book_taste rows must still contribute taste terms
+        #expect(profile.subjectTerms.contains { $0.term == "the mysterious island" })
     }
 
-    func testTasteSeedTermsPrefersUsableAuthorsOverTitle() {
+    @Test func tasteSeedTermsPrefersUsableAuthorsOverTitle() {
         let terms = LibraryRepository.tasteSeedTerms(
             authors: ["  Jules Verne  ", "Various"],
             title: "The Mysterious Island"
         )
-        XCTAssertEqual(terms.map(\.axis), ["author"])
-        XCTAssertEqual(terms.map(\.term), ["jules verne"])
+        #expect(terms.map(\.axis) == ["author"])
+        #expect(terms.map(\.term) == ["jules verne"])
     }
 
-    func testTasteSeedTermsFallsBackToTitleSubjectWhenAuthorsUnusable() {
+    @Test func tasteSeedTermsFallsBackToTitleSubjectWhenAuthorsUnusable() {
         for authors in [[], ["Unknown"], ["Unknown author"], ["Various"], ["Internet Archive"], ["Local Files"]] {
             let terms = LibraryRepository.tasteSeedTerms(authors: authors, title: "The Mysterious Island")
-            XCTAssertEqual(terms.map(\.axis), ["subject"], "authors \(authors)")
-            XCTAssertEqual(terms.map(\.term), ["the mysterious island"], "authors \(authors)")
+            #expect(terms.map(\.axis) == ["subject"])  // authors \(authors)
+            #expect(terms.map(\.term) == ["the mysterious island"])  // authors \(authors)
         }
     }
 
-    func testTasteSeedTermsEmptyWhenNothingUsable() {
-        XCTAssertTrue(LibraryRepository.tasteSeedTerms(authors: ["Unknown"], title: "   ").isEmpty)
-        XCTAssertTrue(LibraryRepository.tasteSeedTerms(authors: [], title: "").isEmpty)
+    @Test func tasteSeedTermsEmptyWhenNothingUsable() {
+        #expect(LibraryRepository.tasteSeedTerms(authors: ["Unknown"], title: "   ").isEmpty)
+        #expect(LibraryRepository.tasteSeedTerms(authors: [], title: "").isEmpty)
     }
 
-    func testResplitBookTasteMigration() async throws {
+    @Test func resplitBookTasteMigration() async throws {
         let flagKey = "voxglass.bookTasteSubjectResplitV1"
         UserDefaults.standard.removeObject(forKey: flagKey)
         defer { UserDefaults.standard.removeObject(forKey: flagKey) }
@@ -524,29 +516,29 @@ final class LibraryRepositoryTests: XCTestCase {
         )
 
         let count = await repository.resplitBookTasteSubjectsIfNeeded()
-        XCTAssertEqual(count, 1)
+        #expect(count == 1)
 
         let rows = try await database.query(
             "SELECT term FROM book_taste WHERE book_id = ? AND axis = 'subject' ORDER BY term",
             [.string(bookID)]
         )
         let terms = rows.compactMap { $0.string("term") }
-        XCTAssertTrue(terms.contains("greek drama"))
-        XCTAssertTrue(terms.contains("aristophanes"))
-        XCTAssertTrue(terms.contains("greek comedy"))
-        XCTAssertFalse(terms.contains { $0.contains(";") }, "no term should contain semicolon after migration")
+        #expect(terms.contains("greek drama"))
+        #expect(terms.contains("aristophanes"))
+        #expect(terms.contains("greek comedy"))
+        #expect(!(terms.contains { $0.contains(";") }))  // no term should contain semicolon after migration
 
         // Idempotent second run
         let secondCount = await repository.resplitBookTasteSubjectsIfNeeded()
-        XCTAssertEqual(secondCount, 0, "migration must be idempotent")
+        #expect(secondCount == 0)  // migration must be idempotent
 
         // Verify reco_surfaced was cleared
         let surfacedRows = try await database.query("SELECT COUNT(*) AS n FROM reco_surfaced", [])
         let n = surfacedRows.first?.int("n") ?? -1
-        XCTAssertEqual(Int(n), 0, "reco_surfaced must be cleared by migration")
+        #expect(Int(n) == 0)  // reco_surfaced must be cleared by migration
     }
 
-    func testResplitMigrationProfileRebuildUsesSplitTerms() async throws {
+    @Test func resplitMigrationProfileRebuildUsesSplitTerms() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "resplit-profile-rebuild")
         let repository = LibraryRepository(database: database)
         let profileStore = TasteProfileStore(database: database)
@@ -603,9 +595,9 @@ final class LibraryRepositoryTests: XCTestCase {
         // Rebuild and verify split terms appear in profile
         await profileStore.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
         let profile = await profileStore.fetchProfile()
-        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "greek drama" })
-        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "aristophanes" })
-        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "aristophanes" })
+        #expect(profile.subjectTerms.contains { $0.term == "greek drama" })
+        #expect(profile.subjectTerms.contains { $0.term == "aristophanes" })
+        #expect(profile.creatorTerms.contains { $0.term == "aristophanes" })
     }
 
     @discardableResult

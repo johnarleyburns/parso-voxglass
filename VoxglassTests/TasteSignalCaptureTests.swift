@@ -1,100 +1,98 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class TasteSignalCaptureTests: XCTestCase {
+@Suite struct TasteSignalCaptureTests {
 
-    func testBelowThresholdPeriodicSaveDoesNotUpsert() async throws {
+    @Test func belowThresholdPeriodicSaveDoesNotUpsert() async throws {
         let harness = try await makeHarness(named: "signal-below-threshold")
 
         await harness.apply(position: 10, duration: 100, isFavorite: false, isFinished: false)
 
         let weight = try await harness.authorWeight()
-        XCTAssertNil(weight, "sub-20% listens must not touch the profile")
+        #expect(weight == nil)  // sub-20% listens must not touch the profile
         let state = try await harness.state()
-        XCTAssertNil(state, "sub-20% listens must not create signal state")
+        #expect(state == nil)  // sub-20% listens must not create signal state
     }
 
-    func testInvalidDurationIsIgnoredUnlessFinished() async throws {
+    @Test func invalidDurationIsIgnoredUnlessFinished() async throws {
         let harness = try await makeHarness(named: "signal-invalid-duration")
 
         await harness.apply(position: 500, duration: nil, isFavorite: false, isFinished: false)
         let weight = try await harness.authorWeight()
-        XCTAssertNil(weight)
+        #expect(weight == nil)
 
         await harness.apply(position: 500, duration: nil, isFavorite: false, isFinished: true)
         let finishedWeight = try await harness.authorWeight()
-        XCTAssertEqual(try XCTUnwrap(finishedWeight), 1.0, accuracy: 0.01)
+        #expect(abs((try #require(finishedWeight)) - (1.0)) <= 0.01)
     }
 
-    func testCrossingThresholdUpsertsOnceAndPeriodicRepeatsAreNoOps() async throws {
+    @Test func crossingThresholdUpsertsOnceAndPeriodicRepeatsAreNoOps() async throws {
         let harness = try await makeHarness(named: "signal-threshold-once")
 
         await harness.apply(position: 30, duration: 100, isFavorite: false, isFinished: false)
         let firstValue = try await harness.authorWeight()
-        let first = try XCTUnwrap(firstValue)
-        XCTAssertEqual(first, 0.5, accuracy: 0.01, "targetIncrement = max(0.5, 0.3)")
+        let first = try #require(firstValue)
+        #expect(abs((first) - (0.5)) <= 0.001)  // targetIncrement = max(0.5, 0.3)
 
         // Simulated 5-second periodic saves at the same completion: no growth.
         for _ in 0..<10 {
             await harness.apply(position: 30, duration: 100, isFavorite: false, isFinished: false)
         }
         let afterRepeatsValue = try await harness.authorWeight()
-        let afterRepeats = try XCTUnwrap(afterRepeatsValue)
-        XCTAssertEqual(afterRepeats, first, accuracy: 0.01,
-                       "repeated periodic saves must not change weights")
+        let afterRepeats = try #require(afterRepeatsValue)
+        #expect(abs((afterRepeats) - (first)) <= 0.001)  // repeated periodic saves must not change weights
     }
 
-    func testProgressAddsOnlyThePositiveDelta() async throws {
+    @Test func progressAddsOnlyThePositiveDelta() async throws {
         let harness = try await makeHarness(named: "signal-progress-delta")
 
         await harness.apply(position: 30, duration: 100, isFavorite: false, isFinished: false)
         await harness.apply(position: 80, duration: 100, isFavorite: false, isFinished: false)
 
         let weightValue = try await harness.authorWeight()
-        let weight = try XCTUnwrap(weightValue)
-        XCTAssertEqual(weight, 0.8, accuracy: 0.01, "0.5 then +0.3 delta as completion rises")
+        let weight = try #require(weightValue)
+        #expect(abs((weight) - (0.8)) <= 0.001)  // 0.5 then +0.3 delta as completion rises
 
         let stateValue = try await harness.state()
-        let state = try XCTUnwrap(stateValue)
-        XCTAssertEqual(state.maxCompletion, 0.8, accuracy: 0.001)
-        XCTAssertEqual(state.appliedIncrement, 0.8, accuracy: 0.001)
+        let state = try #require(stateValue)
+        #expect(abs((state.maxCompletion) - (0.8)) <= 0.001)
+        #expect(abs((state.appliedIncrement) - (0.8)) <= 0.001)
     }
 
-    func testFinishingAddsOnlyTheCompletionDelta() async throws {
+    @Test func finishingAddsOnlyTheCompletionDelta() async throws {
         let harness = try await makeHarness(named: "signal-finish-delta")
 
         await harness.apply(position: 50, duration: 100, isFavorite: false, isFinished: false)
         await harness.apply(position: 100, duration: 100, isFavorite: false, isFinished: true)
         let weightValue = try await harness.authorWeight()
-        let weight = try XCTUnwrap(weightValue)
-        XCTAssertEqual(weight, 1.0, accuracy: 0.01, "0.5 first, then only the 0.5 finish delta")
+        let weight = try #require(weightValue)
+        #expect(abs((weight) - (1.0)) <= 0.001)  // 0.5 first, then only the 0.5 finish delta
 
         // A second finished save (e.g. another chapter-end persist) is a no-op.
         await harness.apply(position: 100, duration: 100, isFavorite: false, isFinished: true)
         let repeatedValue = try await harness.authorWeight()
-        let repeated = try XCTUnwrap(repeatedValue)
-        XCTAssertEqual(repeated, 1.0, accuracy: 0.01)
+        let repeated = try #require(repeatedValue)
+        #expect(abs((repeated) - (1.0)) <= 0.01)
     }
 
-    func testFavoritingAddsOnlyTheFavoriteDeltaOnce() async throws {
+    @Test func favoritingAddsOnlyTheFavoriteDeltaOnce() async throws {
         let harness = try await makeHarness(named: "signal-favorite-delta")
 
         await harness.apply(position: 100, duration: 100, isFavorite: false, isFinished: true)
         let baseValue = try await harness.authorWeight()
-        let base = try XCTUnwrap(baseValue)
-        XCTAssertEqual(base, 1.0, accuracy: 0.01)
+        let base = try #require(baseValue)
+        #expect(abs((base) - (1.0)) <= 0.01)
 
         await harness.apply(position: 100, duration: 100, isFavorite: true, isFinished: true)
         let favoritedValue = try await harness.authorWeight()
-        let favorited = try XCTUnwrap(favoritedValue)
-        XCTAssertEqual(favorited, RecommendationConstants.favoriteBoost, accuracy: 0.01,
-                       "target becomes 1.0 × favoriteBoost; only the delta is added")
+        let favorited = try #require(favoritedValue)
+        #expect(abs((favorited) - (RecommendationConstants.favoriteBoost)) <= 0.001)  // target becomes 1.0 × favoriteBoost; only the delta is added
 
         await harness.apply(position: 100, duration: 100, isFavorite: true, isFinished: true)
         let repeatedValue = try await harness.authorWeight()
-        let repeated = try XCTUnwrap(repeatedValue)
-        XCTAssertEqual(repeated, RecommendationConstants.favoriteBoost, accuracy: 0.01,
-                       "the favorite delta is applied exactly once")
+        let repeated = try #require(repeatedValue)
+        #expect(abs((repeated) - (RecommendationConstants.favoriteBoost)) <= 0.001)  // the favorite delta is applied exactly once
     }
 
     // MARK: - Harness
@@ -150,7 +148,7 @@ final class TasteSignalCaptureTests: XCTestCase {
         let metadata = try metadataFixture()
         let imported = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
         let terms = try await repository.fetchBookTasteTerms(for: imported.book.id)
-        XCTAssertFalse(terms.isEmpty, "fixture import must seed book_taste terms")
+        #expect(!(terms.isEmpty))  // fixture import must seed book_taste terms
         return Harness(
             database: database,
             store: TasteProfileStore(database: database),

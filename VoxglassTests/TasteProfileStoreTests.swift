@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
-final class TasteProfileStoreTests: XCTestCase {
+@Suite struct TasteProfileStoreTests {
 
-    func testDecayUpdateMatchesExponentialFormula() async throws {
+    @Test func decayUpdateMatchesExponentialFormula() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-decay")
         let store = TasteProfileStore(database: database)
 
@@ -24,12 +25,12 @@ final class TasteProfileStoreTests: XCTestCase {
             "SELECT weight FROM taste_profile_terms WHERE axis = ? AND term = ?",
             [.string("author"), .string("jane austen")]
         )
-        let weight = try XCTUnwrap(rows.first?.double("weight"))
+        let weight = try #require(rows.first?.double("weight"))
         let expected = previousWeight * exp(-dt / tau) + 1.0
-        XCTAssertEqual(weight, expected, accuracy: 0.001)
+        #expect(abs((weight) - (expected)) <= 0.001)
     }
 
-    func testFreshUpsertUsesIncrementDirectly() async throws {
+    @Test func freshUpsertUsesIncrementDirectly() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-fresh-upsert")
         let store = TasteProfileStore(database: database)
 
@@ -39,11 +40,11 @@ final class TasteProfileStoreTests: XCTestCase {
             "SELECT weight FROM taste_profile_terms WHERE axis = ? AND term = ?",
             [.string("subject"), .string("gothic fiction")]
         )
-        let weight = try XCTUnwrap(rows.first?.double("weight"))
-        XCTAssertEqual(weight, 1.75, accuracy: 0.001)
+        let weight = try #require(rows.first?.double("weight"))
+        #expect(abs((weight) - (1.75)) <= 0.001)
     }
 
-    func testSubjectDampingDownweightsBroadAndStopListTerms() async throws {
+    @Test func subjectDampingDownweightsBroadAndStopListTerms() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-damping")
         let store = TasteProfileStore(database: database)
 
@@ -58,21 +59,21 @@ final class TasteProfileStoreTests: XCTestCase {
 
         let profile = await store.fetchProfile()
 
-        let author = try XCTUnwrap(profile.creatorTerms.first { $0.term == "mary shelley" })
-        XCTAssertEqual(author.weight, 4.0, accuracy: 0.01, "author weights stay undamped")
+        let author = try #require(profile.creatorTerms.first { $0.term == "mary shelley" })
+        #expect(abs((author.weight) - (4.0)) <= 0.001)  // author weights stay undamped
 
         let distinctSubjects = Double(subjects.count + 1) // + "music"
         let divisor = 1.0 + log(distinctSubjects + 1.0)
-        let horror = try XCTUnwrap(profile.subjectTerms.first { $0.term == "horror" })
-        XCTAssertEqual(horror.weight, 4.0 / divisor, accuracy: 0.01)
-        XCTAssertLessThan(horror.weight, author.weight)
+        let horror = try #require(profile.subjectTerms.first { $0.term == "horror" })
+        #expect(abs((horror.weight) - (4.0 / divisor)) <= 0.01)
+        #expect(horror.weight < author.weight)
 
-        let stopListed = try XCTUnwrap(profile.subjectTerms.first { $0.term == "music" })
-        XCTAssertEqual(stopListed.weight, 4.0 * 0.05, accuracy: 0.01)
-        XCTAssertLessThan(stopListed.weight, horror.weight)
+        let stopListed = try #require(profile.subjectTerms.first { $0.term == "music" })
+        #expect(abs((stopListed.weight) - (4.0 * 0.05)) <= 0.01)
+        #expect(stopListed.weight < horror.weight)
     }
 
-    func testSeedSubjectFiltersStopListTerms() async throws {
+    @Test func seedSubjectFiltersStopListTerms() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-stoplist-seed")
         let store = TasteProfileStore(database: database)
 
@@ -83,10 +84,10 @@ final class TasteProfileStoreTests: XCTestCase {
         let rows = try await database.query(
             "SELECT term FROM taste_profile_terms WHERE axis = 'subject'", []
         )
-        XCTAssertEqual(rows.compactMap { $0.string("term") }, ["detective fiction"])
+        #expect(rows.compactMap { $0.string("term") } == ["detective fiction"])
     }
 
-    func testSurfacedRingRespectsCap() async throws {
+    @Test func surfacedRingRespectsCap() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-surfaced-cap")
         let store = TasteProfileStore(database: database)
 
@@ -100,14 +101,14 @@ final class TasteProfileStoreTests: XCTestCase {
         }
 
         let rows = try await database.query("SELECT COUNT(*) AS n FROM reco_surfaced", [])
-        let count = try XCTUnwrap(rows.first?.int("n"))
-        XCTAssertEqual(Int(count), cap)
+        let count = try #require(rows.first?.int("n"))
+        #expect(Int(count) == cap)
 
         let surfaced = await store.fetchSurfacedIdentifiers()
-        XCTAssertEqual(surfaced.count, cap)
+        #expect(surfaced.count == cap)
     }
 
-    func testHistoryRebuildIncludesAuthorsSubjectsAndLanguages() async throws {
+    @Test func historyRebuildIncludesAuthorsSubjectsAndLanguages() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-axes")
         let store = TasteProfileStore(database: database)
         try await seedHistoryBook(
@@ -122,12 +123,12 @@ final class TasteProfileStoreTests: XCTestCase {
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
 
         let profile = await store.fetchProfile()
-        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "aristophanes" })
-        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "drama" })
-        XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
+        #expect(profile.creatorTerms.contains { $0.term == "aristophanes" })
+        #expect(profile.subjectTerms.contains { $0.term == "drama" })
+        #expect(profile.languageTerms.contains { $0.term == "eng" })
     }
 
-    func testHistoryRebuildUsesPlaybackPositionWhenNoListeningEventsExist() async throws {
+    @Test func historyRebuildUsesPlaybackPositionWhenNoListeningEventsExist() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-position-only")
         let store = TasteProfileStore(database: database)
         try await seedHistoryBook(
@@ -144,14 +145,14 @@ final class TasteProfileStoreTests: XCTestCase {
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
 
         let weight = try await rawWeight(in: database, axis: "author", term: "position author")
-        XCTAssertEqual(weight, 1.5, accuracy: 0.001)
+        #expect(abs((weight) - (1.5)) <= 0.001)
         let profile = await store.fetchProfile()
-        XCTAssertTrue(profile.creatorTerms.contains { $0.term == "position author" })
-        XCTAssertTrue(profile.subjectTerms.contains { $0.term == "adventure" })
-        XCTAssertTrue(profile.languageTerms.contains { $0.term == "eng" })
+        #expect(profile.creatorTerms.contains { $0.term == "position author" })
+        #expect(profile.subjectTerms.contains { $0.term == "adventure" })
+        #expect(profile.languageTerms.contains { $0.term == "eng" })
     }
 
-    func testOnboardingOnlyBrowsePickProfileIsNotEmpty() async throws {
+    @Test func onboardingOnlyBrowsePickProfileIsNotEmpty() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-onboarding-browse-pick")
         let store = TasteProfileStore(database: database)
 
@@ -161,13 +162,13 @@ final class TasteProfileStoreTests: XCTestCase {
         )
 
         let hasProfile = await store.hasProfile()
-        XCTAssertTrue(hasProfile)
+        #expect(hasProfile)
         let profile = await store.fetchProfile()
-        XCTAssertFalse(profile.isEmpty)
-        XCTAssertFalse(profile.subjectTerms.isEmpty)
+        #expect(!(profile.isEmpty))
+        #expect(!(profile.subjectTerms.isEmpty))
     }
 
-    func testFavoriteBookContributesProfileWeight() async throws {
+    @Test func favoriteBookContributesProfileWeight() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-favorite-weight")
         let store = TasteProfileStore(database: database)
         try await seedHistoryBook(
@@ -183,10 +184,10 @@ final class TasteProfileStoreTests: XCTestCase {
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
 
         let weight = try await rawWeight(in: database, axis: "author", term: "jane austen")
-        XCTAssertEqual(weight, RecommendationConstants.favoriteBoost, accuracy: 0.001)
+        #expect(abs((weight) - (RecommendationConstants.favoriteBoost)) <= 0.001)
     }
 
-    func testHistoryRebuildIsIdempotent() async throws {
+    @Test func historyRebuildIsIdempotent() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-idempotent")
         let store = TasteProfileStore(database: database)
         try await seedHistoryBook(
@@ -203,11 +204,11 @@ final class TasteProfileStoreTests: XCTestCase {
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
         let second = try await rawWeight(in: database, axis: "author", term: "aristophanes")
 
-        XCTAssertEqual(first, 2.0, accuracy: 0.001)
-        XCTAssertEqual(second, first, accuracy: 0.001)
+        #expect(abs((first) - (2.0)) <= 0.001)
+        #expect(abs((second) - (first)) <= 0.001)
     }
 
-    func testHistoryRebuildIgnoresOldV1BackfillMarker() async throws {
+    @Test func historyRebuildIgnoresOldV1BackfillMarker() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-history-old-marker")
         let store = TasteProfileStore(database: database)
         let oldMarker = "voxglass.tasteHistoryBackfilledV1"
@@ -225,20 +226,20 @@ final class TasteProfileStoreTests: XCTestCase {
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
 
         let weight = try await rawWeight(in: database, axis: "author", term: "william shakespeare")
-        XCTAssertEqual(weight, 1.0, accuracy: 0.001)
+        #expect(abs((weight) - (1.0)) <= 0.001)
     }
 
-    func testHistoryIncrementKeepsFloorAndCap() {
-        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 60), RecommendationConstants.minListenIncrement, "floor at minListenIncrement")
-        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 2 * 3600), 2.0, accuracy: 0.001)
-        XCTAssertEqual(RecommendationPipeline.historyIncrement(forSeconds: 100 * 3600), 12.0, "cap at 12")
+    @Test func historyIncrementKeepsFloorAndCap() {
+        #expect(RecommendationPipeline.historyIncrement(forSeconds: 60) == RecommendationConstants.minListenIncrement)  // floor at minListenIncrement
+        #expect(abs((RecommendationPipeline.historyIncrement(forSeconds: 2 * 3600)) - (2.0)) <= 0.001)
+        #expect(RecommendationPipeline.historyIncrement(forSeconds: 100 * 3600) == 12.0)  // cap at 12
     }
 
-    func testOnboardingAuthorSeedWeightStaysBelowMinListenIncrement() {
-        XCTAssertLessThan(RecommendationConstants.onboardingAuthorSeedWeight, RecommendationConstants.minListenIncrement)
+    @Test func onboardingAuthorSeedWeightStaysBelowMinListenIncrement() {
+        #expect(RecommendationConstants.onboardingAuthorSeedWeight < RecommendationConstants.minListenIncrement)
     }
 
-    func testRebuildSeedsCuratedOnboardingPicksAsAuthors() async throws {
+    @Test func rebuildSeedsCuratedOnboardingPicksAsAuthors() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-curated-onboarding")
         let store = TasteProfileStore(database: database)
 
@@ -251,14 +252,14 @@ final class TasteProfileStoreTests: XCTestCase {
             "SELECT axis, term FROM taste_profile_terms WHERE axis = 'author'", []
         )
         let authors = rows.compactMap { $0.string("term") }
-        XCTAssertFalse(authors.isEmpty, "curated onboarding should seed author terms")
+        #expect(!(authors.isEmpty))  // curated onboarding should seed author terms
         for author in authors {
             let weight = try await rawWeight(in: database, axis: "author", term: author)
-            XCTAssertEqual(weight, RecommendationConstants.onboardingAuthorSeedWeight, accuracy: 0.001)
+            #expect(abs((weight) - (RecommendationConstants.onboardingAuthorSeedWeight)) <= 0.001)
         }
     }
 
-    func testConcurrentFetchDuringRebuildNeverSeesEmptyProfile() async throws {
+    @Test func concurrentFetchDuringRebuildNeverSeesEmptyProfile() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-atomic-rebuild")
         let store = TasteProfileStore(database: database)
         try await seedHistoryBook(
@@ -272,7 +273,7 @@ final class TasteProfileStoreTests: XCTestCase {
 
         await store.rebuildFromListeningHistory(version: TasteProfileStore.listeningHistoryRebuildVersion)
         let initial = await store.fetchProfile()
-        XCTAssertFalse(initial.isEmpty, "seeded history must produce a non-empty profile")
+        #expect(!(initial.isEmpty))  // seeded history must produce a non-empty profile
 
         let rebuilds = Task {
             for _ in 0..<40 {
@@ -288,15 +289,12 @@ final class TasteProfileStoreTests: XCTestCase {
         }
         await rebuilds.value
 
-        XCTAssertEqual(
-            emptyReads, 0,
-            "fetchProfile interleaved with a rebuild must never observe an empty (mid-transaction) profile"
-        )
+        #expect(emptyReads == 0)  // fetchProfile interleaved with a rebuild must never observe an empty (mid-transaction) profile
     }
 
     // MARK: - Surfaced ring TTL
 
-    func testSurfacedRingExpiresByTTL() async throws {
+    @Test func surfacedRingExpiresByTTL() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-surfaced-ttl")
         let store = TasteProfileStore(database: database)
         let now = Date().timeIntervalSince1970
@@ -312,19 +310,19 @@ final class TasteProfileStoreTests: XCTestCase {
         )
 
         let surfaced = await store.fetchSurfacedIdentifiers()
-        XCTAssertFalse(surfaced.contains("old-item"), "expired surfaced item must be purged by TTL")
-        XCTAssertTrue(surfaced.contains("fresh-item"), "fresh surfaced item must survive TTL check")
+        #expect(!(surfaced.contains("old-item")))  // expired surfaced item must be purged by TTL
+        #expect(surfaced.contains("fresh-item"))  // fresh surfaced item must survive TTL check
     }
 
     // MARK: - Anonymous author filtering
 
-    func testNormalizedTermRejectsAnonymousAuthor() {
-        XCTAssertNotNil(RecommendationPipeline.normalizedTerm(axis: "author", term: "Jane Austen"))
-        XCTAssertNil(RecommendationPipeline.normalizedTerm(axis: "author", term: "anonymous"))
-        XCTAssertNil(RecommendationPipeline.normalizedTerm(axis: "author", term: "Anonymous"))
+    @Test func normalizedTermRejectsAnonymousAuthor() {
+        #expect(RecommendationPipeline.normalizedTerm(axis: "author", term: "Jane Austen") != nil)
+        #expect(RecommendationPipeline.normalizedTerm(axis: "author", term: "anonymous") == nil)
+        #expect(RecommendationPipeline.normalizedTerm(axis: "author", term: "Anonymous") == nil)
     }
 
-    func testSeedAuthorRejectsAnonymous() async throws {
+    @Test func seedAuthorRejectsAnonymous() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "taste-seed-anonymous")
         let store = TasteProfileStore(database: database)
 
@@ -336,7 +334,7 @@ final class TasteProfileStoreTests: XCTestCase {
             "SELECT term FROM taste_profile_terms WHERE axis = 'author'", []
         )
         let terms = rows.compactMap { $0.string("term") }
-        XCTAssertEqual(terms, ["jane austen"])
+        #expect(terms == ["jane austen"])
     }
 
     @discardableResult
@@ -429,6 +427,6 @@ final class TasteProfileStoreTests: XCTestCase {
             "SELECT weight FROM taste_profile_terms WHERE axis = ? AND term = ?",
             [.string(axis), .string(term)]
         )
-        return try XCTUnwrap(rows.first?.double("weight"))
+        return try #require(rows.first?.double("weight"))
     }
 }

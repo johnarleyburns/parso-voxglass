@@ -1,81 +1,81 @@
-import XCTest
+import Testing
 @testable import VoxglassCore
 
-final class CarPlayNowPlayingModelTests: XCTestCase {
+@Suite struct CarPlayNowPlayingModelTests {
 
-    func testRateTitleReflectsCurrentRate() {
+    @Test func rateTitleReflectsCurrentRate() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 5, rate: 1.5,
             sleepMode: .off, sleepRemaining: nil, hasBookmarkStore: true
         )
-        XCTAssertEqual(config.rateTitle, "1.5\u{00D7}")
+        #expect(config.rateTitle == "1.5\u{00D7}")
     }
 
-    func testSleepButtonActiveWhenTimerArmedEndOfChapter() {
+    @Test func sleepButtonActiveWhenTimerArmedEndOfChapter() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 5, rate: 1.0,
             sleepMode: .endOfChapter, sleepRemaining: nil, hasBookmarkStore: true
         )
-        XCTAssertTrue(config.sleepActive)
-        XCTAssertEqual(config.sleepTitle, "Ch. end")
+        #expect(config.sleepActive)
+        #expect(config.sleepTitle == "Ch. end")
     }
 
-    func testSleepButtonActiveWhenTimerArmedThirtyMin() {
+    @Test func sleepButtonActiveWhenTimerArmedThirtyMin() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 5, rate: 1.0,
             sleepMode: .duration(1800), sleepRemaining: nil, hasBookmarkStore: true
         )
-        XCTAssertTrue(config.sleepActive)
-        XCTAssertEqual(config.sleepTitle, "30 min")
+        #expect(config.sleepActive)
+        #expect(config.sleepTitle == "30 min")
     }
 
-    func testSleepButtonInactiveShowsSleep() {
+    @Test func sleepButtonInactiveShowsSleep() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 5, rate: 1.0,
             sleepMode: .off, sleepRemaining: nil, hasBookmarkStore: true
         )
-        XCTAssertFalse(config.sleepActive)
-        XCTAssertEqual(config.sleepTitle, "Sleep")
+        #expect(!(config.sleepActive))
+        #expect(config.sleepTitle == "Sleep")
     }
 
-    func testCarPlaySleepOptionsLeadWithEndOfChapterAndTrimDurations() {
+    @Test func carPlaySleepOptionsLeadWithEndOfChapterAndTrimDurations() {
         let options = CarPlayNowPlayingModel.sleepOptions
-        XCTAssertEqual(options, [.endOfChapter, .duration(1800), .duration(3600), .off])
+        #expect(options == [.endOfChapter, .duration(1800), .duration(3600), .off])
     }
 
-    func testChaptersHiddenForSingleChapterBook() {
+    @Test func chaptersHiddenForSingleChapterBook() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 1, rate: 1.0,
             sleepMode: .off, sleepRemaining: nil, hasBookmarkStore: true
         )
-        XCTAssertFalse(config.showsChapters)
-        XCTAssertFalse(config.isUpNextChapters)
+        #expect(!(config.showsChapters))
+        #expect(!(config.isUpNextChapters))
     }
 
-    func testChaptersShownForMultiChapterBook() {
+    @Test func chaptersShownForMultiChapterBook() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 10, rate: 1.0,
             sleepMode: .off, sleepRemaining: nil, hasBookmarkStore: true
         )
-        XCTAssertTrue(config.showsChapters)
-        XCTAssertTrue(config.isUpNextChapters)
+        #expect(config.showsChapters)
+        #expect(config.isUpNextChapters)
     }
 
-    func testBookmarkHiddenWithoutBookmarkStore() {
+    @Test func bookmarkHiddenWithoutBookmarkStore() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: true, chapterCount: 5, rate: 1.0,
             sleepMode: .off, sleepRemaining: nil, hasBookmarkStore: false
         )
-        XCTAssertFalse(config.showsBookmark)
+        #expect(!(config.showsBookmark))
     }
 
-    func testNoConfigWithoutSession() {
+    @Test func noConfigWithoutSession() {
         let config = CarPlayNowPlayingModel.config(
             hasSession: false, chapterCount: 0, rate: 1.0,
             sleepMode: .off, sleepRemaining: nil, hasBookmarkStore: false
         )
-        XCTAssertFalse(config.showsRateButton)
-        XCTAssertFalse(config.showsBookmark)
-        XCTAssertFalse(config.showsChapters)
+        #expect(!(config.showsRateButton))
+        #expect(!(config.showsBookmark))
+        #expect(!(config.showsChapters))
     }
 }

@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import VoxglassCore
 
 /// Bookmark CRUD and tombstone semantics (P0-3), tested against an on-disk temp
 /// SQLite database using `AppDatabase.makeTemporaryDatabase`.
-final class BookmarkStoreTests: XCTestCase {
+@Suite struct BookmarkStoreTests {
 
     private let bookID = UUID()
     private let chapterID = UUID()
@@ -28,45 +29,45 @@ final class BookmarkStoreTests: XCTestCase {
         return SQLiteBookmarkStore(database: db)
     }
 
-    func testAddAndFetchReturnsLiveBookmarksOnly() async throws {
+    @Test func addAndFetchReturnsLiveBookmarksOnly() async throws {
         let store = try await makeStore()
         let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 42, note: "test"))
         let fetched = try await store.bookmarks(forBookID: bookID)
-        XCTAssertEqual(fetched.count, 1)
-        XCTAssertEqual(fetched.first?.position, 42)
-        XCTAssertEqual(fetched.first?.note, "test")
-        XCTAssertFalse(fetched.first?.isDeleted ?? true)
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.position == 42)
+        #expect(fetched.first?.note == "test")
+        #expect(!(fetched.first?.isDeleted ?? true))
     }
 
-    func testDeleteSoftDeletesAndExcludesFromLiveFetch() async throws {
+    @Test func deleteSoftDeletesAndExcludesFromLiveFetch() async throws {
         let store = try await makeStore()
         let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 10))
         try await store.delete(id: bm.id!)
 
         let live = try await store.bookmarks(forBookID: bookID)
-        XCTAssertTrue(live.isEmpty, "Soft-deleted bookmarks must not appear in live queries")
+        #expect(live.isEmpty)  // Soft-deleted bookmarks must not appear in live queries
 
         let sync = try await store.bookmarksForSync(bookID: bookID)
-        XCTAssertEqual(sync.count, 1)
-        XCTAssertEqual(sync.first?.id, bm.id)
-        XCTAssertTrue(sync.first?.isDeleted ?? false)
+        #expect(sync.count == 1)
+        #expect(sync.first?.id == bm.id)
+        #expect(sync.first?.isDeleted ?? false)
     }
 
-    func testUpdateNoteChangesTextAndBumpsUpdatedAt() async throws {
+    @Test func updateNoteChangesTextAndBumpsUpdatedAt() async throws {
         let store = try await makeStore()
         let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 5))
         let updated = try await store.updateNote("hello, world", id: bm.id!)
-        XCTAssertEqual(updated?.note, "hello, world")
-        XCTAssertGreaterThanOrEqual(updated?.updatedAt ?? .distantPast, bm.updatedAt)
+        #expect(updated?.note == "hello, world")
+        #expect(updated?.updatedAt ?? .distantPast >= bm.updatedAt)
     }
 
-    func testAddGeneratesAnIDWhenNoneSupplied() async throws {
+    @Test func addGeneratesAnIDWhenNoneSupplied() async throws {
         let store = try await makeStore()
         let bm = try await store.add(Bookmark(bookID: bookID, chapterID: chapterID, position: 0))
-        XCTAssertNotNil(bm.id)
+        #expect(bm.id != nil)
     }
 
-    func testMigration5IsIdempotentAndBackfillsUpdatedAt() async throws {
+    @Test func migration5IsIdempotentAndBackfillsUpdatedAt() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "bm-mig-\(UUID().uuidString)")
         try await db.prepare()
         try await db.prepare()
