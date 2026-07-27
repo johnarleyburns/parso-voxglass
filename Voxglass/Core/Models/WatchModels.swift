@@ -98,6 +98,41 @@ public enum WatchTimeFormat {
     }
 }
 
+/// Adjacent-chapter navigation over a book's chapters in natural (play) order.
+/// Pure, host-testable — used by the watch "next/previous chapter" controls.
+public enum WatchChapterNavigation {
+    public static func next(after chapterID: UUID, in chapters: [Chapter]) -> Chapter? {
+        let sorted = chapters.naturallySorted()
+        guard let idx = sorted.firstIndex(where: { $0.id == chapterID }),
+              idx + 1 < sorted.count else { return nil }
+        return sorted[idx + 1]
+    }
+
+    public static func previous(before chapterID: UUID, in chapters: [Chapter]) -> Chapter? {
+        let sorted = chapters.naturallySorted()
+        guard let idx = sorted.firstIndex(where: { $0.id == chapterID }),
+              idx - 1 >= 0 else { return nil }
+        return sorted[idx - 1]
+    }
+}
+
+/// Canonical local-cache identity for a chapter's audio on the watch. Prefers the
+/// Opus rendition when present (matching the streaming policy), else the standard
+/// remote URL. Every watch-cache read/write MUST key on this so a file downloaded
+/// under one URL variant is still found later — otherwise a chapter with both an
+/// `opusURL` and a `remoteURL` gets stored under one key and looked up under the
+/// other. Pure, host-testable.
+public enum WatchChapterCache {
+    public static func canonicalURL(for chapter: Chapter) -> URL? {
+        chapter.opusURL ?? chapter.remoteURL
+    }
+
+    public static func key(for chapter: Chapter) -> String? {
+        guard let url = canonicalURL(for: chapter) else { return nil }
+        return StreamCacheUtils.key(for: url)
+    }
+}
+
 /// Transfer state machine: determines the visible state for a give set of inputs.
 /// Pure, host-testable.
 public enum WatchTransferStateResolver {

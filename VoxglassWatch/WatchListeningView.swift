@@ -40,33 +40,23 @@ struct WatchListeningView: View {
     }
 }
 
+/// A clean, title-only row for the My Books list. A downloaded book gets a small
+/// green dot so offline availability is glanceable without cluttering the title.
 struct WatchBookRow: View {
     let book: BookWithChapters
     @EnvironmentObject var services: WatchAppServices
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 6) {
             Text(book.book.title)
                 .font(.headline)
                 .lineLimit(2)
-            if let narrator = book.book.narratorLine {
-                Text(narrator)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            HStack(spacing: 4) {
-                if let duration = book.totalDuration {
-                    Text(WatchTimeFormat.duration(duration))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                let info = services.offlineManager.storageInfo(for: book.book.id)
-                if info.state == .available {
-                    Circle()
-                        .fill(.green)
-                        .frame(width: 6, height: 6)
-                }
+            Spacer(minLength: 0)
+            if services.offlineManager.storageInfo(for: book.book.id).state == .available {
+                Circle()
+                    .fill(.green)
+                    .frame(width: 6, height: 6)
+                    .accessibilityLabel("Downloaded")
             }
         }
         .padding(.vertical, 4)

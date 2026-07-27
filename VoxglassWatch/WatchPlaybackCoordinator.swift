@@ -10,6 +10,17 @@ public final class WatchPlaybackCoordinator: ObservableObject {
 
     public var navigationHistory: NavigationHistoryStore
 
+    /// Resolves a device-local cached file for a chapter, if one exists. Wired to
+    /// `WatchStorageManager.localURL(for:)` so downloaded books play from the
+    /// on-watch cache instead of streaming. Returns nil to fall back to streaming.
+    public var localURLProvider: (@MainActor (Chapter) -> URL?)?
+
+    /// The effective URL to play for a chapter: a downloaded local file wins,
+    /// otherwise the streaming (remote) URL.
+    private func resolvedURL(for chapter: Chapter) -> URL? {
+        localURLProvider?(chapter) ?? chapter.resolvedPlayableURL()
+    }
+
     private let engine: WatchPlaybackEngine
     private let positionStore: SQLitePositionStore
     private let snapshotStore: LastPlaybackSnapshotStore
@@ -87,7 +98,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     public func play(_ book: BookWithChapters, chapter: Chapter? = nil) async {
         let target = chapter ?? book.chapters.first
         guard let target,
-              let url = target.resolvedPlayableURL() else {
+              let url = resolvedURL(for: target) else {
             playbackError = "No playable URL for this chapter."
             return
         }
@@ -157,7 +168,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     }
 
     public func skipToChapter(_ chapter: Chapter, in book: BookWithChapters) async {
-        guard let url = chapter.resolvedPlayableURL() else { return }
+        guard let url = resolvedURL(for: chapter) else { return }
         pushNavigationHistory()
         await persistCurrentPosition()
         do {
@@ -177,6 +188,30 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         } catch {
             playbackError = error.localizedDescription
         }
+    }
+
+    // MARK: - Chapter navigation
+
+    public var canGoToNextChapter: Bool {
+        guard let session = currentSession else { return false }
+        return WatchChapterNavigation.next(after: session.chapter.id, in: session.chapters) != nil
+    }
+
+    public var canGoToPreviousChapter: Bool {
+        guard let session = currentSession else { return false }
+        return WatchChapterNavigation.previous(before: session.chapter.id, in: session.chapters) != nil
+    }
+
+    public func nextChapter() async {
+        guard let session = currentSession,
+              let next = WatchChapterNavigation.next(after: session.chapter.id, in: session.chapters) else { return }
+        await skipToChapter(next, in: BookWithChapters(book: session.book, chapters: session.chapters))
+    }
+
+    public func previousChapter() async {
+        guard let session = currentSession,
+              let prev = WatchChapterNavigation.previous(before: session.chapter.id, in: session.chapters) else { return }
+        await skipToChapter(prev, in: BookWithChapters(book: session.book, chapters: session.chapters))
     }
 
     // MARK: - Position persistence
@@ -225,7 +260,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
 
     private func loadEngineForPresentedSession() async -> Bool {
         guard let session = currentSession,
-              let url = session.chapter.resolvedPlayableURL() else { return false }
+              let url = resolvedURL(for: session.chapter) else { return false }
         do {
             try await engine.load(url: url, startTime: session.position)
             isEngineLoaded = true

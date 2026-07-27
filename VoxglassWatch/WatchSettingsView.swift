@@ -3,6 +3,7 @@ import VoxglassCore
 
 struct WatchSettingsView: View {
     @EnvironmentObject var services: WatchAppServices
+    @ObservedObject private var relay = WatchAudioRelay.shared
     @State private var isClearingCache = false
     @State private var isRefreshing = false
 
@@ -66,6 +67,7 @@ struct WatchSettingsView: View {
                         syncDetail("Pending", "\(engine.pendingCount)")
                         syncDetail("Last pulled", "\(engine.lastFetchedCount)")
                         syncDetail("Last pushed", "\(engine.lastUploadedCount)")
+                        syncDetail("iPhone", relay.isReachable ? "Reachable" : (relay.isCompanionAppInstalled ? "Not reachable" : "Not paired"))
                         if let error = engine.syncError {
                             Text(error)
                                 .font(.caption2)
@@ -121,9 +123,7 @@ struct WatchSettingsView: View {
                             }
                         } else {
                             Button {
-                                Task {
-                                    await downloadBook(book)
-                                }
+                                Task { await services.downloadBook(book) }
                             } label: {
                                 Image(systemName: "arrow.down.circle")
                             }
@@ -145,13 +145,6 @@ struct WatchSettingsView: View {
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.caption2)
-        }
-    }
-
-    private func downloadBook(_ book: BookWithChapters) async {
-        for chapter in book.chapters {
-            guard services.offlineManager.localURL(for: chapter) == nil else { continue }
-            try? await services.offlineManager.downloadChapter(chapter, bookID: book.book.id)
         }
     }
 }

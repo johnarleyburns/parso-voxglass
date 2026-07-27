@@ -59,10 +59,25 @@ final class VoxglassWatchUITests: XCTestCase {
         ppButton.tap()
         sleep(1)
         ppButton.tap()
+
+        // Chapter navigation: advance to the next chapter, then back. The
+        // controls are present whenever Now Playing is showing; they may be
+        // disabled at a book's first/last chapter, which is still a valid state.
+        let nextChapter = app.buttons[WatchAccessibilityID.npChapterNext]
+        if nextChapter.waitForExistence(timeout: 5), nextChapter.isEnabled {
+            nextChapter.tap()
+            sleep(1)
+            let prevChapter = app.buttons[WatchAccessibilityID.npChapterPrev]
+            if prevChapter.exists, prevChapter.isEnabled {
+                prevChapter.tap()
+            }
+        }
     }
 }
 
 private enum WatchAccessibilityID {
     static let bookStream = "book.stream"
     static let npPlayPause = "np.playpause"
+    static let npChapterNext = "np.chapterNext"
+    static let npChapterPrev = "np.chapterPrev"
 }

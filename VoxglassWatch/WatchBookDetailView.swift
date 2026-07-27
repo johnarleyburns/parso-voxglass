@@ -27,6 +27,16 @@ struct WatchBookDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                HStack(spacing: 10) {
+                    if let duration = book.totalDuration {
+                        Label(WatchTimeFormat.duration(duration), systemImage: "clock")
+                    }
+                    Label("\(book.chapters.count) ch", systemImage: "list.number")
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier(WatchAccessibilityID.bookMeta)
+
                 if let summary = book.book.summary {
                     Text(summary)
                         .font(.caption2)
@@ -51,12 +61,7 @@ struct WatchBookDetailView: View {
                     let info = services.offlineManager.storageInfo(for: book.book.id)
                     if info.state == .notAvailable {
                         Button {
-                            Task {
-                                for chapter in book.chapters {
-                                    guard services.offlineManager.localURL(for: chapter) == nil else { continue }
-                                    try? await services.offlineManager.downloadChapter(chapter, bookID: book.book.id)
-                                }
-                            }
+                            Task { await services.downloadBook(book) }
                         } label: {
                             HStack {
                                 Image(systemName: "arrow.down.circle")

@@ -52,13 +52,10 @@ public final class WatchStorageManager: ObservableObject {
             var cachedIndices = Set<Int>()
             var cachedBytes: Int64 = 0
             for chapter in chapters {
-                let remoteURL = chapter.remoteURL ?? chapter.opusURL
-                if let url = remoteURL {
-                    let key = StreamCacheUtils.key(for: url)
-                    if let size = fileNameToSize[key] {
-                        cachedIndices.insert(chapter.index)
-                        cachedBytes += size
-                    }
+                if let key = WatchChapterCache.key(for: chapter),
+                   let size = fileNameToSize[key] {
+                    cachedIndices.insert(chapter.index)
+                    cachedBytes += size
                 }
             }
             if !cachedIndices.isEmpty {
@@ -92,9 +89,7 @@ public final class WatchStorageManager: ObservableObject {
     }
 
     public func localURL(for chapter: Chapter) -> URL? {
-        let remoteURL = chapter.remoteURL ?? chapter.opusURL
-        guard let url = remoteURL else { return nil }
-        let key = StreamCacheUtils.key(for: url)
+        guard let key = WatchChapterCache.key(for: chapter) else { return nil }
         let fileURL = cacheDir.appendingPathComponent(key)
         return FileManager.default.fileExists(atPath: fileURL.path) ? fileURL : nil
     }
@@ -105,13 +100,9 @@ public final class WatchStorageManager: ObservableObject {
         guard let book = library.first(where: { $0.book.id == bookID }) else { return }
 
         for chapter in book.chapters {
-            if chapters.contains(chapter.index) {
-                let remoteURL = chapter.remoteURL ?? chapter.opusURL
-                if let url = remoteURL {
-                    let key = StreamCacheUtils.key(for: url)
-                    let fileURL = cacheDir.appendingPathComponent(key)
-                    try? FileManager.default.removeItem(at: fileURL)
-                }
+            if chapters.contains(chapter.index), let key = WatchChapterCache.key(for: chapter) {
+                let fileURL = cacheDir.appendingPathComponent(key)
+                try? FileManager.default.removeItem(at: fileURL)
             }
         }
         await refresh()
@@ -152,9 +143,7 @@ public final class WatchStorageManager: ObservableObject {
     }
 
     public func ingestFile(at sourceURL: URL, for chapter: Chapter, bookID: UUID) async {
-        let remoteURL = chapter.remoteURL ?? chapter.opusURL
-        guard let url = remoteURL else { return }
-        let key = StreamCacheUtils.key(for: url)
+        guard let key = WatchChapterCache.key(for: chapter) else { return }
         let dest = cacheDir.appendingPathComponent(key)
         try? FileManager.default.removeItem(at: dest)
         try? FileManager.default.moveItem(at: sourceURL, to: dest)
@@ -171,9 +160,8 @@ public final class WatchStorageManager: ObservableObject {
     }
 
     public func downloadChapter(_ chapter: Chapter, bookID: UUID) async throws {
-        let remoteURL = chapter.opusURL ?? chapter.remoteURL
-        guard let url = remoteURL else { throw URLError(.badURL) }
-        let key = StreamCacheUtils.key(for: url)
+        guard let url = WatchChapterCache.canonicalURL(for: chapter),
+              let key = WatchChapterCache.key(for: chapter) else { throw URLError(.badURL) }
         let dest = cacheDir.appendingPathComponent(key)
 
         guard !FileManager.default.fileExists(atPath: dest.path) else { return }

@@ -260,6 +260,83 @@ import Testing
     }
 }
 
+@Suite struct WatchChapterNavigationTests {
+    private let bookID = UUID()
+
+    private func chapters(_ count: Int) -> [Chapter] {
+        (1...count).map { Chapter(bookID: bookID, title: "Ch \($0)", index: $0) }
+    }
+
+    @Test func next_returnsFollowingChapter() {
+        let chs = chapters(3)
+        let next = WatchChapterNavigation.next(after: chs[0].id, in: chs)
+        #expect(next?.id == chs[1].id)
+    }
+
+    @Test func next_atLastChapter_isNil() {
+        let chs = chapters(3)
+        #expect(WatchChapterNavigation.next(after: chs[2].id, in: chs) == nil)
+    }
+
+    @Test func previous_returnsPrecedingChapter() {
+        let chs = chapters(3)
+        let prev = WatchChapterNavigation.previous(before: chs[2].id, in: chs)
+        #expect(prev?.id == chs[1].id)
+    }
+
+    @Test func previous_atFirstChapter_isNil() {
+        let chs = chapters(3)
+        #expect(WatchChapterNavigation.previous(before: chs[0].id, in: chs) == nil)
+    }
+
+    @Test func navigation_followsNaturalOrderNotArrayOrder() {
+        // Shuffled input: navigation must use the natural (index) ordering.
+        let a = Chapter(bookID: bookID, title: "A", index: 1)
+        let b = Chapter(bookID: bookID, title: "B", index: 2)
+        let c = Chapter(bookID: bookID, title: "C", index: 3)
+        let shuffled = [c, a, b]
+        #expect(WatchChapterNavigation.next(after: a.id, in: shuffled)?.id == b.id)
+        #expect(WatchChapterNavigation.previous(before: c.id, in: shuffled)?.id == b.id)
+    }
+
+    @Test func unknownChapter_isNil() {
+        let chs = chapters(2)
+        #expect(WatchChapterNavigation.next(after: UUID(), in: chs) == nil)
+        #expect(WatchChapterNavigation.previous(before: UUID(), in: chs) == nil)
+    }
+}
+
+@Suite struct WatchChapterCacheTests {
+    private let bookID = UUID()
+
+    @Test func prefersOpusOverRemote() {
+        let opus = URL(string: "https://archive.org/x/ch1.opus")!
+        let remote = URL(string: "https://archive.org/x/ch1.mp3")!
+        let chapter = Chapter(bookID: bookID, title: "Ch", index: 1, remoteURL: remote, opusURL: opus)
+        #expect(WatchChapterCache.canonicalURL(for: chapter) == opus)
+        #expect(WatchChapterCache.key(for: chapter) == StreamCacheUtils.key(for: opus))
+    }
+
+    @Test func fallsBackToRemoteWhenNoOpus() {
+        let remote = URL(string: "https://archive.org/x/ch1.mp3")!
+        let chapter = Chapter(bookID: bookID, title: "Ch", index: 1, remoteURL: remote)
+        #expect(WatchChapterCache.canonicalURL(for: chapter) == remote)
+        #expect(WatchChapterCache.key(for: chapter) == StreamCacheUtils.key(for: remote))
+    }
+
+    @Test func keyIsStableForSameChapter() {
+        let remote = URL(string: "https://archive.org/x/ch1.mp3")!
+        let chapter = Chapter(bookID: bookID, title: "Ch", index: 1, remoteURL: remote)
+        #expect(WatchChapterCache.key(for: chapter) == WatchChapterCache.key(for: chapter))
+    }
+
+    @Test func noURLsYieldsNilKey() {
+        let chapter = Chapter(bookID: bookID, title: "Ch", index: 1)
+        #expect(WatchChapterCache.canonicalURL(for: chapter) == nil)
+        #expect(WatchChapterCache.key(for: chapter) == nil)
+    }
+}
+
 @Suite struct WatchEvictionTests {
 
     @Test func evictionOrder_excludesCurrentBook() {

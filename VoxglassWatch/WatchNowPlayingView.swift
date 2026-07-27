@@ -101,6 +101,30 @@ struct WatchNowPlayingView: View {
                 }
                 .frame(height: 44)
 
+                // Chapter navigation
+                HStack(spacing: 24) {
+                    Button {
+                        Task { await services.playbackCoordinator.previousChapter() }
+                    } label: {
+                        Label("Previous", systemImage: "backward.end.fill")
+                            .labelStyle(.iconOnly)
+                            .font(.body)
+                    }
+                    .disabled(!services.playbackCoordinator.canGoToPreviousChapter)
+                    .accessibilityIdentifier(WatchAccessibilityID.npChapterPrev)
+
+                    Button {
+                        Task { await services.playbackCoordinator.nextChapter() }
+                    } label: {
+                        Label("Next", systemImage: "forward.end.fill")
+                            .labelStyle(.iconOnly)
+                            .font(.body)
+                    }
+                    .disabled(!services.playbackCoordinator.canGoToNextChapter)
+                    .accessibilityIdentifier(WatchAccessibilityID.npChapterNext)
+                }
+                .frame(height: 34)
+
                 // Tool row
                 HStack(spacing: 12) {
                     Button {

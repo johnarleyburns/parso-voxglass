@@ -19,6 +19,9 @@ final class AppServices: ObservableObject {
     let folderWatchService: FolderWatchService
     let playlistStore: PlaylistStore
     let libraryBackupService: LibraryBackupService
+    /// Activates the phone side of the WatchConnectivity audio relay so the watch
+    /// can pull chapters the phone already has cached. Held for the app lifetime.
+    let phoneAudioRelay = PhoneAudioRelay.shared
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()

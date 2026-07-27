@@ -55,6 +55,11 @@ final class WatchAppServices: ObservableObject {
             self?.syncEngine?.pushAfterMutation()
         }
 
+        // Play downloaded books from the on-watch cache instead of streaming.
+        playbackCoordinator.localURLProvider = { [weak self] chapter in
+            self?.offlineManager.localURL(for: chapter)
+        }
+
         // Re-publish the sync engine's state (syncError, counts) through this
         // container so views observing WatchAppServices update live — otherwise
         // errors would only appear after an unrelated re-render.
@@ -63,19 +68,16 @@ final class WatchAppServices: ObservableObject {
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
 
-        WatchAudioRelay.shared.onFileReceived = { [weak self] url, chapterKey in
+        WatchAudioRelay.shared.onFileReceived = { [weak self] fileURL, chapterKey in
             guard let self else { return }
             Task { @MainActor in
-                // Find the chapter by matching the cache key
+                // Match the received file to a chapter by its canonical cache key,
+                // then ingest the *received file* (not the remote URL).
                 let library = try? await self.libraryRepository.fetchLibrary()
                 for book in library ?? [] {
-                    for chapter in book.chapters {
-                        let remoteURL = chapter.remoteURL ?? chapter.opusURL
-                        if let url = remoteURL,
-                           StreamCacheUtils.key(for: url) == chapterKey {
-                            await self.offlineManager.ingestFile(at: url, for: chapter, bookID: book.book.id)
-                            return
-                        }
+                    for chapter in book.chapters where WatchChapterCache.key(for: chapter) == chapterKey {
+                        await self.offlineManager.ingestFile(at: fileURL, for: chapter, bookID: book.book.id)
+                        return
                     }
                 }
             }
@@ -103,6 +105,28 @@ final class WatchAppServices: ObservableObject {
         #if DEBUG
         seedFixturesIfNeeded()
         #endif
+    }
+
+    /// Downloads a book's chapters for offline use. When the paired iPhone is
+    /// reachable it first asks the phone for any chapters it already has cached
+    /// (a WatchConnectivity accelerator that saves cellular/IA bandwidth), then
+    /// falls back to fetching the rest directly from Internet Archive so a
+    /// download never *depends* on the phone being present.
+    func downloadBook(_ book: BookWithChapters) async {
+        let relay = WatchAudioRelay.shared
+        if relay.isReachable && relay.isCompanionAppInstalled {
+            for chapter in book.chapters where offlineManager.localURL(for: chapter) == nil {
+                if let key = WatchChapterCache.key(for: chapter) {
+                    relay.requestChapter(book.book.title, chapterKey: key)
+                }
+            }
+            // Brief head start for the phone to deliver cached chapters before we
+            // spend bandwidth fetching them ourselves.
+            try? await Task.sleep(for: .seconds(2))
+        }
+        for chapter in book.chapters where offlineManager.localURL(for: chapter) == nil {
+            try? await offlineManager.downloadChapter(chapter, bookID: book.book.id)
+        }
     }
 
     func restoreBookmark() async {
