@@ -17,15 +17,21 @@ struct WatchRootView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            WatchListeningView()
+            NavigationStack {
+                WatchListeningView()
+            }
                 .tag(Tab.listening)
                 .accessibilityIdentifier(WatchAccessibilityID.rootListening)
 
-            WatchOnDeviceView()
+            NavigationStack {
+                WatchOnDeviceView()
+            }
                 .tag(Tab.onWatch)
                 .accessibilityIdentifier(WatchAccessibilityID.rootOnWatch)
 
-            WatchSearchView()
+            NavigationStack {
+                WatchSearchView()
+            }
                 .tag(Tab.search)
                 .accessibilityIdentifier(WatchAccessibilityID.rootSearch)
 
@@ -40,13 +46,11 @@ struct WatchRootView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 Task { @MainActor in
-                    // Pull remote changes when foregrounded (throttled), then
-                    // refresh the local library the UI reads from.
                     if Date().timeIntervalSince(lastForegroundFetch) > 30 {
                         lastForegroundFetch = Date()
-                        await services.syncEngine?.fetchChanges()
+                        await services.refreshFromPhone()
                     }
-                    await services.libraryStore.refresh()
+                    await services.refreshLocalLibrary()
                 }
             }
         }
@@ -62,6 +66,7 @@ public enum WatchAccessibilityID {
     public static let bookFetch = "book.fetch"
     public static let bookAdd = "book.add"
     public static let npPlayPause = "np.playpause"
+    public static let npState = "np.state"
     public static let npBack15 = "np.back15"
     public static let npForward30 = "np.forward30"
     public static let npChapterPrev = "np.chapterPrev"

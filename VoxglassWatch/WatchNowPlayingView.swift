@@ -50,6 +50,10 @@ struct WatchNowPlayingView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
+                    Text(isPlaying ? "Playing" : "Paused")
+                        .font(.caption2)
+                        .foregroundStyle(isPlaying ? .green : .secondary)
+                        .accessibilityIdentifier(WatchAccessibilityID.npState)
                 }
 
                 // Progress
@@ -143,7 +147,7 @@ struct WatchNowPlayingView: View {
                     }
 
                     NavigationLink {
-                        if let book = services.libraryStore.books.first(where: { $0.book.id == session?.book.id }) {
+                        if let book = services.books.first(where: { $0.book.id == session?.book.id }) {
                             WatchChaptersView(book: book, onChapterSelected: { chapter in
                                 Task {
                                     await services.playbackCoordinator.skipToChapter(chapter, in: book)
@@ -169,7 +173,7 @@ struct WatchNowPlayingView: View {
             .padding(.vertical, 4)
         }
         .sheet(isPresented: $showFetchStatus) {
-            if let book = services.libraryStore.books.first(where: { $0.book.id == session?.book.id }) {
+            if let book = services.books.first(where: { $0.book.id == session?.book.id }) {
                 WatchFetchStatusView(book: book)
             }
         }

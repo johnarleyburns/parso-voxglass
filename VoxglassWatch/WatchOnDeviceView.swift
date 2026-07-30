@@ -11,7 +11,7 @@ struct WatchOnDeviceView: View {
                     Text("Storage")
                         .font(.caption)
                     Spacer()
-                    Text(WatchTimeFormat.duration(Double(services.offlineManager.totalBytes)))
+                    Text(WatchTimeFormat.bytes(services.offlineManager.totalBytes))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -34,7 +34,7 @@ struct WatchOnDeviceView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(services.offlineManager.onWatchBooks.keys), id: \.self) { bookID in
-                        if let book = services.libraryStore.books.first(where: { $0.book.id == bookID }) {
+                        if let book = services.books.first(where: { $0.book.id == bookID }) {
                             WatchOnDeviceRow(book: book)
                         }
                     }

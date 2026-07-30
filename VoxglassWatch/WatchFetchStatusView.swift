@@ -70,7 +70,7 @@ struct WatchFetchStatusView: View {
                     if state == .failed || state == .waitingForPhone {
                         Button("Retry") {
                             Task {
-                                // Retry download
+                                await services.downloadBook(book)
                             }
                         }
                         .accessibilityIdentifier(WatchAccessibilityID.fetchRetry)

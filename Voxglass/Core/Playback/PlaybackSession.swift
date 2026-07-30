@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PlaybackSession: Equatable, Sendable {
+public struct PlaybackSession: Codable, Equatable, Sendable {
     public var book: Book
     public var chapters: [Chapter]
     public var chapter: Chapter
@@ -55,4 +55,3 @@ public struct PlaybackSession: Equatable, Sendable {
             .reduce(0, +)
     }
 }
-

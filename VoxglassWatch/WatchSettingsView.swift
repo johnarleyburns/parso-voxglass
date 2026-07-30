@@ -44,55 +44,35 @@ struct WatchSettingsView: View {
 
                 Divider()
 
-                Text("Sync")
+                Text("iPhone")
                     .font(.headline)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("iCloud:")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if services.syncEngine?.shouldSync == true {
-                            Text("Synced")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                        } else {
-                            Text("Standalone")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    if let engine = services.syncEngine {
-                        syncDetail("Account", engine.accountStatusText)
-                        syncDetail("Pending", "\(engine.pendingCount)")
-                        syncDetail("Last pulled", "\(engine.lastFetchedCount)")
-                        syncDetail("Last pushed", "\(engine.lastUploadedCount)")
-                        syncDetail("iPhone", relay.isReachable ? "Reachable" : (relay.isCompanionAppInstalled ? "Not reachable" : "Not paired"))
-                        if let error = engine.syncError {
-                            Text(error)
-                                .font(.caption2)
-                                .foregroundStyle(.red)
-                                .lineLimit(3)
-                        }
+                    syncDetail("Status", relay.isReachable ? "Reachable" : (relay.isCompanionAppInstalled ? "Not reachable" : "Not paired"))
+                    syncDetail("My Books", "\(services.phoneBooks.count) from iPhone")
+                    if let error = services.watchError ?? relay.lastError {
+                        Text(error)
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                            .lineLimit(3)
                     }
 
                     if isRefreshing {
-                        ProgressView("Refreshing…")
+                        ProgressView("Refreshing...")
                     } else {
                         Button {
                             Task {
                                 isRefreshing = true
-                                await services.syncEngine?.fetchChanges()
-                                await services.libraryStore.refresh()
+                                await services.refreshFromPhone()
+                                await services.refreshLocalLibrary()
                                 isRefreshing = false
                             }
                         } label: {
                             HStack {
-                                Image(systemName: "arrow.clockwise.icloud")
-                                Text("Refresh from iCloud")
+                                Image(systemName: "arrow.clockwise")
+                                Text("Refresh from iPhone")
                             }
                         }
-                        .disabled(services.syncEngine == nil)
                     }
                 }
 
@@ -101,7 +81,7 @@ struct WatchSettingsView: View {
                 Text("Downloads")
                     .font(.headline)
 
-                ForEach(services.libraryStore.books) { book in
+                ForEach(services.books) { book in
                     let info = services.offlineManager.storageInfo(for: book.book.id)
                     HStack {
                         VStack(alignment: .leading) {

@@ -16,9 +16,9 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     public var localURLProvider: (@MainActor (Chapter) -> URL?)?
 
     /// The effective URL to play for a chapter: a downloaded local file wins,
-    /// otherwise the streaming (remote) URL.
+    /// otherwise Opus, then the standard streaming URL.
     private func resolvedURL(for chapter: Chapter) -> URL? {
-        localURLProvider?(chapter) ?? chapter.resolvedPlayableURL()
+        localURLProvider?(chapter) ?? chapter.opusURL ?? chapter.resolvedPlayableURL()
     }
 
     private let engine: WatchPlaybackEngine
@@ -96,15 +96,22 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     }
 
     public func play(_ book: BookWithChapters, chapter: Chapter? = nil) async {
-        let target = chapter ?? book.chapters.first
+        let target = chapter
+            ?? (currentSession?.book.id == book.book.id ? currentSession?.chapter : nil)
+            ?? book.chapters.first
         guard let target,
               let url = resolvedURL(for: target) else {
             playbackError = "No playable URL for this chapter."
             return
         }
 
+        let startTime = currentSession?.book.id == book.book.id && currentSession?.chapter.id == target.id
+            ? currentSession?.position ?? 0
+            : 0
+
         do {
-            try await engine.load(url: url, startTime: currentSession?.position ?? 0)
+            playbackError = nil
+            try await engine.load(url: url, startTime: startTime)
             isEngineLoaded = true
             engine.play()
 
@@ -112,7 +119,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
                 book: book.book,
                 chapters: book.chapters,
                 chapter: target,
-                position: 0,
+                position: startTime,
                 duration: target.duration ?? engine.duration,
                 isPlaying: true
             )
@@ -168,10 +175,14 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     }
 
     public func skipToChapter(_ chapter: Chapter, in book: BookWithChapters) async {
-        guard let url = resolvedURL(for: chapter) else { return }
+        guard let url = resolvedURL(for: chapter) else {
+            playbackError = "No playable URL for this chapter."
+            return
+        }
         pushNavigationHistory()
         await persistCurrentPosition()
         do {
+            playbackError = nil
             try await engine.load(url: url, startTime: 0)
             isEngineLoaded = true
             if currentSession?.isPlaying == true {
@@ -262,6 +273,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         guard let session = currentSession,
               let url = resolvedURL(for: session.chapter) else { return false }
         do {
+            playbackError = nil
             try await engine.load(url: url, startTime: session.position)
             isEngineLoaded = true
             return true
@@ -306,7 +318,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     }
 
     private func handlePlaybackEnded() async {
-        guard let session = currentSession else { return }
+        guard currentSession != nil else { return }
         await persistCurrentPosition()
         currentSession?.isPlaying = false
     }

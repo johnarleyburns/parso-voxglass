@@ -6,27 +6,27 @@ struct WatchListeningView: View {
 
     var body: some View {
         Group {
-            if services.libraryStore.books.isEmpty {
+            if services.books.isEmpty {
                 VStack(spacing: 8) {
                     Text("No Books")
                         .font(.headline)
-                    Text("Add books from the iOS app or search LibriVox")
+                    Text("Open Voxglass on iPhone or search LibriVox")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                    if let error = services.syncEngine?.syncError {
+                    if let error = services.watchError {
                         Divider()
-                        Label("Sync error", systemImage: "exclamationmark.icloud")
+                        Label("Connection", systemImage: "iphone.radiowaves.left.and.right")
                             .font(.caption2)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.orange)
                         Text(error)
                             .font(.caption2)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.orange)
                             .multilineTextAlignment(.center)
                     }
                 }
             } else {
-                List(services.libraryStore.books) { book in
+                List(services.books) { book in
                     NavigationLink {
                         WatchBookDetailView(book: book)
                             .accessibilityIdentifier(WatchAccessibilityID.bookDetail)

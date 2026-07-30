@@ -363,6 +363,72 @@ import Testing
     }
 }
 
+@Suite struct WatchConnectivityContractTests {
+    @Test func aliceFixture_usesPlayableLibriVoxArchiveURLs() {
+        let alice = WatchPhoneSmokeFixtures.aliceInWonderland()
+        #expect(alice.book.title == "Alice's Adventures in Wonderland")
+        #expect(alice.chapters.count >= 3)
+        #expect(alice.chapters.allSatisfy { $0.remoteURL?.host == "archive.org" })
+        #expect(alice.chapters.first?.remoteURL?.absoluteString.contains("alice_in_wonderland_librivox") == true)
+        #expect(alice.chapters.first?.resolvedPlayableURL() == alice.chapters.first?.remoteURL)
+    }
+
+    @Test func phoneLibrarySnapshot_roundTripsThroughWatchConnectivityPayload() throws {
+        let alice = WatchPhoneSmokeFixtures.aliceInWonderland()
+        let state = WatchPhonePlaybackState(
+            accepted: true,
+            session: PlaybackSession(
+                book: alice.book,
+                chapters: alice.chapters,
+                chapter: alice.chapters[0],
+                position: 0,
+                duration: alice.chapters[0].duration,
+                isPlaying: true
+            )
+        )
+        let snapshot = WatchPhoneLibrarySnapshot(books: [alice], playbackState: state)
+
+        let message = try WatchPhoneMessageCodec.message(
+            action: WatchPhoneAction.requestLibrary,
+            payload: snapshot
+        )
+        #expect(WatchPhoneMessageCodec.action(from: message) == WatchPhoneAction.requestLibrary)
+
+        let decoded = try WatchPhoneMessageCodec.payload(WatchPhoneLibrarySnapshot.self, from: message)
+        #expect(decoded.books.first?.book.title == alice.book.title)
+        #expect(decoded.playbackState?.session?.isPlaying == true)
+    }
+
+    @Test func downloadedBookRemainsAvailableWithNoPhoneOrInternet() {
+        let state = WatchTransferStateResolver.resolve(
+            isDownloaded: true,
+            isQueued: false,
+            isTransferring: false,
+            progress: 0,
+            isFailed: false,
+            isPhoneReachable: false,
+            needsPhoneTransfer: false
+        )
+        #expect(state == .available)
+    }
+
+    @Test func notDownloadedBookCanWaitForPhoneButDoesNotBlockStreamingPolicy() {
+        let waiting = WatchTransferStateResolver.resolve(
+            isDownloaded: false,
+            isQueued: false,
+            isTransferring: false,
+            progress: 0,
+            isFailed: false,
+            isPhoneReachable: false,
+            needsPhoneTransfer: true
+        )
+        #expect(waiting == .waitingForPhone)
+
+        let alice = WatchPhoneSmokeFixtures.aliceInWonderland()
+        #expect(alice.chapters[0].resolvedPlayableURL()?.scheme == "https")
+    }
+}
+
 @Suite struct WatchTransferStateMachineTests {
 
     @Test func initialState_isNotAvailable() {

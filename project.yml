@@ -35,6 +35,7 @@ targets:
       - sdk: AVFoundation.framework
       - sdk: CarPlay.framework
       - sdk: MediaPlayer.framework
+      - sdk: WatchConnectivity.framework
 
       - sdk: UniformTypeIdentifiers.framework
       - sdk: libsqlite3.tbd
@@ -103,6 +104,7 @@ targets:
     dependencies:
       - package: VoxglassCore
       - sdk: AVFoundation.framework
+      - sdk: WatchConnectivity.framework
       - sdk: libsqlite3.tbd
     info:
       path: VoxglassWatch/Resources/Info.plist
@@ -116,7 +118,6 @@ targets:
         WKCompanionAppBundleIdentifier: guru.parso.voxglass
         UIBackgroundModes:
           - audio
-          - remote-notification
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp
@@ -193,5 +194,7 @@ schemes:
         VoxglassWatch: all
     test:
       gatherCoverageData: true
+      environmentVariables:
+        VOXGLASS_WATCH_SMOKE_ALICE: "1"
       targets:
         - VoxglassWatchUITests

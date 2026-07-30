@@ -298,20 +298,24 @@ check_narration_tactile_guards() {
 
 # ──────────────────────────────────────────────────────────────
 # Rule 9 — Watch data-plane wiring guard
-# Asserts WatchAppServices instantiates the CloudKit engine and
-# offlineManager.refresh() is called from watch bootstrap.
+# Asserts WatchAppServices uses the phone snapshot path and does not
+# instantiate watch-side CloudKit sync.
 # ──────────────────────────────────────────────────────────────
 check_watch_data_plane() {
   local had_failure=0
 
-  if ! grep -q 'CloudKitSyncEngine\|syncEngine' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
-    echo "::error title=Watch-data-plane guard::WatchAppServices must instantiate CloudKitSyncEngine."
+  if ! grep -q 'requestLibrarySnapshot\|refreshFromPhone' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::WatchAppServices must refresh My Books through WatchConnectivity."
     had_failure=1
   fi
 
-  if ! grep -q 'offlineManager.refresh()' VoxglassWatch/WatchAppServices.swift 2>/dev/null && \
-     ! grep -q 'offlineManager.refresh()' VoxglassWatch/WatchRootView.swift 2>/dev/null; then
-    echo "::error title=Watch-data-plane guard::Watch bootstrap must call offlineManager.refresh()."
+  if grep -rq 'CloudKitSyncEngine\|SyncMutationLog\|CloudSyncStateStore' VoxglassWatch --include='*.swift' 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::Watch target must not instantiate CloudKit sync."
+    had_failure=1
+  fi
+
+  if ! grep -q 'offlineManager.updateLibrary' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::Watch bootstrap must refresh offline state from the merged phone/local library."
     had_failure=1
   fi
 
@@ -319,19 +323,27 @@ check_watch_data_plane() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# Rule 10 — Both targets start the engine guard
-# Asserts the engine type is referenced in both Voxglass/App/ and VoxglassWatch/.
+# Rule 10 — WatchConnectivity relay guard
+# Asserts both app targets use the direct phone/watch relay and that the
+# watch target has no CloudKit capability metadata.
 # ──────────────────────────────────────────────────────────────
 check_both_targets_engine() {
   local had_failure=0
 
-  if ! grep -q 'CloudKitSyncEngine' Voxglass/App/AppServices.swift 2>/dev/null; then
-    echo "::error title=Both-targets-engine guard::Phone AppServices must reference CloudKitSyncEngine."
+  if ! grep -q 'PhoneAudioRelay' Voxglass/App/AppServices.swift 2>/dev/null; then
+    echo "::error title=WatchConnectivity guard::Phone AppServices must configure PhoneAudioRelay."
     had_failure=1
   fi
 
-  if ! grep -q 'CloudKitSyncEngine' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
-    echo "::error title=Both-targets-engine guard::WatchAppServices must reference CloudKitSyncEngine."
+  if ! grep -q 'WatchAudioRelay' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=WatchConnectivity guard::WatchAppServices must use WatchAudioRelay."
+    had_failure=1
+  fi
+
+  local watch_capability_matches
+  watch_capability_matches=$(grep -rn 'CloudKit\|aps-environment\|remote-notification' VoxglassWatch/Resources project.yml 2>/dev/null | grep -E 'VoxglassWatch|watchOS' || true)
+  if [ -n "$watch_capability_matches" ]; then
+    echo "::error title=WatchConnectivity guard::Watch target must not carry CloudKit or remote-notification capability metadata."
     had_failure=1
   fi
 

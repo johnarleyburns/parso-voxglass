@@ -138,7 +138,7 @@ public enum SourceKind: String, Codable, CaseIterable, Sendable {
     case localFiles
 }
 
-public struct BookWithChapters: Identifiable, Equatable, Sendable {
+public struct BookWithChapters: Identifiable, Codable, Equatable, Sendable {
     public var book: Book
     public var chapters: [Chapter]
 
@@ -170,4 +170,3 @@ public extension Array where Element == Chapter {
         }
     }
 }
-

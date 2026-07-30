@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import VoxglassCore
 
 @MainActor
@@ -17,22 +17,23 @@ final class WatchAppServices: ObservableObject {
     let bookmarkStore: SQLiteBookmarkStore
     let playbackCoordinator: WatchPlaybackCoordinator
     let offlineManager: WatchStorageManager
-    let syncEngine: CloudKitSyncEngine?
+    let relay: WatchAudioRelay
 
-    #if DEBUG
-    var seededFixtures: [BookWithChapters] = []
-    #endif
+    @Published private(set) var phoneBooks: [BookWithChapters] = []
+    @Published private(set) var searchResults: [InternetArchiveSearchResult] = []
+    @Published private(set) var isSearching = false
+    @Published var watchError: String?
 
-    init() {
+    var books: [BookWithChapters] {
+        Self.mergedBooks(phoneBooks: phoneBooks, localBooks: libraryStore.books)
+    }
+
+    init(relay providedRelay: WatchAudioRelay? = nil) {
+        let relay = providedRelay ?? WatchAudioRelay.shared
         let database = AppDatabase.makeApplicationDatabase()
         let libraryRepository = LibraryRepository(database: database)
-        var positionStore = SQLitePositionStore(database: database)
-        var bookmarkStore = SQLiteBookmarkStore(database: database)
-
-        let mutationLog = SyncMutationLog(stateStore: CloudSyncStateStore(database: database))
-        libraryRepository.mutationLog = mutationLog
-        positionStore.mutationLog = mutationLog
-        bookmarkStore.mutationLog = mutationLog
+        let positionStore = SQLitePositionStore(database: database)
+        let bookmarkStore = SQLiteBookmarkStore(database: database)
 
         self.database = database
         self.libraryRepository = libraryRepository
@@ -49,32 +50,42 @@ final class WatchAppServices: ObservableObject {
             repository: libraryRepository,
             positionStore: positionStore
         )
-        self.syncEngine = CloudKitSyncEngine(database: database)
-
-        libraryStore.onBookImported = { [weak self] _ in
-            self?.syncEngine?.pushAfterMutation()
+        self.relay = relay
+        if let snapshot = relay.librarySnapshot {
+            self.phoneBooks = snapshot.books
         }
 
-        // Play downloaded books from the on-watch cache instead of streaming.
         playbackCoordinator.localURLProvider = { [weak self] chapter in
             self?.offlineManager.localURL(for: chapter)
         }
 
-        // Re-publish the sync engine's state (syncError, counts) through this
-        // container so views observing WatchAppServices update live — otherwise
-        // errors would only appear after an unrelated re-render.
-        syncEngine?.objectWillChange
+        libraryStore.onBookImported = { [weak self] _ in
+            guard let self else { return }
+            await self.libraryStore.refresh()
+            await self.offlineManager.updateLibrary(self.books)
+        }
+
+        libraryStore.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
 
-        WatchAudioRelay.shared.onFileReceived = { [weak self] fileURL, chapterKey in
+        relay.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+
+        relay.onLibrarySnapshot = { [weak self] snapshot in
             guard let self else { return }
             Task { @MainActor in
-                // Match the received file to a chapter by its canonical cache key,
-                // then ingest the *received file* (not the remote URL).
-                let library = try? await self.libraryRepository.fetchLibrary()
-                for book in library ?? [] {
+                await self.applyPhoneSnapshot(snapshot)
+            }
+        }
+
+        relay.onFileReceived = { [weak self] fileURL, chapterKey in
+            guard let self else { return }
+            Task { @MainActor in
+                for book in self.books {
                     for chapter in book.chapters where WatchChapterCache.key(for: chapter) == chapterKey {
                         await self.offlineManager.ingestFile(at: fileURL, for: chapter, bookID: book.book.id)
                         return
@@ -89,49 +100,72 @@ final class WatchAppServices: ObservableObject {
         didBootstrap = true
 
         await libraryStore.refresh()
-        await offlineManager.refresh()
-        await enqueueInitialLibraryForCloudKitIfNeeded()
+        await refreshFromPhone()
+        await offlineManager.updateLibrary(books)
+        await restoreBookmark()
+    }
 
-        if let engine = syncEngine {
-            await engine.start()
-            if engine.lastUploadedCount > 0 {
-                UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+    func refreshFromPhone() async {
+        if let snapshot = await relay.requestLibrarySnapshot() {
+            await applyPhoneSnapshot(snapshot)
+        } else if let error = relay.lastError {
+            watchError = error
+        }
+    }
+
+    func refreshLocalLibrary() async {
+        await libraryStore.refresh()
+        await offlineManager.updateLibrary(books)
+    }
+
+    func searchLibriVox(_ query: String) async {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            searchResults = []
+            watchError = nil
+            return
+        }
+
+        isSearching = true
+        defer { isSearching = false }
+
+        if relay.isReachable {
+            let relayed = await relay.searchLibriVox(trimmed)
+            if !relayed.isEmpty || relay.lastError == nil {
+                searchResults = relayed
+                watchError = relay.lastError
+                return
             }
         }
 
-        await libraryStore.refresh()
-        await restoreBookmark()
-
-        #if DEBUG
-        seedFixturesIfNeeded()
-        #endif
+        await catalogStore.searchLibriVox(trimmed)
+        searchResults = catalogStore.results
+        watchError = catalogStore.catalogError
     }
 
-    /// Downloads a book's chapters for offline use. When the paired iPhone is
-    /// reachable it first asks the phone for any chapters it already has cached
-    /// (a WatchConnectivity accelerator that saves cellular/IA bandwidth), then
-    /// falls back to fetching the rest directly from Internet Archive so a
-    /// download never *depends* on the phone being present.
     func downloadBook(_ book: BookWithChapters) async {
-        let relay = WatchAudioRelay.shared
         if relay.isReachable && relay.isCompanionAppInstalled {
             for chapter in book.chapters where offlineManager.localURL(for: chapter) == nil {
                 if let key = WatchChapterCache.key(for: chapter) {
                     relay.requestChapter(book.book.title, chapterKey: key)
                 }
             }
-            // Brief head start for the phone to deliver cached chapters before we
-            // spend bandwidth fetching them ourselves.
             try? await Task.sleep(for: .seconds(2))
         }
+
         for chapter in book.chapters where offlineManager.localURL(for: chapter) == nil {
-            try? await offlineManager.downloadChapter(chapter, bookID: book.book.id)
+            do {
+                try await offlineManager.downloadChapter(chapter, bookID: book.book.id)
+            } catch {
+                watchError = error.localizedDescription
+            }
         }
+        await offlineManager.updateLibrary(books)
     }
 
     func restoreBookmark() async {
         if let row = try? await positionStore.latestPosition(),
-           let book = libraryStore.books.first(where: { $0.book.id == row.bookID }) {
+           let book = books.first(where: { $0.book.id == row.bookID }) {
             let chapters = book.chapters.naturallySorted()
             if let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: row) {
                 playbackCoordinator.present(book, chapter: target.chapter)
@@ -141,67 +175,31 @@ final class WatchAppServices: ObservableObject {
         }
     }
 
-    func adoptCloudPosition() async {
-        guard playbackCoordinator.currentSession?.isPlaying != true else { return }
-        if let row = try? await positionStore.latestPosition(),
-           let book = libraryStore.books.first(where: { $0.book.id == row.bookID }) {
-            let chapters = book.chapters.naturallySorted()
-            if let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: row) {
-                playbackCoordinator.present(book, chapter: target.chapter)
-            }
-        }
-    }
-
     private var didBootstrap = false
 
-    private func enqueueInitialLibraryForCloudKitIfNeeded() async {
-        let defaults = UserDefaults.standard
-
-        if !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) {
-            await libraryRepository.enqueueExistingLibraryForSync()
-            defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
-            return
-        }
-
-        // Self-heal: re-enqueue any locally-added books that were never confirmed
-        // uploaded when nothing is currently queued.
-        let uploadConfirmed = defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
-        let pending = (try? await CloudSyncStateStore(database: database).pendingCount()) ?? 0
-        if !uploadConfirmed && pending == 0 {
-            _ = await libraryRepository.enqueueExistingLibraryForSync()
-        }
+    private func applyPhoneSnapshot(_ snapshot: WatchPhoneLibrarySnapshot) async {
+        phoneBooks = snapshot.books
+        watchError = nil
+        await offlineManager.updateLibrary(books)
     }
 
-    #if DEBUG
-    private func seedFixturesIfNeeded() {
-        guard seededFixtures.isEmpty else { return }
-        seededFixtures = WatchSeedFixtures.make()
-    }
-    #endif
-}
-
-#if DEBUG
-public enum WatchSeedFixtures {
-    public static func make() -> [BookWithChapters] {
-        let bookID = UUID()
-        let book = Book(
-            id: bookID,
-            title: "Pride and Prejudice",
-            authors: ["Jane Austen"],
-            narrators: ["Karen Savage"],
-            summary: "Pride and Prejudice is the second novel by English author Jane Austen, published in 1813. A novel of manners, it follows the character development of Elizabeth Bennet, the protagonist of the book, who learns about the repercussions of hasty judgments and comes to appreciate the difference between superficial goodness and actual goodness.",
-            sourceID: UUID()
-        )
-        let chapters: [Chapter] = (1...5).map { i in
-            Chapter(
-                id: UUID(),
-                bookID: bookID,
-                title: "Chapter \(i)",
-                index: i,
-                duration: 1200
-            )
+    private static func mergedBooks(
+        phoneBooks: [BookWithChapters],
+        localBooks: [BookWithChapters]
+    ) -> [BookWithChapters] {
+        var seen = Set<String>()
+        var merged: [BookWithChapters] = []
+        for book in phoneBooks + localBooks {
+            let key = [
+                book.book.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                book.book.authorLine.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            ].joined(separator: "|")
+            if seen.insert(key).inserted {
+                merged.append(book)
+            }
         }
-        return [BookWithChapters(book: book, chapters: chapters)]
+        return merged.sorted {
+            $0.book.title.localizedCaseInsensitiveCompare($1.book.title) == .orderedAscending
+        }
     }
 }
-#endif

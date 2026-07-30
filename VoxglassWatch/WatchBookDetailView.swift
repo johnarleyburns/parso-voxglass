@@ -5,6 +5,7 @@ struct WatchBookDetailView: View {
     let book: BookWithChapters
     @EnvironmentObject var services: WatchAppServices
     @State private var showNowPlaying = false
+    @State private var playbackError: String?
 
     var body: some View {
         ScrollView {
@@ -48,7 +49,11 @@ struct WatchBookDetailView: View {
                     Button {
                         Task {
                             await services.playbackCoordinator.play(book)
-                            showNowPlaying = true
+                            if services.playbackCoordinator.currentSession?.isPlaying == true {
+                                showNowPlaying = true
+                            } else {
+                                playbackError = services.playbackCoordinator.playbackError
+                            }
                         }
                     } label: {
                         HStack {
@@ -57,6 +62,13 @@ struct WatchBookDetailView: View {
                         }
                     }
                     .accessibilityIdentifier(WatchAccessibilityID.bookStream)
+
+                    if let playbackError {
+                        Text(playbackError)
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                            .lineLimit(4)
+                    }
 
                     let info = services.offlineManager.storageInfo(for: book.book.id)
                     if info.state == .notAvailable {
@@ -83,7 +95,16 @@ struct WatchBookDetailView: View {
                     }
 
                     NavigationLink {
-                        WatchChaptersView(book: book)
+                        WatchChaptersView(book: book, onChapterSelected: { chapter in
+                            Task {
+                                await services.playbackCoordinator.play(book, chapter: chapter)
+                                if services.playbackCoordinator.currentSession?.isPlaying == true {
+                                    showNowPlaying = true
+                                } else {
+                                    playbackError = services.playbackCoordinator.playbackError
+                                }
+                            }
+                        })
                             .accessibilityIdentifier(WatchAccessibilityID.chaptersList)
                     } label: {
                         HStack {

@@ -15,6 +15,7 @@ public final class WatchStorageManager: ObservableObject {
 
     private var localChapters: [UUID: Set<Int>] = [:]
     private var lastPlayed: [UUID: Date] = [:]
+    private var librarySnapshot: [BookWithChapters] = []
 
     public init(repository: LibraryRepository, positionStore: SQLitePositionStore) {
         self.repository = repository
@@ -22,6 +23,11 @@ public final class WatchStorageManager: ObservableObject {
         self.cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("voxglass-watch-audio")
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+    }
+
+    public func updateLibrary(_ library: [BookWithChapters]) async {
+        librarySnapshot = library
+        await refresh()
     }
 
     public func refresh() async {
@@ -40,7 +46,7 @@ public final class WatchStorageManager: ObservableObject {
 
         totalBytes = bytes
 
-        let library = (try? await repository.fetchLibrary()) ?? []
+        let library = await currentLibrary()
         var bookChapters: [UUID: Set<Int>] = [:]
         var bookByteCounts: [UUID: Int64] = [:]
         var bookTotalChapters: [UUID: Int] = [:]
@@ -71,7 +77,7 @@ public final class WatchStorageManager: ObservableObject {
         for (bookID, indices) in bookChapters {
             let total = bookTotalChapters[bookID] ?? indices.count
             storageInfo[bookID] = WatchBookStorageInfo(
-                state: indices.count >= total ? .available : .available,
+                state: indices.count >= total ? .available : .queued,
                 byteCount: bookByteCounts[bookID] ?? 0,
                 chapterCount: indices.count,
                 completeChapterCount: indices.count
@@ -96,7 +102,7 @@ public final class WatchStorageManager: ObservableObject {
 
     public func deleteOffline(bookID: UUID) async {
         guard let chapters = localChapters[bookID] else { return }
-        let library = (try? await repository.fetchLibrary()) ?? []
+        let library = await currentLibrary()
         guard let book = library.first(where: { $0.book.id == bookID }) else { return }
 
         for chapter in book.chapters {
@@ -176,5 +182,12 @@ public final class WatchStorageManager: ObservableObject {
         markPlayed(bookID: bookID)
         await refresh()
         await evictIfNeeded()
+    }
+
+    private func currentLibrary() async -> [BookWithChapters] {
+        if !librarySnapshot.isEmpty {
+            return librarySnapshot
+        }
+        return (try? await repository.fetchLibrary()) ?? []
     }
 }

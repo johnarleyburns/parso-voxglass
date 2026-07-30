@@ -70,6 +70,7 @@ final class AppServices: ObservableObject {
             Task { @MainActor [weak self] in
                 await self?.cloudSync.pushBookmarks()
                 self?.cloudKitSyncEngine.pushAfterMutation()
+                await self?.phoneAudioRelay.publishLibrarySnapshot()
             }
         }
         homeRecommendationStore.configure(profileStore: tasteProfileStore, libraryStore: libraryStore)
@@ -77,7 +78,9 @@ final class AppServices: ObservableObject {
         libraryStore.onBookImported = { [weak self] bookID in
             await self?.cloudSync.adoptCloudPositions(forBookID: bookID)
             self?.cloudKitSyncEngine.pushAfterMutation()
+            await self?.phoneAudioRelay.publishLibrarySnapshot()
         }
+        phoneAudioRelay.configure(libraryStore: self.libraryStore, playbackCoordinator: self.playbackCoordinator)
         playbackCoordinator.listeningStatsStore = listeningStatsStore
         folderWatchService.configure(libraryStore: libraryStore)
 
@@ -101,12 +104,15 @@ final class AppServices: ObservableObject {
         await CacheManager.shared.evictIfNeeded()
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
+        await phoneAudioRelay.publishLibrarySnapshot()
         let rebased = await libraryRepository.rebaseStaleLocalURLsIfNeeded()
         if rebased > 0 {
             await libraryStore.refresh()
+            await phoneAudioRelay.publishLibrarySnapshot()
         }
         await playbackCoordinator.reconcileSnapshots()
         await playbackCoordinator.restorePresentedSession(from: libraryStore.books)
+        await phoneAudioRelay.publishLibrarySnapshot()
 
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
