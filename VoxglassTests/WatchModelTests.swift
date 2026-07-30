@@ -399,6 +399,56 @@ import Testing
         #expect(decoded.playbackState?.session?.isPlaying == true)
     }
 
+    @Test func watchStorageSnapshot_roundTripsThroughWatchConnectivityPayload() throws {
+        let alice = WatchPhoneSmokeFixtures.aliceInWonderland()
+        let chapters = alice.chapters.naturallySorted()
+        let storage = WatchBookStorageInfo(
+            state: .transferring(progress: 2.0 / 3.0),
+            byteCount: 42,
+            chapterCount: 2,
+            completeChapterCount: 2,
+            totalChapterCount: 3,
+            chapters: [
+                WatchChapterStorageInfo(id: chapters[0].id, chapterIndex: 0, state: .available, byteCount: 21),
+                WatchChapterStorageInfo(id: chapters[1].id, chapterIndex: 1, state: .available, byteCount: 21),
+                WatchChapterStorageInfo(id: chapters[2].id, chapterIndex: 2, state: .transferring(progress: 0.25))
+            ]
+        )
+        let snapshot = WatchStorageSnapshot(books: [alice.book.id: storage])
+
+        let message = try WatchPhoneMessageCodec.message(
+            action: WatchPhoneAction.reportWatchStorage,
+            payload: snapshot
+        )
+
+        #expect(WatchPhoneMessageCodec.action(from: message) == WatchPhoneAction.reportWatchStorage)
+        let decoded = try WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: message)
+        let decodedInfo = try #require(decoded.storageInfo(for: alice.book.id))
+        #expect(decodedInfo.completeChapterCount == 2)
+        #expect(decodedInfo.totalChapterCount == 3)
+        #expect(decodedInfo.chapters[2].state == .transferring(progress: 0.25))
+    }
+
+    @Test func watchStorageText_marksPhoneLibraryRows() {
+        let available = WatchBookStorageInfo(
+            state: .available,
+            byteCount: 100,
+            chapterCount: 3,
+            completeChapterCount: 3,
+            totalChapterCount: 3
+        )
+        #expect(available.phoneLibraryStatusText == "Downloaded on Watch")
+
+        let partial = WatchBookStorageInfo(
+            state: .queued,
+            byteCount: 50,
+            chapterCount: 1,
+            completeChapterCount: 1,
+            totalChapterCount: 3
+        )
+        #expect(partial.phoneLibraryStatusText == "1/3 chapters on Watch")
+    }
+
     @Test func downloadedBookRemainsAvailableWithNoPhoneOrInternet() {
         let state = WatchTransferStateResolver.resolve(
             isDownloaded: true,

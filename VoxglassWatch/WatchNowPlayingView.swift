@@ -23,6 +23,18 @@ struct WatchNowPlayingView: View {
         session?.isPlaying ?? false
     }
 
+    var chapterNumberText: String? {
+        guard let session,
+              let index = session.chapters.naturallySorted().firstIndex(where: { $0.id == session.chapter.id }) else {
+            return nil
+        }
+        return "Chapter \(index + 1) of \(session.chapters.count)"
+    }
+
+    var remainingTime: TimeInterval {
+        max((session?.duration ?? duration) - currentPosition, 0)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
@@ -44,6 +56,12 @@ struct WatchNowPlayingView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
+                    if let chapterNumberText {
+                        Text(chapterNumberText)
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier(WatchAccessibilityID.npChapterNumber)
+                    }
                     if let narrator = session?.book.narratorLine {
                         Text(narrator)
                             .font(.caption2)
@@ -63,9 +81,11 @@ struct WatchNowPlayingView: View {
                     HStack {
                         Text(WatchTimeFormat.time(currentPosition))
                             .font(.caption2.monospacedDigit())
+                            .accessibilityIdentifier(WatchAccessibilityID.npElapsed)
                         Spacer()
-                        Text(WatchTimeFormat.time(duration))
+                        Text("-\(WatchTimeFormat.time(remainingTime))")
                             .font(.caption2.monospacedDigit())
+                            .accessibilityIdentifier(WatchAccessibilityID.npRemaining)
                     }
                 }
 
@@ -166,6 +186,7 @@ struct WatchNowPlayingView: View {
                         Image(systemName: "arrow.down.circle")
                             .font(.caption)
                     }
+                    .accessibilityIdentifier(WatchAccessibilityID.npDownload)
                 }
                 .frame(height: 34)
             }

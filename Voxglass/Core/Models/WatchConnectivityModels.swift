@@ -7,6 +7,7 @@ public enum WatchPhoneAction {
     public static let playBook = "watch.playBook"
     public static let playRemote = "watch.playRemote"
     public static let playbackCommand = "watch.playbackCommand"
+    public static let reportWatchStorage = "watch.reportWatchStorage"
 }
 
 public struct WatchPhoneEmptyPayload: Codable, Equatable, Sendable {

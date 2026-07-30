@@ -67,6 +67,10 @@ public enum WatchAccessibilityID {
     public static let bookAdd = "book.add"
     public static let npPlayPause = "np.playpause"
     public static let npState = "np.state"
+    public static let npChapterNumber = "np.chapterNumber"
+    public static let npElapsed = "np.elapsed"
+    public static let npRemaining = "np.remaining"
+    public static let npDownload = "np.download"
     public static let npBack15 = "np.back15"
     public static let npForward30 = "np.forward30"
     public static let npChapterPrev = "np.chapterPrev"
@@ -74,9 +78,15 @@ public enum WatchAccessibilityID {
     public static let bookMeta = "book.meta"
     public static let npRoute = "np.route"
     public static let fetchStatus = "fetch.status"
+    public static let fetchOverallState = "fetch.overallState"
     public static let fetchCancel = "fetch.cancel"
     public static let fetchRetry = "fetch.retry"
+    public static let fetchChapters = "fetch.chapters"
     public static let chaptersList = "chapters.list"
     public static let playbackOptions = "playback.options"
     public static let widgetResume = "widget.resume"
+
+    public static func fetchChapterState(_ chapterNumber: Int) -> String {
+        "fetch.chapter.\(chapterNumber).state"
+    }
 }

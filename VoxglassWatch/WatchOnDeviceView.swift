@@ -57,7 +57,7 @@ struct WatchOnDeviceRow: View {
                 .lineLimit(1)
             HStack {
                 if info.byteCount > 0 {
-                    Text(WatchTimeFormat.duration(Double(info.byteCount)))
+                    Text(WatchTimeFormat.bytes(info.byteCount))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

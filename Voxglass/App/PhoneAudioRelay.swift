@@ -8,6 +8,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     @Published private(set) var isReachable: Bool = false
     @Published private(set) var isWatchAppInstalled: Bool = false
+    @Published private(set) var watchStorageSnapshot: WatchStorageSnapshot?
 
     private let session: WCSession
     private let client: InternetArchiveCatalogClient
@@ -53,6 +54,10 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         session.transferFile(url, metadata: ["chapterKey": chapterKey])
     }
 
+    func watchStorageInfo(for bookID: UUID) -> WatchBookStorageInfo? {
+        watchStorageSnapshot?.storageInfo(for: bookID)
+    }
+
     private func reply(for message: [String: Any]) async -> [String: Any] {
         guard let action = WatchPhoneMessageCodec.action(from: message) else {
             return WatchPhoneMessageCodec.errorReply(WatchPhoneMessageError.missingAction.localizedDescription)
@@ -89,6 +94,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 let request = try WatchPhoneMessageCodec.payload(WatchPhonePlaybackCommandRequest.self, from: message)
                 let state = await handlePlaybackCommand(request)
                 return try WatchPhoneMessageCodec.reply(state)
+
+            case WatchPhoneAction.reportWatchStorage:
+                let snapshot = try WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: message)
+                applyWatchStorageSnapshot(snapshot)
+                return try WatchPhoneMessageCodec.reply(WatchPhoneEmptyPayload())
 
             default:
                 return WatchPhoneMessageCodec.errorReply("Unsupported watch action: \(action)")
@@ -205,9 +215,17 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             let contentKey = message["contentKey"] as? String ?? ""
             let chapterKey = message["chapterKey"] as? String ?? ""
             _ = await findAndSendChapter(contentKey: contentKey, chapterKey: chapterKey)
+        case WatchPhoneAction.reportWatchStorage:
+            if let snapshot = try? WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: message) {
+                applyWatchStorageSnapshot(snapshot)
+            }
         default:
             break
         }
+    }
+
+    private func applyWatchStorageSnapshot(_ snapshot: WatchStorageSnapshot) {
+        watchStorageSnapshot = snapshot
     }
 
     private func findAndSendChapter(contentKey: String, chapterKey: String) async -> Bool {
@@ -254,6 +272,18 @@ extension PhoneAudioRelay: WCSessionDelegate {
     ) {
         Task { @MainActor in
             await handleReceivedMessageWithoutReply(message)
+        }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveApplicationContext applicationContext: [String: Any]
+    ) {
+        Task { @MainActor in
+            if WatchPhoneMessageCodec.action(from: applicationContext) == WatchPhoneAction.reportWatchStorage,
+               let snapshot = try? WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: applicationContext) {
+                applyWatchStorageSnapshot(snapshot)
+            }
         }
     }
 

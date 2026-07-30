@@ -59,6 +59,10 @@ final class WatchAppServices: ObservableObject {
             self?.offlineManager.localURL(for: chapter)
         }
 
+        offlineManager.onStorageChanged = { [weak relay] snapshot in
+            relay?.publishStorageSnapshot(snapshot)
+        }
+
         libraryStore.onBookImported = { [weak self] _ in
             guard let self else { return }
             await self.libraryStore.refresh()
@@ -74,6 +78,23 @@ final class WatchAppServices: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
+
+        playbackCoordinator.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+
+        offlineManager.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+
+        relay.onReachabilityChanged = { [weak self] isReachable in
+            guard isReachable else { return }
+            Task { @MainActor in
+                self?.publishWatchStorageSnapshot()
+            }
+        }
 
         relay.onLibrarySnapshot = { [weak self] snapshot in
             guard let self else { return }
@@ -99,9 +120,13 @@ final class WatchAppServices: ObservableObject {
         guard !didBootstrap else { return }
         didBootstrap = true
 
+        if Self.shouldResetSmokeCache {
+            await offlineManager.clearAllCache()
+        }
         await libraryStore.refresh()
         await refreshFromPhone()
         await offlineManager.updateLibrary(books)
+        publishWatchStorageSnapshot()
         await restoreBookmark()
     }
 
@@ -161,6 +186,7 @@ final class WatchAppServices: ObservableObject {
             }
         }
         await offlineManager.updateLibrary(books)
+        publishWatchStorageSnapshot()
     }
 
     func restoreBookmark() async {
@@ -181,6 +207,18 @@ final class WatchAppServices: ObservableObject {
         phoneBooks = snapshot.books
         watchError = nil
         await offlineManager.updateLibrary(books)
+    }
+
+    private func publishWatchStorageSnapshot() {
+        relay.publishStorageSnapshot(offlineManager.storageSnapshot())
+    }
+
+    private static var shouldResetSmokeCache: Bool {
+        let key = "VOXGLASS_WATCH_SMOKE_RESET_CACHE"
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment[key] == "1"
+            || processInfo.arguments.contains("-\(key)")
+            || UserDefaults.standard.bool(forKey: key)
     }
 
     private static func mergedBooks(

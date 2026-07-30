@@ -10,6 +10,7 @@ struct VoxglassWatchApp: App {
         WindowGroup {
             WatchRootView()
                 .environmentObject(services)
+                .environmentObject(services.offlineManager)
         }
     }
 }

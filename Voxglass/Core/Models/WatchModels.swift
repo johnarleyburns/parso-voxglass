@@ -1,40 +1,167 @@
 import Foundation
 
 /// On-watch book storage state machine. Pure model, host-testable.
-public enum WatchTransferState: Equatable, Sendable {
+public enum WatchTransferState: Equatable, Sendable, Codable {
     case notAvailable
     case queued
     case waitingForPhone
     case transferring(progress: Double)
     case available
     case failed
+
+    private enum CodingKeys: String, CodingKey {
+        case kind
+        case progress
+    }
+
+    private enum Kind: String, Codable {
+        case notAvailable
+        case queued
+        case waitingForPhone
+        case transferring
+        case available
+        case failed
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        switch try container.decode(Kind.self, forKey: .kind) {
+        case .notAvailable:
+            self = .notAvailable
+        case .queued:
+            self = .queued
+        case .waitingForPhone:
+            self = .waitingForPhone
+        case .transferring:
+            self = .transferring(progress: try container.decodeIfPresent(Double.self, forKey: .progress) ?? 0)
+        case .available:
+            self = .available
+        case .failed:
+            self = .failed
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .notAvailable:
+            try container.encode(Kind.notAvailable, forKey: .kind)
+        case .queued:
+            try container.encode(Kind.queued, forKey: .kind)
+        case .waitingForPhone:
+            try container.encode(Kind.waitingForPhone, forKey: .kind)
+        case .transferring(let progress):
+            try container.encode(Kind.transferring, forKey: .kind)
+            try container.encode(progress, forKey: .progress)
+        case .available:
+            try container.encode(Kind.available, forKey: .kind)
+        case .failed:
+            try container.encode(Kind.failed, forKey: .kind)
+        }
+    }
+
+    public var progressFraction: Double? {
+        if case .transferring(let progress) = self {
+            return progress
+        }
+        return nil
+    }
+}
+
+/// Snapshot of a single chapter's watch-local storage state.
+public struct WatchChapterStorageInfo: Identifiable, Equatable, Sendable, Codable {
+    public let id: UUID
+    public let chapterIndex: Int
+    public let state: WatchTransferState
+    public let byteCount: Int64
+    public let bytesExpected: Int64?
+
+    public init(
+        id: UUID,
+        chapterIndex: Int,
+        state: WatchTransferState,
+        byteCount: Int64 = 0,
+        bytesExpected: Int64? = nil
+    ) {
+        self.id = id
+        self.chapterIndex = chapterIndex
+        self.state = state
+        self.byteCount = byteCount
+        self.bytesExpected = bytesExpected
+    }
 }
 
 /// Snapshot of a book's on-watch storage.
-public struct WatchBookStorageInfo: Equatable, Sendable {
+public struct WatchBookStorageInfo: Equatable, Sendable, Codable {
     public let state: WatchTransferState
     public let byteCount: Int64
     public let chapterCount: Int
     public let completeChapterCount: Int
+    public let totalChapterCount: Int
+    public let chapters: [WatchChapterStorageInfo]
 
     public init(
         state: WatchTransferState,
         byteCount: Int64,
         chapterCount: Int,
-        completeChapterCount: Int
+        completeChapterCount: Int,
+        totalChapterCount: Int = 0,
+        chapters: [WatchChapterStorageInfo] = []
     ) {
         self.state = state
         self.byteCount = byteCount
         self.chapterCount = chapterCount
         self.completeChapterCount = completeChapterCount
+        self.totalChapterCount = totalChapterCount
+        self.chapters = chapters
     }
 
     public static let notAvailable = WatchBookStorageInfo(
         state: .notAvailable,
         byteCount: 0,
         chapterCount: 0,
-        completeChapterCount: 0
+        completeChapterCount: 0,
+        totalChapterCount: 0,
+        chapters: []
     )
+
+    public var phoneLibraryStatusText: String? {
+        let total = max(totalChapterCount, chapters.count, completeChapterCount)
+        switch state {
+        case .available:
+            return "Downloaded on Watch"
+        case .transferring(let progress):
+            return "Downloading to Watch \(Int(progress * 100))%"
+        case .queued:
+            guard completeChapterCount > 0 else { return "Queued for Watch" }
+            return "\(completeChapterCount)/\(max(total, 1)) chapters on Watch"
+        case .waitingForPhone:
+            return "Watch download waiting"
+        case .failed:
+            return "Watch download failed"
+        case .notAvailable:
+            return nil
+        }
+    }
+}
+
+/// The watch's storage report sent back to the iPhone. This is deliberately
+/// separate from the iPhone library snapshot: the watch owns watch-local files.
+public struct WatchStorageSnapshot: Equatable, Sendable, Codable {
+    public let books: [UUID: WatchBookStorageInfo]
+    public let generatedAt: Date
+
+    public init(
+        books: [UUID: WatchBookStorageInfo],
+        generatedAt: Date = Date()
+    ) {
+        self.books = books
+        self.generatedAt = generatedAt
+    }
+
+    public func storageInfo(for bookID: UUID) -> WatchBookStorageInfo? {
+        books[bookID]
+    }
 }
 
 /// Watch storage policy constants. Pure, host-testable.

@@ -20,6 +20,7 @@ final class WatchAudioRelay: NSObject, ObservableObject {
     var onFileReceived: ((URL, String) -> Void)?
     var onLibrarySnapshot: ((WatchPhoneLibrarySnapshot) -> Void)?
     var onPlaybackState: ((WatchPhonePlaybackState) -> Void)?
+    var onReachabilityChanged: ((Bool) -> Void)?
 
     override init() {
         smokeMode = Self.isSmokeModeEnabled
@@ -204,6 +205,24 @@ final class WatchAudioRelay: NSObject, ObservableObject {
         session.sendMessage(message, replyHandler: nil)
     }
 
+    func publishStorageSnapshot(_ snapshot: WatchStorageSnapshot) {
+        guard !smokeMode else { return }
+        guard WCSession.isSupported(), session.activationState == .activated else { return }
+        guard let message = try? WatchPhoneMessageCodec.message(
+            action: WatchPhoneAction.reportWatchStorage,
+            payload: snapshot
+        ) else { return }
+
+        try? session.updateApplicationContext(message)
+        if session.isReachable {
+            session.sendMessage(message, replyHandler: nil) { [weak self] error in
+                Task { @MainActor in
+                    self?.lastError = error.localizedDescription
+                }
+            }
+        }
+    }
+
     private func request<Response: Decodable, Payload: Encodable>(
         action: String,
         payload: Payload
@@ -339,6 +358,7 @@ extension WatchAudioRelay: WCSessionDelegate {
         Task { @MainActor in
             isReachable = session.isReachable
             isCompanionAppInstalled = session.isCompanionAppInstalled
+            onReachabilityChanged?(session.isReachable)
             if let context = try? WatchPhoneMessageCodec.payload(
                 WatchPhoneLibrarySnapshot.self,
                 from: session.receivedApplicationContext
@@ -351,6 +371,7 @@ extension WatchAudioRelay: WCSessionDelegate {
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in
             isReachable = session.isReachable
+            onReachabilityChanged?(session.isReachable)
         }
     }
 

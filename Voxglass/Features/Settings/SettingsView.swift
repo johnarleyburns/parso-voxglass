@@ -629,12 +629,12 @@ private struct WatchSyncCard: View {
                 }
             }
 
-            Text("Your library and progress sync to Apple Watch when iCloud is available. The watch also works on its own — search, stream, and download independently.")
+            Text("Apple Watch gets My Books directly from the iPhone with WatchConnectivity. iCloud sync stays on the iPhone library path; the watch can still search, stream, and download independently.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
             if !syncEnabled {
-                Text("iCloud Sync is off. Enable above to sync with Apple Watch.")
+                Text("iCloud Sync is off. Apple Watch still uses direct iPhone connectivity when the phone is reachable.")
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink3)
             } else {

@@ -4,6 +4,7 @@ import VoxglassCore
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
     @State private var pendingDeletion: BookWithChapters?
     @State private var showSearch = false
@@ -75,7 +76,8 @@ struct LibraryView: View {
                                 book: book,
                                 sourceTitle: libraryStore.source(for: book.book)?.title,
                                 accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
-                                style: .grouped
+                                style: .grouped,
+                                watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id)
                             )
                         }
                         .buttonStyle(.plain)

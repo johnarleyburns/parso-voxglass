@@ -143,6 +143,7 @@ struct BookListRow: View {
     var subtitle: String
     var tertiary: String?
     var metadata: String?
+    var watchStatus: String?
     var coverURL: URL?
     var accessory: RowAccessory = .navigation
     var style: BookListRowStyle = .card
@@ -193,6 +194,12 @@ struct BookListRow: View {
                     Text(metadata)
                         .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
+                        .lineLimit(1)
+                }
+                if let watchStatus, !watchStatus.isEmpty {
+                    Label(watchStatus, systemImage: "applewatch")
+                        .scaledFont(size: 11)
+                        .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
                 if showSoloBadge {
@@ -396,6 +403,7 @@ struct CompactBookRowView: View {
     var sourceTitle: String?
     var accessory: RowAccessory = .navigation
     var style: BookListRowStyle = .card
+    var watchStorage: WatchBookStorageInfo?
 
     var body: some View {
         BookListRow(
@@ -403,12 +411,24 @@ struct CompactBookRowView: View {
             subtitle: book.book.authorLine,
             tertiary: book.book.narratorLine,
             metadata: nil,
+            watchStatus: watchStorageText,
             coverURL: book.book.coverURL,
             accessory: accessory,
             style: style,
-            accessibilityLabel: "\(book.book.title) by \(book.book.authorLine)",
+            accessibilityLabel: accessibilityText,
             showSoloBadge: book.narrationKind == .solo
         )
+    }
+
+    private var accessibilityText: String {
+        if let watchStorageText {
+            return "\(book.book.title) by \(book.book.authorLine), \(watchStorageText)"
+        }
+        return "\(book.book.title) by \(book.book.authorLine)"
+    }
+
+    private var watchStorageText: String? {
+        watchStorage?.phoneLibraryStatusText
     }
 }
 

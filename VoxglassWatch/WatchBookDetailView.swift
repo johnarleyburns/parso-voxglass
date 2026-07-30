@@ -71,7 +71,8 @@ struct WatchBookDetailView: View {
                     }
 
                     let info = services.offlineManager.storageInfo(for: book.book.id)
-                    if info.state == .notAvailable {
+                    switch info.state {
+                    case .notAvailable:
                         Button {
                             Task { await services.downloadBook(book) }
                         } label: {
@@ -81,7 +82,32 @@ struct WatchBookDetailView: View {
                             }
                         }
                         .accessibilityIdentifier(WatchAccessibilityID.bookFetch)
-                    } else {
+                    case .transferring(let progress):
+                        VStack(spacing: 4) {
+                            ProgressView(value: progress)
+                            Text("Downloading \(Int(progress * 100))%")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    case .queued:
+                        Label("\(info.completeChapterCount)/\(max(info.totalChapterCount, book.chapters.count)) chapters downloaded", systemImage: "arrow.down.circle")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    case .waitingForPhone:
+                        Label("Waiting for iPhone", systemImage: "iphone.radiowaves.left.and.right")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    case .failed:
+                        Button {
+                            Task { await services.downloadBook(book) }
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.clockwise.circle")
+                                Text("Retry Download")
+                            }
+                        }
+                        .accessibilityIdentifier(WatchAccessibilityID.fetchRetry)
+                    case .available:
                         Button {
                             Task {
                                 await services.offlineManager.deleteOffline(bookID: book.book.id)
