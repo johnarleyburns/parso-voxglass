@@ -154,4 +154,23 @@ import Foundation
         #expect(meta.kind == nil)
         #expect(meta.effectiveKind == .audio)
     }
+
+    @Test func persistedDebugJsonUsesLineBreaks() async throws {
+        await store.setContentLength(100, for: "audio_debug")
+        await store.recordWrite(range: 0..<50, for: "audio_debug")
+        await store.pin(["audio_debug"])
+
+        let metaURL = directory
+            .appendingPathComponent("StreamCacheMeta", isDirectory: true)
+            .appendingPathComponent("audio_debug.json")
+        let pinnedURL = directory.appendingPathComponent("StreamCachePins.json")
+
+        let meta = try String(contentsOf: metaURL, encoding: .utf8)
+        let pins = try String(contentsOf: pinnedURL, encoding: .utf8)
+
+        #expect(meta.hasPrefix("{\n"))
+        #expect(meta.contains("\n"))
+        #expect(pins.hasPrefix("[\n"))
+        #expect(pins.contains("\n"))
+    }
 }

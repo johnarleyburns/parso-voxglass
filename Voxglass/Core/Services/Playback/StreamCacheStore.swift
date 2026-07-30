@@ -271,12 +271,19 @@ public actor StreamCacheStore {
 
     // MARK: - Persistence
 
+    private static func debugJSONEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        return encoder
+    }
+
     private func metaURL(_ key: String) -> URL {
         metaDir.appendingPathComponent("\(key).json")
     }
 
     private func persistMeta(_ key: String) {
-        guard let m = metas[key], let data = try? JSONEncoder().encode(m) else { return }
+        guard let m = metas[key],
+              let data = try? Self.debugJSONEncoder().encode(m) else { return }
         try? data.write(to: metaURL(key))
     }
 
@@ -308,7 +315,7 @@ public actor StreamCacheStore {
     }
 
     private func persistPinnedKeys() {
-        guard let data = try? JSONEncoder().encode(Array(pinnedKeys)) else { return }
+        guard let data = try? Self.debugJSONEncoder().encode(Array(pinnedKeys)) else { return }
         try? data.write(to: pinnedKeysURL)
     }
 
