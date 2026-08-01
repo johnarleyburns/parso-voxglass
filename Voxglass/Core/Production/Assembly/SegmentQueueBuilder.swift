@@ -45,6 +45,15 @@ public struct SegmentQueueBuilder: Sendable {
                 var leading: TimeInterval = 0
                 var trailing: TimeInterval = 0
 
+                // Silence semantics (spec §12.2): `leadingSilence` is written
+                // before a segment and `trailingSilence` after it. To avoid
+                // double-gapping between consecutive paragraphs (leading of one
+                // plus trailing of the previous), the inter-paragraph gap is
+                // carried by exactly one side: the `leadingSilence` of every
+                // segment except the first carries the paragraph gap (plus any
+                // scene-break extra), while `trailingSilence` is 0 for interior
+                // segments and only the chapter tail is nonzero. Review modes
+                // are the inverse: a tight 0.25 s turnaround with no leading.
                 if isReviewMode {
                     trailing = 0.25
                     leading = 0
@@ -57,7 +66,7 @@ public struct SegmentQueueBuilder: Sendable {
                             leading += settings.sceneBreakExtraGap
                         }
                     }
-                    trailing = settings.paragraphGap
+                    trailing = 0
                 }
 
                 if idx == parsWithTakes.count - 1 && !isReviewMode {

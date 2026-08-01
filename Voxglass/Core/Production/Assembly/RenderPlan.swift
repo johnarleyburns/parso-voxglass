@@ -48,6 +48,16 @@ public struct ChapterRendering: Sendable {
     }
 }
 
+/// Materializes a `RenderPlan` into a single lossless audio file (spec §12.4).
+/// Implemented by `AVChapterRenderer` in the Studio target.
+public protocol ChapterRenderable: Sendable {
+    func render(
+        _ plan: RenderPlan,
+        to url: URL,
+        progress: @Sendable (Double) -> Void
+    ) async throws -> ChapterRendering
+}
+
 public protocol RenderCache: Sendable {
     func cachedRender(for key: String) async throws -> AudioAssetReference?
     func store(_ ref: AudioAssetReference, for key: String) async throws
