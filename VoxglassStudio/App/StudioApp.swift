@@ -27,8 +27,42 @@ struct StudioApp: App {
                                 assets: environment.assetStoreForCurrentProject()
                             ))
                         case .dashboard:
-                            DashboardStubView()
-                        case .record, .review, .assembly, .export, .settings:
+                            if let project = environment.currentProject {
+                                ProjectDashboardView(model: ProjectDashboardModel(
+                                    project: project,
+                                    store: environment.store
+                                ))
+                            } else {
+                                PlaceholderView(route: route)
+                            }
+                        case .record:
+                            PlaceholderView(route: route)
+                        case .review:
+                            if let project = environment.currentProject {
+                                let assets = environment.assetStoreForCurrentProject()
+                                ReviewQueueView(model: ReviewQueueModel(
+                                    project: project,
+                                    store: environment.store,
+                                    assets: assets,
+                                    player: AVSegmentPlayer(assets: assets)
+                                ))
+                            } else {
+                                PlaceholderView(route: route)
+                            }
+                        case .assembly:
+                            if let project = environment.currentProject {
+                                let assets = environment.assetStoreForCurrentProject()
+                                ChapterAssemblyView(model: AssemblyModel(
+                                    project: project,
+                                    store: environment.store,
+                                    assets: assets,
+                                    renderer: AVChapterRenderer(assets: assets),
+                                    player: AVSegmentPlayer(assets: assets)
+                                ))
+                            } else {
+                                PlaceholderView(route: route)
+                            }
+                        case .export, .settings:
                             PlaceholderView(route: route)
                         case .takeCompare:
                             if let project = environment.currentProject {
@@ -68,26 +102,6 @@ struct StudioApp: App {
         .commands {
             StudioCommands()
         }
-    }
-}
-
-struct DashboardStubView: View {
-    @Environment(StudioEnvironment.self) private var env
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text(env.currentProject?.metadata.title ?? "No Project")
-                .font(.title)
-            Text("Dashboard")
-                .font(.headline)
-            Text("\(env.currentProject?.recordedCount ?? 0) of \(env.currentProject?.totalCount ?? 0) paragraphs recorded")
-            Button("Record Next") {
-                env.navigate(to: .record)
-            }
-            .accessibilityIdentifier("dashboard.recordNext")
-        }
-        .padding()
-        .frame(minWidth: 500, minHeight: 400)
     }
 }
 
