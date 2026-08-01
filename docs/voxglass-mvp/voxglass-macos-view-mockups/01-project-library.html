@@ -1,0 +1,113 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Project Library — Voxglass Studio</title><style>
+:root{
+  --bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;
+  --muted:#a9b0bd;--accent:#7fb0ff;--accent2:#315f9c;--good:#72d59f;--warn:#f2c96d;--bad:#ff8088
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%} body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button,input,select,textarea{font:inherit} button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px} button:hover{filter:brightness(1.12)}
+button.primary{background:linear-gradient(#8cbcff,#6ca2eb);color:#0b1626;border-color:#9fc8ff;font-weight:700}
+input,select,textarea{width:100%;background:#17191e;color:var(--text);border:1px solid #444a55;border-radius:7px;padding:9px}
+textarea{min-height:86px;resize:vertical} label{display:block;color:var(--muted);margin:12px 0 6px}
+.check{display:flex;gap:8px;align-items:center;color:var(--text)} .check input{width:auto}
+.app-shell{display:grid;grid-template-columns:220px minmax(0,1fr) 280px;height:100vh;max-width:1500px;margin:auto;background:var(--panel);box-shadow:0 20px 80px #0008}
+.app-shell.no-right{grid-template-columns:220px minmax(0,1fr)}
+.sidebar{border-right:1px solid var(--line);padding:14px;background:#1d2025;display:flex;flex-direction:column}
+.brand{font-size:17px;font-weight:750;padding:9px 8px 15px}.nav-section{flex:1}.nav-bottom{margin-top:auto}
+.nav-item{padding:9px 10px;border-radius:8px;color:#d9dde5;margin:2px 0;display:flex;justify-content:space-between}.nav-item.active{background:#315a8f;color:white}.main{min-width:0;background:#202329}
+.inspector{border-left:1px solid var(--line);padding:16px;background:#1d2025;overflow:auto}.inspector hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.toolbar{min-height:64px;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:#252930}
+.toolbar-actions{display:flex;gap:8px;align-items:center}.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}
+.content{padding:18px;overflow:auto;height:calc(100vh - 64px)} .search{width:220px}
+.project-grid,.dashboard-grid,.comparison-grid,.export-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.project-card,.metric-card,.take-card,.export-card,.paragraph-card,.form-card,.note-card,.issue-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.project-card{display:flex;gap:14px;min-height:180px}.project-body{flex:1}.cover{width:92px;border-radius:10px;display:grid;place-items:center;font-size:30px;font-weight:800}.purple{background:#654f87}.blue{background:#395f87}.green{background:#3f735b}
+.new-card{display:grid;place-items:center;text-align:center;border-style:dashed}.plus{font-size:38px;color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.chips span,.status{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}.chips .warn,.status.warn{background:#67562b}.chips .good,.status.good{background:#285640}
+.progress{height:8px;background:#17191e;border-radius:99px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;background:linear-gradient(90deg,#71a9ff,#a0c7ff)}
+.activity{padding:10px 0;border-bottom:1px solid var(--line)}.activity span{display:block;color:var(--muted);margin-top:4px}
+.dialog-shell{width:min(760px,92vw);margin:50px auto;background:var(--panel);border:1px solid #4b515d;border-radius:15px;box-shadow:0 28px 100px #000a;overflow:hidden}.wide-dialog{width:min(1100px,94vw)}
+.dialog-header,.dialog-footer{padding:16px 18px;background:#252930;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.dialog-footer{border-top:1px solid var(--line);border-bottom:0}.dialog-content{padding:20px}
+.two-col,.two-pane{display:grid;grid-template-columns:1fr 1fr;gap:14px}.paragraph-card{margin-bottom:12px}.paragraph-card.selected{outline:2px solid var(--accent2)}.paragraph-head{display:flex;justify-content:space-between}.paragraph-card textarea{margin-top:10px}
+.metric{font-size:34px;font-weight:800}.wide{grid-column:1/-1}.right{float:right}.record-content{padding:24px;overflow:auto;height:calc(100vh - 122px)}.teleprompter{font-size:28px;line-height:1.55;max-width:860px;margin:44px auto;text-align:center}.teleprompter.small{font-size:23px}
+.waveform{height:90px;border-radius:10px;background:
+repeating-linear-gradient(90deg,transparent 0 4px,#79a9f5 4px 6px,transparent 6px 10px),
+linear-gradient(#191c21,#191c21);opacity:.9}.waveform.tall{height:180px}
+.transport{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0}.round{width:52px;height:52px;border-radius:50%;padding:0}.round.record{background:#d8565c;color:white;font-size:22px}
+.shortcut-card{display:flex;gap:10px;flex-wrap:wrap;background:#191c21;padding:12px;border-radius:10px}.shortcut-card span{background:#303640;padding:4px 8px;border-radius:6px}
+.bottom-bar{height:58px;border-top:1px solid var(--line);display:flex;justify-content:center;gap:10px;align-items:center;background:#252930}.take{padding:9px;border-radius:7px}.take.active{background:#315a8f}.full{width:100%;margin:5px 0}
+table{width:100%;border-collapse:collapse} td,th{padding:10px;border-bottom:1px solid var(--line);text-align:left}.assembly-table{background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.large-copy{font-size:20px;line-height:1.5}.issue-card{margin-bottom:12px}.issue-card.blocking{border-left:5px solid var(--bad)}.issue-card.warning{border-left:5px solid var(--warn)}
+.export-grid{grid-template-columns:repeat(3,1fr)}.export-card ul{padding-left:18px;line-height:1.8}.good-text{color:var(--good)}.warn-text{color:var(--warn)}.bad-text{color:var(--bad)}
+h1,h2,h3{margin-top:0} p{line-height:1.45} code{background:#111318;padding:3px 5px;border-radius:5px}
+@media(max-width:900px){.app-shell,.app-shell.no-right{grid-template-columns:180px 1fr}.inspector{display:none}.project-grid,.dashboard-grid,.comparison-grid,.export-grid,.two-pane{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style></head><body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Voxglass Studio</div>
+    <div class="nav-section">
+      <div class="nav-item active">All Projects <span>4</span></div>
+      <div class="nav-item">Needs Review <span>27</span></div>
+      <div class="nav-item">Ready to Export <span>1</span></div>
+      <div class="nav-item">Archive</div>
+    </div>
+    <div class="nav-bottom">
+      <div class="nav-item">Settings</div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="toolbar">
+      <div>
+        <div class="title">Projects</div>
+        <div class="subtitle">Record, review, and preview unfinished audiobooks.</div>
+      </div>
+      <div class="toolbar-actions">
+        <input class="search" placeholder="Search projects">
+        <button class="primary">＋ New Audiobook</button>
+      </div>
+    </div>
+    <div class="project-grid">
+      <article class="project-card">
+        <div class="cover purple">RA</div>
+        <div class="project-body">
+          <h3>The Murder of Roger Ackroyd</h3>
+          <p>Agatha Christie · John Burns</p>
+          <div class="chips"><span>42% recorded</span><span class="warn">18 flagged</span></div>
+          <div class="progress"><i style="width:42%"></i></div>
+          <small>Edited 8 minutes ago · Preview synced</small>
+        </div>
+      </article>
+      <article class="project-card">
+        <div class="cover blue">FH</div>
+        <div class="project-body">
+          <h3>A Farewell to Arms</h3>
+          <p>Ernest Hemingway</p>
+          <div class="chips"><span>12% recorded</span><span>Personal</span></div>
+          <div class="progress"><i style="width:12%"></i></div>
+          <small>Edited yesterday · 3 unsynced takes</small>
+        </div>
+      </article>
+      <article class="project-card">
+        <div class="cover green">FP</div>
+        <div class="project-body">
+          <h3>The Federalist Papers</h3>
+          <p>Hamilton, Madison, Jay</p>
+          <div class="chips"><span class="good">Ready to export</span><span>Public domain</span></div>
+          <div class="progress"><i style="width:100%"></i></div>
+          <small>Completed 2 days ago</small>
+        </div>
+      </article>
+      <article class="project-card new-card">
+        <div class="plus">＋</div>
+        <h3>Start another audiobook</h3>
+        <p>Create a new project or import an existing package.</p>
+      </article>
+    </div>
+  </main>
+  <aside class="inspector">
+    <h3>Production Activity</h3>
+    <div class="activity"><b>Watch note</b><span>“Pronounce Poirot more softly” · ¶ 218</span></div>
+    <div class="activity"><b>Phone review</b><span>3 paragraphs approved</span></div>
+    <div class="activity"><b>Cloud preview</b><span class="good-text">Up to date</span></div>
+  </aside>
+</div>
+</body></html>

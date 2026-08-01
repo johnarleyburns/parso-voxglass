@@ -446,6 +446,27 @@ check_watch_target_membership() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# Rule — No UI or simulator tests in GitHub Actions workflows.
+# All logic tests run via `swift test` (macOS host). The five UI
+# smoke tests are local-only (`scripts/test.sh --all`).
+# ──────────────────────────────────────────────────────────────
+check_no_ui_tests_in_ci() {
+  local had_failure=0
+  local matches
+
+  # A workflow step that runs xcodebuild test would boot a simulator or host
+  # runner UI tests — the one thing CI must never do.
+  matches=$(grep -rEn 'xcodebuild +test|test-without-building|platform=iOS Simulator.*test' .github/workflows/*.yml 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    echo "::error title=No-UI-tests-in-CI guard::GitHub Actions must never run UI or simulator tests. The only CI test job is 'swift test' (VoxglassCoreTests + VoxglassStudioTests). Five UI smoke tests run locally via scripts/test.sh --all."
+    printf '%s\n' "$matches"
+    had_failure=1
+  fi
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────
 
@@ -485,6 +506,7 @@ run_check "watch dead placeholders"    check_watch_dead_placeholders
 run_check "no new KVS writes"          check_no_new_kvs_writes
 run_check "orphan removed"             check_orphan_removed
 run_check "watch target membership"    check_watch_target_membership
+run_check "no UI tests in CI"          check_no_ui_tests_in_ci
 
 echo ""
 echo "=== Summary ==="

@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review Note Summary — Voxglass CarPlay</title><style>
+:root{
+ --bg:#050608;--panel:#121418;--panel2:#1b1e24;--line:#31353d;
+ --text:#f7f8fb;--muted:#a4aab4;--blue:#78adfa;--green:#75d89f;
+ --yellow:#efca6f;--red:#ff7f87
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#1a1d22;color:var(--text);
+ font:16px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
+body{padding:28px}
+.screen{
+ width:1024px;height:600px;margin:auto;background:var(--bg);border:10px solid #34373d;
+ border-radius:28px;overflow:hidden;box-shadow:0 28px 90px #000c;position:relative
+}
+.topbar{height:64px;background:#111318;border-bottom:1px solid #292c33;
+ display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.topbar h1{font-size:23px;margin:0}.time{font-size:18px}.status{display:flex;gap:16px;color:var(--muted)}
+.content{height:536px;display:grid;grid-template-columns:176px 1fr}
+.sidebar{border-right:1px solid #292c33;padding:18px 12px;background:#0f1115}
+.tab{padding:14px 12px;border-radius:12px;color:#a8adb7;margin-bottom:7px;font-weight:650}
+.tab.active{background:#285a91;color:white}.tab .count{float:right;background:#3d434d;padding:2px 7px;border-radius:999px;font-size:12px}
+.main{padding:20px;overflow:hidden}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card.selected{outline:3px solid var(--blue)}.row{display:flex;gap:14px;align-items:center}.between{justify-content:space-between}.grow{flex:1}
+.cover{width:88px;height:118px;border-radius:10px;background:linear-gradient(145deg,#694c8a,#30253f);
+ display:grid;place-items:center;font-size:28px;font-weight:800}
+.cover.small{width:56px;height:74px;font-size:18px}
+h2,h3,p{margin-top:0}h2{font-size:25px}h3{font-size:19px;margin-bottom:6px}
+p{line-height:1.35}.muted{color:var(--muted)}small{color:var(--muted)}
+.badge{display:inline-block;font-size:13px;background:#2c3038;padding:4px 8px;border-radius:999px}
+.badge.warn{background:#5e4d27;color:#ffe19b}.badge.good{background:#244e39;color:#aaf0c8}
+.progress{height:7px;background:#2b2e35;border-radius:99px;overflow:hidden;margin-top:12px}.progress i{display:block;height:100%;background:var(--blue)}
+.list-row{display:flex;align-items:center;gap:14px;padding:17px 8px;border-bottom:1px solid #282b32}
+.list-row:last-child{border-bottom:0}.chev{margin-left:auto;color:#737983;font-size:24px}
+.button{border:0;border-radius:14px;padding:15px 18px;background:#242831;color:white;font:inherit;font-weight:750}
+.button.primary{background:var(--blue);color:#071321}.button.warn{background:#6b5527}.button.danger{background:#6c2d33}
+.full{width:100%}
+.player-layout{display:grid;grid-template-columns:340px 1fr;gap:26px;height:100%}
+.hero{text-align:center}.hero .cover{width:180px;height:242px;margin:auto;font-size:48px}
+.wave{height:92px;border-radius:14px;background:
+ repeating-linear-gradient(90deg,transparent 0 5px,#78aaf2 5px 8px,transparent 8px 13px),
+ linear-gradient(#121318,#121318);margin:18px 0}
+.transport{display:flex;align-items:center;justify-content:center;gap:34px;margin:17px 0}
+.transport button{border:0;background:none;color:white;font-size:33px}.play{width:84px;height:84px;border-radius:50%;background:#fff!important;color:#050608!important}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.actions .button{min-height:76px;font-size:18px}
+.transcript{font-size:26px;line-height:1.45;background:#111318;border-radius:16px;padding:20px}
+.queue-item{padding:16px;border-radius:14px;background:#15181d;margin-bottom:10px}.queue-item.active{outline:3px solid var(--blue)}
+.metric{text-align:center}.metric b{display:block;font-size:48px}.toggle{width:53px;height:30px;border-radius:99px;background:#3d8ef2;padding:3px}
+.toggle i{display:block;width:24px;height:24px;background:white;border-radius:50%;margin-left:23px}
+.voice{font-size:58px;text-align:center;margin:25px 0}.center{text-align:center}
+@media(max-width:1100px){body{padding:0}.screen{border:0;border-radius:0;width:100vw;height:100vh}.content{height:calc(100vh - 64px)}}
+</style></head><body>
+<div class="screen">
+ <div class="topbar"><h1>Paragraph Note</h1><div class="status"><span>LTE</span><span class="time">9:41</span></div></div>
+ <div class="content">
+  <aside class="sidebar">
+   <div class="tab active">Note</div>
+   <div class="tab">Playback</div>
+  </aside>
+  <main class="main">
+   <div class="player-layout">
+    <div class="hero"><div class="cover">RA</div><h2>Chapter 4 · ¶ 218</h2><p class="muted">Flagged for pronunciation</p></div>
+    <div>
+     <div class="card"><span class="badge warn">Pronunciation</span><h2 style="margin-top:14px">“Pronounce Poirot more softly; second syllable too sharp.”</h2><p class="muted">Added on iPhone · Today 3:42 PM</p></div>
+     <div class="grid3">
+      <button class="button primary">✓ Approve</button>
+      <button class="button">↻ Pickup</button>
+      <button class="button">⚑ Keep Flagged</button>
+     </div>
+    </div>
+   </div>
+  </main>
+ </div>
+</div>
+</body></html>

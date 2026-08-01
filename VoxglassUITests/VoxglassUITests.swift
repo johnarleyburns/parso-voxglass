@@ -2,15 +2,16 @@ import XCTest
 
 /// The single simulator smoke test for Voxglass. Everything else is covered by
 /// the host `swift test` logic suite (VoxglassCore); this only proves the app
-/// boots and every tab renders without crashing. Run locally on iPhone 16 — CI
-/// runs `swift test` only.
+/// boots, every tab renders without crashing, and a key surface (the
+/// ten-band EQ) is reachable and draggable. Run locally on iPhone 16 — CI
+/// runs `swift test` only and never runs this target.
 final class VoxglassUITests: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
     }
 
-    func testAppBootsAndVisitsAllTabs() {
+    func testAppBootsVisitsAllTabsAndEQ() {
         let app = XCUIApplication()
         app.launchArguments += [
             "-voxglass.hasCompletedSplash", "YES",
@@ -47,19 +48,11 @@ final class VoxglassUITests: XCTestCase {
             app.textFields["Search LibriVox audiobooks"].waitForExistence(timeout: 10),
             "Search tab did not render its search field"
         )
-    }
 
-    func testAllTenEQBandsVisibleAndDraggable() {
-        let app = XCUIApplication()
-        app.launchArguments += [
-            "-voxglass.hasCompletedSplash", "YES",
-            "-voxglass.hasCompletedOnboarding", "YES",
-            "-VoxglassInitialTab", "more",
-            "-VoxglassDisableAnimatedSplash"
-        ]
-        app.launch()
-
-        XCTAssertTrue(app.staticTexts["Streaming Cache"].waitForExistence(timeout: 15))
+        // The ten-band EQ is reachable from the More tab and every band is
+        // draggable — folded into the smoke test so this target has exactly one.
+        app.buttons["More"].tap()
+        XCTAssertTrue(app.staticTexts["Streaming Cache"].waitForExistence(timeout: 10))
 
         let eqRow = app.buttons["settings.eq"]
         for _ in 0..<6 where !eqRow.isHittable {

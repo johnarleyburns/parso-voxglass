@@ -3,7 +3,7 @@ import Foundation
 @testable import VoxglassCore
 
 @MainActor
-@Suite struct PlaybackCoordinatorSelectionTests {
+@Suite(.serialized) struct PlaybackCoordinatorSelectionTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator
