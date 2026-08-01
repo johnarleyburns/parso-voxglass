@@ -3,10 +3,11 @@ import XCTest
 @testable import Voxglass
 @testable import VoxglassCore
 
-/// The single CarPlay UI smoke test (docs/CARPLAY_DESIGN.md §8). CarPlay cannot
-/// be driven by XCUITest, so this instantiates the real `CP*` templates from a
-/// representative pure model and asserts the renderer's wiring. Simulator/local
-/// gate only — never runs on Linux CI (`ci-no-simulator`).
+/// Part of the iPhone smoke test (docs/voxglass-mvp/VOXGLASS_STUDIO_SPEC.md
+/// §19.5). CarPlay cannot be driven by XCUITest, so this hosted scene test
+/// runs in the same iOS-simulator test action as `VoxglassUITests`
+/// (`xcodebuild test -scheme Voxglass`). It is not a separate UI smoke test
+/// and never runs on GitHub Actions.
 final class VoxglassCarPlaySmokeTests: XCTestCase {
     @MainActor
     func testRendererBuildsFiveTabsAndResumeRowFromModel() throws {

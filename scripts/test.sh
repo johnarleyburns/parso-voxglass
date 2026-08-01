@@ -1,20 +1,24 @@
 #!/bin/bash
-# test.sh — Local simulator test suite.
-# Runs xcodebuild test for the phone (iOS) and watch (watchOS) smoke tests.
-# Does NOT run in CI.
+# test.sh — Local UI smoke test suite. The five UI smoke tests in the repo are
+# the ONLY UI tests; everything else runs under `swift test`.
+# Does NOT run in CI (GitHub Actions runs `swift test` only).
 #
-# Usage: scripts/test.sh [--device "iPhone 16"] [--watch-device "Apple Watch Series 10 (46mm)"]
+# Usage: scripts/test.sh [--all] [--device "iPhone 16"] [--watch-device "Apple Watch Series 10 (46mm)"]
 #
 # With no arguments, defaults to iPhone 16 and the first available Apple Watch.
+# --all runs all five smoke tests: iPhone (VoxglassUITests + CarPlay scene),
+# Watch (VoxglassWatchUITests), and macOS Studio (VoxglassStudioUITests).
 
 set -euo pipefail
 
 DEVICE_NAME="iPhone 16"
 WATCH_DEVICE_NAME=""
+RUN_ALL=0
 
 # Parse args before using defaults.
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --all) RUN_ALL=1; shift ;;
     --device) DEVICE_NAME="$2"; shift 2 ;;
     --watch-device) WATCH_DEVICE_NAME="$2"; shift 2 ;;
     *) shift ;;
@@ -54,20 +58,36 @@ if [ -z "$WATCH_DEVICE_NAME" ]; then
   WATCH_DEVICE_NAME=$(xcrun simctl list devices available | grep -E "Apple Watch|Watch-" | head -1 | sed -E 's/^[[:space:]]*//; s/[[:space:]]+\(.*//' || true)
   if [ -z "$WATCH_DEVICE_NAME" ]; then
     echo "WARNING: No Apple Watch simulator found — skipping watch smoke test."
-    exit 0
   fi
 fi
 
-echo "Watch device name: $WATCH_DEVICE_NAME"
-echo ""
+if [ -n "$WATCH_DEVICE_NAME" ]; then
+  echo "Watch device name: $WATCH_DEVICE_NAME"
+  echo ""
 
-if ! xcrun simctl list devices available | sed -E 's/^[[:space:]]*//' | grep -q "^$WATCH_DEVICE_NAME ("; then
-  echo "WARNING: Watch simulator \"$WATCH_DEVICE_NAME\" not available — skipping watch smoke test."
-  exit 0
+  if xcrun simctl list devices available | sed -E 's/^[[:space:]]*//' | grep -q "^$WATCH_DEVICE_NAME ("; then
+    xcodebuild test \
+      -scheme VoxglassWatch \
+      -project Voxglass.xcodeproj \
+      -destination "platform=watchOS Simulator,name=$WATCH_DEVICE_NAME" \
+      -quiet
+  else
+    echo "WARNING: Watch simulator \"$WATCH_DEVICE_NAME\" not available — skipping watch smoke test."
+  fi
 fi
 
-xcodebuild test \
-  -scheme VoxglassWatch \
-  -project Voxglass.xcodeproj \
-  -destination "platform=watchOS Simulator,name=$WATCH_DEVICE_NAME" \
-  -quiet
+# ── macOS Studio smoke tests (three, one per destination) ────────────────────
+
+if [ "$RUN_ALL" -eq 1 ]; then
+  echo ""
+  echo "=== Voxglass Studio smoke tests (macOS host) ==="
+
+  xcodebuild test \
+    -scheme VoxglassStudio \
+    -project Voxglass.xcodeproj \
+    -destination "platform=macOS" \
+    -quiet
+fi
+
+echo ""
+echo "Local UI smoke tests complete."

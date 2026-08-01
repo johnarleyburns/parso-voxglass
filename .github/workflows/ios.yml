@@ -43,6 +43,29 @@ jobs:
             -destination 'generic/platform=watchOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
 
+  build-mac:
+    name: Build Studio (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Select latest Xcode
+        run: |
+          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
+          sudo xcode-select -s /Applications/$XCODE
+          xcodebuild -version
+
+      - name: Build Studio
+        run: |
+          xcodebuild build \
+            -project Voxglass.xcodeproj \
+            -scheme VoxglassStudio \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
   logic-tests:
     name: Logic Tests (swift test)
     runs-on: macos-latest
@@ -58,8 +81,11 @@ jobs:
           sudo xcode-select -s /Applications/$XCODE
           xcodebuild -version
 
-      - name: Run VoxglassCore logic tests
-        run: swift test
+      - name: Run all Swift Testing suites (parallel, except timing)
+        run: swift test --skip VoxglassPerformanceTests
+
+      - name: Run timing suites (serial, no parallel CPU contention)
+        run: swift test --no-parallel --filter VoxglassPerformanceTests
 
   guarded-tests:
     name: Guarded Tests
@@ -91,7 +117,7 @@ jobs:
   testflight:
     name: TestFlight Build
     runs-on: macos-latest
-    needs: [compile, logic-tests, guarded-tests]
+    needs: [compile, build-mac, logic-tests, guarded-tests]
     timeout-minutes: 45
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     env:

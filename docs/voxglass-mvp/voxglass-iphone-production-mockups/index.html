@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Voxglass iPhone Production Mockups</title>
+<style>
+:root{
+ --bg:#07080b;--panel:#121419;--panel2:#1b1e25;--line:#2d313a;
+ --text:#f6f7fb;--muted:#a4aab5;--blue:#84b5ff;--blue2:#2f609e;
+ --green:#72d8a0;--yellow:#f0c96c;--red:#ff7f88
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#17191e;color:var(--text);
+ font:15px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
+body{padding:28px}
+.phone{width:393px;min-height:852px;margin:auto;background:var(--bg);border:8px solid #383b42;
+ border-radius:46px;overflow:hidden;box-shadow:0 30px 90px #000b;position:relative}
+.status{height:42px;padding:13px 22px 0;display:flex;justify-content:space-between;font-size:12px;font-weight:700}
+.navbar{min-height:53px;padding:4px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.navbar h1{font-size:18px;margin:0}.back{color:var(--blue)}.nav-action{color:var(--blue);font-weight:650}
+.content{padding:0 16px 110px}.large-title{font-size:33px;line-height:1.05;margin:8px 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:11px 0}
+.row{display:flex;align-items:center;gap:12px}.between{justify-content:space-between}.grow{flex:1}
+.cover{width:64px;height:88px;border-radius:9px;background:linear-gradient(145deg,#614783,#332847);
+ display:grid;place-items:center;font-size:22px;font-weight:800;box-shadow:0 8px 20px #0007}
+.cover.large{width:132px;height:184px;margin:auto;font-size:36px}
+h2,h3,p{margin-top:0} h3{margin-bottom:7px}.muted{color:var(--muted)} small{color:var(--muted)}
+.progress{height:5px;background:#292d34;border-radius:99px;overflow:hidden;margin:9px 0}
+.progress i{height:100%;display:block;background:var(--blue)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;background:#292e37;padding:4px 8px;border-radius:999px}
+.chip.warn{background:#5d4d28;color:#ffe09a}.chip.good{background:#244f3a;color:#a5f1c6}
+.primary,.secondary,.icon-btn{border:0;border-radius:13px;padding:12px 14px;font:inherit;font-weight:700}
+.primary{background:var(--blue);color:#081321}.secondary{background:#22262e;color:var(--text)}
+.full{width:100%}.button-stack{display:grid;gap:9px}.segmented{display:flex;background:#171a20;border-radius:10px;padding:3px}
+.segmented span{flex:1;text-align:center;padding:7px;border-radius:8px;color:var(--muted);font-size:13px}
+.segmented .active{background:#363b45;color:white}
+.section-title{font-size:20px;margin:22px 0 10px}.list-row{display:flex;gap:12px;align-items:center;padding:12px 2px;border-bottom:1px solid #23262d}
+.badge{margin-left:auto;background:#333843;border-radius:999px;padding:3px 8px;font-size:12px}
+.good-text{color:var(--green)}.warn-text{color:var(--yellow)}.red-text{color:var(--red)}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:82px;background:#101217ef;border-top:1px solid #292c34;
+ display:flex;justify-content:space-around;padding-top:10px;backdrop-filter:blur(18px)}
+.tab{text-align:center;color:#858b96;font-size:11px}.tab b{display:block;font-size:20px;margin-bottom:3px}.tab.active{color:var(--blue)}
+.mini{position:absolute;left:10px;right:10px;bottom:78px;background:#23262ddf;border:1px solid #393d46;border-radius:14px;
+ padding:8px 10px;display:flex;align-items:center;gap:9px;backdrop-filter:blur(15px)}
+.mini-cover{width:38px;height:38px;border-radius:6px;background:#614783;display:grid;place-items:center;font-weight:800}
+.hero{text-align:center}.hero h2{margin:13px 0 4px}.wave{height:76px;border-radius:12px;margin:22px 0;background:
+ repeating-linear-gradient(90deg,transparent 0 4px,#79a9ef 4px 6px,transparent 6px 10px),
+ linear-gradient(#111318,#111318)}
+.transport{display:flex;align-items:center;justify-content:center;gap:30px;margin:24px 0}
+.transport button{border:0;background:transparent;color:white;font-size:26px}.play{width:70px;height:70px;border-radius:50%!important;background:white!important;color:#050608!important}
+.review-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.review-actions button{min-height:56px}
+.transcript{font-size:18px;line-height:1.45;background:#101217;border-radius:13px;padding:15px}
+.queue-next{background:#101217;border-radius:13px;padding:12px;margin-top:12px}
+.toggle{width:49px;height:29px;border-radius:99px;background:#3d8ef2;padding:3px}.toggle i{display:block;width:23px;height:23px;border-radius:50%;background:white;margin-left:20px}
+.search{width:100%;background:#1a1d23;border:0;color:white;padding:10px 12px;border-radius:11px;font:inherit}
+.para{padding:12px 0;border-bottom:1px solid #252830}.para-head{display:flex;justify-content:space-between;margin-bottom:5px}
+.para.selected{background:#192a40;margin:0 -10px;padding:12px 10px;border-radius:12px;border:0}
+.radio-row,.check-row{display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid #292c33}
+.radio{width:21px;height:21px;border:2px solid #737985;border-radius:50%;display:grid;place-items:center}
+.radio.on:after{content:"";width:11px;height:11px;background:var(--blue);border-radius:50%}
+.checkbox{width:22px;height:22px;border-radius:6px;border:1px solid #5b616d;display:grid;place-items:center}.checkbox.on{background:var(--blue);color:#081321}
+.tags{display:flex;gap:8px;flex-wrap:wrap}.tag{background:#252932;border:1px solid #3b404b;padding:8px 11px;border-radius:999px}
+.tag.active{background:#315e98;border-color:#75a9ed}
+textarea{width:100%;min-height:155px;background:#15181e;border:1px solid #343944;border-radius:13px;color:white;padding:12px;font:inherit;resize:none}
+.sync-icon{width:48px;height:48px;border-radius:50%;background:#213f64;display:grid;place-items:center;font-size:24px}
+.storage{height:10px;background:#282c34;border-radius:99px;overflow:hidden}.storage i{display:block;width:36%;height:100%;background:var(--blue)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#1b1e24;border-radius:22px 22px 0 0;padding:10px 16px 34px;box-shadow:0 -20px 50px #0009}
+.grabber{width:38px;height:5px;background:#5a5e67;border-radius:99px;margin:0 auto 15px}
+@media(max-width:460px){body{padding:0}.phone{border:0;border-radius:0;width:100%;min-height:100vh}}
+
+body{padding:30px}.index{max-width:900px;margin:auto}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.grid a{display:flex;flex-direction:column;gap:7px;text-decoration:none;color:white;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:18px}.grid span{color:var(--muted);font-size:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="index"><h1>Voxglass iPhone — New & Modified Production Views</h1><p class="muted">Only screens changed or added for Mac-produced audiobook preview and review.</p><div class="grid"><a href="01-library-my-productions-modified.html"><b>Library — My Productions Shelf</b><span>01-library-my-productions-modified.html</span></a><a href="02-production-book-detail-new.html"><b>Production Book Detail</b><span>02-production-book-detail-new.html</span></a><a href="03-production-player-modified.html"><b>Production Review Player</b><span>03-production-player-modified.html</span></a><a href="04-paragraph-list-new.html"><b>Production Paragraph List</b><span>04-paragraph-list-new.html</span></a><a href="05-review-queue-builder-new.html"><b>Review Queue Builder</b><span>05-review-queue-builder-new.html</span></a><a href="06-review-note-sheet-new.html"><b>Add Review Note</b><span>06-review-note-sheet-new.html</span></a><a href="07-production-sync-storage-new.html"><b>Production Sync & Storage</b><span>07-production-sync-storage-new.html</span></a></div></div></body></html>

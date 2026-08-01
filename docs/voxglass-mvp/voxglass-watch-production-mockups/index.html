@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Voxglass Watch Production Mockups</title>
+<style>
+:root{
+ --bg:#000;--panel:#18191d;--panel2:#23252a;--line:#353840;--text:#fff;
+ --muted:#a4a8b1;--blue:#77afff;--green:#78dda4;--yellow:#f0ca6d;--red:#ff7e87
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#202226;color:var(--text);
+ font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
+body{padding:32px}
+.watch{
+ width:220px;height:270px;margin:auto;background:var(--bg);border:8px solid #46484e;
+ border-radius:56px;overflow:hidden;box-shadow:0 25px 80px #000c;position:relative
+}
+.status{height:27px;padding:8px 17px 0;display:flex;justify-content:space-between;font-size:10px;font-weight:700}
+.nav{height:34px;padding:2px 12px 6px;display:flex;align-items:center;justify-content:space-between}
+.nav h1{font-size:15px;margin:0}.back{color:var(--blue)}.action{color:var(--blue)}
+.content{height:201px;overflow:hidden;padding:0 10px 10px}
+.scroll{height:100%;overflow:auto;scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:10px;margin:8px 0}
+.row{display:flex;align-items:center;gap:8px}.between{justify-content:space-between}.grow{flex:1}
+.cover{width:38px;height:49px;border-radius:7px;background:linear-gradient(145deg,#694c8a,#30253f);
+ display:grid;place-items:center;font-size:14px;font-weight:800}
+h2,h3,p{margin-top:0}h3{font-size:13px;margin-bottom:4px}p{font-size:11px;line-height:1.3;margin-bottom:6px}
+small,.muted{color:var(--muted);font-size:10px}.good{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}
+.badge{font-size:9px;background:#30333a;padding:3px 6px;border-radius:999px}
+.progress{height:4px;background:#2b2d32;border-radius:99px;overflow:hidden;margin-top:7px}.progress i{display:block;height:100%;background:var(--blue)}
+.list-row{display:flex;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid #24262b}
+.list-row:last-child{border:0}.chev{margin-left:auto;color:#6f737b}
+.button{border:0;border-radius:11px;padding:9px 8px;background:#24272d;color:white;font:inherit;font-weight:700;text-align:center}
+.button.primary{background:var(--blue);color:#071221}.button.full{width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.hero{text-align:center}.hero .cover{width:64px;height:82px;margin:0 auto 7px;font-size:20px}
+.wave{height:36px;border-radius:8px;background:
+ repeating-linear-gradient(90deg,transparent 0 3px,#79a9ef 3px 5px,transparent 5px 8px),
+ linear-gradient(#121318,#121318);margin:7px 0}
+.transport{display:flex;justify-content:center;align-items:center;gap:13px;margin:4px 0}
+.transport button{border:0;background:none;color:white;font-size:18px;padding:0}.play{width:38px;height:38px;border-radius:50%;background:#fff!important;color:#000!important}
+.transcript{font-size:11px;line-height:1.35;background:#15161a;border-radius:10px;padding:8px;margin:6px 0}
+.metric{text-align:center}.metric b{display:block;font-size:24px}.section-label{font-size:10px;color:var(--muted);text-transform:uppercase;margin:8px 2px 3px}
+.toggle{width:35px;height:21px;background:#3d8ff0;border-radius:99px;padding:2px}.toggle i{display:block;width:17px;height:17px;border-radius:50%;background:white;margin-left:14px}
+.note{font-size:11px;line-height:1.3;background:#17191e;border-radius:9px;padding:8px;margin:5px 0}
+.tags{display:flex;gap:4px;flex-wrap:wrap}.tag{font-size:9px;background:#292c32;border-radius:999px;padding:4px 6px}.tag.active{background:#315c94}
+.dictation{width:70px;height:70px;margin:10px auto;border-radius:50%;background:#273d5a;display:grid;place-items:center;font-size:26px}
+.sync{font-size:34px;text-align:center;margin:11px 0}.center{text-align:center}
+@media(max-width:260px){body{padding:0}.watch{border:0;border-radius:0;width:100%;height:100vh}.content{height:calc(100vh - 61px)}}
+
+body{padding:30px}.index{max-width:900px;margin:auto}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.grid a{display:flex;flex-direction:column;gap:7px;text-decoration:none;color:white;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:18px}.grid span{color:var(--muted);font-size:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="index"><h1>Voxglass Watch — New & Modified Production Views</h1><p class="muted">Standalone HTML mockups for production preview, paragraph review, dictation, offline queues, and iPhone-relayed sync.</p><div class="grid"><a href="01-productions-list-new.html"><b>Productions List</b><span>01-productions-list-new.html</span></a><a href="02-production-home-new.html"><b>Production Home</b><span>02-production-home-new.html</span></a><a href="03-review-queue-list-new.html"><b>Review Queues</b><span>03-review-queue-list-new.html</span></a><a href="04-review-player-modified.html"><b>Review Player</b><span>04-review-player-modified.html</span></a><a href="05-paragraph-text-new.html"><b>Paragraph Text</b><span>05-paragraph-text-new.html</span></a><a href="06-review-action-confirmation-new.html"><b>Review Action Confirmation</b><span>06-review-action-confirmation-new.html</span></a><a href="07-dictation-category-new.html"><b>Dictation Category</b><span>07-dictation-category-new.html</span></a><a href="08-dictation-result-new.html"><b>Dictation Result</b><span>08-dictation-result-new.html</span></a><a href="09-watch-sync-status-new.html"><b>Watch Sync Status</b><span>09-watch-sync-status-new.html</span></a><a href="10-offline-queue-new.html"><b>Offline Queue</b><span>10-offline-queue-new.html</span></a></div></div></body></html>
