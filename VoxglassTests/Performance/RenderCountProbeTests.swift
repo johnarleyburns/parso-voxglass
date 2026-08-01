@@ -16,8 +16,13 @@ import VoxglassCoreTestSupport
 /// SwiftUI re-renders, and counting them is deterministic in a headless test
 /// host where live window-server display cycles are not. The teleprompter guard
 /// stays at the view layer (`RenderCounter`), which is reliable in both.
+///
+/// This probe pumps a real runloop against wall-clock time, so it lives in the
+/// dedicated `VoxglassPerformanceTests` target and runs serially
+/// (`--no-parallel --filter VoxglassPerformanceTests`) — under parallel-suite
+/// CPU contention the meter cannot sustain its ~30 Hz cadence.
 @MainActor
-@Suite struct RenderCountProbeTests {
+@Suite(.serialized) struct RenderCountProbeTests {
 
     @Test func teleprompterDoesNotInvalidateWhileMeterUpdates() async throws {
         #if DEBUG

@@ -73,7 +73,7 @@ let package = Package(
         ),
         .testTarget(
             name: "VoxglassPerformanceTests",
-            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport"],
+            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassStudioKit"],
             path: "VoxglassTests/Performance",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),

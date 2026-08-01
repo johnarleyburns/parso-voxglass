@@ -4193,7 +4193,7 @@ Interaction rules (normative):
 |---|---|---|---|
 | `VoxglassCoreTests` (path `VoxglassTests`) | Swift Testing | macOS host, `swift test`, no simulator | all pure logic: domain, text, metrics math, queues, fold, validation, filenames, cache keys, phone view models (Production), watch models |
 | `VoxglassStudioTests` | Swift Testing | macOS host, `swift test`, no simulator | Studio view models + services with fakes; package/store integration; transcoder round-trips |
-| `VoxglassPerformanceTests` (path `VoxglassTests/Performance`) | Swift Testing | macOS host, `swift test --no-parallel`, no simulator | **timing-only suites** (§19.3 budgets): `StorePerformanceTests`, `AudioMetricsPerformanceTests`, `SegmenterPerformanceTests`. Run serially so parallel-suite CPU contention never produces a false failure; the rest of the suite runs in parallel (`swift test --skip VoxglassPerformanceTests`). |
+| `VoxglassPerformanceTests` (path `VoxglassTests/Performance`) | Swift Testing | macOS host, `swift test --no-parallel`, no simulator | **timing-only suites** (§19.3 budgets + §19.8 probe): `StorePerformanceTests`, `AudioMetricsPerformanceTests`, `SegmenterPerformanceTests`, `RenderCountProbeTests`. Run serially so parallel-suite CPU contention never produces a false failure; the rest of the suite runs in parallel (`swift test --skip VoxglassPerformanceTests`). |
 | `VoxglassStudioUITests` | XCUITest | macOS, local only | **three smoke tests** (§19.6): create a LibriVox audiobook, create an Internet Archive audiobook, create a commercial audiobook |
 | `VoxglassUITests` | XCUITest | iOS simulator, local only | **iPhone smoke test** (existing target) |
 | `VoxglassWatchUITests` | XCUITest | watchOS simulator, local only | **watch smoke test** (existing target) |
@@ -4253,6 +4253,7 @@ public enum AudioFixtures {
 - `StorePerformanceTests` — `paragraphSummaries` on the 10,000-¶ fixture < 120 ms; `counts()` < 20 ms.
 - `AudioMetricsPerformanceTests` — metrics for a 30-second take < 150 ms.
 - `SegmenterPerformanceTests` — the 10,000-¶ re-import completes < 2 s.
+- `RenderCountProbeTests` — §19.8; the meter sustains > 100 invalidations at ~30 Hz while the teleprompter stays < 3 (wall-clock runloop pump, so serial only).
 
 **Text**
 - `ImporterTests` — one fixture document per format (`.txt`, `.md`, `.epub`, `.docx`) with a known expected chapter/paragraph shape; malformed EPUB falls back without throwing.
