@@ -22,8 +22,12 @@ if ! bash scripts/guard_wiring.sh; then
 fi
 
 echo ""
-echo "--- swift test (unit tests) ---"
-swift test
+echo "--- swift test (logic suites, parallel) ---"
+swift test --skip VoxglassPerformanceTests
+
+echo ""
+echo "--- swift test (timing suites, serial) ---"
+swift test --no-parallel --filter VoxglassPerformanceTests
 
 echo ""
 echo "--- simulator test suite ---"
