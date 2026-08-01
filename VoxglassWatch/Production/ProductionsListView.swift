@@ -40,6 +40,7 @@ struct ProductionsListView: View {
             if model == nil {
                 model = WatchProductionsModel(environment: env)
             }
+            await env.bootstrap()
             await model?.load()
         }
     }

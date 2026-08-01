@@ -13,6 +13,9 @@ struct VoxglassWatchApp: App {
                 .environmentObject(services)
                 .environmentObject(services.offlineManager)
                 .environment(production)
+                .task {
+                    await production.bootstrap()
+                }
         }
     }
 }

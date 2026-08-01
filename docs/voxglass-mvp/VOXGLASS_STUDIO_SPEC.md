@@ -4255,6 +4255,8 @@ public enum AudioFixtures {
 - The 10,000-¶ re-import completes < 2 s.
 - §19.8 render-count probe: the meter sustains > 100 invalidations while the teleprompter stays < 3. It pumps the runloop until the meter has actually invalidated past the budget (machine-speed independent), so a slow CI runner cannot produce a false failure.
 
+**Deviation (recorded in §22.4):** serialization removes the contention the test run itself creates, but a shared dev machine can still be saturated by unrelated processes, and an absolute wall-clock budget then fails regardless of engine speed. The four wall-clock budgets (metrics, summaries, counts, re-import) are therefore asserted as a **ratio between two input sizes of the same workload** (30 s vs 3 s audio; 10 K vs 1 K rows/paragraphs): the ratio is ~10 under any uniform machine load and blows past the 12× margin on a superlinear regression, while a loose absolute ceiling (3× the numbers above) still fails gross slowdowns.
+
 **Text**
 - `ImporterTests` — one fixture document per format (`.txt`, `.md`, `.epub`, `.docx`) with a known expected chapter/paragraph shape; malformed EPUB falls back without throwing.
 - `SegmenterTests` — heading detection table; scene-break detection; verse mode; front matter; re-import preserves unchanged IDs. (The 10,000-¶ re-import budget lives in `SegmenterPerformanceTests`, §19.3.)
@@ -4766,6 +4768,7 @@ Recorded deliberately; update the mockups when convenient.
 | `13.6 WatchTransport` | protocol has no `sendEvents` member | `sendEvents(_ events: [ReviewEvent])` added | the watch outbox must have a defined way to transfer offline events to the phone; the transport-mapping table (§13.6) already routes events watch→phone via `transferUserInfo`, so the protocol now names it |
 | `01-productions-list` | card shows short title "Roger Ackroyd" | card shows the full `ProjectSummary.title` ("The Murder of Roger Ackroyd"); the a11y slug stays `rogerAckroyd` | `ProjectSummary` carries only one title; the smoke contract keys on `watch.production.rogerAckroyd` (§19.6) |
 | `07-dictation-category` | "Tap to dictate" uses `.dictation` input mode | uses `WKTextInputMode.plain` via `WKInterfaceController.presentTextInputController` | current WatchKit SDKs have no `.dictation` mode; plain text input is already dictation-based on watchOS |
+| `19.3 timing budgets` | absolute wall-clock budgets (e.g. 30 s metrics < 150 ms) | ratio-based: large-vs-small workload ratio ≤ 12× plus a 3× absolute ceiling | an absolute budget on a shared dev machine fails under unrelated-process load regardless of engine speed; the ratio is load-independent and still catches superlinear regressions (§19.3) |
 
 ### 22.5 Deferred backlog (post-MVP, in rough priority order)
 

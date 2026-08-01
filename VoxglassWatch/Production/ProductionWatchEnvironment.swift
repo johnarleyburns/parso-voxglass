@@ -48,6 +48,9 @@ public final class ProductionWatchEnvironment {
     }
 
     public func bootstrap() async {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+
         if let smoke = transport as? ProductionWatchSmoke.SmokeWatchTransport {
             summaries = smoke.seedSummaries
             activeQueue = smoke.seedQueue
@@ -117,4 +120,6 @@ public final class ProductionWatchEnvironment {
     public func refreshPendingCount() {
         pendingEventCount = (try? outbox.pending().count) ?? 0
     }
+
+    private var didBootstrap = false
 }
