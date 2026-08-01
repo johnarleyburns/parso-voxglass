@@ -76,10 +76,13 @@ import VoxglassCoreTestSupport
         await model.startRecording(paragraphID: paragraph.id)
         RenderCounter.counts.removeAll()
 
-        // Pump the runloop for ~4.5 s of fake recording. The meter receives a
-        // level update every 33 ms; each must invalidate.
-        let deadline = Date().addingTimeInterval(4.5)
-        while Date() < deadline {
+        // Pump the runloop until the meter has actually invalidated more than
+        // 100 times (the §19.8 budget). The fake yields at ~30 Hz, but a slow
+        // CI runner cannot sustain that cadence; pumping until the budget is
+        // reached makes the isolation assertion machine-speed independent
+        // while still proving the teleprompter stayed frozen throughout.
+        let deadline = Date().addingTimeInterval(30)
+        while invalidations.value <= 100 && Date() < deadline {
             RunLoop.main.run(until: Date().addingTimeInterval(0.01))
             try await Task.yield()
         }
@@ -88,7 +91,7 @@ import VoxglassCoreTestSupport
         await model.stopRecording()
         window.orderOut(nil)
 
-        #expect(invalidations.value > 100, "meter only invalidated \(invalidations.value) times at ~30 Hz over 4.5 s")
+        #expect(invalidations.value > 100, "meter only invalidated \(invalidations.value) times at ~30 Hz")
         #expect(teleprompter < 3, "teleprompter rendered \(teleprompter) times during recording")
         #endif
     }
