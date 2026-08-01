@@ -2,7 +2,8 @@
 # .githooks/pre-push — Full test gate.
 # Install with: git config core.hooksPath .githooks
 #
-# Runs ALL tests: wiring guards, unit tests, and simulator smoke tests.
+# Runs ALL tests: wiring guards, logic suites (via scripts/test_logic.sh, timing
+# suites serialized), and the simulator smoke tests.
 
 set -euo pipefail
 
@@ -22,12 +23,8 @@ if ! bash scripts/guard_wiring.sh; then
 fi
 
 echo ""
-echo "--- swift test (logic suites, parallel) ---"
-swift test --skip VoxglassPerformanceTests
-
-echo ""
-echo "--- swift test (timing suites, serial) ---"
-swift test --no-parallel --filter VoxglassPerformanceTests
+echo "--- logic suites (timing budgets serialized) ---"
+bash scripts/test_logic.sh
 
 echo ""
 echo "--- simulator test suite ---"

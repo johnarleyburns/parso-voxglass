@@ -22,6 +22,7 @@
 		146A11873D483EDE4293F89F /* VoxglassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6AA015D08BC5D3D56CA570C /* VoxglassApp.swift */; };
 		15ACCBB55B19635A6869247C /* TakeComparisonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F448747D94944D8139F3E8 /* TakeComparisonModel.swift */; };
 		15BD7E3A44F689F44FCE86AF /* WatchSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE3308D3D3F5B6D29FD3563 /* WatchSearchView.swift */; };
+		18CD8EF7CA1C3BBD8D9AA1B9 /* ProductionHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36484C1FBCCB8B71AF60C54F /* ProductionHomeView.swift */; };
 		18E7B50A58D8BFD5CE5D1678 /* bequest_jg_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7AEB9CCDB3E70DB0915C1CAA /* bequest_jg_librivox.jpg */; };
 		18EA1BDFC93497E116D5894B /* aesop_fables_volume_one_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 196740ED53FE2AEBC7990EDA /* aesop_fables_volume_one_librivox.jpg */; };
 		19CD8BD515F6EFFC11B92167 /* StudioCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247EFF6F29C5B39FB069E5E /* StudioCommands.swift */; };
@@ -33,11 +34,13 @@
 		1F2214CAAE5156BF5F35B2EB /* alexander_great_ld_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 60F7BC9A74D4150042BA1CF8 /* alexander_great_ld_librivox.jpg */; };
 		256E7C55F8DC198BDA19F19A /* railway_children_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9C9E2D966DCE8E13DEC2C112 /* railway_children_librivox.jpg */; };
 		268DF6E92D1B683B9DADBACB /* anne_of_green_gables_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A78625CC8B97CB25ACD9C251 /* anne_of_green_gables_librivox.jpg */; };
+		26FCA1ED917968F661F0F161 /* WatchOfflineQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36FE878A24BB01566F302E8D /* WatchOfflineQueueView.swift */; };
 		27807277577DFEC0FE17EAB4 /* odyssey_butler_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DC328A20FBE79B2C9ABFF3A1 /* odyssey_butler_librivox.jpg */; };
 		2807AFBF91D6322D059EE50C /* MiniPlayerPresentationRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3989C8BA86F0E54C896CBD /* MiniPlayerPresentationRouter.swift */; };
 		284A622C4B69B7ADE7400D31 /* count_monte_cristo_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FFE080C02F84A3F3C3C682AC /* count_monte_cristo_0711_librivox.jpg */; };
 		293A63007EB15E38F0842E29 /* BookArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2DBA8A509FFB154473301D /* BookArtworkView.swift */; };
 		2A4888B85BC0DAF92BCA1393 /* RoutePickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8EC154B42BBE347C24283E9 /* RoutePickerButton.swift */; };
+		2A9284E0EA45D385B11B292B /* WatchParagraphTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30DE6AF51C130B8745DA2345 /* WatchParagraphTextView.swift */; };
 		2BF42FAECA7D703D09AD3BE2 /* penguin_island_ms_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6E0713144FB8D6284CDDBE78 /* penguin_island_ms_librivox.jpg */; };
 		2DD834B48187140D085AC6B3 /* RecordingMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F5BF4CB1FE2B80D48D1347 /* RecordingMeter.swift */; };
 		2ECFF65697F24826FB305EC7 /* 12_creepytales_1206_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 95933760B74CDDA0DF861AD9 /* 12_creepytales_1206_librivox.jpg */; };
@@ -53,10 +56,12 @@
 		39B39A2985F787EF90A68145 /* ImportAudioModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A714150A37FA247DEE9E70 /* ImportAudioModel.swift */; };
 		3AFC314231FBC67DF480EFA5 /* solo_pride_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3616511B3047863DE929EEC4 /* solo_pride_librivox.jpg */; };
 		3C5E3F41C3C6AAA1C4691238 /* StudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D6C24D9B10408BEE4D4CBC1 /* StudioApp.swift */; };
+		3CE91280BC3DED88E64D9BC4 /* ProductionWatchAccessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 214F7E8C6C170E9B5B069968 /* ProductionWatchAccessibility.swift */; };
 		3D1FDC4720D46F3585E91D38 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1BBA5A2E92771EE1379D897D /* Assets.xcassets */; };
 		3D51A4C34568B7ACF13475CB /* count_montecristo_1308_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 15A4E3200D9B6B41414C5FC2 /* count_montecristo_1308_librivox.jpg */; };
 		3D6AA56B17B1960C63A6EED3 /* amateur_cracksman_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 018C274D1C0769FF60E74A17 /* amateur_cracksman_librivox.jpg */; };
 		3F1CA81A8D2B0EF71C6265A3 /* VoxglassWatchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25914293BEDD3EF6748F5259 /* VoxglassWatchUITests.swift */; };
+		3FEB78A0B834F4FC9B163B33 /* WatchReviewPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B5E6FC5BCE9A4BD773B627E /* WatchReviewPlayerView.swift */; };
 		3FEEE5663792C3026722EDE7 /* king_solomon_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2C89F09B2802010B27CD6943 /* king_solomon_librivox.jpg */; };
 		4066ABDD4010CF0B8FCAAD2B /* pride_prejudice_krs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E967226D4468771DC77D2A02 /* pride_prejudice_krs_librivox.jpg */; };
 		40C82A08A418FC46B5922DD6 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28210879609150716CCE1C62 /* BookmarksView.swift */; };
@@ -64,17 +69,22 @@
 		4316D94382F1DD709A02C4F0 /* terror_mystery_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9434A47A806A4EA4509EC595 /* terror_mystery_0707_librivox.jpg */; };
 		4487DE27D4F87CDA5EA2ADE6 /* adventures_holmes.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B0F652B44CEB7E5C6E362184 /* adventures_holmes.jpg */; };
 		461421576EA62442A0CEBD15 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = F3AC8EE75DFDED03283E4DC1 /* VoxglassCore */; };
+		464D30D8D889C3939F986AC8 /* WatchDictationCategoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E124B6655D526143C78AD7 /* WatchDictationCategoryView.swift */; };
 		47673AABDD458924EBD693C3 /* WatchFetchStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE5E31FFA303A4831A66963 /* WatchFetchStatusView.swift */; };
 		47FC57EF16AEBEFBB18870CB /* science_gettingrich_1005_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 39C00D54A32B0CDBB2B78CB5 /* science_gettingrich_1005_librivox.jpg */; };
 		488991EDE73D436CB22FDB94 /* ImportAudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB304A59A7DEDC6BCEB22DBF /* ImportAudioView.swift */; };
+		4AC1391D0A25F33A7490BD6B /* WatchReviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850F4456DE697EF013A90246 /* WatchReviewModel.swift */; };
 		4E85D43B3AC0834F16B06791 /* ListeningStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7281A4BB54139B5008C6D6 /* ListeningStatsView.swift */; };
 		4EAD6C535B3D4960C95229C4 /* love_freindship_cs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 179C62958C3F5174F0B0AF7D /* love_freindship_cs_librivox.jpg */; };
 		4EEADBBCBB63CC7E6B7D250B /* WatchListeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E472AB68F0B05BC2B6D85E9F /* WatchListeningView.swift */; };
 		4F9734E15B290167D559E92C /* dracula_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BEFDD43E914E4DAA95D729E2 /* dracula_librivox.jpg */; };
 		4F9783F7FD52124391DB96D0 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
 		4FBFE6080E5B038FB49A075F /* american_indian_tales_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4F695ED501176D7E86BED918 /* american_indian_tales_librivox.jpg */; };
+		50BA3DAB00FFFF12E32ABA0C /* WatchDictationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5789F89BBC7B9237541AB95A /* WatchDictationModel.swift */; };
 		50CCD3DD27C2A0F36810CB77 /* ProjectLibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2141DB83CB8BDBE34BA28E73 /* ProjectLibraryModel.swift */; };
 		5133DE23448FC0452273DBB3 /* CarPlayInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC17411DDC89002281222ACC /* CarPlayInterfaceController.swift */; };
+		54296371539B9C28FB0D58FD /* WatchSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81D6DA9D5820F6FADE950782 /* WatchSyncModel.swift */; };
+		55C3E674A65BDBA26D00A791 /* ProductionWatchSmoke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86469F69AA5B7E24EAABBF28 /* ProductionWatchSmoke.swift */; };
 		564BFEB35B804D136B3134F5 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = A6AF93473A1D0507D28AA8FC /* VoxglassCore */; };
 		56AC66DBDC7979DC60C6D1C8 /* VoxglassWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D3BE184AAF9B15290B979 /* VoxglassWatchApp.swift */; };
 		5D629DB586AFD196EA102F07 /* franklin_autobio_gg_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C916EE82BAA77FF01E218A4E /* franklin_autobio_gg_librivox.jpg */; };
@@ -106,7 +116,10 @@
 		7C236517C4D8F6F2324A4CBF /* BundledArtworkProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99745AB51C27E3F7194CA27 /* BundledArtworkProvider.swift */; };
 		7C5B13235264E71230DCE557 /* RecentsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5D964C5C4EC3A96E8648BC /* RecentsStore.swift */; };
 		7D9C2E22E6DF8072E4EA774F /* AdaptiveGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */; };
+		7DB5CC2B3BF0575DBC9072D6 /* WatchSegmentPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA03C6CBCA75C6CEDDD744DC /* WatchSegmentPlayer.swift */; };
+		7EC439A601E4836960F68EE5 /* WatchReviewConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDFB7EAA0868C2F31B9A628 /* WatchReviewConfirmationView.swift */; };
 		7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */; };
+		820D00B93DC516BA64E2AD9A /* WatchConnectivityTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26154085AE1966AEB526A2CE /* WatchConnectivityTransport.swift */; };
 		844E65CF4448F5D4C7DFF4B8 /* AVAudioDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8AC7268E547EDB4C93FE57 /* AVAudioDecoder.swift */; };
 		8645A692BC33932A36BAB264 /* your_invisible_power_2104_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6F0D99DCD6D4A6A80BC79732 /* your_invisible_power_2104_librivox.jpg */; };
 		87C6F8B5E53454E96DBE3BCA /* les_mis_vol01_0810_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */; };
@@ -116,6 +129,7 @@
 		8A1CD38DD828054566ABEF1C /* GlassDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420E11400AB1535B94D3D0B5 /* GlassDock.swift */; };
 		8A8B968AE4222A958541D20F /* reluctant_dragon_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = AF64D2E09DF828C94AC30C1F /* reluctant_dragon_librivox.jpg */; };
 		8B8EE3584FA8FB99E93666D0 /* mysterious_island_ms_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 82ACAE08A854D9C0B7A70CA9 /* mysterious_island_ms_librivox.jpg */; };
+		8BC90F324FEC05698A1D8DA8 /* WatchProductionHomeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDDFC415F85AA424800030DA /* WatchProductionHomeModel.swift */; };
 		8C6B21C9D4DCE4D3AAFB642E /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49FA6D58EC651570824B18FE /* AudioToolbox.framework */; };
 		8D2D7F580BB053F16527B3DC /* swiss_family_robinson_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4DE029504EEF4954467251CA /* swiss_family_robinson_librivox.jpg */; };
 		8F385E9F8DA031A3C2E31D6C /* secret_garden_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0CAA54FADE549D2158FAB93 /* secret_garden_librivox.jpg */; };
@@ -133,11 +147,14 @@
 		9E60B177F487CA22A0E624CD /* alices_adventures_1003.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */; };
 		A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739CF70CFD45FD09DC69EB64 /* ListenView.swift */; };
 		A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347795F23ED3EA940FB4D8BE /* SystemPlaybackBridge.swift */; };
+		A5E03289F79AB195949E7F75 /* ProductionNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDEA3324DB509FE3F4D2D2A /* ProductionNavigation.swift */; };
+		A6B231C65FE03E552C384F02 /* WatchProductionsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8783A01744671DE2947FDAB5 /* WatchProductionsModel.swift */; };
 		A720762200E37ED3E6C1B405 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F701EDCDE2BB625656606A03 /* SettingsView.swift */; };
 		A787A01E2BC926D7A17297CA /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 401A6A7A2EAF21C7B1B57B98 /* UniformTypeIdentifiers.framework */; };
 		A8039C05A7EE2675DB47287A /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = F9E93D1A57F80DF8FFB3D8A7 /* manifest.json */; };
 		A8326B77796D17017BEAB22F /* invisible_man_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6E236DD8C74AFC36B59293A6 /* invisible_man_librivox.jpg */; };
 		AC1124DB69A7968A686B5B2B /* adventures_sherlockholmes_1007_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 08BCFD8ACA913E9EFA9AD767 /* adventures_sherlockholmes_1007_librivox.jpg */; };
+		AD8E4F3FF948E659510CD304 /* WatchSyncStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE853513A56ADE8BAB406940 /* WatchSyncStatusView.swift */; };
 		AE5B001CD7F7BA60DD0906B6 /* art_of_war_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDC407D3BB2E95FD9AC3A899 /* art_of_war_librivox.jpg */; };
 		AE794233D23294F8810AEE06 /* jane_eyre_ver03_0809_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */; };
 		AF037E9CC64723CFEAB0E678 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5061FBEF9FB1D37EA33526A /* WatchConnectivity.framework */; };
@@ -145,6 +162,7 @@
 		B00B93E335F230E935CAF426 /* WatchNowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0934FA0F60D5D328F61320 /* WatchNowPlayingView.swift */; };
 		B1052AE5DF06037E4B0E0A6C /* WatchPlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */; };
 		B329B42E0CA9E0B40B1BEAD1 /* return_holmes_0708_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A42A7E5AF0C1B49C5E7A01FB /* return_holmes_0708_librivox.jpg */; };
+		B372589F6E12945120DD6305 /* WatchProductionAudioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
 		B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2D878648CFAE6A1DA9323D89 /* 2br02b_0801_librivox.jpg */; };
 		B8BBDD56E99C8F49BF022ED2 /* andersensfairy_1307_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */; };
@@ -162,8 +180,11 @@
 		CA2A1792CB20AA7AB12A6A33 /* RecordingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEC8AEC3FFAD8271A797212 /* RecordingModel.swift */; };
 		CA2AF75687570E66B1AD5EB6 /* little_princess_krs.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7D05BD54482E13A57D007AE1 /* little_princess_krs.jpg */; };
 		CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06CDA895FD619425E8633059 /* OnboardingPreferencesView.swift */; };
+		CB393B89133F1DEC7773461E /* WatchReviewQueueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F32768922968DB717A1230 /* WatchReviewQueueListView.swift */; };
+		CD5A1AA8C2CF7A853985C18B /* ProductionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 448E8B1340B985F0C62F1958 /* ProductionsListView.swift */; };
 		CD5F9F386CBBD79CE6BB523B /* alice_wonderland_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CC9FC90F429E3A6FF0763EF3 /* alice_wonderland_0711_librivox.jpg */; };
 		CF5B708D0222E8900BB02D3D /* memoirs_holmes_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A863A5C2B74DE190C0ED26CB /* memoirs_holmes_0709_librivox.jpg */; };
+		CFEA0A40BF466B1DC927CDC5 /* WatchDictationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D861ACA08F0CDE0AF0DBB6 /* WatchDictationResultView.swift */; };
 		CFFA9AD88269992EB457F35D /* gods_of_mars_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7CB5032639CF00041C20C04D /* gods_of_mars_librivox.jpg */; };
 		D1DB078A196600B28D4BD877 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC318EB68E5165403477C6D /* DiscoverView.swift */; };
 		D4505117C8D75D481294269A /* romeo_and_juliet_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2220F5BD5DBA4CE50C8E4459 /* romeo_and_juliet_librivox.jpg */; };
@@ -203,6 +224,7 @@
 		EF62083B62F11B17FD2FC568 /* romeoandjuliet_ss_0901_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B68D355409D2D26B2CDCCF3E /* romeoandjuliet_ss_0901_librivox.jpg */; };
 		EFF52894E7D8920360E5F5F9 /* VoxglassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */; };
 		F0744E21205AC379C0C239BC /* secret_garden_version2_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3614549857B18C6870AD8A76 /* secret_garden_version2_librivox.jpg */; };
+		F0A0DD0E618D66F5074C0721 /* ProductionWatchEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9CFADA2FB72CE4657D4958 /* ProductionWatchEnvironment.swift */; };
 		F14C7CF0EA99F6CF748CF52A /* CarPlayTemplateRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9FF2C66B604A483005DF1CF /* CarPlayTemplateRenderer.swift */; };
 		F15464A41C029B457BC3D6D1 /* WatchBookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DEF7AEC3EC06D2401F4B097 /* WatchBookDetailView.swift */; };
 		F16486C499C074C1BD162E69 /* art_war_ps_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 034B5DB162C110775DD52953 /* art_war_ps_librivox.jpg */; };
@@ -292,13 +314,16 @@
 		1AAEC7E4D58E0CABD44AE90F /* Artwork */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Artwork; path = Voxglass/Resources/Artwork; sourceTree = SOURCE_ROOT; };
 		1BBA5A2E92771EE1379D897D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
+		1EDEA3324DB509FE3F4D2D2A /* ProductionNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionNavigation.swift; sourceTree = "<group>"; };
 		1F75882B51F22C8D3A3EEAAD /* ArtworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkService.swift; sourceTree = "<group>"; };
 		1F8DFE7B33D0A5AB70593632 /* BookPageActionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPageActionRow.swift; sourceTree = "<group>"; };
 		2141DB83CB8BDBE34BA28E73 /* ProjectLibraryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLibraryModel.swift; sourceTree = "<group>"; };
+		214F7E8C6C170E9B5B069968 /* ProductionWatchAccessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionWatchAccessibility.swift; sourceTree = "<group>"; };
 		2220F5BD5DBA4CE50C8E4459 /* romeo_and_juliet_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = romeo_and_juliet_librivox.jpg; sourceTree = "<group>"; };
 		2247EFF6F29C5B39FB069E5E /* StudioCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioCommands.swift; sourceTree = "<group>"; };
 		2503F5269E8A159A62B785C6 /* emma_solo_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = emma_solo_librivox.jpg; sourceTree = "<group>"; };
 		25914293BEDD3EF6748F5259 /* VoxglassWatchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassWatchUITests.swift; sourceTree = "<group>"; };
+		26154085AE1966AEB526A2CE /* WatchConnectivityTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityTransport.swift; sourceTree = "<group>"; };
 		26353BD12E1601E198264276 /* AVMetricsCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVMetricsCalculator.swift; sourceTree = "<group>"; };
 		2707093FBB8533EDF4CDC384 /* StudioEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioEnvironment.swift; sourceTree = "<group>"; };
 		2761AA70F89396E53EE93D01 /* 0_sense_and_sensibility_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 0_sense_and_sensibility_librivox.jpg; sourceTree = "<group>"; };
@@ -313,6 +338,7 @@
 		2E5969964594F5A94B38DF0C /* NewProjectModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProjectModel.swift; sourceTree = "<group>"; };
 		305628B60168BDF452A13A74 /* letters_brides_0709_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = letters_brides_0709_librivox.jpg; sourceTree = "<group>"; };
 		30D528330E6ECF511FDDDD5B /* dracula_1006_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dracula_1006_librivox.jpg; sourceTree = "<group>"; };
+		30DE6AF51C130B8745DA2345 /* WatchParagraphTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchParagraphTextView.swift; sourceTree = "<group>"; };
 		336F165C2E66C5C32ABDD2CA /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		33E22B53A145A61875D154EB /* jane_eyre_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = jane_eyre_librivox.jpg; sourceTree = "<group>"; };
 		347795F23ED3EA940FB4D8BE /* SystemPlaybackBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPlaybackBridge.swift; sourceTree = "<group>"; };
@@ -320,7 +346,9 @@
 		348FE56BD340B5F368EB305A /* great_expectations_mfs_0812_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = great_expectations_mfs_0812_librivox.jpg; sourceTree = "<group>"; };
 		3614549857B18C6870AD8A76 /* secret_garden_version2_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = secret_garden_version2_librivox.jpg; sourceTree = "<group>"; };
 		3616511B3047863DE929EEC4 /* solo_pride_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = solo_pride_librivox.jpg; sourceTree = "<group>"; };
+		36484C1FBCCB8B71AF60C54F /* ProductionHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionHomeView.swift; sourceTree = "<group>"; };
 		36A76DE94C7C531EF225DB9B /* StudioSmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioSmokeUITests.swift; sourceTree = "<group>"; };
+		36FE878A24BB01566F302E8D /* WatchOfflineQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchOfflineQueueView.swift; sourceTree = "<group>"; };
 		388BFCCC349721C104298DCC /* RenderCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderCounter.swift; sourceTree = "<group>"; };
 		39C00D54A32B0CDBB2B78CB5 /* science_gettingrich_1005_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = science_gettingrich_1005_librivox.jpg; sourceTree = "<group>"; };
 		3B393E27114CA65865E52B0E /* heart_of_darkness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = heart_of_darkness.jpg; sourceTree = "<group>"; };
@@ -337,7 +365,9 @@
 		41ABB6A40594A5A76F1D0400 /* adventuressherlockholmes_v4_1501_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventuressherlockholmes_v4_1501_librivox.jpg; sourceTree = "<group>"; };
 		420E11400AB1535B94D3D0B5 /* GlassDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDock.swift; sourceTree = "<group>"; };
 		446298FA2910316179E29ECB /* moby_dick_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = moby_dick_librivox.jpg; sourceTree = "<group>"; };
+		448E8B1340B985F0C62F1958 /* ProductionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionsListView.swift; sourceTree = "<group>"; };
 		45A607753DCA596271DC8EC7 /* beowulf.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beowulf.jpg; sourceTree = "<group>"; };
+		46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProductionAudioStore.swift; sourceTree = "<group>"; };
 		46BECBB89F17D12CFB910BC9 /* BookRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookRowView.swift; sourceTree = "<group>"; };
 		480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPageOverflowSheet.swift; sourceTree = "<group>"; };
 		484952BA0762D37629A165B7 /* AutosaveRecoverySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveRecoverySheet.swift; sourceTree = "<group>"; };
@@ -353,6 +383,7 @@
 		53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = jane_eyre_ver03_0809_librivox.jpg; sourceTree = "<group>"; };
 		545AD98342DD254058C3BA00 /* PhoneAudioRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAudioRelay.swift; sourceTree = "<group>"; };
 		54A19CE35BAFC21D027EED34 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		5789F89BBC7B9237541AB95A /* WatchDictationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDictationModel.swift; sourceTree = "<group>"; };
 		58BE14BEA49984C7C2023811 /* WatchAudioRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAudioRelay.swift; sourceTree = "<group>"; };
 		5ACD76A1FBF9F2436A430A97 /* walden_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = walden_librivox.jpg; sourceTree = "<group>"; };
 		5CF9F9C666BC7F602B75DB50 /* beyond_good_and_evil_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beyond_good_and_evil_librivox.jpg; sourceTree = "<group>"; };
@@ -367,6 +398,7 @@
 		6651677A03062028BC949542 /* 1601_0903_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 1601_0903_librivox.jpg; sourceTree = "<group>"; };
 		66F7A9D279793D2432215537 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6B0227E7DDA4A542B1026CE7 /* fabulas_esopo_02_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fabulas_esopo_02_librivox.jpg; sourceTree = "<group>"; };
+		6B5E6FC5BCE9A4BD773B627E /* WatchReviewPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchReviewPlayerView.swift; sourceTree = "<group>"; };
 		6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = andersensfairy_1307_librivox.jpg; sourceTree = "<group>"; };
 		6D8E90829CAAF88F8C4F577B /* bleak_house_cl_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bleak_house_cl_librivox.jpg; sourceTree = "<group>"; };
 		6DEF7AEC3EC06D2401F4B097 /* WatchBookDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchBookDetailView.swift; sourceTree = "<group>"; };
@@ -385,12 +417,17 @@
 		7F3C6CF8BC84D0C8022933C5 /* WatchStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStorageManager.swift; sourceTree = "<group>"; };
 		7FFF648C1C68BCEA7325C2C9 /* fabulas_esopo_01_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fabulas_esopo_01_librivox.jpg; sourceTree = "<group>"; };
 		80C8886548A2D672DC6DD80A /* adventures_sherlock_holmes_rg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_sherlock_holmes_rg_librivox.jpg; sourceTree = "<group>"; };
+		80E124B6655D526143C78AD7 /* WatchDictationCategoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDictationCategoryView.swift; sourceTree = "<group>"; };
 		80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = call_of_the_wild.jpg; sourceTree = "<group>"; };
+		81D6DA9D5820F6FADE950782 /* WatchSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncModel.swift; sourceTree = "<group>"; };
 		82ACAE08A854D9C0B7A70CA9 /* mysterious_island_ms_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mysterious_island_ms_librivox.jpg; sourceTree = "<group>"; };
 		841534B2BAC23D46DACCD5B1 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		84A1AC3F062A5AC1804A3500 /* beowulf_te_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beowulf_te_librivox.jpg; sourceTree = "<group>"; };
+		850F4456DE697EF013A90246 /* WatchReviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchReviewModel.swift; sourceTree = "<group>"; };
 		85B1181A1D8983DA914206C2 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		86469F69AA5B7E24EAABBF28 /* ProductionWatchSmoke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionWatchSmoke.swift; sourceTree = "<group>"; };
+		8783A01744671DE2947FDAB5 /* WatchProductionsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProductionsModel.swift; sourceTree = "<group>"; };
 		87A714150A37FA247DEE9E70 /* ImportAudioModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportAudioModel.swift; sourceTree = "<group>"; };
 		8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gulliver_ld_librivox.jpg; sourceTree = "<group>"; };
 		8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = les_mis_vol01_0810_librivox.jpg; sourceTree = "<group>"; };
@@ -426,6 +463,7 @@
 		B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrubberView.swift; sourceTree = "<group>"; };
 		B7B41CFE2DB33DDCA5488BAB /* wizard_of_oz.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = wizard_of_oz.jpg; sourceTree = "<group>"; };
 		B954A59F4997A15A1DF6DB40 /* huck_finn_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = huck_finn_librivox.jpg; sourceTree = "<group>"; };
+		BCDFB7EAA0868C2F31B9A628 /* WatchReviewConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchReviewConfirmationView.swift; sourceTree = "<group>"; };
 		BD0F6CE7B0C3D96D9976A73F /* city_worlds_end_1203_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = city_worlds_end_1203_librivox.jpg; sourceTree = "<group>"; };
 		BD276A6BF5801E2B15EBA44B /* peter_pan_0707_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = peter_pan_0707_librivox.jpg; sourceTree = "<group>"; };
 		BDA53866164FE87F59B27A2D /* CarPlay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CarPlay.framework; path = System/Library/Frameworks/CarPlay.framework; sourceTree = SDKROOT; };
@@ -434,19 +472,23 @@
 		BECFFF6B99D77D6DC68E1D9E /* wuthering_heights_rg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = wuthering_heights_rg_librivox.jpg; sourceTree = "<group>"; };
 		BEFDD43E914E4DAA95D729E2 /* dracula_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dracula_librivox.jpg; sourceTree = "<group>"; };
 		BF296A86B135507051DFBBD2 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		C0F32768922968DB717A1230 /* WatchReviewQueueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchReviewQueueListView.swift; sourceTree = "<group>"; };
 		C47467C62F52089A9F12E038 /* fanny_hill_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fanny_hill_librivox.jpg; sourceTree = "<group>"; };
 		C4982A67A97291048FEDCB58 /* adventures_pinocchio_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_pinocchio_librivox.jpg; sourceTree = "<group>"; };
 		C5061FBEF9FB1D37EA33526A /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		C8EC154B42BBE347C24283E9 /* RoutePickerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePickerButton.swift; sourceTree = "<group>"; };
 		C916EE82BAA77FF01E218A4E /* franklin_autobio_gg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = franklin_autobio_gg_librivox.jpg; sourceTree = "<group>"; };
 		C9C9C82CDA7FAE7C991C661D /* game_of_life_0911_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = game_of_life_0911_librivox.jpg; sourceTree = "<group>"; };
+		C9D861ACA08F0CDE0AF0DBB6 /* WatchDictationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDictationResultView.swift; sourceTree = "<group>"; };
 		CB2DBA8A509FFB154473301D /* BookArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookArtworkView.swift; sourceTree = "<group>"; };
 		CC17411DDC89002281222ACC /* CarPlayInterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayInterfaceController.swift; sourceTree = "<group>"; };
 		CC9FC90F429E3A6FF0763EF3 /* alice_wonderland_0711_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alice_wonderland_0711_librivox.jpg; sourceTree = "<group>"; };
 		CDC407D3BB2E95FD9AC3A899 /* art_of_war_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = art_of_war_librivox.jpg; sourceTree = "<group>"; };
 		CDCDF8AD0F6C456FE5DB27B1 /* huckleberry_mfs_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = huckleberry_mfs_librivox.jpg; sourceTree = "<group>"; };
+		CDDFC415F85AA424800030DA /* WatchProductionHomeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProductionHomeModel.swift; sourceTree = "<group>"; };
 		CE26F9079A1C12E2BAD8E865 /* CatalogDiscoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogDiscoveryView.swift; sourceTree = "<group>"; };
 		CE75508887E5C921B68310DD /* ProjectLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLibraryView.swift; sourceTree = "<group>"; };
+		CE853513A56ADE8BAB406940 /* WatchSyncStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncStatusView.swift; sourceTree = "<group>"; };
 		CE9B0381803F242B696298F4 /* anne_greengables_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = anne_greengables_librivox.jpg; sourceTree = "<group>"; };
 		CEC318EB68E5165403477C6D /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassUITests.swift; sourceTree = "<group>"; };
@@ -477,7 +519,9 @@
 		F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sense_sensibility_ver3_ek.jpg; sourceTree = "<group>"; };
 		F9C1AC88D4122B2F6085A567 /* VoxglassCarPlaySmokeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassCarPlaySmokeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9E93D1A57F80DF8FFB3D8A7 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		FA03C6CBCA75C6CEDDD744DC /* WatchSegmentPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSegmentPlayer.swift; sourceTree = "<group>"; };
 		FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alices_adventures_1003.jpg; sourceTree = "<group>"; };
+		FC9CFADA2FB72CE4657D4958 /* ProductionWatchEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionWatchEnvironment.swift; sourceTree = "<group>"; };
 		FCE3308D3D3F5B6D29FD3563 /* WatchSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSearchView.swift; sourceTree = "<group>"; };
 		FFE080C02F84A3F3C3C682AC /* count_monte_cristo_0711_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = count_monte_cristo_0711_librivox.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -522,6 +566,35 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		03506F361B36984BB1DA0537 /* Production */ = {
+			isa = PBXGroup;
+			children = (
+				36484C1FBCCB8B71AF60C54F /* ProductionHomeView.swift */,
+				1EDEA3324DB509FE3F4D2D2A /* ProductionNavigation.swift */,
+				448E8B1340B985F0C62F1958 /* ProductionsListView.swift */,
+				214F7E8C6C170E9B5B069968 /* ProductionWatchAccessibility.swift */,
+				FC9CFADA2FB72CE4657D4958 /* ProductionWatchEnvironment.swift */,
+				86469F69AA5B7E24EAABBF28 /* ProductionWatchSmoke.swift */,
+				26154085AE1966AEB526A2CE /* WatchConnectivityTransport.swift */,
+				80E124B6655D526143C78AD7 /* WatchDictationCategoryView.swift */,
+				5789F89BBC7B9237541AB95A /* WatchDictationModel.swift */,
+				C9D861ACA08F0CDE0AF0DBB6 /* WatchDictationResultView.swift */,
+				36FE878A24BB01566F302E8D /* WatchOfflineQueueView.swift */,
+				30DE6AF51C130B8745DA2345 /* WatchParagraphTextView.swift */,
+				46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */,
+				CDDFC415F85AA424800030DA /* WatchProductionHomeModel.swift */,
+				8783A01744671DE2947FDAB5 /* WatchProductionsModel.swift */,
+				BCDFB7EAA0868C2F31B9A628 /* WatchReviewConfirmationView.swift */,
+				850F4456DE697EF013A90246 /* WatchReviewModel.swift */,
+				6B5E6FC5BCE9A4BD773B627E /* WatchReviewPlayerView.swift */,
+				C0F32768922968DB717A1230 /* WatchReviewQueueListView.swift */,
+				FA03C6CBCA75C6CEDDD744DC /* WatchSegmentPlayer.swift */,
+				81D6DA9D5820F6FADE950782 /* WatchSyncModel.swift */,
+				CE853513A56ADE8BAB406940 /* WatchSyncStatusView.swift */,
+			);
+			path = Production;
+			sourceTree = "<group>";
+		};
 		0B2C7A3651C1AB626CD04F5D /* Features */ = {
 			isa = PBXGroup;
 			children = (
@@ -568,6 +641,7 @@
 				B034B3B2361D7A4240FCED20 /* WatchSettingsView.swift */,
 				B60A022D276CAE9C8DB87B06 /* WatchSpeedSleepView.swift */,
 				7F3C6CF8BC84D0C8022933C5 /* WatchStorageManager.swift */,
+				03506F361B36984BB1DA0537 /* Production */,
 				E713B2F4E79E3A3590A39454 /* Resources */,
 			);
 			path = VoxglassWatch;
@@ -1352,22 +1426,44 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18CD8EF7CA1C3BBD8D9AA1B9 /* ProductionHomeView.swift in Sources */,
+				A5E03289F79AB195949E7F75 /* ProductionNavigation.swift in Sources */,
+				3CE91280BC3DED88E64D9BC4 /* ProductionWatchAccessibility.swift in Sources */,
+				F0A0DD0E618D66F5074C0721 /* ProductionWatchEnvironment.swift in Sources */,
+				55C3E674A65BDBA26D00A791 /* ProductionWatchSmoke.swift in Sources */,
+				CD5A1AA8C2CF7A853985C18B /* ProductionsListView.swift in Sources */,
 				56AC66DBDC7979DC60C6D1C8 /* VoxglassWatchApp.swift in Sources */,
 				8812DB70D6FB13C2A1B3C92A /* WatchAppServices.swift in Sources */,
 				9CA56629A3B915EE187107DD /* WatchAudioRelay.swift in Sources */,
 				F15464A41C029B457BC3D6D1 /* WatchBookDetailView.swift in Sources */,
 				BCDF05DD630417ED749B9E7A /* WatchChaptersView.swift in Sources */,
+				820D00B93DC516BA64E2AD9A /* WatchConnectivityTransport.swift in Sources */,
+				464D30D8D889C3939F986AC8 /* WatchDictationCategoryView.swift in Sources */,
+				50BA3DAB00FFFF12E32ABA0C /* WatchDictationModel.swift in Sources */,
+				CFEA0A40BF466B1DC927CDC5 /* WatchDictationResultView.swift in Sources */,
 				47673AABDD458924EBD693C3 /* WatchFetchStatusView.swift in Sources */,
 				4EEADBBCBB63CC7E6B7D250B /* WatchListeningView.swift in Sources */,
 				B00B93E335F230E935CAF426 /* WatchNowPlayingView.swift in Sources */,
+				26FCA1ED917968F661F0F161 /* WatchOfflineQueueView.swift in Sources */,
 				34A99B897AF32EA6CBDCBB5A /* WatchOnDeviceView.swift in Sources */,
+				2A9284E0EA45D385B11B292B /* WatchParagraphTextView.swift in Sources */,
 				8859F6D8F7FAEF25CDA90091 /* WatchPlaybackCoordinator.swift in Sources */,
 				B1052AE5DF06037E4B0E0A6C /* WatchPlaybackEngine.swift in Sources */,
+				B372589F6E12945120DD6305 /* WatchProductionAudioStore.swift in Sources */,
+				8BC90F324FEC05698A1D8DA8 /* WatchProductionHomeModel.swift in Sources */,
+				A6B231C65FE03E552C384F02 /* WatchProductionsModel.swift in Sources */,
+				7EC439A601E4836960F68EE5 /* WatchReviewConfirmationView.swift in Sources */,
+				4AC1391D0A25F33A7490BD6B /* WatchReviewModel.swift in Sources */,
+				3FEB78A0B834F4FC9B163B33 /* WatchReviewPlayerView.swift in Sources */,
+				CB393B89133F1DEC7773461E /* WatchReviewQueueListView.swift in Sources */,
 				9005B6ABE5E61D5BEAA71186 /* WatchRootView.swift in Sources */,
 				15BD7E3A44F689F44FCE86AF /* WatchSearchView.swift in Sources */,
+				7DB5CC2B3BF0575DBC9072D6 /* WatchSegmentPlayer.swift in Sources */,
 				72E8D176DA401D53EC2D7312 /* WatchSettingsView.swift in Sources */,
 				E539034DFAC9637A0473AF0C /* WatchSpeedSleepView.swift in Sources */,
 				79B7CB5E2B8BE26EB1298A6A /* WatchStorageManager.swift in Sources */,
+				54296371539B9C28FB0D58FD /* WatchSyncModel.swift in Sources */,
+				AD8E4F3FF948E659510CD304 /* WatchSyncStatusView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

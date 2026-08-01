@@ -84,8 +84,11 @@ jobs:
       - name: Run all Swift Testing suites (parallel, except timing)
         run: swift test --skip VoxglassPerformanceTests
 
+      # Timing budgets are gated behind VOXGLASS_TIMING_TESTS (see
+      # VoxglassTests/Performance/PerformanceBudgetTests.swift) so they can only run
+      # in this serial invocation and never in a parallel `swift test` batch.
       - name: Run timing suites (serial, no parallel CPU contention)
-        run: swift test --no-parallel --filter VoxglassPerformanceTests
+        run: VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests
 
   guarded-tests:
     name: Guarded Tests

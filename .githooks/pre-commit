@@ -2,10 +2,10 @@
 # .githooks/pre-commit — Fast unit-test gate.
 # Install with: git config core.hooksPath .githooks
 #
-# Runs swift test (VoxglassCore logic tests, no simulator needed).
-# Timing/performance suites run in a separate serial invocation
-# (VoxglassPerformanceTests) so their budgets are not skewed by parallel
-# suite CPU contention; everything else runs in parallel.
+# Runs swift test (VoxglassCore logic tests, no simulator needed) via
+# scripts/test_logic.sh, which runs the timing/performance suites in a separate
+# serial invocation so their budgets are never skewed by parallel-suite CPU
+# contention.
 
 set -euo pipefail
 
@@ -14,11 +14,5 @@ cd "$REPO_ROOT"
 
 echo ""
 echo "=== pre-commit guard ==="
-
 echo ""
-echo "--- swift test (logic suites, parallel) ---"
-swift test --skip VoxglassPerformanceTests
-
-echo ""
-echo "--- swift test (timing suites, serial) ---"
-swift test --no-parallel --filter VoxglassPerformanceTests
+bash scripts/test_logic.sh

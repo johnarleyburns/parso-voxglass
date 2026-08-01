@@ -8,6 +8,7 @@ struct WatchRootView: View {
     enum Tab: String, CaseIterable {
         case listening
         case onWatch
+        case productions
         case search
         case settings
     }
@@ -28,6 +29,10 @@ struct WatchRootView: View {
             }
                 .tag(Tab.onWatch)
                 .accessibilityIdentifier(WatchAccessibilityID.rootOnWatch)
+
+            ProductionsListView()
+                .tag(Tab.productions)
+                .accessibilityIdentifier("root.productions")
 
             NavigationStack {
                 WatchSearchView()

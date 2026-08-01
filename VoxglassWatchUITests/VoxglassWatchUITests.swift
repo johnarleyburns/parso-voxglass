@@ -10,6 +10,51 @@ final class VoxglassWatchUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// Production review smoke (spec §19.6): production → Review Flagged → review
+    /// player → approve → confirmation sheet. Seeded via `-uiTestSeed watchQueue` /
+    /// `VOXGLASS_WATCH_SMOKE_PRODUCTION` (a preloaded FakeWatchTransport), never
+    /// touching CloudKit or the microphone.
+    func testProductionReviewApproveShowsConfirmation() {
+        let app = XCUIApplication()
+        app.launchEnvironment["VOXGLASS_WATCH_SMOKE_PRODUCTION"] = "1"
+        app.launchArguments += ["-uiTestSeed", "watchQueue", "-VOXGLASS_WATCH_SMOKE_PRODUCTION", "YES"]
+        app.launch()
+
+        // Productions is the third of five tabs; swipe to it if needed.
+        let ackroyd = app.buttons["watch.production.rogerAckroyd"]
+        if !ackroyd.waitForExistence(timeout: 4) {
+            app.swipeLeft()
+            if !ackroyd.waitForExistence(timeout: 4) {
+                app.swipeLeft()
+            }
+        }
+        XCTAssertTrue(
+            ackroyd.waitForExistence(timeout: 5),
+            "Production row did not render.\n\(app.debugDescription)"
+        )
+        ackroyd.tap()
+
+        let reviewFlagged = app.buttons["watch.reviewFlagged"]
+        XCTAssertTrue(
+            reviewFlagged.waitForExistence(timeout: 5),
+            "Production home did not render Review Flagged.\n\(app.debugDescription)"
+        )
+        reviewFlagged.tap()
+
+        let approve = app.buttons["watch.player.approve"]
+        XCTAssertTrue(
+            approve.waitForExistence(timeout: 5),
+            "Review player did not render.\n\(app.debugDescription)"
+        )
+        approve.tap()
+
+        let confirmed = app.staticTexts["watch.confirmation.approved"]
+        XCTAssertTrue(
+            confirmed.waitForExistence(timeout: 5),
+            "Approval confirmation sheet did not appear.\n\(app.debugDescription)"
+        )
+    }
+
     func testWatchStreamsLibriVoxAlicePlayPauseChaptersTimeAndDownload() {
         let app = XCUIApplication()
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_ALICE"] = "1"

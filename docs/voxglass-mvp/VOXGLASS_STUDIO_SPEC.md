@@ -4193,7 +4193,7 @@ Interaction rules (normative):
 |---|---|---|---|
 | `VoxglassCoreTests` (path `VoxglassTests`) | Swift Testing | macOS host, `swift test`, no simulator | all pure logic: domain, text, metrics math, queues, fold, validation, filenames, cache keys, phone view models (Production), watch models |
 | `VoxglassStudioTests` | Swift Testing | macOS host, `swift test`, no simulator | Studio view models + services with fakes; package/store integration; transcoder round-trips |
-| `VoxglassPerformanceTests` (path `VoxglassTests/Performance`) | Swift Testing | macOS host, `swift test --no-parallel`, no simulator | **timing-only suites** (§19.3 budgets + §19.8 probe): `StorePerformanceTests`, `AudioMetricsPerformanceTests`, `SegmenterPerformanceTests`, `RenderCountProbeTests`. Run serially so parallel-suite CPU contention never produces a false failure; the rest of the suite runs in parallel (`swift test --skip VoxglassPerformanceTests`). |
+| `VoxglassPerformanceTests` (path `VoxglassTests/Performance`) | Swift Testing | macOS host, `VOXGLASS_TIMING_TESTS=1 swift test --no-parallel`, no simulator | **timing-only budgets** (§19.3 budgets + §19.8 probe): one consolidated `@Suite(.serialized)` (`PerformanceBudgetTests`) so the budgets can never contend with each other. The suite is gated behind the `VOXGLASS_TIMING_TESTS` environment variable: a plain `swift test` runs test targets in parallel and would skew the budgets with CPU contention, so the gate makes it **impossible** for them to run un-serialized. The only invocations that set the variable are CI, the pre-commit/pre-push hooks, and `scripts/test_logic.sh`, all of which use `--no-parallel --filter VoxglassPerformanceTests`; the rest of the suite runs in parallel (`swift test --skip VoxglassPerformanceTests`). |
 | `VoxglassStudioUITests` | XCUITest | macOS, local only | **three smoke tests** (§19.6): create a LibriVox audiobook, create an Internet Archive audiobook, create a commercial audiobook |
 | `VoxglassUITests` | XCUITest | iOS simulator, local only | **iPhone smoke test** (existing target) |
 | `VoxglassWatchUITests` | XCUITest | watchOS simulator, local only | **watch smoke test** (existing target) |
@@ -4249,11 +4249,11 @@ public enum AudioFixtures {
 - `SchemaMigrationTests` — migration 1 from empty; a captured v1 snapshot migrates forward; every migration is idempotent when re-run against an already-migrated DB.
 - `ProductionStoreTests` — granular mutations do not rewrite the project; `counts()` matches a brute-force count over `load()`; `paragraphIDs(matching:order:)` matches `ReviewQueueResolver.resolve`.
 
-**Timing budgets** — these live in the dedicated `VoxglassPerformanceTests` target and run serially (`swift test --no-parallel --filter VoxglassPerformanceTests`) so parallel-suite CPU contention cannot produce a false failure. Each budget is asserted as the **best of several runs** so transient CI-runner jitter is likewise discounted; the budget measures the engine's best-case throughput:
-- `StorePerformanceTests` — `paragraphSummaries` on the 10,000-¶ fixture < 120 ms; `counts()` < 20 ms.
-- `AudioMetricsPerformanceTests` — metrics for a 30-second take < 150 ms.
-- `SegmenterPerformanceTests` — the 10,000-¶ re-import completes < 2 s.
-- `RenderCountProbeTests` — §19.8; the meter sustains > 100 invalidations while the teleprompter stays < 3. It pumps the runloop until the meter has actually invalidated past the budget (machine-speed independent), so a slow CI runner cannot produce a false failure.
+**Timing budgets** — these live in the dedicated `VoxglassPerformanceTests` target as **one consolidated `@Suite(.serialized)`** (`PerformanceBudgetTests`) gated behind `VOXGLASS_TIMING_TESTS=1`, and run serially (`VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests`) so parallel-suite CPU contention cannot produce a false failure. Because `swift test` runs test targets in parallel, a plain `swift test` would skew these budgets; the environment gate makes it impossible to run them un-serialized (a plain `swift test` reports them skipped). Each budget is asserted as the **best of several runs** so transient CI-runner jitter is likewise discounted; the budget measures the engine's best-case throughput:
+- `paragraphSummaries` on the 10,000-¶ fixture < 120 ms; `counts()` < 20 ms.
+- Metrics for a 30-second take < 150 ms.
+- The 10,000-¶ re-import completes < 2 s.
+- §19.8 render-count probe: the meter sustains > 100 invalidations while the teleprompter stays < 3. It pumps the runloop until the meter has actually invalidated past the budget (machine-speed independent), so a slow CI runner cannot produce a false failure.
 
 **Text**
 - `ImporterTests` — one fixture document per format (`.txt`, `.md`, `.epub`, `.docx`) with a known expected chapter/paragraph shape; malformed EPUB falls back without throwing.
@@ -4436,7 +4436,7 @@ Implement as `scripts/guard_production.sh`, invoked from `.github/workflows/ios.
 | **G-11** | Legal strings centralized | The literal strings from §3.6 must appear only in `Destinations/LegalStrings.swift`. |
 | **G-12** | No auto-upload | No `archive.org`, `librivox.org`, or `acx.com` URL is passed to `URLSession` upload/data-task APIs anywhere. Only string generation is permitted. |
 
-CI jobs — **GitHub Actions runs no UI tests and no simulator tests.** The only test job is `swift test` (VoxglassCoreTests + VoxglassStudioTests in parallel, plus `VoxglassPerformanceTests` serially — both Swift Testing on the macOS host). The five UI smoke tests never run in CI; they are the local pre-push gate.
+CI jobs — **GitHub Actions runs no UI tests and no simulator tests.** The only test job is `swift test` (VoxglassCoreTests + VoxglassStudioTests in parallel, plus `VoxglassPerformanceTests` serially via `VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests` — both Swift Testing on the macOS host). The five UI smoke tests never run in CI; they are the local pre-push gate.
 
 ```yaml
 jobs:
@@ -4763,6 +4763,9 @@ Recorded deliberately; update the mockups when convenient.
 | `14-export-wizard` | Retail card says "Pro · $149" | unchanged | — |
 | `12-device-preview` | "AAC mono · 80 kbps" | configurable 48/64/80/128, default 80 | quota control (§13.4) |
 | `03-source-import` | "312 sections detected" | shows both section and paragraph counts | the smoke test keys on `import.chapterCount` |
+| `13.6 WatchTransport` | protocol has no `sendEvents` member | `sendEvents(_ events: [ReviewEvent])` added | the watch outbox must have a defined way to transfer offline events to the phone; the transport-mapping table (§13.6) already routes events watch→phone via `transferUserInfo`, so the protocol now names it |
+| `01-productions-list` | card shows short title "Roger Ackroyd" | card shows the full `ProjectSummary.title` ("The Murder of Roger Ackroyd"); the a11y slug stays `rogerAckroyd` | `ProjectSummary` carries only one title; the smoke contract keys on `watch.production.rogerAckroyd` (§19.6) |
+| `07-dictation-category` | "Tap to dictate" uses `.dictation` input mode | uses `WKTextInputMode.plain` via `WKInterfaceController.presentTextInputController` | current WatchKit SDKs have no `.dictation` mode; plain text input is already dictation-based on watchOS |
 
 ### 22.5 Deferred backlog (post-MVP, in rough priority order)
 
