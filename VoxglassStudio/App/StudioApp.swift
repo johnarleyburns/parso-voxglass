@@ -49,6 +49,29 @@ struct StudioApp: App {
                             } else {
                                 PlaceholderView(route: route)
                             }
+                        case .metadata:
+                            if let project = environment.currentProject {
+                                let assets = environment.assetStoreForCurrentProject()
+                                MetadataRightsView(
+                                    model: MetadataRightsModel(project: project, store: environment.store, assets: assets)
+                                ) { updated in
+                                    environment.updateProject(updated)
+                                }
+                            } else {
+                                PlaceholderView(route: route)
+                            }
+                        case .validate:
+                            if let project = environment.currentProject {
+                                let assets = environment.assetStoreForCurrentProject()
+                                ValidationReportView(model: ValidationModel(
+                                    project: project,
+                                    store: environment.store,
+                                    assets: assets,
+                                    target: project.profile.intendedDestination
+                                ))
+                            } else {
+                                PlaceholderView(route: route)
+                            }
                         case .assembly:
                             if let project = environment.currentProject {
                                 let assets = environment.assetStoreForCurrentProject()

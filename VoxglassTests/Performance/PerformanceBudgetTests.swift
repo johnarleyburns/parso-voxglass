@@ -235,6 +235,63 @@ struct PerformanceBudgetTests {
         #expect(pair.large < 24_000, "10K reidentification took \(pair.large) ms, ceiling is 24 s (3× spec)")
     }
 
+    // MARK: - Spec §19.3 / §15.4 — full validation (3,000 ¶ < 2 s)
+
+    /// The pure rule engine's metrics input for the stress fixture: every
+    /// selected take gets one valid metric so audio rules run, not just the
+    /// `missingMetrics` fallback.
+    private func validationMetrics(_ project: AudiobookProject) -> [UUID: AudioQualityMetrics] {
+        var dict: [UUID: AudioQualityMetrics] = [:]
+        for p in project.allParagraphs {
+            guard let sid = p.selectedTakeID, let take = p.takes.first(where: { $0.id == sid }) else { continue }
+            dict[take.id] = AudioQualityMetrics(
+                peakDBFS: -3, truePeakDBFS: -4, rmsDBFS: -20, noiseFloorDBFS: -65,
+                clipCount: 0, dcOffset: 0, leadingSilence: 0.1, trailingSilence: 0.2,
+                duration: 5, sampleRate: 48_000, channels: 1
+            )
+        }
+        return dict
+    }
+
+    private func validate(_ project: AudiobookProject, target: DestinationID) {
+        _ = ValidationRuleEngine().evaluate(
+            project: project,
+            metrics: validationMetrics(project),
+            profile: DestinationProfile.profile(for: target),
+            eligibility: EligibilityProfile.evaluate(project),
+            assembly: project.profile.assembly
+        )
+    }
+
+    /// §15.4's 2 s budget, asserted the repo's documented way (§22.4): a
+    /// load-independent ratio between a 3,000-¶ and a 300-¶ project, plus a
+    /// 3× absolute ceiling. S7 acceptance also requires the `typical()` fixture
+    /// to be deterministic for all five destinations — that lives in
+    /// `ValidationDeterminismTests` (parallel, no clock).
+    @Test func fullValidationOfThreeThousandParagraphs() async throws {
+        let large = ProjectFixtures.stress(paragraphs: 3_000)
+        let small = ProjectFixtures.stress(paragraphs: 300)
+
+        let count = ValidationRuleEngine().evaluate(
+            project: large,
+            metrics: validationMetrics(large),
+            profile: DestinationProfile.profile(for: .acx),
+            eligibility: EligibilityProfile.evaluate(large),
+            assembly: large.profile.assembly
+        )
+        #expect(!count.isEmpty)
+
+        let pair = try await bestPairAsync(
+            { validate(large, target: .acx) },
+            { validate(small, target: .acx) }
+        )
+        #expect(
+            pair.large < pair.small * Self.linearMargin,
+            "validation took \(pair.large) ms on 3K vs \(pair.small) ms on 300 — expected linear (≤ \(Self.linearMargin)×)"
+        )
+        #expect(pair.large < 6_000, "validation took \(pair.large) ms on 3K, ceiling is 6 s (3× spec)")
+    }
+
     // MARK: - Spec §19.8 — render-count probe
 
     /// Drives a 5-second fake recording and asserts the teleprompter's render count

@@ -171,12 +171,14 @@
 		B329B42E0CA9E0B40B1BEAD1 /* return_holmes_0708_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A42A7E5AF0C1B49C5E7A01FB /* return_holmes_0708_librivox.jpg */; };
 		B372589F6E12945120DD6305 /* WatchProductionAudioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
+		B52570A81122DCDCB84A3918 /* ValidationReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05EFBB9757ED8A15C3EEDEF /* ValidationReportView.swift */; };
 		B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2D878648CFAE6A1DA9323D89 /* 2br02b_0801_librivox.jpg */; };
 		B8BBDD56E99C8F49BF022ED2 /* andersensfairy_1307_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */; };
 		B8D77B123CC0612D7FA46EF8 /* BookPageActionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8DFE7B33D0A5AB70593632 /* BookPageActionRow.swift */; };
 		B967BB6133CA77E8AFEE9497 /* ProjectDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E64BC92F4E2DEDA6E95172C /* ProjectDashboardView.swift */; };
 		BB92423FB45EE5D963ED7BAA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF296A86B135507051DFBBD2 /* AVFoundation.framework */; };
 		BCDF05DD630417ED749B9E7A /* WatchChaptersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B049FA17EAEFFE0E32458F /* WatchChaptersView.swift */; };
+		BEAB40CBBF57BE0EE46B4077 /* ValidationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC7D5A5E005806BA9861628 /* ValidationModel.swift */; };
 		BF255B1A764B81A930682ACE /* ghost_stories_001_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2DB5A35CB6F0BC962363DE38 /* ghost_stories_001_librivox.jpg */; };
 		C08F1BF6F2BCCA269841F188 /* prince_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4AAEDDB3F34068321C643AD3 /* prince_librivox.jpg */; };
 		C24768CA7E4D6F07840FB9FF /* timemachine_sjm_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2A5D4A562FBA3FDB85832876 /* timemachine_sjm_librivox.jpg */; };
@@ -200,10 +202,12 @@
 		D6EBA1E5E52AAFBE5FA87BD7 /* treasure_island_ap_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 07B47F8B73E93AF8A2A3E0ED /* treasure_island_ap_librivox.jpg */; };
 		D7CFA5E82C5553B238AC6C14 /* letters_brides_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 305628B60168BDF452A13A74 /* letters_brides_0709_librivox.jpg */; };
 		D8702B14A8C9B66FDD4A525A /* BookRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BECBB89F17D12CFB910BC9 /* BookRowView.swift */; };
+		D97B5B1A64A2060B6F282ECB /* MetadataRightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC204F42F554D72B2CCF11C /* MetadataRightsView.swift */; };
 		D9C5A27596CF22D787186AA3 /* grimm_fairy_tales_1202_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = EB9DEA4B373912453B25F866 /* grimm_fairy_tales_1202_librivox.jpg */; };
 		DB17FE295B92F6AFF298205B /* NewProjectModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5969964594F5A94B38DF0C /* NewProjectModel.swift */; };
 		DC6B72ED93D4BFF69B8FAE39 /* adventuressherlockholmes_v4_1501_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 41ABB6A40594A5A76F1D0400 /* adventuressherlockholmes_v4_1501_librivox.jpg */; };
 		DCFB366F5A6ECB6E93EF1975 /* as_a_man_thinketh_mc_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 651043E3C279BA705B4D4256 /* as_a_man_thinketh_mc_librivox.jpg */; };
+		DF29DF338538A7E86BE081FD /* MetadataRightsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBCC51F825D9918E6FD6A40 /* MetadataRightsModel.swift */; };
 		DF3D0923DF3DD5A7465F7EF8 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBAB9AA5DFEAD67485D8C81 /* SplashView.swift */; };
 		DFA86D6BC6433C4BB2C6F36D /* wuthering_heights_rg_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BECFFF6B99D77D6DC68E1D9E /* wuthering_heights_rg_librivox.jpg */; };
 		E100E5781AEDC9CCCAAF6591 /* anne_greengables_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CE9B0381803F242B696298F4 /* anne_greengables_librivox.jpg */; };
@@ -324,6 +328,7 @@
 		179C62958C3F5174F0B0AF7D /* love_freindship_cs_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = love_freindship_cs_librivox.jpg; sourceTree = "<group>"; };
 		196740ED53FE2AEBC7990EDA /* aesop_fables_volume_one_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = aesop_fables_volume_one_librivox.jpg; sourceTree = "<group>"; };
 		1AAEC7E4D58E0CABD44AE90F /* Artwork */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Artwork; path = Voxglass/Resources/Artwork; sourceTree = SOURCE_ROOT; };
+		1AC7D5A5E005806BA9861628 /* ValidationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationModel.swift; sourceTree = "<group>"; };
 		1BBA5A2E92771EE1379D897D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
 		1EDEA3324DB509FE3F4D2D2A /* ProductionNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionNavigation.swift; sourceTree = "<group>"; };
@@ -367,6 +372,7 @@
 		3BC96C4A46D6DA27786C7AEE /* VoxglassStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoxglassStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3CEC8AEC3FFAD8271A797212 /* RecordingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingModel.swift; sourceTree = "<group>"; };
 		3D6C24D9B10408BEE4D4CBC1 /* StudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioApp.swift; sourceTree = "<group>"; };
+		3DBCC51F825D9918E6FD6A40 /* MetadataRightsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataRightsModel.swift; sourceTree = "<group>"; };
 		3E64BC92F4E2DEDA6E95172C /* ProjectDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDashboardView.swift; sourceTree = "<group>"; };
 		3F568D2BA3403F8B9A055AB3 /* RecordingWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingWorkspaceView.swift; sourceTree = "<group>"; };
 		4008972DE2117B1781A316A6 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
@@ -489,6 +495,7 @@
 		BECFFF6B99D77D6DC68E1D9E /* wuthering_heights_rg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = wuthering_heights_rg_librivox.jpg; sourceTree = "<group>"; };
 		BEFDD43E914E4DAA95D729E2 /* dracula_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dracula_librivox.jpg; sourceTree = "<group>"; };
 		BF296A86B135507051DFBBD2 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		C05EFBB9757ED8A15C3EEDEF /* ValidationReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationReportView.swift; sourceTree = "<group>"; };
 		C0F32768922968DB717A1230 /* WatchReviewQueueListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchReviewQueueListView.swift; sourceTree = "<group>"; };
 		C47467C62F52089A9F12E038 /* fanny_hill_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fanny_hill_librivox.jpg; sourceTree = "<group>"; };
 		C4982A67A97291048FEDCB58 /* adventures_pinocchio_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_pinocchio_librivox.jpg; sourceTree = "<group>"; };
@@ -545,6 +552,7 @@
 		FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alices_adventures_1003.jpg; sourceTree = "<group>"; };
 		FC9CFADA2FB72CE4657D4958 /* ProductionWatchEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionWatchEnvironment.swift; sourceTree = "<group>"; };
 		FCE3308D3D3F5B6D29FD3563 /* WatchSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSearchView.swift; sourceTree = "<group>"; };
+		FDC204F42F554D72B2CCF11C /* MetadataRightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataRightsView.swift; sourceTree = "<group>"; };
 		FFE080C02F84A3F3C3C682AC /* count_monte_cristo_0711_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = count_monte_cristo_0711_librivox.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -624,11 +632,13 @@
 				89E9913F6E8CBAAA7B7BDC7E /* Dashboard */,
 				B9F274598ED8C94F00D64574 /* ImportAudio */,
 				E4CC402C2EEBA94B6687147F /* Library */,
+				62B34639C3AE9A155B506551 /* Metadata */,
 				E62D366526F8965B6883A128 /* NewProject */,
 				6F8DB18CD84C1266DBCAAFDF /* Record */,
 				6F067FDE661ED2613DDCA0A0 /* Review */,
 				D737A4428C91E4A030A0E07B /* SourceImport */,
 				99E68921513700E61332DFAF /* TakeCompare */,
+				CEA9BBC260ED1BB94F6E344E /* Validate */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -834,6 +844,15 @@
 				B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */,
 			);
 			path = Player;
+			sourceTree = "<group>";
+		};
+		62B34639C3AE9A155B506551 /* Metadata */ = {
+			isa = PBXGroup;
+			children = (
+				3DBCC51F825D9918E6FD6A40 /* MetadataRightsModel.swift */,
+				FDC204F42F554D72B2CCF11C /* MetadataRightsView.swift */,
+			);
+			path = Metadata;
 			sourceTree = "<group>";
 		};
 		64929FA504B1795D8AA944D4 /* CarPlay */ = {
@@ -1064,6 +1083,15 @@
 				4008972DE2117B1781A316A6 /* SearchView.swift */,
 			);
 			path = Search;
+			sourceTree = "<group>";
+		};
+		CEA9BBC260ED1BB94F6E344E /* Validate */ = {
+			isa = PBXGroup;
+			children = (
+				1AC7D5A5E005806BA9861628 /* ValidationModel.swift */,
+				C05EFBB9757ED8A15C3EEDEF /* ValidationReportView.swift */,
+			);
+			path = Validate;
 			sourceTree = "<group>";
 		};
 		D737A4428C91E4A030A0E07B /* SourceImport */ = {
@@ -1539,6 +1567,8 @@
 				40333A5CD9D6B595C2692EBA /* ChapterAssemblyView.swift in Sources */,
 				39B39A2985F787EF90A68145 /* ImportAudioModel.swift in Sources */,
 				488991EDE73D436CB22FDB94 /* ImportAudioView.swift in Sources */,
+				DF29DF338538A7E86BE081FD /* MetadataRightsModel.swift in Sources */,
+				D97B5B1A64A2060B6F282ECB /* MetadataRightsView.swift in Sources */,
 				DB17FE295B92F6AFF298205B /* NewProjectModel.swift in Sources */,
 				93E34BE40B616F83D94D57FC /* NewProjectView.swift in Sources */,
 				5FB6BE328E8383EF45B21C13 /* ProjectDashboardModel.swift in Sources */,
@@ -1559,6 +1589,8 @@
 				FE805335A3C3A6717111023C /* StudioEnvironment.swift in Sources */,
 				15ACCBB55B19635A6869247C /* TakeComparisonModel.swift in Sources */,
 				ED26685FCA7CA934BDD55AE4 /* TakeComparisonView.swift in Sources */,
+				BEAB40CBBF57BE0EE46B4077 /* ValidationModel.swift in Sources */,
+				B52570A81122DCDCB84A3918 /* ValidationReportView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -353,4 +353,16 @@ extension DestinationProfile {
         artwork: .none,
         emitsChecksums: true
     )
+
+    /// The single registry the app consults to map a `DestinationID` to its
+    /// profile (validation screen, export wizard, packaging builders).
+    public static func profile(for id: DestinationID) -> DestinationProfile {
+        switch id {
+        case .librivox: return .librivox
+        case .internetArchive: return .internetArchive
+        case .acx: return .acx
+        case .appleBooksAggregator: return .appleBooksAggregator
+        case .personalMaster: return .losslessMaster
+        }
+    }
 }
