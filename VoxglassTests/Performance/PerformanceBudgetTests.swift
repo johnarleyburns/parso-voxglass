@@ -185,6 +185,56 @@ struct PerformanceBudgetTests {
         #expect(pair.large < 6_000, "10K re-import took \(pair.large) ms, ceiling is 6 s (3× spec)")
     }
 
+    // MARK: - Spec §19.3 — 10,000-¶ reidentification (< 8 s)
+
+    /// The reidentification pass over the 10,000-¶ fixture (previously asserted
+    /// inline in the parallel `ReidentificationTests`, where CPU contention
+    /// made the 8 s wall-clock budget flaky — moved here per the serialization
+    /// policy).
+    private func reidentifierParagraph(_ id: UUID, _ text: String, ordinal: Int = 0) -> Paragraph {
+        Paragraph(
+            id: id,
+            ordinal: ordinal,
+            text: text,
+            textHash: TextNormalizer.hash(text),
+            role: .body
+        )
+    }
+
+    private func reidentifierBlock(_ text: String, start: Int = 0) -> ExtractedBlock {
+        ExtractedBlock(kind: .paragraph, text: text, sourceRange: start..<(start + text.count))
+    }
+
+    private func reidentifierFixture(paragraphCount: Int) -> (existing: [Paragraph], incoming: [ExtractedBlock]) {
+        var existing: [Paragraph] = []
+        var incoming: [ExtractedBlock] = []
+        for i in 0..<paragraphCount {
+            let id = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", i))")!
+            let text = "This is the lengthy content of paragraph number \(i) which contains many words to ensure that jaccard similarity computations are representative of real world paragraph structures and lengths for audiobook productions."
+            existing.append(reidentifierParagraph(id, text, ordinal: i))
+            incoming.append(reidentifierBlock(text))
+        }
+        return (existing, incoming)
+    }
+
+    @Test func tenThousandParagraphReidentificationUnder8Seconds() async throws {
+        let large = reidentifierFixture(paragraphCount: 10_000)
+        let small = reidentifierFixture(paragraphCount: 1_000)
+
+        let report = ParagraphReidentifier().match(existing: large.existing, incoming: large.incoming)
+        #expect(report.assignments.count >= 9_999)
+
+        let pair = try await bestPairAsync(
+            { _ = ParagraphReidentifier().match(existing: large.existing, incoming: large.incoming) },
+            { _ = ParagraphReidentifier().match(existing: small.existing, incoming: small.incoming) }
+        )
+        #expect(
+            pair.large < pair.small * Self.linearMargin,
+            "10K reidentification took \(pair.large) ms vs \(pair.small) ms for 1K — expected linear (≤ \(Self.linearMargin)×)"
+        )
+        #expect(pair.large < 24_000, "10K reidentification took \(pair.large) ms, ceiling is 24 s (3× spec)")
+    }
+
     // MARK: - Spec §19.8 — render-count probe
 
     /// Drives a 5-second fake recording and asserts the teleprompter's render count

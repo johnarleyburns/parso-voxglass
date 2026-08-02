@@ -48,6 +48,12 @@ final class CarPlayInterfaceController {
 
     // MARK: - State snapshot
 
+    /// The consumer "Continue" tab's sections, reused by the production tab bar
+    /// (Continue / Productions / Review).
+    func continueSections() -> [CarPlaySection] {
+        CarPlayMenuBuilder.continueTab(makeState()).sections
+    }
+
     func makeState() -> CarPlayState {
         let library = services.libraryStore
         let coordinator = services.playbackCoordinator

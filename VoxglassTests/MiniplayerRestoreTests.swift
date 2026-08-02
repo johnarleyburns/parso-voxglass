@@ -88,6 +88,22 @@ import Foundation
         try? await Task.sleep(nanoseconds: 100_000_000)
     }
 
+    /// Waits for an async effect to land instead of sleeping a fixed duration.
+    /// The coordinator's play pipeline runs on the main actor behind a spawned
+    /// task; under a contended parallel batch a fixed sleep can elapse before
+    /// the effect completes and produce a false failure. Polling yields to the
+    /// main actor so the effect always gets a chance to settle.
+    private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 5_000_000_000) async -> Bool {
+        var waited: UInt64 = 0
+        let step: UInt64 = 20_000_000
+        while waited < timeoutNanoseconds {
+            if condition() { return true }
+            try? await Task.sleep(nanoseconds: step)
+            waited += step
+        }
+        return condition()
+    }
+
     // MARK: - §5.1 Engine-free presented restore
 
     @Test func restorePresentedSessionPresentsPausedSessionWithoutTouchingEngine() async throws {
@@ -166,7 +182,7 @@ import Foundation
         #expect(h.engine.loadCalls.isEmpty)
 
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { h.engine.isPlaying && h.coordinator.currentSession?.isPlaying == true }
 
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.engine.loadCalls.last?.url == chapters[1].localURL)
@@ -175,7 +191,7 @@ import Foundation
         #expect(h.coordinator.currentSession?.isPlaying == true)
 
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { !h.engine.isPlaying && h.coordinator.currentSession?.isPlaying == false }
 
         #expect(!(h.engine.isPlaying))
         #expect(h.coordinator.currentSession?.isPlaying == false)
@@ -196,7 +212,7 @@ import Foundation
 
         h.engine.loadError = URLError(.notConnectedToInternet)
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackError != nil }
 
         #expect(h.coordinator.playbackError != nil)
         #expect(h.coordinator.currentSession != nil)  // The presented session must survive a failed lazy load
@@ -205,7 +221,7 @@ import Foundation
 
         h.engine.loadError = nil
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { h.engine.isPlaying }
 
         #expect(h.engine.isPlaying)  // Retry after a failed load must work
         #expect(h.engine.loadCalls.count == 2)
@@ -321,7 +337,7 @@ import Foundation
         h.engine.currentTime = 100
         h.engine.duration = 100
         h.engine.fireItemChanged()
-        await drainMainQueue()
+        await waitUntil { h.coordinator.currentSession?.chapter.id == chapters[1].id }
         #expect(h.coordinator.currentSession?.chapter.id == chapters[1].id)
 
         let newRow = try await h.store.position(for: chapters[0].bookID, chapterID: chapters[1].id)

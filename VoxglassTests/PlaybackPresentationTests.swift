@@ -83,6 +83,19 @@ import Foundation
         try? await Task.sleep(nanoseconds: 100_000_000)
     }
 
+    /// Waits for an async effect to land instead of sleeping a fixed duration;
+    /// see `MiniplayerRestoreTests.waitUntil` for the rationale.
+    private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 5_000_000_000) async -> Bool {
+        var waited: UInt64 = 0
+        let step: UInt64 = 20_000_000
+        while waited < timeoutNanoseconds {
+            if condition() { return true }
+            try? await Task.sleep(nanoseconds: step)
+            waited += step
+        }
+        return condition()
+    }
+
     private func isForbiddenPresentationEffect(_ call: FakeAudioEngine.Call) -> Bool {
         if case .load = call { return true }
         if case .play = call { return true }
@@ -144,7 +157,7 @@ import Foundation
         h.engine.reset()
 
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        await waitUntil { h.coordinator.currentSession?.isPlaying == true }
 
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.engine.loadCalls.first?.url == book.chapters[1].localURL)

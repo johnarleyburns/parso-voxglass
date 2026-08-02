@@ -107,13 +107,14 @@ import VoxglassCore
             }
         }
 
-        let start = Date()
         let report = ParagraphReidentifier().match(existing: existing, incoming: incoming)
-        let elapsed = Date().timeIntervalSince(start)
 
         #expect(report.assignments.count >= 9_999)
         #expect(report.driftedIDs.count == 1)
-        #expect(elapsed < 8.0)
+        // The wall-clock budget for this scale lives in the serialized timing
+        // suite (PerformanceBudgetTests.tenThousandParagraphReidentification),
+        // not here: this suite runs in the parallel batch where CPU contention
+        // makes any absolute timing assertion flaky.
     }
 
     @Test func insertionKeepsLaterParagraphsMatched() {
