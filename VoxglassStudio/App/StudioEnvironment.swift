@@ -22,6 +22,10 @@ public final class StudioEnvironment {
 
     public var settings: SettingsModel
 
+    /// Production sync coordinator (S10): publishes the projection to CloudKit and
+    /// ingests review events. Live only when a project is open; harmless otherwise.
+    public let projection: StudioProjectionCoordinator
+
     public var showAutosaveRecovery: Bool {
         recoveryModel != nil && recoveryPackageRoot != nil
     }
@@ -54,6 +58,7 @@ public final class StudioEnvironment {
         self.recents = recents
         self.isTestEnvironment = isTestEnvironment
         self.license = LicenseGate(provider: licenseProvider)
+        self.projection = StudioProjectionCoordinator()
         let library = ProjectLibraryModel(
             store: store,
             recents: recents,
@@ -130,6 +135,7 @@ public enum StudioRoute: Sendable, Equatable, Hashable {
     case metadata
     case validate
     case export
+    case devicePreview
     case settings
 }
 

@@ -101,6 +101,21 @@ struct StudioApp: App {
                             } else {
                                 PlaceholderView(route: route)
                             }
+                        case .devicePreview:
+                            if let project = environment.currentProject {
+                                let assets = environment.assetStoreForCurrentProject()
+                                DevicePreviewView(model: DevicePreviewModel(
+                                    coordinator: environment.projection,
+                                    project: project,
+                                    store: environment.store,
+                                    assets: assets,
+                                    flagsQueueIDs: project.allParagraphs
+                                        .filter { $0.reviewState == .flagged }
+                                        .map(\.id)
+                                ))
+                            } else {
+                                PlaceholderView(route: route)
+                            }
                         case .settings:
                             SettingsView(model: environment.settings)
                         case .takeCompare:

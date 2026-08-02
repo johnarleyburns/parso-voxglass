@@ -1,6 +1,6 @@
 import Foundation
 
-public enum ReviewPredicate: Codable, Sendable, Equatable {
+public enum ReviewPredicate: Codable, Sendable, Equatable, Hashable {
     case allRecorded
     case flagged
     case needsPickup
@@ -9,6 +9,20 @@ public enum ReviewPredicate: Codable, Sendable, Equatable {
     case selectedParagraphs(Set<UUID>)
     case chapter(UUID)
     case tag(ReviewTag)
+
+    /// Stable, URL-safe identifier for UI accessibility labels and identifiers.
+    public var debugDescription: String {
+        switch self {
+        case .allRecorded: return "all"
+        case .flagged: return "flagged"
+        case .needsPickup: return "pickup"
+        case .unapproved: return "unapproved"
+        case .unreviewed: return "unreviewed"
+        case .selectedParagraphs: return "selected"
+        case .chapter: return "chapter"
+        case .tag: return "tag"
+        }
+    }
 }
 
 public enum QueueOrder: String, Codable, Sendable {

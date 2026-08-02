@@ -6,10 +6,12 @@ import VoxglassCore
 /// The "My Productions" filter view on the Library tab (spec §18.2.1).
 public struct MyProductionsShelf: View {
     @State private var model: MyProductionsModel
+    private let store: ProductionPreviewStore
     private let sync: PhoneProductionSync
 
     public init(store: ProductionPreviewStore, sync: PhoneProductionSync) {
         self._model = State(initialValue: MyProductionsModel(store: store))
+        self.store = store
         self.sync = sync
     }
 
@@ -45,8 +47,7 @@ public struct MyProductionsShelf: View {
     }
 
     private func previewStore() -> ProductionPreviewStore {
-        // Reached only via NavigationLink; the store is resolved from the model's own.
-        modelSummaries
+        store
     }
 
     private func productionCard(_ summary: ProjectSummary) -> some View {
@@ -92,10 +93,6 @@ public struct MyProductionsShelf: View {
     private func slug(_ title: String) -> String {
         title.lowercased().replacingOccurrences(of: " ", with: "").prefix(24).description
     }
-
-    private var modelSummaries: ProductionPreviewStore {
-        model.summaries.isEmpty ? storePlaceholder : storePlaceholder
-    }
 }
 
 // MARK: - 18.2.2 Production Book Detail
@@ -105,10 +102,12 @@ public struct ProductionBookDetailView: View {
     @State private var model: ProductionDetailModel
     @State private var showPlayer = false
     @State private var playerQueue: [ParagraphProjection] = []
+    private let store: ProductionPreviewStore
     private let sync: PhoneProductionSync
 
     public init(summary: ProjectSummary, store: ProductionPreviewStore, sync: PhoneProductionSync) {
         self.summary = summary
+        self.store = store
         self.sync = sync
         self._model = State(initialValue: ProductionDetailModel(projectID: summary.id, store: store))
     }
@@ -186,7 +185,7 @@ public struct ProductionBookDetailView: View {
     }
 
     private func previewStore() -> ProductionPreviewStore {
-        storePlaceholder
+        store
     }
 }
 
@@ -397,9 +396,13 @@ public struct ReviewQueueBuilderView: View {
     let projectID: UUID
     @State private var model: ReviewQueueBuilderModel
     @State private var startQueue = false
+    private let store: ProductionPreviewStore
+    private let sync: PhoneProductionSync
 
-    public init(projectID: UUID, store: ProductionPreviewStore) {
+    public init(projectID: UUID, store: ProductionPreviewStore, sync: PhoneProductionSync) {
         self.projectID = projectID
+        self.store = store
+        self.sync = sync
         self._model = State(initialValue: ReviewQueueBuilderModel(projectID: projectID, store: store))
     }
 
@@ -432,7 +435,7 @@ public struct ReviewQueueBuilderView: View {
         .navigationTitle("Review Queue")
         .task { await model.load() }
         .fullScreenCover(isPresented: $startQueue) {
-            ProductionReviewPlayerView(projectID: projectID, queue: model.resolvedParagraphs, store: storePlaceholder, sync: syncPlaceholder)
+            ProductionReviewPlayerView(projectID: projectID, queue: model.resolvedParagraphs, store: store, sync: sync)
         }
     }
 

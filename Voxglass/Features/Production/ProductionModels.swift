@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Observation
+import UIKit
 import VoxglassCore
 
 // MARK: - MyProductionsModel
@@ -92,17 +93,11 @@ public final class ProductionPlayerModel: NSObject, AVAudioPlayerDelegate {
     }
 
     public func play() async {
-        if !isPlaying, let current {
-            guard let url = store.proxyURL(paragraphID: current.id, projectID: projectID) else {
-                hasLocalAudio = false
-                return
-            }
-            hasLocalAudio = true
-            player = try? AVAudioPlayer(contentsOf: url)
-            player?.delegate = self
-            player?.play()
-            isPlaying = true
-        }
+        guard !isPlaying, let current else { return }
+        await loadCurrent()
+        guard hasLocalAudio else { return }
+        player?.play()
+        isPlaying = true
     }
 
     public func pause() async {
@@ -152,6 +147,23 @@ public final class ProductionPlayerModel: NSObject, AVAudioPlayerDelegate {
         )
         sync.enqueue(event)
         haptic(for: type)
+    }
+
+    /// Preloads the current paragraph's proxy so `play()` starts instantly; marks
+    /// `hasLocalAudio` when the proxy is missing on this device.
+    private func loadCurrent() async {
+        guard let current else {
+            player = nil
+            return
+        }
+        guard let url = store.proxyURL(paragraphID: current.id, projectID: projectID) else {
+            hasLocalAudio = false
+            player = nil
+            return
+        }
+        hasLocalAudio = true
+        player = try? AVAudioPlayer(contentsOf: url)
+        player?.delegate = self
     }
 
     private func haptic(for type: ReviewEventType) {

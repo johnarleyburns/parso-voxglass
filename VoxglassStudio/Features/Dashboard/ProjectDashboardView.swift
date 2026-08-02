@@ -83,6 +83,13 @@ public struct ProjectDashboardView: View {
                         Label("Validate", systemImage: "checkmark.seal")
                     }
                     .accessibilityIdentifier("dashboard.validate")
+
+                    Button {
+                        env.navigate(to: .devicePreview)
+                    } label: {
+                        Label("Preview on Devices", systemImage: "iphone")
+                    }
+                    .accessibilityIdentifier("dashboard.previewOnDevices")
                 }
             }
         }
