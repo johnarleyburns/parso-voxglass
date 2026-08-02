@@ -56,6 +56,36 @@ import Testing
     }
 }
 
+@Suite struct WatchRelayMessageContractTests {
+
+    /// The phone and watch must agree on the `reviewEvent` wire format: the watch
+    /// encodes a `ReviewEvent` as a `transferUserInfo` payload under the production
+    /// action namespace, and the phone-side transport decodes the same action and
+    /// payload to enqueue it for the Mac (spec §13.6, §18.2.8).
+    @Test func reviewEvent_roundTripsThroughProductionActionMessage() throws {
+        let event = ReviewEvent(
+            id: UUID(),
+            projectID: ProductionWatchFixtures.rogerAckroydProjectID,
+            paragraphID: ProductionWatchFixtures.flaggedParagraphIDs[0],
+            type: .approve,
+            noteText: nil,
+            tag: nil,
+            device: .watch,
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        let message = try WatchPhoneMessageCodec.message(
+            action: ProductionTransportAction.reviewEvent,
+            payload: event
+        )
+
+        #expect(WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.reviewEvent)
+        let decoded = try WatchPhoneMessageCodec.payload(ReviewEvent.self, from: message)
+        #expect(decoded == event)
+        #expect(decoded.device == .watch)
+    }
+}
+
 @Suite struct WatchProductionStoragePolicyTests {
 
     private func item(_ id: UUID, bytes: Int, ageSeconds: TimeInterval) -> WatchProductionStoragePolicy.Item {

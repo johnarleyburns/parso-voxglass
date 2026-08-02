@@ -22,6 +22,10 @@ final class AppServices: ObservableObject {
     /// Activates the phone side of the WatchConnectivity audio relay so the watch
     /// can pull chapters the phone already has cached. Held for the app lifetime.
     let phoneAudioRelay = PhoneAudioRelay.shared
+    /// The production preview + watch relay. Created lazily because constructing the
+    /// sync coordinator must not run during `AppServices.init` in unentitled test
+    /// processes; `PhoneProductionSync` builds its CloudKit stack on first sync.
+    lazy var productionEnvironment: PhoneProductionEnvironment = PhoneProductionEnvironment()
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()
@@ -134,6 +138,8 @@ final class AppServices: ObservableObject {
         await cloudSync.pullPlaybackPositions()
         await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
 
+        let production = productionEnvironment
+        phoneAudioRelay.registerProductionTransport(production.watchTransport)
         Task(priority: .background) { @MainActor [weak self] in
             guard let self else { return }
             await self.cloudSync.sync()
@@ -141,6 +147,8 @@ final class AppServices: ObservableObject {
             if self.cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }
+            // Pull production previews and relay them to the watch (spec §13.6).
+            await production.checkForUpdates()
         }
     }
 
