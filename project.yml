@@ -149,10 +149,18 @@ targets:
         excludes:
           - Resources/Info.plist
           - Resources/VoxglassStudio.entitlements
+      - path: Voxglass/Core/Encoders
+        buildPhase: sources
     dependencies:
       - package: VoxglassCore
-      - package: VoxglassCore
-        product: VoxglassEncoders
+      # LAME and libFLAC are *static* framework slices (S8). Link them directly
+      # with embed:false — SwiftPM's product dependency auto-embeds framework
+      # slices as dynamic, which fails because a static slice has no Info.plist
+      # ("Framework ... did not contain an Info.plist").
+      - framework: Tools/encoders/Vendored/Lame.xcframework
+        embed: false
+      - framework: Tools/encoders/Vendored/FLAC.xcframework
+        embed: false
       - sdk: AVFoundation.framework
       - sdk: StoreKit.framework
       - sdk: libsqlite3.tbd
