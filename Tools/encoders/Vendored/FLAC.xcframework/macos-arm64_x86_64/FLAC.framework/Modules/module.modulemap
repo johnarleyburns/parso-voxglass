@@ -1,0 +1,6 @@
+framework module FLAC {
+    umbrella header "stream_encoder.h"
+    header "metadata.h"
+    export *
+    module * { export * }
+}

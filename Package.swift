@@ -7,18 +7,34 @@ let package = Package(
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
         .library(name: "VoxglassCoreTestSupport", targets: ["VoxglassCoreTestSupport"]),
-        .library(name: "VoxglassStudioKit", targets: ["VoxglassStudioKit"])
+        .library(name: "VoxglassStudioKit", targets: ["VoxglassStudioKit"]),
+        .library(name: "VoxglassEncoders", targets: ["VoxglassEncoders"])
     ],
     targets: [
         .target(
             name: "VoxglassCore",
             path: "Voxglass/Core",
+            exclude: ["Encoders"],
             resources: [.process("Resources/CuratedLists")],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
                 .enableUpcomingFeature("StrictConcurrency")
             ],
             linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
+        .binaryTarget(
+            name: "Lame",
+            path: "Tools/encoders/Vendored/Lame.xcframework"
+        ),
+        .binaryTarget(
+            name: "FLAC",
+            path: "Tools/encoders/Vendored/FLAC.xcframework"
+        ),
+        .target(
+            name: "VoxglassEncoders",
+            dependencies: ["VoxglassCore", "Lame", "FLAC"],
+            path: "Voxglass/Core/Encoders",
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .target(
             name: "VoxglassCoreTestSupport",
@@ -65,7 +81,7 @@ let package = Package(
         ),
         .testTarget(
             name: "VoxglassCoreTests",
-            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport"],
+            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders"],
             path: "VoxglassTests",
             exclude: ["Info.plist", "Performance"],
             resources: [.copy("Fixtures/ReplayGain")],

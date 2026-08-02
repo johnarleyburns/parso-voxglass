@@ -217,10 +217,97 @@ public enum ProjectFixtures {
         )
     }
 
+    /// A project that passes LibriVox validation with zero blocking issues:
+    /// valid metadata and attested public-domain rights, every paragraph
+    /// recorded with clean human takes, and recorded LibriVox disclaimers
+    /// (intro + outro) matching the current `LibriVoxScriptGenerator` plan.
+    /// This is the fixture the S8 export end-to-end acceptance (§20 S8) runs
+    /// through the real transcoder.
+    public static func librivoxReady() -> AudiobookProject {
+        let ids = SequentialIDGenerator()
+        let clock = FixedClock()
+
+        let metadata = BookMetadata(
+            title: "Ready Book",
+            author: "Ready Author",
+            narrator: "Ready Narrator",
+            language: "en-US",
+            description: "A book ready to export to LibriVox.",
+            copyrightYear: 2026
+        )
+        let rights = RightsEvidence(
+            basis: .publicDomainUS,
+            sourceURL: URL(string: "https://www.gutenberg.org/ebooks/1"),
+            editionYear: 1926,
+            attestedAt: clock.now,
+            attestedBy: "Ready Narrator"
+        )
+
+        var chapters: [ProductionChapter] = []
+        for i in 0..<3 {
+            let chapterID = ids.next()
+            var paragraphs: [Paragraph] = []
+            for j in 0..<4 {
+                paragraphs.append(recordedBodyParagraph(
+                    "Paragraph \(j + 1) of Chapter \(i + 1). This is a recordable body paragraph with a human take.",
+                    ordinal: j,
+                    chapterID: chapterID,
+                    ids: ids,
+                    clock: clock
+                ))
+            }
+            chapters.append(ProductionChapter(
+                id: chapterID, ordinal: i, title: "Chapter \(i + 1)", role: .body, paragraphs: paragraphs
+            ))
+        }
+
+        let base = AudiobookProject(
+            id: ids.next(),
+            metadata: metadata,
+            rights: rights,
+            chapters: chapters,
+            createdAt: clock.now,
+            modifiedAt: clock.now
+        )
+
+        // Apply the exact LibriVox disclaimer plan so the engine's
+        // staleDisclaimerText / missingDisclaimerParagraph rules pass.
+        let plan = LibriVoxScriptGenerator().plan(for: base)
+        var finalChapters = base.chapters
+        for index in finalChapters.indices {
+            let chapter = finalChapters[index]
+            var paragraphs = chapter.paragraphs
+            if let introText = plan.chapterIntros[chapter.id] {
+                paragraphs.insert(
+                    recordedBodyParagraph(introText, ordinal: 0, chapterID: chapter.id, role: .libriVoxIntro, ids: ids, clock: clock),
+                    at: 0
+                )
+            }
+            if let outroText = plan.chapterOutros[chapter.id] {
+                paragraphs.append(
+                    recordedBodyParagraph(outroText, ordinal: paragraphs.count, chapterID: chapter.id, role: .libriVoxOutro, ids: ids, clock: clock)
+                )
+            }
+            for p in paragraphs.indices { paragraphs[p].ordinal = p }
+            finalChapters[index] = ProductionChapter(
+                id: chapter.id, ordinal: chapter.ordinal, title: chapter.title, role: chapter.role,
+                paragraphs: paragraphs
+            )
+        }
+
+        return AudiobookProject(
+            id: base.id,
+            metadata: metadata,
+            rights: rights,
+            chapters: finalChapters,
+            createdAt: clock.now,
+            modifiedAt: clock.now
+        )
+    }
+
     // MARK: - Helpers
 
-    private static func makeChapter(
-        ordinal: Int,
+    private static func makeChapter(        ordinal: Int,
         title: String,
         paraCount: Int,
         role: ChapterRole,
@@ -275,5 +362,64 @@ public enum ProjectFixtures {
         }
 
         return ProductionChapter(id: chapterID, ordinal: ordinal, title: title, role: role, paragraphs: paragraphs)
+    }
+
+    /// A body or scripted-synthetic paragraph with a recorded human take at
+    /// 44.1 kHz mono and clean metrics, so the fixture passes LibriVox/retail
+    /// audio rules with no blocking issues.
+    private static func recordedBodyParagraph(
+        _ text: String,
+        ordinal: Int,
+        chapterID: UUID,
+        role: ParagraphRole = .body,
+        ids: SequentialIDGenerator,
+        clock: FixedClock
+    ) -> Paragraph {
+        let pID = ids.next()
+        let takeID = ids.next()
+        let hash = SHA256Hex.hex(Data(text.utf8))
+        let assetRef = AudioAssetReference(
+            sha256: SHA256Hex.hex(Data("\(text)-take".utf8)),
+            relativePath: "Audio/Original/xx/yy/\(ordinal).wav",
+            byteCount: 100_000,
+            contentType: "public.wav"
+        )
+        let metrics = AudioQualityMetrics(
+            peakDBFS: -3,
+            truePeakDBFS: -3.5,
+            rmsDBFS: -20,
+            noiseFloorDBFS: -65,
+            noiseFloorReliable: true,
+            replayGainDB: 0,
+            clipCount: 0,
+            dcOffset: 0,
+            leadingSilence: 0.1,
+            trailingSilence: 0.2,
+            duration: 5,
+            sampleRate: 44_100,
+            channels: 1,
+            computedAt: clock.now,
+            analyzerVersion: AudioMetricsCalculator.analyzerVersion
+        )
+        let take = Take(
+            id: takeID,
+            paragraphID: pID,
+            assetRef: assetRef,
+            origin: .recorded,
+            recordedAt: clock.now,
+            duration: 5,
+            format: AudioFormatDescription(sampleRate: 44_100, channels: 1, bitDepth: 24, codec: "pcm"),
+            metrics: metrics,
+            textHashAtRecording: hash
+        )
+        return Paragraph(
+            id: pID,
+            ordinal: ordinal,
+            text: text,
+            textHash: hash,
+            role: role,
+            takes: [take],
+            selectedTakeID: takeID
+        )
     }
 }
