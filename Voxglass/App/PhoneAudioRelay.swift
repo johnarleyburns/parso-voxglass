@@ -15,6 +15,16 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     private weak var libraryStore: LibraryStore?
     private weak var playbackCoordinator: PlaybackCoordinator?
 
+    /// The production relay transport. `WCSession` permits a single delegate, which
+    /// this relay owns; incoming production messages (review events, refresh
+    /// requests) are forwarded here so the watch's offline actions reach the Mac.
+    weak var productionTransport: WatchConnectivityTransport?
+
+    func registerProductionTransport(_ transport: WatchConnectivityTransport) {
+        productionTransport = transport
+        transport.updateReachability(reachable: isReachable, activated: session.activationState == .activated)
+    }
+
     override init() {
         client = InternetArchiveClient()
         guard WCSession.isSupported() else {
@@ -208,6 +218,14 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         )
     }
 
+    /// Routes a production-relay message (review event, refresh request) to the
+    /// registered transport. Consumer messages are untouched.
+    @MainActor
+    private func forwardProduction(_ message: [String: Any]) {
+        guard let transport = productionTransport else { return }
+        transport.handleIncoming(message)
+    }
+
     private func handleReceivedMessageWithoutReply(_ message: [String: Any]) async {
         guard let action = message["action"] as? String else { return }
         switch action {
@@ -247,6 +265,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
         Task { @MainActor in
             isReachable = session.isReachable
             isWatchAppInstalled = session.isWatchAppInstalled
+            productionTransport?.updateReachability(reachable: session.isReachable, activated: activationState == .activated)
             await publishLibrarySnapshot()
         }
     }
@@ -260,6 +279,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in
             isReachable = session.isReachable
+            productionTransport?.updateReachability(reachable: session.isReachable, activated: session.activationState == .activated)
             if session.isReachable {
                 await publishLibrarySnapshot()
             }
@@ -271,7 +291,17 @@ extension PhoneAudioRelay: WCSessionDelegate {
         didReceiveMessage message: [String: Any]
     ) {
         Task { @MainActor in
+            forwardProduction(message)
             await handleReceivedMessageWithoutReply(message)
+        }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveUserInfo userInfo: [String: Any]
+    ) {
+        Task { @MainActor in
+            forwardProduction(userInfo)
         }
     }
 
@@ -280,6 +310,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
         didReceiveApplicationContext applicationContext: [String: Any]
     ) {
         Task { @MainActor in
+            forwardProduction(applicationContext)
             if WatchPhoneMessageCodec.action(from: applicationContext) == WatchPhoneAction.reportWatchStorage,
                let snapshot = try? WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: applicationContext) {
                 applyWatchStorageSnapshot(snapshot)
@@ -293,6 +324,12 @@ extension PhoneAudioRelay: WCSessionDelegate {
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
         Task { @MainActor in
+            if WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.requestRefresh {
+                // The watch asked the phone to re-push its projection; acknowledge.
+                forwardProduction(message)
+                replyHandler(["received": true])
+                return
+            }
             replyHandler(await reply(for: message))
         }
     }

@@ -50,6 +50,7 @@
 		2A9284E0EA45D385B11B292B /* WatchParagraphTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30DE6AF51C130B8745DA2345 /* WatchParagraphTextView.swift */; };
 		2BA88E35A6E580D7FDE04127 /* ProductionCarPlayRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E78CE200BE688B70B10C8ACC /* ProductionCarPlayRenderer.swift */; };
 		2BF42FAECA7D703D09AD3BE2 /* penguin_island_ms_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6E0713144FB8D6284CDDBE78 /* penguin_island_ms_librivox.jpg */; };
+		2C2E08B90C9BCF92211C7D2E /* PhoneProductionEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */; };
 		2DD834B48187140D085AC6B3 /* RecordingMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F5BF4CB1FE2B80D48D1347 /* RecordingMeter.swift */; };
 		2ECFF65697F24826FB305EC7 /* 12_creepytales_1206_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 95933760B74CDDA0DF861AD9 /* 12_creepytales_1206_librivox.jpg */; };
 		3033A4EB6B56EC2D70ABCDFB /* BookPageOverflowSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */; };
@@ -206,6 +207,7 @@
 		C2E58CF0D325808D06BA604B /* wizard_of_oz.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B7B41CFE2DB33DDCA5488BAB /* wizard_of_oz.jpg */; };
 		C377A5DA921F3AB7A15B0623 /* andersens_fairytales_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2CD52D45D1EC2B1B4C8D2A32 /* andersens_fairytales_librivox.jpg */; };
 		C45EF208CB11E140103D4FDC /* great_expectations_mfs_0812_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 348FE56BD340B5F368EB305A /* great_expectations_mfs_0812_librivox.jpg */; };
+		C7394209E512C5C9C0FCA27E /* WatchConnectivityTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */; };
 		C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6031F6F3B50C0C1657E73466 /* ObservationSubscription.swift */; };
 		C8DB058328B566CB1C27B916 /* dracula_1006_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 30D528330E6ECF511FDDDD5B /* dracula_1006_librivox.jpg */; };
 		CA2A1792CB20AA7AB12A6A33 /* RecordingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEC8AEC3FFAD8271A797212 /* RecordingModel.swift */; };
@@ -413,6 +415,7 @@
 		41ABB6A40594A5A76F1D0400 /* adventuressherlockholmes_v4_1501_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventuressherlockholmes_v4_1501_librivox.jpg; sourceTree = "<group>"; };
 		420E11400AB1535B94D3D0B5 /* GlassDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDock.swift; sourceTree = "<group>"; };
 		44231284CDB43599037F673E /* MPEG4Writer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPEG4Writer.swift; sourceTree = "<group>"; };
+		443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityTransport.swift; sourceTree = "<group>"; };
 		446298FA2910316179E29ECB /* moby_dick_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = moby_dick_librivox.jpg; sourceTree = "<group>"; };
 		448E8B1340B985F0C62F1958 /* ProductionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionsListView.swift; sourceTree = "<group>"; };
 		45A607753DCA596271DC8EC7 /* beowulf.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beowulf.jpg; sourceTree = "<group>"; };
@@ -570,6 +573,7 @@
 		DEE9B3B92053ACFF7C31CADE /* VoxglassStudio-release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "VoxglassStudio-release.entitlements"; sourceTree = "<group>"; };
 		DFB26A7DF361B7DB10762794 /* ThirdPartyNotices.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ThirdPartyNotices.md; sourceTree = "<group>"; };
 		DFC7CC31B75AFFA7E01FC2D5 /* AutosaveRecoveryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveRecoveryModel.swift; sourceTree = "<group>"; };
+		E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionEnvironment.swift; sourceTree = "<group>"; };
 		E27CA265F0603F339331C4A6 /* Voxglass-release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Voxglass-release.entitlements"; sourceTree = "<group>"; };
 		E472AB68F0B05BC2B6D85E9F /* WatchListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListeningView.swift; sourceTree = "<group>"; };
 		E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassTheme.swift; sourceTree = "<group>"; };
@@ -890,10 +894,12 @@
 		588814AB95EACD4D81EDD11F /* Production */ = {
 			isa = PBXGroup;
 			children = (
+				E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */,
 				503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */,
 				F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */,
 				5691CFA693DFE224A476BCEC /* ProductionPreviewStore.swift */,
 				61E847AE08C9D96DEA828D08 /* ProductionViews.swift */,
+				443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */,
 			);
 			path = Production;
 			sourceTree = "<group>";
@@ -1794,6 +1800,7 @@
 				C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */,
 				CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */,
 				E4D272BAADB2E5D3B087D9DB /* PhoneAudioRelay.swift in Sources */,
+				2C2E08B90C9BCF92211C7D2E /* PhoneProductionEnvironment.swift in Sources */,
 				1F13275BAA7575015FAB1589 /* PhoneProductionSync.swift in Sources */,
 				307531D63A9AD0EB05D94E43 /* PlaylistsView.swift in Sources */,
 				26C9EE1831A340B02F72CD5C /* ProductionCarPlayPhoneSupport.swift in Sources */,
@@ -1814,6 +1821,7 @@
 				146A11873D483EDE4293F89F /* VoxglassApp.swift in Sources */,
 				EFF52894E7D8920360E5F5F9 /* VoxglassComponents.swift in Sources */,
 				713811C821F808FF77A38F59 /* VoxglassTheme.swift in Sources */,
+				C7394209E512C5C9C0FCA27E /* WatchConnectivityTransport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

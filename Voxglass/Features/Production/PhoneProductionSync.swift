@@ -7,6 +7,11 @@ import VoxglassCore
 /// the local review-event outbox (with the §13.7 retry policy), and exposes sync
 /// status for the Production Sync & Storage screen. The phone is a consumer only —
 /// it never writes projection records.
+///
+/// The CloudKit transport stack is created lazily on first sync use: constructing
+/// `CKContainer` traps in an unentitled test process, and this coordinator is also
+/// created by the app's production environment in contexts that never touch
+/// CloudKit (mirrors `StudioProjectionCoordinator`).
 @MainActor
 @Observable
 public final class PhoneProductionSync {
@@ -18,20 +23,28 @@ public final class PhoneProductionSync {
     public private(set) var pendingOutboxCount = 0
     public private(set) var isChecking = false
 
-    private let transport: CloudKitProductionSync
-    private let engine: ProductionSyncEngine
+    /// Called after a successful pull and outbox flush so the app can relay the
+    /// freshly applied projection down to the watch (§13.6).
+    public var onProjectionsUpdated: (() -> Void)?
+
+    @ObservationIgnored private var core: PhoneSyncCore?
     private let previewStore: ProductionPreviewStore
     private let outbox: ReviewEventOutbox
 
     public init(previewStore: ProductionPreviewStore) {
         self.previewStore = previewStore
-        self.transport = CloudKitProductionSync()
-        self.engine = ProductionSyncEngine(transport: transport, state: DefaultsSyncStateStore())
         let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         self.outbox = ReviewEventOutbox(
             storage: FileWatchOutboxStorage(directory: directory.appendingPathComponent("ProductionOutbox", isDirectory: true))
         )
+    }
+
+    private var syncCore: PhoneSyncCore {
+        if let core { return core }
+        let newCore = PhoneSyncCore()
+        core = newCore
+        return newCore
     }
 
     /// Enqueues a review action for push to the Mac. Safe to call offline; events
@@ -50,7 +63,7 @@ public final class PhoneProductionSync {
         isChecking = true
         defer { isChecking = false }
 
-        accountStatus = await transport.accountStatus()
+        accountStatus = await syncCore.transport.accountStatus()
         guard accountStatus == .available else {
             if accountStatus == .notAuthenticated {
                 syncError = "Sign in to iCloud to preview on your devices."
@@ -59,8 +72,8 @@ public final class PhoneProductionSync {
         }
 
         do {
-            try await transport.ensureSubscription()
-            let report = try await engine.pump()
+            await syncCore.transport.ensureSubscription()
+            let report = try await syncCore.engine.pump()
 
             if let projection = report.projection {
                 await previewStore.apply(projection)
@@ -70,10 +83,11 @@ public final class PhoneProductionSync {
                 }
             }
 
-            _ = try await outbox.flush(over: engine)
+            _ = try await outbox.flush(over: syncCore.engine)
             refreshPendingCount()
             lastSyncDate = Date()
             syncError = nil
+            onProjectionsUpdated?()
         } catch {
             syncError = error.localizedDescription
         }
@@ -86,5 +100,20 @@ public final class PhoneProductionSync {
         // Proxies arrive with the projection fetch; nothing additional to do here.
         _ = paragraphIDs
         _ = projectID
+    }
+}
+
+/// The lazily-created CloudKit stack: transport and engine. Built only when the
+/// first sync operation runs, so app processes that never sync (UI smoke tests,
+/// hosted scene tests) never touch `CKContainer`.
+private final class PhoneSyncCore: @unchecked Sendable {
+    let transport: CloudKitProductionSync
+    let engine: ProductionSyncEngine
+
+    init() {
+        let transport = CloudKitProductionSync()
+        self.transport = transport
+        let state = DefaultsSyncStateStore()
+        self.engine = ProductionSyncEngine(transport: transport, state: state)
     }
 }
