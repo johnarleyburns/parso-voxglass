@@ -91,6 +91,12 @@ public final class StudioEnvironment {
         navigationPath = [.dashboard]
     }
 
+    /// Replace the in-memory project after an editor (e.g. Metadata & Rights)
+    /// commits a change, without navigating away.
+    public func updateProject(_ project: AudiobookProject) {
+        currentProject = project
+    }
+
     /// A fresh `FileAssetStore` rooted at the open package, or a temp dir when
     /// no package is open (tests).
     public func assetStoreForCurrentProject() -> any ContentAddressedStore {
@@ -112,6 +118,8 @@ public enum StudioRoute: Sendable, Equatable, Hashable {
     case record
     case review
     case assembly
+    case metadata
+    case validate
     case export
     case settings
 }

@@ -69,6 +69,20 @@ public struct ProjectDashboardView: View {
                     .keyboardShortcut("r", modifiers: .command)
                     .disabled(model.recordNext == nil)
                     .accessibilityIdentifier("dashboard.recordNext")
+
+                    Button {
+                        env.navigate(to: .metadata)
+                    } label: {
+                        Label("Metadata", systemImage: "doc.text")
+                    }
+                    .accessibilityIdentifier("dashboard.metadata")
+
+                    Button {
+                        env.navigate(to: .validate)
+                    } label: {
+                        Label("Validate", systemImage: "checkmark.seal")
+                    }
+                    .accessibilityIdentifier("dashboard.validate")
                 }
             }
         }
