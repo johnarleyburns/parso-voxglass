@@ -7,8 +7,6 @@
 		<dict>
 			<key>BinaryPath</key>
 			<string>FLAC.framework/FLAC</string>
-			<key>HeadersPath</key>
-			<string>FLAC.framework/Headers</string>
 			<key>LibraryIdentifier</key>
 			<string>macos-arm64_x86_64</string>
 			<key>LibraryPath</key>

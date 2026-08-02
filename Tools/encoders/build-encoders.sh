@@ -73,8 +73,16 @@ make_lame() {
     cp -R "$src" "$work"
     (
       cd "$work"
+      # --host for x86_64 is REQUIRED: configure derives host_cpu from the
+      # *build machine* (arm64 here), and LAME gates its SSE/vector code on
+      # `case $host_cpu in x86_64|amd64`. Without it, HAVE_XMMINTRIN_H is
+      # defined in quantize.c but xmm_quantize_sub.c is never built, producing
+      # an archive with an undefined `init_xrpow_core_sse` that fails to link.
+      local host_arg=""
+      [ "$arch" = "x86_64" ] && host_arg="--host=x86_64-apple-darwin"
       ./configure $flags \
         --prefix="$work/prefix" \
+        $host_arg \
         CFLAGS="-arch $arch -mmacosx-version-min=$MIN_MACOS -O2" \
         LDFLAGS="-arch $arch" >/dev/null
       make -j"$(sysctl -n hw.ncpu)" >/dev/null
@@ -102,8 +110,11 @@ make_flac() {
     cp -R "$src" "$work"
     (
       cd "$work"
+      local host_arg=""
+      [ "$arch" = "x86_64" ] && host_arg="--host=x86_64-apple-darwin"
       ./configure $flags \
         --prefix="$work/prefix" \
+        $host_arg \
         CFLAGS="-arch $arch -mmacosx-version-min=$MIN_MACOS -O2" \
         LDFLAGS="-arch $arch" >/dev/null
       make -j"$(sysctl -n hw.ncpu)" >/dev/null
@@ -140,6 +151,9 @@ MODULE
   rm -rf "$xcfw"
   mkdir -p "$xcfw"
   cp -R "$TMP/$name/macos-arm64_x86_64" "$xcfw/"
+  # NOTE: do NOT emit a HeadersPath for a 'framework' slice — Xcode 26 rejects
+  # it ("'HeadersPath' is not supported for a 'framework'"); headers are found
+  # inside the framework slice's Headers/ dir via the module.modulemap.
   cat > "$xcfw/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -150,8 +164,6 @@ MODULE
 		<dict>
 			<key>BinaryPath</key>
 			<string>$name.framework/$name</string>
-			<key>HeadersPath</key>
-			<string>$name.framework/Headers</string>
 			<key>LibraryIdentifier</key>
 			<string>macos-arm64_x86_64</string>
 			<key>LibraryPath</key>

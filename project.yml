@@ -151,7 +151,10 @@ targets:
           - Resources/VoxglassStudio.entitlements
     dependencies:
       - package: VoxglassCore
+      - package: VoxglassCore
+        product: VoxglassEncoders
       - sdk: AVFoundation.framework
+      - sdk: StoreKit.framework
       - sdk: libsqlite3.tbd
     info:
       path: VoxglassStudio/Resources/Info.plist
@@ -257,3 +260,4 @@ schemes:
       gatherCoverageData: true
       targets:
         - VoxglassStudioUITests
+    storeKitConfiguration: VoxglassStudio/Resources/VoxglassStudio.storekit

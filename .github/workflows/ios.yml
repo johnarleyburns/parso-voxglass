@@ -102,6 +102,9 @@ jobs:
       - name: Run wiring guards
         run: bash scripts/guard_wiring.sh
 
+      - name: Run production feature guards (G-1..G-12)
+        run: bash scripts/guard_production.sh
+
       - name: Guard runtime network endpoints
         run: |
           set -euo pipefail

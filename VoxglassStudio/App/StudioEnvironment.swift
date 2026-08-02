@@ -16,6 +16,12 @@ public final class StudioEnvironment {
     public var assets: (any ContentAddressedStore)?
     public var recoveryModel: AutosaveRecoveryModel?
 
+    /// The one place entitlement is consulted for the app (§17.5). Only
+    /// `Export*`/`Settings*` code and this file reference it (CI gate G-2).
+    public let license: LicenseGate
+
+    public var settings: SettingsModel
+
     public var showAutosaveRecovery: Bool {
         recoveryModel != nil && recoveryPackageRoot != nil
     }
@@ -41,11 +47,13 @@ public final class StudioEnvironment {
         store: any ProductionStore = InMemoryProductionStore(),
         recents: RecentsStore = RecentsStore(),
         isTestEnvironment: Bool = false,
-        seed: UITestSeed? = nil
+        seed: UITestSeed? = nil,
+        licenseProvider: any LicenseProvider = StaticLicenseProvider()
     ) {
         self.store = store
         self.recents = recents
         self.isTestEnvironment = isTestEnvironment
+        self.license = LicenseGate(provider: licenseProvider)
         let library = ProjectLibraryModel(
             store: store,
             recents: recents,
@@ -53,6 +61,7 @@ public final class StudioEnvironment {
             isTestEnvironment: isTestEnvironment
         )
         self.library = library
+        self.settings = SettingsModel(gate: LicenseGate(provider: licenseProvider))
         library.onProjectOpened = { [weak self] project, openedStore in
             guard let self else { return }
             self.store = openedStore

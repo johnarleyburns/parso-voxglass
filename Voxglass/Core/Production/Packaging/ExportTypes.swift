@@ -4,7 +4,7 @@ import Foundation
 
 /// Which chapters the export covers (§16.11 step 1). LibriVox's actual
 /// workflow posts one section at a time, so single-chapter export is required.
-public enum ExportScope: Sendable, Equatable {
+public enum ExportScope: Sendable, Equatable, Hashable {
     case wholeBook
     case chapters([UUID])
 }

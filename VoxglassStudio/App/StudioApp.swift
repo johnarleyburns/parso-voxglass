@@ -1,9 +1,10 @@
 import SwiftUI
 import VoxglassCore
+import VoxglassEncoders
 
 @main
 struct StudioApp: App {
-    @State private var environment = StudioEnvironment()
+    @State private var environment = StudioEnvironment(licenseProvider: StoreKitLicenseProvider())
 
     var body: some Scene {
         WindowGroup {
@@ -85,8 +86,24 @@ struct StudioApp: App {
                             } else {
                                 PlaceholderView(route: route)
                             }
-                        case .export, .settings:
-                            PlaceholderView(route: route)
+                        case .export:
+                            if let project = environment.currentProject {
+                                let assets = environment.assetStoreForCurrentProject()
+                                let exportsRoot = environment.currentPackageRoot?
+                                    .appendingPathComponent("Exports", isDirectory: true)
+                                ExportWizardView(model: ExportModel(
+                                    project: project,
+                                    assets: assets,
+                                    renderer: AVChapterRenderer(assets: assets),
+                                    transcoder: VoxTranscoder(),
+                                    gate: environment.license,
+                                    outputRoot: exportsRoot
+                                ))
+                            } else {
+                                PlaceholderView(route: route)
+                            }
+                        case .settings:
+                            SettingsView(model: environment.settings)
                         case .takeCompare:
                             if let project = environment.currentProject {
                                 let paragraphsWithTakes = project.allParagraphs.filter { !$0.takes.isEmpty }
