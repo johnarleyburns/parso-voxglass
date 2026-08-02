@@ -81,8 +81,12 @@ jobs:
           sudo xcode-select -s /Applications/$XCODE
           xcodebuild -version
 
-      - name: Run all Swift Testing suites (parallel, except timing)
-        run: swift test --skip VoxglassPerformanceTests
+      # All suites run serially: `swift test` parallelizes test targets by
+      # default, and load-sensitive suites (playback seek timing, performance
+      # budgets, audio metrics) produce false failures under runner CPU
+      # contention. Serialized until the flaky suites are made load-independent.
+      - name: Run all Swift Testing suites (serial)
+        run: swift test --no-parallel --skip VoxglassPerformanceTests
 
       # Timing budgets are gated behind VOXGLASS_TIMING_TESTS (see
       # VoxglassTests/Performance/PerformanceBudgetTests.swift) so they can only run

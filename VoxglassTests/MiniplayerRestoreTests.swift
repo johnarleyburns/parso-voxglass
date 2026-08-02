@@ -8,7 +8,7 @@ import Foundation
 /// on the first play press. Asserted against the `FakeAudioEngine` call log +
 /// a real SQLite position store, following `PlaybackResumeTests`.
 @MainActor
-@Suite struct MiniplayerRestoreTests {
+@Suite(.serialized) struct MiniplayerRestoreTests {
 
     private struct Harness {
         let coordinator: PlaybackCoordinator

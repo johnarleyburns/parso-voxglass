@@ -29,6 +29,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
+trap 'bash "$SCRIPT_DIR/kill_zombie_test_helpers.sh"' EXIT
+
+echo ""
+echo "=== reaping orphaned test helpers from prior runs ==="
+bash "$SCRIPT_DIR/kill_zombie_test_helpers.sh"
+
 # ── Phone smoke test ──────────────────────────────────────────────────────────
 
 echo "=== Voxglass phone smoke test (simulator) ==="

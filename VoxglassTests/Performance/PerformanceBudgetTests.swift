@@ -6,6 +6,11 @@ import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
 @testable import VoxglassStudioKit
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
 
 /// ALL timing-budget tests, consolidated into a single `.serialized` suite so they
 /// can never contend with each other for CPU.
@@ -38,6 +43,21 @@ struct PerformanceBudgetTests {
     /// workloads (both are 10×), plus 20 % margin for fixed overheads.
     private static let linearMargin = 12.0
 
+    /// One sample of the host's one-minute load average vs. active cores, taken
+    /// when the suite is discovered (i.e. just before the run starts). When the
+    /// host is saturated — a noisy CI runner, a shared dev host, leaked test
+    /// processes — every budget test is disabled (reported as skipped) instead
+    /// of false-failing. The threshold is deliberately conservative: ≥ 4 load
+    /// AND > 1.5× the active cores. The 1-minute window also covers the decay
+    /// right after a burst of heavy work.
+    nonisolated static let hostIsQuiet: Bool = {
+        var load = [Double](repeating: 0, count: 3)
+        guard getloadavg(&load, 3) == 3 else { return true }
+        let cores = ProcessInfo.processInfo.activeProcessorCount
+        let threshold = max(4.0, Double(cores) * 1.5)
+        return load[0] <= threshold
+    }()
+
     private func timeAsync(_ body: () async throws -> Void) async rethrows -> Double {
         let start = DispatchTime.now()
         try await body()
@@ -60,7 +80,7 @@ struct PerformanceBudgetTests {
 
     // MARK: - Spec §19.3 / §11.6.9 — audio metrics (30 s < 150 ms)
 
-    @Test func thirtySecondTakeMetricsCompleteUnder150ms() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func thirtySecondTakeMetricsCompleteUnder150ms() async throws {
         let rate = 48000.0
         let long = sine(rate: rate, freq: 440, dur: 30.0, amp: 0.3)
         let short = sine(rate: rate, freq: 440, dur: 3.0, amp: 0.3)
@@ -103,7 +123,7 @@ struct PerformanceBudgetTests {
         return store
     }
 
-    @Test func paragraphSummariesUnder120ms() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func paragraphSummariesUnder120ms() async throws {
         let large = try await onDiskStore(paragraphs: 10_000)
         let small = try await onDiskStore(paragraphs: 1_000)
 
@@ -123,7 +143,7 @@ struct PerformanceBudgetTests {
         #expect(pair.large < 360, "paragraphSummaries took \(pair.large) ms, ceiling is 360 ms (3× spec)")
     }
 
-    @Test func countsUnder20ms() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func countsUnder20ms() async throws {
         let large = try await onDiskStore(paragraphs: 10_000)
         let small = try await onDiskStore(paragraphs: 1_000)
         _ = try await large.counts()
@@ -166,7 +186,7 @@ struct PerformanceBudgetTests {
         )
     }
 
-    @Test func tenThousandParagraphReimportUnder2Seconds() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func tenThousandParagraphReimportUnder2Seconds() async throws {
         let large = importDocument(paragraphCount: 10_000)
         let small = importDocument(paragraphCount: 1_000)
 
@@ -217,7 +237,7 @@ struct PerformanceBudgetTests {
         return (existing, incoming)
     }
 
-    @Test func tenThousandParagraphReidentificationUnder8Seconds() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func tenThousandParagraphReidentificationUnder8Seconds() async throws {
         let large = reidentifierFixture(paragraphCount: 10_000)
         let small = reidentifierFixture(paragraphCount: 1_000)
 
@@ -268,7 +288,7 @@ struct PerformanceBudgetTests {
     /// 3× absolute ceiling. S7 acceptance also requires the `typical()` fixture
     /// to be deterministic for all five destinations — that lives in
     /// `ValidationDeterminismTests` (parallel, no clock).
-    @Test func fullValidationOfThreeThousandParagraphs() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func fullValidationOfThreeThousandParagraphs() async throws {
         let large = ProjectFixtures.stress(paragraphs: 3_000)
         let small = ProjectFixtures.stress(paragraphs: 300)
 
@@ -307,7 +327,7 @@ struct PerformanceBudgetTests {
     /// This probe pumps a real runloop against wall-clock time, which is why it lives
     /// in the serialized timing suite — under parallel-suite CPU contention the meter
     /// cannot sustain its ~30 Hz cadence.
-    @Test func teleprompterDoesNotInvalidateWhileMeterUpdates() async throws {
+    @Test(.enabled(if: PerformanceBudgetTests.hostIsQuiet)) func teleprompterDoesNotInvalidateWhileMeterUpdates() async throws {
         #if DEBUG
         let capture = FakeAudioCapture()
         capture.takeDuration = 10
