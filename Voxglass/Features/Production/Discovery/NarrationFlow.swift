@@ -40,9 +40,11 @@ final class NarrationFlowModel {
     var currentParagraphID: UUID?
     var capture = AudioSessionCapture()
     var isRecording = false
+    var micPermissionDenied = false
     var level: Float = 0
     var currentTake: NarrationTake?
     var playbackPlayer: AVAudioPlayer?
+    private var levelTask: Task<Void, Never>?
 
     var assembly = AssemblySettings()
     var metadata = NarrationMetadata(narrator: "", language: "English", description: "", subjects: [], sourceURL: "")
@@ -177,6 +179,9 @@ final class NarrationFlowModel {
 
     func startRecordingParagraph(_ id: UUID) async {
         guard let project, let paragraph = paragraph(at: id) else { return }
+        currentParagraphID = id
+        importError = nil
+        micPermissionDenied = false
         let dir = store.takesDirectory(for: project.id)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appendingPathComponent("\(paragraph.id.uuidString).caf")
@@ -185,15 +190,21 @@ final class NarrationFlowModel {
             try await capture.startRecording(to: url)
             isRecording = true
             monitorLevels()
+        } catch let error as CaptureError where error == .permissionDenied {
+            micPermissionDenied = true
+            importError = "Microphone access is blocked. Allow the microphone in Settings → Privacy → Microphone, then try again."
         } catch {
-            importError = "Microphone unavailable."
+            importError = "Couldn't start recording. \(error.localizedDescription)"
         }
     }
 
     func stopRecordingParagraph(_ id: UUID) async {
+        guard isRecording else { return }
         do {
             let take = try await capture.stopRecording()
             isRecording = false
+            levelTask?.cancel()
+            levelTask = nil
             let fileName = "\(id.uuidString).caf"
             let recorded = NarrationTake(fileName: fileName, duration: take.duration, peakDBFS: take.peakDBFS, clipped: take.clippedDuringCapture)
             updateParagraph(id) { paragraph in
@@ -233,7 +244,8 @@ final class NarrationFlowModel {
     // MARK: - Levels
 
     private func monitorLevels() {
-        Task { [weak self] in
+        levelTask?.cancel()
+        levelTask = Task { [weak self] in
             guard let self else { return }
             for await levels in self.capture.levels {
                 self.level = max(levels.peakDBFS, -60)
@@ -248,6 +260,12 @@ final class NarrationFlowModel {
 
     func play(_ id: UUID) {
         guard let url = playbackURL(for: id) else { return }
+        // The capture session is `.record`; take playback needs `.playback`
+        // or the audio is silent. Recording re-enters `.record` on the next
+        // startRecordingParagraph call.
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try? session.setActive(true)
         playbackPlayer = try? AVAudioPlayer(contentsOf: url)
         playbackPlayer?.play()
     }
@@ -384,7 +402,9 @@ struct NarrationExportBundle: Equatable {
 struct NarrationFlowRoot: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppPreferencesStore.Keys.narrationOnboardingSeen) private var narrationOnboardingSeen = false
     @State private var model: NarrationFlowModel
+    @State private var showHelp = false
     let existing: NarrationProject?
     let startNeed: NarrationNeed?
 
@@ -407,6 +427,15 @@ struct NarrationFlowRoot: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showHelp = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .scaledFont(size: 17, weight: .semibold)
+                    }
+                    .accessibilityIdentifier("narration.help")
+                }
             }
         }
         .task {
@@ -414,10 +443,95 @@ struct NarrationFlowRoot: View {
                 model.importNeed(startNeed)
                 model.buildParagraphs()
             }
+            if !narrationOnboardingSeen {
+                narrationOnboardingSeen = true
+                showHelp = true
+            }
+        }
+        .sheet(isPresented: $showHelp) {
+            NarrationHelpSheet()
         }
         .onChange(of: model.project) { _, newProject in
             if let newProject { discovery.save(newProject) }
         }
+    }
+}
+
+/// First-run popup + persistent help: a brief walkthrough of the narration
+/// flow. Shown once automatically, and again any time from the help button.
+struct NarrationHelpSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Recording your narration")
+                            .scaledFont(size: 22, weight: .heavy)
+                            .foregroundStyle(Palette.ink)
+                        Text("Read each paragraph aloud, one at a time. Your takes stay on this device until you finish the checklist.")
+                            .scaledFont(size: 13)
+                            .foregroundStyle(Palette.ink2)
+                    }
+
+                    step(1, "Tap the record button and read the paragraph on screen.", icon: "record.circle")
+                    step(2, "Tap stop when you're done. The take appears below the transport.", icon: "stop.fill")
+                    step(3, "Listen back with play. Tap \"Accept & Next\" to move on, or flag a paragraph to re-record it later.", icon: "checkmark.circle.fill")
+                    step(4, "After the last paragraph, review the list, add title and rights, and produce your files.", icon: "list.bullet")
+                    step(5, "Encoding to MP3/FLAC happens in Voxglass Studio on your Mac — your takes carry over with the project.", icon: "desktopcomputer")
+
+                    Text("If a recording doesn't start, check that the microphone is allowed in Settings → Privacy → Microphone.")
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.ink3)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Got it")
+                            .scaledFont(size: 15, weight: .heavy)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
+                            .foregroundStyle(Color(hex: 0x21170B))
+                    }
+                    .buttonStyle(.plain)
+                    .tactileTap()
+                    .accessibilityIdentifier("narration.helpSheet.dismiss")
+                }
+                .padding(18)
+            }
+            .background(VoxglassBackground())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .accessibilityIdentifier("narration.helpSheet")
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func step(_ number: Int, _ text: String, icon: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Palette.brass.opacity(0.14))
+                Image(systemName: icon)
+                    .scaledFont(size: 14, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+            }
+            .frame(width: 32, height: 32)
+            Text(LocalizedStringKey(text))
+                .scaledFont(size: 13.5)
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 4)
+        }
+        .padding(12)
+        .glassSurface(cornerRadius: 14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.hairline, lineWidth: 1))
     }
 }
 

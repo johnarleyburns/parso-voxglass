@@ -26,6 +26,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     private var recordFile: AVAudioFile?
     private var recordURL: URL?
     private var recordFormat: RecordingDefaults?
+    private var activeFormat: AVAudioFormat?
     private var sampleCount: UInt64 = 0
     private var peak: Float = 0
     private var clipped = false
@@ -42,10 +43,9 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     public func prepare(device: String?, format: RecordingDefaults) async throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .spokenAudio, options: [.allowBluetoothHFP, .duckOthers])
-        try session.setPreferredSampleRate(format.sampleRate)
-        try session.setActive(true)
 
+        // Ask for permission before touching the session so a denial is
+        // reported cleanly instead of surfacing as a session/engine error.
         let granted = await withCheckedContinuation { continuation in
             session.requestRecordPermission { granted in
                 continuation.resume(returning: granted)
@@ -55,6 +55,10 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
             state = .failed("Microphone access denied")
             throw CaptureError.permissionDenied
         }
+
+        try session.setCategory(.record, mode: .spokenAudio, options: [.allowBluetoothHFP, .duckOthers])
+        try session.setPreferredSampleRate(format.sampleRate)
+        try session.setActive(true)
 
         recordFormat = format
         installTapIfNeeded()
@@ -79,21 +83,40 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     public func startRecording(to destinationURL: URL) async throws {
         guard state == .prepared || state == .monitoring else { throw CaptureError.invalidState }
 
-        let fmt = recordFormat ?? RecordingDefaults()
-        guard let avFormat = makeFloatFormat(sampleRate: fmt.sampleRate) else {
-            throw CaptureError.formatNotSupported
-        }
+        // Write in the input node's ACTUAL format: the hardware sample rate
+        // (often 48 kHz even when 44.1 kHz was preferred) is what the tap
+        // delivers, and writing those buffers to a file declared at a
+        // different rate silently fails or produces an empty/corrupt take.
+        let writeFormat = tapFormat()
+            ?? makeFloatFormat(sampleRate: recordFormat?.sampleRate ?? 48_000)
+        guard let writeFormat else { throw CaptureError.formatNotSupported }
 
-        let file = try AVAudioFile(forWriting: destinationURL, settings: avFormat.settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+        let file = try AVAudioFile(
+            forWriting: destinationURL,
+            settings: writeFormat.settings,
+            commonFormat: writeFormat.commonFormat,
+            interleaved: writeFormat.isInterleaved
+        )
         lock.withLock {
             recordURL = destinationURL
             recordFile = file
+            activeFormat = writeFormat
             sampleCount = 0
             peak = 0
             clipped = false
         }
 
-        if !engine.isRunning { try engine.start() }
+        do {
+            if !engine.isRunning { try engine.start() }
+        } catch {
+            lock.withLock {
+                recordFile = nil
+                recordURL = nil
+                activeFormat = nil
+            }
+            try? FileManager.default.removeItem(at: destinationURL)
+            throw error
+        }
         state = .recording
         startLevelPolling()
     }
@@ -103,10 +126,11 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         engine.pause()
         stopLevelPolling()
 
-        let captured: (url: URL?, format: RecordingDefaults?, sampleCount: UInt64, peak: Float, clipped: Bool) = lock.withLock {
-            let result = (recordURL, recordFormat, sampleCount, peak, clipped)
+        let captured: (url: URL?, format: AVAudioFormat?, sampleCount: UInt64, peak: Float, clipped: Bool) = lock.withLock {
+            let result = (recordURL, activeFormat, sampleCount, peak, clipped)
             recordFile = nil
             recordURL = nil
+            activeFormat = nil
             return result
         }
 
@@ -121,7 +145,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         return CapturedTake(
             fileURL: url,
             duration: duration,
-            format: AudioFormatDescription(sampleRate: format.sampleRate, channels: 1, bitDepth: format.bitDepth, codec: "pcm"),
+            format: AudioFormatDescription(sampleRate: format.sampleRate, channels: Int(format.channelCount), bitDepth: 24, codec: "pcm"),
             clippedDuringCapture: captured.clipped,
             peakDBFS: peakDBFS
         )
@@ -134,6 +158,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
             if let url = recordURL { try? FileManager.default.removeItem(at: url) }
             recordFile = nil
             recordURL = nil
+            activeFormat = nil
             sampleCount = 0
         }
         state = .idle
@@ -145,10 +170,20 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     // MARK: - Engine
 
+    /// The format the input tap is installed with, or nil if unavailable.
+    /// Uses the input node's hardware format so the tap and the written file
+    /// can never disagree about sample rate or channel count.
+    private func tapFormat() -> AVAudioFormat? {
+        let format = engine.inputNode.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else { return nil }
+        return format
+    }
+
     private func installTapIfNeeded() {
         guard !tapInstalled else { return }
         let input = engine.inputNode
-        input.installTap(onBus: 0, bufferSize: 4096, format: input.outputFormat(forBus: 0)) { [weak self] buffer, _ in
+        let format = tapFormat() ?? makeFloatFormat(sampleRate: 48_000)
+        input.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
             self?.process(buffer)
         }
         tapInstalled = true
@@ -179,7 +214,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
             return true
         }
 
-        let fmt = lock.withLock { recordFormat }
+        let fmt = lock.withLock { activeFormat }
         let sampleTime = fmt.map { Double(lock.withLock { sampleCount }) / $0.sampleRate } ?? 0
         lock.withLock {
             for c in levelContinuations.values {

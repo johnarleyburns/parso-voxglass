@@ -116,13 +116,25 @@ struct SourceReviewView: View {
 struct RecordView: View {
     @Bindable var model: NarrationFlowModel
     let paragraphID: UUID
+    /// True when this view was pushed from the paragraph list (re-record),
+    /// so finishing the last paragraph pops back to the list instead of
+    /// advancing.
+    let fromReview: Bool
 
-    @State private var nextID: UUID?
+    @Environment(\.dismiss) private var dismiss
+    @State private var navigateToReview = false
+
+    init(model: NarrationFlowModel, paragraphID: UUID, fromReview: Bool = false) {
+        self.model = model
+        self.paragraphID = paragraphID
+        self.fromReview = fromReview
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            if let paragraph = model.paragraph(at: paragraphID) {
+            if let paragraph = model.paragraph(at: currentParagraphID) {
                 teleprompter(paragraph)
+                errorCard
                 recordingBar
                 transport
                 takesRow(paragraph)
@@ -133,15 +145,21 @@ struct RecordView: View {
         }
         .padding(18)
         .background(VoxglassBackground())
-        .navigationDestination(item: $nextID) { id in
-            RecordView(model: model, paragraphID: id)
-        }
         .onDisappear {
             if model.isRecording {
-                Task { await model.stopRecordingParagraph(paragraphID) }
+                Task { await model.stopRecordingParagraph(currentParagraphID) }
             }
         }
+        .navigationDestination(isPresented: $navigateToReview) {
+            ReviewView(model: model)
+        }
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// The paragraph currently shown: advances in place as the user accepts
+    /// paragraphs, so each paragraph does not push a new view onto the stack.
+    private var currentParagraphID: UUID {
+        model.currentParagraphID ?? paragraphID
     }
 
     private func teleprompter(_ paragraph: NarrationParagraph) -> some View {
@@ -169,11 +187,37 @@ struct RecordView: View {
         .accessibilityIdentifier("record.teleprompter")
     }
 
+    @ViewBuilder
+    private var errorCard: some View {
+        if let error = model.importError {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(error)
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Palette.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if model.micPermissionDenied {
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.danger.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Palette.danger.opacity(0.35), lineWidth: 1))
+        }
+    }
+
     private var recordingBar: some View {
         VStack(spacing: 8) {
             if model.isRecording {
                 Text("● REC").scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.danger)
-            } else if let take = model.paragraph(at: paragraphID)?.selectedTake {
+            } else if let take = model.paragraph(at: currentParagraphID)?.selectedTake {
                 Text("Take \(take.duration.formattedShort) · \(String(format: "%.1f", take.peakDBFS ?? -40)) dBFS")
                     .scaledFont(size: 12).foregroundStyle(Palette.ink2)
             }
@@ -199,7 +243,7 @@ struct RecordView: View {
     private var transport: some View {
         HStack(spacing: 20) {
             Button {
-                model.play(paragraphID)
+                model.play(currentParagraphID)
             } label: {
                 Image(systemName: "arrow.uturn.backward.circle.fill").scaledFont(size: 40)
             }
@@ -209,9 +253,9 @@ struct RecordView: View {
             Button {
                 Task {
                     if model.isRecording {
-                        await model.stopRecordingParagraph(paragraphID)
+                        await model.stopRecordingParagraph(currentParagraphID)
                     } else {
-                        await model.startRecordingParagraph(paragraphID)
+                        await model.startRecordingParagraph(currentParagraphID)
                     }
                 }
             } label: {
@@ -222,12 +266,12 @@ struct RecordView: View {
             .accessibilityIdentifier("record.transport.record")
 
             Button {
-                model.play(paragraphID)
+                model.play(currentParagraphID)
             } label: {
                 Image(systemName: "play.circle.fill").scaledFont(size: 40)
             }
             .foregroundStyle(Palette.ink2)
-            .disabled(model.paragraph(at: paragraphID)?.selectedTake == nil)
+            .disabled(model.paragraph(at: currentParagraphID)?.selectedTake == nil)
             .accessibilityIdentifier("record.transport.playTake")
         }
         .padding(.vertical, 10)
@@ -253,9 +297,7 @@ struct RecordView: View {
     private func actions(_ paragraph: NarrationParagraph) -> some View {
         HStack(spacing: 10) {
             Button {
-                if let previous = previousParagraph() {
-                    nextID = previous.id
-                }
+                Task { await goPrevious(from: paragraph) }
             } label: {
                 Text("‹ Back")
                     .scaledFont(size: 13, weight: .bold)
@@ -267,9 +309,7 @@ struct RecordView: View {
             .accessibilityIdentifier("record.previousParagraph")
 
             Button {
-                model.markNotRecorded(paragraph.id)
-                model.updateParagraph(paragraph.id) { $0.state = .flagged }
-                if let next = model.nextParagraph(after: paragraph.id) { nextID = next.id }
+                Task { await goNext(from: paragraph, flag: true) }
             } label: {
                 Image(systemName: "flag")
                     .scaledFont(size: 16, weight: .bold)
@@ -282,13 +322,7 @@ struct RecordView: View {
             .accessibilityIdentifier("record.flagAndNext")
 
             Button {
-                model.acceptParagraph(paragraph.id)
-                if let next = model.nextParagraph(after: paragraph.id) {
-                    nextID = next.id
-                } else {
-                    nextID = nil
-                    navigateToReview = true
-                }
+                Task { await goNext(from: paragraph, flag: false) }
             } label: {
                 Text("Accept & Next ▸")
                     .scaledFont(size: 14, weight: .heavy)
@@ -303,16 +337,44 @@ struct RecordView: View {
             .accessibilityIdentifier("record.acceptAndNext")
         }
         .padding(.top, 8)
-        .navigationDestination(isPresented: $navigateToReview) {
-            ReviewView(model: model)
+    }
+
+    /// Stops any live recording, then either accepts or flags the paragraph
+    /// and advances to the next one IN PLACE — no new view on the stack. The
+    /// last paragraph finishes into the review list (or pops back to it when
+    /// this view was pushed from the list).
+    private func goNext(from paragraph: NarrationParagraph, flag: Bool) async {
+        if model.isRecording {
+            await model.stopRecordingParagraph(paragraph.id)
+        }
+        if flag {
+            model.markNotRecorded(paragraph.id)
+            model.updateParagraph(paragraph.id) { $0.state = .flagged }
+        } else {
+            model.acceptParagraph(paragraph.id)
+        }
+        if let next = model.nextParagraph(after: paragraph.id) {
+            model.currentParagraphID = next.id
+        } else if fromReview {
+            dismiss()
+        } else {
+            model.currentParagraphID = nil
+            navigateToReview = true
         }
     }
 
-    @State private var navigateToReview = false
+    private func goPrevious(from paragraph: NarrationParagraph) async {
+        if model.isRecording {
+            await model.stopRecordingParagraph(paragraph.id)
+        }
+        if let previous = previousParagraph() {
+            model.currentParagraphID = previous.id
+        }
+    }
 
     private func previousParagraph() -> NarrationParagraph? {
         guard let project = model.project,
-              let index = project.paragraphs.firstIndex(where: { $0.id == paragraphID }) else { return nil }
+              let index = project.paragraphs.firstIndex(where: { $0.id == currentParagraphID }) else { return nil }
         guard index > 0 else { return nil }
         return project.paragraphs[index - 1]
     }
@@ -380,7 +442,7 @@ struct ReviewView: View {
             AssembleView(model: model)
         }
         .navigationDestination(item: $reRecordID) { id in
-            RecordView(model: model, paragraphID: id)
+            RecordView(model: model, paragraphID: id, fromReview: true)
         }
         .navigationBarTitleDisplayMode(.inline)
     }
