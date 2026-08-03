@@ -185,10 +185,15 @@ jobs:
         id: build_number
         run: |
           set -euo pipefail
+          # One marketing version, varying build number — the standard App Store
+          # practice. All TestFlight builds group under version 1.1, newest on
+          # top, so a push is identifiable at a glance. The build number is the
+          # commit count, which the .githooks/commit-msg hook stamps into every
+          # commit message ("Build <n>") for GitHub ↔ TestFlight correlation.
           build_number="$(git rev-list --count HEAD)"
           echo "value=$build_number" >> "$GITHUB_OUTPUT"
-          echo "version=1.1.$build_number" >> "$GITHUB_OUTPUT"
-          echo "Using build number $build_number (marketing version 1.1.$build_number)"
+          echo "version=1.1" >> "$GITHUB_OUTPUT"
+          echo "Using build number $build_number (marketing version 1.1)"
 
       - name: Select latest Xcode
         run: |

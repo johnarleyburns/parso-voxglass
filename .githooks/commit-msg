@@ -4,8 +4,8 @@
 #
 # The TestFlight job derives the build number from the commit history
 # (`.github/workflows/ios.yml`): `build_number="$(git rev-list --count HEAD)"`,
-# used as `CURRENT_PROJECT_VERSION` (and marketing version `1.1.<n>`). This
-# commit's number is its own position in history, i.e. the count once it
+# used as `CURRENT_PROJECT_VERSION` under the single marketing version 1.1.
+# This commit's number is its own position in history, i.e. the count once it
 # exists — `count(HEAD) + 1` here, because the hook runs before the commit
 # object is created.
 #
