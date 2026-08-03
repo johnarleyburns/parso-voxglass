@@ -61,7 +61,10 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         try session.setActive(true)
 
         recordFormat = format
-        installTapIfNeeded()
+        guard installTapIfNeeded() else {
+            state = .failed("No usable audio input")
+            throw CaptureError.deviceUnavailable
+        }
         state = .prepared
     }
 
@@ -83,20 +86,16 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     public func startRecording(to destinationURL: URL) async throws {
         guard state == .prepared || state == .monitoring else { throw CaptureError.invalidState }
 
-        // Write in the input node's ACTUAL format: the hardware sample rate
-        // (often 48 kHz even when 44.1 kHz was preferred) is what the tap
-        // delivers, and writing those buffers to a file declared at a
-        // different rate silently fails or produces an empty/corrupt take.
-        let writeFormat = tapFormat()
-            ?? makeFloatFormat(sampleRate: recordFormat?.sampleRate ?? 48_000)
-        guard let writeFormat else { throw CaptureError.formatNotSupported }
+        // Write in the tap's installed format (interleaved float32 PCM at the
+        // hardware sample rate — see installTapIfNeeded). The engine converts
+        // the hardware input to this format, so the tap buffers and the file
+        // can never disagree about rate, channels, or interleaving.
+        guard let writeFormat = tapFormat else { throw CaptureError.formatNotSupported }
 
-        let file = try AVAudioFile(
-            forWriting: destinationURL,
-            settings: writeFormat.settings,
-            commonFormat: writeFormat.commonFormat,
-            interleaved: writeFormat.isInterleaved
-        )
+        // Pass settings only: AVAudioFile rejects non-interleaved PCM settings
+        // with OSStatus -50 (paramErr), and commonFormat/interleaved must
+        // match the settings dict exactly.
+        let file = try AVAudioFile(forWriting: destinationURL, settings: writeFormat.settings)
         lock.withLock {
             recordURL = destinationURL
             recordFile = file
@@ -170,23 +169,27 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     // MARK: - Engine
 
-    /// The format the input tap is installed with, or nil if unavailable.
-    /// Uses the input node's hardware format so the tap and the written file
-    /// can never disagree about sample rate or channel count.
-    private func tapFormat() -> AVAudioFormat? {
-        let format = engine.inputNode.outputFormat(forBus: 0)
-        guard format.sampleRate > 0, format.channelCount > 0 else { return nil }
-        return format
-    }
+    /// The exact format the tap is installed with (interleaved float32 mono at
+    /// the hardware sample rate). The engine converts the input to this
+    /// format before the tap callback, so the recorded file and the delivered
+    /// buffers always match.
+    private var tapFormat: AVAudioFormat?
 
-    private func installTapIfNeeded() {
-        guard !tapInstalled else { return }
+    @discardableResult
+    private func installTapIfNeeded() -> Bool {
+        guard !tapInstalled else { return true }
         let input = engine.inputNode
-        let format = tapFormat() ?? makeFloatFormat(sampleRate: 48_000)
+        let hardwareRate = input.outputFormat(forBus: 0).sampleRate
+        guard hardwareRate > 0,
+              let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: hardwareRate, channels: 1, interleaved: true) else {
+            return false
+        }
+        tapFormat = format
         input.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
             self?.process(buffer)
         }
         tapInstalled = true
+        return true
     }
 
     private func process(_ buffer: AVAudioPCMBuffer) {
@@ -241,9 +244,5 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     private func recordFormatIsActive() -> Bool {
         lock.withLock { recordFile != nil }
-    }
-
-    private func makeFloatFormat(sampleRate: Double) -> AVAudioFormat? {
-        AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1, interleaved: false)
     }
 }
