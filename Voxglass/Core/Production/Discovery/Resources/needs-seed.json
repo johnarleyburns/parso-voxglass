@@ -1,0 +1,1390 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "title": "Hope is the thing with feathers",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/12242",
+      "grade": "submittable",
+      "text": "Hope is the thing with feathers\nThat perches in the soul -"
+    },
+    {
+      "title": "Because I could not stop for Death",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "I'm nobody! Who are you?",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "There is no Frigate like a Book",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Bird came down the Walk",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "I heard a Fly buzz - when I died",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 35,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Soul selects her own Society",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "Wild Nights - Wild Nights!",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "Success is counted sweetest",
+      "author": "Emily Dickinson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Road Not Taken",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "Fire and Ice",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 25,
+      "grade": "submittable"
+    },
+    {
+      "title": "Stopping by Woods on a Snowy Evening",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "Nothing Gold Can Stay",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 25,
+      "grade": "submittable"
+    },
+    {
+      "title": "Mending Wall",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 120,
+      "grade": "submittable"
+    },
+    {
+      "title": "Birches",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 180,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Gift Outright",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 45,
+      "grade": "submittable"
+    },
+    {
+      "title": "Acquainted with the Night",
+      "author": "Robert Frost",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Dream Within a Dream",
+      "author": "Edgar Allan Poe",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "Annabel Lee",
+      "author": "Edgar Allan Poe",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 90,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/842",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Raven",
+      "author": "Edgar Allan Poe",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 480,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/17192",
+      "grade": "submittable"
+    },
+    {
+      "title": "Eldorado",
+      "author": "Edgar Allan Poe",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "Alone",
+      "author": "Edgar Allan Poe",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Bells",
+      "author": "Edgar Allan Poe",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 150,
+      "grade": "submittable"
+    },
+    {
+      "title": "O Captain! My Captain!",
+      "author": "Walt Whitman",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 90,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Noiseless Patient Spider",
+      "author": "Walt Whitman",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "When I Heard the Learn'd Astronomer",
+      "author": "Walt Whitman",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "I Hear America Singing",
+      "author": "Walt Whitman",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Tyger",
+      "author": "William Blake",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Lamb",
+      "author": "William Blake",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "London",
+      "author": "William Blake",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Poison Tree",
+      "author": "William Blake",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "Auguries of Innocence",
+      "author": "William Blake",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 180,
+      "grade": "submittable"
+    },
+    {
+      "title": "Ode to a Nightingale",
+      "author": "John Keats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 360,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/23661",
+      "grade": "submittable"
+    },
+    {
+      "title": "Ode on a Grecian Urn",
+      "author": "John Keats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 300,
+      "grade": "submittable"
+    },
+    {
+      "title": "To Autumn",
+      "author": "John Keats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 180,
+      "grade": "submittable"
+    },
+    {
+      "title": "Bright Star",
+      "author": "John Keats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "Ode to Psyche",
+      "author": "John Keats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 300,
+      "grade": "submittable"
+    },
+    {
+      "title": "Ozymandias",
+      "author": "Percy Bysshe Shelley",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "To a Skylark",
+      "author": "Percy Bysshe Shelley",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 240,
+      "grade": "submittable"
+    },
+    {
+      "title": "Ode to the West Wind",
+      "author": "Percy Bysshe Shelley",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 300,
+      "grade": "submittable"
+    },
+    {
+      "title": "Music, When Soft Voices Die",
+      "author": "Percy Bysshe Shelley",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "I Wandered Lonely as a Cloud",
+      "author": "William Wordsworth",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "The World Is Too Much with Us",
+      "author": "William Wordsworth",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "Composed upon Westminster Bridge",
+      "author": "William Wordsworth",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "Lines Written in Early Spring",
+      "author": "William Wordsworth",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "Remember",
+      "author": "Christina Rossetti",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Birthday",
+      "author": "Christina Rossetti",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "In the Bleak Midwinter",
+      "author": "Christina Rossetti",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "She Walks in Beauty",
+      "author": "Lord Byron",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "So We'll Go No More a Roving",
+      "author": "Lord Byron",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Destruction of Sennacherib",
+      "author": "Lord Byron",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "When We Two Parted",
+      "author": "Lord Byron",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Charge of the Light Brigade",
+      "author": "Alfred, Lord Tennyson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 120,
+      "grade": "submittable"
+    },
+    {
+      "title": "Crossing the Bar",
+      "author": "Alfred, Lord Tennyson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "Break, Break, Break",
+      "author": "Alfred, Lord Tennyson",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "How Do I Love Thee?",
+      "author": "Elizabeth Barrett Browning",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Musical Instrument",
+      "author": "Elizabeth Barrett Browning",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 90,
+      "grade": "submittable"
+    },
+    {
+      "title": "We Wear the Mask",
+      "author": "Paul Laurence Dunbar",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "Sympathy",
+      "author": "Paul Laurence Dunbar",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "There Will Come Soft Rains",
+      "author": "Sara Teasdale",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 50,
+      "grade": "submittable"
+    },
+    {
+      "title": "Fog",
+      "author": "Carl Sandburg",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 30,
+      "grade": "submittable"
+    },
+    {
+      "title": "Grass",
+      "author": "Carl Sandburg",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Lake Isle of Innisfree",
+      "author": "W. B. Yeats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "When You Are Old",
+      "author": "W. B. Yeats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 40,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Second Coming",
+      "author": "W. B. Yeats",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "First Fig",
+      "author": "Edna St. Vincent Millay",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 25,
+      "grade": "submittable"
+    },
+    {
+      "title": "Recuerdo",
+      "author": "Edna St. Vincent Millay",
+      "subject": "poem",
+      "kind": "poem",
+      "estSeconds": 60,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Gift of the Magi",
+      "author": "O. Henry",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1500,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/7256",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Ransom of Red Chief",
+      "author": "O. Henry",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1800,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Last Leaf",
+      "author": "O. Henry",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Celebrated Jumping Frog of Calaveras County",
+      "author": "Mark Twain",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/31840",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Lowest Animal",
+      "author": "Mark Twain",
+      "subject": "essay",
+      "kind": "essay",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "Rip Van Winkle",
+      "author": "Washington Irving",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 3540,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/60976",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Tell-Tale Heart",
+      "author": "Edgar Allan Poe",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2148",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Cask of Amontillado",
+      "author": "Edgar Allan Poe",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "A Scandal in Bohemia",
+      "author": "Arthur Conan Doyle",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 2400,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2346",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Red-Headed League",
+      "author": "Arthur Conan Doyle",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 2700,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Call of Cthulhu",
+      "author": "H. P. Lovecraft",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 3000,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/68283",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Story of an Hour",
+      "author": "Kate Chopin",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 480,
+      "grade": "submittable"
+    },
+    {
+      "title": "Desiree's Baby",
+      "author": "Kate Chopin",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "To Build a Fire",
+      "author": "Jack London",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1800,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/31201",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Law of Life",
+      "author": "Jack London",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "Rikki-Tikki-Tavi",
+      "author": "Rudyard Kipling",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 2100,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Open Window",
+      "author": "Saki",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Interlopers",
+      "author": "Saki",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "Araby",
+      "author": "James Joyce",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2814",
+      "grade": "submittable"
+    },
+    {
+      "title": "Eveline",
+      "author": "James Joyce",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "Kew Gardens",
+      "author": "Virginia Woolf",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "Self-Reliance",
+      "author": "Ralph Waldo Emerson",
+      "subject": "essay",
+      "kind": "essay",
+      "estSeconds": 3000,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/12344",
+      "grade": "submittable"
+    },
+    {
+      "title": "Nature",
+      "author": "Ralph Waldo Emerson",
+      "subject": "essay",
+      "kind": "essay",
+      "estSeconds": 2400,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/29405",
+      "grade": "submittable"
+    },
+    {
+      "title": "Walking",
+      "author": "Henry David Thoreau",
+      "subject": "essay",
+      "kind": "essay",
+      "estSeconds": 3000,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1022",
+      "grade": "submittable"
+    },
+    {
+      "title": "Of Studies",
+      "author": "Francis Bacon",
+      "subject": "essay",
+      "kind": "essay",
+      "estSeconds": 600,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/575",
+      "grade": "submittable"
+    },
+    {
+      "title": "Of Travel",
+      "author": "Francis Bacon",
+      "subject": "essay",
+      "kind": "essay",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Ugly Duckling",
+      "author": "Hans Christian Andersen",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Little Match Girl",
+      "author": "Hans Christian Andersen",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 480,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Nightingale",
+      "author": "Hans Christian Andersen",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Emperor's New Clothes",
+      "author": "Hans Christian Andersen",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Golden Goose",
+      "author": "The Brothers Grimm",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "Rapunzel",
+      "author": "The Brothers Grimm",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Elves and the Shoemaker",
+      "author": "The Brothers Grimm",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Goose Girl",
+      "author": "The Brothers Grimm",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Young King",
+      "author": "Oscar Wilde",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Happy Prince",
+      "author": "Oscar Wilde",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/902",
+      "grade": "submittable"
+    },
+    {
+      "title": "The Nightingale and the Rose",
+      "author": "Oscar Wilde",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Selfish Giant",
+      "author": "Oscar Wilde",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Sphinx Without a Secret",
+      "author": "Oscar Wilde",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 600,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Diamond Necklace",
+      "author": "Guy de Maupassant",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Piece of String",
+      "author": "Guy de Maupassant",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 900,
+      "grade": "submittable"
+    },
+    {
+      "title": "The Necklace",
+      "author": "Guy de Maupassant",
+      "subject": "story",
+      "kind": "story",
+      "estSeconds": 1200,
+      "grade": "submittable"
+    },
+    {
+      "title": "Frankenstein",
+      "author": "Mary Shelley",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/84"
+    },
+    {
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1342"
+    },
+    {
+      "title": "Sense and Sensibility",
+      "author": "Jane Austen",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/161"
+    },
+    {
+      "title": "Emma",
+      "author": "Jane Austen",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 36000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/158"
+    },
+    {
+      "title": "Persuasion",
+      "author": "Jane Austen",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/105"
+    },
+    {
+      "title": "Northanger Abbey",
+      "author": "Jane Austen",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 25200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/121"
+    },
+    {
+      "title": "Mansfield Park",
+      "author": "Jane Austen",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 36000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/141"
+    },
+    {
+      "title": "Great Expectations",
+      "author": "Charles Dickens",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 43200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1400"
+    },
+    {
+      "title": "A Christmas Carol",
+      "author": "Charles Dickens",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 10800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/46"
+    },
+    {
+      "title": "David Copperfield",
+      "author": "Charles Dickens",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 50400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/766"
+    },
+    {
+      "title": "Oliver Twist",
+      "author": "Charles Dickens",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 39600,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/730"
+    },
+    {
+      "title": "A Tale of Two Cities",
+      "author": "Charles Dickens",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 39600,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/98"
+    },
+    {
+      "title": "Moby-Dick",
+      "author": "Herman Melville",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 72000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2701"
+    },
+    {
+      "title": "Jane Eyre",
+      "author": "Charlotte Bronte",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 43200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1260"
+    },
+    {
+      "title": "Wuthering Heights",
+      "author": "Emily Bronte",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 36000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/768"
+    },
+    {
+      "title": "Agnes Grey",
+      "author": "Anne Bronte",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/767"
+    },
+    {
+      "title": "The Adventures of Huckleberry Finn",
+      "author": "Mark Twain",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 36000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/76"
+    },
+    {
+      "title": "The Adventures of Tom Sawyer",
+      "author": "Mark Twain",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 32400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/74"
+    },
+    {
+      "title": "A Connecticut Yankee in King Arthur's Court",
+      "author": "Mark Twain",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 39600,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/86"
+    },
+    {
+      "title": "Treasure Island",
+      "author": "Robert Louis Stevenson",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/120"
+    },
+    {
+      "title": "Strange Case of Dr Jekyll and Mr Hyde",
+      "author": "Robert Louis Stevenson",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 7200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/43"
+    },
+    {
+      "title": "Kidnapped",
+      "author": "Robert Louis Stevenson",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/457"
+    },
+    {
+      "title": "Dracula",
+      "author": "Bram Stoker",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 46800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/345"
+    },
+    {
+      "title": "The Picture of Dorian Gray",
+      "author": "Oscar Wilde",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/174"
+    },
+    {
+      "title": "The Importance of Being Earnest",
+      "author": "Oscar Wilde",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 7200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/844"
+    },
+    {
+      "title": "The Time Machine",
+      "author": "H. G. Wells",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 10800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/35"
+    },
+    {
+      "title": "The War of the Worlds",
+      "author": "H. G. Wells",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/36"
+    },
+    {
+      "title": "The Invisible Man",
+      "author": "H. G. Wells",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 21600,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/5230"
+    },
+    {
+      "title": "Heart of Darkness",
+      "author": "Joseph Conrad",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 14400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/219"
+    },
+    {
+      "title": "The Scarlet Letter",
+      "author": "Nathaniel Hawthorne",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 32400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/33"
+    },
+    {
+      "title": "The House of the Seven Gables",
+      "author": "Nathaniel Hawthorne",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 32400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/77"
+    },
+    {
+      "title": "Little Women",
+      "author": "Louisa May Alcott",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 43200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/514"
+    },
+    {
+      "title": "The Odyssey",
+      "author": "Homer",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 50400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1727"
+    },
+    {
+      "title": "The Iliad",
+      "author": "Homer",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 54000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2199"
+    },
+    {
+      "title": "The Republic",
+      "author": "Plato",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 43200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1497"
+    },
+    {
+      "title": "Meditations",
+      "author": "Marcus Aurelius",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 18000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2680"
+    },
+    {
+      "title": "On the Origin of Species",
+      "author": "Charles Darwin",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 50400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1228"
+    },
+    {
+      "title": "The Prince",
+      "author": "Niccolo Machiavelli",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 14400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1232"
+    },
+    {
+      "title": "Leviathan",
+      "author": "Thomas Hobbes",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 64800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/3207"
+    },
+    {
+      "title": "The Wealth of Nations",
+      "author": "Adam Smith",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 72000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/3300"
+    },
+    {
+      "title": "The Count of Monte Cristo",
+      "author": "Alexandre Dumas",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 64800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1184"
+    },
+    {
+      "title": "The Three Musketeers",
+      "author": "Alexandre Dumas",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 50400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/1257"
+    },
+    {
+      "title": "Siddhartha",
+      "author": "Hermann Hesse",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 10800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2500"
+    },
+    {
+      "title": "A Portrait of the Artist as a Young Man",
+      "author": "James Joyce",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/4217"
+    },
+    {
+      "title": "Mrs Dalloway",
+      "author": "Virginia Woolf",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 18000,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/6359"
+    },
+    {
+      "title": "To the Lighthouse",
+      "author": "Virginia Woolf",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 21600,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/6336"
+    },
+    {
+      "title": "The Age of Innocence",
+      "author": "Edith Wharton",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/541"
+    },
+    {
+      "title": "Ethan Frome",
+      "author": "Edith Wharton",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 10800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/5417"
+    },
+    {
+      "title": "My Antonia",
+      "author": "Willa Cather",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/242"
+    },
+    {
+      "title": "Main Street",
+      "author": "Sinclair Lewis",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 43200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/543"
+    },
+    {
+      "title": "The Great Gatsby",
+      "author": "F. Scott Fitzgerald",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 14400,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/64317"
+    },
+    {
+      "title": "A Room with a View",
+      "author": "E. M. Forster",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 21600,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2641"
+    },
+    {
+      "title": "Howards End",
+      "author": "E. M. Forster",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 28800,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/2946"
+    },
+    {
+      "title": "The Trial",
+      "author": "Franz Kafka",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 25200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/7849"
+    },
+    {
+      "title": "The Metamorphosis",
+      "author": "Franz Kafka",
+      "subject": "book",
+      "kind": "book",
+      "estSeconds": 7200,
+      "grade": "submittable",
+      "sourcePageURL": "https://www.gutenberg.org/ebooks/5200"
+    }
+  ]
+}

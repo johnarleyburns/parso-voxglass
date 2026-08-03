@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p06 · iPhone Metadata &amp; Rights</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;--good:#72d59f;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:12px;padding:2px 18px 6px}.nav .b{font-size:20px;color:var(--muted)}.nav .t{font-weight:850;font-size:16px}.nav .step{margin-left:auto;font-size:12px;color:var(--muted)}
+.progressbar{height:4px;border-radius:99px;background:var(--faint);overflow:hidden;margin:0 18px 10px}.progressbar i{display:block;height:100%;width:85%;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.screen{height:calc(100% - 52px);padding:0 18px 96px;overflow:auto}
+small,.muted{color:var(--muted);font-size:12px;line-height:1.4}
+label{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:12px 2px 5px}
+.fld{width:100%;background:#0f1316;border:1px solid var(--line);border-radius:11px;padding:11px 12px;color:var(--ink);font-size:14px}
+.fld.area{min-height:60px}
+.two{display:flex;gap:10px}.two>div{flex:1}
+.badge{font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.ia{color:#8fd0ff;background:rgba(120,160,220,.14);border:1px solid rgba(120,160,220,.3)}
+.lv{color:#f0ce8a;background:rgba(216,173,103,.14);border:1px solid rgba(216,173,103,.4)}
+.rights{background:linear-gradient(160deg,rgba(60,48,26,.3),var(--panel));border:1px solid rgba(216,173,103,.35);border-radius:14px;padding:13px;margin:16px 0 4px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:8px}
+.box{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(216,173,103,.2);display:grid;place-items:center;color:#f0ce8a;font-weight:900;flex:0 0 auto}
+.foot{color:var(--muted);font-size:11px;margin-top:8px}
+.flowbar{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 20px;background:linear-gradient(180deg,rgba(11,15,18,0),rgba(11,15,18,.94) 42%)}
+.gold-btn{width:100%;height:46px;border:0;border-radius:14px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;font-weight:850;font-size:15px}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p06 · Metadata &amp; Rights — fields for LibriVox + Internet Archive · attestation deferred to here</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="nav"><span class="b">‹</span><span class="t">Details</span><span class="step">Step 4 of 5</span></div>
+<div class="progressbar"><i></i></div>
+<main class="screen">
+  <small style="display:block;margin:2px 2px 2px">Chips show where each field is used. <span class="badge lv">LibriVox</span> <span class="badge ia">Archive</span></small>
+
+  <label>Title <span class="badge lv">LV</span><span class="badge ia">IA</span></label>
+  <input class="fld" id="metadata.title" value="Hope">
+  <div class="two"><div><label>Author <span class="badge lv">LV</span><span class="badge ia">IA</span></label><input class="fld" id="metadata.author" value="Emily Brontë"></div>
+  <div><label>Language <span class="badge ia">IA</span></label><input class="fld" id="metadata.language" value="English"></div></div>
+
+  <label>Narrator / reader name <span class="badge lv">LV</span><span class="badge ia">IA</span></label>
+  <input class="fld" id="metadata.narrator" value="J. Burns">
+
+  <label>Description <span class="badge ia">IA</span></label>
+  <textarea class="fld area" id="metadata.description">A short poem by Emily Brontë, read for the public domain.</textarea>
+
+  <div class="two"><div><label>Subjects <span class="badge ia">IA</span></label><input class="fld" id="metadata.subjects" value="poetry; Brontë"></div>
+  <div><label>Date <span class="badge ia">IA</span></label><input class="fld" value="1846"></div></div>
+
+  <label>Source URL <span class="badge lv">LV</span><span class="badge ia">IA</span></label>
+  <input class="fld" id="metadata.sourceURL" value="gutenberg.org/ebooks/768">
+
+  <div class="rights">
+    <b style="font-size:14px">Rights</b>
+    <div style="margin:6px 0"><span class="badge lv">LV</span><span class="badge ia">IA</span> <small>Public domain in the United States</small></div>
+    <label style="margin-top:6px">Basis</label>
+    <input class="fld" value="Public domain · US · pre-1930" style="margin-top:0">
+    <div class="chk"><div class="box" id="metadata.attest">✓</div><small style="color:var(--ink)">I attest this information is accurate and this work is in the public domain in the US.</small></div>
+    <div class="foot">The LibriVox disclaimer is already recorded in your intro &amp; outro. <b style="color:#f0ce8a">Voxglass does not determine copyright status.</b></div>
+  </div>
+</main>
+<div class="flowbar"><button class="gold-btn" id="metadata.toExport">Validate &amp; export ▸</button></div>
+</article></div></body></html>

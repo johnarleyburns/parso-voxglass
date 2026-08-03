@@ -5,11 +5,15 @@ struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(DiscoveryEnvironment.self) private var discovery
     @Binding var showingNowPlaying: Bool
     var selectLibrary: () -> Void
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @State private var importingIdentifier: String?
+    @State private var flowNeed: NarrationNeed?
+    @State private var handoffNeed: NarrationNeed?
+    @State private var showingNeeds = false
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
@@ -21,8 +25,25 @@ struct ListenView: View {
                 jumpBackIn
                 recentlyAdded
                 recommended
+                NarrationHomeShelf(
+                    presentBrowse: { showingNeeds = true },
+                    startProject: { flowNeed = $0 },
+                    presentHandoff: { handoffNeed = $0 }
+                )
             }
             .padding(.top, 12)
+        }
+        .navigationDestination(isPresented: $showingNeeds) {
+            NarrationNeedsView(
+                startProject: { flowNeed = $0 },
+                presentHandoff: { handoffNeed = $0 }
+            )
+        }
+        .fullScreenCover(item: $flowNeed) { need in
+            NarrationFlowRoot(startNeed: need)
+        }
+        .sheet(item: $handoffNeed) { need in
+            LongWorkHandoffSheet(need: need)
         }
         .alert("Playback Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {

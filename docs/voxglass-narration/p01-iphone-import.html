@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p01 · iPhone Import a Work</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:10px;padding:2px 18px 6px}.nav .x{font-size:22px;color:var(--muted)}.nav .t{font-weight:850;font-size:17px}
+.screen{height:calc(100% - 52px);padding:0 18px 20px;overflow:auto}
+small,.muted{color:var(--muted);font-size:12px;line-height:1.4}
+.opt{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;gap:13px;align-items:center;margin:10px 0;backdrop-filter:blur(18px)}
+.opt .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:linear-gradient(150deg,#2a2417,#5a4a2b);flex:0 0 auto}
+.opt h3{margin:0 0 2px;font-size:15px;font-weight:800}.opt .chev{margin-left:auto;color:var(--muted)}
+.opt.reco{border-color:rgba(216,173,103,.45);background:linear-gradient(160deg,rgba(60,48,26,.4),var(--panel))}
+.tag{font-size:10px;font-weight:800;color:#f0ce8a;border:1px solid rgba(216,173,103,.5);border-radius:999px;padding:2px 7px;margin-left:6px}
+.foot{color:var(--muted);font-size:11px;text-align:center;margin-top:14px}
+/* Files picker sheet */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:5}
+.picker{position:absolute;left:0;right:0;bottom:0;z-index:6;height:64%;background:#1c2024;border-top-left-radius:14px;border-top-right-radius:14px;border-top:1px solid var(--line);display:flex;flex-direction:column}
+.pk-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;border-bottom:1px solid var(--line)}.pk-top b{font-size:16px}.pk-top .c{color:#6ea8ff;font-weight:700;font-size:15px}
+.pk-loc{display:flex;gap:8px;align-items:center;padding:10px 16px;color:var(--muted);font-size:13px}
+.pk-search{margin:0 16px 8px;height:34px;border-radius:9px;background:#0f1316;border:1px solid var(--line);display:flex;align-items:center;padding:0 10px;color:var(--muted);font-size:13px;gap:6px}
+.pk-list{overflow:auto;padding:0 8px}
+.fileitem{display:flex;gap:12px;align-items:center;padding:11px 8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.fileitem .fi{width:34px;height:42px;border-radius:5px;background:linear-gradient(150deg,#3a4a6a,#22304a);display:grid;place-items:center;font-size:9px;font-weight:800;color:#cfe0ff;flex:0 0 auto}
+.fileitem.sel{background:rgba(110,168,255,.14);border-radius:8px}
+.fileitem h4{margin:0;font-size:14px;font-weight:700}.fileitem small{font-size:11px}
+.pk-bar{margin-top:auto;padding:12px 16px 20px;border-top:1px solid var(--line)}.pk-open{width:100%;height:44px;border:0;border-radius:12px;background:linear-gradient(180deg,#8cbcff,#6ca2eb);color:#0b1626;font-weight:800;font-size:15px}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p01 · Import a Work — paste · Files (on disk) · Gutenberg · a Need  (Files picker shown)</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<main class="screen">
+  <div class="nav"><span class="x">✕</span><span class="t">New Narration</span></div>
+  <small style="display:block;margin:0 2px 8px">Record a public-domain short work — a poem, a short story, an essay.</small>
+
+  <div class="opt reco" id="import.fromNeed"><div class="ic">🎙️</div><div><h3>From a Narration Need<span class="tag">Recommended</span></h3><small>This week’s poem, or a work that needs a reader</small></div><span class="chev">›</span></div>
+  <div class="opt" id="import.paste"><div class="ic">📝</div><div><h3>Paste text</h3><small>Paste a poem or short piece</small></div><span class="chev">›</span></div>
+  <div class="opt" id="import.files"><div class="ic" style="background:linear-gradient(150deg,#26344e,#3a4a6a)">📄</div><div><h3>Import EPUB from Files</h3><small>An .epub on your iPhone or iCloud Drive</small></div><span class="chev">›</span></div>
+  <div class="opt" id="import.gutenberg"><div class="ic">🌐</div><div><h3>Fetch from Project Gutenberg</h3><small>Paste a gutenberg.org link or ebook number</small></div><span class="chev">›</span></div>
+
+  <div class="foot">Public-domain works only. Voxglass does not determine copyright status.</div>
+</main>
+
+<!-- iOS Files document picker (import.files tapped) -->
+<div class="dim"></div>
+<div class="picker" id="import.filesPicker">
+  <div class="pk-top"><span class="c">Cancel</span><b>Browse</b><span class="c">Select</span></div>
+  <div class="pk-loc">📁 On My iPhone › Voxglass › <b style="color:var(--ink)">Books</b></div>
+  <div class="pk-search">⌕ Search</div>
+  <div class="pk-list">
+    <div class="fileitem sel" id="import.files.selected"><div class="fi">EPUB</div><div style="flex:1"><h4>hope_bronte.epub</h4><small>Emily Brontë · 41 KB · Today</small></div><span style="color:#6ea8ff">✓</span></div>
+    <div class="fileitem"><div class="fi">EPUB</div><div style="flex:1"><h4>frost_selected_poems.epub</h4><small>1.2 MB · Yesterday</small></div></div>
+    <div class="fileitem"><div class="fi">EPUB</div><div style="flex:1"><h4>pg-1063-poe-poems.epub</h4><small>Project Gutenberg · 380 KB · Mon</small></div></div>
+    <div class="fileitem"><div class="fi" style="background:#3a3f49;color:#c9cfda">PDF</div><div style="flex:1"><h4>dickinson-scans.pdf</h4><small>8.4 MB · Aug 2</small></div></div>
+  </div>
+  <div class="pk-bar"><button class="pk-open">Import “hope_bronte.epub”</button></div>
+</div>
+</article></div></body></html>

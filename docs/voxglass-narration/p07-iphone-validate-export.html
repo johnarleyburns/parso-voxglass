@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p07 · iPhone Validate &amp; Export</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;--good:#72d59f;--warn:#e6b877;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:12px;padding:2px 18px 6px}.nav .b{font-size:20px;color:var(--muted)}.nav .t{font-weight:850;font-size:16px}.nav .step{margin-left:auto;font-size:12px;color:var(--muted)}
+.progressbar{height:4px;border-radius:99px;background:var(--faint);overflow:hidden;margin:0 18px 10px}.progressbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.screen{height:calc(100% - 52px);padding:0 18px 96px;overflow:auto}
+small,.muted{color:var(--muted);font-size:12px;line-height:1.4}
+.h{font-size:13px;color:var(--muted);font-weight:700;margin:14px 2px 6px;text-transform:uppercase;letter-spacing:.04em}
+.report{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 13px;backdrop-filter:blur(18px)}
+.chk{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.chk:last-child{border-bottom:0}.chk .m{width:20px;text-align:center;flex:0 0 auto}.ok{color:var(--good)}.warn{color:var(--warn)}
+.chk .r{margin-left:auto;color:var(--muted);font-size:11px}
+.dest{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}
+.dest.on{border-color:rgba(216,173,103,.45)}
+.dest .top{display:flex;align-items:center;gap:10px}.dest .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:18px;flex:0 0 auto}
+.dest h3{margin:0;font-size:15px;font-weight:800}.toggle{margin-left:auto;width:44px;height:26px;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold2));position:relative;flex:0 0 auto}.toggle:after{content:"";position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#fff}
+.toggle.off{background:var(--faint)}.toggle.off:after{right:auto;left:2px}
+.fmt{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.fmt span{font-size:11px;font-weight:700;padding:5px 9px;border-radius:8px;background:#0f1316;border:1px solid var(--line);color:#cfd6e0}
+.fname{margin-top:9px;font-size:12px;color:#9fb0a0;font-family:ui-monospace,Menlo,monospace;background:#0f1316;border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.flowbar{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 20px;background:linear-gradient(180deg,rgba(11,15,18,0),rgba(11,15,18,.94) 42%)}
+.gold-btn{width:100%;height:46px;border:0;border-radius:14px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;font-weight:850;font-size:15px}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p07 · Validate &amp; Export — report · LibriVox (128 CBR MP3) · Internet Archive (FLAC + MP3)</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="nav"><span class="b">‹</span><span class="t">Validate &amp; Export</span><span class="step">Step 5 of 5</span></div>
+<div class="progressbar"><i></i></div>
+<main class="screen">
+  <div class="h">Checks</div>
+  <div class="report" id="validate.report">
+    <div class="chk"><span class="m ok">✓</span>Title, author, narrator, language<span class="r">present</span></div>
+    <div class="chk"><span class="m ok">✓</span>Rights attested · public domain (US)<span class="r">ok</span></div>
+    <div class="chk"><span class="m ok">✓</span>LibriVox disclaimer recorded<span class="r">intro + outro</span></div>
+    <div class="chk"><span class="m ok">✓</span>Human narration (no AI audio)<span class="r">eligible</span></div>
+    <div class="chk"><span class="m ok">✓</span>No clipping · peak −3.4 dB<span class="r">ok</span></div>
+    <div class="chk"><span class="m warn">!</span>Level a touch quiet · −22 dB RMS<span class="r">acceptable</span></div>
+  </div>
+
+  <div class="h">Publish to</div>
+
+  <div class="dest on" id="export.destination.librivox">
+    <div class="top"><div class="ic" style="background:linear-gradient(150deg,#3a2f1c,#6b5432)">📻</div><h3>LibriVox</h3><span class="toggle"></span></div>
+    <div class="fmt"><span>MP3</span><span>128 kbps CBR</span><span>mono</span><span>44.1 kHz</span><span>ID3 tags</span></div>
+    <div class="fname" id="export.filename">hope_bronte_jb_128kb.mp3</div>
+    <small style="display:block;margin-top:8px">+ recording checklist &amp; the Weekly Poetry thread link.</small>
+  </div>
+
+  <div class="dest on" id="export.destination.internetArchive">
+    <div class="top"><div class="ic" style="background:linear-gradient(150deg,#26344e,#3a4a6a)">🏛️</div><h3>Internet Archive</h3><span class="toggle"></span></div>
+    <div class="fmt"><span>FLAC master</span><span>+ MP3 derivative</span><span>metadata.json</span><span>checksums</span></div>
+    <small style="display:block;margin-top:8px">Lossless master for the <code>opensource_audio</code> community collection.</small>
+  </div>
+</main>
+<div class="flowbar"><button class="gold-btn" id="export.run">Produce files ▸</button></div>
+</article></div></body></html>

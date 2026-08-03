@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p04 · iPhone Review</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;--good:#72d59f;--warn:#e6b877;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:12px;padding:2px 18px 6px}.nav .b{font-size:20px;color:var(--muted)}.nav .t{font-weight:850;font-size:16px}.nav .step{margin-left:auto;font-size:12px;color:var(--muted)}
+.progressbar{height:4px;border-radius:99px;background:var(--faint);overflow:hidden;margin:0 18px 8px}.progressbar i{display:block;height:100%;width:55%;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.screen{height:calc(100% - 52px);padding:0 18px 96px;overflow:auto}
+small,.muted{color:var(--muted);font-size:12px;line-height:1.4}
+.seg{display:flex;gap:8px;margin:6px 0 12px}.seg span{font-size:11px;border-radius:999px;padding:7px 12px;background:var(--faint);border:1px solid var(--line)}.seg .active{background:#f6f2ea;color:#111;border-color:transparent}
+.row{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin:9px 0;display:flex;gap:11px;align-items:center;backdrop-filter:blur(18px)}
+.st{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;flex:0 0 auto;font-weight:800}
+.st.ok{background:rgba(114,213,159,.18);color:var(--good)}.st.flag{background:rgba(224,164,79,.18);color:var(--warn)}.st.disc{background:rgba(216,173,103,.18);color:var(--gold)}
+.row .tx{flex:1;min-width:0}.row h4{margin:0 0 1px;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.play{width:32px;height:32px;border-radius:50%;background:var(--faint);border:1px solid var(--line);color:var(--ink);flex:0 0 auto}
+.note{margin-top:7px;background:rgba(224,164,79,.1);border:1px solid rgba(224,164,79,.3);border-radius:9px;padding:7px 9px;font-size:12px;color:#e6c79c}
+.flowbar{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 20px;background:linear-gradient(180deg,rgba(11,15,18,0),rgba(11,15,18,.94) 42%)}
+.gold-btn{width:100%;height:46px;border:0;border-radius:14px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;font-weight:850;font-size:15px}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p04 · Review — per-paragraph status, re-record flagged, notes</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="nav"><span class="b">‹</span><span class="t">Review · Hope</span><span class="step">5 of 6 approved</span></div>
+<div class="progressbar"><i></i></div>
+<main class="screen">
+  <div class="seg" id="paragraphList.filter"><span class="active">All</span><span>Flagged (1)</span><span>Not recorded</span></div>
+
+  <div class="row"><div class="st disc">“”</div><div class="tx"><h4>This is a LibriVox recording…</h4><small>Disclaimer · 0:09 · approved</small></div><button class="play" id="paragraphList.playSelected">▶</button></div>
+  <div class="row"><div class="st disc">“”</div><div class="tx"><h4>Hope, by Emily Brontë. Read by…</h4><small>Intro · 0:05 · approved</small></div><button class="play">▶</button></div>
+  <div class="row"><div class="st ok">✓</div><div class="tx"><h4>Hope was but a timid friend…</h4><small>¶ 3 · 0:07 · approved</small></div><button class="play">▶</button></div>
+
+  <div class="row" style="flex-wrap:wrap"><div class="st flag">⚑</div><div class="tx"><h4>Watching how my fate would tend…</h4><small>¶ 4 · 0:06 · flagged</small></div><button class="play">▶</button>
+    <div class="note" style="width:100%">Note: stumbled on “selfish-hearted” — re-record. <b style="color:#f0ce8a">Re-record ▸</b></div></div>
+
+  <div class="row"><div class="st ok">✓</div><div class="tx"><h4>She was cruel in her fear…</h4><small>¶ 5 · 0:08 · approved</small></div><button class="play">▶</button></div>
+  <div class="row"><div class="st disc">“”</div><div class="tx"><h4>End of poem. This recording is…</h4><small>Outro · 0:04 · approved</small></div><button class="play">▶</button></div>
+</main>
+<div class="flowbar"><button class="gold-btn" id="review.toAssemble">Assemble the recording ▸</button></div>
+</article></div></body></html>

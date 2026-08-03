@@ -106,7 +106,7 @@ jobs:
       - name: Run wiring guards
         run: bash scripts/guard_wiring.sh
 
-      - name: Run production feature guards (G-1..G-12)
+      - name: Run production feature guards (G-1..G-18)
         run: bash scripts/guard_production.sh
 
       - name: Guard runtime network endpoints
@@ -117,9 +117,9 @@ jobs:
             exit 0
           fi
 
-          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru|wikipedia\.org|greaterbooks\.com' || true)"
+          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru|wikipedia\.org|greaterbooks\.com|gutendex\.com|poetrydb\.org|wikisource\.org|gutenberg\.org' || true)"
           if [ -n "$disallowed" ]; then
-            echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, and parso.guru URLs are allowed."
+            echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, parso.guru, Gutendex, PoetryDB, Wikisource, and Gutenberg URLs are allowed."
             printf '%s\n' "$disallowed"
             exit 1
           fi

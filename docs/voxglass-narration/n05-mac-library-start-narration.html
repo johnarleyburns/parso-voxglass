@@ -1,0 +1,109 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>n05 · Studio Library — Start a Narration</title><style>
+:root{--bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;--muted:#a9b0bd;--accent:#7fb0ff;--accent2:#315f9c;--good:#72d59f;--warn:#f2c96d;--gold:#e0be7f}
+*{box-sizing:border-box}html,body{margin:0;height:100%}body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px}button.primary{background:linear-gradient(#8cbcff,#6ca2eb);color:#0b1626;border-color:#9fc8ff;font-weight:700}
+button.gold{background:linear-gradient(#f0ce8a,#d8ad67);color:#21170b;border-color:#f0ce8a;font-weight:750}
+.app-shell{display:grid;grid-template-columns:220px minmax(0,1fr) 300px;height:100vh;max-width:1500px;margin:auto;background:var(--panel);box-shadow:0 20px 80px #0008}
+.sidebar{border-right:1px solid var(--line);padding:14px;background:#1d2025;display:flex;flex-direction:column}
+.brand{font-size:17px;font-weight:750;padding:9px 8px 15px}.nav-section{flex:1}.nav-bottom{margin-top:auto}
+.nav-item{padding:9px 10px;border-radius:8px;color:#d9dde5;margin:2px 0;display:flex;justify-content:space-between}.nav-item.active{background:#315a8f;color:#fff}
+.main{min-width:0;background:#202329}.toolbar{min-height:64px;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:#252930}
+.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}.toolbar-actions{display:flex;gap:8px;align-items:center}.search{width:200px;background:#17191e;color:var(--text);border:1px solid #444a55;border-radius:7px;padding:9px}
+.content{padding:18px;overflow:auto;height:calc(100vh - 64px)}
+.project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.project-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:14px;min-height:150px}.project-body{flex:1}
+.cover{width:84px;border-radius:10px;display:grid;place-items:center;font-size:26px;font-weight:800;text-align:center;color:#f4e6cf;line-height:1.1}.purple{background:#654f87}.blue{background:#395f87}.green{background:#3f735b}.gold{background:linear-gradient(150deg,#3a2f1c,#6b5432)}
+.new-card{display:grid;place-items:center;text-align:center;border-style:dashed}.plus{font-size:34px;color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.chips span{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}.chips .good{background:#285640}.chips .warn{background:#67562b}
+.progress{height:8px;background:#17191e;border-radius:99px;overflow:hidden;margin:10px 0}.progress i{display:block;height:100%;background:linear-gradient(90deg,#71a9ff,#a0c7ff)}
+.sectionhead{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 4px}.sectionhead h2{margin:0;font-size:17px}.aspir{color:var(--gold);font-style:italic;font-size:13px;margin:2px 0 10px}
+.railhead{font-size:13px;color:var(--muted);font-weight:700;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+.feat{background:linear-gradient(160deg,#2e2717,#232830);border:1px solid rgba(224,190,127,.4);border-radius:14px;padding:16px;display:flex;gap:16px;align-items:center}
+.feat .bigcover{width:110px;height:150px;border-radius:12px;display:grid;place-items:center;text-align:center;font-weight:900;color:#f4e6cf;font-size:16px;line-height:1.1;background:linear-gradient(150deg,#101a14,#2f5a3e 50%,#c7b06a);flex:0 0 auto;box-shadow:0 12px 30px #0007}
+.rail{display:flex;gap:12px;overflow:auto;padding-bottom:4px}
+.needcard{width:190px;flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px}
+.needcard.long{border-left:4px solid #5a6a9a}.needcard.gap{border-left:4px solid #6f5a9a}
+.needcard h3{margin:0 0 3px;font-size:14px;font-weight:750;line-height:1.15}
+.sig{font-size:11px;font-weight:750;padding:3px 8px;border-radius:999px;display:inline-block;margin-top:8px}
+.sig.open{color:#a9e6c2;background:rgba(80,200,140,.14);border:1px solid rgba(80,200,140,.35)}
+.sig.gap{color:#c9b6ff;background:rgba(150,120,220,.14);border:1px solid rgba(150,120,220,.35)}
+.sig.classic{color:var(--muted);background:#2f343d;border:1px solid var(--line)}
+.badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid rgba(224,190,127,.5);color:var(--gold)}
+.needcard .go{width:100%;margin-top:11px;font-size:12px}
+.inspector{border-left:1px solid var(--line);padding:16px;background:#1d2025;overflow:auto}.inspector h3{margin-top:0}.inspector hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+.kv{display:flex;justify-content:space-between;margin:8px 0;font-size:13px}.kv span{color:var(--muted)}
+.freshdot{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block;margin-right:6px}
+@media(max-width:1000px){.app-shell{grid-template-columns:180px 1fr}.inspector{display:none}.project-grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">🎙️ Voxglass Studio</div>
+    <nav class="nav-section">
+      <div class="nav-item active" id="library.section.all">All Projects <span>4</span></div>
+      <div class="nav-item">Needs Review <span>2</span></div>
+      <div class="nav-item">Ready to Export <span>1</span></div>
+      <div class="nav-item" id="library.startNarrationSection">Start a Narration</div>
+      <div class="nav-item">Archive</div>
+    </nav>
+    <div class="nav-bottom"><div class="nav-item">Settings</div></div>
+  </aside>
+
+  <section class="main">
+    <div class="toolbar"><div><div class="title">Library</div><div class="subtitle">4 audiobooks · <span class="freshdot"></span>Needs updated just now</div></div>
+      <div class="toolbar-actions"><input class="search" placeholder="Search projects…"><button class="primary" id="library.newAudiobook">＋ New Audiobook</button></div></div>
+
+    <div class="content">
+      <div class="project-grid">
+        <div class="project-card"><div class="cover purple">GE</div><div class="project-body"><h3 style="margin:0">Great Expectations</h3><small>Charles Dickens · You</small><div class="chips"><span class="warn">3 need pickup</span><span>59 chapters</span></div><div class="progress"><i style="width:72%"></i></div><small>72% recorded</small></div></div>
+        <div class="project-card new-card" id="library.openPackage"><div><div class="plus">＋</div><div>Start another audiobook</div><small>or open a .voxproject</small></div></div>
+      </div>
+
+      <!-- The new discovery section -->
+      <div class="sectionhead"><h2>Start a Narration</h2><a class="muted" id="needsBrowser.open" style="text-decoration:none;font-size:13px">Browse all needs →</a></div>
+      <div class="aspir">Bring a public-domain work to life. Short works or whole books — your Mac does both.</div>
+
+      <div class="railhead">Book of the Month</div>
+      <div class="feat" id="library.bookOfMonth">
+        <div class="bigcover">FRANKEN&#8203;STEIN</div>
+        <div style="flex:1">
+          <span class="sig gap">Needs a narrator · no complete solo on LibriVox</span>
+          <h3 style="font-size:19px;margin:8px 0 2px">Frankenstein</h3>
+          <div class="muted" style="font-size:13px">Mary Shelley · ~8 hr · 24 chapters · <span class="badge">Public domain · US</span></div>
+          <p style="font-size:13px;line-height:1.5;color:#cdd3dd;margin:10px 0 12px">One click sets up the whole book — chapters segmented, the LibriVox disclaimer inserted per chapter, and rights pre-filled from Project Gutenberg. Start recording chapter 1.</p>
+          <button class="gold" id="need.startNarrating.frankenstein">Start narrating ▸</button>
+        </div>
+      </div>
+
+      <div class="railhead">Short Works</div>
+      <div class="rail">
+        <div class="needcard"><h3>Hope is the thing with feathers</h3><small>Emily Dickinson · ~40 sec</small><br><span class="badge">Submittable</span><button class="gold go" id="need.startNarrating.dickinson-hope">Start narrating</button></div>
+        <div class="needcard"><h3>The Road Not Taken</h3><small>Robert Frost · ~1 min</small><br><span class="badge">Submittable</span><button class="gold go">Start narrating</button></div>
+        <div class="needcard"><h3>Ozymandias</h3><small>Percy Shelley · ~50 sec</small><br><span class="sig classic" style="margin-top:8px">Classic</span><button class="gold go">Start narrating</button></div>
+      </div>
+
+      <div class="railhead">Needs a Narrator</div>
+      <div class="rail">
+        <div class="needcard gap" id="library.needsARarrator.euclid"><h3>Elements, Book I</h3><small>Euclid · ~2 hr</small><span class="sig gap">Be the first · no LibriVox recording</span><button class="gold go">Start narrating</button></div>
+        <div class="needcard long"><h3>A Midsummer Night’s Dream</h3><small>Shakespeare · ~2.5 hr</small><span class="sig open">Open project · needs readers</span><button class="gold go">Start narrating</button></div>
+        <div class="needcard gap"><h3>On the Motion of the Heart</h3><small>William Harvey · ~3 hr</small><span class="sig gap">Be the first</span><button class="gold go">Start narrating</button></div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+  </section>
+
+  <aside class="inspector">
+    <h3>Frankenstein</h3>
+    <small>Selected · Book of the Month</small>
+    <hr>
+    <div class="kv"><span>Author</span><b>Mary Shelley</b></div>
+    <div class="kv"><span>Length</span><b>~8 hr · 24 chapters</b></div>
+    <div class="kv"><span>Signal</span><b>Needs a narrator</b></div>
+    <div class="kv"><span>Rights</span><b>Public domain · US</b></div>
+    <div class="kv"><span>Source</span><b>Project Gutenberg</b></div>
+    <div class="kv"><span>Grade</span><b>Submittable</b></div>
+    <hr>
+    <p style="font-size:12.5px;line-height:1.5;color:var(--muted)">Tapping <b style="color:var(--text)">Start narrating</b> fetches the Gutenberg EPUB, segments it into chapters, inserts the LibriVox intro/outro per chapter, and opens Source Import → Dashboard ready to record.</p>
+    <p style="font-size:11px;color:var(--muted)">Voxglass prepares files; you submit them yourself. Voxglass does not determine copyright status.</p>
+  </aside>
+</div>
+</body></html>

@@ -1,0 +1,48 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p02 · iPhone Source Review</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:12px;padding:2px 18px 6px}.nav .b{font-size:20px;color:var(--muted)}.nav .t{font-weight:850;font-size:17px}.nav .step{margin-left:auto;font-size:12px;color:var(--muted)}
+.progressbar{height:4px;border-radius:99px;background:var(--faint);overflow:hidden;margin:0 18px 8px}.progressbar i{display:block;height:100%;width:20%;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.screen{height:calc(100% - 52px);padding:0 18px 96px;overflow:auto}
+small,.muted{color:var(--muted);font-size:12px;line-height:1.4}
+.meta{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px;display:flex;gap:12px;align-items:center;margin-bottom:6px;backdrop-filter:blur(18px)}
+.meta .ic{width:48px;height:62px;border-radius:9px;background:linear-gradient(150deg,#101a14,#2f5a3e 50%,#c7b06a);display:grid;place-items:center;font-size:22px;flex:0 0 auto}
+.meta h2{margin:0 0 2px;font-size:17px;font-weight:850;letter-spacing:-.02em}
+.pill{font-size:10px;font-weight:800;color:#f0ce8a;border:1px solid rgba(216,173,103,.5);border-radius:999px;padding:2px 7px}
+.info{display:flex;gap:8px;margin:8px 2px 4px;color:var(--muted);font-size:12px}
+.h{font-size:13px;color:var(--muted);font-weight:700;margin:16px 2px 8px;text-transform:uppercase;letter-spacing:.04em}
+.para{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:8px 0;font-size:13.5px;line-height:1.5;display:flex;gap:10px}
+.para .n{color:var(--muted);font-size:11px;font-weight:800;flex:0 0 auto;margin-top:2px}
+.para.disc{border-color:rgba(216,173,103,.4);background:linear-gradient(160deg,rgba(60,48,26,.32),var(--panel))}
+.para.disc .n{color:#f0ce8a}
+.disc-badge{font-size:10px;font-weight:800;color:#f0ce8a;margin-left:6px}
+.flowbar{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 20px;background:linear-gradient(180deg,rgba(11,15,18,0),rgba(11,15,18,.94) 42%);display:flex;gap:10px}
+.gold-btn{flex:1;height:46px;border:0;border-radius:14px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;font-weight:850;font-size:15px}
+.ghost{width:96px;height:46px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--ink);font-weight:800}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p02 · Source Review — parsed EPUB, segmented lines, auto-inserted LibriVox disclaimer</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="nav"><span class="b">‹</span><span class="t">Review Text</span><span class="step">Step 1 of 5</span></div>
+<div class="progressbar"><i></i></div>
+<main class="screen">
+  <div class="meta"><div class="ic">📗</div><div style="flex:1"><h2>Hope</h2><small>Emily Brontë · from hope_bronte.epub</small></div><span class="pill">PD · US</span></div>
+  <div class="info" id="import.chapterCount">📄 1 piece · 6 spoken paragraphs · ~1 min 10 sec</div>
+
+  <div class="h">What will be recorded</div>
+
+  <div class="para disc"><span class="n">1</span><div>This is a LibriVox recording. All LibriVox recordings are in the public domain. For more information, or to volunteer, please visit librivox dot org.<span class="disc-badge">· disclaimer added</span></div></div>
+  <div class="para disc"><span class="n">2</span><div>Hope, by Emily Brontë. Read for LibriVox by <b>J. Burns</b>.<span class="disc-badge">· intro added</span></div></div>
+
+  <div class="para"><span class="n">3</span><div>Hope was but a timid friend;<br>She sat without the grated den,</div></div>
+  <div class="para"><span class="n">4</span><div>Watching how my fate would tend,<br>Even as selfish-hearted men.</div></div>
+  <div class="para"><span class="n">5</span><div>She was cruel in her fear;<br>Through the bars, one dreary day,</div></div>
+
+  <div class="para disc"><span class="n">6</span><div>End of poem. This recording is in the public domain.<span class="disc-badge">· outro added</span></div></div>
+</main>
+<div class="flowbar"><button class="ghost" id="import.resegment">Edit</button><button class="gold-btn" id="import.acceptStructure">Start recording ▸</button></div>
+</article></div></body></html>

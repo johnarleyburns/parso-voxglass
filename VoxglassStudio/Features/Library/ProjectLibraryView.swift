@@ -41,6 +41,17 @@ struct ProjectLibraryView: View {
                 .accessibilityIdentifier("library.openPackage")
             }
             .padding()
+
+            Divider()
+
+            ScrollView {
+                NarrationSectionView(
+                    browse: { env.push(to: .needsBrowser) },
+                    start: { env.beginNarration($0) }
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 20)
+            }
         }
         .navigationTitle("Library")
         .frame(minWidth: 500, minHeight: 400)

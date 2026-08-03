@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>n06 · Studio Needs Browser</title><style>
+:root{--bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;--muted:#a9b0bd;--accent:#7fb0ff;--good:#72d59f;--gold:#e0be7f}
+*{box-sizing:border-box}html,body{margin:0;height:100%}body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px}button.gold{background:linear-gradient(#f0ce8a,#d8ad67);color:#21170b;border-color:#f0ce8a;font-weight:750}
+.app-shell{display:grid;grid-template-columns:220px minmax(0,1fr);height:100vh;max-width:1500px;margin:auto;background:var(--panel);box-shadow:0 20px 80px #0008}
+.sidebar{border-right:1px solid var(--line);padding:14px;background:#1d2025;display:flex;flex-direction:column}
+.brand{font-size:17px;font-weight:750;padding:9px 8px 15px}.nav-item{padding:9px 10px;border-radius:8px;color:#d9dde5;margin:2px 0;display:flex;justify-content:space-between}.nav-item.active{background:#315a8f;color:#fff}.nav-bottom{margin-top:auto}
+.main{min-width:0;background:#202329}.toolbar{min-height:64px;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:#252930}.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}
+.search{width:220px;background:#17191e;color:var(--text);border:1px solid #444a55;border-radius:7px;padding:9px}
+.content{padding:18px;overflow:auto;height:calc(100vh - 64px)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filters span{font-size:12px;padding:7px 12px;border-radius:999px;background:#2f343d;border:1px solid var(--line);color:#d9dde5}.filters .active{background:#f0ce8a;color:#21170b;border-color:transparent;font-weight:750}
+.fresh{color:var(--muted);font-size:12px;margin-bottom:12px}.freshdot{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block;margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:15px;display:flex;flex-direction:column}
+.card.long{border-left:4px solid #5a6a9a}.card.gap{border-left:4px solid #6f5a9a}.card.weekly{border-left:4px solid #b79350}
+.card h3{margin:0 0 3px;font-size:15px;font-weight:750;line-height:1.18}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.sig{font-size:11px;font-weight:750;padding:3px 8px;border-radius:999px}
+.sig.open{color:#a9e6c2;background:rgba(80,200,140,.14);border:1px solid rgba(80,200,140,.35)}
+.sig.weekly{color:var(--gold);background:rgba(224,190,127,.14);border:1px solid rgba(224,190,127,.4)}
+.sig.gap{color:#c9b6ff;background:rgba(150,120,220,.14);border:1px solid rgba(150,120,220,.35)}
+.sig.classic{color:var(--muted);background:#2f343d;border:1px solid var(--line)}
+.grade{font-size:11px;font-weight:750;padding:3px 8px;border-radius:999px;border:1px solid rgba(224,190,127,.5);color:var(--gold)}.grade.practice{border-color:var(--line);color:var(--muted)}
+.act{margin-top:auto}.act .go{width:100%;font-size:13px}
+.act .mac{width:100%;font-size:13px;background:transparent;color:#a9c3ff;border:1px solid rgba(120,150,220,.45)}
+.foot{color:var(--muted);font-size:11px;margin-top:16px}
+@media(max-width:1100px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:1000px){.app-shell{grid-template-columns:180px 1fr}.grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">🎙️ Voxglass Studio</div>
+    <div class="nav-item">All Projects</div>
+    <div class="nav-item">Needs Review</div>
+    <div class="nav-item">Ready to Export</div>
+    <div class="nav-item active">Start a Narration</div>
+    <div class="nav-item">Archive</div>
+    <div class="nav-bottom"><div class="nav-item">Settings</div></div>
+  </aside>
+  <section class="main">
+    <div class="toolbar"><div><div class="title">Narration Needs</div><div class="subtitle">Public-domain works worth recording — short works and whole books</div></div>
+      <div><input class="search" placeholder="Search works, authors, subjects…"></div></div>
+    <div class="content">
+      <div class="filters" id="needsBrowser.filter">
+        <span class="active">All</span><span>Poems</span><span>Short stories</span><span>Books</span><span>Needs a reader</span><span>Be the first</span><span>Featured</span>
+      </div>
+      <div class="fresh"><span class="freshdot"></span>Updated just now · sources: bundled · parso.guru · Gutenberg · Internet Archive · LibriVox</div>
+
+      <div class="grid">
+        <div class="card weekly"><h3>Hope is the thing with feathers</h3><small>Emily Dickinson · ~40 sec · poem</small><div class="tags"><span class="sig weekly">This Week’s Poem</span><span class="grade">Submittable</span></div><p class="muted" style="font-size:12.5px;line-height:1.45;margin:0 0 12px">Source: Project Gutenberg. Disclaimer &amp; rights pre-filled.</p><div class="act"><button class="gold go">Start narrating</button></div></div>
+
+        <div class="card"><h3>Because I could not stop for Death</h3><small>Emily Dickinson · ~1 min · poem</small><div class="tags"><span class="sig open">Open project · needs a reader</span><span class="grade">Submittable</span></div><p class="muted" style="font-size:12.5px;line-height:1.45;margin:0 0 12px">Live on the LibriVox Short Works forum right now.</p><div class="act"><button class="gold go">Start narrating</button></div></div>
+
+        <div class="card"><h3>Fire and Ice</h3><small>Robert Frost · ~25 sec · poem</small><div class="tags"><span class="sig classic">Classic</span><span class="grade">Submittable</span></div><p class="muted" style="font-size:12.5px;line-height:1.45;margin:0 0 12px">Evergreen short work from the bundled set.</p><div class="act"><button class="gold go">Start narrating</button></div></div>
+
+        <div class="card gap long"><h3>Frankenstein</h3><small>Mary Shelley · ~8 hr · book</small><div class="tags"><span class="sig gap">Needs a narrator</span><span class="grade">Submittable</span></div><p class="muted" style="font-size:12.5px;line-height:1.45;margin:0 0 12px">No complete solo recording on LibriVox. 24 chapters.</p><div class="act"><button class="gold go">Start narrating</button></div></div>
+
+        <div class="card gap long"><h3>Elements, Book I</h3><small>Euclid · ~2 hr · book</small><div class="tags"><span class="sig gap">Be the first</span><span class="grade">Submittable</span></div><p class="muted" style="font-size:12.5px;line-height:1.45;margin:0 0 12px">Genuinely unrecorded on LibriVox (from the Great Books audit).</p><div class="act"><button class="gold go">Start narrating</button></div></div>
+
+        <div class="card"><h3>A Dream Within a Dream</h3><small>Edgar Allan Poe · ~50 sec · poem</small><div class="tags"><span class="sig classic">Classic</span><span class="grade practice">Practice</span></div><p class="muted" style="font-size:12.5px;line-height:1.45;margin:0 0 12px">From PoetryDB — attach a Gutenberg source to make it submittable.</p><div class="act"><button class="gold go">Start narrating</button></div></div>
+      </div>
+      <div class="foot">Sources degrade silently — if a website is unreachable or requires sign-in, this list simply shows saved works instead. Voxglass prepares files; you submit them yourself. Voxglass does not determine copyright status.</div>
+    </div>
+  </section>
+</div>
+</body></html>

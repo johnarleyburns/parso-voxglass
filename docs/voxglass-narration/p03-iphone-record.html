@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p03 · iPhone Record</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;--rec:#e0575d;--good:#72d59f;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:12px;padding:2px 18px 8px}.nav .b{font-size:20px;color:var(--muted)}.nav .t{font-weight:850;font-size:16px}.nav .step{margin-left:auto;font-size:12px;color:var(--muted)}
+.dots{display:flex;gap:5px;padding:0 18px 6px;flex-wrap:wrap}.dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--line)}.dot.done{background:var(--good);border-color:transparent}.dot.cur{background:var(--gold);border-color:transparent;box-shadow:0 0 0 3px rgba(216,173,103,.25)}.dot.flag{background:#e0a44f;border-color:transparent}
+.screen{height:calc(100% - 52px);padding:0 18px 20px;overflow:auto;display:flex;flex-direction:column}
+small,.muted{color:var(--muted);font-size:12px}
+.tele{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 18px;margin:6px 0 12px;text-align:center;backdrop-filter:blur(18px)}
+.tele .cur-n{font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.05em}
+.tele p{font-size:23px;line-height:1.5;margin:12px 0 0;font-weight:600}
+.tele .nextline{color:var(--muted);font-size:15px;margin-top:14px;opacity:.7}
+.meter{display:flex;gap:3px;align-items:flex-end;height:26px;margin:0 auto 6px;width:210px;justify-content:center}
+.meter i{width:5px;border-radius:2px;background:var(--good)}
+.meter i:nth-child(n+13){background:var(--gold)}.meter i:nth-child(n+18){background:#e0a44f}
+.rectime{text-align:center;color:var(--rec);font-weight:800;font-size:13px;margin-bottom:4px}
+.wave{height:56px;border-radius:10px;margin-bottom:6px;background:repeating-linear-gradient(90deg,transparent 0 3px,rgba(224,87,93,.85) 3px 5px,transparent 5px 9px),linear-gradient(#14171b,#14171b)}
+.transport{display:flex;align-items:center;justify-content:center;gap:24px;margin:8px 0 4px}
+.tbtn{width:50px;height:50px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:18px;display:grid;place-items:center}
+.recbtn{width:74px;height:74px;border-radius:50%;border:4px solid rgba(224,87,93,.4);background:var(--rec);color:#fff;font-size:16px;font-weight:850;display:grid;place-items:center;box-shadow:0 10px 26px rgba(224,87,93,.35)}
+.tlabels{display:flex;justify-content:center;gap:36px;color:var(--muted);font-size:11px;margin-bottom:8px}
+.takes{display:flex;gap:8px;margin:4px 0 10px;overflow:auto}
+.take{font-size:11px;padding:7px 11px;border-radius:999px;background:var(--faint);border:1px solid var(--line);white-space:nowrap}.take.active{background:#f6f2ea;color:#111;border-color:transparent;font-weight:750}
+.actions{display:flex;gap:10px;margin-top:auto}
+.act{flex:1;height:48px;border-radius:14px;font-weight:850;font-size:14px;border:0}
+.act.redo{background:transparent;border:1px solid var(--line);color:var(--ink);flex:0 0 96px}
+.act.flag{background:rgba(224,164,79,.16);border:1px solid rgba(224,164,79,.4);color:#e6b877;flex:0 0 54px}
+.act.next{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p03 · Record — teleprompter · level meter · transport · accept / re-record / flag</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="nav"><span class="b">‹</span><span class="t">Recording · Hope</span><span class="step">¶ 3 of 6</span></div>
+<div class="dots"><span class="dot done"></span><span class="dot done"></span><span class="dot cur"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+<main class="screen">
+  <div class="tele" id="record.teleprompter">
+    <div class="cur-n" id="record.disclaimerParagraph">PARAGRAPH 3 · verse</div>
+    <p>Hope was but a timid friend;<br>She sat without the grated den,</p>
+    <div class="nextline">Watching how my fate would tend…</div>
+  </div>
+
+  <div class="rectime">● REC  0:07</div>
+  <div class="meter" id="record.inputLevel"><i style="height:8px"></i><i style="height:13px"></i><i style="height:19px"></i><i style="height:11px"></i><i style="height:22px"></i><i style="height:16px"></i><i style="height:24px"></i><i style="height:14px"></i><i style="height:20px"></i><i style="height:10px"></i><i style="height:17px"></i><i style="height:23px"></i><i style="height:13px"></i><i style="height:9px"></i><i style="height:15px"></i><i style="height:7px"></i><i style="height:12px"></i><i style="height:5px"></i><i style="height:8px"></i><i style="height:4px"></i></div>
+  <div class="wave"></div>
+
+  <div class="transport">
+    <button class="tbtn" id="record.transport.playInContext">◁◁</button>
+    <button class="recbtn" id="record.transport.record">STOP<br><small style="font-size:9px;color:#ffd">■</small></button>
+    <button class="tbtn" id="record.transport.playTake">▶</button>
+  </div>
+  <div class="tlabels"><span>In context</span><span>Play take</span></div>
+
+  <div class="takes"><span class="take active" id="record.take.1">Take 1 · 0:07</span><span class="take" id="record.importWAV">＋ Import WAV</span></div>
+
+  <div class="actions">
+    <button class="act redo" id="record.previousParagraph">‹ Back</button>
+    <button class="act flag" id="record.flagAndNext">⚑</button>
+    <button class="act next" id="record.acceptAndNext">Accept &amp; Next ▸</button>
+  </div>
+</main>
+</article></div></body></html>

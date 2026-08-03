@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>n01 · iPhone Home — Start a Narration</title><style>
+:root{--bgA:#0b0f12;--bgB:#171d20;--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;--tab:rgba(18,22,25,.78);--active:#fff;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,var(--bgA),var(--bgB));border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.screen{height:calc(100% - 52px);padding:6px 20px 92px;overflow:auto;position:relative}
+h2{font-size:18px;margin:14px 0 8px;font-weight:820;letter-spacing:-.02em}small,.muted{color:var(--muted);font-size:12px;line-height:1.35}
+.section-head{display:flex;align-items:end;justify-content:space-between;margin-top:16px;margin-bottom:8px}.section-head a{font-size:12px;color:var(--muted);text-decoration:none}
+.covers{display:flex;gap:12px;overflow:auto;padding-bottom:2px}
+.cover{border-radius:12px;border:1px solid rgba(255,255,255,.22);box-shadow:0 14px 30px rgba(0,0,0,.28);display:grid;place-items:center;text-align:center;color:#f8e8c7;font-weight:900;line-height:1.08;text-shadow:0 1px 7px rgba(0,0,0,.75);flex:0 0 auto}
+.cover.small{width:88px;height:118px;font-size:10px}.book-label{width:104px;margin-top:6px;font-size:11px;font-weight:750;line-height:1.2}.author-name{font-size:10px;color:var(--muted);margin-top:2px}
+.dracula{background:linear-gradient(160deg,#13080a,#80251f 48%,#14080b)}.time{background:linear-gradient(150deg,#10151b,#38546b 52%,#d49a55)}.sense{background:linear-gradient(150deg,#20302c,#d0ad76)}
+.franken{background:linear-gradient(150deg,#101a14,#2f5a3e 50%,#c7b06a)}.mid{background:linear-gradient(150deg,#241018,#7a3a5c 52%,#0f1318)}.euclid{background:linear-gradient(150deg,#1a1420,#4a3a6a 52%,#c9a165)}
+.startshelf{margin-top:20px;border-top:1px solid var(--line);padding-top:6px}
+.aspir{color:#e9d3a5;font-size:12.5px;font-style:italic;margin:2px 0 6px}
+.feat{background:linear-gradient(160deg,rgba(60,48,26,.55),rgba(30,36,39,.62));border:1px solid rgba(216,173,103,.4);border-radius:20px;padding:14px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.feat .mic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(150deg,#3a2f1c,#6b5432);font-size:26px;flex:0 0 auto}
+.badge{display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;border:1px solid rgba(216,173,103,.5);color:#f0ce8a;background:rgba(216,173,103,.12)}
+.pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--faint);color:var(--muted);margin-left:6px}
+.gold-btn{height:36px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;font-weight:850;padding:0 14px;font-size:13px}
+.needcard{width:150px;flex:0 0 auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;backdrop-filter:blur(18px)}
+.needcard h3{font-size:14px;margin:0 0 2px;font-weight:800;line-height:1.15}.needcard .go{margin-top:10px;width:100%;height:32px;font-size:12px}
+.macrow{display:flex;gap:10px;overflow:auto}
+.maccard{width:118px;flex:0 0 auto;text-align:center}
+.mactag{display:inline-block;margin-top:6px;font-size:10px;font-weight:800;color:#a9c3ff;background:rgba(120,150,220,.14);border:1px solid rgba(120,150,220,.35);border-radius:999px;padding:3px 8px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:var(--tab);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;backdrop-filter:blur(18px);font-size:10px;color:var(--muted)}.tab{display:grid;gap:3px;justify-items:center;min-width:54px}.tab b{color:var(--active)}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">n01 · iPhone Home — “Start a Narration” shelf (scrolled to bottom of Home)</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<main class="screen" id="home.startNarrationShelf">
+  <div class="section-head"><h2>Recommended for You</h2><a>See All</a></div>
+  <div class="covers"><div><div class="cover small dracula"></div></div><div><div class="cover small time"></div></div><div><div class="cover small sense"></div></div></div>
+
+  <div class="startshelf">
+    <div class="section-head"><h2>Start a Narration</h2><a id="needs.seeAll">See All</a></div>
+    <div class="aspir">Lend your voice to the public domain.</div>
+
+    <!-- Featured slot: This Week's Poem (deterministic on-device pick) -->
+    <div class="feat" id="needs.featured">
+      <div class="mic">🎙️</div>
+      <div style="flex:1">
+        <div><span class="badge">This Week’s Poem</span><span class="pill">Public domain · US</span></div>
+        <h3 style="margin:6px 0 1px;font-size:16px;font-weight:850">Hope is the thing with feathers</h3>
+        <small>Emily Dickinson · ~40 sec · one tap to record</small>
+      </div>
+      <button class="gold-btn" id="need.startNarrating.dickinson-hope">Start ▸</button>
+    </div>
+
+    <!-- Short works rail (shortest-first, iPhone-narratable) -->
+    <div class="section-head"><h2 style="font-size:15px">Short Works to Narrate</h2></div>
+    <div class="covers" id="needs.rail.short">
+      <div class="needcard"><h3>The Road Not Taken</h3><small>Robert Frost · ~1 min</small><br><span class="badge" style="margin-top:8px;display:inline-block">Submittable</span><button class="gold-btn go" id="need.startNarrating.frost-road">Start narrating</button></div>
+      <div class="needcard"><h3>Fire and Ice</h3><small>Robert Frost · ~25 sec</small><br><span class="badge" style="margin-top:8px;display:inline-block">Submittable</span><button class="gold-btn go" id="need.startNarrating.frost-fire">Start narrating</button></div>
+      <div class="needcard"><h3>A Dream Within a Dream</h3><small>Edgar Allan Poe · ~50 sec</small><br><span class="pill" style="margin:8px 0 0;display:inline-block">Practice</span><button class="gold-btn go" id="need.startNarrating.poe-dream">Start narrating</button></div>
+    </div>
+
+    <!-- Long works: surfaced but Mac-only for the action -->
+    <div class="section-head"><h2 style="font-size:15px">More on Your Mac</h2></div>
+    <div class="macrow" id="needs.rail.long">
+      <div class="maccard"><div class="cover small franken"></div><div class="book-label">Frankenstein</div><div class="author-name">Mary Shelley</div><span class="mactag" id="need.recordOnMac.frankenstein">Record on Mac</span></div>
+      <div class="maccard"><div class="cover small mid"></div><div class="book-label">A Midsummer Night’s Dream</div><div class="author-name">Shakespeare</div><span class="mactag" id="need.recordOnMac.midsummer">Record on Mac</span></div>
+      <div class="maccard"><div class="cover small euclid"></div><div class="book-label">Elements, Book I</div><div class="author-name">Euclid · needs a narrator</div><span class="mactag" id="need.recordOnMac.euclid">Record on Mac</span></div>
+    </div>
+    <div style="height:14px"></div>
+  </div>
+</main>
+<footer class="tabs"><div class="tab"><span>⌂</span><b>Home</b></div><div class="tab"><span>▥</span><span>Library</span></div><div class="tab"><span>◉</span><span>Browse</span></div><div class="tab"><span>⌕</span><span>Search</span></div><div class="tab"><span>☰</span><span>More</span></div></footer>
+</article></div></body></html>

@@ -127,6 +127,25 @@ public final class StudioEnvironment {
         }
         return FileAssetStore(root: FileManager.default.temporaryDirectory)
     }
+
+    /// Kicks off a narration from a discovered need (n05/n06): a fresh
+    /// public-domain project pre-filled from the need, routed to Source Import
+    /// so short works and whole books share the multi-chapter toolset (§10).
+    public func beginNarration(_ need: NarrationNeed) {
+        let project = AudiobookProject(
+            id: UUID(),
+            metadata: BookMetadata(title: need.work.title, author: need.work.author, narrator: ""),
+            rights: RightsEvidence(
+                basis: .publicDomainUS,
+                sourceURL: need.work.sourcePageURL,
+                editionYear: need.provenance.editionYear,
+                evidenceNotes: "Curated public-domain work surfaced by Narration Needs."
+            ),
+            profile: ProductionProfile(purpose: .publicDomainCommunity, intendedDestination: .librivox)
+        )
+        setProject(project)
+        navigationPath = [.sourceImport]
+    }
 }
 
 public enum StudioRoute: Sendable, Equatable, Hashable {
@@ -144,6 +163,8 @@ public enum StudioRoute: Sendable, Equatable, Hashable {
     case export
     case devicePreview
     case settings
+    case discovery
+    case needsBrowser
 }
 
 public enum UITestSeed: String, Sendable, CaseIterable {

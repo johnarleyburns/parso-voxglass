@@ -6,6 +6,7 @@ import CloudKit
 struct VoxglassApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var services = AppServices.shared
+    @State private var discovery = DiscoveryEnvironment()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -14,6 +15,7 @@ struct VoxglassApp: App {
                 .environmentObject(services.libraryStore)
                 .environmentObject(services.catalogStore)
                 .environment(services.playbackCoordinator)
+                .environment(discovery)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
                 .environmentObject(services.cloudSync)

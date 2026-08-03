@@ -51,8 +51,45 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
+    private var myNarrationsEntry: some View {
+        NavigationLink {
+            MyNarrationsView(findSomething: { findSomethingToNarrate = true })
+                .fullScreenCover(isPresented: $findSomethingToNarrate) {
+                    NarrationFlowRoot(startNeed: nil)
+                }
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(LinearGradient(colors: [Color(hex: 0x3A2F1C), Color(hex: 0x6B5432)], startPoint: .top, endPoint: .bottom))
+                    Text("🎙️").scaledFont(size: 20)
+                }
+                .frame(width: 44, height: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Start a Narration")
+                        .scaledFont(size: 15, weight: .bold)
+                        .foregroundStyle(Palette.ink)
+                    Text("My Narrations · record a public-domain short work")
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.ink2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
+            }
+            .padding(13)
+            .glassSurface(cornerRadius: 16)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.brass.opacity(0.4), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .tactileTap()
+    }
+
+    @State private var findSomethingToNarrate = false
+
+    @ViewBuilder
     private var bookList: some View {
         VStack(alignment: .leading, spacing: 10) {
+            myNarrationsEntry
             if libraryStore.books.isEmpty {
                 EmptyStatePanel(
                     title: "No Audiobooks Yet",

@@ -4,6 +4,7 @@ import VoxglassCore
 @main
 struct StudioApp: App {
     @State private var environment = StudioEnvironment(licenseProvider: StoreKitLicenseProvider())
+    @State private var discoveryModel = StudioDiscoveryModel()
 
     init() {
         // The one place the encoder composition is named (S12 diagnostics).
@@ -24,6 +25,13 @@ struct StudioApp: App {
                         switch route {
                         case .library:
                             ProjectLibraryView()
+                        case .discovery:
+                            NarrationSectionView(
+                                browse: { environment.push(to: .needsBrowser) },
+                                start: { environment.beginNarration($0) }
+                            )
+                        case .needsBrowser:
+                            NeedsBrowserView(start: { environment.beginNarration($0) })
                         case .newProject:
                             NewProjectView()
                         case .sourceImport:
@@ -150,6 +158,7 @@ struct StudioApp: App {
                     }
             }
             .environment(environment)
+            .environment(discoveryModel)
             .onChange(of: environment.recoveryPackageRoot) {
                 environment.presentRecoveryIfNeeded()
             }

@@ -15,7 +15,10 @@ let package = Package(
             name: "VoxglassCore",
             path: "Voxglass/Core",
             exclude: ["Encoders"],
-            resources: [.process("Resources/CuratedLists")],
+            resources: [
+                .process("Resources/CuratedLists"),
+                .copy("Production/Discovery/Resources/needs-seed.json")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5),
                 .enableUpcomingFeature("StrictConcurrency")

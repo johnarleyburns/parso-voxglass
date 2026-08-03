@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>n04 · iPhone Long-work Mac Handoff</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:6;background:linear-gradient(180deg,#1b2126,#12171a);border-top-left-radius:26px;border-top-right-radius:26px;border-top:1px solid var(--line);padding:12px 24px 28px;box-shadow:0 -20px 60px rgba(0,0,0,.5)}
+.grab{width:40px;height:5px;border-radius:99px;background:rgba(255,255,255,.28);margin:2px auto 16px}
+.cover{width:120px;height:160px;border-radius:16px;margin:2px auto 16px;display:grid;place-items:center;text-align:center;color:#f8e8c7;font-weight:900;font-size:14px;line-height:1.1;background:linear-gradient(150deg,#101a14,#2f5a3e 50%,#c7b06a);box-shadow:0 16px 34px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2)}
+h2{font-size:21px;text-align:center;margin:0 0 4px;font-weight:850;letter-spacing:-.02em}
+.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
+.explain{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 15px;font-size:13.5px;line-height:1.5;backdrop-filter:blur(18px)}
+.explain b{color:#f0ce8a}
+.steps{margin:12px 0 4px;padding:0;list-style:none}
+.steps li{display:flex;gap:10px;align-items:flex-start;margin:9px 0;font-size:13px;line-height:1.4}
+.num{width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:rgba(216,173,103,.16);color:#f0ce8a;font-weight:850;font-size:12px;border:1px solid rgba(216,173,103,.4)}
+.gold-btn{width:100%;height:46px;border:0;border-radius:14px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b;font-weight:850;font-size:15px;margin-top:16px}
+.ghost{width:100%;height:44px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--ink);font-weight:800;margin-top:10px}
+.foot{text-align:center;color:var(--muted);font-size:11px;margin-top:14px;line-height:1.4}
+</style></head><body>
+<div><div class="label">n04 · Long-work handoff — “Record on Mac” (calm; no record button, no login, no error)</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="dim"></div>
+<div class="sheet" id="handoff.title">
+  <div class="grab"></div>
+  <div class="cover">FRANKENSTEIN</div>
+  <h2>Frankenstein</h2>
+  <div class="sub">Mary Shelley · ~8 hours · a full book</div>
+  <div class="explain">This is a <b>book</b> — best recorded on a Mac, where you get chapter-by-chapter recording, faster review, and a good microphone. Your iPhone is perfect for short poems and stories.</div>
+  <ol class="steps">
+    <li><span class="num">1</span><div>Open <b>Voxglass Studio</b> on your Mac.</div></li>
+    <li><span class="num">2</span><div>Find “Frankenstein” under <b>Start a Narration → Needs a Narrator</b> — one click sets up the whole book.</div></li>
+    <li><span class="num">3</span><div>Record it there. A short work you started on your phone opens on the Mac too — same project.</div></li>
+  </ol>
+  <button class="gold-btn" id="handoff.continueOnMac">How Voxglass Studio works</button>
+  <button class="ghost" id="handoff.dismiss">Find a short work instead</button>
+  <div class="foot">Voxglass prepares files; you submit them yourself. Voxglass does not determine copyright status.</div>
+</div>
+</article></div></body></html>

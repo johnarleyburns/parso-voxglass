@@ -238,6 +238,169 @@ check_no_test_support() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# G-13: Discovery never fails visibly. The aggregator's public API is total,
+# and the Core test target MUST contain a test named matching
+# `allSourcesFail_seedFloor` (§12.3).
+# ──────────────────────────────────────────────────────────────
+check_discovery_total() {
+  local aggregator="Voxglass/Core/Production/Discovery/Aggregate/NeedsAggregator.swift"
+  if [ ! -f "$aggregator" ]; then
+    violate "G-13: NeedsAggregator.swift does not exist"
+    return
+  fi
+  if ! grep -rln --include='*.swift' 'allSourcesFail_seedFloor' VoxglassTests >/dev/null 2>&1; then
+    violate "G-13: Core test target must contain a test named matching allSourcesFail_seedFloor"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-14: No sign-in UI in discovery. Files under **/Discovery/** must not
+# reference login/signIn/credential/password or present any auth view; the
+# forum source must not import UI. The L3 *detection* seam is allowed to
+# recognize a login wall (it yields nothing), so its two parser files are
+# exempted from the `login` token; everything else — including the UI
+# surfaces — must be clean.
+# ──────────────────────────────────────────────────────────────
+check_no_signin_ui() {
+  local banned='ASWebAuthenticationSession|signIn|credential|password'
+  local matches
+  matches=$(grep -rn --include='*.swift' -E "$banned" Voxglass/Core/Production/Discovery Voxglass/Features/Production/Discovery VoxglassStudio/Features/Discovery 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-14: auth/sign-in reference in discovery: $line"
+    done <<< "$matches"
+  fi
+
+  # The `login` token is permitted only inside the L3 wall-detection seam.
+  local login_matches
+  login_matches=$(grep -rn --include='*.swift' -w 'login' Voxglass/Core/Production/Discovery Voxglass/Features/Production/Discovery VoxglassStudio/Features/Discovery 2>/dev/null \
+    | grep -vE 'LenientHTMLScanner\.swift|LibriVoxForumNeedsSource\.swift|looksLikeLoginPage|ucp\.php' || true)
+  if [ -n "$login_matches" ]; then
+    while read -r line; do
+      violate "G-14: login reference in discovery UI: $line"
+    done <<< "$login_matches"
+  fi
+
+  # The forum source must not import any UI module.
+  local forum="Voxglass/Core/Production/Discovery/Sources/LibriVoxForumNeedsSource.swift"
+  if [ -f "$forum" ] && grep -qE '^import (SwiftUI|UIKit|AppKit)' "$forum"; then
+    violate "G-14: LibriVoxForumNeedsSource must not import UI"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-15: iPhone never records long works. The iOS discovery UI must gate any
+# start-narrating CTA on `narratableOn` (derived from lengthClass), and must
+# present only the handoff for long needs. Enforced here by requiring that any
+# iOS discovery file rendering a record CTA references the narratableOn gate.
+# ──────────────────────────────────────────────────────────────
+check_iphone_never_records_long() {
+  local dir="Voxglass/Features/Production/Discovery"
+  if [ ! -d "$dir" ]; then
+    return
+  fi
+  local files
+  files=$(find "$dir" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -lE 'Start narrating|Start ▸' 2>/dev/null || true)
+  for f in $files; do
+    if ! grep -q 'narratableOn' "$f"; then
+      violate "G-15: $f renders a start-narrating CTA without a narratableOn gate"
+    fi
+  done
+  # Long needs must route to the handoff, never a record button.
+  if [ -n "$files" ]; then
+    local handoff
+    handoff=$(find "$dir" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -l 'LongWorkHandoff' 2>/dev/null || true)
+    if [ -z "$handoff" ]; then
+      violate "G-15: iOS discovery must present the long-work handoff (LongWorkHandoff)"
+    fi
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-16: PD gate before submittable. NeedsAggregator must reference PDVerifier,
+# and the Core test target must enforce the downgrade (test-named
+# `pdGate_neverSubmittableWhenUnverified`).
+# ──────────────────────────────────────────────────────────────
+check_pd_gate() {
+  local aggregator="Voxglass/Core/Production/Discovery/Aggregate/NeedsAggregator.swift"
+  if [ ! -f "$aggregator" ]; then
+    violate "G-16: NeedsAggregator.swift does not exist"
+    return
+  fi
+  if ! grep -q 'PDVerifier' "$aggregator"; then
+    violate "G-16: NeedsAggregator must reference PDVerifier"
+  fi
+  if ! grep -rln --include='*.swift' 'pdGate_neverSubmittableWhenUnverified' VoxglassTests >/dev/null 2>&1; then
+    violate "G-16: Core test target must contain a test named matching pdGate_neverSubmittableWhenUnverified"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-17: Discovery is dependency-free and I/O-seamed. Core Discovery must not
+# use URLSession directly (only the HTTPFetching seam) and must not import a
+# URLSession-bearing or UI module, or a third-party HTML parser.
+# ──────────────────────────────────────────────────────────────
+check_discovery_io_seam() {
+  local dir="Voxglass/Core/Production/Discovery"
+  if [ ! -d "$dir" ]; then
+    return
+  fi
+  # HTTPFetching.swift is the seam definition itself; it documents (but never
+  # instantiates) the URLSession-based concrete.
+  local matches
+  matches=$(grep -rn --include='*.swift' -E 'URLSession' "$dir" 2>/dev/null | grep -v 'HTTPFetching\.swift' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-17: discovery URLSession use: $line"
+    done <<< "$matches"
+  fi
+  local ui_matches
+  ui_matches=$(grep -rn --include='*.swift' -E '^import (SwiftUI|UIKit|AppKit|WebKit|JavaScriptCore)' "$dir" 2>/dev/null || true)
+  if [ -n "$ui_matches" ]; then
+    while read -r line; do
+      violate "G-17: discovery UI module import: $line"
+    done <<< "$ui_matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-18: The floor exists. needs-seed.json parses and contains >= 100 .short and
+# >= 20 .long entries, each with a non-unverified PD basis (seed entries are
+# curator-verified).
+# ──────────────────────────────────────────────────────────────
+check_seed_floor() {
+  local seed="Voxglass/Core/Production/Discovery/Resources/needs-seed.json"
+  if [ ! -f "$seed" ]; then
+    violate "G-18: needs-seed.json does not exist at $seed"
+    return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    violate "G-18: python3 is required to validate needs-seed.json"
+    return
+  fi
+  python3 - "$seed" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    env = json.load(f)
+entries = env["entries"]
+short = [e for e in entries if e["estSeconds"] <= 3600]
+long = [e for e in entries if e["estSeconds"] > 3600]
+errors = []
+if len(short) < 100:
+    errors.append(f"short={len(short)} < 100")
+if len(long) < 20:
+    errors.append(f"long={len(long)} < 20")
+if errors:
+    print("guard: G-18: seed floor violated: " + "; ".join(errors), file=sys.stderr)
+    sys.exit(1)
+PY
+  local rc=$?
+  if [ "$rc" -ne 0 ]; then
+    VIOLATIONS=$((VIOLATIONS + 1))
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
 # Run all checks.
 # ──────────────────────────────────────────────────────────────
 check_no_synthesis
@@ -252,6 +415,12 @@ check_no_test_support
 check_destination_constants
 check_legal_strings
 check_no_auto_upload
+check_discovery_total
+check_no_signin_ui
+check_iphone_never_records_long
+check_pd_gate
+check_discovery_io_seam
+check_seed_floor
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

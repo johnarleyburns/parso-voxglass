@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>p08 · iPhone Submit &amp; Hand Off</title><style>
+:root{--ink:#f7f0e6;--muted:#b9afa4;--panel:rgba(30,36,39,.62);--faint:rgba(255,255,255,.09);--line:rgba(255,255,255,.13);--gold:#d8ad67;--gold2:#f0ce8a;--good:#72d59f;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#283034 0%,#020406 42%,#000 100%);color:var(--ink)}
+body{display:grid;place-items:center;padding:28px}.label{font-weight:750;color:#f4e2bf;font-size:15px;margin-bottom:12px;text-align:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:linear-gradient(155deg,#0b0f12,#171d20);border:10px solid #090b0d;box-shadow:0 26px 80px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.24)}
+.phone:before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:34px;border-radius:30px;background:#050505;z-index:20}
+.status{height:52px;padding:16px 25px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:800}
+.nav{display:flex;align-items:center;gap:12px;padding:2px 18px 4px}.nav .x{font-size:22px;color:var(--muted)}.nav .t{font-weight:850;font-size:16px}
+.screen{height:calc(100% - 52px);padding:0 18px 22px;overflow:auto}
+small,.muted{color:var(--muted);font-size:12px;line-height:1.45}
+.hero{text-align:center;margin:8px 0 6px}.hero .big{font-size:44px}.hero h1{font-size:22px;margin:6px 0 2px;font-weight:850;letter-spacing:-.02em}
+.files{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 13px;margin:14px 0;backdrop-filter:blur(18px)}
+.file{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}.file:last-child{border-bottom:0}
+.file .fi{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:800;flex:0 0 auto}
+.file .sz{margin-left:auto;color:var(--muted);font-size:11px}
+.act{width:100%;border-radius:14px;font-weight:850;font-size:15px;margin:9px 0;display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:0}
+.act.share{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#21170b}
+.act.lv{background:rgba(216,173,103,.14);border:1px solid rgba(216,173,103,.45);color:#f0ce8a}
+.act.ia{background:rgba(120,160,220,.14);border:1px solid rgba(120,160,220,.4);color:#9fc3ff}
+.h{font-size:13px;color:var(--muted);font-weight:700;margin:16px 2px 8px;text-transform:uppercase;letter-spacing:.04em}
+.step{display:flex;gap:10px;align-items:flex-start;margin:9px 2px;font-size:13px;line-height:1.4}
+.num{width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:rgba(216,173,103,.16);color:#f0ce8a;font-weight:850;font-size:12px;border:1px solid rgba(216,173,103,.4)}
+.foot{text-align:center;color:var(--muted);font-size:11px;margin-top:16px;line-height:1.5}
+@media(max-width:460px){body{padding:8px}.phone{width:100vw;height:100vh;border-radius:0;border:0}}
+</style></head><body>
+<div><div class="label">p08 · Submit &amp; Hand Off — files ready, share / submit to LibriVox / upload to Archive</div>
+<article class="phone"><div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+<div class="nav"><span class="x">✕</span><span class="t">Ready to Submit</span></div>
+<main class="screen">
+  <div class="hero"><div class="big">🎉</div><h1>Your recording is ready</h1><small id="export.packageReady">“Hope” by Emily Brontë · a publishable public-domain recording</small></div>
+
+  <div class="files">
+    <div class="file"><div class="fi" style="background:linear-gradient(150deg,#3a2f1c,#6b5432)">MP3</div><div>hope_bronte_jb_128kb.mp3</div><span class="sz">1.1 MB</span></div>
+    <div class="file"><div class="fi" style="background:linear-gradient(150deg,#26344e,#3a4a6a)">FLAC</div><div>hope_bronte.flac</div><span class="sz">7.8 MB</span></div>
+    <div class="file"><div class="fi" style="background:#2f343d;color:#cfd6e0">TXT</div><div>librivox-checklist.md</div><span class="sz">2 KB</span></div>
+    <div class="file"><div class="fi" style="background:#2f343d;color:#cfd6e0">{ }</div><div>metadata.json</div><span class="sz">1 KB</span></div>
+  </div>
+
+  <button class="act share" id="export.share">􀈂  Share / Save to Files</button>
+
+  <div class="h">Submit to LibriVox</div>
+  <div class="step"><span class="num">1</span><div>Open this week’s <b>Weekly Poetry</b> thread and claim the poem.</div></div>
+  <div class="step"><span class="num">2</span><div>Upload <code>hope_bronte_jb_128kb.mp3</code> to the LibriVox uploader.</div></div>
+  <div class="step"><span class="num">3</span><div>Post the link in the thread with your reader name. The checklist has the exact steps.</div></div>
+  <button class="act lv" id="export.submitToLibriVox">Open the Weekly Poetry thread →</button>
+
+  <div class="h">Or Internet Archive</div>
+  <button class="act ia" id="export.uploadToArchive">Prepare Archive upload (opensource_audio) →</button>
+
+  <div class="foot">Voxglass prepares files; <b style="color:#e9d3a5">you submit them yourself</b>. Voxglass never uploads on your behalf and does not determine copyright status.</div>
+</main>
+</article></div></body></html>
