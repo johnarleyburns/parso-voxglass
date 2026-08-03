@@ -28,6 +28,25 @@
       sandbox, export verified: RMS ∈ [−23, −18], true peak ≤ −3, noise ≤ −60,
       M4B chapter marks playable, sample duration correct and not credits.
 
+## Capture robustness matrix (WP-D, §19.10 M-2/M-3/M-4)
+
+The real-time tap discipline ("no allocation, no lock, no Task, no os_log, no
+`Date()` in the tap body") is verified by code review in
+`VoxglassStudio/Services/AVAudioEngineCapture.swift` + `CaptureRingBuffer.swift`,
+not by test. The behavioral guarantees below are hardware-dependent and must
+be executed on a real interface before shipping:
+
+- [ ] **M-2 Device change** — record with an interface, unplug it mid-take:
+      banner shows "Your input device changed." with **Reveal Take** and
+      **Resume Recording**; the take plays back completely; recording resumes
+      on the new device.
+- [ ] **M-3 Sleep** — start a take, put the Mac to sleep mid-take: on wake the
+      banner shows "Your Mac went to sleep." and the take is preserved and
+      playable.
+- [ ] **M-4 Disk full** — fill the disk during a take: banner shows "The disk
+      filled up while recording." with "Everything recorded up to that point
+      was saved."; previously recorded takes are intact and playable.
+
 ## Destinations
 
 - [ ] §21.3 re-verification completed; `DESTINATION_VERIFICATION_LOG.md` updated

@@ -70,11 +70,12 @@ public struct AudioDeviceInfo: Sendable, Equatable, Identifiable {
     }
 }
 
-public enum CaptureError: Error {
+public enum CaptureError: Error, Equatable {
     case permissionDenied
     case invalidState
     case formatNotSupported
     case deviceUnavailable
     case punchInNotSupported
     case deviceChanged(name: String)
+    case diskFull
 }

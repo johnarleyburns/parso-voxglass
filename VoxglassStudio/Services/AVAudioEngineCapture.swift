@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import CoreAudio
 import AudioToolbox
@@ -5,9 +6,34 @@ import Foundation
 import os
 import VoxglassCore
 
+/// A finalized take the capture produced outside the normal stop path
+/// (device change, system sleep, or a write failure such as a full disk).
+public struct CaptureInterruption: Sendable, Equatable {
+    public enum Kind: Sendable, Equatable {
+        case deviceChanged(name: String)
+        case sleep
+        case diskFull
+    }
+
+    public let kind: Kind
+    /// The take file the capture finalized before the interruption. Never nil
+    /// for device-change/sleep; nil only when the write failed so early that
+    /// no file exists.
+    public let take: CapturedTake?
+
+    public init(kind: Kind, take: CapturedTake?) {
+        self.kind = kind
+        self.take = take
+    }
+}
+
 public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
 
     public private(set) var state: CaptureState = .idle
+
+    /// Fired when a take had to be finalized outside the normal stop path
+    /// (spec §11.2 rule 6, rule 8). The take is complete and preserved.
+    public var onInterruption: (@Sendable (CaptureInterruption) -> Void)?
 
     public var levels: AsyncStream<CaptureLevels> {
         AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
@@ -34,10 +60,9 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
     private var recordFile: AVAudioFile?
     private var recordURL: URL?
     private var recordFormat: RecordingDefaults?
-    private var recordSampleCount: UInt64 = 0
-    private var recordPeak: Float = 0
-    private var clippedDuringCapture = false
     private var writerError: Error?
+    private var stopRequested = false
+    private var currentInterruption: CaptureInterruption?
 
     private var monitoringActive = false
     private var levelContinuations: [UUID: AsyncStream<CaptureLevels>.Continuation] = [:]
@@ -46,25 +71,35 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
     private var currentDeviceID: String?
     private var swappedDefaultDevice: AudioDeviceID = 0
 
-    // Real-time safety: the tap copies into a preallocated pool and hands off
-    // to a serial writer queue; AVAudioFile.write and the AVAudioConverter
-    // never run on the render thread.
-    private let writerQueue = DispatchQueue(label: "guru.parso.voxglass.capture.writer")
-    private var bufferPool: CaptureBufferPool?
+    // Real-time path: the tap copies into the ring and updates the level
+    // accumulators — nothing else (spec §11.2 rule 3). A detached writer task
+    // drains the ring, converts, and writes the file (rule 1).
+    private var ring: CaptureRingBuffer?
+    private var levelsAccumulator = CaptureLevelAccumulator()
+    private var writerTask: Task<Void, Never>?
     private var writerConverter: AVAudioConverter?
     private var writerOutputFormat: AVAudioFormat?
+    private var writerInputBuffer: AVAudioPCMBuffer?
+    private var writerOutputBuffer: AVAudioPCMBuffer?
+    private var writerScratch: UnsafeMutablePointer<Float>?
     private var tapInstalled = false
 
-    private struct LevelSnapshot {
-        var peak: Float = 0
-        var rms: Float = 0
-        var clipping = false
-        var sampleTime: TimeInterval = 0
-    }
-    private let snapshotLock = OSAllocatedUnfairLock()
-    private var snapshot = LevelSnapshot()
+    private var interruptionObservers: [NSObjectProtocol] = []
 
-    public init() {}
+    public init() {
+        installInterruptionObservers()
+    }
+
+    deinit {
+        if let scratch = writerScratch {
+            scratch.deallocate()
+        }
+        for observer in interruptionObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    // MARK: - Public API
 
     public func availableInputDevices() async -> [AudioDeviceInfo] {
         let devices = enumerateAudioDevices()
@@ -92,6 +127,14 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
         currentDeviceID = device
         configureEngineSession()
         try configureInputFormat(format)
+
+        // Ring sized to 4 seconds at the record format (§11.2 rule 4).
+        let ringFrames = Int(format.sampleRate * 4.0)
+        let ring = CaptureRingBuffer(capacityFrames: ringFrames)
+        self.ring = ring
+        ring.reset()
+        levelsAccumulator.reset()
+
         installTapIfNeeded()
         state = .prepared
     }
@@ -152,98 +195,80 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
         // format. If conversion is impossible the write fails loudly below;
         // we never silently produce a zero-length take.
         let converter = AVAudioConverter(from: tapFormat, to: avFmt)
-        let outputFormat = avFmt
+
+        let inCapacity: AVAudioFrameCount = 16_384
+        guard let inputBuffer = AVAudioPCMBuffer(pcmFormat: tapFormat, frameCapacity: inCapacity) else {
+            throw CaptureError.formatNotSupported
+        }
+        let ratio = avFmt.sampleRate / tapFormat.sampleRate
+        let outCapacity = max(AVAudioFrameCount(Double(inCapacity) * ratio) + 16, 1024)
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: avFmt, frameCapacity: outCapacity) else {
+            throw CaptureError.formatNotSupported
+        }
+
+        // Rebuild the ring on every take so the 4-second window starts empty
+        // and overrun counts are per-take.
+        let ring = CaptureRingBuffer(capacityFrames: Int(fmt.sampleRate * 4.0))
+        self.ring = ring
+        levelsAccumulator.reset()
+        writerScratch?.deallocate()
+        let scratch = UnsafeMutablePointer<Float>.allocate(capacity: Int(inCapacity))
+        writerScratch = scratch
 
         stateLock.withLock {
             recordURL = destinationURL
             recordFile = file
-            recordSampleCount = 0
-            recordPeak = 0
-            clippedDuringCapture = false
             writerError = nil
+            stopRequested = false
+            currentInterruption = nil
         }
-
-        bufferPool = CaptureBufferPool(format: tapFormat)
         writerConverter = converter
-        writerOutputFormat = outputFormat
+        writerOutputFormat = avFmt
+        writerInputBuffer = inputBuffer
+        writerOutputBuffer = outputBuffer
 
         if !engine.isRunning { try engine.start() }
 
         state = .recording
+        startWriter()
         startLevelPolling()
     }
 
     public func stopRecording() async throws -> CapturedTake {
         state = .stopping
 
-        // Stop new callbacks from enqueuing, then drain every write that is
-        // already queued before reading the counters.
-        removeTap()
-        writerQueue.sync {}
+        let (take, error) = await finalizeTake()
 
-        if !monitoringActive, engine.isRunning {
-            engine.stop()
+        if let interruption = currentInterruption {
+            // The take was already surfaced through onInterruption; rethrow the
+            // mapped error so a subsequent stop does not appear successful.
+            if case .deviceChanged(let name) = interruption.kind {
+                throw CaptureError.deviceChanged(name: name)
+            }
         }
 
-        stopLevelPolling()
-        restoreDefaultDeviceIfNeeded()
-
-        let capture: (fileURL: URL?, format: RecordingDefaults?, error: Error?, sampleCount: UInt64, peak: Float, clipped: Bool) = stateLock.withLock {
-            let result = (
-                fileURL: recordURL,
-                format: recordFormat,
-                error: writerError,
-                sampleCount: recordSampleCount,
-                peak: recordPeak,
-                clipped: clippedDuringCapture
-            )
-            recordFile = nil
-            recordURL = nil
-            bufferPool = nil
-            writerConverter = nil
-            writerOutputFormat = nil
-            return result
-        }
-
-        guard let fileURL = capture.fileURL, let fmt = capture.format else {
-            throw CaptureError.invalidState
-        }
-
-        if let error = capture.error {
-            throw error
-        }
-
-        let duration = Double(capture.sampleCount) / fmt.sampleRate
-        let peakDBFS = 20.0 * log10(Double(max(capture.peak, 1e-7)))
-        let captured = CapturedTake(
-            fileURL: fileURL,
-            duration: duration,
-            format: AudioFormatDescription(sampleRate: fmt.sampleRate, channels: 1, bitDepth: fmt.bitDepth, codec: "pcm"),
-            clippedDuringCapture: capture.clipped,
-            peakDBFS: peakDBFS
-        )
-
-        state = .idle
-        return captured
+        if let error { throw error }
+        return take
     }
 
     public func cancelRecording() async {
+        state = .stopping
         removeTap()
-        stopLevelPolling()
-        writerQueue.sync {}
-
+        stopWriter()
         stateLock.withLock {
             if let url = recordURL { try? FileManager.default.removeItem(at: url) }
             recordFile = nil
             recordURL = nil
-            recordSampleCount = 0
-            recordPeak = 0
-            clippedDuringCapture = false
-            bufferPool = nil
-            writerConverter = nil
-            writerOutputFormat = nil
+            writerError = nil
+            stopRequested = false
         }
+        writerConverter = nil
+        writerOutputFormat = nil
+        writerInputBuffer = nil
+        writerOutputBuffer = nil
+        ring = nil
         restoreDefaultDeviceIfNeeded()
+        stopLevelPolling()
 
         if !monitoringActive, engine.isRunning { engine.stop() }
         state = .idle
@@ -253,12 +278,73 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
         throw CaptureError.punchInNotSupported
     }
 
+    /// The take finalized by an interruption (device change, sleep, disk
+    /// full). Nil once the model has consumed it.
+    public func consumeInterruptedTake() -> CapturedTake? {
+        stateLock.withLock {
+            let take = currentInterruption?.take
+            currentInterruption = nil
+            return take
+        }
+    }
+
+    // MARK: - Interruptions (§11.2 rule 6, rule 8)
+
+    private func installInterruptionObservers() {
+        let configObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, self.state == .recording else { return }
+            let name = self.currentDefaultDeviceName() ?? "unknown device"
+            self.handleInterruption(.deviceChanged(name: name))
+        }
+        interruptionObservers.append(configObserver)
+
+        let sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, self.state == .recording else { return }
+            self.handleInterruption(.sleep)
+        }
+        interruptionObservers.append(sleepObserver)
+    }
+
+    private func handleInterruption(_ kind: CaptureInterruption.Kind) {
+        guard state == .recording else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let (take, error) = await self.finalizeTake()
+            let interruption: CaptureInterruption
+            if case .deviceChanged(let name) = kind {
+                interruption = CaptureInterruption(kind: .deviceChanged(name: name), take: take)
+            } else {
+                interruption = CaptureInterruption(kind: kind, take: take)
+            }
+            self.stateLock.withLock { self.currentInterruption = interruption }
+            self.state = .idle
+            if let onInterruption = self.onInterruption {
+                onInterruption(interruption)
+            }
+            _ = error // the take was preserved; the write error is surfaced via the banner
+        }
+    }
+
     // MARK: - Tap and writer
 
     private func installTapIfNeeded() {
         guard !tapInstalled else { return }
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputNode.outputFormat(forBus: 0)) { [weak self] buffer, _ in
-            self?.processTapBuffer(buffer)
+        guard let ring else { return }
+        let hwFormat = inputNode.outputFormat(forBus: 0)
+        let accumulator = levelsAccumulator
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: hwFormat) { [ring, accumulator] buffer, _ in
+            // Real-time thread: copy floats in and update atomics. No
+            // allocation, no lock, no dispatch, no os_log, no Date().
+            ring.write(buffer)
+            accumulator.accumulate(buffer)
         }
         tapInstalled = true
     }
@@ -269,94 +355,51 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
         tapInstalled = false
     }
 
-    private func processTapBuffer(_ buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData else { return }
-
-        let frameCount = Int(buffer.frameLength)
-        let samples = channelData[0]
-
-        // Compute the level snapshot on the render thread — pure arithmetic,
-        // no allocation, no locks beyond an uncontended snapshot store.
-        var blockPeak: Float = 0
-        var blockRmsSq: Double = 0
-        var blockClipping = false
-        for i in 0..<frameCount {
-            let s = samples[i]
-            let a = abs(s)
-            if a > blockPeak { blockPeak = a }
-            blockRmsSq += Double(s) * Double(s)
-            if a >= 0.999 { blockClipping = true }
+    private func startWriter() {
+        writerTask = Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.writerLoop()
         }
-        let blockRms = Float(sqrt(blockRmsSq / Double(frameCount)))
+    }
 
-        let peakCopy = blockPeak
-        let clippingCopy = blockClipping
-        let snapshotState: (format: RecordingDefaults?, isRecording: Bool) = stateLock.withLock {
-            let isRecording = recordFile != nil
-            if peakCopy > recordPeak { recordPeak = peakCopy }
-            if clippingCopy { clippedDuringCapture = true }
-            recordSampleCount += UInt64(frameCount)
-            return (recordFormat, isRecording)
-        }
+    private func stopWriter() {
+        stateLock.withLock { stopRequested = true }
+        writerTask?.cancel()
+        writerTask = nil
+    }
 
-        let finalPeak = peakCopy
-        let finalClipping = clippingCopy
-        let sampleTime = snapshotState.format.map { Double(recordSampleCount) / $0.sampleRate } ?? 0
-        snapshotLock.withLock {
-            snapshot.peak = finalPeak
-            snapshot.rms = blockRms
-            snapshot.clipping = finalClipping
-            snapshot.sampleTime = sampleTime
-        }
+    private func writerLoop() async {
+        guard let scratch = writerScratch else { return }
+        while !Task.isCancelled {
+            guard let ring, let inputBuffer = writerInputBuffer,
+                  let outputBuffer = writerOutputBuffer,
+                  let converter = writerConverter,
+                  let outFormat = writerOutputFormat else { break }
 
-        guard snapshotState.isRecording else { return }
-
-        guard let pool = bufferPool else { return }
-        let pooled = pool.acquire() ?? AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: 16384)
-        pooled?.frameLength = buffer.frameLength
-        if let pooled, let pooledData = pooled.floatChannelData {
-            for i in 0..<frameCount {
-                pooledData[0][i] = samples[i]
-            }
-        }
-
-        writerQueue.async { [weak self] in
-            guard let self else { return }
-            if let pooled {
-                self.writerHandle(pooled)
+            let count = ring.drain(into: scratch, maxFrames: Int(inputBuffer.frameCapacity))
+            if count > 0 {
+                if let data = inputBuffer.floatChannelData {
+                    data[0].update(from: scratch, count: count)
+                }
+                inputBuffer.frameLength = AVAudioFrameCount(count)
+                writeChunk(inputBuffer, converter: converter, outFormat: outFormat, outputBuffer: outputBuffer)
+            } else {
+                let stop = stateLock.withLock { stopRequested }
+                if stop && ring.framesAvailable() == 0 { break }
+                try? await Task.sleep(nanoseconds: 3_000_000)
             }
         }
     }
 
-    private func writerHandle(_ buffer: AVAudioPCMBuffer) {
-        defer { bufferPool?.release(buffer) }
-
-        let capture: (file: AVAudioFile?, converter: AVAudioConverter?, outFormat: AVAudioFormat?) = stateLock.withLock {
-            (recordFile, writerConverter, writerOutputFormat)
-        }
-
-        guard let file = capture.file, let converter = capture.converter, let outFormat = capture.outFormat else { return }
-
-        do {
-            try convertAndWrite(buffer, converter: converter, outFormat: outFormat, file: file)
-        } catch {
-            stateLock.withLock {
-                if writerError == nil { writerError = error }
-            }
-        }
-    }
-
-    private func convertAndWrite(
+    private func writeChunk(
         _ input: AVAudioPCMBuffer,
         converter: AVAudioConverter,
         outFormat: AVAudioFormat,
-        file: AVAudioFile
-    ) throws {
-        let ratio = outFormat.sampleRate / input.format.sampleRate
-        let outCapacity = max(AVAudioFrameCount(Double(input.frameCapacity) * max(ratio, 1.0)) + 16, 1024)
-        guard let outBuffer = AVAudioPCMBuffer(pcmFormat: outFormat, frameCapacity: outCapacity) else {
-            throw CaptureError.formatNotSupported
+        outputBuffer: AVAudioPCMBuffer
+    ) {
+        let capture: (file: AVAudioFile?, error: Error?) = stateLock.withLock {
+            (recordFile, writerError)
         }
+        guard let file = capture.file else { return }
 
         let currentInput = ConverterInputBox(buffer: input)
         let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
@@ -373,10 +416,15 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
         var convertError: NSError?
         var done = false
         while !done {
-            outBuffer.frameLength = 0
-            let status = converter.convert(to: outBuffer, error: &convertError, withInputFrom: inputBlock)
-            if outBuffer.frameLength > 0 {
-                try file.write(from: outBuffer)
+            outputBuffer.frameLength = 0
+            let status = converter.convert(to: outputBuffer, error: &convertError, withInputFrom: inputBlock)
+            if outputBuffer.frameLength > 0 {
+                do {
+                    try file.write(from: outputBuffer)
+                } catch {
+                    recordWriteFailure(error)
+                    return
+                }
             }
             switch status {
             case .haveData:
@@ -384,11 +432,99 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
             case .inputRanDry, .endOfStream:
                 done = true
             case .error:
-                throw convertError ?? CaptureError.formatNotSupported
+                recordWriteFailure(convertError ?? CaptureError.formatNotSupported)
+                return
             @unknown default:
                 done = true
             }
         }
+    }
+
+    private func recordWriteFailure(_ error: Error) {
+        let mapped: Error
+        if let ns = error as NSError?,
+           ns.domain == NSCocoaErrorDomain, ns.code == NSFileWriteOutOfSpaceError {
+            mapped = CaptureError.diskFull
+        } else {
+            mapped = error
+        }
+        stateLock.withLock {
+            if writerError == nil { writerError = mapped }
+            stopRequested = true
+        }
+    }
+
+    // MARK: - Finalize
+
+    private func finalizeTake() async -> (CapturedTake, Error?) {
+        removeTap()
+        stateLock.withLock { stopRequested = true }
+
+        if let task = writerTask {
+            await task.value
+            writerTask = nil
+        }
+
+        if !monitoringActive, engine.isRunning {
+            engine.stop()
+        }
+
+        stopLevelPolling()
+        restoreDefaultDeviceIfNeeded()
+
+        let snapshot: (fileURL: URL?, format: RecordingDefaults?, error: Error?,
+                       peak: Float, rms: Float, clipped: Bool, sampleCount: Int64, overruns: Int) = stateLock.withLock {
+            let levels = levelsAccumulator.snapshot()
+            let result = (
+                fileURL: recordURL,
+                format: recordFormat,
+                error: writerError,
+                peak: levels.peak,
+                rms: levels.rms,
+                clipped: levels.clipping,
+                sampleCount: levels.frameCount,
+                overruns: ring?.overrunCount() ?? 0
+            )
+            recordFile = nil
+            recordURL = nil
+            writerError = nil
+            stopRequested = false
+            return result
+        }
+
+        writerConverter = nil
+        writerOutputFormat = nil
+        writerInputBuffer = nil
+        writerOutputBuffer = nil
+        ring = nil
+
+        guard let fileURL = snapshot.fileURL, let fmt = snapshot.format else {
+            state = .idle
+            return (CapturedTake(
+                fileURL: URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("missing-take.wav"),
+                duration: 0,
+                format: AudioFormatDescription(
+                    sampleRate: snapshot.format?.sampleRate ?? 48_000,
+                    channels: 1,
+                    bitDepth: snapshot.format?.bitDepth,
+                    codec: "pcm"
+                ),
+                clippedDuringCapture: snapshot.clipped,
+                peakDBFS: 0
+            ), CaptureError.invalidState)
+        }
+
+        let duration = Double(snapshot.sampleCount) / fmt.sampleRate
+        let peakDBFS = 20.0 * log10(Double(max(snapshot.peak, 1e-7)))
+        let take = CapturedTake(
+            fileURL: fileURL,
+            duration: duration,
+            format: AudioFormatDescription(sampleRate: fmt.sampleRate, channels: 1, bitDepth: fmt.bitDepth, codec: "pcm"),
+            clippedDuringCapture: snapshot.clipped,
+            peakDBFS: peakDBFS
+        )
+        state = .idle
+        return (take, snapshot.error)
     }
 
     // MARK: - Levels
@@ -399,14 +535,17 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(33))
                 guard let self else { break }
-                let s = self.currentSnapshot()
+                let s = self.levelsAccumulator.snapshot()
+                let peakDB = s.peak > 0 ? 20.0 * log10(Double(max(s.peak, 1e-7))) : -120
+                let rmsDB = s.rms > 0 ? 20.0 * log10(Double(max(s.rms, 1e-7))) : -120
+                let sampleTime = s.frameCount > 0 ? Double(s.frameCount) / (self.recordFormat?.sampleRate ?? 48_000) : 0
                 self.levelContinuationsLock.withLock {
                     for continuation in self.levelContinuations.values {
                         continuation.yield(CaptureLevels(
-                            peakDBFS: s.peak,
-                            rmsDBFS: s.rms,
+                            peakDBFS: Float(peakDB),
+                            rmsDBFS: Float(rmsDB),
                             isClipping: s.clipping,
-                            sampleTime: s.sampleTime
+                            sampleTime: sampleTime
                         ))
                     }
                 }
@@ -417,15 +556,6 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
     private func stopLevelPolling() {
         levelPoller?.cancel()
         levelPoller = nil
-    }
-
-    private func currentSnapshot() -> LevelSnapshot {
-        snapshotLock.withLock {
-            var s = snapshot
-            if s.peak > 0 { s.peak = 20.0 * log10(max(s.peak, 1e-7)) }
-            if s.rms > 0 { s.rms = 20.0 * log10(max(s.rms, 1e-7)) }
-            return s
-        }
     }
 
     // MARK: - Device and format configuration
@@ -485,7 +615,7 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
             throw CaptureError.formatNotSupported
         }
         // The requested format and the hardware format are reconciled by the
-        // AVAudioConverter in the writer queue (startRecording). If the
+        // AVAudioConverter in the writer task (startRecording). If the
         // hardware format is unsupported the write fails loudly, never silently.
     }
 
@@ -502,6 +632,10 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
             mReserved: 0
         )
         return AVAudioFormat(streamDescription: &asbd)
+    }
+
+    private func currentDefaultDeviceName() -> String? {
+        enumerateAudioDevices().first { $0.id == defaultInputDeviceID() }?.name
     }
 
     // MARK: - CoreAudio device enumeration
@@ -544,10 +678,9 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
     }
 
     private func deviceNameAndUID(_ deviceID: AudioDeviceID) -> (String, String)? {
-        var name = propertyString(deviceID, selector: kAudioObjectPropertyName) ?? "Unknown Device"
-        if name.isEmpty { name = "Unknown Device" }
+        let name = propertyString(deviceID, selector: kAudioObjectPropertyName) ?? "Unknown Device"
         let uid = propertyString(deviceID, selector: kAudioDevicePropertyDeviceUID) ?? "\(deviceID)"
-        return (name, uid)
+        return (name.isEmpty ? "Unknown Device" : name, uid)
     }
 
     private func propertyString(_ deviceID: AudioDeviceID, selector: AudioObjectPropertySelector) -> String? {
@@ -619,35 +752,5 @@ private final class ConverterInputBox: @unchecked Sendable {
 
     init(buffer: AVAudioPCMBuffer?) {
         self.buffer = buffer
-    }
-}
-
-/// Preallocated tap-buffer pool so the render thread never allocates while
-/// handing audio off to the writer queue.
-private final class CaptureBufferPool {
-    private let lock = NSLock()
-    private var pool: [AVAudioPCMBuffer]
-    private let format: AVAudioFormat
-
-    init(format: AVAudioFormat, count: Int = 16) {
-        self.format = format
-        self.pool = (0..<count).compactMap { _ in
-            AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 16384)
-        }
-    }
-
-    func acquire() -> AVAudioPCMBuffer? {
-        lock.lock()
-        defer { lock.unlock() }
-        return pool.isEmpty ? nil : pool.removeLast()
-    }
-
-    func release(_ buffer: AVAudioPCMBuffer) {
-        lock.lock()
-        defer { lock.unlock() }
-        if pool.count < 32 {
-            buffer.frameLength = 0
-            pool.append(buffer)
-        }
     }
 }

@@ -15,6 +15,9 @@ struct RecordTabView: View {
     @State private var showImport = false
     @State private var localKeyMonitor: Any?
     @State private var isMonitoring = false
+    @State private var showMicExplanation = false
+    @State private var showMicDenied = false
+    @AppStorage("voxglass.micExplanationSeen") private var micExplanationSeen = false
 
     private var paragraphs: [Paragraph] { project.allParagraphs }
 
@@ -46,9 +49,20 @@ struct RecordTabView: View {
                 if let first = paragraphs.first {
                     await model.loadParagraph(first.id)
                 }
+                if !micExplanationSeen {
+                    showMicExplanation = true
+                }
             }
-            .onAppear { installKeyMonitor(model) }
+            .onAppear {
+                installKeyMonitor(model)
+                wireInterruptions(model)
+            }
             .onDisappear { removeKeyMonitor() }
+            .onChange(of: model.captureError) {
+                if model.captureError == .permissionDenied {
+                    showMicDenied = true
+                }
+            }
             .fileImporter(isPresented: $showImport, allowedContentTypes: [.audio]) { result in
                 if case .success(let url) = result {
                     Task { await model.importWAV(at: url) }
@@ -69,6 +83,110 @@ struct RecordTabView: View {
                 paragraphIndex = clamped
                 Task { await model.loadParagraph(paragraphs[clamped].id) }
             })
+            .safeAreaInset(edge: .bottom) {
+                if let banner = model.interruptionBanner {
+                    interruptionBanner(banner, model: model)
+                }
+            }
+            .sheet(isPresented: $showMicExplanation) {
+                microphoneExplanationSheet(model: model)
+            }
+            .sheet(isPresented: $showMicDenied) {
+                microphoneDeniedSheet(model: model)
+            }
+        }
+    }
+
+    // MARK: - Microphone permission (§18.5, mockup `17`)
+
+    private func microphoneExplanationSheet(model: RecordingModel) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "mic.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.tint)
+            Text("Voxglass records your narration")
+                .font(.title2.weight(.semibold))
+            Text("Audio stays on your Mac unless you choose to preview it on your devices. Nothing is ever uploaded.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: 420)
+            Button("Continue") {
+                micExplanationSeen = true
+                showMicExplanation = false
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("record.micExplanationContinue")
+        }
+        .padding(30)
+        .frame(width: 460)
+    }
+
+    private func microphoneDeniedSheet(model: RecordingModel) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "mic.slash.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.red)
+            Text("Microphone access is off")
+                .font(.title2.weight(.semibold))
+            Text("Voxglass needs microphone access to record. Open System Settings → Privacy & Security → Microphone.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: 420)
+            HStack(spacing: 12) {
+                Button("Open System Settings") {
+                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
+                    showMicDenied = false
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("record.micDeniedOpenSettings")
+                Button("Close") {
+                    showMicDenied = false
+                }
+                .accessibilityIdentifier("record.micDeniedClose")
+            }
+        }
+        .padding(30)
+        .frame(width: 460)
+    }
+
+    // MARK: - Interruption banner (mockup `17`)
+
+    private func interruptionBanner(_ banner: CaptureInterruptionBanner, model: RecordingModel) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(banner.title)
+                    .font(.subheadline.weight(.semibold))
+                Text(banner.message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let takeID = banner.takeID {
+                Button("Reveal Take") {
+                    Task { await model.selectTake(takeID) }
+                    model.dismissInterruptionBanner()
+                }
+                .accessibilityIdentifier("record.interruption.revealTake")
+            }
+            Button("Resume Recording") {
+                Task { await model.resumeAfterInterruption() }
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("record.interruption.resume")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
+    private func wireInterruptions(_ model: RecordingModel) {
+        guard let capture = env.capture as? AVAudioEngineCapture else { return }
+        capture.onInterruption = { @Sendable interruption in
+            Task { @MainActor in
+                await model.handleCaptureInterruption(interruption)
+            }
         }
     }
 

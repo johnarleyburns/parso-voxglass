@@ -2,6 +2,40 @@ import Foundation
 import Observation
 import VoxglassCore
 
+/// The interruption banner copy from mockup `17`.
+public struct CaptureInterruptionBanner: Equatable, Sendable {
+    public enum Kind: Equatable, Sendable {
+        case deviceChanged(name: String)
+        case sleep
+        case diskFull
+    }
+
+    public let kind: Kind
+    /// The take the capture finalized before the interruption; nil when the
+    /// write failed so early that no audio exists.
+    public let takeID: UUID?
+
+    public init(kind: Kind, takeID: UUID?) {
+        self.kind = kind
+        self.takeID = takeID
+    }
+
+    public var title: String {
+        switch kind {
+        case .deviceChanged: "Your input device changed."
+        case .sleep: "Your Mac went to sleep."
+        case .diskFull: "The disk filled up while recording."
+        }
+    }
+
+    public var message: String {
+        switch kind {
+        case .deviceChanged, .sleep: "The take was saved."
+        case .diskFull: "Everything recorded up to that point was saved."
+        }
+    }
+}
+
 @Observable @MainActor
 public final class RecordingModel {
     public enum Phase: Equatable {
@@ -25,6 +59,10 @@ public final class RecordingModel {
     public private(set) var takeMetrics: [UUID: AudioQualityMetrics] = [:]
     public private(set) var isComputingQuality = false
     public private(set) var overrunWarning: String?
+    /// Set when the capture had to finalize a take outside the normal stop
+    /// path (device change, sleep, disk full) — mockup `17`.
+    public private(set) var interruptionBanner: CaptureInterruptionBanner?
+    public private(set) var captureError: CaptureError?
 
     public var canRecord: Bool { phase == .idle || isPreRoll }
 
@@ -102,11 +140,81 @@ public final class RecordingModel {
     public func prepare() async {
         do {
             try await capture.prepare(device: nil, format: project?.profile.recording ?? RecordingDefaults())
+            captureError = nil
             phase = .idle
         } catch {
+            captureError = error as? CaptureError
             self.error = "Failed to prepare capture: \(error.localizedDescription)"
             phase = .idle
         }
+    }
+
+    // MARK: - Capture interruptions (§11.2 rules 6 and 8, mockup `17`)
+
+    /// Consumes a capture-finalized take (device change, sleep, disk full):
+    /// ingests it as a complete take, preserves it, and surfaces the banner.
+    /// "Never lose a take" is the product's first principle (§0.4).
+    public func handleCaptureInterruption(_ interruption: CaptureInterruption) async {
+        var bannerTakeID: UUID?
+        if let captured = interruption.take {
+            do {
+                let assetRef = try await assets.ingest(
+                    fileAt: captured.fileURL,
+                    ext: "wav",
+                    contentType: "audio/wav",
+                    subdirectory: .original,
+                    moving: true
+                )
+                // During a live take `currentParagraphID` is set; the fallback
+                // recovers the paragraph from the autosave take filename
+                // (`Autosave/takes/<uuid>.wav`).
+                let paragraphID = currentParagraphID
+                    ?? project?.allParagraphs.first?.id
+                    ?? UUID(uuidString: captured.fileURL.deletingPathExtension().lastPathComponent)
+                    ?? UUID()
+                let recordedText = project?.allParagraphs.first(where: { $0.id == paragraphID })?.text ?? ""
+                let take = Take(
+                    id: UUID(),
+                    paragraphID: paragraphID,
+                    assetRef: assetRef,
+                    origin: .recorded,
+                    recordedAt: Date(),
+                    duration: captured.duration,
+                    format: captured.format,
+                    textHashAtRecording: project?.allParagraphs.first(where: { $0.id == paragraphID })?.textHash ?? TextNormalizer.hash(recordedText)
+                )
+                try await store.insertTake(take)
+                takes.append(take)
+                ScriptEditorModel.sharedRecordedTexts[paragraphID] = recordedText
+                if settings.autoSelectNewestTake {
+                    await selectTake(take.id, forParagraph: paragraphID, registerUndo: false)
+                }
+                bannerTakeID = take.id
+            } catch {
+                self.error = "Failed to preserve interrupted take: \(error.localizedDescription)"
+            }
+        }
+        let bannerKind: CaptureInterruptionBanner.Kind
+        switch interruption.kind {
+        case .deviceChanged(let name): bannerKind = .deviceChanged(name: name)
+        case .sleep: bannerKind = .sleep
+        case .diskFull: bannerKind = .diskFull
+        }
+        interruptionBanner = CaptureInterruptionBanner(
+            kind: bannerKind,
+            takeID: bannerTakeID
+        )
+    }
+
+    public func dismissInterruptionBanner() {
+        interruptionBanner = nil
+    }
+
+    /// Resumes recording on the same paragraph after an interruption.
+    public func resumeAfterInterruption() async {
+        interruptionBanner = nil
+        guard let paragraphID = currentParagraphID else { return }
+        await startRecording(paragraphID: paragraphID)
     }
 
     // MARK: - Recording transport
