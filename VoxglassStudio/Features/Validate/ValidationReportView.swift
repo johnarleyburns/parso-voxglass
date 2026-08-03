@@ -49,7 +49,7 @@ public struct ValidationReportView: View {
             }
             .pickerStyle(.menu)
             .frame(width: 220)
-            .accessibilityIdentifier("validate.target")
+            .accessibilityIdentifier("validate.target.\(model.target.rawValue)")
 
             Button("Run Again") {
                 Task { await model.evaluate() }

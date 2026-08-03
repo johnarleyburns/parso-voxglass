@@ -59,7 +59,7 @@ public struct ProjectDashboardView: View {
                     } label: {
                         Label("Start Review Queue", systemImage: "checkmark.circle")
                     }
-                    .accessibilityIdentifier("dashboard.startReview")
+                    .accessibilityIdentifier("dashboard.startReviewQueue")
 
                     Button {
                         env.navigate(to: .record)

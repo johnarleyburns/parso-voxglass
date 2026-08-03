@@ -187,11 +187,12 @@ public struct LibriVoxPackageBuilder: PackageBuilder, Sendable {
         var lines: [String] = []
         lines.append("# LibriVox submission checklist — \(metadata.title) by \(metadata.author)")
         lines.append("")
-        lines.append("Prepared by Voxglass Studio \(options.appVersion) on \(ISO8601DateFormatter().string(from: options.generatedAt)). **You submit these files yourself. Voxglass never uploads on your behalf.**")
+        lines.append("Prepared by Voxglass Studio \(options.appVersion) on \(ISO8601DateFormatter().string(from: options.generatedAt)). **\(LegalStrings.userSubmits)**")
         lines.append("")
         lines.append("## Technical")
-        lines.append("- [x] 128 kbps constant bit rate MP3 — verified on all \(rows.count) files")
-        lines.append("- [x] 44.1 kHz, mono — verified")
+        let librivoxAudio = DestinationProfile.librivox.audio
+        lines.append("- [x] \(librivoxAudio.bitrateKbps ?? 0) kbps constant bit rate MP3 — verified on all \(rows.count) files")
+        lines.append("- [x] \(Int(librivoxAudio.sampleRate ?? 44_100) / 1_000) kHz, mono — verified")
         lines.append("- [ ] Perceived volume 86–92 dB — Voxglass estimates on the Validation screen (estimate only; the LibriVox checker is authoritative)")
         lines.append("- [x] No clipping detected")
         lines.append("- [x] ID3 tags written (title, artist, album, track, year, genre)")

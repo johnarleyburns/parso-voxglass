@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import UniformTypeIdentifiers
 import VoxglassCore
 
 /// The Studio's app-level preferences (§18.1.16). Recording defaults apply to
@@ -186,6 +187,73 @@ public final class SettingsModel {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string)
         message = "Diagnostics copied to the clipboard."
+    }
+
+    /// S12 (§4.6, §21.5): writes the diagnostics bundle (zip) to a user-chosen
+    /// location. Contains integrity findings, schema version, entitlement,
+    /// encoder availability, devices, storage, and the log tail — never audio
+    /// or manuscript text.
+    public func exportDiagnosticsBundle(
+        packageRoot: URL?,
+        project: AudiobookProject?,
+        assets: (any ContentAddressedStore)?,
+        encoderAvailability: [String]
+    ) async {
+        isWorking = true
+        defer { isWorking = false }
+
+        var content = DiagnosticsBundleContent(
+            appVersion: ProcessInfo.processInfo.operatingSystemVersionString.isEmpty
+                ? "Voxglass Studio"
+                : "Voxglass Studio (macOS \(ProcessInfo.processInfo.operatingSystemVersionString))",
+            entitlement: entitlementLabel(for: entitlement)
+        )
+        content.logTail = DiagnosticsBundleWriter.logTail()
+        content.encoderAvailability = encoderAvailability
+        if let packageRoot {
+            content.schemaVersion = (try? ProjectPackage.readManifest(packageRoot).schemaVersion) ?? 0
+        }
+        if let report = storageReport {
+            content.storageReport = "Storage report\n\(ByteCountFormatter.string(fromByteCount: report.originalBytes, countStyle: .file)) originals\n\(ByteCountFormatter.string(fromByteCount: report.renderBytes, countStyle: .file)) renders\n\(ByteCountFormatter.string(fromByteCount: report.proxyBytes, countStyle: .file)) proxies\n\(ByteCountFormatter.string(fromByteCount: report.exportBytes, countStyle: .file)) exports\n"
+        }
+        if let project, let assets {
+            let findings = ProjectIntegrity.check(project, assets: assets, deep: false)
+            content.integrityFindings = findings.map { finding in
+                "\(finding.severity.rawValue): \(finding.code.rawValue) — \(finding.message)"
+            }
+        }
+
+        guard let directory = diagnosticsDestinationDirectory() else { return }
+
+        do {
+            let zipURL = try DiagnosticsBundleWriter.writeZip(
+                content.renderedFiles(),
+                into: directory.appendingPathComponent("voxglass-diagnostics", isDirectory: true),
+                outputURL: directory.appendingPathComponent("voxglass-diagnostics.zip")
+            )
+            NSWorkspace.shared.activateFileViewerSelecting([zipURL])
+            message = "Diagnostics bundle written to \(zipURL.lastPathComponent)."
+        } catch {
+            message = "Could not write the diagnostics bundle: \(error.localizedDescription)"
+        }
+    }
+
+    private func entitlementLabel(for state: EntitlementState) -> String {
+        switch state {
+        case .pro: "pro (unlocked)"
+        case .free: "free"
+        case .pending: "pending"
+        case .unknown: "verifying"
+        }
+    }
+
+    private func diagnosticsDestinationDirectory() -> URL? {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "voxglass-diagnostics.zip"
+        panel.allowedContentTypes = [.zip]
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        return url.deletingLastPathComponent()
     }
 
     // MARK: - Audio devices

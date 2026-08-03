@@ -31,9 +31,9 @@ import Testing
         let tab = ProductionCarPlayBuilder.reviewTab(summaries: summaries)
         #expect(tab.badge == 18)
         let ids = tab.sections.flatMap(\.items).map(\.id)
-        #expect(ids.contains("queue-flagged"))
-        #expect(ids.contains("queue-pickup"))
-        #expect(ids.contains("queue-unapproved"))
+        #expect(ids.contains("carplay.queue.flagged"))
+        #expect(ids.contains("carplay.queue.pickup"))
+        #expect(ids.contains("carplay.queue.unapproved"))
         #expect(ids.contains("queue-settings"))
     }
 
@@ -67,8 +67,9 @@ import Testing
         let sections = ProductionCarPlayBuilder.settingsSections(autoAdvance: true, context: false, voiceConfirmations: true)
         let items = sections.flatMap(\.items)
         #expect(items.contains { $0.id == "setting-safety-note" && !$0.isEnabled })
-        #expect(items.contains { $0.id == "setting-autoAdvance" && $0.detailText == "On" })
-        #expect(items.contains { $0.id == "setting-context" && $0.detailText == "Off" })
+        #expect(items.contains { $0.id == "carplay.settings.autoAdvance" && $0.detailText == "On" })
+        #expect(items.contains { $0.id == "carplay.settings.playContext" && $0.detailText == "Off" })
+        #expect(items.contains { $0.id == "carplay.settings.audioConfirmations" && $0.detailText == "On" })
     }
 
     @Test func noteSummary_mapsPayloadFields() {
@@ -147,6 +148,7 @@ import Testing
         #expect(event?.createdAt == clockDate)
         #expect(outcome.confirmed)
         #expect(outcome.session.currentIndex == 3)
+        #expect(outcome.cue == .approve)
     }
 
     @Test func needsPickupAndNext_emitsNeedsPickup() {
@@ -155,6 +157,7 @@ import Testing
         let outcome = mapper().outcome(for: .needsPickupAndNext, in: session, eventID: eventID, createdAt: clockDate)
         #expect(outcome.event?.type == .needsPickup)
         #expect(outcome.session.currentIndex == 1)
+        #expect(outcome.cue == .pickup)
     }
 
     @Test func keepFlaggedAndNext_emitsNoEventButAdvances() {
@@ -163,6 +166,7 @@ import Testing
         let outcome = mapper().outcome(for: .keepFlaggedAndNext, in: session)
         #expect(outcome.event == nil)
         #expect(outcome.session.currentIndex == 1)
+        #expect(outcome.cue == .flag)
     }
 
     @Test func playNext_advancesWithoutEvent() {
@@ -171,6 +175,7 @@ import Testing
         let outcome = mapper().outcome(for: .playNext, in: session)
         #expect(outcome.event == nil)
         #expect(outcome.session.currentIndex == 1)
+        #expect(outcome.cue == nil)
     }
 
     @Test func playNext_atEndStaysPut() {

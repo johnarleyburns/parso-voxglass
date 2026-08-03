@@ -25,6 +25,7 @@ public final class CarPlayReviewController {
     private let dataProvider: any CarPlayProductionDataProviding
     private let eventSink: any CarPlayEventDelivering
     private let player: any CarPlayProductionPlaying
+    private let cuePlayer: any CarPlayCuePlaying
     private weak var interfaceController: CPInterfaceController?
     private let continueProvider: () -> [CarPlaySection]
     private let mapper = CarPlayReviewCommandMapper()
@@ -33,12 +34,14 @@ public final class CarPlayReviewController {
         dataProvider: any CarPlayProductionDataProviding,
         eventSink: any CarPlayEventDelivering,
         player: any CarPlayProductionPlaying,
+        cuePlayer: (any CarPlayCuePlaying)? = nil,
         interfaceController: CPInterfaceController? = nil,
         continueProvider: @escaping () -> [CarPlaySection] = { [] }
     ) {
         self.dataProvider = dataProvider
         self.eventSink = eventSink
         self.player = player
+        self.cuePlayer = cuePlayer ?? BundledCarPlayCuePlayer()
         self.interfaceController = interfaceController
         self.continueProvider = continueProvider
         self.summaries = dataProvider.productionSummaries()
@@ -107,6 +110,11 @@ public final class CarPlayReviewController {
             } catch {
                 lastEventError = error.localizedDescription
             }
+        }
+
+        // Audio confirmations: a short earcon per review action (§18.3 rule 6).
+        if voiceConfirmations, let cue = outcome.cue {
+            cuePlayer.play(cue)
         }
 
         if let paragraphID = current.currentParagraphID {

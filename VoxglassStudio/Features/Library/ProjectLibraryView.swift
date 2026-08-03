@@ -38,6 +38,7 @@ struct ProjectLibraryView: View {
                     Label("Open...", systemImage: "folder")
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("library.openPackage")
             }
             .padding()
         }

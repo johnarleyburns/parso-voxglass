@@ -5,7 +5,7 @@ import Foundation
 /// ```
 /// Exports/InternetArchive/<identifier>/
 ///   <identifier>_NN_<chapterslug>.flac   (lossless masters)
-///   <identifier>_NN_<chapterslug>.mp3    (optional 192 kbps derivative set)
+///   <identifier>_NN_<chapterslug>.mp3    (optional profile-bitrate derivative set)
 ///   <identifier>.jpg                     (cover)
 ///   <identifier>_meta.json
 ///   <identifier>_meta.xml
@@ -33,7 +33,6 @@ public struct InternetArchivePackageBuilder: PackageBuilder, Sendable {
         progress: @Sendable @escaping (ExportProgress) -> Void
     ) async throws -> ExportBundle {
         let profile = DestinationProfile.profile(for: .internetArchive)
-        let eligibility = EligibilityProfile.evaluate(project)
 
         // Identifier preconditions fail fast, before any validation or I/O.
         guard let identifier = project.metadata.archiveIdentifier, !identifier.isEmpty else {
@@ -310,7 +309,8 @@ public struct InternetArchivePackageBuilder: PackageBuilder, Sendable {
         lines.append("")
         lines.append("## What Voxglass produced")
         lines.append("- \(masters.count) lossless chapter master\(masters.count == 1 ? "" : "s") (\(masters.first?.url.pathExtension ?? ""))")
-        if !derivatives.isEmpty { lines.append("- \(derivatives.count) MP3 derivative\(derivatives.count == 1 ? "" : "s") (192 kbps CBR, 44.1 kHz, mono)") }
+        let iaAudio = DestinationProfile.internetArchive.secondaryAudio
+        if !derivatives.isEmpty { lines.append("- \(derivatives.count) MP3 derivative\(derivatives.count == 1 ? "" : "s") (\(iaAudio?.bitrateKbps ?? 0) kbps CBR, \(Int((iaAudio?.sampleRate ?? 44_100) / 1_000)) kHz, mono)") }
         if let cover = files.first(where: { $0.role == .cover }) { lines.append("- Cover art: \(cover.url.lastPathComponent)") }
         lines.append("- Metadata manifest: \(identifier)_meta.json / \(identifier)_meta.xml")
         lines.append("- Checksums: \(identifier)_files.sha256")

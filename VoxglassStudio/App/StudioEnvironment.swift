@@ -16,6 +16,13 @@ public final class StudioEnvironment {
     public var assets: (any ContentAddressedStore)?
     public var recoveryModel: AutosaveRecoveryModel?
 
+    /// Reports which encoders this build can actually use (§16.3). Set by the
+    /// app composition root (`StudioApp`), which is the only place allowed to
+    /// name `VoxTranscoder` — the SwiftPM `VoxglassStudioKit` target cannot
+    /// import the encoder target, and the diagnostics bundle (S12) needs the
+    /// availability list without constructing an encoder itself.
+    public var encoderAvailabilityProvider: () -> [String] = { [] }
+
     /// The one place entitlement is consulted for the app (§17.5). Only
     /// `Export*`/`Settings*` code and this file reference it (CI gate G-2).
     public let license: LicenseGate

@@ -78,7 +78,7 @@ public struct RecordingWorkspaceView: View {
             }
             .keyboardShortcut(.space, modifiers: [])
             .help("Record / Stop")
-            .accessibilityIdentifier("record.transport")
+            .accessibilityIdentifier("record.transport.record")
 
             NavigationButtons(
                 index: paragraphIndex,

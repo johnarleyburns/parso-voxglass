@@ -28,5 +28,26 @@ public protocol CarPlayProductionPlaying: Sendable {
     func pause() async
 }
 
+/// The three review confirmations, each with a bundled pre-recorded earcon
+/// (spec §18.3 rule 6: audio confirmations are tones, never speech synthesis).
+public enum CarPlayCueKind: String, Sendable, CaseIterable {
+    case approve
+    case flag
+    case pickup
+}
+
+/// Plays a short confirmation earcon after a review action. Implemented by
+/// `BundledCarPlayCuePlayer` in the app target (AVAudioPlayer over the bundled
+/// tones); tests use a recording fake.
+public protocol CarPlayCuePlaying: Sendable {
+    func play(_ cue: CarPlayCueKind)
+}
+
+/// A no-op cue player for test environments where audio must not be produced.
+public struct SilentCarPlayCuePlayer: CarPlayCuePlaying {
+    public init() {}
+    public func play(_ cue: CarPlayCueKind) {}
+}
+
 /// The consumer tab sections shown in the production tab bar's "Continue" tab.
 public typealias CarPlayContinueProvider = @MainActor () -> [CarPlaySection]

@@ -12,7 +12,7 @@ import Foundation
 ///   <projectslug>-retail-sample.mp3
 ///   <projectslug>.m4b
 ///   masters/01 - Opening Credits.wav
-///   cover-2400.jpg
+///   cover-<minPx>.jpg          (minPx from the destination profile, §3.4.6)
 ///   delivery-metadata.json
 ///   validation-report.json / .html
 ///   checksums.sha256
@@ -32,6 +32,17 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
     public init(destination: DestinationID = .acx) {
         precondition(destination == .acx || destination == .appleBooksAggregator)
         self.destination = destination
+    }
+
+    /// The cover file's edge length in pixels, taken from the destination's
+    /// artwork rule (§3.4.6) so the filename and manifest stay profile-driven.
+    public var coverMinimumPx: Int {
+        switch DestinationProfile.profile(for: destination).artwork {
+        case .requiredSquare(let minPx, _, _), .optionalSquare(let minPx):
+            return minPx
+        case .none:
+            return 0
+        }
     }
 
     public func build(
@@ -173,9 +184,11 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
             files.append(m4b)
         }
 
-        // Cover art (2400 px convention).
+        // Cover art (§3.4.6 artwork rule: required square at the profile's
+        // minimum edge length).
         if let coverRef = project.metadata.coverRef, let data = try? await assets.data(for: coverRef), !data.isEmpty {
-            let coverURL = directory.appendingPathComponent("cover-2400.jpg")
+            let coverMinPx = coverMinimumPx
+            let coverURL = directory.appendingPathComponent("cover-\(coverMinPx).jpg")
             try data.write(to: coverURL)
             files.append(hashed(ExportedFile(url: coverURL, role: .cover)))
         }
@@ -425,7 +438,9 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
             description: metadata.description,
             categories: metadata.subjects,
             narrationOrigin: eligibility.narrationOrigin.rawValue,
-            cover: files.first(where: { $0.role == .cover }).map { CoverEntry(file: $0.url.lastPathComponent, width: 2400, height: 2400, colorSpace: "RGB") },
+            cover: files.first(where: { $0.role == .cover }).map {
+                CoverEntry(file: $0.url.lastPathComponent, width: coverMinimumPx, height: coverMinimumPx, colorSpace: "RGB")
+            },
             retailSample: sample.map {
                 SampleEntry(file: $0.url.lastPathComponent, duration: $0.duration ?? 0, startsAtParagraph: options.retailSample?.startParagraphID.uuidString ?? "")
             },

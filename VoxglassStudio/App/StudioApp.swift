@@ -5,6 +5,17 @@ import VoxglassCore
 struct StudioApp: App {
     @State private var environment = StudioEnvironment(licenseProvider: StoreKitLicenseProvider())
 
+    init() {
+        // The one place the encoder composition is named (S12 diagnostics).
+        _environment = State(initialValue: {
+            let env = StudioEnvironment(licenseProvider: StoreKitLicenseProvider())
+            env.encoderAvailabilityProvider = {
+                VoxTranscoder().availableEncoders.map(\.rawValue).sorted()
+            }
+            return env
+        }())
+    }
+
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $environment.navigationPath) {

@@ -3,13 +3,15 @@ import Foundation
 /// MPEG-1 Layer III frame-header inspection (§16.3 verification tests,
 /// §19.3 `TranscoderCBRTests`). Voxglass's MP3s must be *true* CBR — every
 /// frame carrying the same bitrate index — because LibriVox rejects VBR and
-/// ACX requires ≥ 192 kbps CBR. This parser proves conformance by walking the
-/// frame stream, exactly the way an MP3Checker would.
+/// ACX requires CBR at the profile bitrate. This parser proves conformance by
+/// walking the frame stream, exactly the way an MP3Checker would.
 public enum MP3FrameParser {
 
     /// Bitrate table (kbps) for MPEG-1 Layer III, indexed by the 4-bit bitrate
     /// index from the frame header. Index 0 = free format, 15 = bad.
-    public static let mpeg1Layer3BitratesKbps: [Int] = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+    /// destination-constant-exempt: this is the MPEG standard table, not a
+    /// destination threshold (the bitrates are re-derived from the MPEG spec).
+    public static let mpeg1Layer3BitratesKbps: [Int] = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320] // destination-constant-exempt: MPEG standard bitrate table
 
     /// Sample-rate table (Hz) for MPEG-1, indexed by the 2-bit index.
     public static let mpeg1SampleRatesHz: [Double] = [44_100, 48_000, 32_000]

@@ -68,7 +68,7 @@ public struct ReviewQueueView: View {
                 : Color.clear
         )
         .clipShape(RoundedRectangle(cornerRadius: 4))
-        .accessibilityIdentifier("review.row")
+        .accessibilityIdentifier("review.queue.item.\(index)")
     }
 
     // MARK: - Main panel
@@ -148,6 +148,7 @@ public struct ReviewQueueView: View {
                 Label("Previous ¶", systemImage: "chevron.left")
             }
             .keyboardShortcut(.leftArrow, modifiers: [])
+            .accessibilityIdentifier("review.previousFlagged")
 
             Button {
                 Task { await model.togglePlayback() }
@@ -163,13 +164,16 @@ public struct ReviewQueueView: View {
                 Label("Next ¶", systemImage: "chevron.right")
             }
             .keyboardShortcut(.rightArrow, modifiers: [])
+            .accessibilityIdentifier("review.nextFlagged")
 
             Spacer()
 
             Toggle("Auto-advance", isOn: $model.autoAdvance)
                 .toggleStyle(.checkbox)
+                .accessibilityIdentifier("review.autoAdvance")
             Toggle("Play 1 s context", isOn: $model.playContextSecond)
                 .toggleStyle(.checkbox)
+                .accessibilityIdentifier("review.playContext")
         }
         .accessibilityIdentifier("review.transport")
     }
@@ -180,13 +184,13 @@ public struct ReviewQueueView: View {
                 Task { await model.approveAndNext() }
             }
             .keyboardShortcut("a", modifiers: .command)
-            .accessibilityIdentifier("review.approve")
+            .accessibilityIdentifier("review.approveAndNext")
 
             Button("Needs Pickup & Next") {
                 Task { await model.needsPickupAndNext() }
             }
             .keyboardShortcut("p", modifiers: .command)
-            .accessibilityIdentifier("review.pickup")
+            .accessibilityIdentifier("review.pickupAndNext")
 
             Button("Keep Flagged") {
                 Task { await model.keepFlagged() }
@@ -200,7 +204,7 @@ public struct ReviewQueueView: View {
         HStack(spacing: 8) {
             TextField("Add a note (entered on Mac)", text: $model.noteText)
                 .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier("review.noteField")
+                .accessibilityIdentifier("review.note")
             Button("Add Note") {
                 Task { await model.submitNote() }
             }

@@ -348,8 +348,11 @@ public struct ProductionParagraphListView: View {
                 Task { await model.setFilter(newValue) }
             })) {
                 Text("Flagged").tag(ReviewPredicate.flagged)
+                    .accessibilityIdentifier("paragraphList.filter.flagged")
                 Text("Pickups").tag(ReviewPredicate.needsPickup)
+                    .accessibilityIdentifier("paragraphList.filter.pickups")
                 Text("All").tag(ReviewPredicate.allRecorded)
+                    .accessibilityIdentifier("paragraphList.filter.all")
             }
             .pickerStyle(.segmented)
             .padding()

@@ -29,6 +29,8 @@ targets:
           - Core
       - path: Voxglass/Resources/Artwork
         type: folder
+      - path: Voxglass/Resources/CarPlayCues
+        type: folder
     dependencies:
       - package: VoxglassCore
       - target: VoxglassWatch

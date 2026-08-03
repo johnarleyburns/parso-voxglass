@@ -1,0 +1,58 @@
+# Voxglass Studio release checklist — v1.0 (2026-08-02)
+
+> Template: `VOXGLASS_STUDIO_SPEC.md` §21.4. Fill every box before submitting;
+> each box names the artifact that proves it.
+
+## Gates
+
+- [x] All Core suites green (`swift test`) — `scripts/test_logic.sh` phase 1
+      (1,1xx tests across VoxglassCoreTests + VoxglassStudioTests)
+- [x] All Studio/phone/watch suites green
+- [ ] Five UI smoke tests green (`scripts/test.sh --all`) — local pre-push gate,
+      not CI. iPhone + CarPlay scene + Watch + three macOS Studio destinations.
+- [x] Twelve CI grep gates green (`scripts/guard_production.sh`)
+- [x] Performance budgets met (§19.7) — `scripts/test_logic.sh` phase 2
+      (`VOXGLASS_TIMING_TESTS=1`), ratio-based and load-independent
+
+## Walkthroughs
+
+- [ ] W-1 LibriVox (free) — Gutenberg `.txt` project, disclaimers recorded,
+      phone flag → Mac fix, clean LibriVox validation, chapter export verified
+      128 kbps CBR / 44.1 kHz / mono with correct names and tags.
+      **No purchase prompt observed.**
+- [ ] W-2 Internet Archive (free) — identifier + license URL set, FLAC masters
+      + MP3 derivatives + test-collection profile, manifest/checksums/`ia upload`
+      command verified, item uploaded to `test_collection` and derived.
+- [ ] W-3 Retail (Pro) — commercial purpose, credits recorded, retail sample
+      set, ACX validation fails on a deliberately hot take, Pro purchased in
+      sandbox, export verified: RMS ∈ [−23, −18], true peak ≤ −3, noise ≤ −60,
+      M4B chapter marks playable, sample duration correct and not credits.
+
+## Destinations
+
+- [ ] §21.3 re-verification completed; `DESTINATION_VERIFICATION_LOG.md` updated
+      (LibriVox tech specs/disclaimer/AI policy, ACX thresholds, IA metadata)
+
+## Legal & licensing
+
+- [x] ThirdPartyNotices.md current (LAME, libFLAC versions, LGPL-2.1 / BSD-3)
+- [x] Encoder build recipe reproducible from a clean checkout
+      (`Tools/encoders/build-encoders.sh`)
+- [x] Legal strings unchanged or reviewed (`Destinations/LegalStrings.swift`,
+      §3.6)
+
+## Store
+
+- [ ] Screenshots for all screens shipped — `scripts/capture_studio_screenshots.sh`
+      output reviewed against the mockup set
+- [ ] IAP configured (`guru.parso.voxglass.studio.pro`, $149, non-consumable),
+      sandbox-tested, Family Sharing on
+- [ ] Privacy label: data not collected; audio and text stay in the user's
+      iCloud private database; no analytics SDK
+- [ ] Review notes include demo project + mic rationale; no auto-upload
+      explanation
+
+## Risk
+
+- [ ] Known issues documented in RELEASE_NOTES.md
+- [ ] Rollback plan: previous build ready in App Store Connect
