@@ -1,0 +1,193 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Capture Interruptions — Voxglass Studio</title><style>
+:root{
+  --bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;
+  --muted:#a9b0bd;--accent:#7fb0ff;--accent2:#315f9c;--good:#72d59f;--warn:#f2c96d;--bad:#ff8088
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%} body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button,input,select,textarea{font:inherit} button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px} button:hover{filter:brightness(1.12)}
+button.primary{background:linear-gradient(#8cbcff,#6ca2eb);color:#0b1626;border-color:#9fc8ff;font-weight:700}
+button.ghost{background:transparent}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 12px 60px}
+.section-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:30px 0 10px}
+.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}
+.status{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}
+.status.good{background:#285640}.status.warn{background:#67562b}.status.bad{background:#5e2f34}
+/* Inline, non-modal banner inside the recording workspace */
+.workspace{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.toolbar{min-height:60px;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:#252930}
+.record-body{padding:18px}
+.teleprompter{font-size:23px;line-height:1.55;max-width:760px;margin:26px auto;text-align:center;color:#dfe5ee}
+.waveform{height:80px;border-radius:10px;background:
+repeating-linear-gradient(90deg,transparent 0 4px,#79a9f5 4px 6px,transparent 6px 10px),
+linear-gradient(#191c21,#191c21);opacity:.9}
+.waveform.dead{background:linear-gradient(#191c21,#191c21);opacity:.5}
+.banner{border-radius:11px;padding:14px 16px;margin:0 0 16px;display:flex;gap:14px;align-items:flex-start}
+.banner .glyph{font-size:20px;line-height:1.2}
+.banner h3{margin:0 0 5px;font-size:15px}
+.banner p{margin:0 0 10px;line-height:1.5}
+.banner .actions{display:flex;gap:8px;flex-wrap:wrap}
+.b-warn{background:#3a3222;border:1px solid #6d5b33;border-left:5px solid var(--warn)}
+.b-bad{background:#3a2529;border:1px solid #7a4048;border-left:5px solid var(--bad)}
+.b-info{background:#25303f;border:1px solid #3f5a86;border-left:5px solid var(--accent)}
+.b-good{background:#20342a;border:1px solid #38664f;border-left:5px solid var(--good)}
+/* Modal sheet */
+.dialog-shell{width:min(620px,92vw);background:var(--panel);border:1px solid #4b515d;border-radius:15px;box-shadow:0 28px 100px #000a;overflow:hidden}
+.dialog-header,.dialog-footer{padding:15px 18px;background:#252930;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.dialog-footer{border-top:1px solid var(--line);border-bottom:0}.dialog-content{padding:20px}
+table{width:100%;border-collapse:collapse} td{padding:8px 0;border-bottom:1px solid var(--line)}
+.dim{color:var(--muted)} code{background:#111318;padding:3px 5px;border-radius:5px}
+.note{color:var(--muted);font-size:13px;line-height:1.7;margin-top:12px}
+h1,h2,h3{margin-top:0} p{line-height:1.45}
+</style></head><body>
+<div class="wrap">
+
+<h1 style="font-size:20px">Capture interruption surfaces</h1>
+<p class="subtitle">Spec §11.2 rules 4/6/8/9, §7.7, §18.5. Every one of these states exists to make one promise
+legible: <b>the audio you already recorded was saved.</b> None of them may discard a take.</p>
+
+<!-- ══════════════ A. Device changed mid-take ══════════════ -->
+<div class="section-label">A · Input device changed mid-take (§11.2 rule 6 · manual test M-2)</div>
+<div class="workspace">
+  <div class="toolbar">
+    <div><div class="title">Recording</div><div class="subtitle">Chapter 1 · Paragraph 37 of 84</div></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="status bad">● No input</span><button>Audio Setup</button></div>
+  </div>
+  <div class="record-body">
+    <div class="banner b-warn">
+      <div class="glyph">⚠︎</div>
+      <div style="flex:1">
+        <h3>Your input device changed. The take was saved.</h3>
+        <p>“Universal Audio Volt 2 — Input 1” disconnected 8.4 seconds into this take.
+           Voxglass stopped cleanly and kept everything recorded up to that point as
+           <b>Take 3 · 8.4 s</b>.</p>
+        <div class="actions">
+          <button class="primary">Resume Recording</button>
+          <button>Play Take 3</button>
+          <button class="ghost">Choose Another Device…</button>
+        </div>
+      </div>
+    </div>
+    <div class="teleprompter">Mrs. Ferrars died on the night of the 16th–17th September — a Thursday.</div>
+    <div class="waveform dead"></div>
+  </div>
+</div>
+<p class="note"><b>Rule:</b> the banner is non-modal and appears in place; recording controls stay visible.
+The word “saved” is required copy — a narrator who has just watched a cable fall out needs the reassurance
+before the explanation. Error: <code>CaptureError.deviceChanged(name:)</code>.</p>
+
+<!-- ══════════════ B. Disk full ══════════════ -->
+<div class="section-label">B · Disk full during a take (§4.5 · manual test M-4)</div>
+<div class="workspace">
+  <div class="toolbar">
+    <div><div class="title">Recording</div><div class="subtitle">Chapter 4 · Paragraph 218 of 2,884</div></div>
+    <span class="status bad">● Stopped</span>
+  </div>
+  <div class="record-body">
+    <div class="banner b-bad">
+      <div class="glyph">⛔︎</div>
+      <div style="flex:1">
+        <h3>The disk is full. Recording stopped and the take was saved.</h3>
+        <p>Voxglass needs about <b>340 MB</b> free to continue recording this chapter.
+           Everything already recorded is intact — nothing was deleted.</p>
+        <div class="actions">
+          <button class="primary">Free Up Space…</button>
+          <button>Vacuum Unused Assets</button>
+          <button class="ghost">Show Project in Finder</button>
+        </div>
+      </div>
+    </div>
+    <div class="waveform dead"></div>
+  </div>
+</div>
+<p class="note"><b>Rule:</b> never offer “Delete recordings to continue.” Support instructions must always preserve
+originals (§21.5). <code>Vacuum Unused Assets</code> moves to <code>Trash/</code> first and never touches
+<code>Audio/Original</code>. Error: <code>CaptureError.diskFull</code> / <code>PackageError.diskFull(needBytes:)</code>.</p>
+
+<!-- ══════════════ C. Buffer overrun ══════════════ -->
+<div class="section-label">C · Writer starved — buffer overrun (§11.2 rule 4)</div>
+<div class="workspace">
+  <div class="toolbar">
+    <div><div class="title">Take 4 saved</div><div class="subtitle">Chapter 2 · Paragraph 91 of 76</div></div>
+    <span class="status warn">Quality warning</span>
+  </div>
+  <div class="record-body">
+    <div class="banner b-warn">
+      <div class="glyph">◈</div>
+      <div style="flex:1">
+        <h3>Some audio blocks may have been dropped</h3>
+        <p>The disk could not keep up with the recording for a moment
+           (<b>3 buffer overruns</b> in 42 seconds). The take was kept — listen before accepting it.
+           If this repeats, record to a faster disk or close other applications.</p>
+        <div class="actions">
+          <button class="primary">Play Take 4</button>
+          <button>Retake</button>
+          <button class="ghost">Keep Anyway</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="note"><b>Rule:</b> an overrun is a warning about the take, never a reason to discard it.
+The counter is surfaced <em>after</em> the take, never from inside the tap.</p>
+
+<!-- ══════════════ D. Autosave recovery sheet ══════════════ -->
+<div class="section-label">D · Crash recovery on next open (§7.7 · manual test M-3)</div>
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div><div class="title">Recording Recovered</div><div class="subtitle">The Murder of Roger Ackroyd</div></div>
+    <span class="status good">Audio intact</span>
+  </div>
+  <div class="dialog-content">
+    <div class="banner b-good" style="margin-bottom:18px">
+      <div class="glyph">✓</div>
+      <div style="flex:1">
+        <h3>Voxglass recovered a recording of ¶ 37 (8.4 s) from a previous session.</h3>
+        <p style="margin:0" class="dim">Voxglass quit unexpectedly while this take was being recorded.
+        The file header was repaired and the audio plays back normally.</p>
+      </div>
+    </div>
+    <table>
+      <tr><td class="dim">Paragraph</td><td>Chapter 1 · ¶ 37 — “Mrs. Ferrars died on the night of the 16th–17th…”</td></tr>
+      <tr><td class="dim">Duration</td><td>8.4 s</td></tr>
+      <tr><td class="dim">Format</td><td>48 kHz · 24-bit · mono</td></tr>
+      <tr><td class="dim">Recorded</td><td>Today at 2:04 PM</td></tr>
+      <tr><td class="dim">Label</td><td>Recovered</td></tr>
+    </table>
+  </div>
+  <div class="dialog-footer">
+    <button class="ghost">Discard</button>
+    <div style="display:flex;gap:8px">
+      <button>Play</button>
+      <button class="primary">Keep as Take</button>
+    </div>
+  </div>
+</div>
+<p class="note"><b>Rule:</b> <code>Discard</code> is never the default button and is never destructive without
+confirmation. On keep, the take is ingested with <code>origin = .recorded</code> and the label “Recovered”.
+Identifiers: <code>recovery.keep</code> · <code>recovery.discard</code> · <code>recovery.message</code>.</p>
+
+<!-- ══════════════ E. Microphone permission denied ══════════════ -->
+<div class="section-label">E · Microphone access denied (§11.2 rule 9 · §18.5)</div>
+<div class="dialog-shell">
+  <div class="dialog-header"><div class="title">Microphone Access Needed</div></div>
+  <div class="dialog-content">
+    <p style="font-size:15px">Voxglass needs microphone access to record. Open System Settings → Privacy &amp; Security → Microphone.</p>
+    <p class="dim">Everything else in Voxglass keeps working — you can import audio, edit the script,
+    assemble chapters, validate, and export without granting access.</p>
+  </div>
+  <div class="dialog-footer">
+    <button class="ghost">Not Now</button>
+    <button class="primary">Open System Settings</button>
+  </div>
+</div>
+<p class="note"><b>Rule:</b> the copy is the exact §18.5 string. Denial degrades one feature, never the app.</p>
+
+<div class="note" style="margin-top:34px;border-top:1px solid var(--line);padding-top:18px">
+  <b>Spec:</b> §4.11 (audio-path threading) · §11.2 (capture requirements) · §7.7 (autosave and crash recovery) ·
+  §18.5 (normative empty/error copy) · §19.10 M-2/M-3/M-4 · §22.9 anti-pattern 4.<br>
+  <b>Non-negotiable across all five states:</b> the in-flight take is finalized and preserved before any
+  error is shown. Principle 1 — <em>never lose a take</em> — is what these screens exist to demonstrate.
+</div>
+
+</div>
+</body></html>

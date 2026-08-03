@@ -1,0 +1,157 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Export Run &amp; Resume — Voxglass Studio</title><style>
+:root{
+  --bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;
+  --muted:#a9b0bd;--accent:#7fb0ff;--accent2:#315f9c;--good:#72d59f;--warn:#f2c96d;--bad:#ff8088
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%} body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button,input,select,textarea{font:inherit} button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px} button:hover{filter:brightness(1.12)}
+button.primary{background:linear-gradient(#8cbcff,#6ca2eb);color:#0b1626;border-color:#9fc8ff;font-weight:700}
+button.ghost{background:transparent}
+input,select,textarea{width:100%;background:#17191e;color:var(--text);border:1px solid #444a55;border-radius:7px;padding:9px}
+label{display:block;color:var(--muted);margin:12px 0 6px}
+.dialog-shell{width:min(760px,92vw);margin:34px auto;background:var(--panel);border:1px solid #4b515d;border-radius:15px;box-shadow:0 28px 100px #000a;overflow:hidden}
+.wide-dialog{width:min(1000px,94vw)}
+.dialog-header,.dialog-footer{padding:16px 18px;background:#252930;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.dialog-footer{border-top:1px solid var(--line);border-bottom:0}.dialog-content{padding:20px}
+.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.chips span,.status{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}
+.status.good{background:#285640}.status.warn{background:#67562b}.status.bad{background:#5e2f34}.status.info{background:#2f4a6d}
+.progress{height:8px;background:#17191e;border-radius:99px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;background:linear-gradient(90deg,#71a9ff,#a0c7ff)}
+table{width:100%;border-collapse:collapse} td,th{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.assembly-table{background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:14px 0}
+.banner{background:#2a3346;border:1px solid #3f5a86;border-left:5px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:18px}
+.banner.done{background:#20342a;border-color:#38664f;border-left-color:var(--good)}
+.banner h3{margin:0 0 6px}
+.log{background:#111318;border:1px solid var(--line);border-radius:10px;padding:12px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#c3cbd8;line-height:1.7;max-height:150px;overflow:auto}
+.good-text{color:var(--good)}.warn-text{color:var(--warn)}.bad-text{color:var(--bad)}.dim{color:var(--muted)}
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+.metric-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.metric{font-size:26px;font-weight:800}
+.legal{color:var(--muted);font-size:13px}
+h1,h2,h3{margin-top:0} p{line-height:1.45} code{background:#111318;padding:3px 5px;border-radius:5px}
+.section-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:26px 0 8px}
+@media(max-width:900px){.metric-row{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+
+<!-- ══════════════ A. Resume prompt: an interrupted run exists ══════════════ -->
+<div class="section-label" style="max-width:1000px;margin:24px auto 8px;padding:0 12px">A · Wizard entry with an interrupted run (spec §16.12)</div>
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div><div class="title">Export Package</div><div class="subtitle">LibriVox Contribution · The Murder of Roger Ackroyd</div></div>
+    <span class="status warn">Interrupted run found</span>
+  </div>
+  <div class="dialog-content">
+    <div class="banner">
+      <h3>An earlier export did not finish</h3>
+      <p>Voxglass found a partial export started <b>today at 2:18 PM</b> in
+      <code>Exports/LibriVox/the-murder-of-roger-ackroyd.partial/</code>.
+      <b>9 of 12 files</b> were written and verified.</p>
+      <p class="dim">Resuming skips files whose contents already match. Starting over
+      re-encodes all 12 chapters.</p>
+    </div>
+    <table>
+      <tr><td class="dim">Started</td><td>2026-08-02 14:18:07</td></tr>
+      <tr><td class="dim">Stopped by</td><td>Cancelled by user</td></tr>
+      <tr><td class="dim">Files complete</td><td>9 of 12 · 41.2 MB</td></tr>
+      <tr><td class="dim">Destination</td><td>LibriVox · 128 kbps CBR · 44.1 kHz mono</td></tr>
+    </table>
+  </div>
+  <div class="dialog-footer">
+    <button class="ghost">Discard Partial</button>
+    <div style="display:flex;gap:8px">
+      <button>Start Over</button>
+      <button class="primary">Resume Export</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ B. Run in progress ══════════════ -->
+<div class="section-label" style="max-width:1000px;margin:36px auto 8px;padding:0 12px">B · Run in progress — per-file status</div>
+<div class="dialog-shell wide-dialog">
+  <div class="dialog-header">
+    <div><div class="title">Exporting to LibriVox</div><div class="subtitle">Step 3 of 3 · Resuming · Chapter 11 of 12</div></div>
+    <button>Cancel</button>
+  </div>
+  <div class="dialog-content">
+    <div class="progress"><i style="width:86%"></i></div>
+    <div class="subtitle" style="margin-bottom:4px">86% · 3 files remaining · about 40 seconds left</div>
+
+    <div class="assembly-table">
+      <table>
+        <tr><th>#</th><th>File</th><th>Duration</th><th>Size</th><th>Status</th></tr>
+        <tr><td>01</td><td>murderrogerackroyd_01_christie.mp3</td><td>12:41</td><td>4.8 MB</td><td><span class="status">unchanged</span></td></tr>
+        <tr><td>02</td><td>murderrogerackroyd_02_christie.mp3</td><td>15:03</td><td>5.7 MB</td><td><span class="status">unchanged</span></td></tr>
+        <tr><td>03</td><td>murderrogerackroyd_03_christie.mp3</td><td>13:22</td><td>5.1 MB</td><td><span class="status">unchanged</span></td></tr>
+        <tr><td colspan="5" class="dim" style="text-align:center">··· 04–08 unchanged ···</td></tr>
+        <tr><td>09</td><td>murderrogerackroyd_09_christie.mp3</td><td>14:07</td><td>5.3 MB</td><td><span class="status">unchanged</span></td></tr>
+        <tr><td>10</td><td>murderrogerackroyd_10_christie.mp3</td><td>16:44</td><td>6.3 MB</td><td><span class="status good">re-encoded</span></td></tr>
+        <tr><td>11</td><td>murderrogerackroyd_11_christie.mp3</td><td>—</td><td>—</td><td><span class="status info">encoding…</span></td></tr>
+        <tr><td>12</td><td>murderrogerackroyd_12_christie.mp3</td><td>—</td><td>—</td><td><span class="status">pending</span></td></tr>
+      </table>
+    </div>
+
+    <label>Live log</label>
+    <div class="log">
+14:41:02  resume  run 7f2a… status=running destination=librivox<br>
+14:41:02  skip    01–09 · sha256 matches recorded output (9 files, 41.2 MB)<br>
+14:41:03  render  chapter 10 · cache miss · 214 segments<br>
+14:41:29  encode  chapter 10 · mp3 128 kbps CBR 44.1 kHz mono · ok<br>
+14:41:29  tag     chapter 10 · ID3v2.4 · 12 frames + APIC<br>
+14:41:30  render  chapter 11 · cache hit<br>
+14:41:30  encode  chapter 11 · …
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <small class="legal">Voxglass prepares files; it does not guarantee acceptance or determine copyright.</small>
+    <button>Cancel</button>
+  </div>
+</div>
+
+<!-- ══════════════ C. Completion summary ══════════════ -->
+<div class="section-label" style="max-width:1000px;margin:36px auto 8px;padding:0 12px">C · Completion summary</div>
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div><div class="title">Export Complete</div><div class="subtitle">LibriVox Contribution · 12 sections</div></div>
+    <span class="status good">Succeeded</span>
+  </div>
+  <div class="dialog-content">
+    <div class="banner done">
+      <h3>12 files written to Exports/LibriVox/the-murder-of-roger-ackroyd/</h3>
+      <p class="dim">9 files were unchanged from the previous run and were not re-encoded.</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card"><div class="metric">12</div><small>Files</small></div>
+      <div class="metric-card"><div class="metric">4:12:55</div><small>Total duration</small></div>
+      <div class="metric-card"><div class="metric">57.4<small> MB</small></div><small>Total size</small></div>
+      <div class="metric-card"><div class="metric good-text">0</div><small>Blocking issues</small></div>
+    </div>
+
+    <table>
+      <tr><td class="dim">Checklist</td><td><a href="#" style="color:var(--accent)">librivox-checklist.md</a></td></tr>
+      <tr><td class="dim">Durations</td><td>section-durations.txt</td></tr>
+      <tr><td class="dim">Metadata</td><td>metadata.json</td></tr>
+      <tr><td class="dim">Checksums</td><td>checksums.sha256 <small class="dim">— verify with <code>shasum -a 256 -c</code></small></td></tr>
+    </table>
+
+    <p class="legal" style="margin-top:18px"><b>You submit these files yourself. Voxglass never uploads on your behalf.</b></p>
+  </div>
+  <div class="dialog-footer">
+    <button class="ghost">Export Again</button>
+    <div style="display:flex;gap:8px">
+      <button>Open Checklist</button>
+      <button class="primary">Reveal in Finder</button>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:1000px;margin:30px auto 60px;padding:0 12px;color:var(--muted);font-size:13px;line-height:1.7">
+  <b>Identifiers:</b> <code>export.run</code> · <code>export.cancel</code> · <code>export.revealInFinder</code> ·
+  <code>export.resume</code> · <code>export.startOver</code> · <code>export.file.&lt;n&gt;</code><br>
+  <b>Spec:</b> §16.11 (wizard contract), §16.12 (idempotency and resumption), §22.2 (<code>legal.userSubmits</code>, <code>legal.noAcceptanceGuarantee</code>).<br>
+  <b>Note:</b> file status values are exactly three — <code>unchanged</code>, <code>re-encoded</code>, <code>pending</code> —
+  plus <code>failed</code>, which keeps the partial directory and the run's error code for diagnosis.
+</div>
+
+</body></html>

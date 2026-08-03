@@ -1,0 +1,187 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Project Lock &amp; Missing Package — Voxglass Studio</title><style>
+:root{
+  --bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;
+  --muted:#a9b0bd;--accent:#7fb0ff;--accent2:#315f9c;--good:#72d59f;--warn:#f2c96d;--bad:#ff8088
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%} body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button,input,select{font:inherit} button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px} button:hover{filter:brightness(1.12)}
+button.primary{background:linear-gradient(#8cbcff,#6ca2eb);color:#0b1626;border-color:#9fc8ff;font-weight:700}
+button.danger{background:#6d3339;border-color:#8c4149;color:#ffdfe2}
+button.ghost{background:transparent}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 12px 60px}
+.section-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:30px 0 10px}
+.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}
+.status{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}
+.status.good{background:#285640}.status.warn{background:#67562b}.status.bad{background:#5e2f34}
+.dialog-shell{width:min(640px,92vw);background:var(--panel);border:1px solid #4b515d;border-radius:15px;box-shadow:0 28px 100px #000a;overflow:hidden}
+.dialog-header,.dialog-footer{padding:15px 18px;background:#252930;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.dialog-footer{border-top:1px solid var(--line);border-bottom:0}.dialog-content{padding:20px}
+.banner{border-radius:11px;padding:14px 16px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-start}
+.banner .glyph{font-size:20px}.banner h3{margin:0 0 5px;font-size:15px}.banner p{margin:0;line-height:1.5}
+.b-warn{background:#3a3222;border:1px solid #6d5b33;border-left:5px solid var(--warn)}
+.b-bad{background:#3a2529;border:1px solid #7a4048;border-left:5px solid var(--bad)}
+.b-info{background:#25303f;border:1px solid #3f5a86;border-left:5px solid var(--accent)}
+table{width:100%;border-collapse:collapse} td{padding:8px 0;border-bottom:1px solid var(--line)}
+.dim{color:var(--muted)} code{background:#111318;padding:3px 5px;border-radius:5px}
+/* library shell fragment */
+.app-shell{display:grid;grid-template-columns:220px minmax(0,1fr);border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.sidebar{border-right:1px solid var(--line);padding:14px;background:#1d2025;display:flex;flex-direction:column;min-height:420px}
+.brand{font-size:17px;font-weight:750;padding:9px 8px 15px}.nav-section{flex:1}.nav-bottom{margin-top:auto}
+.nav-item{padding:9px 10px;border-radius:8px;color:#d9dde5;margin:2px 0;display:flex;justify-content:space-between}.nav-item.active{background:#315a8f;color:white}
+.toolbar{min-height:60px;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:#252930}
+.content{padding:16px}
+.project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.project-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:14px;min-height:150px}
+.project-card.missing{border-style:dashed;opacity:.85}
+.project-body{flex:1}
+.cover{width:76px;border-radius:10px;display:grid;place-items:center;font-size:26px;font-weight:800}
+.purple{background:#654f87}.blue{background:#395f87}.grey{background:#3a3f49;color:#8d95a3}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.chips span{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}
+.chips .warn{background:#67562b}.chips .good{background:#285640}
+.note{color:var(--muted);font-size:13px;line-height:1.7;margin-top:12px}
+h1,h2,h3{margin-top:0} p{line-height:1.45}
+@media(max-width:900px){.project-grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="wrap">
+
+<h1 style="font-size:20px">Project locking and missing packages</h1>
+<p class="subtitle">Spec §8.1 (library and recents) and §8.3 (opening, moving, multiple windows).
+A <code>.voxproject</code> lives wherever the user put it, so both “someone already has this open” and
+“this is no longer where I left it” are ordinary, expected states — not errors.</p>
+
+<!-- ══════════════ A. Already open on this Mac ══════════════ -->
+<div class="section-label">A · Already open in another window on this Mac</div>
+<p class="subtitle" style="margin-top:-4px">No dialog. Opening an already-open project <b>focuses its window</b>.
+This panel documents the behavior; it is not a screen.</p>
+<div class="dialog-shell">
+  <div class="dialog-content">
+    <div class="banner b-info">
+      <div class="glyph">◎</div>
+      <div>
+        <h3>Focus, don’t prompt</h3>
+        <p><code>Autosave/lock.json</code> is present, <code>deviceName</code> matches this Mac, and the
+        recorded <code>pid</code> is alive → bring the existing project window to the front and stop.
+        The user sees their book, not a question.</p>
+      </div>
+    </div>
+    <table>
+      <tr><td class="dim">lock.json</td><td><code>{ "pid": 4821, "deviceName": "Studio-Mac-mini", "openedAt": "2026-08-02T14:02:11Z" }</code></td></tr>
+      <tr><td class="dim">Removed on</td><td>window close · <code>NSApplication.willTerminate</code></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════ B. Stale lock from another machine ══════════════ -->
+<div class="section-label">B · Locked by another machine — “Open anyway”</div>
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div><div class="title">This Project Is Open Elsewhere</div><div class="subtitle">The Murder of Roger Ackroyd</div></div>
+    <span class="status warn">Locked</span>
+  </div>
+  <div class="dialog-content">
+    <div class="banner b-warn">
+      <div class="glyph">⚠︎</div>
+      <div>
+        <h3>“Arley’s MacBook Pro” opened this project 12 minutes ago</h3>
+        <p>Editing the same project from two Macs at once — especially through iCloud Drive or Dropbox —
+        can lose recordings. Voxglass cannot tell whether the other Mac is still using it.</p>
+      </div>
+    </div>
+    <table>
+      <tr><td class="dim">Locked by</td><td>Arley’s MacBook Pro</td></tr>
+      <tr><td class="dim">Opened</td><td>Today at 2:02 PM (12 minutes ago)</td></tr>
+      <tr><td class="dim">Location</td><td><code>~/Library/Mobile Documents/…/The Murder of Roger Ackroyd.voxproject</code></td></tr>
+    </table>
+    <p class="dim" style="margin-top:14px">If that Mac is asleep or was force-quit, opening anyway is safe.
+    If it is actively recording, quit Voxglass there first.</p>
+  </div>
+  <div class="dialog-footer">
+    <button class="ghost">Cancel</button>
+    <div style="display:flex;gap:8px">
+      <button>Reveal in Finder</button>
+      <button class="danger">Open Anyway</button>
+    </div>
+  </div>
+</div>
+<p class="note"><b>Rule:</b> <code>Open Anyway</code> is styled as the destructive action and is never the default.
+SQLite WAL tolerates the situation technically; the warning exists because the <em>audio files</em> do not.
+Identifiers: <code>lock.openAnyway</code> · <code>lock.cancel</code> · <code>lock.reveal</code>.</p>
+
+<!-- ══════════════ C. Missing package in the library ══════════════ -->
+<div class="section-label">C · Library sidebar sections and a missing package (§8.1, §18.1.2)</div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Voxglass Studio</div>
+    <div class="nav-section">
+      <div class="nav-item active">All Projects <span>4</span></div>
+      <div class="nav-item">Needs Review <span>27</span></div>
+      <div class="nav-item">Ready to Export <span>1</span></div>
+      <div class="nav-item">Archive</div>
+    </div>
+    <div class="nav-bottom"><div class="nav-item">Settings</div></div>
+  </aside>
+  <main>
+    <div class="toolbar">
+      <div><div class="title">Projects</div><div class="subtitle">Record, review, and preview unfinished audiobooks.</div></div>
+      <div style="display:flex;gap:8px"><button>Open Package…</button><button class="primary">＋ New Audiobook</button></div>
+    </div>
+    <div class="content">
+      <div class="project-grid">
+
+        <div class="project-card">
+          <div class="cover purple">RA</div>
+          <div class="project-body">
+            <b>The Murder of Roger Ackroyd</b>
+            <div class="subtitle">Agatha Christie · John Burns</div>
+            <div class="chips"><span>42% recorded</span><span class="warn">18 flagged</span><span>Public domain</span></div>
+            <small class="dim">Edited 8 minutes ago · Preview synced</small>
+          </div>
+        </div>
+
+        <div class="project-card missing">
+          <div class="cover grey">?</div>
+          <div class="project-body">
+            <b>A Farewell to Arms</b>
+            <div class="subtitle">Ernest Hemingway</div>
+            <div class="chips"><span class="warn">Missing — locate…</span><span>Personal</span></div>
+            <small class="dim">Last seen on an external volume · 12% recorded when last opened</small>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button>Locate…</button>
+              <button class="ghost">Remove from Recents</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <h3 style="margin-top:22px;font-size:14px">Production Activity</h3>
+      <div style="border-top:1px solid var(--line);padding:10px 0">
+        <b>Watch note</b> “Pronounce Poirot more softly” · ¶ 218
+        <span class="dim" style="display:block;margin-top:4px">Today 3:42 PM</span>
+      </div>
+      <div style="border-top:1px solid var(--line);padding:10px 0">
+        <b>Phone review</b> 3 paragraphs approved
+        <span class="dim" style="display:block;margin-top:4px">Today 1:15 PM</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<p class="note"><b>Rules:</b>
+A project whose security-scoped bookmark fails to resolve renders as <b>“Missing — locate…”</b> and
+<em>never disappears from the list</em> — vanishing is indistinguishable from data loss.
+<code>Remove from Recents</code> removes the row only; it never deletes the package.
+Sidebar counts come from the cached <code>summarySnapshot</code> on each <code>RecentProject</code> —
+rendering the sidebar must never open every project database.
+“Ready to Export” = every non-synthetic paragraph has a selected take, zero <code>needsPickup</code>,
+and the last validation run for the intended destination had no blocking issues.</p>
+
+<div class="note" style="margin-top:26px;border-top:1px solid var(--line);padding-top:18px">
+  <b>Identifiers:</b> <code>library.section.&lt;case&gt;</code> · <code>library.project.&lt;slug&gt;</code> ·
+  <code>library.activity.&lt;n&gt;</code> · <code>library.newAudiobook</code> · <code>library.openPackage</code> ·
+  <code>library.locate</code> · <code>library.removeFromRecents</code><br>
+  <b>Spec:</b> §8.1 · §8.3 · §18.1.2 · §21.5 (“never ask a user to delete their <code>.voxproject</code>”).
+</div>
+
+</div>
+</body></html>

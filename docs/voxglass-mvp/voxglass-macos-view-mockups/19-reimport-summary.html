@@ -1,0 +1,177 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Re-import Summary — Voxglass Studio</title><style>
+:root{
+  --bg:#15171b;--panel:#202329;--panel2:#292d35;--line:#3a3f49;--text:#f5f7fb;
+  --muted:#a9b0bd;--accent:#7fb0ff;--accent2:#315f9c;--good:#72d59f;--warn:#f2c96d;--bad:#ff8088
+}
+*{box-sizing:border-box} html,body{margin:0;height:100%} body{font:14px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:linear-gradient(#24272d,#17191d);color:var(--text)}
+button,input,select{font:inherit} button{background:#343942;color:var(--text);border:1px solid #4a505c;border-radius:8px;padding:8px 12px} button:hover{filter:brightness(1.12)}
+button.primary{background:linear-gradient(#8cbcff,#6ca2eb);color:#0b1626;border-color:#9fc8ff;font-weight:700}
+button.ghost{background:transparent} button.small{padding:5px 9px;font-size:12px}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 12px 60px}
+.section-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:28px 0 10px}
+.title{font-size:18px;font-weight:750}.subtitle,.muted,small{color:var(--muted)}
+.status{background:#383e48;padding:4px 8px;border-radius:999px;font-size:12px}
+.status.good{background:#285640}.status.warn{background:#67562b}.status.bad{background:#5e2f34}.status.info{background:#2f4a6d}
+.dialog-shell{width:min(940px,94vw);background:var(--panel);border:1px solid #4b515d;border-radius:15px;box-shadow:0 28px 100px #000a;overflow:hidden}
+.dialog-header,.dialog-footer{padding:15px 18px;background:#252930;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.dialog-footer{border-top:1px solid var(--line);border-bottom:0}.dialog-content{padding:20px}
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.metric-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px}
+.metric{font-size:30px;font-weight:800;line-height:1.1}
+.metric-card.reuse .metric{color:var(--good)}.metric-card.orphan .metric{color:var(--warn)}.metric-card.drift .metric{color:var(--accent)}
+.banner{border-radius:11px;padding:14px 16px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-start}
+.banner .glyph{font-size:20px}.banner h3{margin:0 0 5px;font-size:15px}.banner p{margin:0;line-height:1.5}
+.b-warn{background:#3a3222;border:1px solid #6d5b33;border-left:5px solid var(--warn)}
+.b-info{background:#25303f;border:1px solid #3f5a86;border-left:5px solid var(--accent)}
+table{width:100%;border-collapse:collapse} td,th{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.assembly-table{background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.dim{color:var(--muted)} code{background:#111318;padding:3px 5px;border-radius:5px}
+.snippet{color:#d3dae4}
+.note{color:var(--muted);font-size:13px;line-height:1.7;margin-top:12px}
+.radio{display:flex;gap:14px;align-items:center;margin-top:6px}
+.radio label{display:flex;gap:6px;align-items:center;color:var(--text);font-size:13px}
+h1,h2,h3{margin-top:0} p{line-height:1.45}
+@media(max-width:900px){.metric-row{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<div class="wrap">
+
+<h1 style="font-size:20px">Re-import summary</h1>
+<p class="subtitle">Spec §9.4 (stable paragraph identity), §9.5 (drift), §18.1.4 (Source Import contract).
+This is the screen where a narrator who has recorded 1,200 paragraphs re-imports a corrected EPUB.
+It is the highest-consequence confirmation in the product: <b>nothing is applied until the user confirms,
+and nothing is ever deleted.</b></p>
+
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div>
+      <div class="title">Re-import Source</div>
+      <div class="subtitle">The Murder of Roger Ackroyd · roger-ackroyd-2nd-ed.epub</div>
+    </div>
+    <span class="status info">Nothing applied yet</span>
+  </div>
+
+  <div class="dialog-content">
+
+    <div class="metric-row">
+      <div class="metric-card reuse"><div class="metric">2,871</div><small>Paragraphs reused</small></div>
+      <div class="metric-card"><div class="metric">13</div><small>New</small></div>
+      <div class="metric-card orphan"><div class="metric">12</div><small>No longer in source</small></div>
+      <div class="metric-card drift"><div class="metric">6</div><small>Changed text</small></div>
+    </div>
+
+    <div class="banner b-warn">
+      <div class="glyph">⚑</div>
+      <div>
+        <h3>4 of the 12 paragraphs missing from the new source have recordings</h3>
+        <p>Their takes are never deleted. Choose <b>Keep</b> to retire the paragraph while preserving its audio,
+        or <b>Discard</b> to remove the paragraph from the script — the audio still stays in
+        <code>Audio/Original</code> and can be recovered from Verify Project.</p>
+      </div>
+    </div>
+
+    <!-- ORPHANS -->
+    <h3 style="font-size:14px;margin-bottom:8px">No longer in the source (12)</h3>
+    <div class="assembly-table">
+      <table>
+        <tr><th>¶</th><th>Chapter</th><th>Text</th><th>Recordings</th><th>Action</th></tr>
+        <tr>
+          <td>412</td><td>7</td>
+          <td class="snippet">“It was Parker who found the body, at a quarter to ten…”</td>
+          <td><span class="status good">3 takes · 1 selected</span></td>
+          <td><div class="radio"><label><input type="radio" name="o1" checked> Keep</label><label><input type="radio" name="o1"> Discard</label></div></td>
+        </tr>
+        <tr>
+          <td>413</td><td>7</td>
+          <td class="snippet">“I had never seen a man look so completely unnerved.”</td>
+          <td><span class="status good">1 take · selected</span></td>
+          <td><div class="radio"><label><input type="radio" name="o2" checked> Keep</label><label><input type="radio" name="o2"> Discard</label></div></td>
+        </tr>
+        <tr>
+          <td>986</td><td>14</td>
+          <td class="snippet">“Poirot laid down his cup with elaborate care.”</td>
+          <td><span class="status good">2 takes · 1 selected</span></td>
+          <td><div class="radio"><label><input type="radio" name="o3" checked> Keep</label><label><input type="radio" name="o3"> Discard</label></div></td>
+        </tr>
+        <tr>
+          <td>987</td><td>14</td>
+          <td class="snippet">“And that, mon ami, is where the matter rests.”</td>
+          <td><span class="status good">1 take · selected</span></td>
+          <td><div class="radio"><label><input type="radio" name="o4" checked> Keep</label><label><input type="radio" name="o4"> Discard</label></div></td>
+        </tr>
+        <tr>
+          <td colspan="5" class="dim" style="text-align:center">··· 8 more, none recorded — defaulting to Discard ···</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- DRIFT -->
+    <h3 style="font-size:14px;margin-bottom:8px">Changed text on recorded paragraphs (6)</h3>
+    <div class="assembly-table">
+      <table>
+        <tr><th>¶</th><th>Change</th><th>Before → after</th><th>Effect on the take</th></tr>
+        <tr>
+          <td>86</td><td><span class="status">cosmetic</span></td>
+          <td class="snippet">straight quotes → curly quotes</td>
+          <td class="dim">None. Take stays selected, no flag.</td>
+        </tr>
+        <tr>
+          <td>218</td><td><span class="status warn">minor</span></td>
+          <td class="snippet">“Fernly Park” → “Fernley Park”</td>
+          <td class="warn-text" style="color:var(--warn)">Take kept · marked <b>Text changed</b> · warning at export</td>
+        </tr>
+        <tr>
+          <td>1,044</td><td><span class="status bad">semantic</span></td>
+          <td class="snippet">“three days later” → “four days later”</td>
+          <td style="color:var(--bad)">Take kept · <b>blocking</b> for LibriVox export until re-recorded</td>
+        </tr>
+        <tr>
+          <td colspan="4" class="dim" style="text-align:center">··· 3 more ···</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="banner b-info">
+      <div class="glyph">◎</div>
+      <div>
+        <h3>What happens on Apply</h3>
+        <p>Reused paragraphs keep their IDs, takes, notes, and review states. New paragraphs are inserted
+        in document order. Retired paragraphs are hidden from the script but keep their rows and audio.
+        Global paragraph numbers are recomputed once, so “¶ 218 of 2,884” stays correct everywhere.
+        <b>This step is not undoable</b> — review it before applying.</p>
+      </div>
+    </div>
+
+    <table>
+      <tr><td class="dim" style="width:180px">Source</td><td>roger-ackroyd-2nd-ed.epub · EPUB · 2.4 MB</td></tr>
+      <tr><td class="dim">Text hash</td><td><code>9c17…4e02</code> <span class="dim">(was <code>6f4d…ab91</code>)</span></td></tr>
+      <tr><td class="dim">Sections detected</td><td>312 <span class="dim">(was 312)</span></td></tr>
+      <tr><td class="dim">Import warnings</td><td>6 <span class="dim">— 4 possible scene breaks, 2 very long paragraphs</span></td></tr>
+    </table>
+
+  </div>
+
+  <div class="dialog-footer">
+    <button class="ghost">Cancel Re-import</button>
+    <div style="display:flex;gap:8px">
+      <button>Keep All Orphans</button>
+      <button class="primary">Apply Re-import</button>
+    </div>
+  </div>
+</div>
+
+<div class="note" style="margin-top:26px;border-top:1px solid var(--line);padding-top:18px">
+  <b>Rules:</b>
+  Orphans with recordings default to <b>Keep</b>; orphans without recordings default to <b>Discard</b>.
+  A paragraph edited beyond the re-identification threshold becomes <em>new + retired</em>, never silently
+  re-matched onto the old audio (§9.4). Drift classification drives the export severity, not the import:
+  <code>.cosmetic</code> is silent, <code>.minor</code> warns, <code>.semantic</code> blocks LibriVox and retail
+  (§15.3 group 3). Cancelling applies nothing.<br><br>
+  <b>Identifiers:</b> <code>reimport.orphan.&lt;n&gt;.keep</code> · <code>reimport.orphan.&lt;n&gt;.discard</code> ·
+  <code>reimport.keepAll</code> · <code>reimport.apply</code> · <code>reimport.cancel</code> ·
+  <code>reimport.summary</code><br>
+  <b>Spec:</b> §9.4 · §9.5 · §18.1.4 · §22.6 (“Paragraph re-identification mis-matches after a big source edit”).
+</div>
+
+</div>
+</body></html>
