@@ -4613,7 +4613,8 @@ Commit subject convention: `feat(studio): S<N> — <summary>` with a body listin
 ### 21.1 Versioning
 
 - `MARKETING_VERSION` is shared across all targets (currently `1.1`); the Studio app ships as `1.0` at first release with its own `MARKETING_VERSION` override, since it is a new product.
-- `CURRENT_PROJECT_VERSION` increments per submission.
+- `CURRENT_PROJECT_VERSION` increments per submission. The TestFlight job derives it from the commit history (`.github/workflows/ios.yml`: `build_number="$(git rev-list --count HEAD)"`, stamped as `CURRENT_PROJECT_VERSION` and marketing version `1.1.<n>`).
+- **Build-number correlation.** The `.githooks/commit-msg` hook appends `Build <n>` to every commit message, where `<n>` is the commit's position in history (`count(HEAD) + 1`). A push's TestFlight build number therefore equals the number stamped on the pushed tip commit's message — look at the commit on GitHub to find the TestFlight build, and vice versa. (Commits created outside the local hooks, e.g. GitHub web merges, still get a CI-derived number but no stamped message.)
 - The `.voxproject` `packageFormatVersion` and the DB `schemaVersion` are independent of marketing version and change only on real format changes.
 
 ### 21.2 App Store considerations
