@@ -22,10 +22,14 @@ public final class ProductionPreviewStore {
 
     public func load() async {
         try? FileManager.default.createDirectory(at: baseDirectory, withIntermediateDirectories: true)
-        let urls = (try? FileManager.default.contentsOfDirectory(at: baseDirectory, includingPropertiesForKeys: nil)) ?? []
+        // `apply` writes each snapshot to `baseDirectory/<projectID>/snapshot.json`,
+        // so a flat scan of `baseDirectory` never finds them — enumerate
+        // recursively for the snapshot files themselves.
+        let enumerator = FileManager.default.enumerator(at: baseDirectory, includingPropertiesForKeys: nil)
         var loaded: [SyncProjection] = []
-        for url in urls where url.pathExtension == "json" {
-            guard let data = try? Data(contentsOf: url),
+        while let url = enumerator?.nextObject() as? URL {
+            guard url.lastPathComponent == "snapshot.json",
+                  let data = try? Data(contentsOf: url),
                   let projection = try? JSONDecoder().decode(SyncProjection.self, from: data) else { continue }
             loaded.append(projection)
         }

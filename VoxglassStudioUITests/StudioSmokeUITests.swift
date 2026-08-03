@@ -1,13 +1,20 @@
 import XCTest
 
-/// The macOS Studio smoke tests — three, one per audiobook destination.
-/// These are the only macOS UI tests in the repository; everything else runs
-/// under `swift test`. They run locally (`scripts/test.sh --all`), never on
+/// The single macOS Studio smoke test (repo convention: one UI smoke test per
+/// device). Drives the New Project wizard for all three destinations — the
+/// destination is the only thing that changes between them; everything else
+/// runs under `swift test`. Runs locally (`scripts/test.sh --all`), never on
 /// GitHub Actions.
 final class StudioSmokeUITests: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
+    }
+
+    func test_createAllDestinationAudiobooks() throws {
+        try createAndImport(destination: "librivox")
+        try createAndImport(destination: "internetArchive")
+        try createAndImport(destination: "acx")
     }
 
     private func createAndImport(destination: String) throws {
@@ -24,17 +31,5 @@ final class StudioSmokeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["import.chapterCount"].waitForExistence(timeout: 5))
         app.buttons["import.acceptStructure"].click()
         XCTAssertTrue(app.buttons["dashboard.recordNext"].waitForExistence(timeout: 5))
-    }
-
-    func test_createLibrivoxAudiobook() throws {
-        try createAndImport(destination: "librivox")
-    }
-
-    func test_createInternetArchiveAudiobook() throws {
-        try createAndImport(destination: "internetArchive")
-    }
-
-    func test_createCommercialAudiobook() throws {
-        try createAndImport(destination: "acx")
     }
 }

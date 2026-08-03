@@ -1,20 +1,25 @@
 import XCTest
 
-/// Real watch smoke for the field-tested path. It seeds a known LibriVox Alice
-/// item, opens it through the normal watch UI, starts the watch playback engine
-/// against the archive.org stream URL, and fails unless Now Playing reports
-/// Playing.
+/// The single watch smoke test (repo convention: one UI smoke test per device).
+/// Everything else runs under `swift test`; this target proves the two
+/// field-tested flows — production review (seeded via
+/// `-uiTestSeed watchQueue`, never touching CloudKit or the microphone) and
+/// real LibriVox Alice playback with download — both launch and drive the real
+/// watch UI.
 final class VoxglassWatchUITests: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
     }
 
-    /// Production review smoke (spec §19.6): production → Review Flagged → review
-    /// player → approve → confirmation sheet. Seeded via `-uiTestSeed watchQueue` /
-    /// `VOXGLASS_WATCH_SMOKE_PRODUCTION` (a preloaded FakeWatchTransport), never
-    /// touching CloudKit or the microphone.
-    func testProductionReviewApproveShowsConfirmation() {
+    func testWatchProductionReviewAndStreamingSmoke() {
+        runProductionReviewSmoke()
+        runAliceStreamingSmoke()
+    }
+
+    /// Production review smoke (spec §19.6): production → Review Flagged →
+    /// review player → approve → confirmation sheet.
+    private func runProductionReviewSmoke() {
         let app = XCUIApplication()
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_PRODUCTION"] = "1"
         app.launchArguments += ["-uiTestSeed", "watchQueue", "-VOXGLASS_WATCH_SMOKE_PRODUCTION", "YES"]
@@ -55,7 +60,7 @@ final class VoxglassWatchUITests: XCTestCase {
         )
     }
 
-    func testWatchStreamsLibriVoxAlicePlayPauseChaptersTimeAndDownload() {
+    private func runAliceStreamingSmoke() {
         let app = XCUIApplication()
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_ALICE"] = "1"
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_RESET_CACHE"] = "1"

@@ -2,26 +2,27 @@ import XCTest
 
 /// The single simulator smoke test for Voxglass. Everything else is covered by
 /// the host `swift test` logic suite (VoxglassCore); this only proves the app
-/// boots, every tab renders without crashing, and a key surface (the
-/// ten-band EQ) is reachable and draggable. Run locally on iPhone 16 — CI
-/// runs `swift test` only and never runs this target.
+/// boots, every tab renders without crashing, the ten-band EQ is reachable and
+/// draggable, and the My Productions surface (seeded via
+/// `-uiTestSeed onePreviewProject`) is reachable — not just present in source
+/// (WP-G). Run locally on iPhone 16 — CI runs `swift test` only and never runs
+/// this target. One UI smoke test per device by repo convention.
 final class VoxglassUITests: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
     }
 
-    func testAppBootsVisitsAllTabsAndEQ() {
+    func testAppBootsVisitsAllTabsEQAndProductions() {
         let app = XCUIApplication()
         app.launchArguments += [
             "-voxglass.hasCompletedSplash", "YES",
             "-voxglass.hasCompletedOnboarding", "YES",
             "-VoxglassInitialTab", "home",
             "-VoxglassDisableAnimatedSplash",
-            // G-8 marker: this consumer smoke test needs no production seed;
-            // the argument is ignored by the app but keeps the guard honest
-            // that no UI test runs without a declared test environment.
-            "-uiTestSeed", "consumer"
+            // Seeds one previewable production (WP-G) and keeps the G-8 guard
+            // honest that no UI test runs without a declared test environment.
+            "-uiTestSeed", "onePreviewProject"
         ]
         app.launch()
 
@@ -45,6 +46,31 @@ final class VoxglassUITests: XCTestCase {
                 "Tab \(tab.button) did not render its content"
             )
         }
+
+        // My Productions reachability (spec §18.2, WP-G): Library → My
+        // Productions → seeded project card → detail review actions.
+        app.buttons["My Books"].tap()
+        let shelf = app.buttons["shelf.myProductions"]
+        XCTAssertTrue(
+            shelf.waitForExistence(timeout: 10),
+            "My Productions entry not on the Library tab.\n\(app.debugDescription)"
+        )
+        shelf.tap()
+
+        let card = app.descendants(matching: .any)["production.themurderofrogerackroyd"]
+        XCTAssertTrue(
+            card.waitForExistence(timeout: 10),
+            "Seeded production card did not render.\n\(app.debugDescription)"
+        )
+        card.tap()
+        XCTAssertTrue(
+            app.buttons["detail.playWholeBook"].waitForExistence(timeout: 10),
+            "detail.playWholeBook not reachable.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(
+            app.buttons["detail.reviewFlagged"].exists,
+            "detail.reviewFlagged not reachable.\n\(app.debugDescription)"
+        )
 
         // Search renders its field (kept last: it puts focus in a text field).
         app.buttons["Search"].tap()
@@ -88,49 +114,5 @@ final class VoxglassUITests: XCTestCase {
         let start = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
         start.press(forDuration: 0.1, thenDragTo: end)
-    }
-
-    /// WP-G acceptance: the My Productions surface must be reachable, not just
-    /// present in source. Launches with `-uiTestSeed onePreviewProject` (which
-    /// seeds one previewable production in DEBUG), navigates Library → My
-    /// Productions, opens the seeded project, and asserts the review actions
-    /// exist.
-    func testMyProductionsReachableFromLibrary() {
-        let app = XCUIApplication()
-        app.launchArguments += [
-            "-voxglass.hasCompletedSplash", "YES",
-            "-voxglass.hasCompletedOnboarding", "YES",
-            "-VoxglassInitialTab", "library",
-            "-VoxglassDisableAnimatedSplash",
-            "-uiTestSeed", "onePreviewProject"
-        ]
-        app.launch()
-
-        // The Library tab's "My Productions" entry (spec §18.2.1).
-        let shelf = app.buttons["shelf.myProductions"]
-        XCTAssertTrue(
-            shelf.waitForExistence(timeout: 15),
-            "My Productions entry not on the Library tab.\n\(app.debugDescription)"
-        )
-        shelf.tap()
-
-        // A seeded preview project card is shown.
-        let slug = "themurderofrogerackroyd"
-        let card = app.otherElements["production.\(slug)"]
-        XCTAssertTrue(
-            card.waitForExistence(timeout: 10),
-            "No production card for \(slug).\n\(app.debugDescription)"
-        )
-        card.tap()
-
-        // The detail screen's review actions are reachable.
-        XCTAssertTrue(
-            app.buttons["detail.playWholeBook"].waitForExistence(timeout: 10),
-            "detail.playWholeBook not reachable.\n\(app.debugDescription)"
-        )
-        XCTAssertTrue(
-            app.buttons["detail.reviewFlagged"].exists,
-            "detail.reviewFlagged not reachable.\n\(app.debugDescription)"
-        )
     }
 }

@@ -109,6 +109,12 @@ final class AppServices: ObservableObject {
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
         await phoneAudioRelay.publishLibrarySnapshot()
+        #if DEBUG
+        // Seed the production preview synchronously at bootstrap so the smoke
+        // test's My Productions shelf is populated before the UI asks for it —
+        // not gated behind the CloudKit background sync (§18.2, WP-G).
+        await seedProductionPreviewIfRequested()
+        #endif
         let rebased = await libraryRepository.rebaseStaleLocalURLsIfNeeded()
         if rebased > 0 {
             await libraryStore.refresh()
@@ -147,9 +153,6 @@ final class AppServices: ObservableObject {
             if self.cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }
-            #if DEBUG
-            await self.seedProductionPreviewIfRequested()
-            #endif
             // Pull production previews and relay them to the watch (spec §13.6).
             await production.checkForUpdates()
         }
