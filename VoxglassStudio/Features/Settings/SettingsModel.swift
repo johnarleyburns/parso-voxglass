@@ -149,6 +149,13 @@ public final class SettingsModel {
         message = nil
     }
 
+    /// Clears both the transient message and a verification summary (used by
+    /// the Project window's Verify Project command).
+    public func dismissVerification() {
+        message = nil
+        integritySummary = nil
+    }
+
     /// Surface a transient message from the view (informational buttons).
     public func setMessage(_ text: String?) {
         message = text

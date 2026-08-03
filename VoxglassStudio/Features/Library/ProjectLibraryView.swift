@@ -2,10 +2,11 @@ import SwiftUI
 import VoxglassCore
 import UniformTypeIdentifiers
 
+/// The library detail pane (spec §18.1.2, mockup `01-project-library`):
+/// recents, New/Open, and Narration Needs. Presented inside `LibrarySplitView`;
+/// the split view owns the open panel and the New Project sheet.
 struct ProjectLibraryView: View {
     @Environment(StudioEnvironment.self) private var env
-    @State private var showOpenPanel = false
-    @State private var showNewProject = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,13 +29,13 @@ struct ProjectLibraryView: View {
             }
 
             HStack(spacing: 12) {
-                Button(action: { showNewProject = true }) {
+                Button(action: { env.presentedSheet = .newProject }) {
                     Label("New Project", systemImage: "plus.square")
                 }
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("library.newAudiobook")
 
-                Button(action: { showOpenPanel = true }) {
+                Button(action: { NotificationCenter.default.post(name: .studioOpenProject, object: nil) }) {
                     Label("Open...", systemImage: "folder")
                 }
                 .buttonStyle(.bordered)
@@ -46,7 +47,7 @@ struct ProjectLibraryView: View {
 
             ScrollView {
                 NarrationSectionView(
-                    browse: { env.push(to: .needsBrowser) },
+                    browse: { env.presentedSheet = .needsBrowser },
                     start: { env.beginNarration($0) }
                 )
                 .padding(.horizontal)
@@ -55,17 +56,5 @@ struct ProjectLibraryView: View {
         }
         .navigationTitle("Library")
         .frame(minWidth: 500, minHeight: 400)
-        .onAppear {
-            Task { await env.library.seedIfNeeded() }
-        }
-        .fileImporter(isPresented: $showOpenPanel,
-                       allowedContentTypes: [UTType(filenameExtension: "voxproject") ?? .folder]) { result in
-            if case .success(let url) = result {
-                Task { await env.library.openProject(at: url) }
-            }
-        }
-        .sheet(isPresented: $showNewProject) {
-            NewProjectView()
-        }
     }
 }

@@ -43,7 +43,7 @@ struct NewProjectView: View {
 
             HStack {
                 Button("Cancel") {
-                    env.navigate(to: .library)
+                    env.presentedSheet = nil
                 }
                 .accessibilityIdentifier("wizard.cancel")
 
@@ -54,7 +54,7 @@ struct NewProjectView: View {
                             return
                         }
                         env.setProject(project)
-                        env.push(to: .sourceImport)
+                        env.presentedSheet = .sourceImport
                     }
                 }
                 .disabled(!model.canProceed)

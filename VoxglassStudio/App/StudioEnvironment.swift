@@ -1,11 +1,25 @@
 import Foundation
-import VoxglassCore
 import Observation
+import VoxglassCore
+
+// MARK: - StudioEnvironment
 
 @MainActor
 @Observable
 public final class StudioEnvironment {
-    public var navigationPath: [StudioRoute] = []
+    // ── Service slots (§4.3). Injected by the composition root (`.test` /
+    //    `.live`), never constructed per-route.
+    public let capture: any AudioCapturing
+    public let metrics: any AudioMetricsCalculating
+    /// The player is rebuilt when a project opens (it must be rooted at the
+    /// project's asset store).
+    public var player: any SegmentPlayer
+    public let transcoder: any AudioTranscoding
+    public let sync: ProductionSyncEngine
+    public let clock: any Clock
+    public let ids: any IDGenerator
+
+    // ── Existing state
     public var currentProject: AudiobookProject?
     public var currentPackageRoot: URL?
     public var store: any ProductionStore
@@ -33,6 +47,17 @@ public final class StudioEnvironment {
     /// ingests review events. Live only when a project is open; harmless otherwise.
     public let projection: StudioProjectionCoordinator
 
+    // ── Shell navigation (§18.1.1)
+    public var selectedTab: ProjectTab = .dashboard
+    public var presentedSheet: StudioSheet?
+    /// Set when a library-side surface (Narration Needs) wants to take over the
+    /// window; the library view renders it as a full-window surface.
+    public var libraryMode: StudioLibraryMode = .library
+    /// Callback the app shell installs to open a project window for a reference.
+    public var onRequestProjectWindow: ((ProjectReference) -> Void)?
+    /// Callback the app shell installs to close the current project window.
+    public var onDismissProjectWindow: (() -> Void)?
+
     public var showAutosaveRecovery: Bool {
         recoveryModel != nil && recoveryPackageRoot != nil
     }
@@ -55,17 +80,33 @@ public final class StudioEnvironment {
     }
 
     public init(
+        capture: any AudioCapturing,
+        metrics: any AudioMetricsCalculating,
+        player: any SegmentPlayer,
+        transcoder: any AudioTranscoding,
+        sync: ProductionSyncEngine,
+        clock: any Clock,
+        ids: any IDGenerator,
         store: any ProductionStore = InMemoryProductionStore(),
         recents: RecentsStore = RecentsStore(),
         isTestEnvironment: Bool = false,
         seed: UITestSeed? = nil,
-        licenseProvider: any LicenseProvider = StaticLicenseProvider()
+        licenseProvider: any LicenseProvider = StaticLicenseProvider(),
+        encoderAvailability: @escaping () -> [String] = { [] }
     ) {
+        self.capture = capture
+        self.metrics = metrics
+        self.player = player
+        self.transcoder = transcoder
+        self.sync = sync
+        self.clock = clock
+        self.ids = ids
         self.store = store
         self.recents = recents
         self.isTestEnvironment = isTestEnvironment
         self.license = LicenseGate(provider: licenseProvider)
-        self.projection = StudioProjectionCoordinator()
+        self.projection = StudioProjectionCoordinator(clock: clock)
+        self.encoderAvailabilityProvider = encoderAvailability
         let library = ProjectLibraryModel(
             store: store,
             recents: recents,
@@ -80,7 +121,10 @@ public final class StudioEnvironment {
             self.library.store = openedStore
             self.currentProject = project
             self.currentPackageRoot = self.library.pendingProjectURL
-            self.navigationPath = [.dashboard]
+            self.rebuildPlayerIfNeeded()
+            self.selectedTab = .dashboard
+            self.presentedSheet = nil
+            self.requestProjectWindow(for: project)
         }
         library.onAutosaveRecoveryAvailable = { [weak self] packageRoot in
             guard let self else { return }
@@ -88,28 +132,143 @@ public final class StudioEnvironment {
         }
     }
 
+    // MARK: - Factories (§4.3)
+
+    /// The live composition root. Called only from `StudioApp`, which can name
+    /// the encoder (`VoxTranscoder`); the SwiftPM `VoxglassStudioKit` mirror
+    /// cannot import the encoder target, so it never calls `.live`.
+    public static func live(
+        package: LivePackage = .none,
+        transcoder: any AudioTranscoding,
+        encoderAvailability: @escaping () -> [String]
+    ) throws -> StudioEnvironment {
+        let clock = SystemClock()
+        let ids = UUIDGenerator()
+        let recentsDir: URL? = package.recentsStorageDirectory
+        let recents = RecentsStore(storageDirectory: recentsDir)
+        let env = StudioEnvironment(
+            capture: AVAudioEngineCapture(),
+            metrics: AVMetricsCalculator(),
+            player: AVSegmentPlayer(assets: FileAssetStore(root: FileManager.default.temporaryDirectory)),
+            transcoder: transcoder,
+            sync: ProductionSyncEngine(
+                transport: CloudKitProductionSync(),
+                state: DefaultsSyncStateStore()
+            ),
+            clock: clock,
+            ids: ids,
+            store: InMemoryProductionStore(),
+            recents: recents,
+            licenseProvider: StoreKitLicenseProvider(),
+            encoderAvailability: encoderAvailability
+        )
+        if let url = package.url {
+            env.initialPackageURL = url
+        }
+        return env
+    }
+
+    /// The seeded composition root (§19.6). Never touches the microphone,
+    /// CloudKit, StoreKit, or the encoders; the fakes live in
+    /// `Support/UITestFakes.swift` because gate G-9 forbids
+    /// `VoxglassCoreTestSupport` in a shipping target (§19.2).
+    public static func test(seed: UITestSeed) -> StudioEnvironment {
+        #if DEBUG
+        let clock = UITestFixedClock()
+        let ids = UITestSequentialIDGenerator()
+        let recents = RecentsStore(storageDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("voxglass-ui-test-recents", isDirectory: true))
+        return StudioEnvironment(
+            capture: UITestAudioCapture(clock: clock, ids: ids),
+            metrics: UITestMetricsCalculator(),
+            player: UITestSegmentPlayer(),
+            transcoder: UITestTranscoder(),
+            sync: ProductionSyncEngine(transport: UITestSyncTransport(), state: UITestSyncStateStore()),
+            clock: clock,
+            ids: ids,
+            store: InMemoryProductionStore(),
+            recents: recents,
+            isTestEnvironment: true,
+            seed: seed,
+            licenseProvider: UITestLicenseProvider()
+        )
+        #else
+        // Release builds never seed (§19.6); `UITestSeed.init?(arguments:)`
+        // returns nil there, so this branch is unreachable.
+        fatalError("UITestSeed is unavailable in release builds")
+        #endif
+    }
+
+    /// The package to open on launch, resolved by `.live(package:)`.
+    public var initialPackageURL: URL?
+
+    // MARK: - Navigation
+
     public func navigate(to route: StudioRoute) {
-        navigationPath = [route]
+        apply(route)
     }
 
     public func push(to route: StudioRoute) {
-        navigationPath.append(route)
+        apply(route)
+    }
+
+    private func apply(_ route: StudioRoute) {
+        switch route {
+        case .dashboard: selectedTab = .dashboard; presentedSheet = nil
+        case .script: selectedTab = .script; presentedSheet = nil
+        case .record: selectedTab = .record; presentedSheet = nil
+        case .review: selectedTab = .review; presentedSheet = nil
+        case .assembly: selectedTab = .assemble; presentedSheet = nil
+        case .metadata: selectedTab = .metadata; presentedSheet = nil
+        case .validate: selectedTab = .validateExport; presentedSheet = nil
+        case .sourceImport: presentedSheet = .sourceImport
+        case .importAudio: presentedSheet = .importAudio
+        case .export: presentedSheet = .export
+        case .takeCompare: presentedSheet = .takeCompare
+        case .devicePreview: presentedSheet = .devicePreview
+        case .newProject: presentedSheet = .newProject
+        case .needsBrowser: presentedSheet = .needsBrowser
+        case .discovery: libraryMode = .discovery
+        case .library, .settings:
+            presentedSheet = nil
+        }
     }
 
     public func popToRoot() {
-        navigationPath.removeAll()
+        selectedTab = .dashboard
+        presentedSheet = nil
+    }
+
+    /// Leaves the project window for the library; the project stays open in
+    /// recents and can be reopened.
+    public func closeProject() {
+        currentProject = nil
+        currentPackageRoot = nil
+        store = InMemoryProductionStore()
+        presentedSheet = nil
+        selectedTab = .dashboard
+        onDismissProjectWindow?()
     }
 
     public func setProject(_ project: AudiobookProject) {
         currentProject = project
-        navigationPath = [.dashboard]
+        store = library.store
+        currentPackageRoot = library.pendingProjectURL
+        rebuildPlayerIfNeeded()
+        selectedTab = .dashboard
+        presentedSheet = nil
+        requestProjectWindow(for: project)
     }
 
     public func open(_ project: AudiobookProject, with openedStore: any ProductionStore) {
         store = openedStore
         library.store = openedStore
         currentProject = project
-        navigationPath = [.dashboard]
+        currentPackageRoot = library.pendingProjectURL
+        rebuildPlayerIfNeeded()
+        selectedTab = .dashboard
+        presentedSheet = nil
+        requestProjectWindow(for: project)
     }
 
     /// Replace the in-memory project after an editor (e.g. Metadata & Rights)
@@ -133,7 +292,7 @@ public final class StudioEnvironment {
     /// so short works and whole books share the multi-chapter toolset (§10).
     public func beginNarration(_ need: NarrationNeed) {
         let project = AudiobookProject(
-            id: UUID(),
+            id: ids.next(),
             metadata: BookMetadata(title: need.work.title, author: need.work.author, narrator: ""),
             rights: RightsEvidence(
                 basis: .publicDomainUS,
@@ -144,7 +303,108 @@ public final class StudioEnvironment {
             profile: ProductionProfile(purpose: .publicDomainCommunity, intendedDestination: .librivox)
         )
         setProject(project)
-        navigationPath = [.sourceImport]
+        presentedSheet = .sourceImport
+    }
+
+    // MARK: - Project window plumbing
+
+    public func requestProjectWindow(for project: AudiobookProject) {
+        let bookmark: Data
+        if let url = currentPackageRoot {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            bookmark = (try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)) ?? Data()
+        } else {
+            bookmark = Data()
+        }
+        onRequestProjectWindow?(ProjectReference(projectID: project.id, bookmark: bookmark))
+    }
+
+    private func rebuildPlayerIfNeeded() {
+        player = AVSegmentPlayer(assets: assetStoreForCurrentProject())
+    }
+}
+
+// MARK: - LivePackage
+
+/// What `.live` should do about a package at launch (§4.3).
+public enum LivePackage: Sendable {
+    case none
+    case temporary
+    case url(URL)
+
+    public static func temporary() -> LivePackage { .temporary }
+    @MainActor
+    public static func lastOpenedOrNone() -> LivePackage {
+        let recents = RecentsStore()
+        return recents.recentURLs.first.map { .url($0) } ?? .none
+    }
+
+    var url: URL? {
+        if case .url(let u) = self { return u }
+        return nil
+    }
+
+    var recentsStorageDirectory: URL? {
+        if case .temporary = self {
+            return FileManager.default.temporaryDirectory.appendingPathComponent("voxglass-ui-test-recents", isDirectory: true)
+        }
+        return nil
+    }
+}
+
+// MARK: - Shell vocabulary (§18.1.1)
+
+public enum StudioSection: Hashable {
+    case library, needsReview, readyToExport, archive, settings
+}
+
+public enum ProjectTab: Hashable, CaseIterable {
+    case dashboard, script, record, review, assemble, metadata, validateExport
+
+    public var title: String {
+        switch self {
+        case .dashboard: "Dashboard"
+        case .script: "Script"
+        case .record: "Record"
+        case .review: "Review"
+        case .assemble: "Assemble"
+        case .metadata: "Metadata"
+        case .validateExport: "Validate & Export"
+        }
+    }
+}
+
+public enum StudioSheet: Hashable {
+    case newProject, needsBrowser
+    case sourceImport, importAudio, export, takeCompare, devicePreview
+}
+
+public enum StudioLibraryMode: Hashable {
+    case library
+    case discovery
+}
+
+/// The value `WindowGroup(for:)` keys project windows on (spec §18.1.1):
+/// the project UUID plus a security-scoped bookmark for window restoration.
+public struct ProjectReference: Codable, Hashable, Sendable {
+    public let projectID: UUID
+    public let bookmark: Data
+
+    public init(projectID: UUID, bookmark: Data = Data()) {
+        self.projectID = projectID
+        self.bookmark = bookmark
+    }
+
+    public func resolveURL() -> URL? {
+        guard !bookmark.isEmpty else { return nil }
+        var isStale = false
+        return try? URL(
+            resolvingBookmarkData: bookmark,
+            options: .withSecurityScope,
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        )
     }
 }
 
@@ -155,6 +415,7 @@ public enum StudioRoute: Sendable, Equatable, Hashable {
     case importAudio
     case takeCompare
     case dashboard
+    case script
     case record
     case review
     case assembly
@@ -173,4 +434,17 @@ public enum UITestSeed: String, Sendable, CaseIterable {
     case watchQueue
     case oneFlaggedQueue
     case librivoxReady
+
+    /// Reads the value after `-uiTestSeed` (§19.6). Returns `nil` on release
+    /// builds regardless of arguments — seeding is DEBUG-only.
+    public init?(arguments: [String]) {
+        guard let index = arguments.firstIndex(of: "-uiTestSeed"),
+              index + 1 < arguments.count,
+              let seed = UITestSeed(rawValue: arguments[index + 1]) else { return nil }
+        #if DEBUG
+        self = seed
+        #else
+        return nil
+        #endif
+    }
 }

@@ -4211,6 +4211,15 @@ GitHub Actions runs only `swift test` (the two Swift Testing targets above, plus
 
 A test-only SwiftPM target providing fakes and fixtures. Never linked into a shipping target (CI gate G-9 greps app targets for `import VoxglassCoreTestSupport`).
 
+> **`.test(seed:)` fakes (§19.6).** Because gate G-9 forbids `VoxglassCoreTestSupport`
+> in a shipping target, the Studio's seeded UI-test environment wires its own
+> fakes — `UITestAudioCapture`, `UITestSyncTransport`/`UITestSyncStateStore`,
+> `UITestLicenseProvider`, `UITestTranscoder`, `UITestMetricsCalculator`,
+> `UITestSegmentPlayer`, `UITestFixedClock`, `UITestSequentialIDGenerator` —
+> from `VoxglassStudio/Support/UITestFakes.swift` behind `#if DEBUG`,
+> mirroring the Core fakes. The `UITestSeed` enum itself compiles in all
+> configurations so gate G-8 can find it.
+
 **Fakes:** `InMemoryProductionStore`, `InMemoryAssetStore`, `FakeAudioCapture`, `FixtureMetricsCalculator`, `FakeTranscoder`, `FakeSegmentPlayer`, `FakeSyncEngine`, `FakeWatchTransport`, `FakeLicenseProvider`, `FixedClock`, `SequentialIDGenerator`, `FixtureDecoder`.
 
 Requirements for fakes: deterministic, inspectable (record every call in an array), and configurable to fail (`fake.failNextWith(.diskFull)`), because half the tests in this spec are error-path tests.
