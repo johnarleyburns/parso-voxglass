@@ -49,6 +49,7 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
+        NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them."
         UTImportedTypeDeclarations:
           - UTTypeConformsTo:
               - public.json
