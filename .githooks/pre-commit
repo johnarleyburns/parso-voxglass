@@ -1,11 +1,12 @@
 #!/bin/bash
-# .githooks/pre-commit — Fast unit-test gate.
+# .githooks/pre-commit — UI smoke-test gate.
 # Install with: git config core.hooksPath .githooks
 #
-# Runs swift test (VoxglassCore logic tests, no simulator needed) via
-# scripts/test_logic.sh, which runs the timing/performance suites in a separate
-# serial invocation so their budgets are never skewed by parallel-suite CPU
-# contention.
+# Runs the local UI smoke tests (scripts/test.sh — phone + watch simulators).
+# The UI suite moved here from pre-push: it takes minutes, and a long-running
+# pre-push hook over SSH made GitHub drop the push connection. Swift test
+# (scripts/test_logic.sh) runs on every push instead, so a commit that is never
+# pushed costs nothing extra and every pushed commit is still logic-tested.
 
 set -euo pipefail
 
@@ -13,6 +14,6 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 echo ""
-echo "=== pre-commit guard ==="
+echo "=== pre-commit guard (UI smoke tests) ==="
 echo ""
-bash scripts/test_logic.sh
+bash scripts/test.sh

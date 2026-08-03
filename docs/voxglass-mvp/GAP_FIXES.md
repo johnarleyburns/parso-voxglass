@@ -244,7 +244,7 @@ enum ProjectTab: Hashable { case dashboard, script, record, review, assemble, me
 
 **Acceptance:**
 
-- `StudioSmokeUITests.test_createLibrivoxAudiobook` passes locally via `scripts/test.sh --all` without modification to the test file.
+- `StudioSmokeUITests.test_createAllDestinationAudiobooks` passes locally via `scripts/test.sh --all` without modification to the test file.
 - New `VoxglassStudioTests/StudioEnvironmentTests`: `.test(seed: .empty).isTestEnvironment == true`; the capture, sync, license, and transcoder slots are the fake types; `.live` is never called under any `-uiTestSeed`.
 - Grepping `VoxglassStudio` for `PlaceholderView` returns nothing.
 

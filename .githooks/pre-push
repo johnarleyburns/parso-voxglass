@@ -1,9 +1,11 @@
 #!/bin/bash
-# .githooks/pre-push — Full test gate.
+# .githooks/pre-push — Fast test gate (swift test only, no UI).
 # Install with: git config core.hooksPath .githooks
 #
-# Runs ALL tests: wiring guards, logic suites (via scripts/test_logic.sh, timing
-# suites serialized), and the simulator smoke tests.
+# Runs wiring guards and the logic suites via scripts/test_logic.sh (timing
+# suites serialized). Deliberately does NOT run the simulator UI smoke tests:
+# they are slow, and a long-running pre-push hook over SSH causes GitHub to
+# drop the push connection. The UI smoke tests now run in the pre-commit hook.
 
 set -euo pipefail
 
@@ -11,7 +13,7 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 echo ""
-echo "=== pre-push guard ==="
+echo "=== pre-push guard (swift test, no UI) ==="
 
 echo ""
 echo "--- guard_wiring.sh ---"
@@ -25,7 +27,3 @@ fi
 echo ""
 echo "--- logic suites (timing budgets serialized) ---"
 bash scripts/test_logic.sh
-
-echo ""
-echo "--- simulator test suite ---"
-bash scripts/test.sh
