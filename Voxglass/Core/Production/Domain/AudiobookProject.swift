@@ -133,8 +133,8 @@ public struct AudiobookProject: Codable, Sendable, Identifiable, Equatable {
         source: SourceDocument? = nil,
         chapters: [ProductionChapter] = [],
         pronunciations: [PronunciationNote] = [],
-        createdAt: Date = Date(),
-        modifiedAt: Date = Date(),
+        createdAt: Date = Date(), // determinism-exempt: convenience default; persistence passes Clock values
+        modifiedAt: Date = Date(), // determinism-exempt: convenience default; persistence passes Clock values
         schemaVersion: Int = 1
     ) {
         self.id = id

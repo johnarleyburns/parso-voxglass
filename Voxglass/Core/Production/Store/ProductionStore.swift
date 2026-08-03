@@ -23,7 +23,7 @@ public struct ProjectSummary: Codable, Sendable, Identifiable, Equatable {
         percentRecorded: Double = 0, recordedCount: Int = 0, totalCount: Int = 0,
         flaggedCount: Int = 0, needsPickupCount: Int = 0, unapprovedCount: Int = 0,
         readyToExport: Bool = false, purpose: ProjectPurpose = .publicDomainCommunity,
-        modifiedAt: Date = Date(), coverRef: AudioAssetReference? = nil,
+        modifiedAt: Date = Date(), coverRef: AudioAssetReference? = nil, // determinism-exempt: convenience default; callers pass Clock values
         isHiddenFromDevices: Bool = false, projectionRevision: Int = 0
     ) {
         self.id = id

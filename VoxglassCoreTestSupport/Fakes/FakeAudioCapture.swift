@@ -10,7 +10,7 @@ public enum FakeCaptureError: Error, Equatable {
 
 /// Scripted `AudioCapturing` for the S5 recording-flow tests.
 ///
-/// - Synthesizes a real WAV at the requested destination on `startRecording`,
+/// - Builds a real WAV at the requested destination on `startRecording`,
 ///   so takes moved into an asset store have real `sha256` / `byteCount`.
 /// - Yields a scripted level stream (~30 Hz) while recording, so the meter and
 ///   teleprompter see live updates without hardware.

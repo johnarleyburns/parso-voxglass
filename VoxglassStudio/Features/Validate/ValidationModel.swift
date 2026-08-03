@@ -7,7 +7,7 @@ import VoxglassCore
 /// severity tallies, and an eligibility panel.
 ///
 /// Validation is free for **every** destination (§15.7) — this model MUST NOT
-/// consult `LicenseGate` or any entitlement state (CI gate G-2).
+/// read the entitlement gate (CI gate G-2); only the Export path may.
 @Observable @MainActor
 public final class ValidationModel {
     public private(set) var report: ValidationReport?

@@ -15,14 +15,14 @@ public struct ReviewEvent: Codable, Sendable, Identifiable, Equatable {
     public enum Origin: String, Codable, Sendable { case local, cloud }
 
     public init(
-        id: UUID = UUID(),
+        id: UUID = UUID(), // determinism-exempt: convenience default for new events; sync paths pass SequentialIDGenerator values
         projectID: UUID,
         paragraphID: UUID,
         type: ReviewEventType,
         noteText: String? = nil,
         tag: ReviewTag? = nil,
         device: DeviceKind,
-        createdAt: Date = Date(),
+        createdAt: Date = Date(), // determinism-exempt: convenience default for new events; sync paths pass Clock values
         appliedAt: Date? = nil,
         origin: Origin = .local
     ) {

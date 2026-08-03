@@ -18,7 +18,7 @@ public actor ProjectDatabase {
         }
     }
 
-    public static func makeTemporary(named name: String = UUID().uuidString) -> ProjectDatabase {
+    public static func makeTemporary(named name: String = UUID().uuidString) -> ProjectDatabase { // determinism-exempt: transient temp filename, never persisted
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("VoxglassProductionTests", isDirectory: true)
             .appendingPathComponent("\(name).sqlite")

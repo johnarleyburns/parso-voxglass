@@ -33,7 +33,7 @@
 | 16 | Packaging & export | encoders and licensing, mastering chain, the three builders, artifacts, wizard |
 | 17 | Licensing & StoreKit | product, provider, gate, caching, placement rules |
 | 18 | UI specification | every screen on Mac, iPhone, CarPlay, and Watch |
-| 19 | Testing & CI | suites, fixtures, smoke tests, budgets, twelve grep gates |
+| 19 | Testing & CI | suites, fixtures, smoke tests, budgets, eighteen grep gates |
 | 20 | Stage plan | S1–S12 with acceptance criteria and the three human walkthroughs |
 | 21 | Release & operations | versioning, App Store, re-verification, checklist |
 | 22 | Appendices | a11y registry, legal strings, deviations, backlog, risks, quickstart, anti-patterns |
@@ -691,7 +691,7 @@ Voxglass/Core/                      → SwiftPM target "VoxglassCore" (existing,
         ├── Assembly/               segment queues, render plans, cache keys
         ├── Review/                 events, fold, queues, predicates
         ├── Validation/             thresholds, rules, report
-        ├── Destinations/           DestinationProfile table, filename sanitizer, identifier suggester
+        ├── Destinations/           DestinationProfile literals + registry (Destinations/DestinationProfiles.swift), filename sanitizer, identifier suggester
         ├── Packaging/              builders, manifests, checklists, checksum writer
         ├── Sync/                   ProductionSyncEngine protocol, projection builder, record mappers
         ├── WatchLink/              WatchTransport protocol + payloads
@@ -705,6 +705,11 @@ VoxglassStudio/                     → NEW macOS app target
   └── Features/                     Library, NewProject, SourceImport, Script, Record, Import,
                                     TakeCompare, Review, Assembly, Metadata, DevicePreview,
                                     Validation, Export, Settings
+
+> **Module topology note (§4.1):** the `DestinationProfile` **literals** (the five
+> profiles and `profile(for:)`) live in `Destinations/DestinationProfiles.swift`;
+> the **type** declaration stays in `Domain/DestinationTypes.swift`. CI gate G-10
+> names the literals file, so the platform numbers have one defined home.
 
 Voxglass/Features/Production/       → NEW iPhone feature folder
 Voxglass/App/CarPlay/Production*    → CarPlay production templates (extends existing CarPlay layer)
@@ -4437,6 +4442,7 @@ Implement as `scripts/guard_production.sh`, invoked from `.github/workflows/ios.
 | **G-10** | Destination constants centralized | Literal `128`, `192`, `44100`, `-23`, `-18`, `-60`, `-3.0` must not appear in `Validation/**` or `Packaging/**` outside `Destinations/DestinationProfiles.swift` and `Destinations/ValidationThresholds.swift`. (Prevents the research from drifting into scattered magic numbers.) |
 | **G-11** | Legal strings centralized | The literal strings from §3.6 must appear only in `Destinations/LegalStrings.swift`. |
 | **G-12** | No auto-upload | No `archive.org`, `librivox.org`, or `acx.com` URL is passed to `URLSession` upload/data-task APIs anywhere. Only string generation is permitted. |
+| **G-19** | The gates can fail | `scripts/test_guards.sh` MUST plant a probe for each grep gate and assert the guard catches it, then assert the guard passes without it. Runs in CI immediately before `guard_production.sh`. A gate that cannot fail is not a gate. (Numbered G-19 because G-13…G-18 are taken by the discovery gates; the gap plan's provisional label "G-13" was superseded.) |
 
 CI jobs — **GitHub Actions runs no UI tests and no simulator tests.** The only test job is `swift test`, fully serialized (`swift test --no-parallel` for all logic suites, plus `VoxglassPerformanceTests` via `VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests` — both Swift Testing on the macOS host). Serialization is a deliberate temporary policy: `swift test` runs test targets in parallel by default and load-sensitive suites (playback seek timing, performance budgets, audio metrics) produce false failures under runner CPU contention; run everything serially until those suites are made load-independent. The five UI smoke tests never run in CI; they are the local pre-push gate.
 
@@ -4574,7 +4580,7 @@ Commit subject convention: `feat(studio): S<N> — <summary>` with a body listin
 
 **Test** `CarPlayTemplateTests` + the CarPlay smoke test; `MigrationMatrixTests`; `PerformanceBudgetTests`; `AccessibilityAuditTests`.
 
-**Accept** All five UI smoke tests green; all Core suites green via `swift test`; all twelve grep gates passing; the three walkthroughs in §20.13 executed on hardware.
+**Accept** All five UI smoke tests green; all Core suites green via `swift test`; all eighteen grep gates passing; the three walkthroughs in §20.13 executed on hardware.
 
 ### 20.13 End-to-end acceptance walkthroughs (human)
 
@@ -4624,7 +4630,8 @@ Record the verification date and the outcome in `docs/voxglass-mvp/DESTINATION_V
 - [ ] All Core suites green (`swift test`)
 - [ ] All Studio/phone/watch suites green
 - [ ] Five UI smoke tests green (`scripts/test.sh --all`)
-- [ ] Twelve CI grep gates green (`scripts/guard_production.sh`)
+- [ ] Eighteen CI grep gates green (`scripts/guard_production.sh`)
+- [ ] Guard self-test green (`scripts/test_guards.sh` — proves each gate can fail)
 - [ ] Performance budgets met (§19.7) on the reference machine
 
 ## Walkthroughs
@@ -4797,6 +4804,7 @@ Recorded deliberately; update the mockups when convenient.
 | App-wide SwiftUI invalidation returns | Unusable recording UI | `RecordingMeter` isolation + `RenderCountProbeTests` |
 | GPL/App Store licensing challenge | Distribution blocked | LGPL-only encoders, dynamic linking, notices, written offer (§16.3) |
 | Scope creep into AI narration | Product identity and LibriVox eligibility | CI gate G-1; `aiImported` is provenance only, with no generation path |
+| A grep gate silently stops matching (broken regex, missing search root, self-defeating exclusion) | The product's defining rules go unenforced | G-19 self-test (`scripts/test_guards.sh`) plants a probe per gate and asserts the guard fails on it |
 
 ### 22.7 Reading list for the implementing agent
 

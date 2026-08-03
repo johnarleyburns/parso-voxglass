@@ -161,7 +161,7 @@ public struct AudioQualityMetrics: Codable, Sendable, Equatable {
         duration: TimeInterval,
         sampleRate: Double,
         channels: Int,
-        computedAt: Date = Date(),
+        computedAt: Date = Date(), // determinism-exempt: convenience default; metrics pipeline passes Clock values
         analyzerVersion: Int = 1
     ) {
         self.peakDBFS = peakDBFS

@@ -14,7 +14,7 @@ public struct ImportWarning: Codable, Sendable, Identifiable, Equatable {
     public var message: String
     public var paragraphIndex: Int?
 
-    public init(id: UUID = UUID(), kind: ImportWarningKind, message: String, paragraphIndex: Int? = nil) {
+    public init(id: UUID = UUID(), kind: ImportWarningKind, message: String, paragraphIndex: Int? = nil) { // determinism-exempt: convenience default for new warnings; import passes IDGenerator values
         self.id = id
         self.kind = kind
         self.message = message

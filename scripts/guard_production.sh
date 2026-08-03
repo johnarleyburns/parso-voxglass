@@ -23,13 +23,33 @@ violate() {
 # G-1: No synthesis symbols in any source.
 # ──────────────────────────────────────────────────────────────
 check_no_synthesis() {
-  local banned='TTS|Synthesi[sz]e\b|VoiceModel|Kokoro|Chatterbox|CosyVoice|voiceClone|AVSpeechSynthesizer'
+  # `Synthesi[sz]er` is part of the banned set, not the exclusion set:
+  # `AVSpeechSynthesizer` is how synthesis enters the product.
+  local banned='\bTTS\b|Synthesi[sz]e|Synthesi[sz]er|VoiceModel|Kokoro|Chatterbox|CosyVoice|voiceClone|AVSpeechSynthesizer'
+  # `import Speech` is banned because §18.2.6 requires the system dictation
+  # keyboard, not the Speech framework (SFSpeechRecognizer is the other
+  # synthesis-adjacent AI path).
+  local banned_imports='^[[:space:]]*import[[:space:]]+(MLX|CoreML|Speech)\b'
+  # `isLikelyGeneratedTTSAudio` is the consumer app's *classifier* over catalogue
+  # metadata (no synthesis); it is the one permitted match. `synthesis-exempt:`
+  # marks fixture comments that merely describe fake audio.
   local matches
-  matches=$(grep -rn --include='*.swift' -E "$banned" Voxglass/Core Voxglass VoxglassWatch VoxglassStudio 2>/dev/null | grep -v 'isLikelyGeneratedTTSAudio' | grep -v 'Synthesi[sz]er' || true)
+  matches=$(grep -rn --include='*.swift' -E "$banned" \
+              Voxglass VoxglassWatch VoxglassStudio VoxglassCoreTestSupport 2>/dev/null \
+            | grep -v 'isLikelyGeneratedTTSAudio' \
+            | grep -v 'synthesis-exempt:' || true)
   if [ -n "$matches" ]; then
     while read -r line; do
       violate "G-1: synthesis symbol found: $line"
     done <<< "$matches"
+  fi
+  local import_matches
+  import_matches=$(grep -rn --include='*.swift' -E "$banned_imports" \
+              Voxglass VoxglassWatch VoxglassStudio VoxglassCoreTestSupport 2>/dev/null || true)
+  if [ -n "$import_matches" ]; then
+    while read -r line; do
+      violate "G-1: banned import (synthesis-adjacent AI): $line"
+    done <<< "$import_matches"
   fi
 }
 
@@ -37,12 +57,15 @@ check_no_synthesis() {
 # G-2: Pro-gate placement (no LicenseGate/isPro/ProFeature in free paths).
 # ──────────────────────────────────────────────────────────────
 check_pro_gate_placement() {
-  local banned='LicenseGate|\.isPro|ProFeature|EntitlementState'
-  local freepaths='Recording|Review|Preview|Capture|Assembly|Segment|Sync|Watch|CarPlay|Validation'
+  local banned='LicenseGate|\.isPro\b|ProFeature|EntitlementState'
+  # §17.5 allow-list, by FILENAME.
+  local allowed='Export|Packaging|RetailMaster|Master|License|Settings|StudioEnvironment'
+  local forbidden='Recording|Review|Preview|Capture|Assembly|Segment|Sync|Watch|CarPlay|Validation'
   local matches
-  matches=$(find Voxglass/Core Voxglass VoxglassWatch -name '*.swift' -print0 2>/dev/null \
-    | xargs -0 grep -lE "$freepaths" 2>/dev/null \
-    | xargs grep -nE "$banned" 2>/dev/null || true)
+  matches=$(find Voxglass/Core Voxglass VoxglassWatch VoxglassStudio -name '*.swift' 2>/dev/null \
+            | grep -E "/[^/]*($forbidden)[^/]*\.swift$" \
+            | grep -vE "/[^/]*($allowed)[^/]*\.swift$" \
+            | xargs grep -nE "$banned" 2>/dev/null || true)
   if [ -n "$matches" ]; then
     while read -r line; do
       violate "G-2: Pro gate in free-territory file: $line"
@@ -80,6 +103,11 @@ check_stable_hashing() {
         while read -r line; do
           violate "G-4: Hasher/hashValue in caching code: $line"
         done <<< "$matches"
+      fi
+      # Positive half (§19.9 G-4): each directory must actually wire stable
+      # hashing, or the negative half silently rots into a no-op.
+      if ! grep -rq --include='*.swift' 'SHA256Hex' "$d" 2>/dev/null; then
+        violate "G-4: $d contains no SHA256Hex reference (stable hashing not wired)"
       fi
     fi
   done
@@ -124,8 +152,6 @@ check_determinism_seams() {
   local matches
   matches=$(grep -rn --include='*.swift' -E '\bDate\(\)|\bUUID\(\)' "Voxglass/Core/Production" 2>/dev/null \
     | grep -v 'determinism-exempt:' \
-    | grep -v '= UUID()' \
-    | grep -v '= Date()' \
     | grep -v 'UUIDGenerator' \
     | grep -v 'SystemClock' \
     || true)

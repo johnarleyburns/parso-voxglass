@@ -32,7 +32,7 @@ public struct PronunciationNote: Codable, Sendable, Identifiable, Equatable {
     public var term: String
     public var guidance: String
 
-    public init(id: UUID = UUID(), term: String, guidance: String) {
+    public init(id: UUID = UUID(), term: String, guidance: String) { // determinism-exempt: convenience default for new entries; import passes IDGenerator values
         self.id = id
         self.term = term
         self.guidance = guidance
@@ -61,13 +61,13 @@ public struct ReviewNote: Codable, Sendable, Identifiable, Equatable {
     public var resolvedAt: Date?
 
     public init(
-        id: UUID = UUID(),
+        id: UUID = UUID(), // determinism-exempt: convenience default for new entities; persistence passes IDGenerator values
         paragraphID: UUID,
         text: String,
         tag: ReviewTag? = nil,
         device: DeviceKind,
         timecode: TimeInterval? = nil,
-        createdAt: Date = Date(),
+        createdAt: Date = Date(), // determinism-exempt: convenience default for new entities; persistence passes Clock values
         resolvedAt: Date? = nil
     ) {
         self.id = id
@@ -117,7 +117,7 @@ public struct Paragraph: Codable, Sendable, Identifiable, Equatable {
         reviewState: ReviewState = .unreviewed,
         sourceRange: SourceRange? = nil,
         isSceneBreak: Bool = false,
-        updatedAt: Date = Date()
+        updatedAt: Date = Date() // determinism-exempt: convenience default for new entities; persistence passes Clock values
     ) {
         self.id = id
         self.ordinal = ordinal

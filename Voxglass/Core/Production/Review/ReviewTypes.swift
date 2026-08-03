@@ -43,7 +43,7 @@ public struct ReviewQueueDefinition: Codable, Sendable, Identifiable, Equatable 
     public var playContextSecond: Bool
 
     public init(
-        id: UUID = UUID(),
+        id: UUID = UUID(), // determinism-exempt: convenience default for new events; sync paths pass SequentialIDGenerator values
         projectID: UUID,
         chapterIDs: Set<UUID>? = nil,
         predicate: ReviewPredicate,

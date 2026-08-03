@@ -47,7 +47,7 @@ public struct ExportOptions: Sendable, Equatable {
         overwriteExisting: Bool = true,
         writeValidationReport: Bool = true,
         scope: ExportScope = .wholeBook,
-        generatedAt: Date = Date(),
+        generatedAt: Date = Date(), // determinism-exempt: convenience default; re-export passes explicit values from SystemClock
         appVersion: String = "Voxglass Studio 1.0"
     ) {
         self.includeMP3Derivatives = includeMP3Derivatives

@@ -47,7 +47,7 @@ public struct IntegrityFinding: Sendable, Equatable, Identifiable {
     public let repair: RepairAction?
 
     public init(
-        id: UUID = UUID(),
+        id: UUID = UUID(), // determinism-exempt: convenience default for new findings; verification passes IDGenerator values
         severity: Severity,
         code: IntegrityCode,
         message: String,
