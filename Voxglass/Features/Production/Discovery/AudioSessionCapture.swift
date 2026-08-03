@@ -2,6 +2,20 @@ import AVFoundation
 import Foundation
 import VoxglassCore
 
+/// Wraps an underlying capture error with the name of the failing step so the
+/// record screen can say exactly which call failed (e.g. "setActive failed…")
+/// instead of an opaque OSStatus code.
+enum CaptureSetupError: LocalizedError {
+    case step(String, underlying: Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .step(let name, let underlying):
+            return "\(name) failed — \(underlying.localizedDescription)"
+        }
+    }
+}
+
 /// iOS concrete of the `AudioCapturing` seam (NARRATION_NEEDS_SPEC §11.4 P3).
 /// Uses `AVAudioEngine`'s input tap and writes a float-PCM CAF to the given
 /// URL; streams level snapshots for the record meter. On interruption the
@@ -42,12 +56,12 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     }
 
     public func prepare(device: String?, format: RecordingDefaults) async throws {
-        let session = AVAudioSession.sharedInstance()
-
-        // Ask for permission before touching the session so a denial is
-        // reported cleanly instead of surfacing as a session/engine error.
+        // requestRecordPermission is safe from any thread, but its completion
+        // handler resumes on an arbitrary dispatch queue — and AVAudioSession
+        // calls made off the main thread can fail with OSStatus -50 (paramErr).
+        // Hop to the main actor for all session configuration.
         let granted = await withCheckedContinuation { continuation in
-            session.requestRecordPermission { granted in
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
                 continuation.resume(returning: granted)
             }
         }
@@ -56,9 +70,24 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
             throw CaptureError.permissionDenied
         }
 
-        try session.setCategory(.record, mode: .spokenAudio, options: [.allowBluetoothHFP, .duckOthers])
-        try session.setPreferredSampleRate(format.sampleRate)
-        try session.setActive(true)
+        try await MainActor.run {
+            let session = AVAudioSession.sharedInstance()
+            do {
+                try session.setCategory(.record, mode: .spokenAudio, options: [.allowBluetoothHFP, .duckOthers])
+            } catch {
+                throw CaptureSetupError.step("setCategory", underlying: error)
+            }
+            do {
+                try session.setPreferredSampleRate(format.sampleRate)
+            } catch {
+                throw CaptureSetupError.step("setPreferredSampleRate", underlying: error)
+            }
+            do {
+                try session.setActive(true)
+            } catch {
+                throw CaptureSetupError.step("setActive", underlying: error)
+            }
+        }
 
         recordFormat = format
         guard installTapIfNeeded() else {
@@ -95,7 +124,12 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         // Pass settings only: AVAudioFile rejects non-interleaved PCM settings
         // with OSStatus -50 (paramErr), and commonFormat/interleaved must
         // match the settings dict exactly.
-        let file = try AVAudioFile(forWriting: destinationURL, settings: writeFormat.settings)
+        let file: AVAudioFile
+        do {
+            file = try AVAudioFile(forWriting: destinationURL, settings: writeFormat.settings)
+        } catch {
+            throw CaptureSetupError.step("AVAudioFile", underlying: error)
+        }
         lock.withLock {
             recordURL = destinationURL
             recordFile = file
@@ -114,7 +148,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
                 activeFormat = nil
             }
             try? FileManager.default.removeItem(at: destinationURL)
-            throw error
+            throw CaptureSetupError.step("engine.start", underlying: error)
         }
         state = .recording
         startLevelPolling()
