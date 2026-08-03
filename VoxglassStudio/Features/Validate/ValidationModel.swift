@@ -15,6 +15,14 @@ public final class ValidationModel {
     public private(set) var error: String?
     public var target: DestinationID
 
+    /// Routes a fix that needs a different surface (record, metadata, export…).
+    /// The window shell sets this; `fixNext()` returns the navigation when set.
+    public var onNavigate: ((ValidationFixNavigation) -> Void)?
+
+    /// Re-analyzes a take's metrics on demand (§15.2 `reanalyzeTake`). The
+    /// Studio wires the real analyzer; tests leave it nil.
+    public var reanalyzeTake: ((UUID) async -> AudioQualityMetrics?)?
+
     public var eligibility: EligibilityProfile? { report?.eligibility }
 
     public var blockingCount: Int { report?.summary.blocking ?? 0 }
@@ -108,6 +116,100 @@ public final class ValidationModel {
         issues.filter { $0.severity == severity }
     }
 
+    // MARK: - Fix Next Issue (§15.2)
+
+    /// The first blocking issue (document order) with a remedy, or nil.
+    public var nextFixableBlockingIssue: ValidationIssue? {
+        issues.first { $0.severity == .blocking && $0.fix != nil }
+    }
+
+    /// "Fix Next Issue": walks blocking issues in document order, performing
+    /// store-level remedies inline and routing surface changes through
+    /// `onNavigate`. Returns what happened so the view can re-evaluate.
+    @discardableResult
+    public func fixNext() async -> ValidationFixOutcome {
+        guard let issue = nextFixableBlockingIssue, let fix = issue.fix else { return .none }
+        switch fix {
+        case .goToParagraph(let id):
+            return navigate(.goToParagraph(id))
+        case .goToChapter(let id):
+            return navigate(.goToChapter(id))
+        case .openMetadata(let field):
+            return navigate(.openMetadata(field))
+        case .openRights:
+            return navigate(.openRights)
+        case .recordParagraph(let id):
+            return navigate(.recordParagraph(id))
+        case .selectTake(let paragraphID, let takeID):
+            do {
+                try await store.setSelectedTake(takeID, forParagraph: paragraphID)
+                await evaluate()
+                return .performed("Selected take")
+            } catch {
+                return .failed("Could not select take: \(error.localizedDescription)")
+            }
+        case .clearPickup(let id):
+            do {
+                try await store.setReviewState(.unreviewed, forParagraph: id)
+                await evaluate()
+                return .performed("Cleared pickup flag")
+            } catch {
+                return .failed("Could not clear pickup: \(error.localizedDescription)")
+            }
+        case .reanalyzeTake(let takeID):
+            guard let reanalyzeTake else { return .none }
+            guard let metrics = await reanalyzeTake(takeID) else { return .none }
+            do {
+                try await store.setTakeMetrics(metrics, forTake: takeID)
+                await evaluate()
+                return .performed("Re-analyzed take")
+            } catch {
+                return .failed("Could not store metrics: \(error.localizedDescription)")
+            }
+        case .regenerateDisclaimers:
+            return await regenerate(introOutro: true)
+        case .regenerateCredits:
+            return await regenerate(introOutro: false)
+        case .applyMastering:
+            return navigate(.exportWithMastering)
+        case .splitChapter(let chapterID, let atParagraph):
+            return navigate(.splitChapter(chapterID, atParagraph: atParagraph))
+        case .chooseArtwork:
+            return navigate(.chooseArtwork)
+        case .setRetailSample:
+            return navigate(.setRetailSample)
+        }
+    }
+
+    /// §15.2 `validate.goToParagraph.<n>`: jump to a specific paragraph.
+    public func goToParagraph(_ id: UUID) {
+        onNavigate?(.goToParagraph(id))
+    }
+
+    // MARK: - Private
+
+    private func navigate(_ navigation: ValidationFixNavigation) -> ValidationFixOutcome {
+        onNavigate?(navigation)
+        return .navigated(navigation)
+    }
+
+    private func regenerate(introOutro: Bool) async -> ValidationFixOutcome {
+        do {
+            var updated = try await store.load()
+            let ids = UUIDGenerator()
+            let clock = SystemClock()
+            let generator: any ScriptGenerating = introOutro
+                ? LibriVoxScriptGenerator()
+                : RetailScriptGenerator()
+            _ = ScriptApplier().apply(generator.plan(for: updated), to: &updated, ids: ids, clock: clock)
+            try await store.save(updated)
+            await evaluate()
+            return .performed(introOutro ? "Regenerated LibriVox disclaimers" : "Regenerated retail credits")
+        } catch {
+            return .failed("Could not regenerate: \(error.localizedDescription)")
+        }
+    }
+
     private static var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
@@ -116,4 +218,25 @@ public final class ValidationModel {
         }
         return "dev"
     }
+}
+
+/// A fix that moves the user to a different surface (§15.2).
+public enum ValidationFixNavigation: Sendable, Equatable {
+    case goToParagraph(UUID)
+    case goToChapter(UUID)
+    case openMetadata(MetadataField)
+    case openRights
+    case recordParagraph(UUID)
+    case exportWithMastering
+    case splitChapter(UUID, atParagraph: UUID)
+    case chooseArtwork
+    case setRetailSample
+}
+
+/// What "Fix Next Issue" did.
+public enum ValidationFixOutcome: Sendable, Equatable {
+    case performed(String)
+    case navigated(ValidationFixNavigation)
+    case failed(String)
+    case none
 }

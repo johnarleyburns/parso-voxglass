@@ -86,10 +86,48 @@ struct LibraryView: View {
 
     @State private var findSomethingToNarrate = false
 
+    /// §18.2.1: the "My Productions" entry on the Library tab. The phone can
+    /// never create a production — it only previews what Studio pushed — so the
+    /// empty state is copy only, with no call to action.
+    @ViewBuilder
+    private var myProductionsEntry: some View {
+        let production = AppServices.shared.productionEnvironment
+        NavigationLink {
+            MyProductionsShelf(store: production.previewStore, sync: production.sync)
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(LinearGradient(colors: [Color(hex: 0x23303F), Color(hex: 0x3A4A5F)], startPoint: .top, endPoint: .bottom))
+                    Image(systemName: "waveform.badge.mic")
+                        .scaledFont(size: 18)
+                }
+                .frame(width: 44, height: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("My Productions")
+                        .scaledFont(size: 15, weight: .bold)
+                        .foregroundStyle(Palette.ink)
+                    Text("Previews you made in Voxglass Studio on your Mac")
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.ink2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
+            }
+            .padding(13)
+            .glassSurface(cornerRadius: 16)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.brass.opacity(0.4), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .tactileTap()
+        .accessibilityIdentifier("shelf.myProductions")
+    }
+
     @ViewBuilder
     private var bookList: some View {
         VStack(alignment: .leading, spacing: 10) {
             myNarrationsEntry
+            myProductionsEntry
             if libraryStore.books.isEmpty {
                 EmptyStatePanel(
                     title: "No Audiobooks Yet",

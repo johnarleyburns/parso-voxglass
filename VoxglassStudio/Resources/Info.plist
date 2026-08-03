@@ -6,6 +6,21 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Voxglass Studio</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Voxglass Audiobook Project</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>guru.parso.voxglass.project</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,5 +39,25 @@
 	<string>14.0</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Voxglass records your narration for the audiobook you are producing. Audio stays on your Mac unless you choose to preview it on your devices.</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Voxglass Audiobook Project</string>
+			<key>UTTypeIdentifier</key>
+			<string>guru.parso.voxglass.project</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>voxproject</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

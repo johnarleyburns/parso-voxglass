@@ -9,6 +9,7 @@ struct TakeComparisonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
+            abPanel
             takeList
             if let error = model.error {
                 Text(error)
@@ -19,6 +20,60 @@ struct TakeComparisonView: View {
         .padding(20)
         .frame(minWidth: 560, minHeight: 400)
         .navigationTitle("Compare Takes")
+    }
+
+    /// §11.7 A/B with position preservation: `compare.takeA`, `compare.takeB`,
+    /// `compare.playAB`, `compare.useSelected`.
+    @ViewBuilder
+    private var abPanel: some View {
+        if let a = model.takeA, let b = model.takeB {
+            HStack(spacing: 14) {
+                takeSlot(a, identifier: "compare.takeA")
+                Image(systemName: "arrow.left.and.right")
+                    .foregroundStyle(.secondary)
+                takeSlot(b, identifier: "compare.takeB")
+                Divider().frame(height: 40)
+                Button(model.isABComparing ? "Pause A/B" : "Play A/B") {
+                    Task {
+                        if model.isABComparing { await model.stopAB() } else { await model.playAB() }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("compare.playAB")
+                Button("Use Selected") {
+                    if let id = model.takeA?.id {
+                        Task { await model.select(id) }
+                    }
+                }
+                .accessibilityIdentifier("compare.useSelected")
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 10).fill(.quaternary.opacity(0.4)))
+        }
+    }
+
+    private func takeSlot(_ take: Take, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("Take \(shortID(take.id))")
+                .font(.headline)
+                .accessibilityIdentifier(identifier)
+            Text(String(format: "%.1f s", take.duration))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if take.id == model.recommendedTakeID {
+                Label("Suggested", systemImage: "star.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.yellow)
+            }
+            if take.id == model.selectedTakeID {
+                Text("Selected")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.blue.opacity(0.15))
+                    .cornerRadius(4)
+            }
+        }
     }
 
     private var header: some View {

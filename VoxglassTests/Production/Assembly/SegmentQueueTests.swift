@@ -173,4 +173,73 @@ import VoxglassCore
         #expect(segments.allSatisfy { $0.chapterID == ch1.id })
         #expect(segments.count <= 2)
     }
+
+    @Test func retailSampleStartsAtParagraphAndStaysInChapter() {
+        let project = makeProject()
+        let ch1 = project.chapters[0]
+        let start = ch1.paragraphs[0].id
+        let segments = SegmentQueueBuilder().build(
+            .retailSample(startParagraph: start, maxDuration: 6.0),
+            from: project,
+            settings: settings
+        )
+        // ch1 has two recorded paragraphs (4 s and 5 s) starting at index 0 —
+        // far less than the 60 s retail floor, so the whole run is returned.
+        #expect(!segments.isEmpty)
+        #expect(segments[0].paragraphID == start)
+        #expect(segments.allSatisfy { $0.chapterID == ch1.id })
+        let duration = segments.reduce(TimeInterval(0)) { acc, s in
+            acc + (s.trim.upperBound - s.trim.lowerBound) + s.leadingSilence + s.trailingSilence
+        }
+        // 4 s + 5 s + head silence (0.75) + interior gap (0.45) + tail (1.5).
+        #expect(duration == 11.7)
+    }
+
+    @Test func retailSampleWindowFloorDoesNotTruncateShortContent() {
+        let project = makeProject()
+        let ch1 = project.chapters[0]
+        let start = ch1.paragraphs[0].id
+        // A sub-60 s request clips to the 60 s floor, but content shorter than
+        // the floor is returned in full — never truncated to the requested
+        // (sub-60 s) length.
+        let segments = SegmentQueueBuilder().build(
+            .retailSample(startParagraph: start, maxDuration: 1.0),
+            from: project,
+            settings: settings
+        )
+        let duration = segments.reduce(TimeInterval(0)) { acc, s in
+            acc + (s.trim.upperBound - s.trim.lowerBound) + s.leadingSilence + s.trailingSilence
+        }
+        #expect(duration == 11.7)
+        #expect(segments.count == 2)
+    }
+
+    @Test func retailSampleWindowClipsAtTargetWhenContentIsLong() {
+        // Six 12 s paragraphs = 72 s+ of content: a 60 s target must clip.
+        let ids = [UUID(), UUID(), UUID(), UUID(), UUID(), UUID()]
+        var paragraphs: [Paragraph] = []
+        for (i, id) in ids.enumerated() {
+            paragraphs.append(makeParagraph(id, ordinal: i, text: "Para \(i)", take: makeTake(paragraphID: id, duration: 12.0)))
+        }
+        let chapter = ProductionChapter(id: UUID(), ordinal: 0, title: "Chapter One", paragraphs: paragraphs)
+        let project = AudiobookProject(
+            id: UUID(),
+            metadata: BookMetadata(title: "Long Book", author: "A", narrator: "N"),
+            chapters: [chapter],
+            createdAt: Date(timeIntervalSince1970: 0),
+            modifiedAt: Date(timeIntervalSince1970: 0)
+        )
+        let segments = SegmentQueueBuilder().build(
+            .retailSample(startParagraph: ids[0], maxDuration: 60.0),
+            from: project,
+            settings: settings
+        )
+        let duration = segments.reduce(TimeInterval(0)) { acc, s in
+            acc + (s.trim.upperBound - s.trim.lowerBound) + s.leadingSilence + s.trailingSilence
+        }
+        // 5 paragraphs of 12 s + head 0.75 + gaps: ≥ 60, under the full 6.
+        #expect(duration >= 60)
+        #expect(duration < 6 * 12)
+        #expect(segments.count < 6)
+    }
 }

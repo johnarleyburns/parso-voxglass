@@ -322,20 +322,14 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
     }
 
     private func sampleSegments(project: AudiobookProject, selection: RetailSampleSelection) -> [PlaybackSegment]? {
-        guard let chapter = project.chapters.first(where: { $0.paragraphs.contains { $0.id == selection.startParagraphID } }) else { return nil }
-        let settings = project.profile.assembly
-        let all = SegmentQueueBuilder().build(.chapter(chapter.id), from: project, settings: settings)
-        guard let startIndex = all.firstIndex(where: { $0.paragraphID == selection.startParagraphID }) else { return nil }
-        var sliced: [PlaybackSegment] = []
-        var accumulated: TimeInterval = 0
-        let target = max(60, min(300, selection.duration))
-        for segment in all[startIndex...] {
-            let duration = (segment.trim.upperBound - segment.trim.lowerBound) + segment.leadingSilence + segment.trailingSilence
-            sliced.append(segment)
-            accumulated += duration
-            if accumulated >= target { break }
-        }
-        return sliced.isEmpty ? nil : sliced
+        // §12.2: the sample obeys the same segment rules as every other queue —
+        // the queue builder clamps the duration to the 60…300 s retail window.
+        let segments = SegmentQueueBuilder().build(
+            .retailSample(startParagraph: selection.startParagraphID, maxDuration: selection.duration),
+            from: project,
+            settings: project.profile.assembly
+        )
+        return segments.isEmpty ? nil : segments
     }
 
     // MARK: - delivery-metadata.json

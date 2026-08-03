@@ -94,7 +94,7 @@ import VoxglassCore
 
         for i in 0..<35 {
             let url = URL(fileURLWithPath: "/projects/test\(i).voxproject")
-            recents.add(url: url)
+            recents.add(url: url, manifest: nil, summary: nil)
         }
 
         #expect(recents.recentURLs.count <= 30)
@@ -104,9 +104,10 @@ import VoxglassCore
     @Test func seedEmptyClearsRecents() async {
         let store = InMemoryProductionStore()
         let recents = RecentsStore(storageDirectory: URL.temporaryDirectory)
+        recents.clear()
 
         for i in 0..<3 {
-            recents.add(url: URL(fileURLWithPath: "/projects/test\(i).voxproject"))
+            recents.add(url: URL(fileURLWithPath: "/projects/test\(i).voxproject"), manifest: nil, summary: nil)
         }
         #expect(recents.recentURLs.count == 3)
 
@@ -124,9 +125,10 @@ import VoxglassCore
     @Test func seedIsNoopOutsideTestEnvironment() async {
         let store = InMemoryProductionStore()
         let recents = RecentsStore(storageDirectory: URL.temporaryDirectory)
+        recents.clear()
 
         for i in 0..<3 {
-            recents.add(url: URL(fileURLWithPath: "/projects/test\(i).voxproject"))
+            recents.add(url: URL(fileURLWithPath: "/projects/test\(i).voxproject"), manifest: nil, summary: nil)
         }
         let countBefore = recents.recentURLs.count
 

@@ -72,20 +72,26 @@ public struct ProjectCounts: Sendable, Equatable {
     public var needsPickup: Int
     public var approved: Int
     public var unreviewed: Int
+    public var unapproved: Int
     public var chapters: Int
     public var totalRecordedDuration: TimeInterval
     public var aiOriginSelected: Int
+    /// Generated paragraphs (intro/outro/credits) that need no take.
+    public var syntheticParagraphs: Int
 
     public init(
         paragraphs: Int = 0, recorded: Int = 0, flagged: Int = 0,
         needsPickup: Int = 0, approved: Int = 0, unreviewed: Int = 0,
-        chapters: Int = 0, totalRecordedDuration: TimeInterval = 0,
-        aiOriginSelected: Int = 0
+        unapproved: Int = 0, chapters: Int = 0,
+        totalRecordedDuration: TimeInterval = 0,
+        aiOriginSelected: Int = 0, syntheticParagraphs: Int = 0
     ) {
         self.paragraphs = paragraphs; self.recorded = recorded; self.flagged = flagged
         self.needsPickup = needsPickup; self.approved = approved; self.unreviewed = unreviewed
+        self.unapproved = unapproved
         self.chapters = chapters; self.totalRecordedDuration = totalRecordedDuration
         self.aiOriginSelected = aiOriginSelected
+        self.syntheticParagraphs = syntheticParagraphs
     }
 }
 
@@ -93,6 +99,11 @@ public protocol ProductionStore: Sendable {
     func load() async throws -> AudiobookProject
     func save(_ project: AudiobookProject) async throws
     func summary() async throws -> ProjectSummary
+
+    /// Serializes long operations (import, script application, full save)
+    /// against UI-driven mutations (§7.9). Implementations wrap the body in a
+    /// single transaction; the UI can show a progress state around it.
+    func withExclusiveWrite<T: Sendable>(_ body: @Sendable () async throws -> T) async throws -> T
 
     func upsertChapter(_ chapter: ProductionChapter) async throws
     func upsertParagraph(_ paragraph: Paragraph) async throws
@@ -121,6 +132,16 @@ public protocol ProductionStore: Sendable {
 
     func cachedRender(forKey: String) async throws -> AudioAssetReference?
     func storeRender(_ ref: AudioAssetReference, key: String, chapterID: UUID, duration: TimeInterval) async throws
+
+    /// Opens an export run row (`status = 'running'`, §16.12). A run left in
+    /// `running` state after a crash/interrupt is what resumption detects.
+    func openExportRun(projectID: UUID, destination: String) async throws -> ExportRunRecord
+    /// Persists progress (file hashes, totals) and the terminal status.
+    func updateExportRun(_ run: ExportRunRecord) async throws
+    /// The most recent run row for a destination, any status.
+    func latestExportRun(destination: String) async throws -> ExportRunRecord?
+    /// The `running` run row for a destination, if one exists (resume prompt).
+    func runningExportRun(destination: String) async throws -> ExportRunRecord?
     func cachedProxy(forTake: UUID, bitrateKbps: Int) async throws -> AudioAssetReference?
     func storeProxy(_ ref: AudioAssetReference, forTake: UUID, bitrateKbps: Int) async throws
 

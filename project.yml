@@ -175,6 +175,20 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSMinimumSystemVersion: "14.0"
         NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Audio stays on your Mac unless you choose to preview it on your devices."
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: guru.parso.voxglass.project
+            UTTypeDescription: Voxglass Audiobook Project
+            UTTypeConformsTo:
+              - com.apple.package
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - voxproject
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Voxglass Audiobook Project
+            LSItemContentTypes:
+              - guru.parso.voxglass.project
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.studio

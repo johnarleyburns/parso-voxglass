@@ -154,6 +154,34 @@ public struct ProductionBookDetailView: View {
                     .accessibilityIdentifier("detail.chapter.\(chapter.ordinal)")
                 }
             }
+
+            Section("Workflows") {
+                NavigationLink {
+                    ProductionParagraphListView(projectID: summary.id, store: previewStore())
+                } label: {
+                    Label("Paragraphs", systemImage: "list.bullet")
+                }
+                .accessibilityIdentifier("detail.paragraphList")
+
+                NavigationLink {
+                    ReviewQueueBuilderView(
+                        projectID: summary.id,
+                        store: previewStore(),
+                        sync: sync,
+                        watchTransport: AppServices.shared.productionEnvironment.watchTransport
+                    )
+                } label: {
+                    Label("Review Queue", systemImage: "square.stack.3d.up")
+                }
+                .accessibilityIdentifier("detail.reviewQueue")
+
+                NavigationLink {
+                    ProductionSyncStorageView(sync: sync, store: previewStore())
+                } label: {
+                    Label("Sync & Storage", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .accessibilityIdentifier("detail.syncStorage")
+            }
         }
         .navigationTitle(summary.title)
         .task { await model.load() }
@@ -234,6 +262,15 @@ public struct ProductionReviewPlayerView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Done") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        model.autoAdvance.toggle()
+                    } label: {
+                        Image(systemName: model.autoAdvance ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle")
+                    }
+                    .help(model.autoAdvance ? "Auto-advance on" : "Auto-advance off")
+                    .accessibilityIdentifier("player.autoAdvance")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -399,13 +436,22 @@ public struct ReviewQueueBuilderView: View {
     let projectID: UUID
     @State private var model: ReviewQueueBuilderModel
     @State private var startQueue = false
+    @State private var didDownloadToWatch = false
+    @State private var watchTransferError: String?
     private let store: ProductionPreviewStore
     private let sync: PhoneProductionSync
+    private let watchTransport: any WatchTransport
 
-    public init(projectID: UUID, store: ProductionPreviewStore, sync: PhoneProductionSync) {
+    public init(
+        projectID: UUID,
+        store: ProductionPreviewStore,
+        sync: PhoneProductionSync,
+        watchTransport: any WatchTransport
+    ) {
         self.projectID = projectID
         self.store = store
         self.sync = sync
+        self.watchTransport = watchTransport
         self._model = State(initialValue: ReviewQueueBuilderModel(projectID: projectID, store: store))
     }
 
@@ -433,6 +479,38 @@ public struct ReviewQueueBuilderView: View {
                 .accessibilityIdentifier("queueBuilder.start")
             } footer: {
                 Text("Queue duration: \(formattedDuration(model.totalDuration))")
+            }
+            Section {
+                Button {
+                    Task {
+                        do {
+                            let count = try await model.downloadToWatch(using: watchTransport)
+                            didDownloadToWatch = count > 0
+                            watchTransferError = nil
+                        } catch {
+                            watchTransferError = error.localizedDescription
+                        }
+                    }
+                } label: {
+                    Label("Download queue to Apple Watch", systemImage: "applewatch")
+                }
+                .disabled(model.resolvedParagraphs.isEmpty)
+                .accessibilityIdentifier("queueBuilder.downloadToWatch")
+            } footer: {
+                let estimate = model.watchQueueEstimate
+                Text("\(estimate.paragraphCount) paragraphs · \(ByteCountFormatter.string(fromByteCount: estimate.totalBytes, countStyle: .file)). The watch keeps up to 200 MB with automatic eviction.")
+            }
+            if didDownloadToWatch {
+                Section {
+                    Label("Sent to Apple Watch", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .accessibilityIdentifier("queueBuilder.downloaded")
+                }
+            }
+            if let watchTransferError {
+                Section {
+                    Text(watchTransferError).foregroundStyle(.red)
+                }
             }
         }
         .navigationTitle("Review Queue")

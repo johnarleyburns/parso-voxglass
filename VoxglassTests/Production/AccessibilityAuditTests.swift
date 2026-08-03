@@ -99,65 +99,34 @@ import VoxglassCoreTestSupport
     /// each with the reason (kept truthful; adding the control requires
     /// removing the row here).
     private static let documentedAbsences: [String: String] = [
-        // Wizard rights step is a single form in the MVP (S4 simplified the
-        // four-step wizard); rights are edited in Metadata & Rights.
-        "wizard.rightsBasis.": "wizard has no rights step (see MetadataRightsView)",
-        "wizard.sourceURL": "wizard has no rights step (see MetadataRightsView)",
-        "wizard.editionYear": "wizard has no rights step (see MetadataRightsView)",
-        "wizard.attest": "wizard has no rights step (see MetadataRightsView)",
-        "wizard.back": "wizard is a single form with only Cancel",
-        // The Script editor screen is DEFERRED; paragraph editing happens on
-        // the source import acceptance path only.
-        "script.chapter.": "no Script Editor screen in MVP (structure is accepted at import)",
-        "script.paragraph.": "no Script Editor screen in MVP",
-        "script.save": "no Script Editor screen in MVP",
-        "script.find": "no Script Editor screen in MVP",
-        "script.split": "no Script Editor screen in MVP",
-        "script.merge": "no Script Editor screen in MVP",
-        "script.directionNote": "no Script Editor screen in MVP",
-        "script.pronunciation": "no Script Editor screen in MVP",
-        "script.reviewStatus": "no Script Editor screen in MVP",
-        "script.driftBanner": "no Script Editor screen in MVP",
-        // Recording workspace is the teleprompter + transport core; takes and
-        // quality inspection live in Take Comparison.
-        "record.acceptAndNext": "recording advances via Next ¶ (S5 simplification)",
-        "record.flagAndNext": "flagging happens in Review Queue",
-        "record.take.": "take list lives in Take Comparison",
-        "record.importWAV": "import lives in the Import Audio feature",
-        "record.quality.peak": "quality metrics shown in Take Comparison",
-        "record.quality.noise": "quality metrics shown in Take Comparison",
-        "record.inputLevel": "level shown in the meter section without an identifier",
-        "record.transport.playTake": "take playback lives in Take Comparison",
-        "record.transport.playInContext": "context playback lives in the Review Queue",
-        // The import-audio marker workflow is DEFERRED (spanning takes are not
-        // supported, §22.4 deviation 07-import-audio).
-        "import.audio.addMarker": "marker workflow not implemented in MVP",
-        "import.audio.removeMarker": "marker workflow not implemented in MVP",
-        "import.audio.segment.": "segment table not rendered in MVP",
+        // The Script Editor's chapter list is a plain List (chapter rows are
+        // identified by the section structure, not per-chapter); save is
+        // debounce-flushed, not an explicit action.
+        "script.chapter.": "chapter rows in the Script Editor are not individually identified",
+        "script.save": "text is debounce-flushed, not an explicit save action",
+        "script.directionNote": "inspector shows direction notes without a dedicated identifier",
+        "script.pronunciation": "inspector shows pronunciation without a dedicated identifier",
+        "script.reviewStatus": "review status is shown by the state chip, not a control",
+        // Recording is driven by the §11.4 keyboard table; the actions have no
+        // on-screen buttons (Return/⌘Return/⌥Space/⇧Space per spec).
+        "record.acceptAndNext": "Return keyboard shortcut only (§11.4)",
+        "record.flagAndNext": "⌘Return keyboard shortcut only (§11.4)",
+        "record.transport.playTake": "⌥Space keyboard shortcut only (§11.4)",
+        "record.transport.playInContext": "⇧Space keyboard shortcut only (§11.4)",
+        // Remaining import surface: re-segmentation, per-paragraph editing, and
+        // split/merge/scene-break gestures are still import-internal; the
+        // marker workflow (F-26) ships add/remove markers and the segment table.
         "import.resegment": "re-segmentation options not implemented",
         "import.paragraph.": "paragraph list not rendered at import",
         "import.splitHere.": "split UI not implemented",
         "import.mergeNext.": "merge UI not implemented",
         "import.markSceneBreak": "scene-break marking not implemented",
-        "import.warningCount": "import warnings are not surfaced in the simplified import view",
         "library.activity.": "activity feed not implemented in the library",
-        "library.section.": "library sidebar sections not implemented",
-        "library.project.": "recents list rows are identified by their package path",
         "dashboard.openFeedback": "feedback feed not implemented on the dashboard",
         "dashboard.chapter.": "chapter rows are not individually identified",
         "dashboard.progress": "progress ring has no identifier (visual only)",
-        "compare.takeA": "take comparison uses per-row play/select buttons",
-        "compare.takeB": "take comparison uses per-row play/select buttons",
-        "compare.playAB": "take comparison plays a single take (A/B sync DEFERRED)",
-        "compare.useSelected": "take comparison uses 'Use Selected Take' per row",
-        "metadata.tab.": "tabs are plain TabView items without identifiers",
-        "metadata.artwork": "artwork tab not implemented (cover is metadata-only)",
         "metadata.subjects": "subjects field exists but carries no identifier",
         "metadata.rightsBasis": "rights picker exists but carries no identifier",
-        "validate.fixNext": "issue fixes are inline, not a single next-fix button",
-        "validate.goToParagraph.": "issue rows carry no jump button",
-        "player.autoAdvance": "phone player auto-advance is on the queue builder",
-        "queueBuilder.downloadToWatch": "watch download not implemented on the phone",
         "note.dictate": "dictation is a watch-only affordance",
         "carplay.playNext": "CPAlertTemplate actions expose no identifiers",
         "carplay.undo": "CPAlertTemplate actions expose no identifiers",

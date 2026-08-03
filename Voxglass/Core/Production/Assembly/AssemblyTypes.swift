@@ -56,4 +56,8 @@ public enum PlaybackMode: Sendable, Equatable {
     case unapproved
     case reviewQueue(ReviewQueueDefinition)
     case paragraphRange(chapterID: UUID, from: Int, to: Int)
+    /// §12.2 retail sample: a gapless run of segments starting at
+    /// `startParagraph`, clipped to `maxDuration` (bounded to
+    /// `RetailSampleSelection`'s 60…300 s window by the queue builder).
+    case retailSample(startParagraph: UUID, maxDuration: TimeInterval)
 }

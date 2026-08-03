@@ -250,6 +250,40 @@ public final class ReviewQueueBuilderModel {
     public var totalDuration: TimeInterval {
         resolvedParagraphs.reduce(0) { $0 + $1.duration }
     }
+
+    /// The size estimate for pushing the resolved queue to the watch (§18.2.5):
+    /// the on-device proxies, not the lossless masters. The watch enforces its
+    /// own 200 MB cap with least-recently-queued eviction.
+    public var watchQueueEstimate: (paragraphCount: Int, totalBytes: Int64) {
+        let paragraphs = resolvedParagraphs
+        var bytes: Int64 = 0
+        for paragraph in paragraphs {
+            guard let url = store.proxyURL(paragraphID: paragraph.id, projectID: projectID),
+                  let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize else { continue }
+            bytes += Int64(size)
+        }
+        return (paragraphs.count, bytes)
+    }
+
+    /// Pushes the resolved queue's proxies to the watch through the transport.
+    /// Returns the number of paragraphs actually queued (those with a proxy
+    /// already on device).
+    public func downloadToWatch(using transport: any WatchTransport) async throws -> Int {
+        let paragraphs = resolvedParagraphs
+        var items: [WatchAudioItem] = []
+        for paragraph in paragraphs {
+            guard let url = store.proxyURL(paragraphID: paragraph.id, projectID: projectID) else { continue }
+            let byteCount = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            items.append(WatchAudioItem(
+                paragraphID: paragraph.id,
+                sha256: paragraph.proxySourceSHA ?? "",
+                byteCount: byteCount,
+                fileURL: url
+            ))
+        }
+        try await transport.sendAudio(items)
+        return items.count
+    }
 }
 
 // MARK: - ReviewNoteModel

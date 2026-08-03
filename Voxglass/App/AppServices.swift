@@ -147,10 +147,26 @@ final class AppServices: ObservableObject {
             if self.cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }
+            #if DEBUG
+            await self.seedProductionPreviewIfRequested()
+            #endif
             // Pull production previews and relay them to the watch (spec §13.6).
             await production.checkForUpdates()
         }
     }
+
+    /// `-uiTestSeed onePreviewProject` seeds one previewable production so the
+    /// iPhone smoke test can assert the My Productions surface is reachable
+    /// (§18.2, WP-G). Debug-only; release builds ignore the argument.
+    #if DEBUG
+    private func seedProductionPreviewIfRequested() async {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-uiTestSeed"),
+              arguments.indices.contains(index + 1),
+              arguments[index + 1] == "onePreviewProject" else { return }
+        await productionEnvironment.previewStore.apply(ProductionSmokeSeed.projection())
+    }
+    #endif
 
     private func enqueueInitialLibraryForCloudKitIfNeeded() async {
         let defaults = UserDefaults.standard

@@ -14,6 +14,11 @@ import VoxglassCore
         #expect(model.canProceed == false)
 
         model.author = "Jane Doe"
+        #expect(model.canProceed == false)
+
+        // §8.2: the wizard requires a narrator; an empty narrator blocks
+        // progress even with title and author filled.
+        model.narrator = "Voice Actor"
         #expect(model.canProceed == true)
     }
 
@@ -21,10 +26,15 @@ import VoxglassCore
         let model = NewProjectModel()
         model.title = "   "
         model.author = "Author"
+        model.narrator = "Narrator"
         #expect(model.canProceed == false)
 
         model.title = "Title"
         model.author = "   "
+        #expect(model.canProceed == false)
+
+        model.author = "Author"
+        model.narrator = "   "
         #expect(model.canProceed == false)
     }
 
@@ -64,11 +74,15 @@ import VoxglassCore
         #expect(model.error == nil)
     }
 
-    @Test func narratorDefaultsWhenEmpty() async throws {
+    @Test func narratorRequiredByWizard() async throws {
+        // §8.2: title/author/narrator are all required (trimmed). An empty
+        // narrator must not be silently defaulted.
         let model = NewProjectModel()
         model.title = "Book"
         model.author = "Author"
         model.narrator = ""
+
+        #expect(model.canProceed == false)
 
         let store = InMemoryProductionStore()
         let recents = RecentsStore(storageDirectory: URL.temporaryDirectory)
@@ -80,6 +94,6 @@ import VoxglassCore
 
         await model.createProject(using: library, at: projectURL)
 
-        #expect(model.createdProject?.metadata.narrator == "Narrator")
+        #expect(model.createdProject?.metadata.narrator == "")
     }
 }

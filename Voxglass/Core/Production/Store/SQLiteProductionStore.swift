@@ -82,11 +82,31 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         try await db.checkpoint()
     }
 
+    public func withExclusiveWrite<T: Sendable>(_ body: @Sendable () async throws -> T) async throws -> T {
+        try await db.prepare()
+        return try await db.transaction { _ in
+            try await body()
+        }
+    }
+
     public func summary() async throws -> ProjectSummary {
         try await db.prepare()
         let cc = try await counts()
         let rows = try await db.query("SELECT id, title, author, narrator, purpose, modified_at, hidden_from_devices FROM project LIMIT 1")
         guard let row = rows.first else { throw StoreError.projectNotFound }
+        // Ready-to-export leg (§8.1): every non-synthetic paragraph has a
+        // selected take and zero paragraphs need pickup. (The "last validation
+        // run had no blocking issues" leg is covered live by the Validation
+        // screen; the persisted run log arrives with export resumption.)
+        let rt = try await db.query("""
+            SELECT COUNT(*) AS total,
+                   SUM(selected_take_id IS NOT NULL) AS recorded,
+                   SUM(review_state='needsPickup') AS np
+            FROM paragraph WHERE project_id = ?
+            """, [.string(row.string("id") ?? "")])
+        let total = Int(rt.first?.int("total") ?? 0)
+        let recorded = Int(rt.first?.int("recorded") ?? 0)
+        let needsPickup = Int(rt.first?.int("np") ?? 0)
         return ProjectSummary(
             id: try uuid(from: row, column: "id"),
             title: row.string("title") ?? "", author: row.string("author") ?? "",
@@ -94,6 +114,8 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
             percentRecorded: cc.paragraphs > 0 ? Double(cc.recorded) / Double(cc.paragraphs) : 0,
             recordedCount: cc.recorded, totalCount: cc.paragraphs,
             flaggedCount: cc.flagged, needsPickupCount: cc.needsPickup,
+            unapprovedCount: cc.unapproved,
+            readyToExport: total > 0 && recorded >= total - cc.syntheticParagraphs && needsPickup == 0,
             purpose: ProjectPurpose(rawValue: row.string("purpose") ?? "publicDomainCommunity") ?? .publicDomainCommunity,
             modifiedAt: Date(timeIntervalSince1970: row.double("modified_at") ?? 0),
             isHiddenFromDevices: row.bool("hidden_from_devices") ?? false
@@ -324,7 +346,11 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         let td = dur.first?.double("td") ?? 0
         let ai = try await db.query("SELECT COUNT(*) AS cnt FROM take t JOIN paragraph p ON p.id=t.paragraph_id WHERE p.selected_take_id=t.id AND t.origin_kind=? AND t.project_id=?", [.string("aiImported"), .string(projID)])
         let aiCount = Int(ai.first?.int("cnt") ?? 0)
-        return ProjectCounts(paragraphs: Int(r.int("p") ?? 0), recorded: Int(r.int("r") ?? 0), flagged: Int(r.int("f") ?? 0), needsPickup: Int(r.int("np") ?? 0), approved: Int(r.int("a") ?? 0), unreviewed: Int(r.int("u") ?? 0), chapters: chCount, totalRecordedDuration: td, aiOriginSelected: aiCount)
+        let synthetic = try await db.query("SELECT COUNT(*) AS cnt FROM paragraph WHERE project_id=? AND role IN ('libriVoxIntro','libriVoxOutro','retailOpeningCredits','retailClosingCredits')", [.string(projID)])
+        let syntheticCount = Int(synthetic.first?.int("cnt") ?? 0)
+        let recorded = Int(r.int("r") ?? 0)
+        let approved = Int(r.int("a") ?? 0)
+        return ProjectCounts(paragraphs: Int(r.int("p") ?? 0), recorded: recorded, flagged: Int(r.int("f") ?? 0), needsPickup: Int(r.int("np") ?? 0), approved: approved, unreviewed: Int(r.int("u") ?? 0), unapproved: max(0, recorded - approved), chapters: chCount, totalRecordedDuration: td, aiOriginSelected: aiCount, syntheticParagraphs: syntheticCount)
     }
 
     public func cachedRender(forKey key: String) async throws -> AudioAssetReference? {
@@ -338,6 +364,88 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
     public func storeRender(_ ref: AudioAssetReference, key: String, chapterID: UUID, duration: TimeInterval) async throws {
         try await db.prepare()
         try await db.execute("INSERT OR REPLACE INTO render_cache (cache_key,chapter_id,asset_sha256,asset_path,asset_bytes,duration,created_at) VALUES (?,?,?,?,?,?,?)", [.string(key), .string(chapterID.uuidString), .string(ref.sha256), .string(ref.relativePath), .int(Int64(ref.byteCount)), .double(duration), .double(clock.now.timeIntervalSince1970)])
+    }
+
+    // MARK: - Export runs (§16.12)
+
+    public func openExportRun(projectID: UUID, destination: String) async throws -> ExportRunRecord {
+        try await db.prepare()
+        let run = ExportRunRecord(projectID: projectID, destination: destination, startedAt: clock.now)
+        try await db.execute("""
+            INSERT INTO export_run (id, project_id, destination, started_at, status)
+            VALUES (?, ?, ?, ?, 'running')
+            """, [
+            .string(run.id.uuidString),
+            .string(projectID.uuidString),
+            .string(destination),
+            .double(run.startedAt.timeIntervalSince1970)
+        ])
+        return run
+    }
+
+    public func updateExportRun(_ run: ExportRunRecord) async throws {
+        try await db.prepare()
+        let report = try JSONEncoder().encode(run.fileHashes)
+        try await db.execute("""
+            UPDATE export_run SET
+                finished_at = ?,
+                output_path = ?,
+                status = ?,
+                error_code = ?,
+                file_count = ?,
+                total_bytes = ?,
+                report_json = ?
+            WHERE id = ?
+            """, [
+            run.finishedAt.map { .double($0.timeIntervalSince1970) } ?? .null,
+            run.outputPath.map { .string($0) } ?? .null,
+            .string(run.status.rawValue),
+            run.errorCode.map { .string($0) } ?? .null,
+            .int(Int64(run.fileCount)),
+            .int(run.totalBytes),
+            .string(String(data: report, encoding: .utf8) ?? ""),
+            .string(run.id.uuidString)
+        ])
+    }
+
+    public func latestExportRun(destination: String) async throws -> ExportRunRecord? {
+        try await db.prepare()
+        let rows = try await db.query(
+            "SELECT * FROM export_run WHERE destination = ? ORDER BY started_at DESC LIMIT 1",
+            [.string(destination)]
+        )
+        return try rows.first.map(runRecord)
+    }
+
+    public func runningExportRun(destination: String) async throws -> ExportRunRecord? {
+        try await db.prepare()
+        let rows = try await db.query(
+            "SELECT * FROM export_run WHERE destination = ? AND status = 'running' ORDER BY started_at DESC LIMIT 1",
+            [.string(destination)]
+        )
+        return try rows.first.map(runRecord)
+    }
+
+    private func runRecord(_ row: DatabaseRow) throws -> ExportRunRecord {
+        let hashes: [String: String]
+        if let json = row.string("report_json") {
+            hashes = (try? JSONDecoder().decode([String: String].self, from: Data(json.utf8))) ?? [:]
+        } else {
+            hashes = [:]
+        }
+        return ExportRunRecord(
+            id: try uuid(from: row, column: "id"),
+            projectID: try uuid(from: row, column: "project_id"),
+            destination: row.string("destination") ?? "",
+            startedAt: Date(timeIntervalSince1970: row.double("started_at") ?? 0),
+            finishedAt: row.double("finished_at").map { Date(timeIntervalSince1970: $0) },
+            outputPath: row.string("output_path"),
+            status: ExportRunStatus(rawValue: row.string("status") ?? "running") ?? .running,
+            errorCode: row.string("error_code"),
+            fileCount: Int(row.int("file_count") ?? 0),
+            totalBytes: row.int("total_bytes") ?? 0,
+            fileHashes: hashes
+        )
     }
 
     public func cachedProxy(forTake tid: UUID, bitrateKbps: Int) async throws -> AudioAssetReference? {

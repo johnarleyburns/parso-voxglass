@@ -114,6 +114,31 @@ public final class TakeComparisonModel {
             self.error = "Selection failed: \(error.localizedDescription)"
         }
     }
+
+    // MARK: - A/B (§11.7, F-25)
+
+    /// The A slot — the first take.
+    public var takeA: Take? { takes.first }
+
+    /// The B slot — the second take (nil when there is only one).
+    public var takeB: Take? { takes.count > 1 ? takes[1] : nil }
+
+    public private(set) var isABComparing = false
+
+    /// Gapless, position-preserving A/B: switches to the other slot at the
+    /// current position (clamped to the target's duration) with a short
+    /// crossfade. Never an automatic selection — the user picks.
+    public func playAB() async {
+        guard let a = takeA, let b = takeB else { return }
+        let target = (activeTakeID == a.id) ? b : a
+        await play(target.id)
+        isABComparing = true
+    }
+
+    public func stopAB() async {
+        await pause()
+        isABComparing = false
+    }
 }
 
 /// Pluggable A/B playback; the default uses `AVAudioPlayer` and preserves the

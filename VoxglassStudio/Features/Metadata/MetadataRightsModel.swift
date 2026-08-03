@@ -42,16 +42,29 @@ public final class MetadataRightsModel {
 
     public var isAttested: Bool { attestationDate != nil }
 
+    // Artwork (§18.1.12, F-28)
+    public private(set) var coverOriginal: ArtworkPreview?
+    public private(set) var coverOriginalData: Data?
+    public private(set) var cover2400: ArtworkPreview?
+    /// Validation of the current cover against the destination's `ArtworkRule`.
+    public private(set) var artworkIssues: [String] = []
+    public private(set) var isGenerating2400 = false
+
+    public var hasCover: Bool { coverOriginal != nil }
+
     private let store: any ProductionStore
+    private let artworkStore: any ArtworkStore
     private var working: AudiobookProject
 
     public init(
         project: AudiobookProject,
         store: any ProductionStore,
-        assets: any ContentAddressedStore
+        assets: any ContentAddressedStore,
+        artworkStore: any ArtworkStore = InMemoryArtworkStore()
     ) {
         self.working = project
         self.store = store
+        self.artworkStore = artworkStore
         let m = project.metadata
         let r = project.rights
 
@@ -81,6 +94,19 @@ public final class MetadataRightsModel {
         suggestedIdentifier = ""
         eligibility = EligibilityProfile.evaluate(project)
         suggestIdentifier()
+        Task { await loadExistingArtwork() }
+    }
+
+    /// Restores any stored artwork so the tab reflects the saved state.
+    private func loadExistingArtwork() async {
+        if let original = try? await artworkStore.load(role: .coverOriginal) {
+            coverOriginal = ArtworkPreview.preview(data: original)
+            coverOriginalData = original
+        }
+        if let derivative = try? await artworkStore.load(role: .cover2400) {
+            cover2400 = ArtworkPreview.preview(data: derivative)
+        }
+        await validateArtwork()
     }
 
     /// Set the rights attestation (checkbox toggled).
@@ -142,6 +168,77 @@ public final class MetadataRightsModel {
     }
 
     public var workingProject: AudiobookProject { working }
+
+    // MARK: - Artwork (§18.1.12)
+
+    /// Loads a cover image, validates it against the destination's artwork
+    /// rule, stores the original, and generates the 2400 px derivative that
+    /// becomes `working.metadata.coverRef`.
+    public func importArtwork(at url: URL) async {
+        guard let data = try? Data(contentsOf: url) else {
+            artworkIssues = ["Could not read the image file."]
+            return
+        }
+        guard let preview = ArtworkPreview.preview(data: data) else {
+            artworkIssues = ["That file is not a readable image."]
+            return
+        }
+        do {
+            _ = try await artworkStore.store(data, role: .coverOriginal, ext: url.pathExtension.isEmpty ? "jpg" : url.pathExtension)
+            coverOriginal = preview
+            coverOriginalData = data
+            isGenerating2400 = true
+            defer { isGenerating2400 = false }
+            if let derivative = ArtworkResizer.resizeTo2400(data: data),
+               let derivativePreview = ArtworkPreview.preview(data: derivative) {
+                let ref = try await artworkStore.store(derivative, role: .cover2400, ext: "jpg")
+                working.metadata.coverRef = ref
+                cover2400 = derivativePreview
+            } else {
+                artworkIssues = ["Could not generate the 2400 px derivative."]
+            }
+            await validateArtwork()
+        } catch {
+            self.error = "Failed to store artwork: \(error.localizedDescription)"
+        }
+    }
+
+    public func removeArtwork() async {
+        try? await artworkStore.remove(role: .coverOriginal)
+        try? await artworkStore.remove(role: .cover2400)
+        working.metadata.coverRef = nil
+        coverOriginal = nil
+        coverOriginalData = nil
+        cover2400 = nil
+        await validateArtwork()
+    }
+
+    /// The destination rule the cover must satisfy (from the working project's
+    /// intended destination).
+    public var artworkRule: ArtworkRule {
+        DestinationProfile.profile(for: working.profile.intendedDestination).artwork
+    }
+
+    private func validateArtwork() async {
+        artworkIssues = []
+        guard let cover = coverOriginal else {
+            if case .requiredSquare = artworkRule {
+                artworkIssues.append("This destination requires cover art.")
+            }
+            return
+        }
+        switch artworkRule {
+        case .none:
+            break
+        case .optionalSquare(let minPx), .requiredSquare(let minPx, _, _):
+            let shortest = min(cover.pixelWidth, cover.pixelHeight)
+            if cover.pixelWidth != cover.pixelHeight {
+                artworkIssues.append("Cover is \(cover.pixelWidth)×\(cover.pixelHeight); this destination requires a square image.")
+            } else if shortest < minPx {
+                artworkIssues.append("Cover is \(shortest) px on the short side; this destination needs at least \(minPx) px.")
+            }
+        }
+    }
 
     // MARK: - Private
 

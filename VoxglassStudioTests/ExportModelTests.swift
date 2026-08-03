@@ -31,6 +31,7 @@ import VoxglassCoreTestSupport
             renderer: TestChapterRenderer(),
             transcoder: FakeTranscoder(),
             gate: LicenseGate(provider: provider),
+            store: InMemoryProductionStore(),
             outputRoot: try exportsRoot(),
             now: { Date(timeIntervalSinceReferenceDate: 0) }
         )

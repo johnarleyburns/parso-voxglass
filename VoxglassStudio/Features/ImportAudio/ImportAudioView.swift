@@ -11,6 +11,7 @@ struct ImportAudioView: View {
     @State private var showFilePicker = false
     @State private var selectedChapterIndex = 0
     @State private var startParagraphIndex = 0
+    @State private var markerTimeText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -18,6 +19,7 @@ struct ImportAudioView: View {
             if !model.segments.isEmpty {
                 assignmentControls
                 originPicker
+                markerControls
                 segmentTable
                 commitButton
             }
@@ -110,11 +112,12 @@ struct ImportAudioView: View {
     }
 
     private var segmentTable: some View {
-        Table(model.segments) {
+        Table(model.segments) { [model] in
             TableColumn("Segment") { segment in
                 Text(String(format: "%@ – %@",
                             formatTime(segment.start), formatTime(segment.end)))
                     .monospacedDigit()
+                    .accessibilityIdentifier("import.audio.segment.\(model.segments.firstIndex(where: { $0.id == segment.id }) ?? 0)")
             }
             TableColumn("Duration") { segment in
                 Text(String(format: "%.1f s", segment.duration))
@@ -134,8 +137,45 @@ struct ImportAudioView: View {
             TableColumn("Confidence") { segment in
                 Text(segment.confidence == .high ? "High" : "Review")
             }
+            TableColumn("") { segment in
+                if let index = model.segments.firstIndex(where: { $0.id == segment.id }) {
+                    Button {
+                        model.removeMarker(at: index)
+                    } label: {
+                        Image(systemName: "minus.circle")
+                    }
+                    .disabled(index == 0)
+                    .help("Remove marker (merge with previous)")
+                    .accessibilityIdentifier("import.audio.removeMarker.\(index)")
+                }
+            }
         }
         .frame(minHeight: 200)
+    }
+
+    /// §11.5 marker controls: split a segment at a boundary time, or nudge a
+    /// segment's end marker (`import.audio.addMarker`).
+    private var markerControls: some View {
+        HStack(spacing: 12) {
+            TextField("Marker time (seconds)", text: $markerTimeText)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 180)
+                .accessibilityIdentifier("import.audio.markerTime")
+            Button("Add Marker") {
+                if let time = Double(markerTimeText) {
+                    model.addMarker(at: time)
+                    markerTimeText = ""
+                }
+            }
+            .disabled(Double(markerTimeText) == nil)
+            .accessibilityIdentifier("import.audio.addMarker")
+            if let last = model.segments.last {
+                Text("\(model.segments.count) segments · ends \(formatTime(last.end))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
     }
 
     private var commitButton: some View {

@@ -22,6 +22,13 @@ struct SourceImportView: View {
                     Text("\(document.sections.count) chapters")
                         .accessibilityIdentifier("import.chapterCount")
 
+                    if model.importWarningCount > 0 {
+                        Label("\(model.importWarningCount) import warning\(model.importWarningCount == 1 ? "" : "s")", systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .accessibilityIdentifier("import.warningCount")
+                    }
+
                     ScrollView {
                         ForEach(Array(document.sections.enumerated()), id: \.offset) { index, section in
                             HStack {
@@ -73,6 +80,57 @@ struct SourceImportView: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { model.reimportSummary != nil },
+            set: { if !$0 { model.dismissReimportSummary() } }
+        )) {
+            reimportSheet
+        }
+    }
+
+    /// Re-import reconciliation sheet (§18.1.4, mockup `19`). Orphan
+    /// retirement stays non-destructive: the audio assets remain in the store;
+    /// only the project rows are dropped (§22.6).
+    private var reimportSheet: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Import completed")
+                .font(.title)
+            if let summary = model.reimportSummary {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Reusing \(summary.reused) paragraphs")
+                    Text("\(summary.added) new")
+                        .accessibilityIdentifier("import.reimport.added")
+                    Text("\(summary.retired) no longer in source (\(summary.retiredWithRecordings) have recordings)")
+                        .accessibilityIdentifier("import.reimport.retired")
+                    if summary.drifted > 0 {
+                        Text("\(summary.drifted) changed text")
+                            .accessibilityIdentifier("import.reimport.drifted")
+                    }
+                }
+                .font(.body)
+
+                if summary.retiredWithRecordings > 0 {
+                    Text("The retired paragraphs with recordings are kept in a separate chapter so no take is lost. You can review them there before discarding.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button("Keep Orphans") {
+                    model.dismissReimportSummary()
+                }
+                Button("Discard Orphans") {
+                    Task { await model.discardOrphans(env) }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(model.reimportSummary?.retired == 0)
+                .accessibilityIdentifier("import.reimport.discard")
+            }
+        }
+        .padding(24)
+        .frame(width: 480)
     }
 
     private var sourceTypes: [UTType] {

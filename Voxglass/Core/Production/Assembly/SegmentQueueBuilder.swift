@@ -23,6 +23,8 @@ public struct SegmentQueueBuilder: Sendable {
         case .paragraphRange(let chapterID, let from, let to):
             chapterIDs = [chapterID]
             isReviewMode = false
+        case .retailSample(let startParagraph, let maxDuration):
+            return buildRetailSample(project: project, settings: settings, startParagraph: startParagraph, maxDuration: maxDuration)
         }
 
         var segments: [PlaybackSegment] = []
@@ -117,6 +119,27 @@ public struct SegmentQueueBuilder: Sendable {
         }
 
         return segments
+    }
+
+    private func buildRetailSample(
+        project: AudiobookProject,
+        settings: AssemblySettings,
+        startParagraph: UUID,
+        maxDuration: TimeInterval
+    ) -> [PlaybackSegment] {
+        guard let chapter = project.chapters.first(where: { $0.paragraphs.contains { $0.id == startParagraph } }) else { return [] }
+        let all = build(.chapter(chapter.id), from: project, settings: settings)
+        guard let startIndex = all.firstIndex(where: { $0.paragraphID == startParagraph }) else { return [] }
+        var sliced: [PlaybackSegment] = []
+        var accumulated: TimeInterval = 0
+        let target = max(60, min(300, maxDuration))
+        for segment in all[startIndex...] {
+            let duration = (segment.trim.upperBound - segment.trim.lowerBound) + segment.leadingSilence + segment.trailingSilence
+            sliced.append(segment)
+            accumulated += duration
+            if accumulated >= target { break }
+        }
+        return sliced.isEmpty ? [] : sliced
     }
 
     private func resolveParagraphIDs(_ mode: PlaybackMode, project: AudiobookProject) -> [UUID] {

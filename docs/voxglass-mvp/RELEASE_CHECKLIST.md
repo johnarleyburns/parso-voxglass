@@ -6,11 +6,13 @@
 ## Gates
 
 - [x] All Core suites green (`swift test`) — `scripts/test_logic.sh` phase 1
-      (1,1xx tests across VoxglassCoreTests + VoxglassStudioTests)
+      (1,2xx tests across VoxglassCoreTests + VoxglassStudioTests)
 - [x] All Studio/phone/watch suites green
 - [ ] Five UI smoke tests green (`scripts/test.sh --all`) — local pre-push gate,
       not CI. iPhone + CarPlay scene + Watch + three macOS Studio destinations.
-- [x] Twelve CI grep gates green (`scripts/guard_production.sh`)
+      WP-G adds `testMyProductionsReachableFromLibrary` (the fifth).
+- [x] Eighteen CI grep gates green (`scripts/guard_production.sh`)
+- [x] Guard self-test green (`scripts/test_guards.sh` — proves each gate can fail)
 - [x] Performance budgets met (§19.7) — `scripts/test_logic.sh` phase 2
       (`VOXGLASS_TIMING_TESTS=1`), ratio-based and load-independent
 

@@ -7,6 +7,7 @@ public actor InMemoryProductionStore: ProductionStore {
     private var renderCache: [String: AudioAssetReference] = [:]
     private var proxyCache: [UUID: AudioAssetReference] = [:]
     private var syncValues: [String: String] = [:]
+    private var exportRuns: [ExportRunRecord] = []
 
     public init() {}
 
@@ -17,6 +18,10 @@ public actor InMemoryProductionStore: ProductionStore {
 
     public func save(_ project: AudiobookProject) async throws {
         self.project = project
+    }
+
+    public func withExclusiveWrite<T: Sendable>(_ body: @Sendable () async throws -> T) async throws -> T {
+        try await body()
     }
 
     public func summary() async throws -> ProjectSummary {
@@ -32,6 +37,8 @@ public actor InMemoryProductionStore: ProductionStore {
             totalCount: c.paragraphs,
             flaggedCount: c.flagged,
             needsPickupCount: c.needsPickup,
+            unapprovedCount: c.unapproved,
+            readyToExport: c.paragraphs > 0 && c.recorded >= c.paragraphs - c.syntheticParagraphs && c.needsPickup == 0,
             purpose: project.profile.purpose,
             modifiedAt: project.modifiedAt,
             coverRef: project.metadata.coverRef,
@@ -233,10 +240,17 @@ public actor InMemoryProductionStore: ProductionStore {
         var counts = ProjectCounts()
         var totalDur: TimeInterval = 0
         var aiCount = 0
+        var synthetic = 0
         for ch in project.chapters {
             counts.chapters += 1
             for para in ch.paragraphs {
                 counts.paragraphs += 1
+                switch para.role {
+                case .libriVoxIntro, .libriVoxOutro, .retailOpeningCredits, .retailClosingCredits:
+                    synthetic += 1
+                case .body, .chapterHeading:
+                    break
+                }
                 if let selectedTake = para.takes.first(where: { $0.id == para.selectedTakeID }) {
                     counts.recorded += 1
                     totalDur += selectedTake.duration
@@ -252,6 +266,8 @@ public actor InMemoryProductionStore: ProductionStore {
         }
         counts.totalRecordedDuration = totalDur
         counts.aiOriginSelected = aiCount
+        counts.syntheticParagraphs = synthetic
+        counts.unapproved = max(0, counts.recorded - counts.approved)
         return counts
     }
 
@@ -262,5 +278,31 @@ public actor InMemoryProductionStore: ProductionStore {
     public func syncValue(_ key: String) async throws -> String? { syncValues[key] }
     public func setSyncValue(_ key: String, _ value: String?) async throws {
         if let v = value { syncValues[key] = v } else { syncValues.removeValue(forKey: key) }
+    }
+
+    // MARK: - Export runs (§16.12)
+
+    public func openExportRun(projectID: UUID, destination: String) async throws -> ExportRunRecord {
+        let run = ExportRunRecord(projectID: projectID, destination: destination, startedAt: Date(timeIntervalSince1970: 0))
+        exportRuns.append(run)
+        return run
+    }
+
+    public func updateExportRun(_ run: ExportRunRecord) async throws {
+        if let index = exportRuns.firstIndex(where: { $0.id == run.id }) {
+            exportRuns[index] = run
+        } else {
+            exportRuns.append(run)
+        }
+    }
+
+    public func latestExportRun(destination: String) async throws -> ExportRunRecord? {
+        exportRuns.filter { $0.destination == destination }
+            .max(by: { $0.startedAt < $1.startedAt })
+    }
+
+    public func runningExportRun(destination: String) async throws -> ExportRunRecord? {
+        exportRuns.filter { $0.destination == destination && $0.status == .running }
+            .max(by: { $0.startedAt < $1.startedAt })
     }
 }

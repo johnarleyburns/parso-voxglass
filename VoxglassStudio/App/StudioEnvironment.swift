@@ -130,6 +130,13 @@ public final class StudioEnvironment {
             guard let self else { return }
             self.recoveryPackageRoot = packageRoot
         }
+        library.onProjectAlreadyOpen = { [weak self] _ in
+            // §8.3: focus the existing window (WindowGroup(for:) re-keys on the
+            // same ProjectReference, so this is an openWindow call that
+            // activates the already-open window).
+            guard let self, let project = self.currentProject else { return }
+            self.requestProjectWindow(for: project)
+        }
     }
 
     // MARK: - Factories (§4.3)
@@ -240,14 +247,25 @@ public final class StudioEnvironment {
     }
 
     /// Leaves the project window for the library; the project stays open in
-    /// recents and can be reopened.
+    /// recents and can be reopened. Refreshes the cached snapshot and
+    /// releases the advisory lock (§8.1, §8.3).
     public func closeProject() {
+        let root = currentPackageRoot
+        if let project = currentProject {
+            Task { await library.refreshSummary(project: project, store: store) }
+        }
         currentProject = nil
         currentPackageRoot = nil
         store = InMemoryProductionStore()
         presentedSheet = nil
         selectedTab = .dashboard
+        library.releaseLock(for: root)
         onDismissProjectWindow?()
+    }
+
+    /// App termination / window teardown: release the advisory lock.
+    public func releaseLock() {
+        library.releaseLock(for: currentPackageRoot)
     }
 
     public func setProject(_ project: AudiobookProject) {
@@ -285,6 +303,15 @@ public final class StudioEnvironment {
             return FileAssetStore(root: root)
         }
         return FileAssetStore(root: FileManager.default.temporaryDirectory)
+    }
+
+    /// The package's `ArtworkStore` (cover-original + cover-2400 roles), or a
+    /// temp store when no package is open.
+    public func artworkStoreForCurrentProject() -> any ArtworkStore {
+        if let root = currentPackageRoot {
+            return FileArtworkStore(root: root)
+        }
+        return FileArtworkStore(root: FileManager.default.temporaryDirectory)
     }
 
     /// Kicks off a narration from a discovered need (n05/n06): a fresh

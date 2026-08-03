@@ -89,4 +89,48 @@ final class VoxglassUITests: XCTestCase {
         let end = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
         start.press(forDuration: 0.1, thenDragTo: end)
     }
+
+    /// WP-G acceptance: the My Productions surface must be reachable, not just
+    /// present in source. Launches with `-uiTestSeed onePreviewProject` (which
+    /// seeds one previewable production in DEBUG), navigates Library → My
+    /// Productions, opens the seeded project, and asserts the review actions
+    /// exist.
+    func testMyProductionsReachableFromLibrary() {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-voxglass.hasCompletedSplash", "YES",
+            "-voxglass.hasCompletedOnboarding", "YES",
+            "-VoxglassInitialTab", "library",
+            "-VoxglassDisableAnimatedSplash",
+            "-uiTestSeed", "onePreviewProject"
+        ]
+        app.launch()
+
+        // The Library tab's "My Productions" entry (spec §18.2.1).
+        let shelf = app.buttons["shelf.myProductions"]
+        XCTAssertTrue(
+            shelf.waitForExistence(timeout: 15),
+            "My Productions entry not on the Library tab.\n\(app.debugDescription)"
+        )
+        shelf.tap()
+
+        // A seeded preview project card is shown.
+        let slug = "themurderofrogerackroyd"
+        let card = app.otherElements["production.\(slug)"]
+        XCTAssertTrue(
+            card.waitForExistence(timeout: 10),
+            "No production card for \(slug).\n\(app.debugDescription)"
+        )
+        card.tap()
+
+        // The detail screen's review actions are reachable.
+        XCTAssertTrue(
+            app.buttons["detail.playWholeBook"].waitForExistence(timeout: 10),
+            "detail.playWholeBook not reachable.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(
+            app.buttons["detail.reviewFlagged"].exists,
+            "detail.reviewFlagged not reachable.\n\(app.debugDescription)"
+        )
+    }
 }

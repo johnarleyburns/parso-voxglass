@@ -5,6 +5,7 @@ import VoxglassCore
 /// counts, an eligibility panel, and the issue list with per-issue fixes.
 public struct ValidationReportView: View {
     @Bindable var model: ValidationModel
+    @State private var outcome: ValidationFixOutcome?
 
     public init(model: ValidationModel) {
         _model = Bindable(model)
@@ -90,6 +91,72 @@ public struct ValidationReportView: View {
             Divider()
             issueList
         }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task {
+                        outcome = await model.fixNext()
+                    }
+                } label: {
+                    Label("Fix Next Issue", systemImage: "wrench.and.screwdriver")
+                }
+                .disabled(model.nextFixableBlockingIssue == nil)
+                .accessibilityIdentifier("validate.fixNext")
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if let outcome {
+                outcomeBanner(outcome)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func outcomeBanner(_ outcome: ValidationFixOutcome) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon(for: outcome))
+            Text(text(for: outcome))
+                .font(.caption)
+            Spacer()
+            Button("Dismiss") { self.outcome = nil }
+                .font(.caption)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial)
+        .accessibilityIdentifier("validate.fixOutcome")
+    }
+
+    private func icon(for outcome: ValidationFixOutcome) -> String {
+        switch outcome {
+        case .performed: return "checkmark.circle.fill"
+        case .navigated: return "arrow.forward.circle.fill"
+        case .failed: return "exclamationmark.triangle.fill"
+        case .none: return "minus.circle"
+        }
+    }
+
+    private func text(for outcome: ValidationFixOutcome) -> String {
+        switch outcome {
+        case .performed(let message): return message
+        case .navigated(let navigation): return "Navigated to \(navigationDescription(navigation))"
+        case .failed(let message): return message
+        case .none: return "No fixable blocking issue."
+        }
+    }
+
+    private func navigationDescription(_ navigation: ValidationFixNavigation) -> String {
+        switch navigation {
+        case .goToParagraph: return "paragraph"
+        case .goToChapter: return "chapter"
+        case .openMetadata: return "metadata"
+        case .openRights: return "rights"
+        case .recordParagraph: return "recording"
+        case .exportWithMastering: return "export"
+        case .splitChapter: return "Script Editor"
+        case .chooseArtwork: return "metadata artwork"
+        case .setRetailSample: return "export retail sample"
+        }
     }
 
     private var severitySidebar: some View {
@@ -162,13 +229,32 @@ public struct ValidationReportView: View {
                 }
             }
             Spacer()
-            Text(issue.code.rawValue)
-                .font(.caption2.monospaced())
-                .foregroundStyle(.tertiary)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(issue.code.rawValue)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+                if let paragraphID = paragraphID(for: issue.fix) {
+                    Button("Go to ¶") {
+                        model.goToParagraph(paragraphID)
+                    }
+                    .font(.caption2)
+                    .accessibilityIdentifier("validate.goToParagraph.\(index)")
+                }
+            }
         }
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
         .accessibilityIdentifier("validate.issue.\(index)")
+    }
+
+    /// The paragraph a fix operates on, when it can jump there directly.
+    private func paragraphID(for fix: FixAction?) -> UUID? {
+        switch fix {
+        case .goToParagraph(let id), .recordParagraph(let id):
+            return id
+        default:
+            return nil
+        }
     }
 
     private func fixLabel(_ fix: FixAction) -> String {

@@ -150,6 +150,46 @@ public final class ImportAudioModel {
         }
     }
 
+    // MARK: - Markers (§11.5, F-26)
+
+    /// Test seam: inject a segment layout without decoding a file.
+    func setSegmentsForTesting(_ segments: [Segment]) {
+        self.segments = segments
+    }
+
+    /// Boundary times between segments (the draggable marker positions).
+    public var boundaryTimes: [TimeInterval] {
+        segments.dropFirst().map(\.start)
+    }
+
+    /// Splits the segment containing `time` into two at `time` — the "add
+    /// marker" action (`import.audio.addMarker`).
+    public func addMarker(at time: TimeInterval) {
+        guard let index = segments.firstIndex(where: { $0.start < time && time < $0.end }) else { return }
+        let segment = segments[index]
+        let first = Segment(id: UUID(), start: segment.start, end: time, confidence: .review, paragraphID: segment.paragraphID)
+        let second = Segment(id: UUID(), start: time, end: segment.end, confidence: .review, paragraphID: segment.paragraphID)
+        segments.replaceSubrange(index...index, with: [first, second])
+    }
+
+    /// Merges the segment at `index` into the previous one by removing the
+    /// boundary at its start — the "remove marker" action
+    /// (`import.audio.removeMarker`). The first segment has no boundary to
+    /// remove.
+    public func removeMarker(at segmentIndex: Int) {
+        guard segments.indices.contains(segmentIndex), segmentIndex > 0 else { return }
+        let prev = segments[segmentIndex - 1]
+        let current = segments[segmentIndex]
+        let merged = Segment(
+            id: UUID(),
+            start: prev.start,
+            end: current.end,
+            confidence: prev.confidence == .high && current.confidence == .high ? .high : .review,
+            paragraphID: prev.paragraphID
+        )
+        segments.replaceSubrange((segmentIndex - 1)...segmentIndex, with: [merged])
+    }
+
     // MARK: - Commit
 
     /// One take per assigned segment, each sliced into its own WAV in

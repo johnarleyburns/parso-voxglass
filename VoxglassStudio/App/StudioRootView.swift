@@ -39,6 +39,13 @@ struct StudioRootView: View {
                 }
             }
         }
+        .onOpenURL { url in
+            // Finder double-click on a `.voxproject` (F-18, §4.8): the
+            // advisory lock and recents handling live in `openProject(at:)`.
+            if url.pathExtension.lowercased() == "voxproject" || url.hasDirectoryPath {
+                Task { await env.library.openProject(at: url) }
+            }
+        }
     }
 
     private func open(reference: ProjectReference) async {
@@ -101,14 +108,19 @@ struct LibrarySplitView: View {
             Section("Library") {
                 Label("All Projects", systemImage: "tray.full")
                     .tag(StudioSection.library)
+                    .accessibilityIdentifier("library.section.library")
                 Label("Needs Review", systemImage: "flag")
                     .tag(StudioSection.needsReview)
+                    .accessibilityIdentifier("library.section.needsReview")
                 Label("Ready to Export", systemImage: "shippingbox")
                     .tag(StudioSection.readyToExport)
+                    .accessibilityIdentifier("library.section.readyToExport")
                 Label("Archive", systemImage: "archivebox")
                     .tag(StudioSection.archive)
+                    .accessibilityIdentifier("library.section.archive")
                 Label("Settings", systemImage: "gearshape")
                     .tag(StudioSection.settings)
+                    .accessibilityIdentifier("library.section.settings")
             }
         }
         .listStyle(.sidebar)
@@ -270,7 +282,8 @@ struct ProjectWindowView: View {
             MetadataRightsView(model: MetadataRightsModel(
                 project: project,
                 store: env.store,
-                assets: env.assetStoreForCurrentProject()
+                assets: env.assetStoreForCurrentProject(),
+                artworkStore: env.artworkStoreForCurrentProject()
             )) { updated in
                 env.updateProject(updated)
             }
@@ -316,6 +329,7 @@ struct ProjectWindowView: View {
                 renderer: AVChapterRenderer(assets: env.assetStoreForCurrentProject()),
                 transcoder: env.transcoder,
                 gate: env.license,
+                store: env.store,
                 outputRoot: exportsRoot
             ))
         case .takeCompare:
@@ -350,32 +364,43 @@ struct ProjectWindowView: View {
 
 // MARK: - Filtered library sections
 
-/// Sidebar sections over the recents list (spec §18.1.2). Computed from the
-/// cached recents; a full project database is only opened when the user picks
-/// a row.
+/// Sidebar sections over the cached recents snapshots (spec §18.1.2). The
+/// filters never open a project database — they read `summarySnapshot`
+/// (refreshed on open/close and after sync fetches).
 struct FilteredProjectsView: View {
     let section: StudioSection
 
     @Environment(StudioEnvironment.self) private var env
     @State private var showOpenPanel = false
 
+    private var filtered: [RecentProject] {
+        let projects = env.recents.projects
+        switch section {
+        case .library: return projects
+        case .needsReview: return projects.filter { ($0.summarySnapshot?.flaggedCount ?? 0) > 0 }
+        case .readyToExport: return projects.filter { $0.summarySnapshot?.readyToExport == true }
+        case .archive: return projects.filter { $0.summarySnapshot?.isHiddenFromDevices == true }
+        case .settings: return []
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            List(env.recents.recentURLs, id: \.absoluteString) { url in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(url.lastPathComponent)
-                            .font(.headline)
-                        Text(url.deletingLastPathComponent().path)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
+            if filtered.isEmpty {
+                VStack(spacing: 8) {
+                    Text(emptyCopy)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    Task { await env.library.openProject(at: url) }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(filtered) { project in
+                    ProjectRow(project: project, isMissing: env.recents.resolvedURL(for: project) == nil)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            Task { await env.library.openProject(at: project.lastKnownURL) }
+                        }
                 }
             }
 
@@ -401,6 +426,16 @@ struct FilteredProjectsView: View {
         case .readyToExport: "Ready to Export"
         case .archive: "Archive"
         case .settings: "Settings"
+        }
+    }
+
+    private var emptyCopy: String {
+        switch section {
+        case .library: "No audiobooks yet — create one, or open a `.voxproject` you already have."
+        case .needsReview: "Nothing flagged. Everything you have reviewed is approved."
+        case .readyToExport: "Nothing ready to export yet."
+        case .archive: "No archived projects."
+        case .settings: ""
         }
     }
 }

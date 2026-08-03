@@ -3124,6 +3124,13 @@ public struct ReviewQueueResolver: Sendable {
 
 Both a pure in-memory resolver (for tests and for the phone's projection) and a SQL form (for the Mac's large projects) must exist and MUST agree. `ReviewQueueResolverTests` asserts equality of the two for every predicate × order combination on a shared fixture.
 
+> **§14.3 implementation note.** `ReviewQueueResolver.sql(for:)` is implemented
+> as `ProductionStore.paragraphIDs(matching:order:)` rather than a free
+> function, so the Mac's store-backed fast path lives with the store (where the
+> SQL bindings already are). The "both forms MUST agree" requirement is
+> unchanged and is asserted by `ProductionStoreTests` alongside
+> `ReviewQueueResolverTests`.
+
 `documentOrder` = ascending `globalOrdinal`. `flaggedFirst` = flagged before needsPickup before unapproved, each in document order. `shortestFirst` = ascending duration (useful for clearing a backlog quickly).
 
 ### 14.4 Live queue mutation
@@ -4785,6 +4792,19 @@ Recorded deliberately; update the mockups when convenient.
 | `01-productions-list` | card shows short title "Roger Ackroyd" | card shows the full `ProjectSummary.title` ("The Murder of Roger Ackroyd"); the a11y slug stays `rogerAckroyd` | `ProjectSummary` carries only one title; the smoke contract keys on `watch.production.rogerAckroyd` (§19.6) |
 | `07-dictation-category` | "Tap to dictate" uses `.dictation` input mode | uses `WKTextInputMode.plain` via `WKInterfaceController.presentTextInputController` | current WatchKit SDKs have no `.dictation` mode; plain text input is already dictation-based on watchOS |
 | `19.3 timing budgets` | absolute wall-clock budgets (e.g. 30 s metrics < 150 ms) | ratio-based: large-vs-small workload ratio ≤ 12× plus a 3× absolute ceiling | an absolute budget on a shared dev machine fails under unrelated-process load regardless of engine speed; the ratio is load-independent and still catches superlinear regressions (§19.3) |
+| §22.1 registry | `script.chapter.`/`script.save`/`script.directionNote`/`script.pronunciation`/`script.reviewStatus` identifiers | not shipped as controls | the Script Editor's chapter list is a plain `List`; text is debounce-flushed (no explicit save); direction/pronunciation/review-status are shown by state chips, not controls |
+| §22.1 registry | `record.acceptAndNext`/`record.flagAndNext`/`record.transport.playTake`/`record.transport.playInContext` identifiers | not shipped as on-screen buttons | the §11.4 keyboard table drives these (Return / ⌘Return / ⌥Space / ⇧Space) with no visible button; a keyboard shortcut is not an accessibility control |
+| §22.1 registry | `import.resegment`/`import.paragraph.`/`import.splitHere.`/`import.mergeNext.`/`import.markSceneBreak` identifiers | not implemented | re-segmentation, per-paragraph editing, and split/merge/scene-break gestures at import are post-MVP; the F-26 marker workflow (add/remove marker, segment table) is the shipped slice |
+| §22.1 registry | `library.activity.` identifier | not implemented | the Production Activity feed (§18.1.2) is not shipped; the sidebar sections ship without the feed |
+| §22.1 registry | `dashboard.openFeedback`/`dashboard.chapter.`/`dashboard.progress` identifiers | not shipped as controls | the dashboard's feedback feed, per-chapter rows, and progress ring carry no identifiers (visual-only) |
+| §22.1 registry | `metadata.subjects`/`metadata.rightsBasis` identifiers | not shipped as controls | the subjects field and rights picker exist but carry no identifier; the Artwork tab (F-28) is the shipped new surface |
+| §22.1 registry | `note.dictate` identifier | not shipped | dictation is a watch-only affordance; the phone note sheet has no dictation control |
+| §22.1 registry | `carplay.playNext`/`carplay.undo` identifiers | not shipped | `CPAlertTemplate` actions expose no identifiers |
+
+> **§22.4 enforcement.** `AccessibilityAuditTests.documentedAbsences` is the
+> executable copy of the rows above: each entry must exist here (with its
+> reason) before the test will ignore it, and adding the control requires
+> deleting the row from both places.
 
 ### 22.5 Deferred backlog (post-MVP, in rough priority order)
 
