@@ -193,6 +193,11 @@ public actor InMemoryProductionStore: ProductionStore {
         return result
     }
 
+    /// In-memory summaries derive `globalOrdinal` on the fly in document
+    /// order, so there is nothing to renumber (the SQLite projection keeps the
+    /// column). The method exists to satisfy the protocol (§7.8).
+    public func renumberGlobalOrdinals() async throws {}
+
     public func paragraphIDs(matching predicate: ReviewPredicate, order: QueueOrder) async throws -> [UUID] {
         guard let project else { return [] }
         var ids: [UUID] = []

@@ -208,6 +208,7 @@
 		B372589F6E12945120DD6305 /* WatchProductionAudioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
 		B52570A81122DCDCB84A3918 /* ValidationReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05EFBB9757ED8A15C3EEDEF /* ValidationReportView.swift */; };
+		B54AF2A34DD2459E8A1016DF /* StudioUndo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5DC8E14FE7C153281F56D3D /* StudioUndo.swift */; };
 		B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2D878648CFAE6A1DA9323D89 /* 2br02b_0801_librivox.jpg */; };
 		B84F27739EB903B73486E10D /* StudioDiscoveryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6FBA8170D1D47DC269CC2B4 /* StudioDiscoveryModel.swift */; };
 		B8BBDD56E99C8F49BF022ED2 /* andersensfairy_1307_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */; };
@@ -630,6 +631,7 @@
 		F0CAA54FADE549D2158FAB93 /* secret_garden_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = secret_garden_librivox.jpg; sourceTree = "<group>"; };
 		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
 		F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionModels.swift; sourceTree = "<group>"; };
+		F5DC8E14FE7C153281F56D3D /* StudioUndo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioUndo.swift; sourceTree = "<group>"; };
 		F6FBA8170D1D47DC269CC2B4 /* StudioDiscoveryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioDiscoveryModel.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F8133D9EE165903ECF80F723 /* CarPlayNowPlayingConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNowPlayingConfigurator.swift; sourceTree = "<group>"; };
@@ -1118,6 +1120,7 @@
 			isa = PBXGroup;
 			children = (
 				388BFCCC349721C104298DCC /* RenderCounter.swift */,
+				F5DC8E14FE7C153281F56D3D /* StudioUndo.swift */,
 				BF5A62E20CC561704AC4827B /* UITestFakes.swift */,
 			);
 			path = Support;
@@ -1855,6 +1858,7 @@
 				8645E97E9290DC580734429F /* StudioProjectionCoordinator.swift in Sources */,
 				08D7FD84BAADE48F9277D6E0 /* StudioRootView.swift in Sources */,
 				81CE52CF47E467222A309A1A /* StudioURLSessionFetcher.swift in Sources */,
+				B54AF2A34DD2459E8A1016DF /* StudioUndo.swift in Sources */,
 				15ACCBB55B19635A6869247C /* TakeComparisonModel.swift in Sources */,
 				ED26685FCA7CA934BDD55AE4 /* TakeComparisonView.swift in Sources */,
 				0B4BCA37D2CA17E8D7D99BE5 /* UITestFakes.swift in Sources */,

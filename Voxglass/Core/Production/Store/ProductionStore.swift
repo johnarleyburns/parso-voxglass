@@ -113,6 +113,12 @@ public protocol ProductionStore: Sendable {
     func paragraphIDs(matching predicate: ReviewPredicate, order: QueueOrder) async throws -> [UUID]
     func counts() async throws -> ProjectCounts
 
+    /// One pass that renumbers `global_ordinal` contiguously in document order
+    /// (chapter.ordinal, paragraph.ordinal). MUST be called after import,
+    /// split, merge, chapter reorder, and script application (§7.8); every
+    /// "¶ N of M" label on every surface reads this column.
+    func renumberGlobalOrdinals() async throws
+
     func cachedRender(forKey: String) async throws -> AudioAssetReference?
     func storeRender(_ ref: AudioAssetReference, key: String, chapterID: UUID, duration: TimeInterval) async throws
     func cachedProxy(forTake: UUID, bitrateKbps: Int) async throws -> AudioAssetReference?

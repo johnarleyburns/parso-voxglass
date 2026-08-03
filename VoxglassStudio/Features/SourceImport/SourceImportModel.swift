@@ -83,6 +83,7 @@ public final class SourceImportModel {
 
         do {
             try await env.store.save(updated)
+            try await env.store.renumberGlobalOrdinals()
             env.setProject(updated)
         } catch {
             self.error = "Failed to persist import: \(error.localizedDescription)"

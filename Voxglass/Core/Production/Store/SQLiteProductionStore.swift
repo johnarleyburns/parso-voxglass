@@ -353,6 +353,28 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         try await db.execute("INSERT OR REPLACE INTO proxy_cache (take_id,asset_sha256,asset_path,asset_bytes,bitrate_kbps,created_at) VALUES (?,?,?,?,?,?)", [.string(tid.uuidString), .string(ref.sha256), .string(ref.relativePath), .int(Int64(ref.byteCount)), .int(Int64(bitrateKbps)), .double(clock.now.timeIntervalSince1970)])
     }
 
+    public func renumberGlobalOrdinals() async throws {
+        try await db.prepare()
+        // One transaction; the window function pass is ~10 ms for 10,000 rows
+        // (indexed by chapter_id). A correlated subquery avoids UPDATE…FROM,
+        // which older SQLite builds do not accept.
+        try await db.transaction { db in
+            try await db.execute("""
+            UPDATE paragraph
+            SET global_ordinal = (
+                SELECT ranked.new_global
+                FROM (
+                    SELECT p2.id AS pid,
+                           ROW_NUMBER() OVER (ORDER BY ch.ordinal, p2.ordinal) - 1 AS new_global
+                    FROM paragraph p2
+                    JOIN chapter ch ON ch.id = p2.chapter_id
+                ) ranked
+                WHERE ranked.pid = paragraph.id
+            )
+            """)
+        }
+    }
+
     public func syncValue(_ key: String) async throws -> String? {
         try await db.prepare()
         return try await db.query("SELECT value FROM sync_state WHERE key=?", [.string(key)]).first?.string("value")
