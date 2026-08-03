@@ -68,11 +68,14 @@ public struct CarPlayReviewCommandMapper: Sendable {
         public var event: ReviewEvent?
         public var session: CarPlayReviewSession
         public var confirmed: Bool
+        /// The confirmation earcon for this action, if any (§18.3 rule 6).
+        public var cue: CarPlayCueKind?
 
-        public init(event: ReviewEvent?, session: CarPlayReviewSession, confirmed: Bool) {
+        public init(event: ReviewEvent?, session: CarPlayReviewSession, confirmed: Bool, cue: CarPlayCueKind? = nil) {
             self.event = event
             self.session = session
             self.confirmed = confirmed
+            self.cue = cue
         }
     }
 
@@ -105,17 +108,17 @@ public struct CarPlayReviewCommandMapper: Sendable {
         case .approveAndNext:
             next.history.append(command)
             next.advance()
-            return Outcome(event: event(.approve), session: next, confirmed: true)
+            return Outcome(event: event(.approve), session: next, confirmed: true, cue: .approve)
 
         case .needsPickupAndNext:
             next.history.append(command)
             next.advance()
-            return Outcome(event: event(.needsPickup), session: next, confirmed: true)
+            return Outcome(event: event(.needsPickup), session: next, confirmed: true, cue: .pickup)
 
         case .keepFlaggedAndNext:
             next.history.append(command)
             next.advance()
-            return Outcome(event: nil, session: next, confirmed: false)
+            return Outcome(event: nil, session: next, confirmed: false, cue: .flag)
 
         case .playNext:
             next.advance()

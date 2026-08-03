@@ -19,7 +19,7 @@ public enum ProductionCarPlayBuilder {
     ) -> [ProductionCarPlayTab] {
         [
             ProductionCarPlayTab(
-                id: "continue",
+                id: "carplay.tab.continue",
                 title: "Continue",
                 systemImage: "arrow.clockwise.circle.fill",
                 sections: continueSections.map {
@@ -58,7 +58,7 @@ public enum ProductionCarPlayBuilder {
                 header: "My Productions",
                 items: Array(summaries.prefix(drivingItemCap)).map { summary in
                     ProductionCarPlayItem(
-                        id: summary.id.uuidString,
+                        id: "carplay.production.\(summary.id.uuidString)",
                         title: summary.title,
                         subtitle: summary.flaggedCount > 0
                             ? "\(summary.flaggedCount) flagged · \(Int(summary.percentRecorded))% recorded"
@@ -71,7 +71,7 @@ public enum ProductionCarPlayBuilder {
             ))
         }
         return ProductionCarPlayTab(
-            id: "productions",
+            id: "carplay.tab.productions",
             title: "Productions",
             systemImage: "rectangle.stack.fill",
             sections: sections
@@ -81,7 +81,7 @@ public enum ProductionCarPlayBuilder {
     public static func reviewTab(summaries: [ProjectSummary]) -> ProductionCarPlayTab {
         let flagged = summaries.reduce(0) { $0 + $1.flaggedCount }
         return ProductionCarPlayTab(
-            id: "review",
+            id: "carplay.tab.review",
             title: "Review",
             systemImage: "checkmark.circle.fill",
             badge: flagged,
@@ -138,7 +138,7 @@ public enum ProductionCarPlayBuilder {
         let flaggedDuration = payload.map { queueDuration($0) } ?? 0
         var items: [ProductionCarPlayItem] = [
             ProductionCarPlayItem(
-                id: "queue-flagged",
+                id: "carplay.queue.flagged",
                 title: "Flagged",
                 subtitle: "\(flaggedCount) paragraphs · \(WatchTimeFormat.duration(flaggedDuration))",
                 symbol: "flag.fill",
@@ -146,7 +146,7 @@ public enum ProductionCarPlayBuilder {
                 action: .startQueue(.flagged)
             ),
             ProductionCarPlayItem(
-                id: "queue-pickup",
+                id: "carplay.queue.pickup",
                 title: "Needs Pickup",
                 subtitle: "\(pickupCount) paragraphs",
                 symbol: "arrow.triangle.2.circlepath",
@@ -154,7 +154,7 @@ public enum ProductionCarPlayBuilder {
                 action: .startQueue(.needsPickup)
             ),
             ProductionCarPlayItem(
-                id: "queue-unapproved",
+                id: "carplay.queue.unapproved",
                 title: "Unapproved",
                 subtitle: "\(unapprovedCount) paragraphs",
                 symbol: "circle",
@@ -220,7 +220,7 @@ public enum ProductionCarPlayBuilder {
         [
             ProductionCarPlaySection(header: "Playback", items: [
                 ProductionCarPlayItem(
-                    id: "setting-autoAdvance",
+                    id: "carplay.settings.autoAdvance",
                     title: "Auto-advance after review action",
                     subtitle: "Move directly to the next queued paragraph.",
                     detailText: autoAdvance ? "On" : "Off",
@@ -228,7 +228,7 @@ public enum ProductionCarPlayBuilder {
                     action: .toggleAutoAdvance
                 ),
                 ProductionCarPlayItem(
-                    id: "setting-context",
+                    id: "carplay.settings.playContext",
                     title: "Play one second of context",
                     subtitle: "Include nearby audio before and after the paragraph.",
                     detailText: context ? "On" : "Off",
@@ -236,7 +236,7 @@ public enum ProductionCarPlayBuilder {
                     action: .toggleContext
                 ),
                 ProductionCarPlayItem(
-                    id: "setting-voice",
+                    id: "carplay.settings.audioConfirmations",
                     title: "Audio confirmations",
                     subtitle: "Play a short cue after each review action.",
                     detailText: voiceConfirmations ? "On" : "Off",

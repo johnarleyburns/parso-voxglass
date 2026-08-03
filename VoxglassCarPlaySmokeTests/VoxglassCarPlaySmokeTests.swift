@@ -37,7 +37,8 @@ final class VoxglassCarPlaySmokeTests: XCTestCase {
         let controller = CarPlayReviewController(
             dataProvider: env.store,
             eventSink: env.sync,
-            player: env.player
+            player: env.player,
+            cuePlayer: env.cuePlayer
         )
 
         let root = try XCTUnwrap(controller.makeRootTemplate() as? CPTabBarTemplate)
@@ -52,11 +53,17 @@ final class VoxglassCarPlaySmokeTests: XCTestCase {
 
         controller.perform(.approveAndNext)
         XCTAssertEqual(env.sync.emittedEvents.map(\.type), [.approve]) // exactly one
+        XCTAssertEqual(env.cuePlayer.playedCues, [.approve])          // exactly one audio confirmation
 
         controller.perform(.approveAndNext)
         XCTAssertEqual(env.sync.emittedEvents.count, 2)                 // different paragraph, not a duplicate
         XCTAssertEqual(Set(env.sync.emittedEvents.map(\.paragraphID)).count, 2)
         XCTAssertEqual(Set(env.sync.emittedEvents.map(\.device)), [.carPlay])
+        XCTAssertEqual(env.cuePlayer.playedCues.count, 2)               // a cue per confirmation
+
+        // The pickup action maps to its own earcon.
+        controller.perform(.needsPickupAndNext)
+        XCTAssertEqual(env.cuePlayer.playedCues.last, .pickup)
 
         XCTAssertEqual(controller.remoteCommandMapping, .paragraphBoundaries)
         controller.stop()
@@ -76,6 +83,7 @@ final class CarPlayTestEnvironment {
     let store: CarPlayTestStore
     let sync: CarPlayTestSync
     let player: CarPlayTestPlayer
+    let cuePlayer: CarPlayTestCuePlayer
 
     init(seed: Seed) {
         switch seed {
@@ -84,6 +92,7 @@ final class CarPlayTestEnvironment {
             store = CarPlayTestStore(summaries: fixture.summaries, queue: fixture.queue)
             sync = CarPlayTestSync()
             player = CarPlayTestPlayer()
+            cuePlayer = CarPlayTestCuePlayer()
         }
     }
 }
@@ -123,4 +132,14 @@ final class CarPlayTestPlayer: CarPlayProductionPlaying {
     }
 
     func pause() async {}
+}
+
+/// Records every confirmation earcon the controller asks for (§18.3 rule 6).
+@MainActor
+final class CarPlayTestCuePlayer: CarPlayCuePlaying {
+    private(set) var playedCues: [CarPlayCueKind] = []
+
+    func play(_ cue: CarPlayCueKind) {
+        playedCues.append(cue)
+    }
 }

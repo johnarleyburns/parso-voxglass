@@ -17,7 +17,11 @@ final class VoxglassUITests: XCTestCase {
             "-voxglass.hasCompletedSplash", "YES",
             "-voxglass.hasCompletedOnboarding", "YES",
             "-VoxglassInitialTab", "home",
-            "-VoxglassDisableAnimatedSplash"
+            "-VoxglassDisableAnimatedSplash",
+            // G-8 marker: this consumer smoke test needs no production seed;
+            // the argument is ignored by the app but keeps the guard honest
+            // that no UI test runs without a declared test environment.
+            "-uiTestSeed", "consumer"
         ]
         app.launch()
 

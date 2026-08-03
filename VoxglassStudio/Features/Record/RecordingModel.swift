@@ -112,6 +112,7 @@ public final class RecordingModel {
             }
             phase = .recording
 
+            Log.capture.info("recording started (paragraph \(paragraphID.uuidString), preRoll \(preRoll)s)")
             startLevelUpdates()
         } catch {
             self.error = "Failed to start recording: \(error.localizedDescription)"
@@ -132,6 +133,7 @@ public final class RecordingModel {
             deleteAutosaveSession()
             pendingTakeID = nil
             phase = .idle
+            Log.capture.info("recording finalized (take \(take.id.uuidString), \(Int(take.duration))s, asset \(take.assetRef.sha256.prefix(12)))")
         } catch {
             self.error = "Failed to stop recording: \(error.localizedDescription)"
             phase = .idle

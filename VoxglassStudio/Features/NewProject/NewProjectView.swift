@@ -25,6 +25,7 @@ struct NewProjectView: View {
                     Picker("Purpose", selection: $model.purpose) {
                         ForEach(ProjectPurpose.allCases, id: \.self) { purpose in
                             Text(purpose.displayName).tag(purpose)
+                                .accessibilityIdentifier("wizard.purpose.\(purpose.rawValue)")
                         }
                     }
                 }
@@ -44,6 +45,7 @@ struct NewProjectView: View {
                 Button("Cancel") {
                     env.navigate(to: .library)
                 }
+                .accessibilityIdentifier("wizard.cancel")
 
                 Button("Continue to Import") {
                     Task {

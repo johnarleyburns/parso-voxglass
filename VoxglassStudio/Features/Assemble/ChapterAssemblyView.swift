@@ -36,10 +36,10 @@ public struct ChapterAssemblyView: View {
         HStack(spacing: 20) {
             Label("Spacing", systemImage: "slider.horizontal.3")
                 .font(.headline)
-            spacingSlider(label: "Paragraph gap", value: $model.settings.paragraphGap, range: 0.1...2.0)
-            spacingSlider(label: "Chapter head", value: $model.settings.chapterHeadSilence, range: 0.1...3.0)
-            spacingSlider(label: "Chapter tail", value: $model.settings.chapterTailSilence, range: 0.1...5.0)
-            spacingSlider(label: "Scene break extra", value: $model.settings.sceneBreakExtraGap, range: 0.0...5.0)
+            spacingSlider(label: "Paragraph gap", id: "assemble.paragraphGap", value: $model.settings.paragraphGap, range: 0.1...2.0)
+            spacingSlider(label: "Chapter head", id: "assemble.headSilence", value: $model.settings.chapterHeadSilence, range: 0.1...3.0)
+            spacingSlider(label: "Chapter tail", id: "assemble.tailSilence", value: $model.settings.chapterTailSilence, range: 0.1...5.0)
+            spacingSlider(label: "Scene break extra", id: "assemble.sceneBreakGap", value: $model.settings.sceneBreakExtraGap, range: 0.0...5.0)
             Toggle("Normalize gaps", isOn: $model.settings.normalizeGapsFromTakeSilence)
                 .toggleStyle(.checkbox)
         }
@@ -47,13 +47,14 @@ public struct ChapterAssemblyView: View {
         .background(.regularMaterial)
     }
 
-    private func spacingSlider(label: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+    private func spacingSlider(label: String, id: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(label) \(value.wrappedValue, specifier: "%.2f") s")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Slider(value: value, in: range)
                 .frame(width: 130)
+                .accessibilityIdentifier(id)
         }
     }
 
@@ -75,6 +76,7 @@ public struct ChapterAssemblyView: View {
             HStack {
                 Text("\(chapter.ordinal + 1). \(chapter.title)")
                     .font(.headline)
+                    .accessibilityIdentifier("assemble.row.\(chapter.ordinal)")
                 Spacer()
                 Text("\(chapter.paragraphCount) ¶ · \(formatDuration(chapter.duration))")
                     .font(.caption)
@@ -85,10 +87,12 @@ public struct ChapterAssemblyView: View {
                     Task { await model.renderChapter(chapter.id) }
                 }
                 .disabled(chapter.segments.isEmpty)
+                .accessibilityIdentifier("assemble.renderPreview")
                 Button("Play Chapter") {
                     Task { await model.playChapter(chapter.id) }
                 }
                 .disabled(chapter.segments.isEmpty)
+                .accessibilityIdentifier("assemble.playChapter")
             }
 
             if !chapter.segments.isEmpty {
@@ -158,7 +162,7 @@ public struct ChapterAssemblyView: View {
                 Task { await model.rebuildChanged() }
             }
             .disabled(model.changedChapterCount == 0 || model.isRendering)
-            .accessibilityIdentifier("assembly.rebuild")
+            .accessibilityIdentifier("assemble.rebuildChanged")
         }
         .padding(12)
     }

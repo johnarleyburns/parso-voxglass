@@ -99,9 +99,23 @@ check_watch_isolation() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-6: Eligibility wired (EligibilityProfile in LibriVox builder).
-# Deferred until S<n>: LibriVoxPackageBuilder does not exist yet.
+# G-6: Eligibility wired. LibriVoxPackageBuilder must derive eligibility
+# exclusively through EligibilityProfile.evaluate (§5.6), and the Core test
+# target must contain a test whose name matches `AIblocksLibriVox` (§19.3).
 # ──────────────────────────────────────────────────────────────
+check_eligibility_wired() {
+  local builder="Voxglass/Core/Production/Packaging/LibriVoxPackageBuilder.swift"
+  if [ ! -f "$builder" ]; then
+    violate "G-6: LibriVoxPackageBuilder.swift does not exist"
+    return
+  fi
+  if ! grep -q 'EligibilityProfile.evaluate' "$builder"; then
+    violate "G-6: $builder must call EligibilityProfile.evaluate"
+  fi
+  if ! grep -rln --include='*.swift' 'AIblocksLibriVox' VoxglassTests >/dev/null 2>&1; then
+    violate "G-6: Core test target must contain a test named matching AIblocksLibriVox"
+  fi
+}
 
 # ──────────────────────────────────────────────────────────────
 # G-7: Determinism seams (no bare Date()/UUID() in Core/Production).
@@ -123,8 +137,88 @@ check_determinism_seams() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-8: Deferred until S<n> — not yet implemented.
+# G-8: Tests never touch real services. The Studio app must handle the
+# test-environment flag (so fakes are wired for the microphone, CloudKit,
+# StoreKit, and the encoder helper), and every UI test must launch with
+# `-uiTestSeed` plus `-useTemporaryStore` (§4.3, §19.6).
 # ──────────────────────────────────────────────────────────────
+check_test_environment() {
+  if ! grep -rq 'isTestEnvironment' VoxglassStudio --include='*.swift'; then
+    violate "G-8: VoxglassStudio must handle isTestEnvironment (fakes for capture/sync/license/transcoder)"
+  fi
+  local ui_dirs="VoxglassStudioUITests VoxglassUITests VoxglassWatchUITests VoxglassCarPlaySmokeTests"
+  for d in $ui_dirs; do
+    if [ -d "$d" ]; then
+      local files
+      files=$(find "$d" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -lE 'XCTestCase' 2>/dev/null || true)
+      for f in $files; do
+        # Hosted scene tests (CarPlay) never launch the app; they seed
+        # in-process. Every other UI test must launch with -uiTestSeed.
+        if ! grep -q -- '-uiTestSeed' "$f" && ! grep -qE 'TestEnvironment\(seed:|seed: \.[a-zA-Z]+' "$f"; then
+          violate "G-8: UI test file $f must launch with -uiTestSeed (or seed in-process)"
+        fi
+      done
+    fi
+  done
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-10: Destination constants centralized. The literal platform numbers from
+# §3 must not leak into Validation/** or Packaging/** outside
+# Destinations/DestinationProfiles.swift and Destinations/ValidationThresholds.swift.
+# ──────────────────────────────────────────────────────────────
+check_destination_constants() {
+  local banned='\b128\b|\b192\b|\b44100\b|-23|-18|-60|-3\.0|\b2400\b'
+  local allowed='Voxglass/Core/Production/Destinations/DestinationProfiles.swift|Voxglass/Core/Production/Destinations/ValidationThresholds.swift'
+  local matches
+  matches=$(find Voxglass/Core/Production/Validation Voxglass/Core/Production/Packaging -name '*.swift' -print0 2>/dev/null \
+    | xargs -0 grep -nE "$banned" 2>/dev/null \
+    | grep -vE "$allowed" \
+    | grep -v 'destination-constant-exempt:' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-10: destination constant outside DestinationProfiles/ValidationThresholds: $line"
+    done <<< "$matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-11: Legal strings centralized (§3.6). The exact strings must appear only
+# in Destinations/LegalStrings.swift.
+# ──────────────────────────────────────────────────────────────
+check_legal_strings() {
+  local legal_file="Voxglass/Core/Production/Destinations/LegalStrings.swift"
+  local i
+  for i in "Voxglass does not determine copyright status." \
+           "Voxglass prepares files; it does not guarantee acceptance or determine copyright." \
+           "LibriVox accepts only recordings made by human volunteers using their own voices" \
+           "You submit these files yourself. Voxglass never uploads on your behalf." \
+           "Contains narration generated or processed with AI voice technology."; do
+    local matches
+    matches=$(grep -rn --include='*.swift' -F "$i" Voxglass VoxglassStudio VoxglassWatch VoxglassCoreTestSupport 2>/dev/null | grep -vF "$legal_file" || true)
+    if [ -n "$matches" ]; then
+      while read -r line; do
+        violate "G-11: legal string outside LegalStrings.swift: $line"
+      done <<< "$matches"
+    fi
+  done
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-12: No auto-upload. No archive.org / librivox.org / acx.com URL may be
+# passed to any URLSession request API anywhere (C-7). Only string generation
+# is permitted.
+# ──────────────────────────────────────────────────────────────
+check_no_auto_upload() {
+  local matches
+  matches=$(grep -rn --include='*.swift' -E 'URLSession.*(dataTask|uploadTask|downloadTask)|(dataTask|uploadTask|downloadTask).*URLSession' Voxglass VoxglassStudio VoxglassWatch Voxglass/Core 2>/dev/null \
+    | grep -E 'archive\.org|librivox\.org|acx\.com' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-12: auto-upload call to a destination URL: $line"
+    done <<< "$matches"
+  fi
+}
 
 # ──────────────────────────────────────────────────────────────
 # G-9: No test support in shipping targets.
@@ -151,8 +245,13 @@ check_pro_gate_placement
 check_no_observable_object
 check_stable_hashing
 check_watch_isolation
+check_eligibility_wired
 check_determinism_seams
+check_test_environment
 check_no_test_support
+check_destination_constants
+check_legal_strings
+check_no_auto_upload
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

@@ -48,8 +48,14 @@ public enum ExportCard: String, Sendable, CaseIterable, Identifiable {
     /// The feature gated when this card is chosen (the retail profile set).
     public var gatedFeature: ProFeature { .retailPresets }
 
+    /// Literal per-card identifiers (§22.1 registry) so the smoke test and the
+    /// accessibility audit can key on them verbatim.
     public var accessibilityIdentifier: String {
-        "export.destination.\(rawValue)"
+        switch self {
+        case .librivox: "export.destination.librivox"
+        case .internetArchive: "export.destination.internetArchive"
+        case .retail: "export.destination.retail"
+        }
     }
 }
 
@@ -284,6 +290,7 @@ public final class ExportModel {
         )
 
         do {
+            Log.packaging.info("export started (project \(self.project.id.uuidString), destination \(card.rawValue))")
             let bundle = try await builder.build(
                 project: project,
                 renders: renderer,
@@ -298,6 +305,7 @@ public final class ExportModel {
                 }
             )
             completedBundle = bundle
+            Log.packaging.info("export finished (destination \(card.rawValue), \(bundle.files.count) files, \(bundle.totalBytes) bytes, \(Int(bundle.totalDuration))s)")
             progress = ExportProgress(
                 phase: .done,
                 completedUnits: bundle.files.count,

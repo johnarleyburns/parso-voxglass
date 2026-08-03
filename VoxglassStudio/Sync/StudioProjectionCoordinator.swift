@@ -84,19 +84,22 @@ public final class StudioProjectionCoordinator {
         await ensureProxies(project: project, store: store, assets: assets)
         let counts = try await store.counts()
         let notes = try await latestNotes(store: store, project: project)
-        return try await publisher.publishIfNeeded(
+        let outcome = try await publisher.publishIfNeeded(
             reason: reason,
             project: project,
             counts: counts,
             watchPinnedParagraphIDs: watchPinnedParagraphIDs,
             latestNotes: notes
         )
+        Log.sync.info("projection publish (\(reason.rawValue)): \(String(describing: outcome))")
+        return outcome
     }
 
     /// Ingests review events from devices (spec §13.7) and republishes if changed.
     public func ingest() async {
         do {
-            _ = try await ingestor.pump()
+            let applied = try await ingestor.pump()
+            Log.sync.info("review event ingest: \(applied.events.count) events, \(applied.eventRecordNames.count) records consumed")
             await refreshPendingFeedback()
         } catch {
             lastSyncError = error.localizedDescription

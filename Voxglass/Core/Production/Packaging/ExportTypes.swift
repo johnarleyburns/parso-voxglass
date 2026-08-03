@@ -12,7 +12,8 @@ public enum ExportScope: Sendable, Equatable, Hashable {
 // MARK: - ExportOptions
 
 public struct ExportOptions: Sendable, Equatable {
-    /// IA: also produce 192 kbps MP3 derivatives alongside the FLAC masters.
+    /// IA: also produce MP3 derivatives (profile-defined bitrate) alongside
+    /// the FLAC masters.
     public var includeMP3Derivatives: Bool
     /// IA: target `test_collection` (auto-purged dry run) instead of
     /// `opensource_audio` (§3.3.1).
@@ -41,7 +42,7 @@ public struct ExportOptions: Sendable, Equatable {
         includeMP3Derivatives: Bool = false,
         useTestCollection: Bool = false,
         applyMastering: Bool = true,
-        m4bBitrateKbps: Int = 128,
+        m4bBitrateKbps: Int = DestinationProfile.appleBooksAggregator.audio.bitrateKbps ?? 0,
         retailSample: RetailSampleSelection? = nil,
         overwriteExisting: Bool = true,
         writeValidationReport: Bool = true,

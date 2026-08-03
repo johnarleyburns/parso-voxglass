@@ -177,6 +177,20 @@ struct SettingsView: View {
                     model.copyDiagnostics(packageRoot: env.currentPackageRoot)
                 }
                 .accessibilityIdentifier("settings.copyDiagnostics")
+                Button("Export Diagnostics Bundle…") {
+                    Task {
+                        await model.exportDiagnosticsBundle(
+                            packageRoot: env.currentPackageRoot,
+                            project: env.currentProject,
+                            assets: env.assetStoreForCurrentProject(),
+                            encoderAvailability: env.encoderAvailabilityProvider()
+                        )
+                    }
+                }
+                .accessibilityIdentifier("settings.exportDiagnostics")
+                Text("The bundle contains integrity findings, encoder availability, and log lines — never audio or manuscript text.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
