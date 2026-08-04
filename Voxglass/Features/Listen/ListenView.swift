@@ -5,17 +5,15 @@ struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
-    @Environment(DiscoveryEnvironment.self) private var discovery
     @Binding var showingNowPlaying: Bool
     var selectLibrary: () -> Void
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @State private var importingIdentifier: String?
-    @State private var flowNeed: NarrationNeed?
-    @State private var handoffNeed: NarrationNeed?
-    @State private var showingNeeds = false
+    @State private var showSettings = false
+    @State private var showEQ = false
+    @State private var showStats = false
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
     var body: some View {
@@ -25,25 +23,47 @@ struct ListenView: View {
                 jumpBackIn
                 recentlyAdded
                 recommended
-                NarrationHomeShelf(
-                    presentBrowse: { showingNeeds = true },
-                    startProject: { flowNeed = $0 },
-                    presentHandoff: { handoffNeed = $0 }
-                )
             }
             .padding(.top, 12)
         }
-        .navigationDestination(isPresented: $showingNeeds) {
-            NarrationNeedsView(
-                startProject: { flowNeed = $0 },
-                presentHandoff: { handoffNeed = $0 }
-            )
+        .overlay(alignment: .topTrailing) {
+            moreMenu
+                .padding(.trailing, 16)
+                .padding(.top, 6)
         }
-        .fullScreenCover(item: $flowNeed) { need in
-            NarrationFlowRoot(startNeed: need)
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView(showingNowPlaying: $showingNowPlaying)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") { showSettings = false }
+                        }
+                    }
+            }
+            .presentationDragIndicator(.visible)
         }
-        .sheet(item: $handoffNeed) { need in
-            LongWorkHandoffSheet(need: need)
+        .sheet(isPresented: $showEQ) {
+            NavigationStack {
+                EQView()
+                    .environment(playback)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") { showEQ = false }
+                        }
+                    }
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showStats) {
+            NavigationStack {
+                ListeningStatsView()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") { showStats = false }
+                        }
+                    }
+            }
+            .presentationDragIndicator(.visible)
         }
         .alert("Playback Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -89,6 +109,41 @@ struct ListenView: View {
                 .foregroundStyle(Palette.ink2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The former "More" tab, reachable from a "…" menu in the top-right
+    /// corner of the home view.
+    private var moreMenu: some View {
+        Menu {
+            Button {
+                showSettings = true
+            } label: {
+                Label("Settings", systemImage: "gearshape.fill")
+            }
+            Button {
+                showEQ = true
+            } label: {
+                Label("Equalizer", systemImage: "waveform.path.ecg")
+            }
+            Button {
+                showStats = true
+            } label: {
+                Label("Listening Stats", systemImage: "chart.bar.fill")
+            }
+            NavigationLink {
+                AboutView()
+            } label: {
+                Label("About Voxglass", systemImage: "info.circle.fill")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .scaledFont(size: 21, weight: .semibold)
+                .foregroundStyle(Palette.ink2)
+                .frame(width: 40, height: 40)
+                .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.07))
+        }
+        .accessibilityIdentifier("home.moreMenu")
+        .accessibilityLabel("More")
     }
 
     @ViewBuilder

@@ -40,7 +40,7 @@ final class VoxglassUITests: XCTestCase {
         let tabs: [(button: String, anchor: String)] = [
             ("My Books", "My Books"),
             ("Explore", "Featured Collections"),
-            ("More", "Streaming Cache"),
+            ("Narration", "Start a Narration"),
             ("Listen", "Recommended for You")
         ]
         for tab in tabs {
@@ -79,26 +79,22 @@ final class VoxglassUITests: XCTestCase {
         // Narration recording (regression gate): the record button must
         // actually start a take. Catches OSStatus -50 / setCategory capture
         // failures that previously made recording impossible on device.
-        app.buttons["Listen"].tap()
+        app.buttons["Narration"].tap()
         XCTAssertTrue(
-            app.staticTexts["Recommended for You"].waitForExistence(timeout: 10),
-            "Listen tab did not render after returning\n\(app.debugDescription)"
+            app.staticTexts["Start a Narration"].waitForExistence(timeout: 10),
+            "Narration tab did not render after returning\n\(app.debugDescription)"
         )
 
         let startNarrationShelf = app.descendants(matching: .any)["home.startNarrationShelf"]
-        for _ in 0..<8 where !startNarrationShelf.exists {
-            app.swipeUp()
-            _ = startNarrationShelf.waitForExistence(timeout: 2)
-        }
         XCTAssertTrue(
             startNarrationShelf.exists,
-            "Start a Narration shelf not found on Listen tab.\n\(app.debugDescription)"
+            "Start a Narration shelf not found on Narration tab.\n\(app.debugDescription)"
         )
 
         let featuredNeed = app.buttons["needs.featured"]
-        for _ in 0..<8 where !featuredNeed.isHittable {
+        for _ in 0..<8 where !featuredNeed.exists {
             app.swipeUp()
-            _ = featuredNeed.waitForExistence(timeout: 3)
+            _ = featuredNeed.waitForExistence(timeout: 2)
         }
         XCTAssertTrue(
             featuredNeed.waitForExistence(timeout: 30),
@@ -145,7 +141,7 @@ final class VoxglassUITests: XCTestCase {
         // Back out of the narration flow to continue the smoke path.
         app.buttons["Close"].tap()
         XCTAssertTrue(
-            app.staticTexts["Recommended for You"].waitForExistence(timeout: 10),
+            app.staticTexts["Start a Narration"].waitForExistence(timeout: 10),
             "Narration flow did not close.\n\(app.debugDescription)"
         )
 
@@ -156,19 +152,16 @@ final class VoxglassUITests: XCTestCase {
             "Search tab did not render its search field"
         )
 
-        // The ten-band EQ is reachable from the More tab and every band is
-        // draggable — folded into the smoke test so this target has exactly one.
-        app.buttons["More"].tap()
-        XCTAssertTrue(app.staticTexts["Streaming Cache"].waitForExistence(timeout: 10))
+        // The ten-band EQ is reachable from the "…" menu on the home view and
+        // every band is draggable — folded into the smoke test so this target
+        // has exactly one.
+        app.buttons["Listen"].tap()
+        XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 10))
 
-        let eqRow = app.buttons["settings.eq"]
-        for _ in 0..<6 where !eqRow.isHittable {
-            app.swipeUp()
-            _ = eqRow.waitForExistence(timeout: 2)
-        }
-        XCTAssertTrue(eqRow.exists, "EQ settings row not found.\n\(app.debugDescription)")
-        XCTAssertTrue(eqRow.isHittable, "EQ settings row is not hittable.\n\(app.debugDescription)")
-        eqRow.tap()
+        let moreMenu = app.buttons["home.moreMenu"]
+        XCTAssertTrue(moreMenu.waitForExistence(timeout: 10), "More menu not on home view.\n\(app.debugDescription)")
+        moreMenu.tap()
+        app.buttons["Equalizer"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Equalizer"].waitForExistence(timeout: 10),

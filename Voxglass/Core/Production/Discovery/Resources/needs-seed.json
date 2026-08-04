@@ -9,7 +9,7 @@
       "estSeconds": 40,
       "sourcePageURL": "https://www.gutenberg.org/ebooks/12242",
       "grade": "submittable",
-      "text": "Hope is the thing with feathers\nThat perches in the soul -"
+      "text": "Hope is the thing with feathers\nThat perches in the soul,\nAnd sings the tune without the words,\nAnd never stops at all,\nAnd sweetest in the gale is heard;\nAnd sore must be the storm\nThat could abash the little bird\nThat kept so many warm.\nI 've heard it in the chillest land,\nAnd on the strangest sea;\nYet, never, in extremity,\nIt asked a crumb of me."
     },
     {
       "title": "Because I could not stop for Death",
@@ -17,7 +17,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Because I could not stop for Death,\nHe kindly stopped for me;\nThe carriage held but just ourselves\nAnd Immortality.\nWe slowly drove, he knew no haste,\nAnd I had put away\nMy labor, and my leisure too,\nFor his civility.\nWe passed the school where children played,\nTheir lessons scarcely done;\nWe passed the fields of gazing grain,\nWe passed the setting sun.\nWe paused before a house that seemed\nA swelling of the ground;\nThe roof was scarcely visible,\nThe cornice but a mound.\nSince then 't is centuries; but each\nFeels shorter than the day\nI first surmised the horses' heads\nWere toward eternity."
     },
     {
       "title": "I'm nobody! Who are you?",
@@ -25,7 +26,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I'm nobody!  Who are you?\nAre you nobody, too?\nThen there 's a pair of us -- don't tell!\nThey 'd banish us, you know.\nHow dreary to be somebody!\nHow public, like a frog\nTo tell your name the livelong day\nTo an admiring bog!"
     },
     {
       "title": "There is no Frigate like a Book",
@@ -33,7 +35,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "There is no frigate like a book\nTo take us lands away,\nNor any coursers like a page\nOf prancing poetry.\nThis traverse may the poorest take\nWithout oppress of toll;\nHow frugal is the chariot\nThat bears a human soul!"
     },
     {
       "title": "A Bird came down the Walk",
@@ -41,7 +44,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "A bird came down the walk:\nHe did not know I saw;\nHe bit an angle-worm in halves\nAnd ate the fellow, raw.\nAnd then he drank a dew\nFrom a convenient grass,\nAnd then hopped sidewise to the wall\nTo let a beetle pass.\nHe glanced with rapid eyes\nThat hurried all abroad, --\nThey looked like frightened beads, I thought;\nHe stirred his velvet head\nLike one in danger; cautious,\nI offered him a crumb,\nAnd he unrolled his feathers\nAnd rowed him softer home\nThan oars divide the ocean,\nToo silver for a seam,\nOr butterflies, off banks of noon,\nLeap, splashless, as they swim."
     },
     {
       "title": "I heard a Fly buzz - when I died",
@@ -49,7 +53,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 35,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I heard a fly buzz when I died;\nThe stillness round my form\nWas like the stillness in the air\nBetween the heaves of storm.\nThe eyes beside had wrung them dry,\nAnd breaths were gathering sure\nFor that last onset, when the king\nBe witnessed in his power.\nI willed my keepsakes, signed away\nWhat portion of me I\nCould make assignable, -- and then\nThere interposed a fly,\nWith blue, uncertain, stumbling buzz,\nBetween the light and me;\nAnd then the windows failed, and then\nI could not see to see."
     },
     {
       "title": "The Soul selects her own Society",
@@ -57,7 +62,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "The soul selects her own society,\nThen shuts the door;\nOn her divine majority\nObtrude no more.\nUnmoved, she notes the chariot's pausing\nAt her low gate;\nUnmoved, an emperor is kneeling\nUpon her mat.\nI've known her from an ample nation\nChoose one;\nThen close the valves of her attention\nLike stone."
     },
     {
       "title": "Wild Nights - Wild Nights!",
@@ -65,7 +71,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Wild nights! Wild nights!\nWere I with thee,\nWild nights should be\nOur luxury!\nFutile the winds\nTo a heart in port, --\nDone with the compass,\nDone with the chart.\nRowing in Eden!\nAh! the sea!\nMight I but moor\nTo-night in thee!"
     },
     {
       "title": "Success is counted sweetest",
@@ -73,7 +80,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Success is counted sweetest\nBy those who ne'er succeed.\nTo comprehend a nectar\nRequires sorest need.\nNot one of all the purple host\nWho took the flag to-day\nCan tell the definition,\nSo clear, of victory,\nAs he, defeated, dying,\nOn whose forbidden ear\nThe distant strains of triumph\nBreak, agonized and clear!"
     },
     {
       "title": "The Road Not Taken",
@@ -81,7 +89,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  Two roads diverged in a yellow wood,\n  And sorry I could not travel both\n  And be one traveler, long I stood\n  And looked down one as far as I could\n  To where it bent in the undergrowth;\n  Then took the other, as just as fair,\n  And having perhaps the better claim,\n  Because it was grassy and wanted wear;\n  Though as for that the passing there\n  Had worn them really about the same,\n  And both that morning equally lay\n  In leaves no step had trodden black.\n  Oh, I kept the first for another day!\n  Yet knowing how way leads on to way,\n  I doubted if I should ever come back.\n  I shall be telling this with a sigh\n  Somewhere ages and ages hence:\n  Two roads diverged in a wood, and I--\n  I took the one less traveled by,\n  And that has made all the difference."
     },
     {
       "title": "Fire and Ice",
@@ -89,7 +98,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 25,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Some say the world will end in fire,\nSome say in ice.\nFrom what I've tasted of desire\nI hold with those who favor fire.\nBut if it had to perish twice,\nI think I know enough of hate\nTo say that for destruction ice\nIs also great\nAnd would suffice."
     },
     {
       "title": "Stopping by Woods on a Snowy Evening",
@@ -97,7 +107,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  Whose woods these are I think I know.\n  His house is in the village though;\n  He will not see me stopping here\n  To watch his woods fill up with snow.\n  My little horse must think it queer\n  To stop without a farmhouse near\n  Between the woods and frozen lake\n  The darkest evening of the year.\n  He gives his harness bells a shake\n  To ask if there is some mistake.\n  The only other sound's the sweep\n  Of easy wind and downy flake.\n  The woods are lovely, dark and deep,\n  But I have promises to keep,\n  And miles to go before I sleep,\n  And miles to go before I sleep."
     },
     {
       "title": "Nothing Gold Can Stay",
@@ -105,7 +116,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 25,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  Nature's first green is gold,\n  Her hardest hue to hold.\n  Her early leaf's a flower;\n  But only so an hour.\n  Then leaf subsides to leaf.\n  So Eden sank to grief,\n  So dawn goes down to day.\n  Nothing gold can stay."
     },
     {
       "title": "Mending Wall",
@@ -113,7 +125,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 120,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "    SOMETHING there is that doesn't love a wall,\n    That sends the frozen-ground-swell under it,\n    And spills the upper boulders in the sun;\n    And makes gaps even two can pass abreast.\n    The work of hunters is another thing:\n    I have come after them and made repair\n    Where they have left not one stone on a stone,\n    But they would have the rabbit out of hiding,\n    To please the yelping dogs. The gaps I mean,\n    No one has seen them made or heard them made,\n    But at spring mending-time we find them there.\n    I let my neighbour know beyond the hill;\n    And on a day we meet to walk the line\n    And set the wall between us once again.\n    We keep the wall between us as we go.\n    To each the boulders that have fallen to each.\n    And some are loaves and some so nearly balls\n    We have to use a spell to make them balance:\n    \"Stay where you are until our backs are turned!\"\n    We wear our fingers rough with handling them.\n    Oh, just another kind of out-door game,\n    One on a side. It comes to little more:\n    There where it is we do not need the wall:\n    He is all pine and I am apple orchard.\n    My apple trees will never get across\n    And eat the cones under his pines, I tell him.\n    He only says, \"Good fences make good neighbours.\"\n    Spring is the mischief in me, and I wonder\n    If I could put a notion in his head:\n    \"Why do they make good neighbours? Isn't it\n    Where there are cows? But here there are no cows.\n    Before I built a wall I'd ask to know\n    What I was walling in or walling out,\n    And to whom I was like to give offence.\n    Something there is that doesn't love a wall,\n    That wants it down.\" I could say \"Elves\" to him,\n    But it's not elves exactly, and I'd rather\n    He said it for himself. I see him there\n    Bringing a stone grasped firmly by the top\n    In each hand, like an old-stone savage armed.\n    He moves in darkness as it seems to me,\n    Not of woods only and the shade of trees.\n    He will not go behind his father's saying,\n    And he likes having thought of it so well\n    He says again, \"Good fences make good neighbours.\""
     },
     {
       "title": "Birches",
@@ -121,7 +134,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 180,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  When I see birches bend to left and right\n  Across the lines of straighter darker trees,\n  I like to think some boy's been swinging them.\n  But swinging doesn't bend them down to stay.\n  Ice-storms do that. Often you must have seen them\n  Loaded with ice a sunny winter morning\n  After a rain. They click upon themselves\n  As the breeze rises, and turn many-colored\n  As the stir cracks and crazes their enamel.\n  Soon the sun's warmth makes them shed crystal shells\n  Shattering and avalanching on the snow-crust--\n  Such heaps of broken glass to sweep away\n  You'd think the inner dome of heaven had fallen.\n  They are dragged to the withered bracken by the load,\n  And they seem not to break; though once they are bowed\n  So low for long, they never right themselves:\n  You may see their trunks arching in the woods\n  Years afterwards, trailing their leaves on the ground\n  Like girls on hands and knees that throw their hair\n  Before them over their heads to dry in the sun.\n  But I was going to say when Truth broke in\n  With all her matter-of-fact about the ice-storm\n  (Now am I free to be poetical?)\n  I should prefer to have some boy bend them\n  As he went out and in to fetch the cows--\n  Some boy too far from town to learn baseball,\n  Whose only play was what he found himself,\n  Summer or winter, and could play alone.\n  One by one he subdued his father's trees\n  By riding them down over and over again\n  Until he took the stiffness out of them,\n  And not one but hung limp, not one was left\n  For him to conquer. He learned all there was\n  To learn about not launching out too soon\n  And so not carrying the tree away\n  Clear to the ground. He always kept his poise\n  To the top branches, climbing carefully\n  With the same pains you use to fill a cup\n  Up to the brim, and even above the brim.\n  Then he flung outward, feet first, with a swish,\n  Kicking his way down through the air to the ground.\n  So was I once myself a swinger of birches.\n  And so I dream of going back to be.\n  It's when I'm weary of considerations,\n  And life is too much like a pathless wood\n  Where your face burns and tickles with the cobwebs\n  Broken across it, and one eye is weeping\n  From a twig's having lashed across it open.\n  I'd like to get away from earth awhile\n  And then come back to it and begin over.\n  May no fate willfully misunderstand me\n  And half grant what I wish and snatch me away\n  Not to return. Earth's the right place for love:\n  I don't know where it's likely to go better.\n  I'd like to go by climbing a birch tree,\n  And climb black branches up a snow-white trunk\n  _Toward_ heaven, till the tree could bear no more,\n  But dipped its top and set me down again.\n  That would be good both going and coming back.\n  One could do worse than be a swinger of birches.\nPEA BRUSH\n  I walked down alone Sunday after church\n    To the place where John has been cutting trees\n  To see for myself about the birch\n    He said I could have to bush my peas.\n  The sun in the new-cut narrow gap\n    Was hot enough for the first of May,\n  And stifling hot with the odor of sap\n    From stumps still bleeding their life away.\n  The frogs that were peeping a thousand shrill\n    Wherever the ground was low and wet,\n  The minute they heard my step went still\n    To watch me and see what I came to get.\n  Birch boughs enough piled everywhere!--\n    All fresh and sound from the recent axe.\n  Time someone came with cart and pair\n    And got them off the wild flower's backs.\n  They might be good for garden things\n    To curl a little finger round,\n  The same as you seize cat's-cradle strings,\n    And lift themselves up off the ground.\n  Small good to anything growing wild,\n    They were crooking many a trillium\n  That had budded before the boughs were piled\n    And since it was coming up had to come.\nPUTTING IN THE SEED\n  You come to fetch me from my work to-night\n  When supper's on the table, and we'll see\n  If I can leave off burying the white\n  Soft petals fallen from the apple tree.\n  (Soft petals, yes, but not so barren quite,\n  Mingled with these, smooth bean and wrinkled pea;)\n  And go along with you ere you lose sight\n  Of what you came for and become like me,\n  Slave to a springtime passion for the earth.\n  How Love burns through the Putting in the Seed\n  On through the watching for that early birth\n  When, just as the soil tarnishes with weed,\n  The sturdy seedling with arched body comes\n  Shouldering its way and shedding the earth crumbs.\nA TIME TO TALK\n  When a friend calls to me from the road\n  And slows his horse to a meaning walk,\n  I don't stand still and look around\n  On all the hills I haven't hoed,\n  And shout from where I am, What is it?\n  No, not as there is a time to talk.\n  I thrust my hoe in the mellow ground,\n  Blade-end up and five feet tall,\n  And plod: I go up to the stone wall\n  For a friendly visit.\nTHE COW IN APPLE TIME\n  Something inspires the only cow of late\n  To make no more of a wall than an open gate,\n  And think no more of wall-builders than fools.\n  Her face is flecked with pomace and she drools\n  A cider syrup. Having tasted fruit,\n  She scorns a pasture withering to the root.\n  She runs from tree to tree where lie and sweeten\n  The windfalls spiked with stubble and worm-eaten.\n  She leaves them bitten when she has to fly.\n  She bellows on a knoll against the sky.\n  Her udder shrivels and the milk goes dry.\nAN ENCOUNTER\n  Once on the kind of day called \"weather breeder,\"\n  When the heat slowly hazes and the sun\n  By its own power seems to be undone,\n  I was half boring through, half climbing through\n  A swamp of cedar. Choked with oil of cedar\n  And scurf of plants, and weary and over-heated,\n  And sorry I ever left the road I knew,\n  I paused and rested on a sort of hook\n  That had me by the coat as good as seated,\n  And since there was no other way to look,\n  Looked up toward heaven, and there against the blue,\n  Stood over me a resurrected tree,\n  A tree that had been down and raised again--\n  A barkless spectre. He had halted too,\n  As if for fear of treading upon me.\n  I saw the strange position of his hands--\n  Up at his shoulders, dragging yellow strands\n  Of wire with something in it from men to men.\n  \"You here?\" I said. \"Where aren't you nowadays\n  And what's the news you carry--if you know?\n  And tell me where you're off for--Montreal?\n  Me? I'm not off for anywhere at all.\n  Sometimes I wander out of beaten ways\n  Half looking for the orchid Calypso.\"\nRANGE-FINDING\n  The battle rent a cobweb diamond-strung\n  And cut a flower beside a ground bird's nest\n  Before it stained a single human breast.\n  The stricken flower bent double and so hung.\n  And still the bird revisited her young.\n  A butterfly its fall had dispossessed\n  A moment sought in air his flower of rest,\n  Then lightly stooped to it and fluttering clung.\n  On the bare upland pasture there had spread\n  O'ernight 'twixt mullein stalks a wheel of thread\n  And straining cables wet with silver dew.\n  A sudden passing bullet shook it dry.\n  The indwelling spider ran to greet the fly,\n  But finding nothing, sullenly withdrew."
     },
     {
       "title": "The Gift Outright",
@@ -137,7 +151,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I have been one acquainted with the night.\nI have walked out in rain—and back in rain.\nI have outwalked the furthest city light.\nI have looked down the saddest city lane.\nI have passed by the watchman on his beat\nAnd dropped my eyes, unwilling to explain.\nI have stood still and stopped the sound of feet\nWhen far away an interrupted cry\nCame over houses from another street,\nBut not to call me back or say good-bye;\nAnd further still at an unearthly height,\nOne luminary clock against the sky\nProclaimed the time was neither wrong nor right.\nI have been one acquainted with the night."
     },
     {
       "title": "A Dream Within a Dream",
@@ -145,7 +160,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Take this kiss upon the brow!\nAnd, in parting from you now,\nThus much let me avow--\nYou are not wrong, who deem\nThat my days have been a dream:\nYet if hope has flown away\nIn a night, or in a day,\nIn a vision or in none,\nIs it therefore the less gone?\nAll that we see or seem\nIs but a dream within a dream.\n\nI stand amid the roar\nOf a surf-tormented shore,\nAnd I hold within my hand\nGrains of the golden sand--\nHow few! yet how they creep\nThrough my fingers to the deep\nWhile I weep--while I weep!\nO God! can I not grasp\nThem with a tighter clasp?\nO God! can I not save\nOne from the pitiless wave?\nIs all that we see or seem\nBut a dream within a dream?"
     },
     {
       "title": "Annabel Lee",
@@ -154,7 +170,8 @@
       "kind": "poem",
       "estSeconds": 90,
       "sourcePageURL": "https://www.gutenberg.org/ebooks/842",
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "It was many and many a year ago,\n  In a kingdom by the sea,\nThat a maiden there lived whom you may know\n  By the name of ANNABEL LEE;\nAnd this maiden she lived with no other thought\n  Than to love and be loved by me.\n\nI was a child and she was a child,\n  In this kingdom by the sea:\nBut we loved with a love that was more than love--\n  I and my ANNABEL LEE;\nWith a love that the winged seraphs of heaven\n  Coveted her and me.\n\nAnd this was the reason that, long ago,\n  In this kingdom by the sea,\nA wind blew out of a cloud, chilling\n  My beautiful ANNABEL LEE;\nSo that her highborn kinsmen came\n  And bore her away from me,\nTo shut her up in a sepulchre\n  In this kingdom by the sea.\n\nThe angels, not half so happy in heaven,\n  Went envying her and me--\nYes!--that was the reason (as all men know,\n  In this kingdom by the sea)\nThat the wind came out of the cloud by night,\n  Chilling and killing my ANNABEL LEE.\n\nBut our love it was stronger by far than the love\n  Of those who were older than we--\n  Of many far wiser than we--\nAnd neither the angels in heaven above,\n  Nor the demons down under the sea,\nCan ever dissever my soul from the soul\n  Of the beautiful ANNABEL LEE.\n\nFor the moon never beams without bringing me dreams\n  Of the beautiful ANNABEL LEE;\nAnd the stars never rise but I see the bright eyes\n  Of the beautiful ANNABEL LEE;\nAnd so, all the night-tide, I lie down by the side\nOf my darling, my darling, my life and my bride,\n  In her sepulchre there by the sea--\n  In her tomb by the side of the sea."
     },
     {
       "title": "The Raven",
@@ -163,7 +180,8 @@
       "kind": "poem",
       "estSeconds": 480,
       "sourcePageURL": "https://www.gutenberg.org/ebooks/17192",
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Once upon a midnight dreary, while I pondered, weak and weary,\nOver many a quaint and curious volume of forgotten lore--\nWhile I nodded, nearly napping, suddenly there came a tapping,\nAs of some one gently rapping--rapping at my chamber door.\n\"'Tis some visitor,\" I muttered, \"tapping at my chamber door--\n        Only this and nothing more.\"\n\nAh, distinctly I remember, it was in the bleak December,\nAnd each separate dying ember wrought its ghost upon the floor.\nEagerly I wished the morrow;--vainly I had sought to borrow\nFrom my books surcease of sorrow--sorrow for the lost Lenore--\nFor the rare and radiant maiden whom the angels name Lenore--\n        Nameless here for evermore.\n\nAnd the silken sad uncertain rustling of each purple curtain\nThrilled me--filled me with fantastic terrors never felt before;\nSo that now, to still the beating of my heart, I stood repeating\n\"'Tis some visitor entreating entrance at my chamber door--\nSome late visitor entreating entrance at my chamber door;--\n    This it is and nothing more.\"\n\nPresently my soul grew stronger; hesitating then no longer,\n\"Sir,\" said I, \"or Madam, truly your forgiveness I implore;\nBut the fact is I was napping, and so gently you came rapping,\nAnd so faintly you came tapping--tapping at my chamber door,\nThat I scarce was sure I heard you\"--here I opened wide the door:--\n      Darkness there and nothing more.\n\nDeep into that darkness peering, long I stood there wondering,\n  fearing,\nDoubting, dreaming dreams no mortal ever dared to dream before;\nBut the silence was unbroken, and the darkness gave no token,\nAnd the only word there spoken was the whispered word, \"Lenore!\"\nThis I whispered, and an echo murmured back the word, \"Lenore!\"\n      Merely this and nothing more.\n\nBack into the chamber turning, all my soul within me burning,\nSoon I heard again a tapping, somewhat louder than before.\n\"Surely,\" said I, \"surely that is something at my window lattice;\nLet me see, then, what thereat is, and this mystery explore--\nLet my heart be still a moment, and this mystery explore;--\n    'Tis the wind and nothing more.\"\n\nOpen here I flung the shutter, when, with many a flirt and flutter,\nIn there stepped a stately Raven of the saintly days of yore;\nNot the least obeisance made he: not an instant stopped or stayed he;\nBut, with mien of lord or lady, perched above my chamber door--\nPerched upon a bust of Pallas just above my chamber door--\n    Perched, and sat, and nothing more.\n\nThen this ebony bird beguiling my sad fancy into smiling,\nBy the grave and stern decorum of the countenance it wore,\n\"Though thy crest be shorn and shaven, thou,\" I said, \"art sure no\n  craven,\nGhastly grim and ancient Raven wandering from the Nightly shore--\nTell me what thy lordly name is on the Night's Plutonian shore!\"\n      Quoth the Raven, \"Nevermore.\"\n\nMuch I marvelled this ungainly fowl to hear discourse so plainly,\nThough its answer little meaning--little relevancy bore;\nFor we cannot help agreeing that no living human being\nEver yet was blessed with seeing bird above his chamber door--\nBird or beast upon the sculptured bust above his chamber door,\n      With such name as \"Nevermore.\"\n\nBut the Raven, sitting lonely on that placid bust, spoke only\nThat one word, as if his soul in that one word he did outpour.\nNothing further then he uttered--not a feather then he fluttered--\nTill I scarcely more than muttered, \"Other friends have flown before--\nOn the morrow _he_ will leave me, as my hopes have flown before.\"\n      Then the bird said, \"Nevermore.\"\n\nStartled at the stillness broken by reply so aptly spoken,\n\"Doubtless,\" said I, \"what it utters is its only stock and store,\nCaught from some unhappy master whom unmerciful Disaster\nFollowed fast and followed faster till his songs one burden bore--\nTill the dirges of his Hope the melancholy burden bore\n    Of 'Never--nevermore.'\"\n\nBut the Raven still beguiling all my sad soul into smiling,\nStraight I wheeled a cushioned seat in front of bird and bust and\n  door;\nThen, upon the velvet sinking, I betook myself to linking\nFancy unto fancy, thinking what this ominous bird of yore--\nWhat this grim, ungainly, ghastly, gaunt, and ominous bird of yore\n    Meant in croaking \"Nevermore.\"\n\nThis I sat engaged in guessing, but no syllable expressing\nTo the fowl whose fiery eyes now burned into my bosom's core;\nThis and more I sat divining, with my head at ease reclining\nOn the cushion's velvet lining that the lamp-light gloated o'er,\nBut whose velvet violet lining with the lamp-light gloating o'er,\n      _She_ shall press, ah, nevermore!\n\nThen, methought, the air grew denser, perfumed from an unseen censer\nSwung by Seraphim whose foot-falls tinkled on the tufted floor.\n\"Wretch,\" I cried, \"thy God hath lent thee--by these angels he hath\n  sent thee\nRespite--respite aad nepenthé from thy memories of Lenore!\nQuaff, oh quaff this kind nepenthé, and forget this lost Lenore!\"\n      Quoth the Raven, \"Nevermore.\"\n\n\"Prophet!\" said I, \"thing of evil!--prophet still, if bird or devil!--\nWhether Tempter sent, or whether tempest tossed thee here ashore,\nDesolate yet all undaunted, on this desert land enchanted--\nOn this home by Horror haunted--tell me truly, I implore--\nIs there--_is_ there balm in Gilead?--tell me--tell me, I implore!\"\n    Quoth the Raven, \"Nevermore.\"\n\n\"Prophet!\" said I, \"thing of evil!--prophet still, if bird or devil!\nBy that Heaven that bends above us--by that God we both adore--\nTell this soul with sorrow laden if, within the distant Aidenn,\nIt shall clasp a sainted maiden whom the angels name Lenore--\nClasp a rare and radiant maiden whom the angels name Lenore.\"\n      Quoth the Raven, \"Nevermore.\"\n\n\"Be that word our sign of parting, bird or fiend!\" I shrieked,\n  upstarting--\n\"Get thee back into the tempest and the Night's Plutonian shore!\nLeave no black plume as a token of that lie thy soul hath spoken!\nLeave my loneliness unbroken!--quit the bust above my door!\nTake thy beak from out my heart, and take thy form from off my door!\"\n    Quoth the Raven, \"Nevermore.\"\n\nAnd the Raven, never flitting, still is sitting, still is sitting\nOn the pallid bust of Pallas just above my chamber door;\nAnd his eyes have all the seeming of a demon's that is dreaming,\nAnd the lamp-light o'er him streaming throws his shadow on the floor;\nAnd my soul from out that shadow that lies floating on the floor\n    Shall be lifted--nevermore!"
     },
     {
       "title": "Eldorado",
@@ -171,7 +189,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  Gaily bedight,\n  A gallant knight,\nIn sunshine and in shadow,\n  Had journeyed long,\n  Singing a song,\nIn search of Eldorado.\n  But he grew old--\n  This knight so bold--\nAnd o'er his heart a shadow\n  Fell as he found\n  No spot of ground\nThat looked like Eldorado.\n\nAnd, as his strength\n  Failed him at length,\nHe met a pilgrim shadow--\n  \"Shadow,\" said he,\n  \"Where can it be--\nThis land of Eldorado?\"\n\n  \"Over the Mountains\n  Of the Moon,\nDown the Valley of the Shadow,\n  Ride, boldly ride,\"\n  The shade replied,\n\"If you seek for Eldorado!\""
     },
     {
       "title": "Alone",
@@ -179,7 +198,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "From childhood's hour I have not been\nAs others were — I have not seen\nAs others saw — I could not bring\nMy passions from a common spring —\nFrom the same source I have not taken\nMy sorrow — I could not awaken\nMy heart to joy at the same tone —\nAnd all I lov'd — ''I'' lov'd alone —\n''Then'' — in my childhood — in the dawn\nOf a most stormy life — was drawn\nFrom ev'ry depth of good and ill\nThe mystery which binds me still —\nFrom the torrent, or the fountain —\nFrom the red cliff of the mountain —\nFrom the sun that 'round me roll'd\nIn its autumn tint of gold —\nFrom the lightning in the sky\nAs it pass'd me flying by —\nFrom the thunder, and the storm —\nAnd the cloud that took the form\n(When the rest of Heaven was blue)\nOf a demon in my view —"
     },
     {
       "title": "The Bells",
@@ -187,7 +207,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 150,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Hear the sledges with the bells--\nSilver bells!\nWhat a world of merriment their melody foretells!\nHow they tinkle, tinkle, tinkle,\nIn their icy air of night!\nWhile the stars, that oversprinkle\nAll the heavens, seem to twinkle\nWith a crystalline delight;\nKeeping time, time, time,\nIn a sort of Runic rhyme,\nTo the tintinnabulation that so musically wells\nFrom the bells, bells, bells, bells,\nBells, bells, bells--\nFrom the jingling and the tinkling of the bells.\n\nHear the mellow wedding bells,\nGolden bells!\nWhat a world of happiness their harmony foretells!\nThrough the balmy air of night\nHow they ring out their delight!\nFrom the molten golden-notes,\nAnd all in tune,\nWhat a liquid ditty floats\nTo the turtle-dove that listens, while she gloats\nOn the moon!\nOh, from out the sounding cells,\nWhat a gush of euphony voluminously wells!\nHow it swells!\nHow it dwells\nOn the future! how it tells\nOf the rapture that impels\nTo the swinging and the ringing\nOf the bells, bells, bells,\nOf the bells, bells, bells, bells,\nBells, bells, bells--\nTo the rhyming and the chiming of the bells!\n\nHear the loud alarum bells--\nBrazen bells!\nWhat a tale of terror now their turbulency tells!\nIn the startled ear of night\nHow they scream out their affright!\nToo much horrified to speak,\nThey can only shriek, shriek,\nOut of tune,\nIn a clamorous appealing to the mercy of the fire,\nIn a mad expostulation with the deaf and frantic fire\nLeaping higher, higher, higher,\nWith a desperate desire,\nAnd a resolute endeavor\nNow--now to sit or never,\nBy the side of the pale-faced moon.\nOh, the bells, bells, bells!\nWhat a tale their terror tells\nOf Despair!\nHow they clang, and clash, and roar!\nWhat a horror they outpour\nOn the bosom of the palpitating air!\nYet the ear it fully knows,\nBy the twanging,\nAnd the clanging,\nHow the danger ebbs and flows;\nYet the ear distinctly tells,\nIn the jangling,\nAnd the wrangling,\nHow the danger sinks and swells,\nBy the sinking or the swelling in the anger of the bells--\nOf the bells--\nOf the bells, bells, bells, bells,\nBells, bells, bells--\nIn the clamor and the clangor of the bells!\n\nHear the tolling of the bells--\nIron bells!\nWhat a world of solemn thought their monody compels!\nIn the silence of the night,\nHow we shiver with affright\nAt the melancholy menace of their tone!\nFor every sound that floats\nFrom the rust within their throats\n   Is a groan.\nAnd the people--ah, the people--\nThey that dwell up in the steeple.\n    All alone,\nAnd who tolling, tolling, tolling,\n  In that muffled monotone,\nFeel a glory in so rolling\n  On the human heart a stone--\nThey are neither man nor woman--\nThey are neither brute nor human--\n    They are Ghouls:\nAnd their king it is who tolls;\nAnd he rolls, rolls, rolls,\n         Rolls\nA pæan from the bells!\nAnd his merry bosom swells\nWith the pæan of the bells!\nAnd he dances, and he yells;\nKeeping time, time, time,\nIn a sort of Runic rhyme,\nTo the pæan of the bells--\n    Of the bells:\nKeeping time, time, time,\nIn a sort of Runic rhyme,\n  To the throbbing of the bells--\nOf the bells, bells, bells--\n  To the sobbing of the bells;\nKeeping time, time, time,\n  As he knells, knells, knells,\nIn a happy Runic rhyme,\nTo the rolling of the bells--\nOf the bells, bells, bells--\nTo the tolling of the bells,\nOf the bells, bells, bells, bells,\n  Bells, bells, bells--\nTo the moaning and the groaning of the bells."
     },
     {
       "title": "O Captain! My Captain!",
@@ -195,7 +216,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 90,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  O Captain! my Captain! our fearful trip is done,\n  The ship has weather’d every rack, the prize we sought is won,\n  The port is near, the bells I hear, the people all exulting,\n  While follow eyes the steady keel, the vessel grim and daring;\n      But O heart! heart! heart!\n       O the bleeding drops of red,\n         Where on the deck my Captain lies,\n           Fallen cold and dead.\n  O Captain! my Captain! rise up and hear the bells;\n  Rise up--for you the flag is flung--for you the bugle trills,\n  For you bouquets and ribbon’d wreaths--for you the shores a-crowding,\n  For you they call, the swaying mass, their eager faces turning;\n      Here Captain! dear father!\n       This arm beneath your head!\n         It is some dream that on the deck,\n           You’ve fallen cold and dead.\n  My Captain does not answer, his lips are pale and still,\n  My father does not feel my arm, he has no pulse nor will,\n  The ship is anchor’d safe and sound, its voyage closed and done,\n  From fearful trip the victor ship comes in with object won;\n       Exult O shores, and ring O bells!\n         But I with mournful tread,\n           Walk the deck my Captain lies,\n             Fallen cold and dead.\nHush’d Be the Camps To-Day [May 4, 1865\n  Hush’d be the camps to-day,\n  And soldiers let us drape our war-worn weapons,\n  And each with musing soul retire to celebrate,\n  Our dear commander’s death.\n  No more for him life’s stormy conflicts,\n  Nor victory, nor defeat--no more time’s dark events,\n  Charging like ceaseless clouds across the sky.\n  But sing poet in our name,\n  Sing of the love we bore him--because you, dweller in camps, know it truly.\n  As they invault the coffin there,\n  Sing--as they close the doors of earth upon him--one verse,\n  For the heavy hearts of soldiers."
     },
     {
       "title": "A Noiseless Patient Spider",
@@ -203,7 +225,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  A noiseless patient spider,\n  I mark’d where on a little promontory it stood isolated,\n  Mark’d how to explore the vacant vast surrounding,\n  It launch’d forth filament, filament, filament out of itself,\n  Ever unreeling them, ever tirelessly speeding them.\n  And you O my soul where you stand,\n  Surrounded, detached, in measureless oceans of space,\n  Ceaselessly musing, venturing, throwing, seeking the spheres to\n      connect them,\n  Till the bridge you will need be form’d, till the ductile anchor hold,\n  Till the gossamer thread you fling catch somewhere, O my soul."
     },
     {
       "title": "When I Heard the Learn'd Astronomer",
@@ -211,7 +234,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "When I heard the learn’d astronomer,\nWhen the proofs, the figures, were ranged in columns before me,\nWhen I was shown the charts and diagrams, to add, divide, and measure them,\nWhen I sitting heard the astronomer where he lectured with much\napplause in the lecture-room,\nHow soon unaccountable I became tired and sick,\nTill rising and gliding out I wander’d off by myself,\nIn the mystical moist night-air, and from time to time,\nLook’d up in perfect silence at the stars."
     },
     {
       "title": "I Hear America Singing",
@@ -219,7 +243,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  I hear America singing, the varied carols I hear,\n  Those of mechanics, each one singing his as it should be blithe and strong,\n  The carpenter singing his as he measures his plank or beam,\n  The mason singing his as he makes ready for work, or leaves off work,\n  The boatman singing what belongs to him in his boat, the deckhand\n      singing on the steamboat deck,\n  The shoemaker singing as he sits on his bench, the hatter singing as\n      he stands,\n  The wood-cutter’s song, the ploughboy’s on his way in the morning,\n      or at noon intermission or at sundown,\n  The delicious singing of the mother, or of the young wife at work,\n      or of the girl sewing or washing,\n  Each singing what belongs to him or her and to none else,\n  The day what belongs to the day--at night the party of young\n      fellows, robust, friendly,\n  Singing with open mouths their strong melodious songs."
     },
     {
       "title": "The Tyger",
@@ -227,7 +252,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Tyger, tyger, burning bright\nIn the forests of the night,\nWhat immortal hand or eye\nCould frame thy fearful symmetry?\n\nIn what distant deeps or skies\nBurnt the fire of thine eyes?\nOn what wings dare he aspire?\nWhat the hand dare seize the fire?\n\nAnd what shoulder and what art\nCould twist the sinews of thy heart?\nAnd, when thy heart began to beat,\nWhat dread hand and what dread feet?\n\nWhat the hammer?  what the chain?\nIn what furnace was thy brain?\nWhat the anvil? what dread grasp\nDare its deadly terrors clasp?\n\nWhen the stars threw down their spears,\nAnd watered heaven with their tears,\nDid he smile his work to see?\nDid he who made the lamb make thee?\n\nTyger, tyger, burning bright\nIn the forests of the night,\nWhat immortal hand or eye\nDare frame thy fearful symmetry?"
     },
     {
       "title": "The Lamb",
@@ -235,7 +261,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Little lamb, who made thee?\nDoes thou know who made thee,\nGave thee life, and bid thee feed\nBy the stream and o’er the mead;\nGave thee clothing of delight,\nSoftest clothing, woolly, bright;\nGave thee such a tender voice,\nMaking all the vales rejoice?\n    Little lamb, who made thee?\n    Does thou know who made thee?\nLittle lamb, I’ll tell thee;\nLittle lamb, I’ll tell thee:\nHe is callèd by thy name,\nFor He calls Himself a Lamb.\nHe is meek, and He is mild,\nHe became a little child.\nI a child, and thou a lamb,\nWe are callèd by His name.\n    Little lamb, God bless thee!\n    Little lamb, God bless thee!"
     },
     {
       "title": "London",
@@ -243,7 +270,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I wander through each chartered street,\n    Near where the chartered Thames does flow,\nA mark in every face I meet,\n    Marks of weakness, marks of woe.\nIn every cry of every man,\n    In every infant’s cry of fear,\nIn every voice, in every ban,\n    The mind-forged manacles I hear:\nHow the chimney-sweeper’s cry\n    Every blackening church appals,\nAnd the hapless soldier’s sigh\n    Runs in blood down palace-walls.\nBut most, through midnight streets I hear\n    How the youthful harlot’s curse\nBlasts the new-born infant’s tear,\n    And blights with plagues the marriage hearse."
     },
     {
       "title": "A Poison Tree",
@@ -251,7 +279,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I was angry with my friend:\nI told my wrath, my wrath did end.\nI was angry with my foe:\nI told it not, my wrath did grow.\n\nAnd I watered it in fears\nNight and morning with my tears,\nAnd I sunned it with smiles\nAnd with soft deceitful wiles.\n\nAnd it grew both day and night,\nTill it bore an apple bright,\nAnd my foe beheld it shine,\nand he knew that it was mine,--\n\nAnd into my garden stole\nWhen the night had veiled the pole;\nIn the morning, glad, I see\nMy foe outstretched beneath the tree."
     },
     {
       "title": "Auguries of Innocence",
@@ -259,7 +288,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 180,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "To see a World in a Grain of Sand\nAnd a Heaven in a Wild Flower\nHold Infinity in the palm of your hand\nAnd Eternity in an hour\nA Robin Red breast in a Cage\nPuts all Heaven in a Rage\nA Dove house filld with Doves and Pigeons\nShudders Hell thro all its regions\nA Dog starvd at his Masters Gate\nPredicts the ruin of the State\nA Horse misused upon the Road\nCalls to Heaven for Human blood\nEach outcry of the hunted Hare\nA fibre from the Brain does tear\nA Skylark wounded in the wing\nA Cherubim does cease to sing\nThe Game Cock clipd and armd for fight\nDoes the Rising sun affright\nEvery Wolfs and Lions howl\nRaises from Hell a Human Soul\nThe wild deer wandring here & there\nKeeps the Human Soul from care\nThe lamb misusd breeds public strife\nAnd yet forgives the Butchers Knife\nThe Bat that flits at close of eve\nHas left the Brain that won't believe\nThe Owl that calls upon the night\nSpeaks the Unbelievers Fright\nHe who shall hurt the little Wren\nShall never be belovd by men\nHe who the Ox to wrath has movd\nShall never be by Woman lovd\nThe wanton Boy that kills the Fly\nShall feel the Spiders enmity\nHe who torments the Chafers sprite\nWeaves a Bower in endless Night\nThe Catterpiller on the leaf\nRepeats to thee thy Mothers grief\nKill not the Moth nor Butterfly\nFor the Last Judgement draweth nigh\nHe who shall train the Horse to war\nShall never pass the Polar Bar\nThe Beggars dog & Widows Cat\nFeed them and thou wilt grow fat\nThe Gnat that sings his Summers song\nPoison gets from Slanders Tongue\nThe poison of the Snake and Newt\nIs the sweat of Envys Foot\nThe Poison of the Honey Bee\nIs the Artist's Jealousy\nThe Princes Robes and Beggars Rags\nAre Toadstools on the Misers Bags\nA Truth thats told with bad intent\nBeats all the Lies you can invent\nIt is right it should be so\nMan was made for Joy & Woe\nAnd when this we rightly Know\nThro the World we safely go\nJoy & woe are woven fine\nA Clothing for the soul divine\nUnder every grief & pine\nRuns a joy with silken twine\nThe Babe is more than Swaddling Bands\nThroughout all these Human Lands\nTools were made & Born were hands\nEvery Farmer Understands\nEvery Tear from Every Eye\nBecomes a Babe in Eternity\nThis is caught by Females bright\nAnd returnd to its own Delight\nThe Bleat the Bark Bellow & Roar\nAre Waves that Beat on Heavens Shore\nThe Babe that weeps the Rod beneath\nWrites Revenge in realms of Death\nThe Beggars Rags fluttering in Air\nDoes to Rags the Heavens tear\nThe Soldier armd with Sword & Gun\nPalsied strikes the Summers Sun\nThe poor Mans Farthing is worth more\nThan all the Gold on Africs Shore\nOne Mite wrung from the Labrers hands\nShall buy & sell the Misers Lands\nOr if protected from on high\nDoes that whole Nation sell & buy\nHe who mocks the Infants Faith\nShall be mockd in Age & Death\nHe who shall teach the Child to Doubt\nThe rotting Grave shall neer get out\nHe who respects the Infants faith\nTriumphs over Hell & Death\nThe Childs Toys & the Old Mans Reasons\nAre the Fruits of the Two seasons\nThe Questioner who sits so sly\nShall never know how to Reply\nHe who replies to words of Doubt\nDoth put the Light of Knowledge out\nThe Strongest Poison ever known\nCame from Caesars Laurel Crown\nNought can Deform the Human Race\nLike to the Armours iron brace\nWhen Gold & Gems adorn the Plow\nTo peaceful Arts shall Envy Bow\nA Riddle or the Crickets Cry\nIs to Doubt a fit Reply\nThe Emmets Inch & Eagles Mile\nMake Lame Philosophy to smile\nHe who Doubts from what he sees\nWill neer Believe do what you Please\nIf the Sun & Moon should Doubt\nTheyd immediately Go out\nTo be in a Passion you Good may Do\nBut no Good if a Passion is in you\nThe Whore & Gambler by the State\nLicencd build that Nations Fate\nThe Harlots cry from Street to Street\nShall weave Old Englands winding Sheet\nThe Winners Shout the Losers Curse\nDance before dead Englands Hearse\nEvery Night & every Morn\nSome to Misery are Born\nEvery Morn & every Night\nSome are Born to Sweet Delight\nSome are Born to Sweet Delight\nSome are Born to Endless Night\nWe are led to Believe a Lie\nWhen we see not Thro the Eye\nWhich was Born in a Night to perish in a Night\nWhen the Soul Slept in Beams of Light\nGod Appears & God is Light\nTo those poor Souls who dwell in Night\nBut does a Human Form Display\nTo those who Dwell in Realms of day"
     },
     {
       "title": "Ode to a Nightingale",
@@ -268,7 +298,8 @@
       "kind": "poem",
       "estSeconds": 360,
       "sourcePageURL": "https://www.gutenberg.org/ebooks/23661",
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "My heart aches, and a drowsy numbness pains\nMy sense, as though of hemlock I had drunk,\nOr emptied some dull opiate to the drains\nOne minute past, and Lethe-wards had sunk:\n'Tis not through envy of thy happy lot,\nBut being too happy in thine happiness,--\nThat thou, light-winged Dryad of the trees,\nIn some melodious plot\nOf beechen green, and shadows numberless,\nSingest of summer in full-throated ease.                 10\nO, for a draught of vintage! that hath been\nCool'd a long age in the deep-delved earth,\nTasting of Flora and the country green,\nDance, and Provencal song, and sunburnt mirth!\nO for a beaker full of the warm South,\nFull of the true, the blushful Hippocrene,\nWith beaded bubbles winking at the brim,\nAnd purple-stained mouth;\nThat I might drink, and leave the world unseen,\nAnd with thee fade away into the forest dim:             20\nFade far away, dissolve, and quite forget\nWhat thou among the leaves hast never known,\nThe weariness, the fever, and the fret\nHere, where men sit and hear each other groan;\nWhere palsy shakes a few, sad, last gray hairs,\nWhere youth grows pale, and spectre-thin, and dies;\nWhere but to think is to be full of sorrow\nAnd leaden-eyed despairs,\nWhere Beauty cannot keep her lustrous eyes,\nOr new Love pine at them beyond to-morrow.               30\nAway! away! for I will fly to thee,\nNot charioted by Bacchus and his pards,\nBut on the viewless wings of Poesy,\nThough the dull brain perplexes and retards:\nAlready with thee! tender is the night,\nAnd haply the Queen-Moon is on her throne,\nCluster'd around by all her starry Fays;\nBut here there is no light,\nSave what from heaven is with the breezes blown\nThrough verdurous glooms and winding mossy ways.         40\nI cannot see what flowers are at my feet,\nNor what soft incense hangs upon the boughs,\nBut, in embalmed darkness, guess each sweet\nWherewith the seasonable month endows\nThe grass, the thicket, and the fruit-tree wild;\nWhite hawthorn, and the pastoral eglantine;\nFast fading violets cover'd up in leaves;\nAnd mid-May's eldest child,\nThe coming musk-rose, full of dewy wine,\nThe murmurous haunt of flies on summer eves.             50\nDarkling I listen; and, for many a time\nI have been half in love with easeful Death,\nCall'd him soft names in many a mused rhyme,\nTo take into the air my quiet breath;\nNow more than ever seems it rich to die,\nTo cease upon the midnight with no pain,\nWhile thou art pouring forth thy soul abroad\nIn such an ecstasy!\nStill wouldst thou sing, and I have ears in vain--\nTo thy high requiem become a sod.                        60\nThou wast not born for death, immortal Bird!\nNo hungry generations tread thee down;\nThe voice I hear this passing night was heard\nIn ancient days by emperor and clown:\nPerhaps the self-same song that found a path\nThrough the sad heart of Ruth, when, sick for home,\nShe stood in tears amid the alien corn;\nThe same that oft-times hath\nCharm'd magic casements, opening on the foam\nOf perilous seas, in faery lands forlorn.                70\nForlorn! the very word is like a bell\nTo toll me back from thee to my sole self!\nAdieu! the fancy cannot cheat so well\nAs she is fam'd to do, deceiving elf.\nAdieu! adieu! thy plaintive anthem fades\nPast the near meadows, over the still stream,\nUp the hill-side; and now 'tis buried deep\nIn the next valley-glades:\nWas it a vision, or a waking dream?\nFled is that music:--Do I wake or sleep?                 80"
     },
     {
       "title": "Ode on a Grecian Urn",
@@ -276,7 +307,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 300,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Thou still unravish'd bride of quietness,\nThou foster-child of silence and slow time,\nSylvan historian, who canst thus express\nA flowery tale more sweetly than our rhyme:\nWhat leaf-fring'd legend haunts about thy shape\nOf deities or mortals, or of both,\nIn Tempe or the dales of Arcady?\nWhat men or gods are these? What maidens loth?\nWhat mad pursuit? What struggle to escape?\nWhat pipes and timbrels? What wild ecstasy?              10\nHeard melodies are sweet, but those unheard\nAre sweeter; therefore, ye soft pipes, play on;\nNot to the sensual ear, but, more endear'd,\nPipe to the spirit ditties of no tone:\nFair youth, beneath the trees, thou canst not leave\nThy song, nor ever can those trees be bare;\nBold Lover, never, never canst thou kiss,\nThough winning near the goal--yet, do not grieve;\nShe cannot fade, though thou hast not thy bliss,\nFor ever wilt thou love, and she be fair!                20\nAh, happy, happy boughs! that cannot shed\nYour leaves, nor ever bid the Spring adieu;\nAnd, happy melodist, unwearied,\nFor ever piping songs for ever new;\nMore happy love! more happy, happy love!\nFor ever warm and still to be enjoy'd,\nFor ever panting, and for ever young;\nAll breathing human passion far above,\nThat leaves a heart high-sorrowful and cloy'd,\nA burning forehead, and a parching tongue.               30\nWho are these coming to the sacrifice?\nTo what green altar, O mysterious priest,\nLead'st thou that heifer lowing at the skies,\nAnd all her silken flanks with garlands drest?\nWhat little town by river or sea shore,\nOr mountain-built with peaceful citadel,\nIs emptied of this folk, this pious morn?\nAnd, little town, thy streets for evermore\nWill silent be; and not a soul to tell\nWhy thou art desolate, can e'er return.                 40\nO Attic shape! Fair attitude! with brede\nOf marble men and maidens overwrought,\nWith forest branches and the trodden weed;\nThou, silent form, dost tease us out of thought\nAs doth eternity: Cold Pastoral!\nWhen old age shall this generation waste,\nThou shalt remain, in midst of other woe\nThan ours, a friend to man, to whom thou say'st,\n\"Beauty is truth, truth beauty,\"--that is all\nYe know on earth, and all ye need to know.               50"
     },
     {
       "title": "To Autumn",
@@ -284,7 +316,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 180,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Season of mists and mellow fruitfulness,\nClose bosom-friend of the maturing sun;\nConspiring with him how to load and bless\nWith fruit the vines that round the thatch-eves run;\nTo bend with apples the moss'd cottage-trees,\nAnd fill all fruit with ripeness to the core;\nTo swell the gourd, and plump the hazel shells\nWith a sweet kernel; to set budding more,\nAnd still more, later flowers for the bees,\nUntil they think warm days will never cease,               10\nFor Summer has o'er-brimm'd their clammy cells.\nWho hath not seen thee oft amid thy store?\nSometimes whoever seeks abroad may find\nThee sitting careless on a granary floor,\nThy hair soft-lifted by the winnowing wind;\nOr on a half-reap'd furrow sound asleep,\nDrows'd with the fume of poppies, while thy hook\nSpares the next swath and all its twined flowers:\nAnd sometimes like a gleaner thou dost keep\nSteady thy laden head across a brook;                      20\nOr by a cyder-press, with patient look,\nThou watchest the last oozings hours by hours.\nWhere are the songs of Spring? Ay, where are they?\nThink not of them, thou hast thy music too,--\nWhile barred clouds bloom the soft-dying day,\nAnd touch the stubble-plains with rosy hue;\nThen in a wailful choir the small gnats mourn\nAmong the river sallows, borne aloft\nOr sinking as the light wind lives or dies;\nAnd full-grown lambs loud bleat from hilly bourn;            30\nHedge-crickets sing; and now with treble soft\nThe red-breast whistles from a garden-croft;\nAnd gathering swallows twitter in the skies."
     },
     {
       "title": "Bright Star",
@@ -292,7 +325,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Bright star, would I were steadfast as thou art—\n    Not in lone splendour hung aloft the night\nAnd watching, with eternal lids apart,\n    Like nature's patient, sleepless Eremite,\nThe moving waters at their priestlike task\n    Of pure ablution round earth's human shores,\nOr gazing on the new soft-fallen mask\n    Of snow upon the mountains and the moors—\nNo—yet still steadfast, still unchangeable,\n    Pillow'd upon my fair love's ripening breast,\nTo feel for ever its soft fall and swell,\n    Awake for ever in a sweet unrest,\nStill, still to hear her tender-taken breath,\nAnd so live ever—or else swoon to death."
     },
     {
       "title": "Ode to Psyche",
@@ -300,7 +334,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 300,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "O Goddess! hear these tuneless numbers, wrung\nBy sweet enforcement and remembrance dear,\nAnd pardon that thy secrets should be sung\nEven into thine own soft-conched ear:\nSurely I dreamt to-day, or did I see\nThe winged Psyche with awaken'd eyes?\nI wander'd in a forest thoughtlessly,\nAnd, on the sudden, fainting with surprise,\nSaw two fair creatures, couched side by side\nIn deepest grass, beneath the whisp'ring roof              10\nOf leaves and trembled blossoms, where there ran\nA brooklet, scarce espied:\n'Mid hush'd, cool-rooted flowers, fragrant-eyed,\nBlue, silver-white, and budded Tyrian,\nThey lay calm-breathing on the bedded grass;\nTheir arms embraced, and their pinions too;\nTheir lips touch'd not, but had not bade adieu,\nAs if disjoined by soft-handed slumber,\nAnd ready still past kisses to outnumber\nAt tender eye-dawn of aurorean love:                       20\nThe winged boy I knew;\nBut who wast thou, O happy, happy dove?\nHis Psyche true!\nO latest born and loveliest vision far\nOf all Olympus' faded hierarchy!\nFairer than Phoebe's sapphire-region'd star,\nOr Vesper, amorous glow-worm of the sky;\nFairer than these, though temple thou hast none,\nNor altar heap'd with flowers;\nNor virgin-choir to make delicious moan                      30\nUpon the midnight hours;\nNo voice, no lute, no pipe, no incense sweet\nFrom chain-swung censer teeming;\nNo shrine, no grove, no oracle, no heat\nOf pale-mouth'd prophet dreaming.\nO brightest! though too late for antique vows,\nToo, too late for the fond believing lyre,\nWhen holy were the haunted forest boughs,\nHoly the air, the water, and the fire;\nYet even in these days so far retir'd                        40\nFrom happy pieties, thy lucent fans,\nFluttering among the faint Olympians,\nI see, and sing, by my own eyes inspired.\nSo let me be thy choir, and make a moan\nUpon the midnight hours;\nThy voice, thy lute, thy pipe, thy incense sweet\nFrom swinged censer teeming;\nThy shrine, thy grove, thy oracle, thy heat\nOf pale-mouth'd prophet dreaming.\nYes, I will be thy priest, and build a fane                  50\nIn some untrodden region of my mind,\nWhere branched thoughts, new grown with pleasant pain,\nInstead of pines shall murmur in the wind:\nFar, far around shall those dark-cluster'd trees\nFledge the wild-ridged mountains steep by steep;\nAnd there by zephyrs, streams, and birds, and bees,\nThe moss-lain Dryads shall be lull'd to sleep;\nAnd in the midst of this wide quietness\nA rosy sanctuary will I dress\nWith the wreath'd trellis of a working brain,                60\nWith buds, and bells, and stars without a name,\nWith all the gardener Fancy e'er could feign,\nWho breeding flowers, will never breed the same:\nAnd there shall be for thee all soft delight\nThat shadowy thought can win,\nA bright torch, and a casement ope at night,\nTo let the warm Love in!"
     },
     {
       "title": "Ozymandias",
@@ -308,7 +343,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I met a traveller from an antique land\nWho said: Two vast and trunkless legs of stone\nStand in the desert...Near them, on the sand,\nHalf sunk, a shattered visage lies, whose frown,\nAnd wrinkled lip, and sneer of cold command,\nTell that its sculptor well those passions read\nWhich yet survive, stamped on these lifeless things,\nThe hand that mocked them, and the heart that fed:\nAnd on the pedestal these words appear:\n'My name is Ozymandias, king of kings:\nLook on my works, ye Mighty, and despair!'\nNothing beside remains. Round the decay\nOf that colossal wreck, boundless and bare\nThe lone and level sands stretch far away."
     },
     {
       "title": "To a Skylark",
@@ -316,7 +352,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 240,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Hail to thee, blithe Spirit!\nBird thou never wert,\nThat from Heaven, or near it,\nPourest thy full heart\nIn profuse strains of unpremeditated art.\n\nHigher still and higher\nFrom the earth thou springest\nLike a cloud of fire;\nThe blue deep thou wingest,\nAnd singing still dost soar, and soaring ever singest.\n\nIn the golden lightning\nOf the sunken sun,\nO'er which clouds are bright'ning.\nThou dost float and run;\nLike an unbodied joy whose race is just begun.\n\nThe pale purple even\nMelts around thy flight;\nLike a star of Heaven,\nIn the broad daylight\nThou art unseen, but yet I hear thy shrill delight,\n\nKeen as are the arrows\nOf that silver sphere,\nWhose intense lamp narrows\nIn the white dawn clear\nUntil we hardly see--we feel that it is there.\n\nAll the earth and air\nWith thy voice is loud,\nAs, when night is bare,\nFrom one lonely cloud\nThe moon rains out her beams, and Heaven is overflowed.\n\nWhat thou art we know not;\nWhat is most like thee?\nFrom rainbow clouds there flow not\nDrops so bright to see\nAs from thy presence showers a rain of melody.\n\nLike a Poet hidden\nIn the light of thought,\nSinging hymns unbidden,\nTill the world is wrought\nTo sympathy with hopes and fears it heeded not:\n\nLike a high-born maiden\nIn a palace-tower,\nSoothing her love-laden\nSoul in secret hour\nWith music sweet as love, which overflows her bower:\n\nLike a glow-worm golden\nIn a dell of dew,\nScattering unbeholden\nIts aereal hue\nAmong the flowers and grass, which screen it from the view!\n\nLike a rose embowered\nIn its own green leaves,\nBy warm winds deflowered,\nTill the scent it gives\nMakes faint with too much sweet those heavy-winged thieves:\n\nSound of vernal showers\nOn the twinkling grass,\nRain-awakened flowers,\nAll that ever was\nJoyous, and clear, and fresh, thy music doth surpass:\n\nTeach us, Sprite or Bird,\nWhat sweet thoughts are thine:\nI have never heard\nPraise of love or wine\nThat panted forth a flood of rapture so divine.\n\nChorus Hymeneal,\nOr triumphal chant,\nMatched with thine would be all\nBut an empty vaunt,\nA thing wherein we feel there is some hidden want.\n\nWhat objects are the fountains\nOf thy happy strain?\nWhat fields, or waves, or mountains?\nWhat shapes of sky or plain?\nWhat love of thine own kind? what ignorance of pain?\n\nWith thy clear keen joyance\nLanguor cannot be:\nShadow of annoyance\nNever came near thee:\nThou lovest--but ne'er knew love's sad satiety.\n\nWaking or asleep,\nThou of death must deem\nThings more true and deep\nThan we mortals dream,\nOr how could thy notes flow in such a crystal stream?\n\nWe look before and after,\nAnd pine for what is not:\nOur sincerest laughter\nWith some pain is fraught;\nOur sweetest songs are those that tell of saddest thought.\n\nYet if we could scorn\nHate, and pride, and fear;\nIf we were things born\nNot to shed a tear,\nI know not how thy joy we ever should come near.\n\nBetter than all measures\nOf delightful sound,\nBetter than all treasures\nThat in books are found,\nThy skill to poet were, thou scorner of the ground!\n\nTeach me half the gladness\nThat thy brain must know,\nSuch harmonious madness\nFrom my lips would flow\nThe world should listen then--as I am listening now."
     },
     {
       "title": "Ode to the West Wind",
@@ -324,7 +361,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 300,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "O wild West Wind, thou breath of Autumn's being,\nThou, from whose unseen presence the leaves dead\nAre driven, like ghosts from an enchanter fleeing,\n\nYellow, and black, and pale, and hectic red,\nPestilence-stricken multitudes: O thou,\nWho chariotest to their dark wintry bed\n\nThe winged seeds, where they lie cold and low,\nEach like a corpse within its grave, until\nThine azure sister of the Spring shall blow\n\nHer clarion o'er the dreaming earth, and fill\n(Driving sweet buds like flocks to feed in air)\nWith living hues and odours plain and hill:\n\nWild Spirit, which art moving everywhere;\nDestroyer and preserver; hear, oh, hear!\n\nThou on whose stream, mid the steep sky's commotion,\nLoose clouds like earth's decaying leaves are shed,\nShook from the tangled boughs of Heaven and Ocean,\n\nAngels of rain and lightning: there are spread\nOn the blue surface of thine aery surge,\nLike the bright hair uplifted from the head\n\nOf some fierce Maenad, even from the dim verge\nOf the horizon to the zenith's height,\nThe locks of the approaching storm. Thou dirge\n\nOf the dying year, to which this closing night\nWill be the dome of a vast sepulchre,\nVaulted with all thy congregated might\n\nOf vapours, from whose solid atmosphere\nBlack rain, and fire, and hail will burst: oh, hear!\n\nThou who didst waken from his summer dreams\nThe blue Mediterranean, where he lay,\nLulled by the coil of his crystalline streams,\n\nBeside a pumice isle in Baiae's bay,\nAnd saw in sleep old palaces and towers\nQuivering within the wave's intenser day,\n\nAll overgrown with azure moss and flowers\nSo sweet, the sense faints picturing them! Thou\nFor whose path the Atlantic's level powers\n\nCleave themselves into chasms, while far below\nThe sea-blooms and the oozy woods which wear\nThe sapless foliage of the ocean, know\n\nThy voice, and suddenly grow gray with fear,\nAnd tremble and despoil themselves: oh, hear!\n\nIf I were a dead leaf thou mightest bear;\nIf I were a swift cloud to fly with thee;\nA wave to pant beneath thy power, and share\n\nThe impulse of thy strength, only less free\nThan thou, O uncontrollable! If even\nI were as in my boyhood, and could be\n\nThe comrade of thy wanderings over Heaven,\nAs then, when to outstrip thy skiey speed\nScarce seemed a vision; I would ne'er have striven\n\nAs thus with thee in prayer in my sore need.\nOh, lift me as a wave, a leaf, a cloud!\nI fall upon the thorns of life! I bleed!\n\nA heavy weight of hours has chained and bowed\nOne too like thee: tameless, and swift, and proud.\n\nMake me thy lyre, even as the forest is:\nWhat if my leaves are falling like its own!\nThe tumult of thy mighty harmonies\n\nWill take from both a deep, autumnal tone,\nSweet though in sadness. Be thou, Spirit fierce,\nMy spirit! Be thou me, impetuous one!\n\nDrive my dead thoughts over the universe\nLike withered leaves to quicken a new birth!\nAnd, by the incantation of this verse,\n\nScatter, as from an unextinguished hearth\nAshes and sparks, my words among mankind!\nBe through my lips to unawakened earth\n\nThe trumpet of a prophecy! O, Wind,\nIf Winter comes, can Spring be far behind?"
     },
     {
       "title": "Music, When Soft Voices Die",
@@ -332,7 +370,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Music, when soft voices die,\nVibrates in the memory—\nOdours, when sweet violets sicken,\nLive within the sense they quicken.\nRose leaves, when the rose is dead,\nAre heaped for the beloved’s bed;\nAnd so thy thoughts, when thou art gone,\nLove itself shall slumber on."
     },
     {
       "title": "I Wandered Lonely as a Cloud",
@@ -340,7 +379,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I wandered lonely as a cloud\nThat floats on high o'er vales and hills,\nWhen all at once I saw a crowd,\nA host, of golden daffodils;\nBeside the lake, beneath the trees,\nFluttering and dancing in the breeze.\n\nContinuous as the stars that shine\nAnd twinkle on the milky way,\nThey stretched in never-ending line\nAlong the margin of a bay:\nTen thousand saw I at a glance,\nTossing their heads in sprightly dance.\n\n The waves beside them danced, but they\nOut-did the sparkling leaves in glee;\nA poet could not be but gay,\nIn such a jocund company!\nI gazed—and gazed—but little thought\nWhat wealth the show to me had brought:\n\nFor oft, when on my couch I lie\nIn vacant or in pensive mood,\nThey flash upon that inward eye\nWhich is the bliss of solitude;\nAnd then my heart with pleasure fills,\nAnd dances with the daffodils."
     },
     {
       "title": "The World Is Too Much with Us",
@@ -348,7 +388,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "The world is too much with us; late and soon,\nGetting and spending, we lay waste our powers:\nLittle we see in nature that is ours;\nWe have given our hearts away, a sordid boon!\nThis Sea that bares her bosom to the moon;\nThe Winds that will be howling at all hours\nAnd are up-gathered now like sleeping flowers;\nFor this, for every thing, we are out of tune;\nIt moves us not— Great God! I'd rather be\nA Pagan suckled in a creed outworn;\nSo might I, standing on this pleasant lea,\nHave glimpses that would make me less forlorn\nHave sight of Proteus coming from the sea;\nOr hear old Triton blow his wreathed horn."
     },
     {
       "title": "Composed upon Westminster Bridge",
@@ -356,7 +397,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Earth has not any thing to shew more fair:\nDull would he be of soul who could pass by\nA sight so touching in it's majesty:\nThis City now doth like a garment wear\nThe beauty of the morning; silent, bare,\nShips, towers, domes, theatres, and temples lie\nOpen unto the fields, and to the sky;\nAll bright and glittering in the smokeless air.\nNever did sun more beautifully steep\nIn his first splendor valley, rock, or hill;\nNe'er saw I, never felt, a calm so deep!\nThe river glideth at his own sweet will:\nDear God! the very houses seem asleep;\nAnd all that mighty heart is lying still!"
     },
     {
       "title": "Lines Written in Early Spring",
@@ -364,7 +406,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I heard a thousand blended notes,\nWhile in a grove I sate reclined,\nIn that sweet mood when pleasant thoughts\nBring sad thoughts to the mind.\n\nTo her fair works did Nature link\nThe human soul that through me ran;\nAnd much it grieved my heart to think\nWhat man has made of man.\n\nThrough primrose tufts, in that green bower,\nThe periwinkle trailed its wreaths;\nAnd 'tis my faith that every flower\nEnjoys the air it breathes.\n\nThe birds around me hopped and played,\nTheir thoughts I cannot measure:--\nBut the least motion which they made\nIt seemed a thrill of pleasure.\n\nThe budding twigs spread out their fan,\nTo catch the breezy air;\nAnd I must think, do all I can,\nThat there was pleasure there.\n\nIf this belief from heaven be sent,\nIf such be Nature's holy plan,\nHave I not reason to lament\nWhat man has made of man?"
     },
     {
       "title": "Remember",
@@ -372,7 +415,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Remember me when I am gone away,\nGone far away into the silent land;\nWhen you can no more hold me by the hand,\nNor I half turn to go yet turning stay.\nRemember me when no more, day by day,\nYou tell me of our future that you planned:\nOnly remember me; you understand\nIt will be late to counsel then or pray.\nYet if you should forget me for a while\nAnd afterwards remember, do not grieve:\nFor if the darkness and corruption leave\nA vestige of the thoughts that once I had,\nBetter by far you should forget and smile\nThan that you should remember and be sad."
     },
     {
       "title": "A Birthday",
@@ -380,7 +424,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "My heart is like a singing bird\nWhose nest is in a water'd shoot;\nMy heart is like an apple-tree\nWhose boughs are bent with thickset fruit;\nMy heart is like a rainbow shell\nThat paddles in a halcyon sea;\nMy heart is gladder than all these\nBecause my love is come to me.\n\nRaise me a dais of silk and down;\nHang it with vair and purple dyes;\nCarve it in doves and pomegranates,\nAnd peacocks with a hundred eyes;\nWork it in gold and silver grapes,\nIn leaves and silver fleurs-de-lys;\nBecause the birthday of my life\nIs come, my love is come to me."
     },
     {
       "title": "In the Bleak Midwinter",
@@ -388,7 +433,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "In the bleak mid-winter\n:Frosty wind made moan,\nEarth stood hard as iron,\n:Water like a stone;\nSnow had fallen, snow on snow,\n:Snow on snow,\nIn the bleak mid-winter\n:Long ago.\nOur God, Heaven cannot hold Him\n:Nor earth sustain;\nHeaven and earth shall flee away\n:When He comes to reign:\nIn the bleak mid-winter\n:A stable-place sufficed\nThe Lord God Almighty,\n:Jesus Christ.\nEnough for Him, whom cherubim\n:Worship night and day,\nA breastful of milk\n:And a mangerful of hay;\nEnough for Him, whom angels\n:Fall down before,\nThe ox and ass and camel\n:Which adore.\nAngels and archangels\n:May have gathered there,\nCherubim and seraphim\n:Thronged the air;\nBut only His mother\n:In her maiden bliss,\nWorshipped the Beloved\n:With a kiss.\nWhat can I give Him,\n:Poor as I am?\nIf I were a shepherd\n:I would bring a lamb,\nIf I were a wise man\n:I would do my part,\nYet what I can I give Him,\n:Give my heart."
     },
     {
       "title": "She Walks in Beauty",
@@ -396,7 +442,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "She walks in Beauty, like the night\n  Of cloudless climes and starry skies;\nAnd all that's best of dark and bright\n  Meet in her aspect and her eyes:\nThus mellowed to that tender light\n  Which Heaven to gaudy day denies.\n\nOne shade the more, one ray the less,\n  Had half impaired the nameless grace\nWhich waves in every raven tress,\n  Or softly lightens o'er her face;\nWhere thoughts serenely sweet express,\n How pure, how dear their dwelling-place.\n\nAnd on that cheek, and o'er that brow,\n  So soft, so calm, yet eloquent,\nThe smiles that win, the tints that glow,\n  But tell of days in goodness spent,\nA mind at peace with all below,\n  A heart whose love is innocent!"
     },
     {
       "title": "So We'll Go No More a Roving",
@@ -404,7 +451,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "So we'll go no more a roving\nSo late into the night,\nThough the heart be still as loving,\nAnd the moon be still as bright.\nFor the sword outwears its sheath,\nAnd the soul wears out the breast,\nAnd the heart must pause to breathe,\nAnd Love itself have rest.\nThough the night was made for loving,\nAnd the day returns too soon,\nYet we'll go no more a roving\nBy the light of the moon."
     },
     {
       "title": "The Destruction of Sennacherib",
@@ -412,7 +460,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "The Assyrian came down like the wolf on the fold,\nAnd his cohorts were gleaming in purple and gold;\nAnd the sheen of their spears was like stars on the sea,\nWhen the blue wave rolls nightly on deep Galilee.\n\nLike the leaves of the forest when Summer is green,\nThat host with their banners at sunset were seen:\nLike the leaves of the forest when Autumn hath blown,\nThat host on the morrow lay withered and strown.\n\nFor the Angel of Death spread his wings on the blast,\nAnd breathed in the face of the foe as he passed;\nAnd the eyes of the sleepers waxed deadly and chill,\nAnd their hearts but once heaved--and for ever grew still!\n\nAnd there lay the steed with his nostril all wide,\nBut through it there rolled not the breath of his pride;\nAnd the foam of his gasping lay white on the turf,\nAnd cold as the spray of the rock-beating surf.\n\nAnd there lay the rider distorted and pale,\nWith the dew on his brow, and the rust on his mail:\nAnd the tents were all silent--the banners alone--\nThe lances unlifted--the trumpet unblown.\n\nAnd the widows of Ashur are loud in their wail,\nAnd the idols are broke in the temple of Baal;\nAnd the might of the Gentile, unsmote by the sword,\nHath melted like snow in the glance of the Lord!"
     },
     {
       "title": "When We Two Parted",
@@ -420,7 +469,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "When we two parted\nIn silence and tears,\nHalf broken-hearted\nTo sever for years,\nPale grew thy cheek and cold,\nColder thy kiss;\nTruly that hour foretold\nSorrow to this.\nThe dew of the morning\nSunk chill on my brow--\nIt felt like the warning\nOf what I feel now.\nThy vows are all broken,\nAnd light is thy fame:\nI hear thy name spoken,\nAnd share in its shame.\n3.\nThey name thee before me,\nA knell to mine ear;\nA shudder comes o'er me--\nWhy wert thou so dear?\nThey know not I knew thee,\nWho knew thee too well:--\nLong, long shall I rue thee,\nToo deeply to tell.\nIn secret we met--\nIn silence I grieve.\nThat thy heart could forget,\nThy spirit deceive.\nIf I should meet thee\nAfter long years,\nHow should I greet thee?--\nWith silence and tears.\n[First published, _Poems_, 1816.]"
     },
     {
       "title": "The Charge of the Light Brigade",
@@ -428,7 +478,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 120,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Half a league, half a league,\nHalf a league onward,\nAll in the valley of Death\nRode the six hundred.\n\"Forward, the Light Brigade!\n\"Charge for the guns!\" he said:\nInto the valley of Death\nRode the six hundred.\n\"Forward, the Light Brigade!\"\nWas there a man dismay'd?\nNot tho' the soldier knew\nSome one had blunder' d:\nTheir's not to make reply,\nTheir's not to reason why,\nTheir's but to do and die,\nInto the valley of Death\nRode the six hundred.\nCannon to right of them,\nCannon to left of them,\nCannon in front of them\nVolley'd and thunder'd;\nStorm'd at with shot and shell,\nBoldly they rode and well,\nInto the jaws of Death,\nInto the mouth of Hell\nRode the six hundred.\nFlash'd all their sabres bare,\nFlash'd as they turn'd in air,\nSabring the gunners there,\nCharging an army, while\nAll the world wonder'd:\nPlunged in the battery-smoke\nRight thro' the line they broke;\nCossack and Russian\nReel'd from the sabre-stroke\nShatter'd and sunder'd.\nThen they rode back, but not\nNot the six hundred.\nCannon to right of them,\nCannon to left of them,\nCannon behind them\nVolley'd and thunder'd;\nStorm'd at with shot and shell,\nWhile horse and hero fell,\nThey that had fought so well\nCame thro' the jaws of Death\nBack from the mouth of Hell,\nAll that was left of them,\nLeft of six hundred.\nWhen can their glory fade?\nO the wild charge they made!\nAll the world wonder'd.\nHonour the charge they made!\nHonour the Light Brigade,\nNoble six hundred!"
     },
     {
       "title": "Crossing the Bar",
@@ -436,7 +487,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Sunset and evening star,\nAnd one clear call for me!\nAnd may there be no moaning of the bar,\nWhen I put out to sea,\nBut such a tide as moving seems asleep,\nToo full for sound and foam,\nWhen that which drew from out the boundless deep\nTurns again home.\nTwilight and evening bell,\nAnd after that the dark!\nAnd may there be no sadness of farewell,\nWhen I embark;\nFor tho' from out our bourne of Time and Place\nThe flood may bear me far,\nI hope to see my Pilot face to face\nWhen I have crost the bar."
     },
     {
       "title": "Break, Break, Break",
@@ -444,7 +496,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Break, break, break,\nOn thy cold gray stones, O Sea!\nAnd I would that my tongue could utter\nThe thoughts that arise in me.\nO well for the fisherman’s boy,\nThat he shouts with his sister at play!\nO well for the sailor lad,\nThat he sings in his boat on the bay!\nAnd the stately ships go on\nTo their haven under the hill;\nBut O for the touch of a vanish’d hand,\nAnd the sound of a voice that is still!\nBreak, break, break,\nAt the foot of thy crags, O Sea!\nBut the tender grace of a day that is dead\nWill never come back to me."
     },
     {
       "title": "How Do I Love Thee?",
@@ -452,7 +505,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "How do I love thee?  Let me count the ways.\nI love thee to the depth and breadth and height\nMy soul can reach, when feeling out of sight\nFor the ends of Being and ideal Grace.\nI love thee to the level of everyday’s\nMost quiet need, by sun and candlelight.\nI love thee freely, as men strive for Right;\nI love thee purely, as they turn from Praise.\nI love thee with the passion put to use\nIn my old griefs, and with my childhood’s faith.\nI love thee with a love I seemed to lose\nWith my lost saints,—I love thee with the breath,\nSmiles, tears, of all my life!—and, if God choose,\nI shall but love thee better after death."
     },
     {
       "title": "A Musical Instrument",
@@ -460,7 +514,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 90,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "What was he doing, the great god Pan,\nDown in the reeds by the river?\nSpreading ruin and scattering ban,\nSplashing and paddling with hoofs of a goat,\nAnd breaking the golden lilies afloat\nWith the dragon-fly on the river.\n\nHe tore out a reed, the great god Pan,\nFrom the deep cool bed of the river:\nThe limpid water turbidly ran,\nAnd the broken lilies a-dying lay,\nAnd the dragon-fly had fled away,\nEre he brought it out of the river.\n\nHigh on the shore sat the great god Pan,\nWhile turbidly flowed the river;\nAnd hacked and hewed as a great god can,\nWith his hard bleak steel at the patient reed,\nTill there was not a sign of the leaf indeed\nTo prove it fresh from the river.\n\nHe cut it short, did the great god Pan,\n(How tall it stood in the river!)\nThen drew the pith, like the heart of a man,\nSteadily from the outside ring,\nAnd notched the poor dry empty thing\nIn holes, as he sat by the river.\n\n\"This is the way,\" laughed the great god Pan,\n(Laughed while he sat by the river)\n\"The only way, since gods began\nTo make sweet music, they could succeed.\"\nThen, dropping his mouth to a hole in the reed,\nHe blew in power by the river.\n\nSweet, sweet, sweet, O Pan!\nPiercing sweet by the river!\nBlinding sweet, O great god Pan!\nThe sun on the hill forgot to die,\nAnd the lilies revived, and the dragon-fly\nCame back to dream on the river.\n\nYet half a beast is the great god Pan,\nTo laugh as he sits by the river,\nMaking a poet out of a man:\nThe true gods sigh for the cost and pain—\nFor the reed which grows nevermore again\nAs a reed with the reeds in the river."
     },
     {
       "title": "We Wear the Mask",
@@ -468,7 +523,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  We wear the mask that grins and lies,\n  It hides our cheeks and shades our eyes,--\n  This debt we pay to human guile;\n  With torn and bleeding hearts we smile,\n  And mouth with myriad subtleties.\n  Why should the world be over-wise,\n  In counting all our tears and sighs?\n  Nay, let them only see us, while\n      We wear the mask.\n  We smile, but, O great Christ, our cries\n  To thee from tortured souls arise.\n  We sing, but oh the clay is vile\n  Beneath our feet, and long the mile;\n  But let the world dream otherwise,\n      We wear the mask!"
     },
     {
       "title": "Sympathy",
@@ -476,7 +532,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I know what the caged bird feels, alas!\nWhen the sun is bright on the upland slopes;\nWhen the wind stirs soft through the springing grass,\nAnd the river flows like a stream of glass;\nWhen the first bird sings and the first bud opes,\nAnd the faint perfume from its chalice steals--\nI know what the caged bird feels!\nI know why the caged bird beats his wing\nTill its blood is red on the cruel bars;\nFor he must fly back to his perch and cling\nWhen he fain would be on the bough a-swing;\nAnd a pain still throbs in the old, old scars\nAnd they pulse again with a keener sting--\nI know why he beats his wing!\nI know why the caged bird sings, ah me,\nWhen his wing is bruised and his bosom sore,--\nWhen he beats his bars and he would be free;\nIt is not a carol of joy or glee,\nBut a prayer that he sends from his heart's deep core,\nBut a plea, that upward to Heaven he flings--\nI know why the caged bird sings!"
     },
     {
       "title": "There Will Come Soft Rains",
@@ -484,7 +541,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 50,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "There will come soft rains and the smell of the ground,\nAnd swallows circling with their shimmering sound;\nAnd frogs in the pools singing at night,\nAnd wild plum-trees in tremulous white;\nRobins will wear their feathery fire\nWhistling their whims on a low fence-wire;\nAnd not one will know of the war, not one\nWill care at last when it is done.\nNot one would mind, neither bird nor tree\nIf mankind perished utterly;\nAnd Spring herself, when she woke at dawn,\nWould scarcely know that we were gone."
     },
     {
       "title": "Fog",
@@ -492,7 +550,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 30,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "The fog comes\non little cat feet.\nIt sits looking\nover harbor and city\non silent haunches\nand then moves on."
     },
     {
       "title": "Grass",
@@ -500,7 +559,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "Pile the bodies high at Austerlitz and Waterloo.\nShovel them under and let me work—\nI am the grass; I cover all.\nAnd pile them high at Gettysburg\nAnd pile them high at Ypres and Verdun.\nShovel them under and let me work.\nTwo years, ten years, and passengers ask the conductor:\nWhat place is this?\nWhere are we now?\nI am the grass.\nLet me work."
     },
     {
       "title": "The Lake Isle of Innisfree",
@@ -508,7 +568,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "I will arise and go now, and go to Innisfree,\nAnd a small cabin build there, of clay and wattles made:\nNine bean rows will I have there, a hive for the honey bee,\nAnd live alone in the bee-loud glade.\nAnd I shall have some peace there, for peace comes dropping slow,\nDropping from the veils of the morning to where the cricket sings;\nThere midnight's all a glimmer, and noon a purple glow,\nAnd evening full of the linnet's wings.\nI will arise and go now, for always night and day\nI hear lake water lapping with low sounds by the shore;\nWhile I stand on the roadway, or on the pavements gray,\nI hear it in the deep heart's core."
     },
     {
       "title": "When You Are Old",
@@ -516,7 +577,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 40,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "When you are old and gray and full of sleep,\nAnd nodding by the fire, take down this book,\nAnd slowly read, and dream of the soft look\nYour eyes had once, and of their shadows deep;\nHow many loved your moments of glad grace,\nAnd loved your beauty will love false or true;\nBut one man loved the pilgrim soul in you,\nAnd loved the sorrows of your changing face.\nAnd bending down beside the glowing bars\nMurmur, a little sadly, how love fled\nAnd paced upon the mountains overhead\nAnd hid his face amid a crowd of stars."
     },
     {
       "title": "The Second Coming",
@@ -524,7 +586,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  Turning and turning in the widening gyre\n  The falcon cannot hear the falconer;\n  Things fall apart; the centre cannot hold;\n  Mere anarchy is loosed upon the world,\n  The blood-dimmed tide is loosed, and everywhere\n  The ceremony of innocence is drowned;\n  The best lack all conviction, while the worst\n  Are full of passionate intensity.\n  Surely some revelation is at hand;\n  Surely the Second Coming is at hand.\n  The Second Coming! Hardly are those words out\n  When a vast image out of Spiritus Mundi\n  Troubles my sight: a waste of desert sand;\n  A shape with lion body and the head of a man,\n  A gaze blank and pitiless as the sun,\n  Is moving its slow thighs, while all about it\n  Wind shadows of the indignant desert birds.\n  The darkness drops again but now I know\n  That twenty centuries of stony sleep\n  Were vexed to nightmare by a rocking cradle,\n  And what rough beast, its hour come round at last,\n  Slouches towards Bethlehem to be born?"
     },
     {
       "title": "First Fig",
@@ -532,7 +595,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 25,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  My candle burns at both ends;\n    It will not last the night;\n  But ah, my foes, and oh, my friends--\n    It gives a lovely light!"
     },
     {
       "title": "Recuerdo",
@@ -540,7 +604,8 @@
       "subject": "poem",
       "kind": "poem",
       "estSeconds": 60,
-      "grade": "submittable"
+      "grade": "submittable",
+      "text": "  We were very tired, we were very merry--\n  We had gone back and forth all night on the ferry.\n  It was bare and bright, and smelled like a stable--\n  But we looked into a fire, we leaned across a table,\n  We lay on a hill-top underneath the moon;\n  And the whistles kept blowing, and the dawn came soon.\n  We were very tired, we were very merry--\n  We had gone back and forth all night on the ferry;\n  And you ate an apple, and I ate a pear,\n  From a dozen of each we had bought somewhere;\n  And the sky went wan, and the wind came cold,\n  And the sun rose dripping, a bucketful of gold.\n  We were very tired, we were very merry,\n  We had gone back and forth all night on the ferry.\n  We hailed, \"Good morrow, mother!\" to a shawl-covered head,\n  And bought a morning paper, which neither of us read;\n  And she wept, \"God bless you!\" for the apples and pears,\n  And we gave her all our money but our subway fares."
     },
     {
       "title": "The Gift of the Magi",

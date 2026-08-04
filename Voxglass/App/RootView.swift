@@ -66,8 +66,8 @@ struct RootView: View {
                     .tag(VoxglassTab.search)
                     .toolbar(.hidden, for: .tabBar)
 
-                SettingsView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                    .tag(VoxglassTab.more)
+                NarrationTabView()
+                    .tag(VoxglassTab.narration)
                     .toolbar(.hidden, for: .tabBar)
             }
 
@@ -98,7 +98,7 @@ enum VoxglassTab: Hashable {
     case library
     case browse
     case search
-    case more
+    case narration
 
     static var launchDefault: VoxglassTab {
         #if DEBUG
@@ -122,8 +122,8 @@ enum VoxglassTab: Hashable {
             self = .browse
         case "search":
             self = .search
-        case "more", "settings":
-            self = .more
+        case "narration":
+            self = .narration
         default:
             return nil
         }
