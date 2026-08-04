@@ -66,6 +66,8 @@ final class NarrationFlowModel {
         if let existing {
             draftTitle = existing.title
             draftAuthor = existing.author
+            setSource(existing.sourceURL)
+            pendingNeedID = existing.needID
         }
     }
 
@@ -75,12 +77,20 @@ final class NarrationFlowModel {
     /// later start of the same need resumes this project (no duplicates).
     var pendingNeedID: String?
 
+    /// Keeps the project's source URL and the Metadata "Source URL" field in
+    /// sync so the export records where the text came from (Gutenberg, a need's
+    /// source page, a forum, etc.) instead of an empty field.
+    func setSource(_ url: String?) {
+        sourceURL = url
+        sourceURLText = url ?? ""
+    }
+
     func importNeed(_ need: NarrationNeed) {
         pendingNeedID = need.id
         draftTitle = need.work.title
         draftAuthor = need.work.author
         draftText = need.work.text ?? ""
-        sourceURL = need.work.sourcePageURL?.absoluteString
+        setSource(need.work.sourcePageURL?.absoluteString)
     }
 
     func importPastedText(title: String, author: String, text: String) {
@@ -88,7 +98,7 @@ final class NarrationFlowModel {
         draftTitle = title
         draftAuthor = author
         draftText = text
-        sourceURL = nil
+        setSource(nil)
     }
 
     func fetchGutenberg(identifier: String) async {
@@ -113,7 +123,7 @@ final class NarrationFlowModel {
             }
             let text = String(decoding: result.data, as: UTF8.self)
             draftText = stripProjectGutenberg(text)
-            sourceURL = "https://www.gutenberg.org/ebooks/\(ebookID)"
+            setSource("https://www.gutenberg.org/ebooks/\(ebookID)")
             // Best-effort title/author from the header block.
             if let titleLine = firstHeaderLine(text, matching: "Title:") { draftTitle = titleLine }
             if let authorLine = firstHeaderLine(text, matching: "Author:") { draftAuthor = authorLine }
@@ -127,10 +137,11 @@ final class NarrationFlowModel {
     /// Builds the paragraph list: auto-inserted LibriVox disclaimer intro/outro
     /// plus the segmented body (p02).
     func buildParagraphs() {
-        let body = draftText
-            .split(whereSeparator: { $0 == "\n" || $0 == "\r" })
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        // Group lines into real paragraphs: blank lines are paragraph breaks,
+        // and over-long blocks (text without blank lines — e.g. poems or
+        // pasted prose) are split at sentence boundaries so a take is never
+        // an unwieldy wall of text (field fix: poems were split line by line).
+        let body = Self.narrationParagraphs(from: draftText)
 
         // A work with no text on this device would produce a project whose
         // only paragraphs are the LibriVox header/footer — nothing to read.
@@ -171,6 +182,62 @@ final class NarrationFlowModel {
         store.save(project)
     }
 
+    /// Groups raw text into narration paragraphs. Blank lines are paragraph
+    /// breaks; lines within a paragraph are kept on their own lines (poems
+    /// read line by line). Blocks that still exceed `maxLength` (no blank
+    /// lines anywhere — e.g. poems or pasted prose) are split at sentence
+    /// boundaries so a single take stays a comfortable read.
+    static func narrationParagraphs(from text: String, maxLength: Int = 1000) -> [String] {
+        var blocks: [String] = []
+        var current: [String] = []
+        for rawLine in text.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "\n" || $0 == "\r" }) {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty {
+                if !current.isEmpty {
+                    blocks.append(current.joined(separator: "\n"))
+                    current = []
+                }
+            } else {
+                current.append(line)
+            }
+        }
+        if !current.isEmpty {
+            blocks.append(current.joined(separator: "\n"))
+        }
+
+        var paragraphs: [String] = []
+        for block in blocks {
+            paragraphs.append(contentsOf: Self.splitParagraph(block, maxLength: maxLength))
+        }
+        return paragraphs
+    }
+
+    /// Splits a block longer than `maxLength` at sentence boundaries.
+    private static func splitParagraph(_ block: String, maxLength: Int) -> [String] {
+        guard block.count > maxLength else { return [block] }
+        var parts: [String] = []
+        var rest = block
+        while rest.count > maxLength {
+            let window = String(rest.prefix(maxLength))
+            let cut = Self.sentenceBoundary(in: window) ?? window.count
+            let part = window.prefix(cut).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !part.isEmpty { parts.append(part) }
+            rest = String(rest.dropFirst(cut)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if !rest.isEmpty { parts.append(rest) }
+        return parts
+    }
+
+    /// Index just past the last sentence-ending punctuation (`.`, `!`, `?`),
+    /// or nil when the window has none.
+    private static func sentenceBoundary(in text: String) -> Int? {
+        var last: Int?
+        for (index, char) in text.enumerated() where char == "." || char == "!" || char == "?" {
+            last = index + 1
+        }
+        return last
+    }
+
     /// Finds an already-started project for the same need (by need ID, then
     /// legacy work identity) so re-tapping a need resumes it instead of
     /// creating a duplicate.
@@ -191,7 +258,7 @@ final class NarrationFlowModel {
         draftTitle = project.title
         draftAuthor = project.author
         draftText = project.sourceText
-        sourceURL = project.sourceURL
+        setSource(project.sourceURL)
         pendingNeedID = project.needID
         currentParagraphID = nil
         importError = nil
@@ -448,6 +515,7 @@ struct NarrationFlowRoot: View {
     @AppStorage(AppPreferencesStore.Keys.narrationOnboardingSeen) private var narrationOnboardingSeen = false
     @State private var model: NarrationFlowModel
     @State private var showHelp = false
+    @State private var confirmDelete = false
     let existing: NarrationProject?
     let startNeed: NarrationNeed?
 
@@ -471,15 +539,41 @@ struct NarrationFlowRoot: View {
                     Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showHelp = true
-                    } label: {
-                        Image(systemName: "questionmark.circle")
-                            .scaledFont(size: 17, weight: .semibold)
+                    HStack(spacing: 6) {
+                        if model.project != nil {
+                            Button {
+                                confirmDelete = true
+                            } label: {
+                                Image(systemName: "trash")
+                                    .scaledFont(size: 16, weight: .semibold)
+                            }
+                            .accessibilityIdentifier("narration.delete")
+                        }
+                        Button {
+                            showHelp = true
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .scaledFont(size: 17, weight: .semibold)
+                        }
+                        .accessibilityIdentifier("narration.help")
                     }
-                    .accessibilityIdentifier("narration.help")
                 }
             }
+        }
+        .confirmationDialog(
+            model.project.map { "Delete \"\($0.title)\" and its recordings?" } ?? "Delete this narration?",
+            isPresented: $confirmDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Narration", role: .destructive) {
+                if let project = model.project {
+                    discovery.delete(project)
+                }
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes the project and its recorded takes from this device.")
         }
         .task {
             if let startNeed {
@@ -719,7 +813,7 @@ struct WorkImportView: View {
                 model.draftTitle = doc.title ?? ""
                 model.draftAuthor = doc.author ?? ""
                 model.draftText = doc.plainText
-                model.sourceURL = url.lastPathComponent
+                model.setSource(url.lastPathComponent)
             } catch {
                 model.importError = "Couldn't read that EPUB."
             }

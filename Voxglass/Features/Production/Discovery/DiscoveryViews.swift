@@ -451,6 +451,8 @@ struct NeedRow: View {
 struct MyNarrationsSection: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let findSomething: () -> Void
+    @State private var pendingDeletion: NarrationProject?
+    @State private var resumeProject: NarrationProject?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -486,19 +488,62 @@ struct MyNarrationsSection: View {
             } else {
                 VStack(spacing: 10) {
                     ForEach(projects) { project in
-                        NavigationLink {
-                            NarrationFlowRoot(existing: project)
+                        // Presented as a cover (not a NavigationLink push) so
+                        // the flow owns its navigation bar: the root shows only
+                        // Close, never an extra Back from the tab's stack.
+                        Button {
+                            resumeProject = project
                         } label: {
                             projectRow(project)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                pendingDeletion = project
+                            } label: {
+                                Label("Delete Narration", systemImage: "trash")
+                            }
+                        }
                         .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.title))")
                     }
                 }
             }
         }
-        .accessibilityIdentifier("myNarrations.list")
+        // NOTE: no accessibilityIdentifier on this container — a plain VStack
+        // with one overrides every child's identifier (SwiftUI quirk), which
+        // would make `myNarrations.project.*` / `myNarrations.newFromNeed`
+        // unreachable from UI tests.
+        .fullScreenCover(item: $resumeProject) { project in
+            NarrationFlowRoot(existing: project)
+        }
+        .confirmationDialog(
+            pendingDeletion.map { "Delete \"\($0.title)\" and its recordings?" } ?? "",
+            isPresented: deletionBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Narration", role: .destructive) {
+                if let project = pendingDeletion {
+                    discovery.delete(project)
+                }
+                pendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                pendingDeletion = nil
+            }
+        } message: {
+            Text("This removes the project and its recorded takes from this device.")
+        }
         .onAppear { discovery.reloadNarrations() }
+    }
+
+    private var deletionBinding: Binding<Bool> {
+        Binding {
+            pendingDeletion != nil
+        } set: { isPresented in
+            if !isPresented {
+                pendingDeletion = nil
+            }
+        }
     }
 
     private func projectRow(_ project: NarrationProject) -> some View {

@@ -88,7 +88,10 @@ struct GlassTabBar: View {
                 } label: {
                     VStack(spacing: 3) {
                         Image(systemName: icon).scaledFont(size: 18)
-                        Text(label).scaledFont(size: 9.5, weight: .medium)
+                        Text(label)
+                            .scaledFont(size: 9.5, weight: .medium)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
                     .foregroundStyle(selection == tab ? Palette.brass : Palette.ink3)
                     .frame(minHeight: 48)
@@ -106,7 +109,7 @@ struct GlassTabBar: View {
             }
         }
         .padding(.vertical, 9)
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 4)
         .adaptiveGlass(cornerRadius: 26)
     }
 }
