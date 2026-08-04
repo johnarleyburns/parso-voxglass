@@ -38,7 +38,7 @@ final class NarrationFlowModel {
     var isImporting = false
 
     var currentParagraphID: UUID?
-    var capture = AudioSessionCapture()
+    let capture: any AudioCapturing
     var isRecording = false
     var micPermissionDenied = false
     var level: Float = 0
@@ -59,9 +59,15 @@ final class NarrationFlowModel {
     let store: NarrationProjectStore
     let fetcher: any HTTPFetching
 
-    init(store: NarrationProjectStore = NarrationProjectStore(), fetcher: any HTTPFetching = URLSessionFetcher(), existing: NarrationProject? = nil) {
+    init(
+        store: NarrationProjectStore = NarrationProjectStore(),
+        fetcher: any HTTPFetching = URLSessionFetcher(),
+        existing: NarrationProject? = nil,
+        capture: any AudioCapturing = AudioSessionCapture()
+    ) {
         self.store = store
         self.fetcher = fetcher
+        self.capture = capture
         self.project = existing
         if let existing {
             draftTitle = existing.title
@@ -522,7 +528,17 @@ struct NarrationFlowRoot: View {
     init(existing: NarrationProject? = nil, startNeed: NarrationNeed? = nil) {
         self.existing = existing
         self.startNeed = startNeed
-        _model = State(initialValue: NarrationFlowModel(existing: existing))
+        #if DEBUG
+        // The smoke test drives the whole flow with a scripted capture
+        // (spec §12.3) so recording is deterministic with no mic or audio
+        // hardware — simulator audio input is unreliable since iOS 17.
+        let capture: any AudioCapturing = ProcessInfo.processInfo.arguments.contains("-uiTestFakeCapture")
+            ? UITestAudioCapture()
+            : AudioSessionCapture()
+        #else
+        let capture: any AudioCapturing = AudioSessionCapture()
+        #endif
+        _model = State(initialValue: NarrationFlowModel(existing: existing, capture: capture))
     }
 
     var body: some View {

@@ -24,6 +24,10 @@ final class VoxglassUITests: XCTestCase {
             // Starts the narration flow from a clean store so the record step
             // is deterministic (resume could land on Review/Assemble instead).
             "-uiTestResetNarrations",
+            // Scripted capture: the record step must never depend on the
+            // simulator's audio input (unreliable since iOS 17) — the fake
+            // writes silent takes so the flow runs end-to-end with no mic.
+            "-uiTestFakeCapture",
             // Seeds one previewable production (WP-G) and keeps the G-8 guard
             // honest that no UI test runs without a declared test environment.
             "-uiTestSeed", "onePreviewProject"
