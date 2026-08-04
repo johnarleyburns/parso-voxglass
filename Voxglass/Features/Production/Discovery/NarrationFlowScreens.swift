@@ -131,19 +131,21 @@ struct RecordView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let paragraph = model.paragraph(at: currentParagraphID) {
-                teleprompter(paragraph)
-                errorCard
-                recordingBar
-                transport
-                takesRow(paragraph)
-                actions(paragraph)
-            } else {
-                Text("Paragraph not found").foregroundStyle(Palette.ink2)
+        ScrollView {
+            VStack(spacing: 0) {
+                if let paragraph = model.paragraph(at: currentParagraphID) {
+                    teleprompter(paragraph)
+                    errorCard
+                    recordingBar
+                    transport
+                    takesRow(paragraph)
+                    actions(paragraph)
+                } else {
+                    Text("Paragraph not found").foregroundStyle(Palette.ink2)
+                }
             }
+            .padding(18)
         }
-        .padding(18)
         .background(VoxglassBackground())
         .onDisappear {
             if model.isRecording {
@@ -172,14 +174,7 @@ struct RecordView: View {
                 .foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
-            if let next = model.nextParagraph(after: paragraph.id) {
-                Text(next.text)
-                    .scaledFont(size: 15)
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 6)
-            }
+                .frame(maxWidth: .infinity)
         }
         .padding(20)
         .frame(maxWidth: .infinity)

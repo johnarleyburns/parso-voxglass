@@ -60,10 +60,20 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         // handler resumes on an arbitrary dispatch queue — and AVAudioSession
         // calls made off the main thread can fail with OSStatus -50 (paramErr).
         // Hop to the main actor for all session configuration.
-        let granted = await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                continuation.resume(returning: granted)
+        let granted: Bool
+        switch AVAudioApplication.shared.recordPermission {
+        case .granted:
+            granted = true
+        case .denied:
+            granted = false
+        case .undetermined:
+            granted = await withCheckedContinuation { continuation in
+                AVAudioApplication.requestRecordPermission { granted in
+                    continuation.resume(returning: granted)
+                }
             }
+        @unknown default:
+            granted = false
         }
         guard granted else {
             state = .failed("Microphone access denied")

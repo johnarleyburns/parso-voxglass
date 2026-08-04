@@ -77,7 +77,7 @@ struct GlassTabBar: View {
         (.library, "books.vertical.fill", "My Books"),
         (.browse, "square.grid.2x2.fill", "Explore"),
         (.search, "magnifyingglass", "Search"),
-        (.more, "ellipsis.circle.fill", "More")
+        (.narration, "mic.fill", "Narration")
     ]
 
     var body: some View {

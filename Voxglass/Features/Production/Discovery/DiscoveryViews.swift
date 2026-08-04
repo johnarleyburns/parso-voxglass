@@ -76,8 +76,17 @@ extension TimeInterval {
 
 // MARK: - n01 Home shelf
 
-/// "Start a Narration" shelf appended below Recommended on the listening home
-/// (n01): This Week's Poem + short rail + long rail.
+/// Short works are offerable on iPhone only when their text is available
+/// on-device; a textless need would open an empty recording flow (field fix:
+/// "narration asks to record NO CONTENT").
+extension NarrationNeed {
+    var recordableOniOS: Bool {
+        narratableOn.contains(.iOS) && work.text?.isEmpty == false
+    }
+}
+
+/// "Start a Narration" shelf on the Narration tab (n01): This Week's Poem +
+/// short rail + long rail.
 struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let presentBrowse: () -> Void
@@ -97,12 +106,12 @@ struct NarrationHomeShelf: View {
                 .foregroundStyle(Palette.ink2)
                 .italic()
 
-            if let featured = discovery.featured {
+            if let featured = featuredNeed {
                 featuredCard(featured)
                     .padding(.top, 12)
             }
 
-            if !discovery.needs.filter { $0.work.lengthClass == .short }.isEmpty {
+            if !shortNeeds.isEmpty {
                 shortRail
             }
             if !discovery.needs.filter { $0.work.lengthClass == .long }.isEmpty {
@@ -110,6 +119,19 @@ struct NarrationHomeShelf: View {
             }
         }
         .task { await discovery.refreshOnce() }
+    }
+
+    /// The pinned weekly slot when it is recordable, else the first short
+    /// need with on-device text — never a card that opens an empty flow.
+    private var featuredNeed: NarrationNeed? {
+        if let featured = discovery.featured, featured.recordableOniOS {
+            return featured
+        }
+        return discovery.needs.first { $0.recordableOniOS }
+    }
+
+    private var shortNeeds: [NarrationNeed] {
+        discovery.needs.filter { $0.recordableOniOS }.prefix(12).map { $0 }
     }
 
     @ViewBuilder
@@ -157,7 +179,7 @@ struct NarrationHomeShelf: View {
             SectionTitle(title: "Short Works to Narrate", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(discovery.needs.filter { $0.work.lengthClass == .short }.prefix(12)) { need in
+                    ForEach(shortNeeds) { need in
                         ShortNeedCard(need: need, start: { startProject(need) })
                     }
                 }
@@ -314,7 +336,9 @@ struct NarrationNeedsView: View {
                 }
                 .accessibilityIdentifier("needs.filter")
 
-                let rows = discovery.needs.filter(filter.matches)
+                let rows = discovery.needs
+                    .filter(filter.matches)
+                    .filter { $0.narratableOn.contains(.iOS) ? $0.recordableOniOS : true }
                 if rows.isEmpty {
                     EmptyStatePanel(
                         title: "Nothing Here Yet",
@@ -422,55 +446,56 @@ struct NeedRow: View {
 
 // MARK: - n03 My Narrations
 
-struct MyNarrationsView: View {
+/// My Narrations content — embedded in the Narration tab (n03). Rows resume
+/// the flow at the first unrecorded paragraph.
+struct MyNarrationsSection: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let findSomething: () -> Void
 
     var body: some View {
-        VoxglassScreen(title: "My Narrations") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Short works you're recording. Whole books → Voxglass Studio on your Mac.")
-                    .scaledFont(size: 12.5)
-                    .foregroundStyle(Palette.ink2)
+        VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(title: "My Narrations", actionTitle: nil)
 
-                Button(action: findSomething) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus")
-                        Text("Find something to narrate")
-                    }
-                    .scaledFont(size: 14, weight: .heavy)
-                    .foregroundStyle(Palette.brass)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(Palette.brass.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [5])))
+            Text("Short works you're recording. Whole books → Voxglass Studio on your Mac.")
+                .scaledFont(size: 12.5)
+                .foregroundStyle(Palette.ink2)
+
+            Button(action: findSomething) {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                    Text("Find something to narrate")
                 }
-                .buttonStyle(.plain)
-                .tactileTap()
-                .accessibilityIdentifier("myNarrations.newFromNeed")
+                .scaledFont(size: 14, weight: .heavy)
+                .foregroundStyle(Palette.brass)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(Palette.brass.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [5])))
+            }
+            .buttonStyle(.plain)
+            .tactileTap()
+            .accessibilityIdentifier("myNarrations.newFromNeed")
 
-                let projects = discovery.myNarrations
-                if projects.isEmpty {
-                    EmptyStatePanel(
-                        title: "No Narrations Yet",
-                        message: "Find a poem or short work and record it right here.",
-                        systemImage: "mic"
-                    )
-                } else {
-                    VStack(spacing: 10) {
-                        ForEach(projects) { project in
-                            NavigationLink {
-                                NarrationFlowRoot(existing: project)
-                            } label: {
-                                projectRow(project)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.title))")
+            let projects = discovery.myNarrations
+            if projects.isEmpty {
+                EmptyStatePanel(
+                    title: "No Narrations Yet",
+                    message: "Find a poem or short work and record it right here.",
+                    systemImage: "mic"
+                )
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(projects) { project in
+                        NavigationLink {
+                            NarrationFlowRoot(existing: project)
+                        } label: {
+                            projectRow(project)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.title))")
                     }
                 }
             }
-            .padding(.top, 12)
         }
         .accessibilityIdentifier("myNarrations.list")
         .onAppear { discovery.reloadNarrations() }

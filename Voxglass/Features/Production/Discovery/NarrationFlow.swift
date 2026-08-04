@@ -132,6 +132,15 @@ final class NarrationFlowModel {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
+        // A work with no text on this device would produce a project whose
+        // only paragraphs are the LibriVox header/footer — nothing to read.
+        // Refuse to create it instead of sending the user into an empty
+        // recording flow (field fix: "narration asks to record NO CONTENT").
+        guard !body.isEmpty else {
+            importError = "This work doesn't have its text on this device yet. Try another short work."
+            return
+        }
+
         var paragraphs: [NarrationParagraph] = []
         paragraphs.append(NarrationParagraph(
             text: "This is a LibriVox recording. All LibriVox recordings are in the public domain. For more information, or to volunteer, please visit librivox dot org.",
@@ -477,8 +486,12 @@ struct NarrationFlowRoot: View {
                 model.importNeed(startNeed)
                 if let existing = model.existingProject(for: startNeed) {
                     model.resume(existing)
-                } else {
+                } else if startNeed.work.text?.isEmpty == false {
                     model.buildParagraphs()
+                } else {
+                    // Textless need: stay on Import so the error is visible
+                    // instead of opening an empty recording flow.
+                    model.importError = "This work doesn't have its text on this device yet. Try another short work."
                 }
             }
             if !narrationOnboardingSeen {
