@@ -18,6 +18,7 @@ final class VoxglassUITests: XCTestCase {
         app.launchArguments += [
             "-voxglass.hasCompletedSplash", "YES",
             "-voxglass.hasCompletedOnboarding", "YES",
+            "-voxglass.narration.onboardingSeen.v1", "YES",
             "-VoxglassInitialTab", "home",
             "-VoxglassDisableAnimatedSplash",
             // Seeds one previewable production (WP-G) and keeps the G-8 guard
@@ -70,6 +71,79 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(
             app.buttons["detail.reviewFlagged"].exists,
             "detail.reviewFlagged not reachable.\n\(app.debugDescription)"
+        )
+
+        // Narration recording (regression gate): the record button must
+        // actually start a take. Catches OSStatus -50 / setCategory capture
+        // failures that previously made recording impossible on device.
+        app.buttons["Listen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Recommended for You"].waitForExistence(timeout: 10),
+            "Listen tab did not render after returning\n\(app.debugDescription)"
+        )
+
+        let startNarrationShelf = app.descendants(matching: .any)["home.startNarrationShelf"]
+        for _ in 0..<8 where !startNarrationShelf.exists {
+            app.swipeUp()
+            _ = startNarrationShelf.waitForExistence(timeout: 2)
+        }
+        XCTAssertTrue(
+            startNarrationShelf.exists,
+            "Start a Narration shelf not found on Listen tab.\n\(app.debugDescription)"
+        )
+
+        let featuredNeed = app.buttons["needs.featured"]
+        for _ in 0..<8 where !featuredNeed.isHittable {
+            app.swipeUp()
+            _ = featuredNeed.waitForExistence(timeout: 3)
+        }
+        XCTAssertTrue(
+            featuredNeed.waitForExistence(timeout: 30),
+            "Featured narration need not found after ladder load.\n\(app.debugDescription)"
+        )
+        for _ in 0..<4 where featuredNeed.exists && !featuredNeed.isHittable {
+            app.swipeUp()
+            _ = featuredNeed.waitForExistence(timeout: 2)
+        }
+        featuredNeed.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["record.teleprompter"].waitForExistence(timeout: 10),
+            "Record screen did not open.\n\(app.debugDescription)"
+        )
+
+        let recordButton = app.buttons["record.transport.record"]
+        XCTAssertTrue(
+            recordButton.waitForExistence(timeout: 10),
+            "Record transport not found.\n\(app.debugDescription)"
+        )
+        recordButton.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["● REC"].waitForExistence(timeout: 10),
+            "Recording did not start — capture failed.\n\(app.debugDescription)"
+        )
+        XCTAssertFalse(
+            app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'failed'")).firstMatch.exists,
+            "Recording error card shown.\n\(app.debugDescription)"
+        )
+
+        recordButton.tap() // stop
+
+        XCTAssertTrue(
+            app.staticTexts["record.take.1"].waitForExistence(timeout: 10),
+            "Take was not saved after stopping.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(
+            app.buttons["record.acceptAndNext"].isEnabled,
+            "Accept & Next should be enabled once a take exists.\n\(app.debugDescription)"
+        )
+
+        // Back out of the narration flow to continue the smoke path.
+        app.buttons["Close"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Recommended for You"].waitForExistence(timeout: 10),
+            "Narration flow did not close.\n\(app.debugDescription)"
         )
 
         // Search renders its field (kept last: it puts focus in a text field).

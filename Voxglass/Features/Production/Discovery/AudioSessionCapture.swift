@@ -72,10 +72,20 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
         try await MainActor.run {
             let session = AVAudioSession.sharedInstance()
+            // The player can leave the session ACTIVE with .playback; on
+            // recent iOS an active session can reject a category change with
+            // OSStatus -50 (paramErr). Release it before reconfiguring.
+            try? session.setActive(false, options: [.notifyOthersOnDeactivation])
             do {
-                try session.setCategory(.record, mode: .spokenAudio, options: [.allowBluetoothHFP, .duckOthers])
+                try session.setCategory(.record, mode: .spokenAudio, options: [.duckOthers])
             } catch {
-                throw CaptureSetupError.step("setCategory", underlying: error)
+                // Some iOS versions reject the full configuration; fall back
+                // to the bare record category so narration always records.
+                do {
+                    try session.setCategory(.record)
+                } catch {
+                    throw CaptureSetupError.step("setCategory", underlying: error)
+                }
             }
             do {
                 try session.setPreferredSampleRate(format.sampleRate)

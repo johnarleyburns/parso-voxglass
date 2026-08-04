@@ -48,6 +48,14 @@ if ! xcrun simctl list devices available | grep -q "$DEVICE_NAME ("; then
   exit 1
 fi
 
+# The narration smoke step starts a real recording; pre-grant microphone
+# access so the permission prompt never blocks it (deterministic runs).
+echo "=== granting microphone permission on \"$DEVICE_NAME\" ==="
+xcrun simctl boot "$DEVICE_NAME" 2>/dev/null || true
+if ! xcrun simctl privacy "$DEVICE_NAME" grant microphone guru.parso.voxglass; then
+  echo "WARNING: could not grant microphone permission — the narration record step may fail."
+fi
+
 xcodebuild test \
   -scheme Voxglass \
   -project Voxglass.xcodeproj \

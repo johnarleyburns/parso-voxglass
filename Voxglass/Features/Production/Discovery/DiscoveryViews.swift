@@ -85,6 +85,9 @@ struct NarrationHomeShelf: View {
     let presentHandoff: (NarrationNeed) -> Void
 
     var body: some View {
+        // NOTE: no accessibilityIdentifier on this container — a plain VStack
+        // with one overrides every child's identifier (SwiftUI quirk), which
+        // would make `needs.featured` / rail CTAs unreachable from UI tests.
         VStack(alignment: .leading, spacing: 0) {
             SectionTitle(title: "Start a Narration", actionTitle: "See All", action: presentBrowse)
                 .accessibilityIdentifier("home.startNarrationShelf")
@@ -106,7 +109,6 @@ struct NarrationHomeShelf: View {
                 longRail
             }
         }
-        .accessibilityIdentifier("home.startNarrationShelf")
         .task { await discovery.refreshOnce() }
     }
 
