@@ -21,6 +21,9 @@ final class VoxglassUITests: XCTestCase {
             "-voxglass.narration.onboardingSeen.v1", "YES",
             "-VoxglassInitialTab", "home",
             "-VoxglassDisableAnimatedSplash",
+            // Starts the narration flow from a clean store so the record step
+            // is deterministic (resume could land on Review/Assemble instead).
+            "-uiTestResetNarrations",
             // Seeds one previewable production (WP-G) and keeps the G-8 guard
             // honest that no UI test runs without a declared test environment.
             "-uiTestSeed", "onePreviewProject"

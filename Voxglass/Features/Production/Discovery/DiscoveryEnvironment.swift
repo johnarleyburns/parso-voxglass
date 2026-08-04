@@ -31,6 +31,14 @@ public final class DiscoveryEnvironment {
         self.aggregator = LadderNeedsAggregator(sources: sources, cache: cache, fetcher: fetcher, clock: clock)
         self.store = store
         self.clock = clock
+        #if DEBUG
+        // `-uiTestResetNarrations` (phone smoke test) guarantees a fresh My
+        // Narrations store so the record flow always starts at paragraph one,
+        // regardless of what earlier test runs left behind.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestResetNarrations") {
+            store.deleteAll()
+        }
+        #endif
         self.myNarrations = store.loadAll()
     }
 

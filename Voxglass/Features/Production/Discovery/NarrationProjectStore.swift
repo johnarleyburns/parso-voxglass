@@ -4,7 +4,9 @@ import VoxglassCore
 // MARK: - Phone narration project (short works, iPhone)
 
 /// A single short-work narration project on the phone (NARRATION_NEEDS_SPEC
-/// §11.4). Resumable at any step; paragraph-addressable.
+/// §11.4). Resumable at any step; paragraph-addressable. `needID` ties a
+/// project to the Narration Need it came from so starting the same need again
+/// resumes this project instead of creating a duplicate.
 public struct NarrationProject: Codable, Identifiable, Equatable {
     public var id: UUID
     public var title: String
@@ -16,6 +18,7 @@ public struct NarrationProject: Codable, Identifiable, Equatable {
     public var updatedAt: Date
     public var metadata: NarrationMetadata?
     public var rightsAttested: Bool
+    public var needID: String?
 
     public init(
         id: UUID = UUID(),
@@ -27,7 +30,8 @@ public struct NarrationProject: Codable, Identifiable, Equatable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         metadata: NarrationMetadata? = nil,
-        rightsAttested: Bool = false
+        rightsAttested: Bool = false,
+        needID: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -39,6 +43,7 @@ public struct NarrationProject: Codable, Identifiable, Equatable {
         self.updatedAt = updatedAt
         self.metadata = metadata
         self.rightsAttested = rightsAttested
+        self.needID = needID
     }
 
     public var recordedCount: Int { paragraphs.count { $0.state != .notRecorded } }
@@ -49,6 +54,23 @@ public struct NarrationProject: Codable, Identifiable, Equatable {
 
     public func duration(of paragraphs: [NarrationParagraph]) -> TimeInterval {
         paragraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
+    }
+
+    /// Identity used to collapse duplicates: the originating need ID when
+    /// known, otherwise the work's title + author + source URL. Projects
+    /// created before need IDs existed (all current user data) fall back to
+    /// the work key, which is what those duplicates share.
+    public var dedupeKey: String {
+        if let needID { return "need:\(needID)" }
+        return "work:\(Self.normalize(title))|\(Self.normalize(author))|\(Self.normalize(sourceURL ?? ""))"
+    }
+
+    private static func normalize(_ value: String) -> String {
+        value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
     }
 }
 
@@ -158,12 +180,56 @@ public final class NarrationProjectStore: @unchecked Sendable {
     public func loadAll() -> [NarrationProject] {
         lock.withLock {
             guard let files = try? FileManager.default.contentsOfDirectory(at: rootURL, includingPropertiesForKeys: nil) else { return [] }
-            return files
+            let projects = files
                 .filter { $0.pathExtension == "json" }
                 .compactMap { try? Data(contentsOf: $0) }
                 .compactMap { try? NeedsJSONCoding.decoder.decode(NarrationProject.self, from: $0) }
                 .sorted { $0.updatedAt > $1.updatedAt }
+            // Migration for existing installs: duplicate narrations of the same
+            // work (created before resume-by-need existed) collapse here, keeping
+            // the most complete project. Idempotent; runs on every load.
+            return Self.deduplicate(projects) { id in
+                try? FileManager.default.removeItem(at: projectURL(id))
+                try? FileManager.default.removeItem(at: takesDirectory(for: id))
+            }
         }
+    }
+
+    /// Collapses projects sharing a `dedupeKey` into the most complete one
+    /// (most approved, then most recorded, then most takes, then newest) and
+    /// deletes the losers. Returns the survivors in input order.
+    private static func deduplicate(_ projects: [NarrationProject], delete: (UUID) -> Void) -> [NarrationProject] {
+        var byKey: [String: NarrationProject] = [:]
+        var survivors: [NarrationProject] = []
+        for project in projects {
+            let key = project.dedupeKey
+            if let existing = byKey[key] {
+                let keep = moreComplete(existing, project)
+                delete(keep.id == existing.id ? project.id : existing.id)
+                byKey[key] = keep
+            } else {
+                byKey[key] = project
+                survivors.append(project)
+            }
+        }
+        return survivors.compactMap { byKey[$0.dedupeKey] }
+    }
+
+    private static func moreComplete(_ a: NarrationProject, _ b: NarrationProject) -> NarrationProject {
+        func score(_ p: NarrationProject) -> (approved: Int, recorded: Int, takes: Int, updatedAt: Date) {
+            (
+                p.paragraphs.count { $0.state == .approved },
+                p.paragraphs.count { $0.state == .recorded },
+                p.paragraphs.count { $0.selectedTake != nil },
+                p.updatedAt
+            )
+        }
+        let (aa, ar, at, ad) = score(a)
+        let (ba, br, bt, bd) = score(b)
+        if aa != ba { return aa > ba ? a : b }
+        if ar != br { return ar > br ? a : b }
+        if at != bt { return at > bt ? a : b }
+        return ad >= bd ? a : b
     }
 
     public func load(id: UUID) throws -> NarrationProject {
@@ -182,6 +248,14 @@ public final class NarrationProjectStore: @unchecked Sendable {
     public func delete(_ id: UUID) {
         try? FileManager.default.removeItem(at: projectURL(id))
         try? FileManager.default.removeItem(at: takesDirectory(for: id))
+    }
+
+    /// Removes every project and take (UI-test reset hook; also usable as a
+    /// user-facing "clear my narrations" if ever needed).
+    public func deleteAll() {
+        lock.withLock {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
     }
 
     public func writeTake(data: Data, projectID: UUID, take: inout NarrationTake) -> Bool {

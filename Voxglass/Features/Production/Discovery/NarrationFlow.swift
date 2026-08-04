@@ -71,7 +71,12 @@ final class NarrationFlowModel {
 
     // MARK: - Import
 
+    /// The Need ID of the work being imported; stamped onto the project so a
+    /// later start of the same need resumes this project (no duplicates).
+    var pendingNeedID: String?
+
     func importNeed(_ need: NarrationNeed) {
+        pendingNeedID = need.id
         draftTitle = need.work.title
         draftAuthor = need.work.author
         draftText = need.work.text ?? ""
@@ -79,6 +84,7 @@ final class NarrationFlowModel {
     }
 
     func importPastedText(title: String, author: String, text: String) {
+        pendingNeedID = nil
         draftTitle = title
         draftAuthor = author
         draftText = text
@@ -149,10 +155,38 @@ final class NarrationFlowModel {
             author: draftAuthor,
             sourceText: draftText,
             sourceURL: sourceURL,
-            paragraphs: paragraphs
+            paragraphs: paragraphs,
+            needID: pendingNeedID
         )
         self.project = project
         store.save(project)
+    }
+
+    /// Finds an already-started project for the same need (by need ID, then
+    /// legacy work identity) so re-tapping a need resumes it instead of
+    /// creating a duplicate.
+    func existingProject(for need: NarrationNeed) -> NarrationProject? {
+        store.loadAll().first { project in
+            if let needID = project.needID {
+                return needID == need.id
+            }
+            guard project.title == need.work.title,
+                  project.author == need.work.author else { return false }
+            return project.sourceURL == need.work.sourcePageURL?.absoluteString
+        }
+    }
+
+    /// Loads an existing project into the flow (resume path).
+    func resume(_ project: NarrationProject) {
+        self.project = project
+        draftTitle = project.title
+        draftAuthor = project.author
+        draftText = project.sourceText
+        sourceURL = project.sourceURL
+        pendingNeedID = project.needID
+        currentParagraphID = nil
+        importError = nil
+        micPermissionDenied = false
     }
 
     func paragraph(at id: UUID) -> NarrationParagraph? {
@@ -441,7 +475,11 @@ struct NarrationFlowRoot: View {
         .task {
             if let startNeed {
                 model.importNeed(startNeed)
-                model.buildParagraphs()
+                if let existing = model.existingProject(for: startNeed) {
+                    model.resume(existing)
+                } else {
+                    model.buildParagraphs()
+                }
             }
             if !narrationOnboardingSeen {
                 narrationOnboardingSeen = true
