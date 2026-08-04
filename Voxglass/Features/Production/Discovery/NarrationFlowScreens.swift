@@ -1,6 +1,26 @@
 import SwiftUI
 import VoxglassCore
 
+/// Pushed narration-flow screens: replaces the root's "Close"/help toolbar
+/// with an empty one so only the system Back button shows (field fix: the
+/// flow must show Close or Back, never both).
+private extension View {
+    func narrationFlowBackOnlyToolbar() -> some View {
+        toolbar {
+            ToolbarItem(placement: .topBarLeading) { EmptyView() }
+        }
+    }
+
+    @ViewBuilder
+    func narrationFlowBackOnlyToolbar(if condition: Bool) -> some View {
+        if condition {
+            narrationFlowBackOnlyToolbar()
+        } else {
+            self
+        }
+    }
+}
+
 // MARK: - p02 Source review
 
 struct SourceReviewView: View {
@@ -153,8 +173,9 @@ struct RecordView: View {
             }
         }
         .navigationDestination(isPresented: $navigateToReview) {
-            ReviewView(model: model)
+            ReviewView(model: model, isPushed: true)
         }
+        .narrationFlowBackOnlyToolbar(if: fromReview)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -388,6 +409,9 @@ struct RecordView: View {
 
 struct ReviewView: View {
     @Bindable var model: NarrationFlowModel
+    /// True when pushed from the record flow's review destination; false when
+    /// shown as the flow root. Drives the Close-vs-Back toolbar choice.
+    var isPushed = false
     @State private var filter: ReviewFilter = .all
     @State private var reRecordID: UUID?
 
@@ -434,11 +458,12 @@ struct ReviewView: View {
         }
         .background(VoxglassBackground())
         .navigationDestination(isPresented: $goAssemble) {
-            AssembleView(model: model)
+            AssembleView(model: model, isPushed: true)
         }
         .navigationDestination(item: $reRecordID) { id in
             RecordView(model: model, paragraphID: id, fromReview: true)
         }
+        .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -540,6 +565,7 @@ struct ReviewView: View {
 
 struct AssembleView: View {
     @Bindable var model: NarrationFlowModel
+    var isPushed = false
 
     var body: some View {
         ScrollView {
@@ -588,8 +614,9 @@ struct AssembleView: View {
         }
         .background(VoxglassBackground())
         .navigationDestination(isPresented: $goMetadata) {
-            MetadataView(model: model)
+            MetadataView(model: model, isPushed: true)
         }
+        .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -614,6 +641,7 @@ struct AssembleView: View {
 
 struct MetadataView: View {
     @Bindable var model: NarrationFlowModel
+    var isPushed = false
 
     var body: some View {
         ScrollView {
@@ -684,9 +712,10 @@ struct MetadataView: View {
             .padding(18)
         }
         .background(VoxglassBackground())
+        .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $goExport) {
-            ValidateExportView(model: model)
+            ValidateExportView(model: model, isPushed: true)
         }
     }
 
@@ -740,6 +769,7 @@ struct MetadataView: View {
 
 struct ValidateExportView: View {
     @Bindable var model: NarrationFlowModel
+    var isPushed = false
     @State private var librivoxEnabled = true
     @State private var archiveEnabled = true
 
@@ -795,8 +825,9 @@ struct ValidateExportView: View {
         }
         .background(VoxglassBackground())
         .navigationDestination(isPresented: $goSubmit) {
-            SubmitView(model: model)
+            SubmitView(model: model, isPushed: true)
         }
+        .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -812,8 +843,12 @@ struct ValidateExportView: View {
 
     private var hasDisclaimer: Bool {
         guard let project = model.project else { return false }
-        return project.paragraphs.contains { $0.role == .disclaimer && $0.state == .approved }
-            && project.paragraphs.contains { $0.role == .outro && $0.state == .approved }
+        // A recorded-but-not-yet-accepted paragraph still has its take, so it
+        // satisfies the LibriVox disclaimer requirement (matches
+        // readyToAssemble, which only requires every paragraph recorded).
+        let recorded: Set<NarrationParagraphState> = [.recorded, .approved]
+        return project.paragraphs.contains { $0.role == .disclaimer && recorded.contains($0.state) }
+            && project.paragraphs.contains { $0.role == .outro && recorded.contains($0.state) }
     }
 
     private var clippingDetected: Bool {
@@ -877,6 +912,7 @@ struct ValidateExportView: View {
 
 struct SubmitView: View {
     @Bindable var model: NarrationFlowModel
+    var isPushed = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -972,6 +1008,7 @@ struct SubmitView: View {
             .padding(18)
         }
         .background(VoxglassBackground())
+        .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }
 
