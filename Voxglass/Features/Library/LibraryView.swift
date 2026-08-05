@@ -7,6 +7,7 @@ struct LibraryView: View {
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
     @State private var pendingDeletion: BookWithChapters?
+    @State private var pendingWatchTransfer: BookWithChapters?
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
@@ -42,6 +43,32 @@ struct LibraryView: View {
             }
         } message: {
             Text("This deletes the book and its cached audio from this device.")
+        }
+        .confirmationDialog(
+            "Send to Apple Watch on cellular data?",
+            isPresented: watchCellularBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Send now on cellular") {
+                if let book = pendingWatchTransfer {
+                    Task { await transferToWatch(book, allowCellular: true) }
+                }
+            }
+            Button("Wait for Wi-Fi", role: .cancel) {
+                pendingWatchTransfer = nil
+            }
+        } message: {
+            Text("Sending a book to the watch can use significant cellular data.")
+        }
+        .alert(
+            "Couldn't Send to Apple Watch",
+            isPresented: watchTransferErrorBinding
+        ) {
+            Button("OK", role: .cancel) {
+                phoneAudioRelay.watchTransferError = nil
+            }
+        } message: {
+            Text(phoneAudioRelay.watchTransferError ?? "")
         }
         .task {
             libraryStore.sort = .recent
@@ -117,6 +144,14 @@ struct LibraryView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
+                            if phoneAudioRelay.isWatchAppInstalled {
+                                Button {
+                                    Task { await transferToWatch(book, allowCellular: false) }
+                                } label: {
+                                    Label(watchContextTitle(for: book), systemImage: "applewatch")
+                                }
+                                .disabled(phoneAudioRelay.isTransferringToWatch)
+                            }
                             Button("Remove from My Books", role: .destructive) {
                                 pendingDeletion = book
                             }
@@ -229,6 +264,57 @@ struct LibraryView: View {
                 return book.book.authors.contains { $0.localizedCaseInsensitiveContains(query) }
             case .narrator:
                 return book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
+            }
+        }
+    }
+
+    private func watchContextTitle(for book: BookWithChapters) -> String {
+        guard let storage = phoneAudioRelay.watchStorageInfo(for: book.book.id) else {
+            return "Download to Apple Watch"
+        }
+        switch storage.state {
+        case .available:
+            return "Downloaded on Apple Watch"
+        case .transferring, .queued, .waitingForPhone:
+            return "Downloading to Apple Watch…"
+        case .failed:
+            return "Retry Download to Apple Watch"
+        case .notAvailable:
+            return "Download to Apple Watch"
+        }
+    }
+
+    private func transferToWatch(_ book: BookWithChapters, allowCellular: Bool) async {
+        let start = await phoneAudioRelay.transferBookToWatch(
+            book,
+            allowCellularOverride: allowCellular
+        )
+        switch start {
+        case .needsCellularConfirmation:
+            pendingWatchTransfer = book
+        case .failed(let message):
+            phoneAudioRelay.watchTransferError = message
+        case .started:
+            pendingWatchTransfer = nil
+        }
+    }
+
+    private var watchCellularBinding: Binding<Bool> {
+        Binding {
+            pendingWatchTransfer != nil
+        } set: { isPresented in
+            if !isPresented {
+                pendingWatchTransfer = nil
+            }
+        }
+    }
+
+    private var watchTransferErrorBinding: Binding<Bool> {
+        Binding {
+            phoneAudioRelay.watchTransferError != nil
+        } set: { isPresented in
+            if !isPresented {
+                phoneAudioRelay.watchTransferError = nil
             }
         }
     }

@@ -5,6 +5,7 @@ struct BookPageView: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
     @Environment(\.dismiss) private var dismiss
     var book: BookWithChapters?
@@ -14,6 +15,7 @@ struct BookPageView: View {
     @State private var showingBookmarks = false
     @State private var showingOverflow = false
     @State private var showCellularPrompt = false
+    @State private var showWatchCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
     @State private var showingPlaylistPicker = false
@@ -67,6 +69,9 @@ struct BookPageView: View {
                                 scrubber(resolved)
                                 transportControls(resolved)
                                 actionRow(resolved)
+                                if phoneAudioRelay.isWatchAppInstalled {
+                                    watchRow(resolved)
+                                }
                                 aboutSection(resolved)
                                 chapterList(resolved)
                                 discoveryLinks(resolved)
@@ -152,6 +157,28 @@ struct BookPageView: View {
             Button("Wait for Wi-Fi", role: .cancel) {}
         } message: {
             Text("Caching a whole book can use significant cellular data.")
+        }
+        .confirmationDialog(
+            "Send to Apple Watch on cellular data?",
+            isPresented: $showWatchCellularPrompt,
+            titleVisibility: .visible
+        ) {
+            Button("Send now on cellular") {
+                Task { await transferToWatch(allowCellular: true) }
+            }
+            Button("Wait for Wi-Fi", role: .cancel) {}
+        } message: {
+            Text("Sending a book to the watch can use significant cellular data.")
+        }
+        .alert(
+            "Couldn't Send to Apple Watch",
+            isPresented: watchTransferErrorBinding
+        ) {
+            Button("OK", role: .cancel) {
+                phoneAudioRelay.watchTransferError = nil
+            }
+        } message: {
+            Text(phoneAudioRelay.watchTransferError ?? "")
         }
         .confirmationDialog(
             "Remove the offline copy?",
@@ -772,6 +799,86 @@ struct BookPageView: View {
             showCellularPrompt = true
         case .start:
             break
+        }
+    }
+
+    @ViewBuilder
+    private func watchRow(_ resolved: BookWithChapters) -> some View {
+        let storage = phoneAudioRelay.watchStorageInfo(for: resolved.book.id)
+        let isTransferring = phoneAudioRelay.isTransferringToWatch
+        VoxglassGroupedSection(title: "Apple Watch") {
+            Button {
+                TactileFeedback.tap()
+                Task { await transferToWatch(allowCellular: false) }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: isTransferring ? "arrow.triangle.2.circlepath" : "applewatch")
+                        .scaledFont(size: 14)
+                        .foregroundStyle(Palette.brass)
+                        .frame(width: 32, height: 32)
+                    Text(isTransferring ? "Transferring to Watch…" : watchRowTitle(storage))
+                        .scaledFont(size: 14, weight: .medium)
+                        .foregroundStyle(Color.white.opacity(0.9))
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    if isTransferring {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .scaledFont(size: 11, weight: .bold)
+                            .foregroundStyle(Color.white.opacity(0.5))
+                    }
+                }
+                .padding(.horizontal, 14)
+                .frame(minHeight: 50)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(isTransferring)
+            .accessibilityIdentifier("bookpage.downloadToWatch")
+        }
+        .padding(.top, 16)
+    }
+
+    private func watchRowTitle(_ storage: WatchBookStorageInfo?) -> String {
+        switch storage?.state {
+        case .available:
+            return "Downloaded on Apple Watch"
+        case .transferring(let progress):
+            return "Downloading to Watch \(Int((progress * 100).rounded()))%"
+        case .queued, .waitingForPhone:
+            return "Downloading to Apple Watch…"
+        case .failed:
+            return "Retry Download to Apple Watch"
+        case .notAvailable, .none:
+            return "Download to Apple Watch"
+        }
+    }
+
+    private func transferToWatch(allowCellular: Bool) async {
+        guard let book = resolved else { return }
+        let start = await phoneAudioRelay.transferBookToWatch(
+            book,
+            allowCellularOverride: allowCellular
+        )
+        switch start {
+        case .needsCellularConfirmation:
+            showWatchCellularPrompt = true
+        case .failed(let message):
+            phoneAudioRelay.watchTransferError = message
+        case .started:
+            break
+        }
+    }
+
+    private var watchTransferErrorBinding: Binding<Bool> {
+        Binding {
+            phoneAudioRelay.watchTransferError != nil
+        } set: { isPresented in
+            if !isPresented {
+                phoneAudioRelay.watchTransferError = nil
+            }
         }
     }
 
