@@ -16,9 +16,11 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     public var localURLProvider: (@MainActor (Chapter) -> URL?)?
 
     /// The effective URL to play for a chapter: a downloaded local file wins,
-    /// otherwise Opus, then the standard streaming URL.
+    /// otherwise the canonical rendition (see `ChapterAudioIdentity`). The opus
+    /// rendition is deliberately not preferred: `WatchPlaybackEngine`'s plain
+    /// `AVPlayer` cannot decode raw Ogg/Opus.
     private func resolvedURL(for chapter: Chapter) -> URL? {
-        localURLProvider?(chapter) ?? chapter.opusURL ?? chapter.resolvedPlayableURL()
+        localURLProvider?(chapter) ?? chapter.resolvedPlayableURL()
     }
 
     private let engine: WatchPlaybackEngine

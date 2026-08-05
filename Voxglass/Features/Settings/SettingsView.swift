@@ -629,7 +629,7 @@ private struct WatchSyncCard: View {
                 }
             }
 
-            Text("Apple Watch gets My Books directly from the iPhone with WatchConnectivity. iCloud sync stays on the iPhone library path; the watch can still search, stream, and download independently.")
+            Text("Apple Watch gets My Books directly from the iPhone with WatchConnectivity. Use “Download to Apple Watch” on a book's page to send it over for offline listening; the watch can also search, stream, and download on its own.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 

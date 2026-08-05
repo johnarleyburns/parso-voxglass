@@ -309,12 +309,16 @@ import Testing
 @Suite struct WatchChapterCacheTests {
     private let bookID = UUID()
 
-    @Test func prefersOpusOverRemote() {
+    @Test func canonicalDoesNotPreferOpus() {
+        // The canonical identity must NOT prefer the opus rendition: the watch
+        // engine cannot decode raw Ogg/Opus, so downloads and transfers key on
+        // the rendition the players can decode (RC3/RC5, INV-B).
         let opus = URL(string: "https://archive.org/x/ch1.opus")!
         let remote = URL(string: "https://archive.org/x/ch1.mp3")!
         let chapter = Chapter(bookID: bookID, title: "Ch", index: 1, remoteURL: remote, opusURL: opus)
-        #expect(WatchChapterCache.canonicalURL(for: chapter) == opus)
-        #expect(WatchChapterCache.key(for: chapter) == StreamCacheUtils.key(for: opus))
+        #expect(WatchChapterCache.canonicalURL(for: chapter) == remote)
+        #expect(WatchChapterCache.key(for: chapter) == StreamCacheUtils.key(for: remote))
+        #expect(WatchChapterCache.key(for: chapter) != StreamCacheUtils.key(for: opus))
     }
 
     @Test func fallsBackToRemoteWhenNoOpus() {

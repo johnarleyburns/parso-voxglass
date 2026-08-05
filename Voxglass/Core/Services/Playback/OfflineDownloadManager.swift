@@ -153,6 +153,24 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         return .start
     }
 
+    /// Deletes download records for every book whose chapters reference one of
+    /// the given cache keys. Used after the offline-store migration drops pins
+    /// whose blobs were already purged, so the UI shows those books as
+    /// not-downloaded rather than falsely "cached".
+    public func dropDownloadRecords(forCacheKeys keys: Set<String>, in books: [BookWithChapters]) async {
+        var bookIDs = Set<UUID>()
+        for book in books {
+            for chapter in book.chapters {
+                if let key = ChapterAudioIdentity.cacheKey(for: chapter), keys.contains(key) {
+                    bookIDs.insert(book.book.id)
+                }
+            }
+        }
+        for bookID in bookIDs {
+            try? await repository.deleteDownloadRecords(forBookID: bookID)
+        }
+    }
+
     /// Cancels in-flight tasks, unpins + removes the book's cached chapter files,
     /// deletes its download records, and resets state to `.notCached`. Keeps the
     /// book in the library.
@@ -312,7 +330,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
 
     private func cacheableChapters(of book: BookWithChapters) -> [CacheableChapter] {
         book.chapters.compactMap { chapter in
-            guard let url = chapter.resolvedPlayableURL(),
+            guard let url = ChapterAudioIdentity.canonicalURL(for: chapter),
                   StreamCacheUtils.isRemoteCacheable(url) else { return nil }
             return CacheableChapter(chapter: chapter, url: url)
         }
