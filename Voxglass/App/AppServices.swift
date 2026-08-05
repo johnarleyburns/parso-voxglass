@@ -84,7 +84,11 @@ final class AppServices: ObservableObject {
             self?.cloudKitSyncEngine.pushAfterMutation()
             await self?.phoneAudioRelay.publishLibrarySnapshot()
         }
-        phoneAudioRelay.configure(libraryStore: self.libraryStore, playbackCoordinator: self.playbackCoordinator)
+        phoneAudioRelay.configure(
+            libraryStore: self.libraryStore,
+            playbackCoordinator: self.playbackCoordinator,
+            offlineManager: self.offlineDownloadManager
+        )
         playbackCoordinator.listeningStatsStore = listeningStatsStore
         folderWatchService.configure(libraryStore: libraryStore)
 
@@ -108,6 +112,16 @@ final class AppServices: ObservableObject {
         await CacheManager.shared.evictIfNeeded()
         await CacheManager.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
+        // The offline-store migration ran inside `StreamCacheStore.init` (it must
+        // precede any eviction); clean up download records for pins it dropped so
+        // the UI shows those books as not-downloaded.
+        let dropped = await StreamCacheStore.shared.droppedLegacyPinKeys
+        if !dropped.isEmpty {
+            await offlineDownloadManager.dropDownloadRecords(
+                forCacheKeys: Set(dropped),
+                in: libraryStore.books
+            )
+        }
         await phoneAudioRelay.publishLibrarySnapshot()
         #if DEBUG
         // Seed the production preview synchronously at bootstrap so the smoke

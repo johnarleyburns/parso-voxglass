@@ -3,6 +3,13 @@ import Foundation
 /// Streaming byte-range cache accounting: limit, LRU eviction, GC of stale partials.
 /// The cache is passive: nothing here initiates caching of a chapter the player
 /// didn't request. It only stores/evicts what flows through the resource loader.
+///
+/// Two storage roots (INV-A):
+/// - **Streaming cache** (unpinned, evictable) lives under `Caches` — the system
+///   may reclaim it at any time.
+/// - **Offline store** (pinned, durable) lives under Application Support,
+///   excluded from iCloud backup. Blobs the user explicitly downloaded for
+///   offline use must never sit in a purgeable directory (RC1).
 public actor StreamCacheStore {
     public static let shared = StreamCacheStore()
 
@@ -23,9 +30,18 @@ public actor StreamCacheStore {
     private let dir: URL
     private let artDir: URL
     private let metaDir: URL
+    private let offlineDir: URL
+    private let offlineMetaDir: URL
+    private let pinsURL: URL
     private var metas: [String: Meta] = [:]   // key = cacheKey
     private var pinnedKeys: Set<String> = []   // never evicted (offline downloads, §7)
     private var limitBytes: Int64
+
+    /// Cache keys that were pinned before the offline-store migration but whose
+    /// blob was already purged by the system. Read by the app layer after
+    /// bootstrap so their `download_records` can be deleted (the UI must show
+    /// them as not-downloaded, not falsely "cached").
+    public private(set) var droppedLegacyPinKeys: [String] = []
 
     public static let defaultLimit: Int64 = 500 * 1024 * 1024
 
@@ -40,17 +56,43 @@ public actor StreamCacheStore {
         cacheBaseDirectory().appendingPathComponent("Voxglass/StreamCacheArt", isDirectory: true)
     }
 
+    /// Durable root for pinned (user-downloaded) audio: Application Support so
+    /// the system never reclaims it, excluded from iCloud backup so re-downloads
+    /// stay re-downloadable.
+    public static func offlineBaseDirectory() -> URL {
+        (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
+                                      appropriateFor: nil, create: true))
+            ?? URL(fileURLWithPath: NSTemporaryDirectory())
+    }
+
     public init() {
         let base = Self.cacheBaseDirectory()
         dir = base.appendingPathComponent("Voxglass/StreamCache", isDirectory: true)
         artDir = base.appendingPathComponent("Voxglass/StreamCacheArt", isDirectory: true)
         metaDir = base.appendingPathComponent("Voxglass/StreamCacheMeta", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(at: artDir, withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
+
+        let durable = Self.offlineBaseDirectory()
+        offlineDir = durable.appendingPathComponent("Voxglass/OfflineAudio", isDirectory: true)
+        offlineMetaDir = durable.appendingPathComponent("Voxglass/OfflineMeta", isDirectory: true)
+        pinsURL = durable.appendingPathComponent("Voxglass/OfflinePins.json")
+
+        let fm = FileManager.default
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: artDir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: metaDir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: offlineDir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: offlineMetaDir, withIntermediateDirectories: true)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var offlineURL = offlineDir
+        try? offlineURL.setResourceValues(values)
+        var offlineMetaURL = offlineMetaDir
+        try? offlineMetaURL.setResourceValues(values)
+
         limitBytes = Self.defaultLimit
-        metas = Self.loadMetas(from: metaDir)
-        pinnedKeys = Self.loadPinnedKeys(from: metaDir)
+        metas = Self.loadMetas(from: metaDir, and: offlineMetaDir)
+        pinnedKeys = Self.loadPinnedKeys(from: pinsURL)
+        droppedLegacyPinKeys = migrateLegacyPinnedBlobs()
     }
 
     /// Testable init that isolates all state under a caller-supplied directory.
@@ -58,12 +100,17 @@ public actor StreamCacheStore {
         dir = directory.appendingPathComponent("StreamCache", isDirectory: true)
         artDir = directory.appendingPathComponent("StreamCacheArt", isDirectory: true)
         metaDir = directory.appendingPathComponent("StreamCacheMeta", isDirectory: true)
+        offlineDir = directory.appendingPathComponent("OfflineAudio", isDirectory: true)
+        offlineMetaDir = directory.appendingPathComponent("OfflineMeta", isDirectory: true)
+        pinsURL = directory.appendingPathComponent("OfflinePins.json")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: artDir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: offlineDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: offlineMetaDir, withIntermediateDirectories: true)
         limitBytes = Self.defaultLimit
-        metas = Self.loadMetas(from: metaDir)
-        pinnedKeys = Self.loadPinnedKeys(from: metaDir)
+        metas = Self.loadMetas(from: metaDir, and: offlineMetaDir)
+        pinnedKeys = Self.loadPinnedKeys(from: pinsURL)
     }
 
     // MARK: - Public accounting
@@ -99,15 +146,55 @@ public actor StreamCacheStore {
 
     // MARK: - Pinning (offline downloads, §7)
 
-    /// Marks keys as pinned so they are never evicted or GC'd. Pinned bytes are
-    /// also excluded from the streaming-budget eviction total.
+    /// Marks keys as pinned so they are never evicted or GC'd, and **moves** any
+    /// existing blob + meta from the streaming root into the durable offline
+    /// root. Pinned bytes are also excluded from the streaming-budget eviction
+    /// total.
     public func pin(_ keys: [String]) {
-        pinnedKeys.formUnion(keys)
+        let fm = FileManager.default
+        for key in keys {
+            let streamingBlob = dir.appendingPathComponent(key)
+            let offlineBlob = offlineDir.appendingPathComponent(key)
+            if fm.fileExists(atPath: streamingBlob.path) {
+                if fm.fileExists(atPath: offlineBlob.path) {
+                    try? fm.removeItem(at: streamingBlob)
+                } else {
+                    try? fm.moveItem(at: streamingBlob, to: offlineBlob)
+                }
+            }
+            let streamingMeta = metaDir.appendingPathComponent("\(key).json")
+            let offlineMeta = offlineMetaDir.appendingPathComponent("\(key).json")
+            if fm.fileExists(atPath: streamingMeta.path) {
+                if fm.fileExists(atPath: offlineMeta.path) {
+                    try? fm.removeItem(at: streamingMeta)
+                } else {
+                    try? fm.moveItem(at: streamingMeta, to: offlineMeta)
+                }
+            }
+            pinnedKeys.insert(key)
+        }
         persistPinnedKeys()
     }
 
+    /// Un-pins keys: moves their blob + meta back into the streaming root (or
+    /// simply drops them if the offline blob is gone).
     public func unpin(_ keys: [String]) {
-        pinnedKeys.subtract(keys)
+        let fm = FileManager.default
+        for key in keys where pinnedKeys.contains(key) {
+            let offlineBlob = offlineDir.appendingPathComponent(key)
+            let streamingBlob = dir.appendingPathComponent(key)
+            if fm.fileExists(atPath: offlineBlob.path) {
+                try? fm.removeItem(at: streamingBlob)
+                try? fm.moveItem(at: offlineBlob, to: streamingBlob)
+            }
+            let offlineMeta = offlineMetaDir.appendingPathComponent("\(key).json")
+            let streamingMeta = metaDir.appendingPathComponent("\(key).json")
+            if fm.fileExists(atPath: offlineMeta.path) {
+                try? fm.removeItem(at: streamingMeta)
+                try? fm.moveItem(at: offlineMeta, to: streamingMeta)
+            }
+            pinnedKeys.remove(key)
+        }
         persistPinnedKeys()
     }
 
@@ -125,10 +212,11 @@ public actor StreamCacheStore {
     }
 
     /// Ingests a fully-downloaded file (delivered complete by a background
-    /// `URLSession` download task, not streamed in ranges): moves it into place,
-    /// records the full range, marks it complete, and pins it for offline use.
+    /// `URLSession` download task, not streamed in ranges): moves it into the
+    /// durable offline root (it is pinned for offline use), records the full
+    /// range, marks it complete, and pins it.
     public func ingestCompleteFile(at tempURL: URL, key: String, totalBytes: Int64) async {
-        let destination = fileURL(for: key)
+        let destination = offlineDir.appendingPathComponent(key)
         let fm = FileManager.default
         try? fm.removeItem(at: destination)
         do {
@@ -144,6 +232,9 @@ public actor StreamCacheStore {
         let now = Date()
         var map = ByteRangeMap()
         if resolvedTotal > 0 { map.insert(0..<resolvedTotal) }
+        // Pin before persisting the meta so the meta file lands in the offline
+        // meta directory alongside the durable blob.
+        pin([key])
         metas[key] = Meta(
             totalBytes: resolvedTotal,
             cachedBytes: resolvedTotal,
@@ -154,12 +245,16 @@ public actor StreamCacheStore {
             kind: .audio
         )
         persistMeta(key)
-        pin([key])
     }
 
     public func fileURL(for key: String) -> URL {
-        let base = (metas[key]?.effectiveKind == .artwork) ? artDir : dir
-        return base.appendingPathComponent(key)
+        if metas[key]?.effectiveKind == .artwork {
+            return artDir.appendingPathComponent(key)
+        }
+        if pinnedKeys.contains(key) {
+            return offlineDir.appendingPathComponent(key)
+        }
+        return dir.appendingPathComponent(key)
     }
 
     public func artworkFileURL(for key: String) -> URL {
@@ -225,11 +320,12 @@ public actor StreamCacheStore {
         for key in metas.keys {
             try? FileManager.default.removeItem(at: fileURL(for: key))
             try? FileManager.default.removeItem(at: metaURL(key))
+            try? FileManager.default.removeItem(at: offlineMetaDir.appendingPathComponent("\(key).json"))
         }
         metas.removeAll()
         pinnedKeys.removeAll()
         persistPinnedKeys()
-        for blobDir in [dir, artDir] {
+        for blobDir in [dir, artDir, offlineDir, offlineMetaDir] {
             if let files = try? FileManager.default.contentsOfDirectory(at: blobDir, includingPropertiesForKeys: nil) {
                 for file in files { try? FileManager.default.removeItem(at: file) }
             }
@@ -242,6 +338,63 @@ public actor StreamCacheStore {
         for (key, m) in metas where !m.complete && m.lastAccessedAt < cutoff && !pinnedKeys.contains(key) {
             remove(key)
         }
+    }
+
+    // MARK: - Offline-store migration (RC1, INV-A)
+
+    /// One-time migration of the legacy Caches-based pin store: moves every
+    /// pinned blob + meta into the durable offline root, and drops pins whose
+    /// blob is already missing (previously purged by the system). Returns the
+    /// dropped keys so callers can delete their `download_records` and show the
+    /// book as not-downloaded. Idempotent: after the first successful run the
+    /// legacy pins file is removed and there is nothing left to migrate.
+    @discardableResult
+    public func migrateLegacyPinnedBlobs(legacyPinsURL legacyURL: URL? = nil) -> [String] {
+        let legacy = legacyURL ?? Self.cacheBaseDirectory()
+            .appendingPathComponent("Voxglass/StreamCachePins.json")
+        let fm = FileManager.default
+        guard let data = try? Data(contentsOf: legacy),
+              let keys = try? JSONDecoder().decode([String].self, from: data),
+              !keys.isEmpty else {
+            return []
+        }
+
+        var dropped: [String] = []
+        for key in keys {
+            let streamingBlob = dir.appendingPathComponent(key)
+            let offlineBlob = offlineDir.appendingPathComponent(key)
+            if fm.fileExists(atPath: streamingBlob.path) {
+                if fm.fileExists(atPath: offlineBlob.path) {
+                    try? fm.removeItem(at: streamingBlob)
+                } else {
+                    try? fm.moveItem(at: streamingBlob, to: offlineBlob)
+                }
+                let streamingMeta = metaDir.appendingPathComponent("\(key).json")
+                let offlineMeta = offlineMetaDir.appendingPathComponent("\(key).json")
+                if fm.fileExists(atPath: streamingMeta.path) {
+                    try? fm.removeItem(at: offlineMeta)
+                    try? fm.moveItem(at: streamingMeta, to: offlineMeta)
+                }
+                pinnedKeys.insert(key)
+            } else {
+                // The system already purged this download; drop the pin so the
+                // UI stops claiming it is cached.
+                let streamingMeta = metaDir.appendingPathComponent("\(key).json")
+                if fm.fileExists(atPath: streamingMeta.path) {
+                    try? fm.removeItem(at: streamingMeta)
+                }
+                let offlineMeta = offlineMetaDir.appendingPathComponent("\(key).json")
+                if fm.fileExists(atPath: offlineMeta.path) {
+                    try? fm.removeItem(at: offlineMeta)
+                }
+                metas.removeValue(forKey: key)
+                pinnedKeys.remove(key)
+                dropped.append(key)
+            }
+        }
+        persistPinnedKeys()
+        try? fm.removeItem(at: legacy)
+        return dropped
     }
 
     // MARK: - Eviction
@@ -266,6 +419,7 @@ public actor StreamCacheStore {
     private func remove(_ key: String) {
         try? FileManager.default.removeItem(at: fileURL(for: key))
         try? FileManager.default.removeItem(at: metaURL(key))
+        try? FileManager.default.removeItem(at: offlineMetaDir.appendingPathComponent("\(key).json"))
         metas.removeValue(forKey: key)
     }
 
@@ -278,13 +432,22 @@ public actor StreamCacheStore {
     }
 
     private func metaURL(_ key: String) -> URL {
-        metaDir.appendingPathComponent("\(key).json")
+        let base = pinnedKeys.contains(key) ? offlineMetaDir : metaDir
+        return base.appendingPathComponent("\(key).json")
     }
 
     private func persistMeta(_ key: String) {
         guard let m = metas[key],
               let data = try? Self.debugJSONEncoder().encode(m) else { return }
         try? data.write(to: metaURL(key))
+    }
+
+    private static func loadMetas(from metaDir: URL, and offlineMetaDir: URL) -> [String: Meta] {
+        var result = loadMetas(from: metaDir)
+        for (key, meta) in loadMetas(from: offlineMetaDir) {
+            result[key] = meta
+        }
+        return result
     }
 
     private static func loadMetas(from metaDir: URL) -> [String: Meta] {
@@ -305,23 +468,13 @@ public actor StreamCacheStore {
 
     // MARK: - Pinned-key persistence
 
-    /// Stored outside `metaDir` so it isn't mistaken for a per-key meta blob.
-    private var pinnedKeysURL: URL {
-        Self.pinnedKeysURL(for: metaDir)
-    }
-
-    private static func pinnedKeysURL(for metaDir: URL) -> URL {
-        metaDir.deletingLastPathComponent().appendingPathComponent("StreamCachePins.json")
-    }
-
     private func persistPinnedKeys() {
         guard let data = try? Self.debugJSONEncoder().encode(Array(pinnedKeys)) else { return }
-        try? data.write(to: pinnedKeysURL)
+        try? data.write(to: pinsURL)
     }
 
-    private static func loadPinnedKeys(from metaDir: URL) -> Set<String> {
-        let url = pinnedKeysURL(for: metaDir)
-        guard let data = try? Data(contentsOf: url),
+    private static func loadPinnedKeys(from pinsURL: URL) -> Set<String> {
+        guard let data = try? Data(contentsOf: pinsURL),
               let keys = try? JSONDecoder().decode([String].self, from: data) else {
             return []
         }

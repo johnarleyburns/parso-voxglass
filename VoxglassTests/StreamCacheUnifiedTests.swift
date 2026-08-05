@@ -161,9 +161,9 @@ import Foundation
         await store.pin(["audio_debug"])
 
         let metaURL = directory
-            .appendingPathComponent("StreamCacheMeta", isDirectory: true)
+            .appendingPathComponent("OfflineMeta", isDirectory: true)
             .appendingPathComponent("audio_debug.json")
-        let pinnedURL = directory.appendingPathComponent("StreamCachePins.json")
+        let pinnedURL = directory.appendingPathComponent("OfflinePins.json")
 
         let meta = try String(contentsOf: metaURL, encoding: .utf8)
         let pins = try String(contentsOf: pinnedURL, encoding: .utf8)

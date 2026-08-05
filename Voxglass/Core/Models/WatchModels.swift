@@ -243,20 +243,18 @@ public enum WatchChapterNavigation {
     }
 }
 
-/// Canonical local-cache identity for a chapter's audio on the watch. Prefers the
-/// Opus rendition when present (matching the streaming policy), else the standard
-/// remote URL. Every watch-cache read/write MUST key on this so a file downloaded
-/// under one URL variant is still found later — otherwise a chapter with both an
-/// `opusURL` and a `remoteURL` gets stored under one key and looked up under the
-/// other. Pure, host-testable.
+/// Canonical local-cache identity for a chapter's audio on the watch. Thin shim
+/// over `ChapterAudioIdentity` so the watch store, the phone→watch transfer, and
+/// the phone downloader all agree on one key per chapter (INV-B). Every
+/// watch-cache read/write MUST key on this so a file downloaded under one URL
+/// variant is still found later. Pure, host-testable.
 public enum WatchChapterCache {
     public static func canonicalURL(for chapter: Chapter) -> URL? {
-        chapter.opusURL ?? chapter.remoteURL
+        ChapterAudioIdentity.canonicalURL(for: chapter)
     }
 
     public static func key(for chapter: Chapter) -> String? {
-        guard let url = canonicalURL(for: chapter) else { return nil }
-        return StreamCacheUtils.key(for: url)
+        ChapterAudioIdentity.cacheKey(for: chapter)
     }
 }
 
