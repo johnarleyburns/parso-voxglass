@@ -65,7 +65,7 @@ The source implementation plan is broadly correct and this document adopts its s
 |---|---|---|---|
 | C-1 | "GRDB over SQLite … *matches existing stack*" | The repo has **no GRDB dependency**. Persistence is a hand-rolled `public actor AppDatabase` over `SQLite3` (`Voxglass/Core/Database/AppDatabase.swift`) with an integer-keyed migration list in `DatabaseMigrations.swift`. | **Do not add GRDB.** Extend the existing `AppDatabase` actor pattern into a new `ProjectDatabase` actor scoped to one `.voxproject`. Rationale in §7.1. This keeps `VoxglassCore` dependency-free, keeps the GPL dependency surface at zero, and avoids a second ORM in one binary. |
 | C-2 | "Swift 6, strict concurrency on" | `Package.swift` is `swift-tools-version: 5.9`; `project.yml` sets `SWIFT_VERSION: "5.0"`. Flipping the whole repo to Swift 6 is a multi-day migration of 146 existing Swift files and is not MVP work. | Bump `Package.swift` to `swift-tools-version: 6.0`. Set `swiftLanguageMode(.v6)` **per-target on the new Studio/production targets only**; leave the existing `VoxglassCore` target at `.v5` with `.enableUpcomingFeature("StrictConcurrency")` warnings-only. §4.4. |
-| C-3 | "bundle ffmpeg … Voxglass is GPL-3.0, so ffmpeg/LAME/libFLAC are license-compatible" | GPL-compatibility is only half the problem. A **GPL-configured** ffmpeg cannot be shipped through the Mac App Store, because the App Store additional permission in `LICENSE-APPSTORE-EXCEPTION.md` is granted by *this repository's* copyright holder and cannot bind ffmpeg's authors. | Ship **LGPL-only** encoders: `libmp3lame` (LGPL-2.1), `libFLAC` (BSD-3), and AVFoundation for AAC/ALAC. Link them **dynamically** from an embedded framework, or build ffmpeg with `--disable-gpl --disable-nonfree`. Detailed recipe, sandbox entitlements, and the written-offer obligation in §16.3. |
+| C-3 | "bundle ffmpeg … Voxglass is GPL-3.0, so ffmpeg/LAME/libFLAC are license-compatible" | GPL-compatibility is only half the problem. A **GPL-configured** ffmpeg cannot be shipped through the Mac App Store, because the App Store additional permission in `LICENSE-APPSTORE-EXCEPTION.md` is granted by *this repository's* copyright holder and cannot bind ffmpeg's authors. | Do **not** bundle ffmpeg or hand-build `libmp3lame`/`libFLAC` xcframeworks. Use SwiftPM codec packages on both macOS and iPhone: SwiftLAME for MP3 creation, SwiftFlac 1.0.0 for FLAC reading and creation, and AVFoundation only for AAC/ALAC/PCM plus Apple-supported non-FLAC decode paths. Dependency pins, platform rules, and notices are in §16.3. |
 | C-4 | Export presets list "ACX 192 kbps" as `retailACX` | ACX/Audible is *one* commercial destination among several, and its file rules (per-chapter files, ≤120 min, opening/closing credit files, retail sample) are as important as its bitrate. | Model commercial output as a **family** of destination profiles (ACX/Audible, Findaway-style aggregator, Apple Books, generic M4B, lossless archive master), driven by a data table (§3.4) rather than two hard-coded constants. |
 | C-5 | Watch smoke test "may need hosted-logic fallback" | Prior work in this repo already resolved this: watchOS UI smoke tests do run locally via `scripts/test.sh`, with known gotchas (row taps need `.contentShape`, sheets are not `NavigationPath` destinations, the simulator must be pre-booted, and seeders must be idempotent). | Keep the **XCUITest** watch smoke test. Follow the gotcha list in §19.6. CI does not run simulators (see `scripts/test.sh` header: "Does NOT run in CI"); the simulator suite is a **local pre-commit gate** (the pre-push hook runs `swift test` only). |
 
@@ -571,7 +571,7 @@ M4B is an MPEG-4 audio container (AAC) with embedded chapter markers, used by Ap
 - Chapters: one chapter marker per project chapter, with title and start time, embedded as a chapter track (`chpl`/QuickTime chapter track) — both the text track and the Nero-style `chpl` atom SHOULD be written for maximum player compatibility.
 - Cover art embedded as `covr`.
 - Metadata: `©nam` (title), `©ART` (author), `©wrt` (narrator/composer field is commonly used for narrator by convention — Voxglass writes narrator to both `©wrt` and a custom `----:com.apple.iTunes:NARRATOR` atom), `©alb`, `©day`, `©gen` = "Audiobook", `stik` = 2 (Audiobook), `pgap` = 1 (gapless).
-- Because AVFoundation *can* encode AAC and write MPEG-4, M4B production does **not** require the bundled encoder — but chapter-atom writing does require either `AVAssetWriter` plus a chapter-metadata group (supported: `AVAssetWriterInputMetadataAdaptor` / timed metadata group with `AVMetadataIdentifier.quickTimeUserDataChapter`) or the ffmpeg path. §16.8 specifies the AVFoundation-first implementation with an ffmpeg fallback.
+- M4B production is AVFoundation-only: AAC encoding and chapter metadata MUST be written with `AVAssetWriter`, `AVAssetWriterInputMetadataAdaptor`, and timed metadata groups using `AVMetadataIdentifier.quickTimeUserDataChapter`. If Nero-style `chpl` atoms cannot be written through public Apple APIs, Voxglass writes the QuickTime chapter track, records that limitation in the validation report, and MUST NOT fall back to ffmpeg.
 
 #### 3.4.5 Apple Books and aggregators
 
@@ -700,7 +700,7 @@ Voxglass/Core/                      → SwiftPM target "VoxglassCore" (existing,
 VoxglassStudio/                     → NEW macOS app target
   ├── App/                          StudioApp, StudioRootView, DI container, launch-arg seeding
   ├── Services/                     AVAudioEngineCapture, AVMetricsCalculator, AVSegmentPlayer,
-  │                                 Transcoder (LAME/FLAC/AVFoundation), CloudKitProductionSync,
+  │                                 Transcoder (SwiftLAME/SwiftFlac/AVFoundation), CloudKitProductionSync,
   │                                 StoreKitLicenseProvider, WatchConnectivity? (no — Mac has none)
   └── Features/                     Library, NewProject, SourceImport, Script, Record, Import,
                                     TakeCompare, Review, Assembly, Metadata, DevicePreview,
@@ -711,7 +711,8 @@ VoxglassStudio/                     → NEW macOS app target
 > the **type** declaration stays in `Domain/DestinationTypes.swift`. CI gate G-10
 > names the literals file, so the platform numbers have one defined home.
 
-Voxglass/Features/Production/       → NEW iPhone feature folder
+Voxglass/Features/Production/       → NEW iPhone feature folder, including the iPhone Transcoder
+                                    (SwiftLAME/SwiftFlac/AVFoundation)
 Voxglass/App/CarPlay/Production*    → CarPlay production templates (extends existing CarPlay layer)
 VoxglassWatch/Production/           → NEW watch feature folder
 
@@ -2591,7 +2592,7 @@ All shortcuts MUST work without focus juggling: the recording workspace installs
 
 ### 11.5 Importing existing audio
 
-Mockup `07-import-audio`. Supported inputs: WAV, AIFF, CAF, M4A/AAC, MP3, FLAC (all decodable by AVFoundation on macOS 14; FLAC decode is supported natively).
+Mockup `07-import-audio`. Supported inputs: WAV, AIFF, CAF, M4A/AAC, MP3, FLAC. AVFoundation decodes WAV/AIFF/CAF/M4A/AAC/MP3 inputs; FLAC input MUST be decoded through SwiftFlac on both macOS and iPhone rather than relying on platform FLAC behavior.
 
 ```swift
 public protocol AudioDecoding: Sendable {
@@ -3449,40 +3450,40 @@ public protocol AudioTranscoding: Sendable {
 public struct ChapterMark: Sendable, Equatable { public var title: String; public var start: TimeInterval }
 ```
 
-### 16.3 The encoder decision (correction C-3, in full)
+### 16.3 The codec decision (correction C-3, in full)
 
-**Requirement.** MP3 CBR at 128 and 192 kbps, and FLAC. AVFoundation on macOS **decodes** MP3 and FLAC but **encodes** neither. AAC/ALAC/PCM encoding is available through AVFoundation and needs no third party.
+**Requirement.** MP3 CBR at 128 and 192 kbps, FLAC decode, and FLAC encode MUST work on both macOS and iPhone. AVFoundation handles AAC/ALAC/PCM encode and WAV/AIFF/CAF/M4A/AAC/MP3 decode. FLAC reading and writing MUST go through SwiftFlac on both platforms so long audiobook seeking, metadata, and output determinism do not depend on platform FLAC behavior.
+
+**Dependencies.**
+
+- **MP3 creation:** use SwiftLAME, the Swift wrapper around the open-source LAME project. Add it as a SwiftPM dependency for both `VoxglassStudio` and `Voxglass`: `https://github.com/hidden-spectrum/swiftlame`, pinned at the current compatible release.
+- **FLAC reading and creation:** use SwiftFlac from the local development repo `~/github/swift-flac`, but commit only the public release dependency: `https://github.com/johnarleyburns/swift-flac.git`, exact version `1.0.0`. The public release link is `https://github.com/johnarleyburns/swift-flac/releases/tag/1.0.0`.
+- **Apple-native formats:** use AVFoundation for AAC, ALAC, PCM/WAV/CAF/AIFF, M4A/M4B, and MP3 decode.
+
+The committed project configuration MUST NOT contain a local `file://` or `~/github/swift-flac` package reference. The local checkout is only the staging source for the assumed public `1.0.0` release.
 
 **Licensing constraint.** Voxglass is GPLv3 with a hand-written App Store additional permission covering *this repository's* code. That permission cannot extend to third-party GPL code. Therefore:
 
-- **Do not** ship a GPL-configured ffmpeg binary (`--enable-gpl`) in an App Store build.
-- **Do** use LGPL/BSD components: **libmp3lame** (LGPL-2.1) for MP3, **libFLAC** (BSD-3-Clause) for FLAC.
-- Under LGPL, dynamic linking with a mechanism for the user to substitute a modified library is the safe pattern. Ship them as **embedded dynamic frameworks** in `Contents/Frameworks/`, signed with the app's identity, and publish the exact build recipe plus sources.
+- **Do not** ship a GPL-configured ffmpeg binary (`--enable-gpl`) in any App Store build.
+- **Do not** hand-build or embed separate `libmp3lame` or `libFLAC` xcframeworks for this MVP.
+- **Do** satisfy the license and notice obligations of SwiftLAME/LAME and SwiftFlac exactly as shipped, including copyright notices, license text, source links, and any required written offer or source-availability statement.
 
-**Recommended implementation (primary path):**
+**Implementation path:**
 
-1. Build `libmp3lame` and `libFLAC` as xcframeworks for `arm64` + `x86_64` macOS, minimum 14.0, with a documented, scripted recipe checked into `Tools/encoders/build-encoders.sh`.
-2. Write two thin Swift wrappers over their C APIs:
-   - `LameMP3Encoder` — `lame_init`, `lame_set_num_channels/in_samplerate/brate`, `lame_set_VBR(vbr_off)` for CBR, `lame_set_quality(2)`, `lame_encode_buffer_ieee_float`, `lame_encode_flush`, then `lame_mp3_tags_fid` for the Xing/LAME header. **CBR requires `vbr_off`** — this is the exact setting the destinations care about.
-   - `FLACEncoder` — `FLAC__stream_encoder_new`, set channels/bps/sample rate/compression level 5, `FLAC__stream_encoder_process_interleaved`, `finish`.
-3. `VoxTranscoder` composes: AVFoundation for decode and for AAC/ALAC/PCM encode; `LameMP3Encoder` for MP3; `FLACEncoder` for FLAC.
-4. `availableEncoders` reports what actually loaded, and the Export wizard disables destinations whose codec is unavailable with a specific message rather than failing mid-export.
+1. Add the codec dependencies to the generated Xcode project / SwiftPM integration for both the macOS Studio target and the iPhone app target. The Mac and iPhone products must be able to create MP3 and FLAC files from the same render plan model.
+2. Implement `SwiftLameMP3Encoder` as the `VoxTranscoder` MP3 path. It MUST request constant bitrate mode for LibriVox 128 kbps and retail 192 kbps outputs, 44.1 kHz sample rate, mono channel output where required, and the LAME/Xing information header needed for downstream frame-header verification.
+3. Implement `SwiftFlacCodec` as both an `AudioDecoding` implementation for `.flac` input and the `VoxTranscoder` FLAC output path. It MUST preserve source sample rate for archive masters unless a destination profile explicitly asks for resampling, write native `.flac` streams, and round-trip PCM bit-exactly in tests.
+4. `VoxTranscoder` composes: AVFoundation for Apple-native decode and AAC/ALAC/PCM encode; `SwiftLameMP3Encoder` for MP3 encode; `SwiftFlacCodec` for FLAC decode and encode.
+5. `availableEncoders` reports what actually loaded, and the Export wizard disables destinations whose codec is unavailable with a specific message rather than failing mid-export.
 
-**Fallback path (if the framework build is deferred to a later stage):** an `FFmpegProcessTranscoder` that invokes a bundled **LGPL-configured** ffmpeg (`--disable-gpl --disable-nonfree --enable-libmp3lame --enable-libvorbis` etc.) from `Contents/Helpers/`. Requirements if this path is used:
-- Signed with the app's team ID and the hardened runtime; `Contents/Helpers/` is inside the app bundle so it inherits the sandbox.
-- Invoked with absolute paths, no shell, `Process` with explicit `arguments`, `standardError` captured for `TranscodeError.encoderFailed(status:stderr:)`.
-- Exact invocations:
-  - MP3 CBR 128 mono 44.1k: `-i in.caf -vn -ac 1 -ar 44100 -c:a libmp3lame -b:a 128k -abr 0 -write_xing 1 out.mp3` (verify CBR by inspecting the resulting frame headers in a test).
-  - MP3 CBR 192: same with `-b:a 192k`.
-  - FLAC: `-i in.caf -c:a flac -compression_level 5 out.flac`.
-- **Sandbox note:** spawning a helper from an App Sandbox app is permitted for binaries inside the app bundle. Do **not** rely on `/usr/local/bin/ffmpeg`; never invoke a user-installed binary.
+**No ffmpeg fallback.** The MVP MUST NOT include `FFmpegProcessTranscoder`, a bundled helper in `Contents/Helpers/`, or any dependency on `/usr/local/bin/ffmpeg`. iPhone export support makes a process-helper fallback the wrong abstraction.
 
-**Verification tests (required either way):**
-- `TranscoderCBRTests` — encode 10 s of tone to MP3 at 128 kbps and parse the MPEG frame headers, asserting every frame reports the same bitrate index (true CBR) and 44.1 kHz, mono.
-- `TranscoderFLACTests` — encode and decode round-trip, assert bit-exact PCM.
+**Verification tests:**
+- `TranscoderCBRTests` — encode 10 s of tone through SwiftLAME to MP3 at 128 kbps and parse the MPEG frame headers, asserting every frame reports the same bitrate index (true CBR) and 44.1 kHz, mono. Run on macOS and in the iOS simulator.
+- `TranscoderFLACTests` — decode a FLAC fixture through SwiftFlac, encode PCM back to FLAC through SwiftFlac, decode again, and assert bit-exact PCM. Run on macOS and in the iOS simulator.
 - `TranscoderAvailabilityTests` — with encoders unavailable, `availableEncoders` excludes them and the LibriVox builder throws `TranscodeError.encoderUnavailable("mp3")` **before** writing any file.
 
-**Third-party notices.** Add `Voxglass/Resources/ThirdPartyNotices.md` listing LAME (LGPL-2.1) and FLAC (BSD-3) with copyright notices, the build recipe location, and the written offer for the corresponding sources. Surface it in Settings → About. This is a licensing obligation, not a nicety.
+**Third-party notices.** Add `Voxglass/Resources/ThirdPartyNotices.md` listing SwiftLAME/LAME and SwiftFlac with their exact versions, copyright notices, license text, public source links, and any written-offer/source-availability language required by their licenses. Surface it in Settings → About. This is a licensing obligation, not a nicety.
 
 ### 16.4 `LibriVoxPackageBuilder`
 
@@ -3608,7 +3609,7 @@ public struct AudioTags: Sendable, Equatable {
 
 - **MP3 → ID3v2.4** written by a small dedicated writer (`ID3Writer`) — LAME does not write ID3 for you beyond the Xing frame. Write `TIT2 TPE1 TALB TPE2 TCOM TRCK TDRC TCON COMM TCOP TLAN APIC`. Use UTF-8 encoding byte `0x03`. Write a padded frame area of 4 KB so retagging does not rewrite the file.
 - **M4A/M4B → MPEG-4 metadata** via `AVAssetExportSession`/`AVAssetWriter` metadata items: `©nam ©ART ©alb ©wrt ©day ©gen ©cmt cprt covr stik pgap` plus the freeform `----:com.apple.iTunes:NARRATOR`.
-- **FLAC → Vorbis comments** written by the FLAC encoder wrapper: `TITLE ARTIST ALBUM TRACKNUMBER DATE GENRE DESCRIPTION COPYRIGHT PERFORMER`.
+- **FLAC → Vorbis comments** written through SwiftFlac: `TITLE ARTIST ALBUM TRACKNUMBER DATE GENRE DESCRIPTION COPYRIGHT PERFORMER`.
 - **WAV → LIST/INFO chunk** (`INAM IART IPRD ICRD IGNR ICMT`) — optional, best-effort.
 
 `TaggingTests` round-trips every container: write tags, read them back with `AVAsset`/a minimal parser, assert equality of the fields each format supports.
@@ -4319,7 +4320,7 @@ public enum AudioFixtures {
 ### 19.4 Studio integration suites
 
 - `RecordingFlowTests` — with `FakeAudioCapture`: arm → record → stop → take inserted → metrics computed → selection applied → advance; crash-recovery path with a synthetic `session.json` and a truncated WAV (asserts `WAVHeaderRepair`).
-- `TranscoderTests` — real encoders: MP3 CBR frame-header verification, FLAC bit-exact round-trip, AAC/M4B chapter marks readable back via `AVAsset`.
+- `TranscoderTests` — real encoders on macOS and iOS simulator: SwiftLAME MP3 CBR frame-header verification, SwiftFlac FLAC decode/encode bit-exact round-trip, AAC/M4B chapter marks readable back via `AVAsset`.
 - `MasteringChainTests` — §16.7 assertions.
 - `ExportEndToEndTests` — `librivoxReady()` fixture → real transcoder → real files on disk in a temp dir → re-validate the *output* files by decoding them and running the metrics engine, asserting the destination profile is met. **This is the highest-value test in the suite**: it proves the product's core claim.
 - `ProjectionBuilderTests`, `ProjectionPolicyTests` (debounce, delta, hidden, tombstones), `SyncTokenRecoveryTests` (stale token), `SyncConflictTests`.
@@ -4560,7 +4561,7 @@ Commit subject convention: `feat(studio): S<N> — <summary>` with a body listin
 
 ### S8 — Encoders and packaging
 
-**Add** `Tools/encoders/build-encoders.sh`, the LAME/FLAC xcframeworks and Swift wrappers, `VoxTranscoder`, `ID3Writer`, MPEG-4/Vorbis/RIFF tagging, `MasteringChain`, the three package builders, `ChecksumWriter`, checklist and manifest generators, `ThirdPartyNotices.md`.
+**Add** SwiftPM dependency pins for SwiftLAME and SwiftFlac 1.0.0, Mac and iPhone transcoder implementations, `VoxTranscoder`, `ID3Writer`, MPEG-4/Vorbis/RIFF tagging, `MasteringChain`, the three package builders, `ChecksumWriter`, checklist and manifest generators, `ThirdPartyNotices.md`.
 
 **Test** `TranscoderCBRTests`, `TranscoderFLACTests`, `TranscoderAvailabilityTests`, `TaggingTests`, `MasteringChainTests`, `PackageBuilderTests`, `ChecksumWriterTests`, `ExportEndToEndTests`.
 
@@ -4660,8 +4661,8 @@ Record the verification date and the outcome in `docs/voxglass-mvp/DESTINATION_V
 - [ ] §21.3 re-verification completed; log updated
 
 ## Legal & licensing
-- [ ] ThirdPartyNotices.md current (LAME, FLAC versions)
-- [ ] Encoder build recipe reproducible from a clean checkout
+- [ ] ThirdPartyNotices.md current (SwiftLAME/LAME, SwiftFlac versions)
+- [ ] Codec dependency pins resolve from a clean checkout with no local package paths
 - [ ] Legal strings unchanged or reviewed
 
 ## Store
@@ -4824,7 +4825,7 @@ Recorded deliberately; update the mockups when convenient.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Encoder framework build is harder than expected (signing, universal binaries) | Blocks all export | S8 is scheduled before the sync stages so it is discovered early; the ffmpeg-helper fallback (§16.3) is fully specified |
+| Codec package integration fails on one Apple platform | Blocks MP3/FLAC export or FLAC import there | S8 is scheduled before the sync stages so it is discovered early; SwiftLAME and SwiftFlac are required on both macOS and iPhone, and there is no ffmpeg fallback (§16.3) |
 | LibriVox or ACX changes a requirement | Silent non-compliance | `DestinationProfileTests` is the executable copy of the research; §21.3 re-verification per release |
 | CloudKit quota on large books | Sync silently stops | Estimates shown before publish; hide-from-devices; bitrate control; explicit quota error copy |
 | watchOS UI test flakiness in the local gate | Slows every push | Documented gotchas (§19.6); pre-booted simulator; `test-without-building` |
