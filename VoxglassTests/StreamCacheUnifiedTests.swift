@@ -114,6 +114,29 @@ import Foundation
         #expect(try Data(contentsOf: url).count == 100)
     }
 
+    @Test func staleCompleteMetaWithoutBlobIsNotCompleteAndUnpins() async throws {
+        let source = directory.appendingPathComponent("missing-source-\(UUID().uuidString).bin")
+        try Data(repeating: 8, count: 64).write(to: source)
+        await store.ingestCompleteFile(at: source, key: "missing_blob", totalBytes: 64)
+        let url = await store.fileURL(for: "missing_blob")
+        try FileManager.default.removeItem(at: url)
+
+        #expect(!(await store.isComplete("missing_blob")))
+        #expect(!(await store.isPinned("missing_blob")))
+    }
+
+    @Test func staleRangeMapWithoutBlobIsIgnoredAndCleared() async {
+        await store.setContentLength(100, for: "stale_ranges")
+        await store.recordWrite(range: 0..<100, for: "stale_ranges")
+
+        let cachedBytes = await store.cachedContiguousBytes(for: "stale_ranges", from: 0)
+        let rangeMap = await store.rangeMap(for: "stale_ranges")
+
+        #expect(cachedBytes == 0)
+        #expect(rangeMap.contiguousBytes(from: 0) == 0)
+        #expect(!(await store.isComplete("stale_ranges")))
+    }
+
     @Test func pinnedKeysAreExcludedFromEviction() async throws {
         let source = directory.appendingPathComponent("pin-source-\(UUID().uuidString).bin")
         try Data(repeating: 1, count: 100).write(to: source)

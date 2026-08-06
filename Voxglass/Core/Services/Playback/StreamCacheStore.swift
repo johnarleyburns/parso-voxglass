@@ -137,7 +137,7 @@ public actor StreamCacheStore {
 
     /// True when the full audio file for `key` is present.
     public func isComplete(_ key: String) -> Bool {
-        metas[key]?.complete ?? false
+        completeAudioFileURL(for: key) != nil
     }
 
     public func isPinned(_ key: String) -> Bool {
@@ -255,6 +255,59 @@ public actor StreamCacheStore {
             return offlineDir.appendingPathComponent(key)
         }
         return dir.appendingPathComponent(key)
+    }
+
+    /// Returns a real on-disk audio URL only when the cache metadata and blob are
+    /// both complete. This lets playback bypass the remote resource loader for
+    /// fully cached chapters, which is required for offline/downloaded books.
+    public func completeAudioFileURL(for key: String) -> URL? {
+        guard let meta = metas[key],
+              meta.effectiveKind == .audio,
+              meta.complete else { return nil }
+
+        let url = fileURL(for: key)
+        let fm = FileManager.default
+        guard let attrs = try? fm.attributesOfItem(atPath: url.path),
+              let size = attrs[.size] as? NSNumber else {
+            discardCachedBytes(for: key, unpin: pinnedKeys.contains(key))
+            return nil
+        }
+
+        let actualBytes = size.int64Value
+        let expectedBytes = meta.totalBytes ?? meta.cachedBytes
+        guard actualBytes > 0,
+              expectedBytes <= 0 || actualBytes >= expectedBytes else {
+            discardCachedBytes(for: key, unpin: pinnedKeys.contains(key))
+            return nil
+        }
+
+        touch(key)
+        return url
+    }
+
+    /// Number of contiguous cached bytes that are backed by a readable file.
+    /// Stale metadata from a purged/truncated cache blob is cleared before
+    /// returning 0 so the resource loader falls through to the network path.
+    public func cachedContiguousBytes(for key: String, from offset: Int64) -> Int64 {
+        guard let meta = metas[key] else { return 0 }
+        let contiguous = meta.rangeMap.contiguousBytes(from: offset)
+        guard contiguous > 0 else { return 0 }
+
+        let url = fileURL(for: key)
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = attrs[.size] as? NSNumber else {
+            discardCachedBytes(for: key, unpin: pinnedKeys.contains(key))
+            return 0
+        }
+
+        let actualBytes = size.int64Value
+        guard actualBytes >= offset + contiguous else {
+            discardCachedBytes(for: key, unpin: pinnedKeys.contains(key))
+            return 0
+        }
+
+        touch(key)
+        return contiguous
     }
 
     public func artworkFileURL(for key: String) -> URL {
@@ -421,6 +474,33 @@ public actor StreamCacheStore {
         try? FileManager.default.removeItem(at: metaURL(key))
         try? FileManager.default.removeItem(at: offlineMetaDir.appendingPathComponent("\(key).json"))
         metas.removeValue(forKey: key)
+    }
+
+    private func discardCachedBytes(for key: String, unpin: Bool) {
+        let wasPinned = pinnedKeys.contains(key)
+        try? FileManager.default.removeItem(at: fileURL(for: key))
+        guard var meta = metas[key] else {
+            if unpin {
+                pinnedKeys.remove(key)
+                persistPinnedKeys()
+            }
+            return
+        }
+
+        meta.cachedBytes = 0
+        meta.complete = false
+        meta.rangeMap = ByteRangeMap()
+        meta.lastAccessedAt = Date()
+        metas[key] = meta
+
+        if unpin {
+            pinnedKeys.remove(key)
+            persistPinnedKeys()
+        }
+        if wasPinned && unpin {
+            try? FileManager.default.removeItem(at: offlineMetaDir.appendingPathComponent("\(key).json"))
+        }
+        persistMeta(key)
     }
 
     // MARK: - Persistence

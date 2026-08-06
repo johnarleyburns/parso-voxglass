@@ -9,6 +9,7 @@ import Foundation
         let coordinator: PlaybackCoordinator
         let engine: FakeAudioEngine
         let store: MemoryPositionStore
+        let cacheStore: StreamCacheStore
         let snapshotStore: LastPlaybackSnapshotStore
         let bridge: NoopPlaybackBridge
     }
@@ -43,6 +44,10 @@ import Foundation
     private func makeHarness() -> Harness {
         let engine = FakeAudioEngine()
         let store = MemoryPositionStore()
+        let cacheStore = StreamCacheStore(
+            directory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("playback-cache-\(UUID().uuidString)", isDirectory: true)
+        )
         let defaults = UserDefaults(suiteName: "presentation-\(UUID().uuidString)")!
         let snapshotStore = LastPlaybackSnapshotStore(defaults: defaults)
         let bridge = NoopPlaybackBridge()
@@ -51,12 +56,14 @@ import Foundation
             positionStore: store,
             snapshotStore: snapshotStore,
             rateStore: PlaybackRateStore(defaults: defaults),
+            cacheStore: cacheStore,
             bridge: bridge
         )
         return Harness(
             coordinator: coordinator,
             engine: engine,
             store: store,
+            cacheStore: cacheStore,
             snapshotStore: snapshotStore,
             bridge: bridge
         )
@@ -76,6 +83,22 @@ import Foundation
         return BookWithChapters(
             book: Book(id: bookID, title: title, authors: ["A"], sourceID: UUID()),
             chapters: chapters
+        )
+    }
+
+    private func makeRemoteBook(remoteURL: URL) -> BookWithChapters {
+        let bookID = UUID()
+        return BookWithChapters(
+            book: Book(id: bookID, title: "Remote", authors: ["A"], sourceID: UUID()),
+            chapters: [
+                Chapter(
+                    bookID: bookID,
+                    title: "Remote Chapter",
+                    index: 0,
+                    duration: 100,
+                    remoteURL: remoteURL
+                )
+            ]
         )
     }
 
@@ -211,5 +234,24 @@ import Foundation
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.engine.loadCalls.first?.url == second.chapters[0].localURL)
         #expect(h.engine.calls.contains(.play))
+    }
+
+    @Test func downloadedRemoteChapterLoadsCompleteCacheFileDirectly() async throws {
+        let h = makeHarness()
+        let remote = URL(string: "https://archive.org/download/item/ch1.mp3")!
+        let key = StreamCacheUtils.key(for: remote)
+        let source = FileManager.default.temporaryDirectory
+            .appendingPathComponent("downloaded-\(UUID().uuidString).mp3")
+        try Data(repeating: 9, count: 128).write(to: source)
+        await h.cacheStore.ingestCompleteFile(at: source, key: key, totalBytes: 128)
+        let resolvedCachedURL = await h.cacheStore.completeAudioFileURL(for: key)
+        let cachedURL = try #require(resolvedCachedURL)
+
+        await h.coordinator.play(makeRemoteBook(remoteURL: remote))
+
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.engine.loadCalls.first?.url == cachedURL)
+        #expect(h.engine.loadCalls.first?.url.isFileURL == true)
+        #expect(h.coordinator.currentSession?.isPlaying == true)
     }
 }

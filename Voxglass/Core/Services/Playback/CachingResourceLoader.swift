@@ -155,16 +155,19 @@ public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegat
         while cursor < endRequested {
             try Task.checkCancellation()
 
-            let map = await StreamCacheStore.shared.rangeMap(for: cacheKey)
-            let cachedContiguous = map.contiguousBytes(from: cursor)
+            let cachedContiguous = await StreamCacheStore.shared.cachedContiguousBytes(
+                for: cacheKey,
+                from: cursor
+            )
 
             if cachedContiguous > 0 {
                 let chunkEnd = min(cursor + cachedContiguous, endRequested)
-                if let data = readFile(fileURL, offset: cursor, length: chunkEnd - cursor) {
+                if let data = readFile(fileURL, offset: cursor, length: chunkEnd - cursor),
+                   !data.isEmpty {
                     dr.respond(with: data)
+                    cursor += Int64(data.count)
+                    continue
                 }
-                cursor = chunkEnd
-                continue
             }
 
             let rangeHeader: String
