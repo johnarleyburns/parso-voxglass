@@ -390,10 +390,8 @@ final class NarrationFlowModel {
 
     func buildExport() {
         guard var project, project.rightsAttested else { return }
-        // A LibriVox/IA package requires encoded audio, which iOS cannot
-        // produce yet in the shared LAME/libFLAC pipeline. We prepare the
-        // textual package + filenames; the encoded destinations are flagged
-        // "Encoder unavailable" and the user finishes on the Mac.
+        // Build the package on iPhone; the selected destination's encoder is
+        // responsible for producing the final audio files before handoff to Files.
         let sanitizer = FilenameSanitizer()
         let filename = sanitizer.librivoxFilename(
             shortTitle: project.title,
@@ -433,13 +431,13 @@ final class NarrationFlowModel {
         lines.append("**\(LegalStrings.userSubmits)**")
         lines.append("")
         lines.append("## Technical")
-        lines.append("- [ ] MP3 \(Int(DestinationProfile.librivox.audio.bitrateKbps ?? 128)) kbps CBR, mono, 44.1 kHz — encode on your Mac with Voxglass Studio")
+        lines.append("- [ ] MP3 \(Int(DestinationProfile.librivox.audio.bitrateKbps ?? 128)) kbps CBR, mono, 44.1 kHz — export from Voxglass on iPhone")
         lines.append("- [ ] File: \(filename)")
         lines.append("")
         lines.append("## Content")
         lines.append("- [x] LibriVox disclaimer recorded (intro + outro)")
         lines.append("- [x] \(approved.count) of \(project.paragraphs.count) paragraphs approved on this iPhone")
-        lines.append("- [ ] Final recording assembled on the Mac")
+        lines.append("- [ ] Final recording assembled on iPhone")
         lines.append("")
         lines.append("## Rights")
         lines.append("- Source: \(project.sourceURL ?? "—")")
@@ -640,7 +638,7 @@ struct NarrationHelpSheet: View {
                     step(2, "Tap stop when you're done. The take appears below the transport.", icon: "stop.fill")
                     step(3, "Listen back with play. Tap \"Accept & Next\" to move on, or flag a paragraph to re-record it later.", icon: "checkmark.circle.fill")
                     step(4, "After the last paragraph, review the list, add title and rights, and produce your files.", icon: "list.bullet")
-                    step(5, "Encoding to MP3/FLAC happens in Voxglass Studio on your Mac — your takes carry over with the project.", icon: "desktopcomputer")
+                    step(5, "Encoding to MP3/FLAC happens on your iPhone. Save the finished package to Files and submit it yourself.", icon: "iphone")
 
                     Text("If a recording doesn't start, check that the microphone is allowed in Settings → Privacy → Microphone.")
                         .scaledFont(size: 11.5)

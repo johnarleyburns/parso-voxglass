@@ -1,7 +1,7 @@
 import Foundation
 
-/// The sync engine: publishes projections (Mac writer), fetches zone changes and
-/// returns decoded records (both sides), pushes review events (phone), and recovers
+/// The sync engine: publishes phone-owned state, fetches the remote mirror and
+/// returns decoded records, pushes watch review events, and recovers
 /// stale change tokens (spec §13.5, §13.7). CloudKit-free by construction; concrete
 /// `ProductionSyncTransport` implementations live in the app targets.
 public actor ProductionSyncEngine {
@@ -51,7 +51,7 @@ public actor ProductionSyncEngine {
         self.config = config
     }
 
-    // MARK: - Publish (Mac writer)
+    // MARK: - Publish (iPhone writer)
 
     /// Publishes the delta between the last snapshot and the current project.
     /// Only changed records are pushed (spec §13.5). Returns `.withdrawn` when the

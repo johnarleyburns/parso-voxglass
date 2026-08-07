@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assembly - Voxglass Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>Wi-Fi 66%</span></div>
+    <div class="nav centered"><span class="back">Dashboard</span><h1>Assembly</h1><span class="action">Render</span></div>
+    <div class="content compact">
+      <div class="card">
+        <div class="row between"><h3>Chapter 6</h3><span class="chip yellow">Needs render</span></div>
+        <div class="wave"></div>
+        <div class="kv">
+          <div><span>Paragraphs</span><b>84</b></div>
+          <div><span>Estimated length</span><b>24:18</b></div>
+          <div><span>Gaps outside target</span><b>3</b></div>
+        </div>
+      </div>
+      <h2 class="section-title">Continuity</h2>
+      <div class="card">
+        <div class="list-row"><b>P34 -> P35</b><span class="chip green">0.72 s</span></div>
+        <div class="list-row"><b>P35 -> P36</b><span class="chip yellow">1.90 s</span></div>
+        <div class="list-row"><b>P36 -> P37</b><span class="chip red">0.12 s</span></div>
+        <div class="list-row"><b>P37 -> P38</b><span class="chip green">0.86 s</span></div>
+      </div>
+      <div class="card">
+        <h3>Render Cache</h3>
+        <p class="muted">Chapter render can be evicted before original takes. Remote-only originals are hydrated if a rebuild is required.</p>
+        <div class="progress"><i style="width:42%"></i></div>
+      </div>
+      <div class="button-stack">
+        <button>Fix Gap Warnings</button>
+        <button class="primary">Render Chapter Preview</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

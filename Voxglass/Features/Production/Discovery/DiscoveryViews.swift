@@ -270,7 +270,7 @@ struct LongNeedCard: View {
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
             Button(action: presentHandoff) {
-                Text("Record on Mac")
+                Text("Start recording")
                     .scaledFont(size: 10, weight: .bold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -279,7 +279,7 @@ struct LongNeedCard: View {
                     .overlay(Capsule().stroke(Color(hex: 0x7896DC).opacity(0.35), lineWidth: 1))
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier("need.recordOnMac.\(needSlug(need))")
+            .accessibilityIdentifier("need.startRecording.\(needSlug(need))")
         }
         .frame(width: 118)
     }
@@ -437,7 +437,7 @@ struct NeedRow: View {
             .tactileTap()
             .accessibilityIdentifier(need.narratableOn.contains(.iOS)
                 ? "need.startNarrating.\(needSlug(need))"
-                : "need.recordOnMac.\(needSlug(need))")
+                : "need.startRecording.\(needSlug(need))")
         }
         .padding(.vertical, 10)
         .accessibilityIdentifier("needs.card.\(needSlug(need))")
@@ -458,7 +458,7 @@ struct MyNarrationsSection: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(title: "My Narrations", actionTitle: nil)
 
-            Text("Short works you're recording. Whole books → Voxglass Studio on your Mac.")
+            Text("Record short works and whole books directly on iPhone.")
                 .scaledFont(size: 12.5)
                 .foregroundStyle(Palette.ink2)
 
@@ -651,7 +651,7 @@ struct LongWorkHandoffSheet: View {
                     .foregroundStyle(Palette.ink2)
                     .padding(.top, 2)
 
-                Text("This is a **book** — best recorded on a Mac, where you get chapter-by-chapter recording, faster review, and a good microphone. Your iPhone is perfect for short poems and stories.")
+                Text("This is a book. Voxglass keeps the workflow chapter-by-chapter while you record, review, validate, and export on iPhone.")
                     .scaledFont(size: 13.5)
                     .multilineTextAlignment(.center)
                     .padding(15)
@@ -666,7 +666,7 @@ struct LongWorkHandoffSheet: View {
                 Button {
                     // Open the Studio Learn More deep link when available.
                 } label: {
-                    Text("How Voxglass Studio works")
+                        Text("How iPhone production works")
                         .scaledFont(size: 15, weight: .heavy)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -675,7 +675,7 @@ struct LongWorkHandoffSheet: View {
                 }
                 .buttonStyle(.plain)
                 .tactileTap()
-                .accessibilityIdentifier("handoff.continueOnMac")
+                .accessibilityIdentifier("production.learnMore")
 
                 Button {
                     dismiss()
@@ -707,9 +707,9 @@ struct LongWorkHandoffSheet: View {
 
     private var steps: some View {
         VStack(alignment: .leading, spacing: 10) {
-            step(1, "Open Voxglass Studio on your Mac.")
+            step(1, "Start a project on iPhone and choose a source document.")
             step(2, "Find \"\(need.work.title)\" under Start a Narration → Needs a Narrator — one click sets up the whole book.")
-            step(3, "Record it there. A short work you started on your phone opens on the Mac too — same project.")
+            step(3, "Record paragraph by paragraph, then review, validate, and export from this iPhone.")
         }
         .padding(.top, 8)
     }

@@ -248,18 +248,14 @@ public final class PlaybackCoordinator {
         return value
     }
 
-    /// Playback URL resolution is deliberately stricter than the model's raw
-    /// `resolvedPlayableURL()`: if a remote chapter already has a complete cache
-    /// blob, feed AVPlayer that file directly instead of sending it through the
-    /// custom resource loader and a network metadata probe.
+    /// Keep remote chapters on their canonical URL even when the cache is
+    /// complete. `AVPlayerAudioEngine` routes that URL through
+    /// `CachingResourceLoader`, which can serve a pinned offline file and can
+    /// fall back to the network for a partial/missing cache. Passing the cache
+    /// file directly to AVPlayer bypasses that recovery path and can produce an
+    /// item that starts and immediately ends.
     private func playbackURL(for chapter: Chapter) async -> URL? {
         guard let url = chapter.resolvedPlayableURL() else { return nil }
-        guard StreamCacheUtils.isRemoteCacheable(url) else { return url }
-
-        let key = StreamCacheUtils.key(for: url)
-        if let cached = await cacheStore.completeAudioFileURL(for: key) {
-            return cached
-        }
         return url
     }
 

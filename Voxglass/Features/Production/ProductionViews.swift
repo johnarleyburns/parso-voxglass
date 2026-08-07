@@ -22,7 +22,7 @@ public struct MyProductionsShelf: View {
                     Image(systemName: "mic")
                         .font(.largeTitle)
                         .foregroundStyle(.secondary)
-                    Text("Productions you preview from Voxglass Studio on your Mac appear here.")
+                    Text("Create a project on iPhone to start recording your next production.")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                 }

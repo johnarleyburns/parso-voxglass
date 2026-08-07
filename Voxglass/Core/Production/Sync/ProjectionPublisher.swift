@@ -1,6 +1,6 @@
 import Foundation
 
-/// Mac-side publish coordinator (spec §13.5). Debounces non-manual triggers to at
+/// iPhone-side mirror coordinator (spec §5). Debounces non-manual triggers to at
 /// most one publish per `debounceInterval`, and delegates the delta publish to the
 /// shared engine. Manual and app-backgrounded reasons publish immediately.
 public actor ProjectionPublisher {

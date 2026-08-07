@@ -7,14 +7,12 @@ import Foundation
 import CloudKit
 import os
 
-/// Concrete `ProductionSyncTransport` over the private CloudKit database and the
-/// shared `VGProductionZone` (spec §13.2). The writer transport (Mac): maps
-/// `SyncRecord` to/from `CKRecord`, attaches paragraph proxies as `CKAsset`, and
-/// surfaces server-record conflicts with the server change tag + revision so the
-/// engine can adopt and retry. The phone consumer uses the same transport.
+/// Concrete `ProductionSyncTransport` over the user's private CloudKit database.
+/// The iPhone is the sole project writer; this transport mirrors phone-owned state
+/// and relays watch review events. The watch never instantiates this type.
 public actor CloudKitProductionSync: ProductionSyncTransport {
 
-    public static let zoneName = "VGProductionZone"
+    public static let zoneName = "VGProductionStudioZone"
     public static let containerID = "iCloud.guru.parso.voxglass"
 
     private let container: CKContainer

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Storage & iCloud - Voxglass Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>Wi-Fi 61%</span></div>
+    <div class="nav centered"><span class="back">Dashboard</span><h1>Storage</h1><span class="action">Edit</span></div>
+    <div class="content compact">
+      <div class="card">
+        <div class="row between"><div><h3>Narration working cache</h3><p class="muted">Separate from downloaded audiobooks.</p></div><b>10 GB</b></div>
+        <div class="progress"><i style="width:84%"></i></div>
+        <div class="chips"><span class="chip yellow">8.4 GB local</span><span class="chip blue">31.2 GB iCloud</span></div>
+      </div>
+      <div class="card">
+        <div class="row between"><div><h3>Consumer audiobook cache</h3><p class="muted">Playback downloads and previews.</p></div><b>6 GB</b></div>
+        <div class="progress"><i style="width:38%"></i></div>
+      </div>
+      <h2 class="section-title">Working Set</h2>
+      <div class="card">
+        <div class="list-row"><span class="status-dot"></span><div class="grow"><b>Chapter 6</b><br><small>Current chapter pinned locally.</small></div><span class="chip green">Local</span></div>
+        <div class="list-row"><span class="status-dot"></span><div class="grow"><b>Chapter 5</b><br><small>Previous context and active review items.</small></div><span class="chip green">Local</span></div>
+        <div class="list-row"><span class="status-dot warn"></span><div class="grow"><b>Chapter 3</b><br><small>Verified in iCloud, safe to hydrate later.</small></div><span class="chip">Remote-only</span></div>
+      </div>
+      <h2 class="section-title">Offload Queue</h2>
+      <div class="card">
+        <div class="list-row"><b>Rendered proxies</b><span class="chip green">evict first</span></div>
+        <div class="list-row"><b>Old export staging</b><span class="chip green">evict next</span></div>
+        <div class="list-row"><b>Verified originals</b><span class="chip yellow">last resort</span></div>
+      </div>
+      <button class="primary full">Free 4.8 GB Safely</button>
+    </div>
+  </div>
+</body>
+</html>

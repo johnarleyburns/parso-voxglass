@@ -49,9 +49,9 @@ public struct ZoneFetchResult: Sendable, Equatable {
 
 // MARK: - ProductionSyncTransport
 
-/// CloudKit-agnostic transport over the production zone (`VGProductionZone`, spec
-/// §13.2). The Mac writer pushes projection records; the phone pushes event records
-/// and both fetch zone changes. Concrete implementations map `SyncRecord` to/from
+/// CloudKit-agnostic transport over the production zone (`VGProductionStudioZone`,
+/// spec §5). The iPhone writes project records and relays watch event records;
+/// concrete implementations map `SyncRecord` to/from
 /// `CKRecord` (one per app target) — Core stays CloudKit-free so the watch never
 /// links it and every path is testable with a fake.
 public protocol ProductionSyncTransport: Sendable {

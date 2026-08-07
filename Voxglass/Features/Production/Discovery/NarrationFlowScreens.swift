@@ -898,7 +898,7 @@ struct ValidateExportView: View {
                     .background(Color(hex: 0x0F1316), in: RoundedRectangle(cornerRadius: 8))
                     .accessibilityIdentifier("export.filename")
             }
-            Text("Encoder unavailable on this device — finish on your Mac.")
+            Text("Encoding is unavailable in this build. Save your project and try again after enabling the on-device export codecs.")
                 .scaledFont(size: 11).foregroundStyle(Color(hex: 0xE6B877))
         }
         .padding(14)

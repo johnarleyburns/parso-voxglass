@@ -2,8 +2,8 @@ import Foundation
 
 // MARK: - Record vocabulary
 
-/// CloudKit record types in the production zone (spec §13.2). Kept in Core as the
-/// shared vocabulary between the Mac writer and the phone consumer.
+/// CloudKit record types in the production zone (spec §5). Kept in Core as the
+/// shared vocabulary between the iPhone writer and the watch companion.
 public enum ProductionRecordType: String, Sendable, Equatable {
     case project = "VGProductionProject"
     case chapter = "VGProductionChapter"

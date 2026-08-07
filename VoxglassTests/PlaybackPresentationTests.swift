@@ -236,7 +236,7 @@ import Foundation
         #expect(h.engine.calls.contains(.play))
     }
 
-    @Test func downloadedRemoteChapterLoadsCompleteCacheFileDirectly() async throws {
+    @Test func downloadedRemoteChapterKeepsCanonicalURLForCacheLoader() async throws {
         let h = makeHarness()
         let remote = URL(string: "https://archive.org/download/item/ch1.mp3")!
         let key = StreamCacheUtils.key(for: remote)
@@ -244,14 +244,13 @@ import Foundation
             .appendingPathComponent("downloaded-\(UUID().uuidString).mp3")
         try Data(repeating: 9, count: 128).write(to: source)
         await h.cacheStore.ingestCompleteFile(at: source, key: key, totalBytes: 128)
-        let resolvedCachedURL = await h.cacheStore.completeAudioFileURL(for: key)
-        let cachedURL = try #require(resolvedCachedURL)
+        #expect(await h.cacheStore.completeAudioFileURL(for: key) != nil)
 
         await h.coordinator.play(makeRemoteBook(remoteURL: remote))
 
         #expect(h.engine.loadCalls.count == 1)
-        #expect(h.engine.loadCalls.first?.url == cachedURL)
-        #expect(h.engine.loadCalls.first?.url.isFileURL == true)
+        #expect(h.engine.loadCalls.first?.url == remote)
+        #expect(h.engine.loadCalls.first?.url.isFileURL == false)
         #expect(h.coordinator.currentSession?.isPlaying == true)
     }
 }

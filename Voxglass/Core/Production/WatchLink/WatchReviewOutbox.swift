@@ -2,7 +2,7 @@ import Foundation
 
 /// File-backed persistence for review events the watch created while the phone was
 /// unreachable. Events are append-only and idempotent by their `id`, so a retry can
-/// never duplicate a review action on the Mac.
+/// never duplicate a review action on the phone.
 public protocol WatchOutboxStorage: Sendable {
     func read() throws -> [ReviewEvent]
     func write(_ events: [ReviewEvent]) throws

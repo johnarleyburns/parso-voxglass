@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Import Audio - Voxglass Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>Wi-Fi 74%</span></div>
+    <div class="nav centered"><span class="back">Dashboard</span><h1>Import Audio</h1><span class="action">Add</span></div>
+    <div class="content compact">
+      <div class="card">
+        <h3>External Recording</h3>
+        <p class="muted">Import WAV, AIFF, M4A, or FLAC from Files, Voice Memos export, or attached storage.</p>
+        <button class="primary full">Choose Files</button>
+      </div>
+      <h2 class="section-title">Alignment</h2>
+      <div class="card">
+        <div class="row between"><span>chapter_06_session_a.wav</span><span class="chip blue">Analyzing</span></div>
+        <div class="progress"><i style="width:63%"></i></div>
+        <p class="muted">Detected 31 speech regions. Matching to paragraphs 1-38 using transcript timing.</p>
+      </div>
+      <div class="card">
+        <div class="list-row"><b>Paragraphs 1-12</b><span class="chip green">Matched</span></div>
+        <div class="list-row"><b>Paragraphs 13-15</b><span class="chip yellow">Needs split</span></div>
+        <div class="list-row"><b>Paragraph 16</b><span class="chip red">No match</span></div>
+        <div class="list-row"><b>Paragraphs 17-38</b><span class="chip green">Matched</span></div>
+      </div>
+      <div class="notice warn">Imported source remains pinned until the derived paragraph takes are uploaded and verified in iCloud.</div>
+      <div class="button-stack">
+        <button>Review Ambiguous Matches</button>
+        <button class="primary">Create Takes</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
