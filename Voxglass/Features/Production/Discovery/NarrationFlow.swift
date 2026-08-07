@@ -391,7 +391,7 @@ final class NarrationFlowModel {
     func buildExport() {
         guard var project, project.rightsAttested else { return }
         // A LibriVox/IA package requires encoded audio, which iOS cannot
-        // produce yet (no LAME/FLAC iOS slices — §11.4 / D-6). We prepare the
+        // produce yet in the shared LAME/libFLAC pipeline. We prepare the
         // textual package + filenames; the encoded destinations are flagged
         // "Encoder unavailable" and the user finishes on the Mac.
         let sanitizer = FilenameSanitizer()

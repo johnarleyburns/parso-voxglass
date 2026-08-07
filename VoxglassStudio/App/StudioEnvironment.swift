@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import VoxglassCore
+import VoxglassEncoders
 
 // MARK: - StudioEnvironment
 
@@ -32,10 +33,16 @@ public final class StudioEnvironment {
 
     /// Reports which encoders this build can actually use (§16.3). Set by the
     /// app composition root (`StudioApp`), which is the only place allowed to
-    /// name `VoxTranscoder` — the SwiftPM `VoxglassStudioKit` target cannot
-    /// import the encoder target, and the diagnostics bundle (S12) needs the
-    /// availability list without constructing an encoder itself.
+    /// name `VoxTranscoder` — the SwiftPM `VoxglassStudioKit` mirror imports
+    /// the encoder target but keeps the live composition root app-only (the
+    /// diagnostics bundle, S12, needs the availability list without
+    /// constructing an encoder itself).
     public var encoderAvailabilityProvider: () -> [String] = { [] }
+
+    /// The decode path shared by metrics, import, and playback preview:
+    /// FLAC through libFLAC, everything else through AVFoundation (§11.5,
+    /// §16.3).
+    public let audioDecoder: any SeekableAudioDecoding
 
     /// The one place entitlement is consulted for the app (§17.5). Only
     /// `Export*`/`Settings*` code and this file reference it (CI gate G-2).
@@ -92,7 +99,8 @@ public final class StudioEnvironment {
         isTestEnvironment: Bool = false,
         seed: UITestSeed? = nil,
         licenseProvider: any LicenseProvider = StaticLicenseProvider(),
-        encoderAvailability: @escaping () -> [String] = { [] }
+        encoderAvailability: @escaping () -> [String] = { [] },
+        audioDecoder: any SeekableAudioDecoding = RoutingAudioDecoder()
     ) {
         self.capture = capture
         self.metrics = metrics
@@ -107,6 +115,7 @@ public final class StudioEnvironment {
         self.license = LicenseGate(provider: licenseProvider)
         self.projection = StudioProjectionCoordinator(clock: clock)
         self.encoderAvailabilityProvider = encoderAvailability
+        self.audioDecoder = audioDecoder
         let library = ProjectLibraryModel(
             store: store,
             recents: recents,
@@ -143,7 +152,8 @@ public final class StudioEnvironment {
 
     /// The live composition root. Called only from `StudioApp`, which can name
     /// the encoder (`VoxTranscoder`); the SwiftPM `VoxglassStudioKit` mirror
-    /// cannot import the encoder target, so it never calls `.live`.
+    /// keeps its composition-root call sites test-only, so it never calls
+    /// `.live`.
     public static func live(
         package: LivePackage = .none,
         transcoder: any AudioTranscoding,
@@ -348,7 +358,7 @@ public final class StudioEnvironment {
     }
 
     private func rebuildPlayerIfNeeded() {
-        player = AVSegmentPlayer(assets: assetStoreForCurrentProject())
+        player = AVSegmentPlayer(assets: assetStoreForCurrentProject(), decoder: audioDecoder)
     }
 }
 

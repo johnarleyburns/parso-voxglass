@@ -3,7 +3,10 @@ import Foundation
 import VoxglassCore
 
 /// The composition point of the encoder pipeline (§16.3): AVFoundation for
-/// decode and for AAC/ALAC/PCM encode, LAME for MP3, libFLAC for FLAC.
+/// Apple-native decode (MP3, WAV, M4A/AAC) and for AAC/ALAC/PCM encode, LAME
+/// for MP3, libFLAC for FLAC decode *and* encode. FLAC decode always goes
+/// through `FLACDecoder` (libFLAC) on macOS and iPhone, never through platform
+/// FLAC behavior (§11.5).
 ///
 /// `availableEncoders` reports what this build can actually encode. LAME and
 /// libFLAC are statically linked, so they are present by default, but the
@@ -19,7 +22,7 @@ public struct VoxTranscoder: AudioTranscoding {
     public init(
         mp3Available: Bool = true,
         flacAvailable: Bool = true,
-        decoder: any AudioDecoding = AVFoundationDecoder()
+        decoder: any AudioDecoding = RoutingAudioDecoder()
     ) {
         self.mp3Available = mp3Available
         self.flacAvailable = flacAvailable

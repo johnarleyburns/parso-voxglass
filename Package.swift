@@ -72,7 +72,7 @@ let package = Package(
         ),
         .target(
             name: "VoxglassStudioKit",
-            dependencies: ["VoxglassCore"],
+            dependencies: ["VoxglassCore", "VoxglassEncoders"],
             path: "VoxglassStudio",
             exclude: [
                 "App/StudioApp.swift",

@@ -1,12 +1,13 @@
 import AVFoundation
 import VoxglassCore
+import VoxglassEncoders
 
 public struct AVMetricsCalculator: AudioMetricsCalculating {
     public static let analyzerVersion = 1
 
-    private let decoder: AVAudioDecoder
+    private let decoder: any AudioDecoding
 
-    public init(decoder: AVAudioDecoder = AVAudioDecoder()) {
+    public init(decoder: any AudioDecoding = RoutingAudioDecoder()) {
         self.decoder = decoder
     }
 
@@ -19,10 +20,13 @@ public struct AVMetricsCalculator: AudioMetricsCalculating {
         AudioMetricsCalculator(decoder: PlaceholderAudioDecoder()).metrics(for: samples, sampleRate: sampleRate, channels: channels)
     }
 
-    /// Decodes any AVFoundation-readable file to mono Float samples. Shared by
-    /// the metrics URL path and the Import Audio feature (§11.5). Sample rates
-    /// outside ReplayGain's 44.1/48 kHz tables are resampled to 48 kHz so a
-    /// rate table is never silently misapplied (§11.6.8 deviation note).
+    /// Decodes any supported file to mono Float samples, shared by the metrics
+    /// URL path and the Import Audio feature (§11.5). FLAC files are decoded
+    /// through libFLAC (`FLACDecoder`); everything else through AVFoundation.
+    /// Sample rates outside ReplayGain's 44.1/48 kHz tables are resampled to
+    /// 48 kHz so a rate table is never silently misapplied (§11.6.8 deviation
+    /// note). Whole-file decode here is an explicit whole-asset analysis step,
+    /// which §11.5 permits.
     public func decodeFileForImport(_ url: URL) async throws -> DecodedAudio {
         let format = try await decoder.describe(url)
         let target: Double? = ReplayGainCoefficients.supportedRates.contains(Int(format.sampleRate))

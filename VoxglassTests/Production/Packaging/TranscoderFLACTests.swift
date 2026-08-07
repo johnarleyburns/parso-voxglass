@@ -4,6 +4,8 @@ import VoxglassCore
 import VoxglassEncoders
 
 /// §16.3 / §19.3 — FLAC is lossless, so a decode round-trip must be bit-exact.
+/// Both encode and decode run through libFLAC (the repo's `FLACDecoder`), not
+/// platform FLAC behavior.
 @Suite struct TranscoderFLACTests {
 
     @Test func flacRoundTripIsBitExact() async throws {
@@ -23,9 +25,10 @@ import VoxglassEncoders
         )
 
         #expect(file.byteCount > 0)
-        let decoder = AVFoundationDecoder()
-        let original = try await decoder.decodeToMonoFloat(input, targetSampleRate: 44_100)
-        let decoded = try await decoder.decodeToMonoFloat(output, targetSampleRate: 44_100)
+        // Original PCM comes from the CAF source (AVFoundation); the FLAC side
+        // MUST decode through libFLAC rather than platform FLAC behavior.
+        let original = try await AVFoundationDecoder().decodeToMonoFloat(input, targetSampleRate: 44_100)
+        let decoded = try await FLACDecoder().decodeToMonoFloat(output, targetSampleRate: 44_100)
 
         // Quantize both to int16 and require exact equality.
         let original16 = quantize16(original.samples)

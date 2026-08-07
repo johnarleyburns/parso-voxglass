@@ -54,10 +54,15 @@ public enum TranscodeError: Error, Sendable, Equatable {
     case encoderUnavailable(String)
     /// `AudioSpec` cannot be produced (unknown container/codec combination).
     case unsupportedSpec(AudioSpec)
-    /// The encoder returned a failure status (LAME/FLAC/ffmpeg exit code).
+    /// The bundled codec encoder returned a failure status.
     case encoderFailed(status: Int, stderr: String?)
     /// The input file could not be decoded to PCM.
     case decodeFailed(URL)
+    /// The input stream cannot be positioned, so a seekable range decode is
+    /// impossible (§11.5). The interactive path must surface this specific
+    /// error so the UI can offer a proxy/transcode action; it MUST NOT fall
+    /// back to decoding the whole file.
+    case fileNotSeekable(URL)
     /// Memory could not be allocated for a buffer.
     case bufferAllocation
     /// A required encoder library call failed.

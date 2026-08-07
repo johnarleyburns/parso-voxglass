@@ -5,11 +5,12 @@ permission in `LICENSE-APPSTORE-EXCEPTION.md`. This file lists the third-party
 software linked into or shipped with the Studio app and the obligations that
 come with each component (§16.3, §21.4).
 
-## Audio encoders (statically linked)
+## Audio codecs
 
-Voxglass encodes MP3 and FLAC with two libraries built from unmodified upstream
-sources by the recipe in `Tools/encoders/build-encoders.sh`. The resulting
-static frameworks are committed at `Tools/encoders/Vendored/`.
+Voxglass encodes MP3 and FLAC, and decodes FLAC, with two libraries built from
+unmodified upstream sources by the recipe in `Tools/encoders/build-encoders.sh`.
+The resulting xcframeworks are committed at `Tools/encoders/Vendored/` and
+contain macOS, iOS device, and iOS simulator slices.
 
 ### LAME MP3 encoder — LGPL-2.1
 
@@ -20,12 +21,13 @@ static frameworks are committed at `Tools/encoders/Vendored/`.
 - Used for: MP3 encoding (128/192 kbps CBR) — the only MP3 path in the product.
 - Recipe: `Tools/encoders/build-encoders.sh` (downloads and builds 3.100 from
   the unmodified upstream tarball).
-- Source: <https://sourceforge.net/projects/lame/>
+- Source: <https://sourceforge.net/projects/lame/files/lame/3.100/>
+- License text: <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>
 
-Under LGPL-2.1 §6, dynamic linking with a substitutable library is the safest
-distribution pattern. Because Voxglass ships these as **static** frameworks
-(linked into the application binary), Voxglass offers the following to anyone
-who received this software, in satisfaction of the LGPL's obligations:
+The LAME xcframework is linked through the shared `VoxglassEncoders` target.
+For distributions in which the library is statically incorporated, LGPL-2.1
+§6 requires the relinkable object files and link instructions. Voxglass offers
+the following to anyone who received this software:
 
 > **Written offer for the Corresponding Source of LAME.** For a period of three
 > years after Voxglass Studio is distributed, Voxglass offers to give any third
@@ -46,7 +48,8 @@ who received this software, in satisfaction of the LGPL's obligations:
 - License: BSD 3-Clause License
 - Used for: FLAC encoding (lossless masters, Internet Archive lane).
 - Recipe: `Tools/encoders/build-encoders.sh`.
-- Source: <https://xiph.org/flac/>
+- Source: <https://github.com/xiph/flac/releases/tag/1.4.3>
+- License text: <https://opensource.org/license/bsd-3-clause/>
 
 BSD-3-Clause attribution text:
 
@@ -92,9 +95,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ## Verification
 
-- `Tools/encoders/build-encoders.sh` reproduces `Tools/encoders/Vendored/` from
-  a clean checkout (requires network access to download the unmodified upstream
-  tarballs).
+- `Tools/encoders/build-encoders.sh` downloads the exact LAME 3.100 and
+  libFLAC 1.4.3 upstream tarballs, configures static library builds with
+  `--disable-shared`, `--disable-frontend`/`--disable-programs`, and creates
+  the three Apple platform slices without Homebrew or a system codec.
 - The xcframeworks committed under `Tools/encoders/Vendored/` are the output of
-  that recipe; their Info.plist records the supported macOS architectures
-  (arm64 + x86_64).
+  that recipe; their Info.plist records `macos-arm64_x86_64`, `ios-arm64`, and
+  `ios-arm64_x86_64-simulator`, with importable Swift modules named `Lame` and
+  `FLAC`.

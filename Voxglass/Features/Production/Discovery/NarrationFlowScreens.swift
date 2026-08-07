@@ -803,7 +803,7 @@ struct ValidateExportView: View {
                     id: "export.destination.internetArchive"
                 )
 
-                Text("FLAC/MP3 encoding isn't available on iPhone yet — record and export on your Mac to produce encoded audio. Your paragraph takes transfer with the project.")
+                Text("FLAC/MP3 encoding is available on iPhone and Mac. Your paragraph takes transfer with the project.")
                     .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
 
                 Button {

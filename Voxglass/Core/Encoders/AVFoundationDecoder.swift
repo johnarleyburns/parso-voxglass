@@ -3,9 +3,15 @@ import Foundation
 import VoxglassCore
 
 /// AVFoundation-backed `AudioDecoding` for the encoder pipeline (§16.2). Reads
-/// any AVFoundation-supported file (CAF, WAV, MP3, FLAC, M4A) into mono float
-/// PCM, optionally resampling to a target rate via `AVAudioConverter`.
-public struct AVFoundationDecoder: AudioDecoding {
+/// any AVFoundation-supported file (CAF, WAV, MP3, M4A) into mono float PCM,
+/// optionally resampling to a target rate via `AudioResampler`.
+///
+/// MP3 decode MAY remain AVFoundation-backed (§16.3); FLAC files are routed to
+/// `FLACDecoder` (libFLAC) by `RoutingAudioDecoder`, never through this type.
+///
+/// Also conforms to `SeekableAudioDecoding` so MP3/WAV paragraph preview can
+/// use `AVAudioFile.framePosition` instead of reading a whole file.
+public struct AVFoundationDecoder: SeekableAudioDecoding {
 
     public init() {}
 
@@ -44,11 +50,44 @@ public struct AVFoundationDecoder: AudioDecoding {
         var rate = format.sampleRate
 
         if let targetSampleRate, abs(targetSampleRate - rate) > 0.5 {
-            samples = try resample(samples, from: rate, to: targetSampleRate)
+            samples = try AudioResampler.resample(samples, from: rate, to: targetSampleRate)
             rate = targetSampleRate
         }
 
         return DecodedAudio(samples: samples, sampleRate: rate, duration: Double(buffer.frameLength) / format.sampleRate)
+    }
+
+    public func decodeToMonoFloat(
+        _ url: URL,
+        range: AudioDecodeRange,
+        targetSampleRate: Double?
+    ) async throws -> DecodedAudio {
+        let file = try AVAudioFile(forReading: url)
+        let format = file.processingFormat
+        let total = Int64(file.length)
+        let start = max(0, min(range.startFrame, total))
+        let count = max(0, min(Int64(range.frameCount), total - start))
+        file.framePosition = start
+
+        guard let buffer = AVAudioPCMBuffer(
+            pcmFormat: format,
+            frameCapacity: AVAudioFrameCount(count)
+        ) else {
+            throw AVAudioDecoderError.bufferAllocationFailed
+        }
+        try file.read(into: buffer)
+
+        var samples = monoFloat(from: buffer)
+        var rate = format.sampleRate
+        if let targetSampleRate, abs(targetSampleRate - rate) > 0.5 {
+            samples = try AudioResampler.resample(samples, from: rate, to: targetSampleRate)
+            rate = targetSampleRate
+        }
+        return DecodedAudio(
+            samples: samples,
+            sampleRate: rate,
+            duration: Double(count) / format.sampleRate
+        )
     }
 
     // MARK: - Conversion
@@ -68,57 +107,6 @@ public struct AVFoundationDecoder: AudioDecoding {
             for i in 0..<frameLength { mono[i] += channel[i] / Float(channels) }
         }
         return mono
-    }
-
-    private func resample(_ input: [Float], from inputRate: Double, to outputRate: Double) throws -> [Float] {
-        let inputFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32, sampleRate: inputRate, channels: 1, interleaved: false
-        )!
-        let outputFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32, sampleRate: outputRate, channels: 1, interleaved: false
-        )!
-        guard let converter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
-            throw AVAudioDecoderError.conversionUnavailable
-        }
-        let inputBuffer = AVAudioPCMBuffer(pcmFormat: inputFormat, frameCapacity: AVAudioFrameCount(input.count))!
-        inputBuffer.frameLength = AVAudioFrameCount(input.count)
-        if let channel = inputBuffer.floatChannelData?[0] {
-            input.withUnsafeBufferPointer { src in
-                channel.update(from: src.baseAddress!, count: input.count)
-            }
-        }
-
-        let ratio = outputRate / inputRate
-        let outputCapacity = AVAudioFrameCount(Double(input.count) * ratio) + 4096
-        let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: outputCapacity)!
-
-        var all: [Float] = []
-        var error: NSError?
-
-        while true {
-            let status = converter.convert(to: outputBuffer, error: &error) { _, packetStatus in
-                packetStatus.pointee = .haveData
-                return inputBuffer
-            }
-            switch status {
-            case .haveData:
-                if let channel = outputBuffer.floatChannelData?[0] {
-                    all.append(contentsOf: UnsafeBufferPointer(start: channel, count: Int(outputBuffer.frameLength)))
-                }
-            case .endOfStream:
-                if let channel = outputBuffer.floatChannelData?[0] {
-                    all.append(contentsOf: UnsafeBufferPointer(start: channel, count: Int(outputBuffer.frameLength)))
-                }
-                return all
-            case .inputRanDry, .error:
-                // The block always supplies the full input buffer, so "ran dry"
-                // only signals the converter finished consuming it; treat both
-                // as a hard stop rather than looping forever.
-                return all
-            @unknown default:
-                return all
-            }
-        }
     }
 
     public enum AVAudioDecoderError: Error {

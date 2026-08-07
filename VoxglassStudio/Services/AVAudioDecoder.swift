@@ -6,7 +6,13 @@ import VoxglassCore
 /// This is the live implementation behind `AudioMetricsCalculator.metrics(for:)`
 /// in the Studio target; the Core `PlaceholderAudioDecoder` exists only so the
 /// library target compiles without AVFoundation.
-public struct AVAudioDecoder: AudioDecoding {
+///
+/// Conforms to `SeekableAudioDecoding` (§11.5) so paragraph seek / trim
+/// preview can read a bounded range via `AVAudioFile.framePosition`. FLAC files
+/// are normally routed to `FLACDecoder` (libFLAC) by the shared
+/// `RoutingAudioDecoder`; this type exists as the non-FLAC fallback and the
+/// SwiftPM-side default.
+public struct AVAudioDecoder: SeekableAudioDecoding {
     public init() {}
 
     public func describe(_ url: URL) async throws -> AudioFormatDescription {
@@ -62,6 +68,49 @@ public struct AVAudioDecoder: AudioDecoding {
             duration = Double(samples.count) / sampleRate
         }
         return DecodedAudio(samples: samples, sampleRate: sampleRate, duration: duration)
+    }
+
+    public func decodeToMonoFloat(
+        _ url: URL,
+        range: AudioDecodeRange,
+        targetSampleRate: Double?
+    ) async throws -> DecodedAudio {
+        let file = try AVAudioFile(forReading: url)
+        let format = file.processingFormat
+        let total = Int64(file.length)
+        let start = max(0, min(range.startFrame, total))
+        let count = max(0, min(Int64(range.frameCount), total - start))
+        file.framePosition = start
+
+        let frameCount = AVAudioFrameCount(count)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+            throw AVAudioDecoderError.bufferAllocationFailed
+        }
+        try file.read(into: buffer)
+        guard let channelData = buffer.floatChannelData else {
+            throw AVAudioDecoderError.noChannelData
+        }
+        let readCount = Int(buffer.frameLength)
+        var samples = [Float](repeating: 0, count: readCount)
+        let chanCount = Int(format.channelCount)
+        for i in 0..<readCount {
+            var sum: Float = 0
+            for c in 0..<chanCount {
+                sum += channelData[c][i]
+            }
+            samples[i] = sum / Float(chanCount)
+        }
+        var sampleRate = format.sampleRate
+        if let target = targetSampleRate, abs(target - sampleRate) > 0.5 {
+            let resampled = try resampleTo(samples: samples, fromRate: sampleRate, targetRate: target)
+            samples = resampled.samples
+            sampleRate = resampled.sampleRate
+        }
+        return DecodedAudio(
+            samples: samples,
+            sampleRate: sampleRate,
+            duration: Double(count) / format.sampleRate
+        )
     }
 
     private func resampleTo(samples: [Float], fromRate: Double, targetRate: Double) throws -> (samples: [Float], sampleRate: Double) {

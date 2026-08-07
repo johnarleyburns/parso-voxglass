@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import VoxglassCore
+import VoxglassEncoders
 
 /// Concrete `SegmentPlayer` backed by `AVAudioEngine` + `AVAudioPlayerNode`
 /// (spec §12.5).
@@ -23,6 +24,7 @@ public final class AVSegmentPlayer: @preconcurrency SegmentPlayer {
     public let events: AsyncStream<PlayerEvent>
 
     private let assets: any ContentAddressedStore
+    private let decoder: any SeekableAudioDecoding
     private let engine = AVAudioEngine()
     private let node = AVAudioPlayerNode()
     private let timePitch = AVAudioUnitTimePitch()
@@ -49,8 +51,12 @@ public final class AVSegmentPlayer: @preconcurrency SegmentPlayer {
         let isBoundary: Bool
     }
 
-    public init(assets: any ContentAddressedStore) {
+    public init(
+        assets: any ContentAddressedStore,
+        decoder: any SeekableAudioDecoding = RoutingAudioDecoder()
+    ) {
         self.assets = assets
+        self.decoder = decoder
         self.canonicalFormat = AVAudioFormat(
             standardFormatWithSampleRate: AVSegmentPlayer.canonicalRate,
             channels: 1
@@ -240,6 +246,70 @@ public final class AVSegmentPlayer: @preconcurrency SegmentPlayer {
 
     private func makeAudioBuffer(for segment: PlaybackSegment, startOffset: TimeInterval) async throws -> AVAudioPCMBuffer {
         let url = assets.url(for: segment.assetRef)
+        var samples: [Float]
+        if isFLAC(url) {
+            // §11.5: FLAC preview/seek MUST use the libFLAC seekable range path;
+            // decoding the whole file just to reach a later paragraph is forbidden.
+            samples = try await decodeFLACRange(for: url, segment: segment)
+        } else {
+            samples = try await decodeWholeFile(for: url, segment: segment)
+        }
+        let rate = canonicalFormat.sampleRate
+
+        let offsetSample = min(samples.count, Int(startOffset * rate))
+        if offsetSample > 0 {
+            samples.removeFirst(offsetSample)
+        }
+
+        let gain = Float(pow(10, segment.gainDB / 20))
+        let fadeInFrames = max(1, Int(segment.fadeIn * rate))
+        let fadeOutFrames = max(1, Int(segment.fadeOut * rate))
+
+        for i in samples.indices {
+            var g = gain
+            if i < fadeInFrames {
+                g *= Float(i) / Float(fadeInFrames)
+            }
+            let fromEnd = samples.count - i
+            if fromEnd <= fadeOutFrames {
+                g *= Float(fromEnd) / Float(fadeOutFrames)
+            }
+            samples[i] *= g
+        }
+
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: canonicalFormat, frameCapacity: AVAudioFrameCount(samples.count)) else {
+            throw AVSegmentPlayerError.bufferAllocation
+        }
+        buffer.frameLength = AVAudioFrameCount(samples.count)
+        if let data = buffer.floatChannelData {
+            for i in samples.indices {
+                data[0][i] = samples[i]
+            }
+        }
+        return buffer
+    }
+
+    /// Seekable range decode for FLAC files (§11.5): describe the file through
+    /// libFLAC, decode only the take's trim window (in source frames) plus a
+    /// small tail, and resample to the canonical rate.
+    private func decodeFLACRange(for url: URL, segment: PlaybackSegment) async throws -> [Float] {
+        let format = try await decoder.describe(url)
+        let sourceRate = format.sampleRate
+        let start = Int64(max(0, segment.trim.lowerBound * sourceRate))
+        let cappedEnd = min(segment.trim.upperBound * sourceRate, Double(Int64.max))
+        let end = Int64(max(Double(start), cappedEnd))
+        let range = AudioDecodeRange(startFrame: start, frameCount: Int(max(0, end - start)))
+        let decoded = try await decoder.decodeToMonoFloat(
+            url,
+            range: range,
+            targetSampleRate: canonicalFormat.sampleRate
+        )
+        return decoded.samples
+    }
+
+    /// Legacy whole-file path for non-FLAC formats (read at the file rate,
+    /// convert to canonical, then apply the trim window).
+    private func decodeWholeFile(for url: URL, segment: PlaybackSegment) async throws -> [Float] {
         let file = try AVAudioFile(forReading: url)
         let fileFormat = file.processingFormat
         let frameCount = AVAudioFrameCount(file.length)
@@ -253,40 +323,19 @@ public final class AVSegmentPlayer: @preconcurrency SegmentPlayer {
 
         let startSample = max(0, min(samples.count, Int(segment.trim.lowerBound * rate)))
         let endSample = max(startSample, min(samples.count, Int(segment.trim.upperBound * rate)))
-        var trimmed = Array(samples[startSample..<endSample])
-        samples.removeAll(keepingCapacity: false)
+        samples = Array(samples[startSample..<endSample])
+        return samples
+    }
 
-        let offsetSample = min(trimmed.count, Int(startOffset * rate))
-        if offsetSample > 0 {
-            trimmed.removeFirst(offsetSample)
+    private func isFLAC(_ url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
+            return url.pathExtension.lowercased() == "flac"
         }
-
-        let gain = Float(pow(10, segment.gainDB / 20))
-        let fadeInFrames = max(1, Int(segment.fadeIn * rate))
-        let fadeOutFrames = max(1, Int(segment.fadeOut * rate))
-
-        for i in trimmed.indices {
-            var g = gain
-            if i < fadeInFrames {
-                g *= Float(i) / Float(fadeInFrames)
-            }
-            let fromEnd = trimmed.count - i
-            if fromEnd <= fadeOutFrames {
-                g *= Float(fromEnd) / Float(fadeOutFrames)
-            }
-            trimmed[i] *= g
+        defer { try? handle.close() }
+        guard let head = try? handle.read(upToCount: 4), head.count == 4 else {
+            return url.pathExtension.lowercased() == "flac"
         }
-
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: canonicalFormat, frameCapacity: AVAudioFrameCount(trimmed.count)) else {
-            throw AVSegmentPlayerError.bufferAllocation
-        }
-        buffer.frameLength = AVAudioFrameCount(trimmed.count)
-        if let data = buffer.floatChannelData {
-            for i in trimmed.indices {
-                data[0][i] = trimmed[i]
-            }
-        }
-        return buffer
+        return head == Data([0x66, 0x4C, 0x61, 0x43])
     }
 
     private func makeSilenceBuffer(seconds: TimeInterval) throws -> AVAudioPCMBuffer {

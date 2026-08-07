@@ -1,5 +1,6 @@
 import SwiftUI
 import VoxglassCore
+import VoxglassEncoders
 
 @main
 struct StudioApp: App {
