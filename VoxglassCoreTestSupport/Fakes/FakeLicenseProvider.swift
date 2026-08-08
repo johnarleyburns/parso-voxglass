@@ -29,8 +29,8 @@ public final class FakeLicenseProvider: LicenseProvider, @unchecked Sendable {
     public init(
         entitlement: EntitlementState = .free,
         productInfo: ProductInfo = ProductInfo(
-            displayPrice: "$149.00",
-            displayName: "Voxglass Studio Pro",
+            displayPrice: "$79.00",
+            displayName: NarrationProProduct.displayName,
             description: "Professional retail delivery"
         ),
         failEveryCall: Bool = false

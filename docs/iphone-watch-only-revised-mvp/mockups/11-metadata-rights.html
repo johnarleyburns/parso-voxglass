@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11 · Metadata &amp; rights — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>11 · Metadata &amp; rights</b>Flow step <code>.metadata</code>. Commercial-only fields are visibly Pro but the <em>form</em> is free — you can see exactly what you would be buying.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Metadata &amp; rights</span><span class="step">Step 6 of 8</span></div>
+  <div class="dots"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i></div>
+
+  <div class="content">
+
+    <div class="card">
+      <div class="row top">
+        <div class="cover">RA</div>
+        <div class="grow">
+          <h3>Artwork</h3>
+          <p style="margin-top:4px">1400 × 1400 px</p>
+          <div class="chips"><span class="chip bad">Too small for retail</span><span class="chip ok">Fine for LibriVox</span></div>
+          <button class="btn small" style="margin-top:10px" id="metadata.replaceArtwork">Replace</button>
+        </div>
+      </div>
+      <p class="faint" style="margin-top:10px">Retail destinations require square artwork of at least 2400 × 2400 px.</p>
+    </div>
+
+    <div class="field-label">TITLE</div>
+    <input class="field" id="metadata.title" value="The Murder of Roger Ackroyd" readonly>
+    <div class="field-label">AUTHOR</div>
+    <input class="field" id="metadata.author" value="Agatha Christie" readonly>
+    <div class="field-label">NARRATOR</div>
+    <input class="field" id="metadata.narrator" value="John Burns" readonly>
+    <div class="field-label">DESCRIPTION</div>
+    <textarea class="field" id="metadata.description" readonly>Dr Sheppard, the village doctor of King's Abbot, records the events surrounding the death of Roger Ackroyd.</textarea>
+
+    <div class="field-label">LANGUAGE &amp; GENRE</div>
+    <div class="card tight">
+      <div class="kv"><span>Language</span><span>English (UK)</span></div>
+      <div class="kv"><span>Genre</span><span>Mystery &amp; Detective</span></div>
+      <div class="kv"><span>Keywords</span><span>golden age, poirot</span></div>
+    </div>
+
+    <div class="field-label">RIGHTS</div>
+    <div class="card tight">
+      <div class="list-row"><div class="checkbox on">✓</div><div class="grow"><small>Public domain in my jurisdiction</small></div></div>
+      <div class="kv" style="margin-top:6px"><span>Basis</span><span>Published 1926</span></div>
+      <div class="kv"><span>Source</span><span class="mono">gutenberg.org/ebooks/69087</span></div>
+      <div class="kv"><span>Narration origin</span><span class="ok-text">Recorded by me · human</span></div>
+      <p class="faint" style="margin-top:9px">Voxglass does not determine copyright status.</p>
+    </div>
+
+    <div class="field-label">INTERNET ARCHIVE</div>
+    <div class="card tight">
+      <div class="kv"><span>Identifier</span><span class="mono">murder_roger_ackroyd_jb</span></div>
+      <div class="kv"><span>Collection</span><span>opensource_audio</span></div>
+      <div class="kv"><span>License URL</span><span class="mono">creativecommons.org/publicdomain/…</span></div>
+    </div>
+
+    <div class="row between section-title">
+      <h2 style="font-size:19px">Commercial fields</h2>
+      <span class="chip brass">Pro</span>
+    </div>
+    <div class="card tight" id="metadata.commercial" style="opacity:.62">
+      <div class="kv"><span>ISBN / ASIN</span><span class="faint">Locked</span></div>
+      <div class="kv"><span>Publisher</span><span class="faint">Locked</span></div>
+      <div class="kv"><span>Rights holder</span><span class="faint">Locked</span></div>
+      <div class="kv"><span>Production copyright</span><span class="faint">Locked</span></div>
+      <div class="kv"><span>Retail sample</span><span class="faint">Locked</span></div>
+    </div>
+    <p class="faint" style="margin-top:8px">These are only needed for a paid retail release. LibriVox and Internet Archive exports never ask for them.</p>
+
+    <button class="btn primary" style="margin-top:16px" id="metadata.continue">Continue</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

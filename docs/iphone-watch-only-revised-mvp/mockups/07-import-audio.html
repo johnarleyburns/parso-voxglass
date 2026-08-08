@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>07 · Import audio — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>07 · Import existing audio</b>NEW (§10). Storage impact is stated <em>before</em> the import runs. Origin declaration is mandatory compliance metadata, not a nicety.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">✕</span><span class="title">Import audio</span><span class="action">Import</span></div>
+
+  <div class="content">
+
+    <div class="card tight">
+      <div class="row top">
+        <span class="lead" style="font-size:22px">♪</span>
+        <div class="grow"><h3>ackroyd-ch03-raw.wav</h3><small>48 kHz · 24-bit · mono · 1h 12m</small></div>
+      </div>
+      <div class="kv" style="margin-top:8px"><span>Original size</span><span class="mono">1.42 GB</span></div>
+      <div class="kv"><span>Estimated slices</span><span class="mono">112 files · 1.44 GB</span></div>
+      <div class="kv"><span>Free on iPhone after import</span><span class="warn-text mono">4.1 GB</span></div>
+      <div class="list-row" style="margin-top:6px" id="importAudio.trashOriginal">
+        <div class="checkbox on">✓</div>
+        <div class="grow"><small>Move the original to Trash after every slice is verified</small></div>
+      </div>
+    </div>
+
+    <div class="field-label">HOW TO ASSIGN IT</div>
+    <div class="card tight" id="importAudio.mode">
+      <div class="list">
+        <div class="list-row" id="importAudio.mode.silence">
+          <div class="radio on"></div>
+          <div class="grow"><h3>Split by silence, then match in order</h3><small>112 segments found · matches 112 paragraphs in Chapter 3</small></div>
+        </div>
+        <div class="list-row" id="importAudio.mode.sequential">
+          <div class="radio"></div>
+          <div class="grow"><h3>Assign detected segments sequentially</h3><small>You confirm each boundary</small></div>
+        </div>
+        <div class="list-row" id="importAudio.mode.whole">
+          <div class="radio"></div>
+          <div class="grow"><h3>One paragraph, whole file</h3><small>For a single poem or a pickup</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="row between"><h3>Detected segments</h3><span class="chip ok">112 of 112 matched</span></div>
+      <div class="wave" style="margin:10px 0"></div>
+      <div class="list">
+        <div class="list-row"><span class="lead">1</span><div class="grow"><small>0:00 – 0:11 → ¶ 1093</small></div><span class="chip ok">Clean</span></div>
+        <div class="list-row"><span class="lead">2</span><div class="grow"><small>0:13 – 0:29 → ¶ 1094</small></div><span class="chip ok">Clean</span></div>
+        <div class="list-row"><span class="lead">3</span><div class="grow"><small>0:31 – 0:38 → ¶ 1095</small></div><span class="chip bad">Clipping</span></div>
+      </div>
+      <button class="btn small" style="margin-top:10px" id="importAudio.adjustSilence">Adjust silence threshold</button>
+    </div>
+
+    <div class="field-label">WHO OR WHAT MADE THIS RECORDING?</div>
+    <div class="card tight" id="importAudio.origin">
+      <div class="list">
+        <div class="list-row" id="importAudio.origin.selfRecorded"><div class="radio on"></div><div class="grow"><h3>I recorded it myself</h3></div></div>
+        <div class="list-row" id="importAudio.origin.humanExternal"><div class="radio"></div><div class="grow"><h3>Another person recorded it</h3></div></div>
+        <div class="list-row" id="importAudio.origin.aiImported"><div class="radio"></div><div class="grow"><h3>AI-generated or AI-processed</h3><small>Blocks LibriVox export</small></div></div>
+        <div class="list-row" id="importAudio.origin.unknown"><div class="radio"></div><div class="grow"><h3>I’m not sure</h3><small>Blocks LibriVox export</small></div></div>
+      </div>
+      <p style="margin-top:9px" class="faint">LibriVox accepts only recordings made by human volunteers using their own voices.</p>
+    </div>
+
+    <button class="btn primary" style="margin-top:14px" id="importAudio.start">Import 112 segments</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

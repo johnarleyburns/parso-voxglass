@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>10 · Assembly — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>10 · Assembly</b>Flow step <code>.assemble</code>. Non-destructive: gaps and trims are a plan, not an edit. Renders are chunked by chapter and cancellable (M-4).</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Assembly</span><span class="step">Step 5 of 8</span></div>
+  <div class="dots"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i></div>
+
+  <div class="content">
+
+    <div class="card">
+      <div class="row between"><h3>Chapter 3</h3><span class="chip">112 ¶ · 21m 40s</span></div>
+      <div class="wave" style="margin:11px 0"></div>
+      <p>Assembly is a plan. Your original takes are never modified or trimmed on disk.</p>
+    </div>
+
+    <div class="card">
+      <h3>Spacing</h3>
+      <div class="kv" style="margin-top:8px"><span>Between paragraphs</span><span class="mono" id="assemble.paragraphGap">0.65 s</span></div>
+      <div class="progress"><i style="width:33%"></i></div>
+      <div class="kv" style="margin-top:6px"><span>Between scenes</span><span class="mono" id="assemble.sceneGap">1.50 s</span></div>
+      <div class="progress"><i style="width:60%"></i></div>
+      <div class="kv" style="margin-top:6px"><span>Room tone at head / tail</span><span class="mono" id="assemble.roomTone">0.75 s / 3.00 s</span></div>
+      <div class="progress"><i style="width:48%"></i></div>
+      <p style="margin-top:8px" class="faint">ACX requires room tone at the head and tail of every file. These defaults satisfy it.</p>
+    </div>
+
+    <div class="card tight">
+      <div class="row between"><div class="grow"><h3>Trim silence at take edges</h3><small>Detected, not guessed — uses the same analysis as import</small></div><div class="toggle on" id="assemble.trimSilence"><i></i></div></div>
+      <div class="row between" style="margin-top:12px"><div class="grow"><h3>Normalise take-to-take loudness</h3><small>ReplayGain, applied at render</small></div><div class="toggle on" id="assemble.normalise"><i></i></div></div>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>Render cache</h3><span class="chip">1.1 GB</span></div>
+      <div class="list" style="margin-top:4px">
+        <div class="list-row"><div class="grow"><h3>Chapter 1</h3><small>Rendered · 18m 12s</small></div><span class="chip ok">Current</span></div>
+        <div class="list-row"><div class="grow"><h3>Chapter 2</h3><small>Rendered · 16m 44s</small></div><span class="chip ok">Current</span></div>
+        <div class="list-row"><div class="grow"><h3>Chapter 3</h3><small>Spacing changed since render</small></div><span class="chip brass">Stale</span></div>
+        <div class="list-row"><div class="grow"><h3>Chapters 4–24</h3><small>Not recorded yet</small></div><span class="chip">—</span></div>
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn small" id="assemble.renderChapter">Render chapter 3</button>
+        <button class="btn small" id="assemble.clearCache">Clear cache</button>
+      </div>
+      <p class="faint" style="margin-top:9px">Renders can be cleared any time — they rebuild from your takes. They are the first thing evicted under storage pressure.</p>
+    </div>
+
+    <div class="card tight">
+      <div class="row between"><h3>Preflight</h3><span class="chip ok">1.4 GB free needed · 4.1 GB available</span></div>
+      <div class="kv" style="margin-top:6px"><span>Assets in iCloud</span><span class="ok-text">None for this chapter</span></div>
+    </div>
+
+    <button class="btn primary" style="margin-top:14px" id="assemble.continue">Continue</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

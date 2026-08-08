@@ -35,7 +35,7 @@ check_no_synthesis() {
   # marks fixture comments that merely describe fake audio.
   local matches
   matches=$(grep -rn --include='*.swift' -E "$banned" \
-              Voxglass VoxglassWatch VoxglassStudio VoxglassCoreTestSupport 2>/dev/null \
+              Voxglass VoxglassWatch VoxglassCoreTestSupport 2>/dev/null \
             | grep -v 'isLikelyGeneratedTTSAudio' \
             | grep -v 'synthesis-exempt:' || true)
   if [ -n "$matches" ]; then
@@ -45,7 +45,7 @@ check_no_synthesis() {
   fi
   local import_matches
   import_matches=$(grep -rn --include='*.swift' -E "$banned_imports" \
-              Voxglass VoxglassWatch VoxglassStudio VoxglassCoreTestSupport 2>/dev/null || true)
+              Voxglass VoxglassWatch VoxglassCoreTestSupport 2>/dev/null || true)
   if [ -n "$import_matches" ]; then
     while read -r line; do
       violate "G-1: banned import (synthesis-adjacent AI): $line"
@@ -62,7 +62,7 @@ check_pro_gate_placement() {
   local allowed='Export|Packaging|RetailMaster|Master|License|Settings|StudioEnvironment'
   local forbidden='Recording|Review|Preview|Capture|Assembly|Segment|Sync|Watch|CarPlay|Validation'
   local matches
-  matches=$(find Voxglass/Core Voxglass VoxglassWatch VoxglassStudio -name '*.swift' 2>/dev/null \
+  matches=$(find Voxglass/Core Voxglass VoxglassWatch -name '*.swift' 2>/dev/null \
             | grep -E "/[^/]*($forbidden)[^/]*\.swift$" \
             | grep -vE "/[^/]*($allowed)[^/]*\.swift$" \
             | xargs grep -nE "$banned" 2>/dev/null || true)
@@ -77,7 +77,7 @@ check_pro_gate_placement() {
 # G-3: No ObservableObject in new Production files.
 # ──────────────────────────────────────────────────────────────
 check_no_observable_object() {
-  local dirs='Voxglass/Core/Production VoxglassStudio VoxglassWatch/Production Voxglass/Features/Production'
+  local dirs='Voxglass/Core/Production VoxglassWatch/Production Voxglass/Features/Production'
   for d in $dirs; do
     if [ -d "$d" ]; then
       local matches
@@ -163,16 +163,11 @@ check_determinism_seams() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-8: Tests never touch real services. The Studio app must handle the
-# test-environment flag (so fakes are wired for the microphone, CloudKit,
-# StoreKit, and the encoder helper), and every UI test must launch with
-# `-uiTestSeed` plus `-useTemporaryStore` (§4.3, §19.6).
+# G-8: Tests never touch real services. Every UI test must launch with
+# `-uiTestSeed` plus `-useTemporaryStore` (§4.3, §19.6), or seed in-process.
 # ──────────────────────────────────────────────────────────────
 check_test_environment() {
-  if ! grep -rq 'isTestEnvironment' VoxglassStudio --include='*.swift'; then
-    violate "G-8: VoxglassStudio must handle isTestEnvironment (fakes for capture/sync/license/transcoder)"
-  fi
-  local ui_dirs="VoxglassStudioUITests VoxglassUITests VoxglassWatchUITests VoxglassCarPlaySmokeTests"
+  local ui_dirs="VoxglassUITests VoxglassWatchUITests VoxglassCarPlaySmokeTests"
   for d in $ui_dirs; do
     if [ -d "$d" ]; then
       local files
@@ -221,7 +216,7 @@ check_legal_strings() {
            "You submit these files yourself. Voxglass never uploads on your behalf." \
            "Contains narration generated or processed with AI voice technology."; do
     local matches
-    matches=$(grep -rn --include='*.swift' -F "$i" Voxglass VoxglassStudio VoxglassWatch VoxglassCoreTestSupport 2>/dev/null | grep -vF "$legal_file" || true)
+    matches=$(grep -rn --include='*.swift' -F "$i" Voxglass VoxglassWatch VoxglassCoreTestSupport 2>/dev/null | grep -vF "$legal_file" || true)
     if [ -n "$matches" ]; then
       while read -r line; do
         violate "G-11: legal string outside LegalStrings.swift: $line"
@@ -237,7 +232,7 @@ check_legal_strings() {
 # ──────────────────────────────────────────────────────────────
 check_no_auto_upload() {
   local matches
-  matches=$(grep -rn --include='*.swift' -E 'URLSession.*(dataTask|uploadTask|downloadTask)|(dataTask|uploadTask|downloadTask).*URLSession' Voxglass VoxglassStudio VoxglassWatch Voxglass/Core 2>/dev/null \
+  matches=$(grep -rn --include='*.swift' -E 'URLSession.*(dataTask|uploadTask|downloadTask)|(dataTask|uploadTask|downloadTask).*URLSession' Voxglass VoxglassWatch Voxglass/Core 2>/dev/null \
     | grep -E 'archive\.org|librivox\.org|acx\.com' || true)
   if [ -n "$matches" ]; then
     while read -r line; do
@@ -250,7 +245,7 @@ check_no_auto_upload() {
 # G-9: No test support in shipping targets.
 # ──────────────────────────────────────────────────────────────
 check_no_test_support() {
-  for target in Voxglass/Core Voxglass VoxglassWatch VoxglassStudio; do
+  for target in Voxglass/Core Voxglass VoxglassWatch; do
     if [ -d "$target" ]; then
       local matches
       matches=$(grep -rn --include='*.swift' 'import VoxglassCoreTestSupport' "$target" 2>/dev/null || true)
@@ -290,7 +285,7 @@ check_discovery_total() {
 check_no_signin_ui() {
   local banned='ASWebAuthenticationSession|signIn|credential|password'
   local matches
-  matches=$(grep -rn --include='*.swift' -E "$banned" Voxglass/Core/Production/Discovery Voxglass/Features/Production/Discovery VoxglassStudio/Features/Discovery 2>/dev/null || true)
+  matches=$(grep -rn --include='*.swift' -E "$banned" Voxglass/Core/Production/Discovery Voxglass/Features/Production/Discovery 2>/dev/null || true)
   if [ -n "$matches" ]; then
     while read -r line; do
       violate "G-14: auth/sign-in reference in discovery: $line"
@@ -299,7 +294,7 @@ check_no_signin_ui() {
 
   # The `login` token is permitted only inside the L3 wall-detection seam.
   local login_matches
-  login_matches=$(grep -rn --include='*.swift' -w 'login' Voxglass/Core/Production/Discovery Voxglass/Features/Production/Discovery VoxglassStudio/Features/Discovery 2>/dev/null \
+  login_matches=$(grep -rn --include='*.swift' -w 'login' Voxglass/Core/Production/Discovery Voxglass/Features/Production/Discovery 2>/dev/null \
     | grep -vE 'LenientHTMLScanner\.swift|LibriVoxForumNeedsSource\.swift|looksLikeLoginPage|ucp\.php' || true)
   if [ -n "$login_matches" ]; then
     while read -r line; do
@@ -427,6 +422,49 @@ PY
 }
 
 # ──────────────────────────────────────────────────────────────
+# G-P6: No VoxglassStudio. The deleted macOS Studio tree must never be
+# reintroduced by a partial revert (D-3). No source file and no project
+# manifest (project.yml / Package.swift) may reference VoxglassStudio or
+# VoxglassStudioKit, and the three Studio directories must not reappear.
+# ──────────────────────────────────────────────────────────────
+check_no_studio() {
+  local matches
+  matches=$(grep -rn --include='*.swift' -E 'VoxglassStudio' Voxglass VoxglassWatch VoxglassCoreTestSupport VoxglassTests 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-P6: deleted Studio module referenced in source: $line"
+    done <<< "$matches"
+  fi
+  local manifest
+  manifest=$(grep -nE 'VoxglassStudio' project.yml Package.swift 2>/dev/null || true)
+  if [ -n "$manifest" ]; then
+    while read -r line; do
+      violate "G-P6: deleted Studio module referenced in project manifest: $line"
+    done <<< "$manifest"
+  fi
+  local d
+  for d in VoxglassStudio VoxglassStudioTests VoxglassStudioUITests; do
+    if [ -e "$d" ]; then
+      violate "G-P6: deleted Studio tree reappeared on disk: $d"
+    fi
+  done
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-P7: The legacy Pro product id is gone. The string
+# `voxglass.studio.pro` MUST NOT appear in any source file (§2.2, D-1).
+# ──────────────────────────────────────────────────────────────
+check_no_legacy_product_id() {
+  local matches
+  matches=$(grep -rn --include='*.swift' -F 'voxglass.studio.pro' Voxglass VoxglassWatch VoxglassCoreTestSupport VoxglassTests 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-P7: legacy Pro product id reference: $line"
+    done <<< "$matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
 # Run all checks.
 # ──────────────────────────────────────────────────────────────
 check_no_synthesis
@@ -447,6 +485,8 @@ check_iphone_never_records_long
 check_pd_gate
 check_discovery_io_seam
 check_seed_floor
+check_no_studio
+check_no_legacy_product_id
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

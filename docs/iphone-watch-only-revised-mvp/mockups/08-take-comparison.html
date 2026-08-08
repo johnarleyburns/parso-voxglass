@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>08 · Take comparison — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>08 · Take comparison</b>NEW (§9.5). A/B at matched loudness using the ReplayGain values already computed. Selecting a take is a project mutation — phone only, never the watch.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">✕</span><span class="title">Compare takes</span><span class="step">¶ 1205</span></div>
+
+  <div class="content" style="display:flex;flex-direction:column">
+
+    <div class="card tight">
+      <div class="eyebrow">The text</div>
+      <p style="color:var(--ink);font-size:15px;margin-top:7px">“Sheppard,” he said, “you are the only man in King’s Abbot who does not gossip.”</p>
+    </div>
+
+    <div class="card" id="compare.takeA">
+      <div class="row between">
+        <div><h3>Take 2</h3><small>Today 9:38 · USB-C interface</small></div>
+        <span class="chip brass">Selected</span>
+      </div>
+      <div class="wave" style="margin:11px 0"></div>
+      <div class="kv"><span>Duration</span><span class="mono">0:07.4</span></div>
+      <div class="kv"><span>RMS</span><span class="ok-text mono">−18.2 dBFS</span></div>
+      <div class="kv"><span>Peak</span><span class="ok-text mono">−4.1 dBFS</span></div>
+      <div class="kv"><span>Noise floor</span><span class="ok-text mono">−64.0 dBFS</span></div>
+      <div class="btn-row" style="margin-top:11px">
+        <button class="btn small" id="compare.takeA.play">▶ Play</button>
+        <button class="btn small" id="compare.takeA.inContext">In context</button>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:center;margin:2px 0">
+      <span class="chip" id="compare.matchedLoudness">⇄ Matched loudness · +1.4 dB applied to take 1</span>
+    </div>
+
+    <div class="card" id="compare.takeB">
+      <div class="row between">
+        <div><h3>Take 1</h3><small>Today 9:35 · USB-C interface</small></div>
+        <span class="chip">Archived</span>
+      </div>
+      <div class="wave" style="margin:11px 0"></div>
+      <div class="kv"><span>Duration</span><span class="mono">0:09.1</span></div>
+      <div class="kv"><span>RMS</span><span class="warn-text mono">−19.6 dBFS</span></div>
+      <div class="kv"><span>Peak</span><span class="ok-text mono">−6.8 dBFS</span></div>
+      <div class="kv"><span>Noise floor</span><span class="bad-text mono">−57.2 dBFS <small>(ACX needs ≤ −60)</small></span></div>
+      <div class="btn-row" style="margin-top:11px">
+        <button class="btn small" id="compare.takeB.play">▶ Play</button>
+        <button class="btn small" id="compare.takeB.inContext">In context</button>
+      </div>
+    </div>
+
+    <div class="banner">
+      <small>Take 1 was recorded before the window closed — its noise floor would fail an ACX check. Nothing is deleted either way; unselected takes stay in the project.</small>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="footer-actions">
+      <button class="btn" id="compare.useTakeB">Use take 1</button>
+      <button class="btn primary" id="compare.useTakeA">Keep take 2</button>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>06b · Audio setup — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>06b · Audio setup</b>NEW (§7.1). Classifies the route as retail-ready / community-ready / draft-only from a 10-second test. Bluetooth is never blocked — the truth is told at export time.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Audio setup</span></div>
+
+  <div class="content">
+
+    <div class="card">
+      <div class="row between"><h3>Current input</h3><span class="chip ok" id="audioSetup.classification">Retail-ready</span></div>
+      <div class="kv"><span>Device</span><span>Scarlett Solo (USB-C)</span></div>
+      <div class="kv"><span>Format</span><span>48 kHz · 24-bit · mono</span></div>
+      <div class="kv"><span>Monitoring</span><span>Direct (hardware)</span></div>
+      <p style="margin-top:8px">Voxglass records at the hardware’s own format and resamples only at export.</p>
+    </div>
+
+    <div class="card">
+      <h3>10-second room test</h3>
+      <p style="margin-top:4px">Stay quiet. We measure your room, not your voice.</p>
+      <div class="wave" style="margin:13px 0"></div>
+      <div class="kv"><span>Noise floor</span><span class="ok-text">−64.2 dBFS <small>(needs ≤ −60)</small></span></div>
+      <div class="kv"><span>Peak</span><span class="ok-text">−8.4 dBFS <small>(needs ≤ −3)</small></span></div>
+      <div class="kv"><span>Speech RMS</span><span class="ok-text">−19.6 dBFS <small>(needs −23 to −18)</small></span></div>
+      <div class="kv"><span>Sample-rate stability</span><span class="ok-text">Stable</span></div>
+      <button class="btn small" style="margin-top:12px" id="audioSetup.runTest">Run the test again</button>
+    </div>
+
+    <h2 class="section-title">If you change input</h2>
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row"><span class="lead ok-text">●</span><div class="grow"><h3>USB-C interface or USB mic</h3><small>Recommended for commercial release</small></div><span class="chip ok">Retail</span></div>
+        <div class="list-row"><span class="lead warn-text">●</span><div class="grow"><h3>Wired headset mic</h3><small>Fine for LibriVox and Internet Archive</small></div><span class="chip brass">Community</span></div>
+        <div class="list-row"><span class="lead warn-text">●</span><div class="grow"><h3>Built-in iPhone mic</h3><small>Usable in a quiet, soft-furnished room</small></div><span class="chip brass">Community</span></div>
+        <div class="list-row"><span class="lead bad-text">●</span><div class="grow"><h3>Bluetooth / AirPods</h3><small>Allowed, but retail export will warn</small></div><span class="chip bad">Draft</span></div>
+      </div>
+    </div>
+
+    <div class="banner">
+      <h3>What this can and can’t fix</h3>
+      <p style="margin-top:6px">Voxglass can level, trim, and master your recording. It cannot make a noisy room or a compressed Bluetooth signal meet ACX. If your room test fails, the honest fix is the room or the microphone.</p>
+    </div>
+
+    <div class="card tight">
+      <div class="row between"><div class="grow"><h3>Warn me when the route drops below retail</h3><small>Shown once per session</small></div><div class="toggle on"><i></i></div></div>
+    </div>
+
+    <button class="btn primary" style="margin-top:14px" id="audioSetup.done">Use this input</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

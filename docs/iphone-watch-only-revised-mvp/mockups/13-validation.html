@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>13 · Validation — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>13 · Validation</b>Flow step <code>.validateExport</code>. Never gated — a free user can run and read a full ACX report (§2.2). Every issue carries a fix action.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Validation</span><span class="step">Step 7 of 8</span></div>
+  <div class="dots"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i></div>
+
+  <div class="content">
+
+    <div class="card tight">
+      <div class="segmented" id="validation.destination" style="margin:0">
+        <span id="validation.destination.librivox">LibriVox</span>
+        <span class="active" id="validation.destination.internetArchive">Internet Archive</span>
+        <span id="validation.destination.retail">Retail</span>
+      </div>
+      <p class="faint" style="margin-top:10px">Checking against retail is free even without Pro. You see the result before you decide to buy.</p>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>Internet Archive</h3><span class="chip bad">2 blocking · 4 warnings</span></div>
+      <div class="progress"><i style="width:78%"></i></div>
+      <small>2,884 paragraphs · 24 chapters · checked in 4.1 s</small>
+    </div>
+
+    <div class="eyebrow" style="margin-top:16px">Blocks export</div>
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row" id="validation.issue.needsPickup">
+          <span class="lead bad-text">●</span>
+          <div class="grow"><h3>7 paragraphs need pickup</h3><small>Chapter 3 (4), Chapter 2 (3)</small></div>
+          <button class="btn small inline">Review</button>
+        </div>
+        <div class="list-row" id="validation.issue.assetRemoteOnly">
+          <span class="lead bad-text">●</span>
+          <div class="grow"><h3>12 chapters are in iCloud</h3><small>3.4 GB must download before export can start</small></div>
+          <button class="btn small inline">Download</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:16px">Warnings</div>
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row" id="validation.issue.drift">
+          <span class="lead warn-text">●</span>
+          <div class="grow"><h3>3 paragraphs changed after recording</h3><small>The audio no longer matches the script</small></div>
+          <button class="btn small inline">Show</button>
+        </div>
+        <div class="list-row" id="validation.issue.routeNotRetailReady">
+          <span class="lead warn-text">●</span>
+          <div class="grow"><h3>41 takes were recorded on a draft-quality input</h3><small>Bluetooth · fine here, would fail retail</small></div>
+          <button class="btn small inline">Audio setup</button>
+        </div>
+        <div class="list-row" id="validation.issue.backupNotVerified">
+          <span class="lead warn-text">●</span>
+          <div class="grow"><h3>Front matter is not backed up yet</h3><small>7 takes exist only on this iPhone</small></div>
+          <button class="btn small inline">Back up</button>
+        </div>
+        <div class="list-row" id="validation.issue.artwork">
+          <span class="lead warn-text">●</span>
+          <div class="grow"><h3>Artwork is 1400 × 1400</h3><small>Fine here; retail needs 2400 × 2400</small></div>
+          <button class="btn small inline">Replace</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:16px">Passing</div>
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Narration origin is human on every selected take</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Rights attested · source URL present</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>No clipping · peak ≤ −3 dBFS on every chapter</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>No chapter exceeds 120 minutes</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Metrics computed for all 2,884 paragraphs</small></div></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn" id="validation.exportReport">Save report <span class="chip brass">Pro</span></button>
+      <button class="btn primary" id="validation.continueToExport">Fix &amp; export</button>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

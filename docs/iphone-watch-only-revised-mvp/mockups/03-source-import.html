@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>03 · Source import — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>03 · Source import</b>Flow step <code>.reviewSource</code>. Counts and warnings first, chapters second — a 400-page EPUB must never block on a full parse (§8.2).</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Review the text</span><span class="step">Step 2 of 8</span></div>
+  <div class="dots"><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <div class="content">
+
+    <div class="card">
+      <div class="row between">
+        <div><div class="eyebrow">EPUB · 1.2 MB</div><h3 style="margin-top:5px" id="import.chapterCount">24 chapters · 2,884 paragraphs</h3></div>
+        <span class="chip ok">Parsed</span>
+      </div>
+      <div class="progress ok"><i style="width:100%"></i></div>
+      <p>Estimated 8h 40m at your usual pace. You can start recording before reviewing every chapter.</p>
+    </div>
+
+    <div class="banner">
+      <div class="row between"><h3>2 segmentation warnings</h3><span class="chip brass">Review</span></div>
+      <p style="margin-top:6px">Chapter 7 has a 1,900-word paragraph — likely a missing scene break. Chapter 19 has no heading.</p>
+      <div class="btn-row" style="margin-top:11px">
+        <button class="btn small" id="import.markSceneBreak">Mark scene break</button>
+        <button class="btn small" id="import.ignoreWarnings">Ignore</button>
+      </div>
+    </div>
+
+    <div class="row between section-title">
+      <h2 style="font-size:19px">Chapters</h2>
+      <span class="faint" style="font-size:13px" id="import.resegment">Re-segment</span>
+    </div>
+
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row" id="import.chapter.0"><div class="grow"><h3>Front matter</h3><small>7 ¶ · generated LibriVox disclaimer added</small></div><span class="chip brass">Generated</span></div>
+        <div class="list-row" id="import.chapter.1"><div class="grow"><h3>1. Dr Sheppard at the Breakfast Table</h3><small>84 ¶</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="import.chapter.2"><div class="grow"><h3>2. Who’s Who in King’s Abbot</h3><small>76 ¶</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="import.chapter.3"><div class="grow"><h3>3. The Man Who Grew Vegetable Marrows</h3><small>112 ¶</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="import.chapter.4"><div class="grow"><h3>4. Dinner at Fernly</h3><small>98 ¶</small></div><span class="chev">›</span></div>
+        <div class="list-row"><div class="grow faint"><h3 class="faint">…20 more</h3></div><span class="chev">›</span></div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="kv"><span>Source hash</span><span class="mono">a41f…9c02</span></div>
+      <div class="kv"><span>Edition</span><span>1926 · Project Gutenberg</span></div>
+      <div class="kv"><span>Paragraph identity</span><span class="ok-text">Stable across re-import</span></div>
+    </div>
+
+    <button class="btn primary" style="margin-top:16px" id="import.acceptStructure">Accept structure</button>
+    <p class="faint" style="text-align:center;margin-top:10px">You can split, merge, and edit paragraphs later without losing recordings.</p>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

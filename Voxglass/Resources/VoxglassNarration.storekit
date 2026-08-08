@@ -1,0 +1,33 @@
+{
+  "identifier" : "E0A1C2D3-B4C5-4D6E-8F90-A1B2C3D4E5F6",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "79.00",
+      "familyShareable" : true,
+      "internalID" : "9A8B7C6D-5E4F-4A3B-8C2D-1E0F9A8B7C6D",
+      "localizations" : [
+        {
+          "description" : "Unlock professional retail delivery: mastered MP3/WAV/FLAC chapter files, chapterized M4B, retail samples, batch export, and exportable validation reports. One-time purchase, no subscription.",
+          "displayName" : "Voxglass Narration Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "guru.parso.voxglass.narration.pro",
+      "referenceName" : "Voxglass Narration Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

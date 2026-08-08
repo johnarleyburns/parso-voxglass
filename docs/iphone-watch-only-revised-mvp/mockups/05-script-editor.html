@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>05 · Script editor — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>05 · Script editor</b>NEW (§8.4). Phone-shaped: paragraph list with state chips, inline inspector sheet for split / merge / notes. Editing a recorded paragraph raises drift immediately.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹ Roger Ackroyd</span><span class="title">Chapter 3</span><span class="action">Done</span></div>
+
+  <div class="content">
+    <div class="segmented" id="script.filter">
+      <span class="active" id="script.filter.all">All 112</span>
+      <span id="script.filter.drift">Changed 3</span>
+      <span id="script.filter.unrecorded">Unrecorded 40</span>
+    </div>
+
+    <div class="card">
+      <div class="para" id="script.row.1203">
+        <div class="head"><span class="num">¶ 1203</span><span class="chip ok">Recorded</span></div>
+        <div class="text">The man who grew vegetable marrows had a habit of appearing over the wall at the least convenient hour.</div>
+      </div>
+      <div class="para selected" id="script.row.1204">
+        <div class="head"><span class="num">¶ 1204 · selected</span><span class="chip bad">Text changed</span></div>
+        <div class="text">I had known Roger Ackroyd for nine years, and in all that time I had never seen him <b>hesitate</b> before answering a direct question.</div>
+        <div class="chips">
+          <span class="chip">Take 2 selected · 0:14</span>
+          <span class="chip bad">Recording no longer matches</span>
+        </div>
+        <div class="btn-row" style="margin-top:11px">
+          <button class="btn small" id="script.row.1204.edit">Edit text</button>
+          <button class="btn small" id="script.row.1204.rerecord">Re-record</button>
+          <button class="btn small" id="script.row.1204.keep">Keep take</button>
+        </div>
+      </div>
+      <div class="para" id="script.row.1205">
+        <div class="head"><span class="num">¶ 1205</span><span class="chip">Unrecorded</span></div>
+        <div class="text">“Sheppard,” he said, “you are the only man in King’s Abbot who does not gossip.”</div>
+      </div>
+      <div class="para" id="script.row.1206">
+        <div class="head"><span class="num">¶ 1206</span><span class="chip bad">Needs pickup</span></div>
+        <div class="text">It was, I reflected, a doubtful compliment.</div>
+        <div class="chips"><span class="chip">Note from Apple Watch · “breath at start”</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="script.inspector">
+    <div class="grabber"></div>
+    <div class="row between"><h2>¶ 1204</h2><span class="chip bad">Text changed</span></div>
+
+    <div class="field-label">TEXT</div>
+    <textarea class="field" id="script.inspector.text" readonly>I had known Roger Ackroyd for nine years, and in all that time I had never seen him hesitate before answering a direct question.</textarea>
+
+    <div class="field-label">DIRECTION NOTE</div>
+    <input class="field placeholder" id="script.inspector.direction" value="Dry, faintly amused" readonly>
+
+    <div class="field-label">PRONUNCIATION</div>
+    <input class="field placeholder" id="script.inspector.pronunciation" value="Ackroyd — ACK-royd" readonly>
+
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn small" id="script.inspector.splitHere">Split here</button>
+      <button class="btn small" id="script.inspector.mergeNext">Merge next</button>
+    </div>
+    <div class="banner" style="margin-top:12px">
+      <small>Splitting keeps the existing recording on the first half and marks the second half unrecorded. Nothing is deleted.</small>
+    </div>
+    <button class="btn primary" style="margin-top:12px" id="script.inspector.save">Save</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

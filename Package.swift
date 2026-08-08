@@ -7,7 +7,6 @@ let package = Package(
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
         .library(name: "VoxglassCoreTestSupport", targets: ["VoxglassCoreTestSupport"]),
-        .library(name: "VoxglassStudioKit", targets: ["VoxglassStudioKit"]),
         .library(name: "VoxglassEncoders", targets: ["VoxglassEncoders"])
     ],
     targets: [
@@ -70,18 +69,6 @@ let package = Package(
                 "verified-seed.json"
             ]
         ),
-        .target(
-            name: "VoxglassStudioKit",
-            dependencies: ["VoxglassCore", "VoxglassEncoders"],
-            path: "VoxglassStudio",
-            exclude: [
-                "App/StudioApp.swift",
-                "Resources/Info.plist",
-                "Resources/VoxglassStudio.entitlements",
-                "Resources/VoxglassStudio-release.entitlements"
-            ],
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
         .testTarget(
             name: "VoxglassCoreTests",
             dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders"],
@@ -92,14 +79,8 @@ let package = Package(
         ),
         .testTarget(
             name: "VoxglassPerformanceTests",
-            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassStudioKit"],
+            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport"],
             path: "VoxglassTests/Performance",
-            swiftSettings: [.swiftLanguageMode(.v5)]
-        ),
-        .testTarget(
-            name: "VoxglassStudioTests",
-            dependencies: ["VoxglassStudioKit", "VoxglassCore", "VoxglassCoreTestSupport"],
-            path: "VoxglassStudioTests",
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]

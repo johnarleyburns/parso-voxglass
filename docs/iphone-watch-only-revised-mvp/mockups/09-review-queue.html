@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>09 · Review queue — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>09 · Review queue</b>Existing surface (<code>ProductionViews.swift</code>). Identifiers unchanged. Adds “Send to Apple Watch”, which is how a queue leaves the phone (§14).</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹ Roger Ackroyd</span><span class="title">Review</span><span class="step">3 of 18</span></div>
+
+  <div class="content" style="display:flex;flex-direction:column">
+
+    <div class="card tight">
+      <div class="segmented" id="paragraphList.filter" style="margin:0">
+        <span class="active" id="paragraphList.filter.flagged">Flagged 18</span>
+        <span id="paragraphList.filter.pickups">Pickups 7</span>
+        <span id="paragraphList.filter.all">All</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row between">
+        <span class="eyebrow">¶ 1188 · Chapter 3</span>
+        <span class="chip bad">Flagged on Apple Watch</span>
+      </div>
+      <p style="color:var(--ink);font-size:16px;line-height:1.5;margin-top:10px" id="player.paragraphText">
+        It was, I reflected, a doubtful compliment. Caroline would have made short work of the man, and I rather wished she had been there to do it.
+      </p>
+      <div class="banner" style="margin-top:12px">
+        <div class="eyebrow">Note · pacing</div>
+        <small>“Breath at the start — take it again slower.” · dictated 08:12, Apple Watch</small>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="wave"></div>
+      <div class="row between" style="margin-top:8px">
+        <small class="mono">0:04</small>
+        <small class="mono">0:16</small>
+      </div>
+      <div class="transport" style="margin:8px 0 4px">
+        <button class="tbtn" id="player.previousParagraph">|◁</button>
+        <button class="tbtn" id="player.skipBack">−15</button>
+        <button class="recbtn" style="background:var(--brass);border-color:rgba(227,164,75,.35);color:#21170B" id="player.playPause">▶</button>
+        <button class="tbtn" id="player.skipForward">+15</button>
+        <button class="tbtn" id="player.nextParagraph">▷|</button>
+      </div>
+      <div class="row between" style="margin-top:8px">
+        <div class="grow"><small>Auto-advance after each decision</small></div>
+        <div class="toggle on" id="player.autoAdvance"><i></i></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:2px">
+      <button class="btn" id="player.pickup">↻ Pickup</button>
+      <button class="btn" id="player.flag">⚑ Keep flagged</button>
+      <button class="btn primary" id="player.approve">✓ Approve</button>
+    </div>
+    <button class="btn small" style="margin-top:9px" id="player.addNote">＋ Add a note</button>
+
+    <h2 class="section-title">Next in queue</h2>
+    <div class="card tight" id="player.queue">
+      <div class="list">
+        <div class="list-row"><span class="lead">4</span><div class="grow"><h3>¶ 1206</h3><small>Needs pickup · “breath at start”</small></div><span class="chip bad">Pickup</span></div>
+        <div class="list-row"><span class="lead">5</span><div class="grow"><h3>¶ 1211</h3><small>Flagged on iPhone</small></div><span class="chip">0:22</span></div>
+        <div class="list-row"><span class="lead">6</span><div class="grow"><h3>¶ 1240</h3><small>Text changed after recording</small></div><span class="chip bad">Drift</span></div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="row between">
+        <div class="grow"><h3>Take this queue with you</h3><small>18 ¶ · 62 MB of 200 MB watch cache</small></div>
+      </div>
+      <button class="btn small" style="margin-top:10px" id="queueBuilder.downloadToWatch">Send to Apple Watch</button>
+      <p class="faint" style="margin-top:8px">Approvals and notes made on the watch sync back exactly once, even if it was offline.</p>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

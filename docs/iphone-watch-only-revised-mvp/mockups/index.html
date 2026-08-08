@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voxglass — iPhone + Watch Narration MVP mockups</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="index">
+  <h1>iPhone + Watch Narration MVP</h1>
+  <p class="muted">Revised mockup set for <a href="../SPEC.md">SPEC.md</a>. Every screen lives <b>inside the existing Voxglass app</b>, entered from the Narration tab — there is no separate Studio app. Numbering matches the superseded set in <code>docs/iphone-watch-only-mvp/mockups/</code> so the two can be diffed 1:1.</p>
+
+  <h2>Design compliance</h2>
+  <p class="muted">Tokens are transcribed from the app, not invented: <code>Voxglass/DesignSystem/VoxglassTheme.swift</code> and <code>AdaptiveGlass.swift</code>. Use the <b>GLASS / SOLID</b> toggle at the top-right of any screen to see the Reduce Transparency fallback that <code>AdaptiveGlass</code> actually renders — a design that only works with blur is not compliant.</p>
+  <div class="swatches">
+    <div class="swatch" style="width:120px"><i style="background:#0A0B0D;border:1px solid rgba(255,255,255,.14)"></i>bg #0A0B0D</div>
+    <div class="swatch" style="width:120px"><i style="background:#F2F4F6"></i>ink #F2F4F6</div>
+    <div class="swatch" style="width:120px"><i style="background:#E3A44B"></i>brass #E3A44B</div>
+    <div class="swatch" style="width:120px"><i style="background:#B97F2E"></i>deep #B97F2E</div>
+    <div class="swatch" style="width:120px"><i style="background:#4CD471"></i>ok #4CD471</div>
+    <div class="swatch" style="width:120px"><i style="background:#FF6B5E"></i>danger #FF6B5E</div>
+    <div class="swatch" style="width:120px"><i style="background:#1E2026;border:1px solid rgba(255,255,255,.16)"></i>panel #1E2026</div>
+  </div>
+  <p class="muted" style="margin-top:12px"><b>Not</b> the compliance target: the gold <code>#d8ad67</code> of <code>docs/voxglass-narration/p0*.html</code>, or the blue <code>#84b5ff</code> of <code>docs/voxglass-mvp/voxglass-iphone-production-mockups/</code>. The app's brass wins.</p>
+
+  <h2>iPhone</h2>
+  <div class="index-grid">
+    <a href="01-narration-tab.html"><b>01 · Narration tab</b><small>Needs shelf, My Narrations, storage — with the 5-tab glass dock</small></a>
+    <a href="02-new-project.html"><b>02 · New narration</b><small>Source, title, lane, rights attestation</small></a>
+    <a href="03-source-import.html"><b>03 · Source import</b><small>Counts and warnings first, chapters second</small></a>
+    <a href="04-project-dashboard.html"><b>04 · Project dashboard</b><small>NEW · one lead action: Record next</small></a>
+    <a href="05-script-editor.html"><b>05 · Script editor</b><small>NEW · state chips, split / merge, drift</small></a>
+    <a href="06-recording-workspace.html"><b>06 · Recording workspace</b><small>Teleprompter, meter, transport, takes</small></a>
+    <a href="06b-audio-setup.html"><b>06b · Audio setup</b><small>NEW · route classification and room test</small></a>
+    <a href="06c-capture-interruption.html"><b>06c · Interruption &amp; recovery</b><small>Never a silent loss</small></a>
+    <a href="07-import-audio.html"><b>07 · Import audio</b><small>NEW · silence split, storage impact, origin</small></a>
+    <a href="08-take-comparison.html"><b>08 · Take comparison</b><small>NEW · A/B at matched loudness</small></a>
+    <a href="09-review-queue.html"><b>09 · Review queue</b><small>Ships today · adds Send to Apple Watch</small></a>
+    <a href="10-assembly.html"><b>10 · Assembly</b><small>Gaps, room tone, chunked renders</small></a>
+    <a href="11-metadata-rights.html"><b>11 · Metadata &amp; rights</b><small>Commercial fields visible but locked</small></a>
+    <a href="12-storage-icloud.html"><b>12 · Storage &amp; iCloud</b><small>NEW · offload rule stated in the UI</small></a>
+    <a href="13-validation.html"><b>13 · Validation</b><small>Free for every destination, including retail</small></a>
+    <a href="14-export-wizard-free.html"><b>14 · Export — free lanes</b><small>Hydration and free space in bytes</small></a>
+    <a href="14b-export-run-resume.html"><b>14b · Export run &amp; resume</b><small>NEW · resumes at the first incomplete chapter</small></a>
+    <a href="14c-pro-purchase.html"><b>14c · Pro</b><small>NEW · two entry points only</small></a>
+    <a href="15-settings.html"><b>15 · Settings → Narration</b><small>A section of Voxglass settings</small></a>
+  </div>
+
+  <h2>Apple Watch</h2>
+  <div class="index-grid">
+    <a href="watch-01-productions.html"><b>watch-01 · Narrations</b><small>Ships today</small></a>
+    <a href="watch-02-review-player.html"><b>watch-02 · Review player</b><small>Ships today</small></a>
+    <a href="watch-03-offline-queue.html"><b>watch-03 · Offline queue</b><small>Ships today · outbox syncs exactly once</small></a>
+    <a href="watch-04-recording-remote.html"><b>watch-04 · Recording remote</b><small>NEW · the only new watch surface</small></a>
+    <a href="watch-05-dictation.html"><b>watch-05 · Dictated note</b><small>Ships today</small></a>
+  </div>
+
+  <h2>Retired from the speculative set</h2>
+  <p class="muted">
+    <code>01-projects.html</code> (a Studio app project library) → replaced by <b>01 · Narration tab</b>.
+    Every screen carrying the Studio tab bar (Projects / Record / Review / Settings) is gone.
+    <code>docs/voxglass-narration/n04-iphone-long-work-mac-handoff.html</code> is retired outright — long works record on iPhone now (N-1).
+  </p>
+
+  <h2>Reading the identifiers</h2>
+  <p class="muted">HTML <code>id</code> attributes on interactive elements are the <code>.accessibilityIdentifier</code> values the implementation must use. Identifiers already shipping (<code>record.*</code>, <code>player.*</code>, <code>paragraphList.*</code>, <code>queueBuilder.*</code>, <code>note.*</code>, <code>import.*</code>) are preserved deliberately — the UI smoke tests key on them.</p>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

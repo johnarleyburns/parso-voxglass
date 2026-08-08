@@ -126,7 +126,7 @@ import VoxglassCoreTestSupport
     @Test func productReturnsInfo() async throws {
         let provider = FakeLicenseProvider(entitlement: .free)
         let info = try await provider.product()
-        #expect(info.displayName == "Voxglass Studio Pro")
+        #expect(info.displayName == NarrationProProduct.displayName)
         #expect(provider.calls == [.product])
     }
 }

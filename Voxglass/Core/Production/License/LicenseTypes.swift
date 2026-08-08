@@ -36,6 +36,20 @@ public enum ProFeature: String, Codable, Sendable, CaseIterable {
     }
 }
 
+// MARK: - Narration Pro product identity
+
+/// The single source of the "Voxglass Narration Pro" product identity (§2.2).
+///
+/// Both strings are read from here, never inlined at a call site. The price is
+/// deliberately not a constant — it lives in App Store Connect and is set at
+/// submission (decision D-2).
+public enum NarrationProProduct {
+    /// The App Store Connect product id of the one-time Pro purchase.
+    public static let productID = "guru.parso.voxglass.narration.pro"
+    /// The display name shown in every purchase surface.
+    public static let displayName = "Voxglass Narration Pro"
+}
+
 // MARK: - EntitlementState
 
 /// The current license state as seen by the UI and the gate (§17.2).
@@ -135,8 +149,8 @@ public struct StaticLicenseProvider: LicenseProvider {
     public init(
         entitlement: EntitlementState = .free,
         productInfo: ProductInfo = ProductInfo(
-            displayPrice: "$149.00",
-            displayName: "Voxglass Studio Pro",
+            displayPrice: "$79.00",
+            displayName: NarrationProProduct.displayName,
             description: "Unlock professional retail delivery: mastered MP3/WAV/FLAC chapter files, chapterized M4B, retail samples, batch export, and exportable validation reports. One-time purchase, no subscription."
         )
     ) {

@@ -81,9 +81,9 @@ fi
 # ──────────────────────────────────────────────────────────────
 # G-1 probes: AVSpeechSynthesizer symbol and CoreML import.
 # ──────────────────────────────────────────────────────────────
-probe="VoxglassStudio/ProbeG1Synthesizer.swift"
+probe="Voxglass/Core/Production/ProbeG1Synthesizer.swift"
 plant "$probe" "let s = AVSpeechSynthesizer()"
-expect_guard_fails 1 "AVSpeechSynthesizer in VoxglassStudio"
+expect_guard_fails 1 "AVSpeechSynthesizer in Core/Production"
 unplant "$probe"
 expect_guard_passes "AVSpeechSynthesizer probe"
 
@@ -96,9 +96,9 @@ expect_guard_passes "CoreML import probe"
 # ──────────────────────────────────────────────────────────────
 # G-2 probe: entitlement symbol in a free-territory filename.
 # ──────────────────────────────────────────────────────────────
-probe="VoxglassStudio/Features/Record/RecordingProbe.swift"
+probe="Voxglass/Features/Production/RecordingProbe.swift"
 plant "$probe" "let g: LicenseGate? = nil"
-expect_guard_fails 2 "LicenseGate in Features/Record/"
+expect_guard_fails 2 "LicenseGate in Features/Production/RecordingProbe"
 unplant "$probe"
 expect_guard_passes "LicenseGate probe"
 
@@ -134,6 +134,38 @@ plant "$probe" "let b = 192"
 expect_guard_fails 10 "literal 192 in Validation/"
 unplant "$probe"
 expect_guard_passes "destination constant probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-P6 probes: the deleted Studio module in a source file, in a project
+# manifest, and as a reappearing directory.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Core/Production/ProbeGP6.swift"
+plant "$probe" "import VoxglassStudioKit"
+expect_guard_fails "P6" "VoxglassStudioKit reference in source"
+unplant "$probe"
+expect_guard_passes "VoxglassStudioKit source probe"
+
+probe="Voxglass/Core/Production/ProbeGP6b.swift"
+plant "$probe" "let x = VoxglassStudio"
+expect_guard_fails "P6" "VoxglassStudio reference in source"
+unplant "$probe"
+expect_guard_passes "VoxglassStudio source probe"
+
+probe_dir="VoxglassStudio"
+mkdir -p "$probe_dir"
+plant "$probe_dir/ProbeDir.swift" "let x = 1"
+expect_guard_fails "P6" "VoxglassStudio tree reappeared"
+rm -rf "$probe_dir"
+expect_guard_passes "VoxglassStudio tree probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-P7 probe: the legacy Pro product id in a source file.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Core/Production/ProbeGP7.swift"
+plant "$probe" "let legacy = \"voxglass.studio.pro\""
+expect_guard_fails "P7" "legacy product id reference"
+unplant "$probe"
+expect_guard_passes "legacy product id probe"
 
 # ──────────────────────────────────────────────────────────────
 echo

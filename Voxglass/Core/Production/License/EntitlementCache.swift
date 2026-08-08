@@ -13,8 +13,8 @@ import Foundation
 ///   **indefinitely** — the cache never expires, so a narrator on a plane with
 ///   a deadline does not lose their exporter.
 public struct EntitlementCache: Sendable {
-    public static let proSinceKey = "voxglass.studio.pro.since"
-    public static let transactionIDKey = "voxglass.studio.pro.transaction"
+    public static let proSinceKey = "voxglass.narration.pro.since"
+    public static let transactionIDKey = "voxglass.narration.pro.transaction"
 
     private let defaults: UserDefaults
 

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14b · Export run &amp; resume — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>14b · Export run &amp; resume</b>§13.3. Runs are chunked by chapter and recorded in <code>ExportRunRecord</code>, so a relaunch resumes at the first incomplete chapter rather than from zero.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Exporting</span><span class="step">Internet Archive</span></div>
+
+  <div class="content" style="display:flex;flex-direction:column">
+
+    <div class="banner ok">
+      <div class="row between"><h3 class="ok-text">Resumed where it stopped</h3><span class="chip ok">9 chapters kept</span></div>
+      <p style="margin-top:6px">Voxglass closed while chapter 10 was encoding. Chapters 1–9 were already finished and verified, so they were not re-rendered.</p>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>Chapter 10 of 24</h3><b class="mono" id="exportRun.percent">41%</b></div>
+      <div class="progress"><i style="width:41%"></i></div>
+      <div class="kv" style="margin-top:6px"><span>Step</span><span id="exportRun.step">Encoding FLAC · 44.1 kHz</span></div>
+      <div class="kv"><span>Elapsed</span><span class="mono">12m 04s</span></div>
+      <div class="kv"><span>Remaining</span><span class="mono">about 22m</span></div>
+      <button class="btn small" style="margin-top:12px" id="exportRun.cancel">Cancel after this chapter</button>
+      <p class="faint" style="margin-top:9px">Cancelling never discards finished chapters — resuming later picks up from chapter 11.</p>
+    </div>
+
+    <div class="card tight">
+      <h3>Pipeline</h3>
+      <div class="list">
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Hydrate 12 chapters from iCloud · 3.4 GB</small></div><span class="chip ok">Verified</span></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Validate</small></div><span class="chip ok">Passed</span></div>
+        <div class="list-row"><span class="lead warn-text">●</span><div class="grow"><small>Render → transcode → tag</small></div><span class="chip brass">10 / 24</span></div>
+        <div class="list-row"><span class="lead faint">○</span><div class="grow"><small>Checksums</small></div></div>
+        <div class="list-row"><span class="lead faint">○</span><div class="grow"><small>Checklist &amp; package</small></div></div>
+        <div class="list-row"><span class="lead faint">○</span><div class="grow"><small>Save to Files</small></div></div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <h3>Chapters</h3>
+      <div class="list">
+        <div class="list-row"><div class="grow"><small>1 – 9</small></div><span class="chip ok">Done · 1.9 GB staged</span></div>
+        <div class="list-row"><div class="grow"><small>10</small></div><span class="chip brass">Encoding</span></div>
+        <div class="list-row"><div class="grow"><small>11 – 24</small></div><span class="chip">Queued</span></div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="row between"><div class="grow"><h3>Keep the screen on</h3><small>Exports continue in the background, but finish faster in the foreground</small></div><div class="toggle on"><i></i></div></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="banner">
+      <small>If storage runs low mid-run the export pauses rather than failing, and tells you exactly how much to free.</small>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14 · Export (free) — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>14 · Export — free lanes</b>The two free destinations must never touch <code>LicenseGate</code> (§2.2, gate G-P2). Hydration and free space are stated in bytes before anything starts.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">✕</span><span class="title">Export</span></div>
+
+  <div class="content">
+
+    <div class="field-label">WHAT TO EXPORT</div>
+    <div class="card tight" id="export.scope">
+      <div class="list">
+        <div class="list-row" id="export.scope.chapter"><div class="radio"></div><div class="grow"><h3>This chapter</h3><small>Chapter 3 · 21m 40s</small></div></div>
+        <div class="list-row" id="export.scope.selected"><div class="radio"></div><div class="grow"><h3>Selected chapters</h3><small>Pick from a list</small></div></div>
+        <div class="list-row" id="export.scope.whole"><div class="radio on"></div><div class="grow"><h3>Whole book</h3><small>24 chapters · 8h 40m</small></div></div>
+        <div class="list-row" id="export.scope.queue"><div class="radio"></div><div class="grow"><h3>Review queue range</h3><small>18 flagged paragraphs</small></div></div>
+      </div>
+    </div>
+
+    <div class="field-label">WHERE IT’S GOING</div>
+    <div class="card tight" id="export.destination">
+      <div class="list">
+        <div class="list-row" id="export.destination.librivox">
+          <div class="radio"></div>
+          <div class="grow"><h3>LibriVox</h3><small>128 kbps CBR mono MP3 · 44.1 kHz · ID3 tags · checklist</small></div>
+          <span class="chip ok">Free</span>
+        </div>
+        <div class="list-row" id="export.destination.internetArchive">
+          <div class="radio on"></div>
+          <div class="grow"><h3>Internet Archive</h3><small>FLAC masters + MP3 derivatives · metadata · checksums</small></div>
+          <span class="chip ok">Free</span>
+        </div>
+        <div class="list-row" id="export.destination.personal">
+          <div class="radio"></div>
+          <div class="grow"><h3>Just for me</h3><small>Lossless WAV chapters</small></div>
+          <span class="chip ok">Free</span>
+        </div>
+        <div class="list-row" id="export.destination.retail">
+          <div class="radio"></div>
+          <div class="grow"><h3>Commercial retail</h3><small>ACX, Apple Books, aggregator, M4B</small></div>
+          <span class="chip brass">Pro</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner">
+      <div class="row between"><h3>12 chapters are in iCloud</h3><span class="chip brass">3.4 GB</span></div>
+      <p style="margin-top:6px">They must download before this export can run.</p>
+      <div class="btn-row" style="margin-top:11px">
+        <button class="btn small primary" id="export.hydrateAll">Download 3.4 GB</button>
+        <button class="btn small" id="export.localOnly">Export the 12 local chapters</button>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <h3>Preflight</h3>
+      <div class="kv" style="margin-top:6px"><span>Space needed</span><span class="mono">6.9 GB</span></div>
+      <div class="kv"><span>Available</span><span class="warn-text mono">7.4 GB</span></div>
+      <div class="kv"><span>Estimated time</span><span class="mono">about 34 minutes</span></div>
+      <div class="list-row" style="margin-top:6px" id="export.evictAfterSave">
+        <div class="checkbox on">✓</div>
+        <div class="grow"><small>Free the staging space once the package is saved to Files</small></div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <h3>You’ll get</h3>
+      <div class="list">
+        <div class="list-row"><span class="lead">♪</span><div class="grow"><small>24 FLAC chapter masters</small></div></div>
+        <div class="list-row"><span class="lead">♪</span><div class="grow"><small>24 MP3 derivatives, 128 kbps</small></div></div>
+        <div class="list-row"><span class="lead">☰</span><div class="grow"><small>Metadata sidecar + SHA-256 checksums</small></div></div>
+        <div class="list-row"><span class="lead">✓</span><div class="grow"><small>Upload checklist and a suggested <span class="mono">ia upload</span> command</small></div></div>
+      </div>
+      <p class="faint" style="margin-top:9px">You submit these files yourself. Voxglass never uploads on your behalf.</p>
+    </div>
+
+    <button class="btn primary" style="margin-top:14px" id="export.start">Download, then export</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

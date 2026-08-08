@@ -4,14 +4,14 @@ import VoxglassCore
 import VoxglassCoreTestSupport
 
 /// Accessibility audit (spec §12 / §22.1). The identifier registry in the spec
-/// is the normative list of every interactive control across the four
-/// production surfaces. These tests keep the registry honest in three ways:
+/// is the normative list of every interactive control across the production
+/// surfaces. These tests keep the registry honest in three ways:
 ///
 /// 1. Every registry identifier resolves to a real control in the source
 ///    (exact string match, or prefix match for template patterns like
 ///    `record.take.<n>`), or is a documented absence whose control the MVP
 ///    implementation does not ship.
-/// 2. The identifiers the five UI smoke tests key on can never be renamed
+/// 2. The identifiers the UI smoke tests key on can never be renamed
 ///    silently — they are the contract between the test and the app.
 /// 3. Every identifier used in the new surfaces is well-formed
 ///    (`area.segment.segment`, lowercase, no spaces) so VoiceOver and the
@@ -19,7 +19,6 @@ import VoxglassCoreTestSupport
 @Suite struct AccessibilityAuditTests {
 
     enum Area: String, CaseIterable {
-        case studio = "VoxglassStudio"
         case iphone = "Voxglass/Features/Production"
         case phoneCarPlay = "Voxglass/App/CarPlay"
         case watch = "VoxglassWatch"
@@ -33,40 +32,6 @@ import VoxglassCoreTestSupport
     }
 
     // MARK: - The §22.1 registry (verbatim, template suffixes normalized)
-
-    private static let studioRegistry: [String] = [
-        "library.newAudiobook", "library.openPackage", "library.project.", "library.section.", "library.activity.",
-        "wizard.title", "wizard.author", "wizard.narrator", "wizard.purpose.", "wizard.rightsBasis.",
-        "wizard.sourceURL", "wizard.editionYear", "wizard.attest", "wizard.continueToImport", "wizard.back", "wizard.cancel",
-        "import.chapterCount", "import.warningCount", "import.acceptStructure", "import.resegment",
-        "import.paragraph.", "import.splitHere.", "import.mergeNext.", "import.markSceneBreak",
-        "dashboard.recordNext", "dashboard.previewOnDevices", "dashboard.startReviewQueue", "dashboard.openFeedback",
-        "dashboard.chapter.", "dashboard.progress",
-        "script.chapter.", "script.paragraph.", "script.save", "script.find", "script.split", "script.merge",
-        "script.directionNote", "script.pronunciation", "script.reviewStatus", "script.driftBanner",
-        "record.teleprompter", "record.transport.record", "record.transport.playTake", "record.transport.playInContext",
-        "record.acceptAndNext", "record.flagAndNext", "record.previousParagraph", "record.nextParagraph",
-        "record.take.", "record.importWAV", "record.quality.peak", "record.quality.noise", "record.inputLevel",
-        "import.audio.origin.", "import.audio.method.", "import.audio.assign", "import.originWarning",
-        "import.audio.addMarker", "import.audio.removeMarker", "import.audio.segment.",
-        "compare.takeA", "compare.takeB", "compare.playAB", "compare.useSelected",
-        "review.queue.item.", "review.approveAndNext", "review.pickupAndNext", "review.keepFlagged",
-        "review.note", "review.autoAdvance", "review.playContext", "review.previousFlagged", "review.nextFlagged",
-        "assemble.paragraphGap", "assemble.headSilence", "assemble.tailSilence", "assemble.renderPreview",
-        "assemble.playChapter", "assemble.rebuildChanged", "assemble.row.",
-        "metadata.tab.", "metadata.title", "metadata.author", "metadata.narrator", "metadata.language",
-        "metadata.description", "metadata.subjects", "metadata.rightsBasis", "metadata.sourceURL", "metadata.attest",
-        "metadata.originAudit", "metadata.artwork", "metadata.identifier", "metadata.save",
-        "preview.syncNow", "preview.hideFromDevices", "preview.autoSync", "preview.includeText",
-        "preview.prepareOfflineQueue", "preview.storageProfile", "preview.openReviewQueue",
-        "validate.target.", "validate.runAgain", "validate.fixNext", "validate.issue.",
-        "validate.severity.", "validate.goToParagraph.",
-        "export.scope.", "export.destination.librivox", "export.destination.internetArchive",
-        "export.destination.retail", "export.unlockPro", "export.run", "export.cancel", "export.revealInFinder",
-        "settings.tab.", "settings.inputDevice", "settings.recordingFormat", "settings.monitoring",
-        "settings.preRoll", "settings.warnClipping", "settings.autoMetrics", "settings.recordTest",
-        "settings.purchasePro", "settings.restorePurchases", "settings.thirdPartyNotices", "settings.copyDiagnostics",
-    ]
 
     private static let iphoneRegistry: [String] = [
         "shelf.myProductions", "production.",
@@ -99,34 +64,6 @@ import VoxglassCoreTestSupport
     /// each with the reason (kept truthful; adding the control requires
     /// removing the row here).
     private static let documentedAbsences: [String: String] = [
-        // The Script Editor's chapter list is a plain List (chapter rows are
-        // identified by the section structure, not per-chapter); save is
-        // debounce-flushed, not an explicit action.
-        "script.chapter.": "chapter rows in the Script Editor are not individually identified",
-        "script.save": "text is debounce-flushed, not an explicit save action",
-        "script.directionNote": "inspector shows direction notes without a dedicated identifier",
-        "script.pronunciation": "inspector shows pronunciation without a dedicated identifier",
-        "script.reviewStatus": "review status is shown by the state chip, not a control",
-        // Recording is driven by the §11.4 keyboard table; the actions have no
-        // on-screen buttons (Return/⌘Return/⌥Space/⇧Space per spec).
-        "record.acceptAndNext": "Return keyboard shortcut only (§11.4)",
-        "record.flagAndNext": "⌘Return keyboard shortcut only (§11.4)",
-        "record.transport.playTake": "⌥Space keyboard shortcut only (§11.4)",
-        "record.transport.playInContext": "⇧Space keyboard shortcut only (§11.4)",
-        // Remaining import surface: re-segmentation, per-paragraph editing, and
-        // split/merge/scene-break gestures are still import-internal; the
-        // marker workflow (F-26) ships add/remove markers and the segment table.
-        "import.resegment": "re-segmentation options not implemented",
-        "import.paragraph.": "paragraph list not rendered at import",
-        "import.splitHere.": "split UI not implemented",
-        "import.mergeNext.": "merge UI not implemented",
-        "import.markSceneBreak": "scene-break marking not implemented",
-        "library.activity.": "activity feed not implemented in the library",
-        "dashboard.openFeedback": "feedback feed not implemented on the dashboard",
-        "dashboard.chapter.": "chapter rows are not individually identified",
-        "dashboard.progress": "progress ring has no identifier (visual only)",
-        "metadata.subjects": "subjects field exists but carries no identifier",
-        "metadata.rightsBasis": "rights picker exists but carries no identifier",
         "note.dictate": "dictation is a watch-only affordance",
         "carplay.playNext": "CPAlertTemplate actions expose no identifiers",
         "carplay.undo": "CPAlertTemplate actions expose no identifiers",
@@ -155,14 +92,6 @@ import VoxglassCoreTestSupport
 
     // MARK: - Tests
 
-    @Test func registryIdentifiersResolveInStudioSource() {
-        let missing = AccessibilityAuditTests.studioRegistry.filter { id in
-            guard Self.documentedAbsences[id] == nil else { return false }
-            return !Self.areaContains(.studio, id)
-        }
-        #expect(missing.isEmpty, "Studio identifiers missing from source (add the control or document the absence): \(missing)")
-    }
-
     @Test func registryIdentifiersResolveInPhoneSource() {
         let missing = AccessibilityAuditTests.iphoneRegistry.filter { id in
             guard Self.documentedAbsences[id] == nil else { return false }
@@ -188,14 +117,9 @@ import VoxglassCoreTestSupport
     }
 
     @Test func smokePathIdentifiersAreNeverRenamed() {
-        // The exact identifiers the five UI smoke tests key on (§19.6). If a
+        // The exact identifiers the two UI smoke tests key on (§19.6). If a
         // view renames one of these, this test fails before the flaky UI run.
         let smokeKeys: [String: Area] = [
-            "library.newAudiobook": .studio,
-            "wizard.title": .studio, "wizard.author": .studio, "wizard.narrator": .studio,
-            "wizard.continueToImport": .studio,
-            "import.chapterCount": .studio, "import.acceptStructure": .studio,
-            "dashboard.recordNext": .studio,
             "shelf.myProductions": .iphone, "detail.playWholeBook": .iphone, "detail.reviewFlagged": .iphone,
             "watch.queue.": .watch,        ]
         let missing = smokeKeys.filter { !Self.areaContains($0.value, $0.key) }

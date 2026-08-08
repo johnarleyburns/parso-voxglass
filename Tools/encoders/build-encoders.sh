@@ -1,5 +1,5 @@
 #!/bin/bash
-# build-encoders.sh — Voxglass Studio encoder build recipe (spec §16.3, correction C-3).
+# build-encoders.sh — Voxglass encoder build recipe (spec §16.3, correction C-3).
 #
 # Builds the two required third-party encoders as multi-platform xcframeworks:
 #   - libmp3lame 3.100  (LGPL-2.1)    — MP3, CBR capable
@@ -18,7 +18,7 @@
 #
 # Required slices (§16.3) — every slice exposes the same Swift-importable
 # modules `Lame` and `FLAC`:
-#   - macos-arm64_x86_64               (Voxglass Studio, macOS 14+)
+#   - macos-arm64_x86_64               (macOS host for swift test)
 #   - ios-arm64                        (physical iPhone, iOS 17+)
 #   - ios-arm64_x86_64-simulator       (iOS simulator builds and tests)
 #
@@ -356,7 +356,7 @@ PLIST
 }
 
 main() {
-  say "Voxglass Studio encoders — LAME $LAME_VERSION + FLAC $FLAC_VERSION"
+  say "Voxglass encoders — LAME $LAME_VERSION + FLAC $FLAC_VERSION"
   say "Slices: macos-arm64_x86_64, ios-arm64, ios-arm64_x86_64-simulator"
   mkdir -p "$OUT"
 

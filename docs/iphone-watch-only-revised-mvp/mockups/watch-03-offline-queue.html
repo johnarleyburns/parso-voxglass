@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>watch-03 · Offline queue — Voxglass Watch</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>watch-03 · Offline queue</b>Ships today (<code>WatchOfflineQueueView</code>). Decisions made away from the phone wait in a file-backed outbox and sync exactly once (§14.2).</div>
+
+<div class="watch">
+  <div class="status"><span>9:41</span><span>✈ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Offline</span></div>
+  <div class="content">
+
+    <div class="card tight">
+      <div class="row between"><small>iPhone</small><span class="chip bad">Not reachable</span></div>
+      <p style="margin-top:5px">Keep reviewing. Nothing is lost.</p>
+    </div>
+
+    <div class="card tight" id="watch.outbox">
+      <div class="row between"><h3>Waiting to send</h3><span class="chip brass">6</span></div>
+      <div class="list">
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>¶ 1188 approved</small></div></div>
+        <div class="list-row"><span class="lead bad-text">↻</span><div class="grow"><small>¶ 1206 pickup</small></div></div>
+        <div class="list-row"><span class="lead warn-text">⚑</span><div class="grow"><small>¶ 1211 flagged</small></div></div>
+        <div class="list-row"><span class="lead">🎤</span><div class="grow"><small>¶ 1206 note · pacing</small></div></div>
+      </div>
+    </div>
+
+    <div class="card tight" id="watch.cache">
+      <div class="row between"><h3>Downloaded</h3><span class="chip">62 / 200 MB</span></div>
+      <div class="progress"><i style="width:31%"></i></div>
+      <small>15 of 18 paragraphs have audio</small>
+    </div>
+
+    <div class="card tight">
+      <small class="muted">Least recently reviewed audio is removed first when the cache is full.</small>
+    </div>
+
+    <button class="btn" id="watch.retrySync">Try to sync</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

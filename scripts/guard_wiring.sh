@@ -458,7 +458,7 @@ check_no_ui_tests_in_ci() {
   # runner UI tests — the one thing CI must never do.
   matches=$(grep -rEn 'xcodebuild +test|test-without-building|platform=iOS Simulator.*test' .github/workflows/*.yml 2>/dev/null || true)
   if [ -n "$matches" ]; then
-    echo "::error title=No-UI-tests-in-CI guard::GitHub Actions must never run UI or simulator tests. The only CI test job is 'swift test' (VoxglassCoreTests + VoxglassStudioTests). Five UI smoke tests run locally via scripts/test.sh --all."
+    echo "::error title=No-UI-tests-in-CI guard::GitHub Actions must never run UI or simulator tests. The only CI test job is 'swift test' (VoxglassCoreTests + VoxglassPerformanceTests). Two UI smoke tests run locally via scripts/test.sh --all."
     printf '%s\n' "$matches"
     had_failure=1
   fi

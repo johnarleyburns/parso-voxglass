@@ -1,13 +1,13 @@
 #!/bin/bash
-# test.sh — Local UI smoke test suite. The five UI smoke tests in the repo are
+# test.sh — Local UI smoke test suite. The two UI smoke tests in the repo are
 # the ONLY UI tests; everything else runs under `swift test`.
 # Does NOT run in CI (GitHub Actions runs `swift test` only).
 #
-# Usage: scripts/test.sh [--all] [--device "iPhone 16"] [--watch-device "Apple Watch Series 10 (46mm)"]
+# Usage: scripts/test.sh [--device "iPhone 16"] [--watch-device "Apple Watch Series 10 (46mm)"]
 #
 # With no arguments, defaults to iPhone 16 and the first available Apple Watch.
-# --all runs all five smoke tests: iPhone (VoxglassUITests + CarPlay scene),
-# Watch (VoxglassWatchUITests), and macOS Studio (VoxglassStudioUITests).
+# --all is retained for compatibility and runs the same two smoke tests:
+# iPhone (VoxglassUITests + CarPlay scene) and Watch (VoxglassWatchUITests).
 
 set -euo pipefail
 
@@ -88,19 +88,6 @@ if [ -n "$WATCH_DEVICE_NAME" ]; then
   else
     echo "WARNING: Watch simulator \"$WATCH_DEVICE_NAME\" not available — skipping watch smoke test."
   fi
-fi
-
-# ── macOS Studio smoke tests (three, one per destination) ────────────────────
-
-if [ "$RUN_ALL" -eq 1 ]; then
-  echo ""
-  echo "=== Voxglass Studio smoke tests (macOS host) ==="
-
-  xcodebuild test \
-    -scheme VoxglassStudio \
-    -project Voxglass.xcodeproj \
-    -destination "platform=macOS" \
-    -quiet
 fi
 
 echo ""

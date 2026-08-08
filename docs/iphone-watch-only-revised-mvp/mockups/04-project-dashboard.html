@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>04 · Project dashboard — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>04 · Project dashboard</b>Pushed from My Narrations. Leads with one action — <em>Record next</em> (§15.5). Storage card is expanded by default for a long work (§8.3).</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹ Narration</span><span class="action">•••</span></div>
+
+  <div class="content">
+    <div style="text-align:center;padding:6px 0 4px">
+      <div class="cover large">RA</div>
+      <h2 style="margin-top:14px;font-size:21px">The Murder of Roger Ackroyd</h2>
+      <p style="margin-top:3px">Agatha Christie · narrated by John Burns</p>
+      <div class="chips" style="justify-content:center"><span class="chip">Internet Archive lane</span><span class="chip bad">18 flagged</span></div>
+    </div>
+
+    <button class="btn primary" style="margin-top:16px" id="dashboard.recordNext">Record next — ¶ 1205, Chapter 3</button>
+
+    <div class="card">
+      <div class="row between"><h3>Progress</h3><b class="mono">42%</b></div>
+      <div class="progress"><i style="width:42%"></i></div>
+      <div class="kv"><span>Recorded</span><span>1,204 of 2,884 ¶</span></div>
+      <div class="kv"><span>Approved</span><span>1,061 ¶</span></div>
+      <div class="kv"><span>Chapters complete</span><span>2 of 24</span></div>
+      <p style="margin-top:6px">Recording since 14 July · about 6h 20m of audio.</p>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>Needs your attention</h3><span class="chip bad">25</span></div>
+      <div class="list">
+        <div class="list-row" id="dashboard.flagged"><span class="lead">⚑</span><div class="grow"><h3>Flagged</h3><small>18 ¶ · 6 from Apple Watch</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="dashboard.pickups"><span class="lead">↻</span><div class="grow"><h3>Needs pickup</h3><small>7 ¶ · blocks export</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="dashboard.drift"><span class="lead">✎</span><div class="grow"><h3>Text changed after recording</h3><small>3 ¶</small></div><span class="chev">›</span></div>
+      </div>
+      <button class="btn small" style="margin-top:11px" id="dashboard.startReviewQueue">Start review queue</button>
+    </div>
+
+    <div class="card" id="dashboard.storage">
+      <div class="row between"><h3>Storage &amp; iCloud</h3><span class="chip ok">Backed up</span></div>
+      <div class="storagebar">
+        <i style="width:44%;background:var(--brass)"></i>
+        <i style="width:12%;background:var(--brass-deep)"></i>
+        <i style="width:30%;background:rgba(255,255,255,.16)"></i>
+      </div>
+      <div class="legend">
+        <span style="color:var(--brass)">4.1 GB on iPhone</span>
+        <span style="color:var(--brass-deep)">1.1 GB renders</span>
+        <span style="color:rgba(255,255,255,.45)">19.6 GB in iCloud</span>
+      </div>
+      <div class="kv" style="margin-top:8px"><span>Chapters 1–20</span><span>In iCloud · tap to download</span></div>
+      <div class="kv"><span>Chapters 2–4</span><span class="ok-text">Pinned on iPhone</span></div>
+      <button class="btn small" style="margin-top:10px" id="dashboard.manageStorage">Manage storage</button>
+    </div>
+
+    <h2 class="section-title">Work on</h2>
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row" id="dashboard.script"><span class="lead">☰</span><div class="grow"><h3>Script</h3><small>Split, merge, edit, pronunciation notes</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="dashboard.assemble"><span class="lead">⧉</span><div class="grow"><h3>Assembly</h3><small>Gaps, room tone, chapter renders</small></div><span class="chev">›</span></div>
+        <div class="list-row" id="dashboard.metadata"><span class="lead">ⓘ</span><div class="grow"><h3>Metadata &amp; rights</h3><small>Artwork missing</small></div><span class="chip bad">1</span></div>
+        <div class="list-row" id="dashboard.validate"><span class="lead">✓</span><div class="grow"><h3>Validate &amp; export</h3><small>9 issues · 2 block export</small></div><span class="chev">›</span></div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Chapters</h2>
+    <div class="card tight">
+      <div class="list">
+        <div class="list-row"><div class="grow"><h3>1. Breakfast Table</h3><small>84 ¶ · pinned</small></div><span class="chip ok">Complete</span></div>
+        <div class="list-row"><div class="grow"><h3>2. King’s Abbot</h3><small>76 ¶</small></div><span class="chip ok">Complete</span></div>
+        <div class="list-row"><div class="grow"><h3>3. Vegetable Marrows</h3><small>112 ¶ · recording here</small></div><span class="chip brass">64%</span></div>
+        <div class="list-row"><div class="grow"><h3>4. Dinner at Fernly</h3><small>98 ¶</small></div><span class="chip">Not started</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

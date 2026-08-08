@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>06 · Recording workspace — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>06 · Recording workspace</b>The centre of the product. Warm background variant (<code>VoxglassTheme.warmBackground</code>). Identifiers preserved from the shipping <code>RecordView</code>.</div>
+
+<div class="phone warm">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Chapter 3 · Recording</span><span class="step">¶ 1205 of 2884</span></div>
+  <div class="dots">
+    <i class="done"></i><i class="done"></i><i class="done"></i><i class="flag"></i><i class="done"></i>
+    <i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  </div>
+
+  <div class="content" style="display:flex;flex-direction:column">
+
+    <div class="row between" style="margin-bottom:2px">
+      <span class="chip ok" id="record.routeChip">USB-C interface · retail-ready</span>
+      <span class="chip" id="record.autosaveChip">Autosaving</span>
+    </div>
+
+    <div class="tele" id="record.teleprompter">
+      <div class="eyebrow" id="record.paragraphLabel">Paragraph 1205 · dialogue</div>
+      <div class="line">“Sheppard,” he said, “you are the only man in King’s Abbot who does not gossip.”</div>
+      <div class="next">It was, I reflected, a doubtful compliment…</div>
+    </div>
+
+    <div class="row between">
+      <span class="bad-text mono" style="font-weight:800;font-size:13px" id="record.elapsed">● REC 0:07</span>
+      <span class="faint mono" style="font-size:12px" id="record.peak">Peak −8.4 dBFS · Noise −64 dB</span>
+    </div>
+
+    <div class="meter" id="record.inputLevel">
+      <i style="height:8px"></i><i style="height:13px"></i><i style="height:19px"></i><i style="height:11px"></i>
+      <i style="height:22px"></i><i style="height:16px"></i><i style="height:24px"></i><i style="height:14px"></i>
+      <i style="height:20px"></i><i style="height:10px"></i><i style="height:17px"></i><i style="height:23px"></i>
+      <i style="height:13px"></i><i style="height:9px"></i><i style="height:15px"></i><i style="height:7px"></i>
+      <i style="height:12px"></i><i style="height:5px"></i><i style="height:8px"></i><i style="height:4px"></i>
+    </div>
+
+    <div class="wave rec" id="record.waveform"></div>
+
+    <div class="transport">
+      <button class="tbtn" id="record.transport.playInContext">◁◁</button>
+      <button class="recbtn" id="record.transport.record">STOP</button>
+      <button class="tbtn" id="record.transport.playTake">▶</button>
+    </div>
+    <div class="row" style="justify-content:center;gap:40px;font-size:11px;color:var(--ink3)">
+      <span>In context</span><span>Play take</span>
+    </div>
+
+    <div class="takes" style="margin-top:14px">
+      <span class="take active" id="record.take.2">Take 2 · 0:07 · −18.2 RMS</span>
+      <span class="take" id="record.take.1">Take 1 · 0:09</span>
+      <span class="take" id="record.compareTakes">⇄ Compare</span>
+      <span class="take" id="record.importAudio">＋ Import audio</span>
+    </div>
+
+    <div class="banner" style="margin-top:12px">
+      <small><b>Apple Watch connected.</b> Start, stop, accept, and flag from your wrist.</small>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="footer-actions">
+      <button class="btn narrow" id="record.previousParagraph">‹</button>
+      <button class="btn narrow" id="record.flagAndNext">⚑</button>
+      <button class="btn primary" id="record.acceptAndNext">Accept &amp; next ›</button>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

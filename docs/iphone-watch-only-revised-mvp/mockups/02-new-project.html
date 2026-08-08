@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>02 · New narration — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>02 · New narration</b>Flow step <code>.importWork</code>, presented as a fullScreenCover — no tab dock. Lane choice drives every later validation rule.</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">✕</span><span class="title">New narration</span><span class="step">Step 1 of 8</span></div>
+  <div class="dots"><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <div class="content">
+
+    <div class="card tight">
+      <div class="row top">
+        <div class="cover small">HO</div>
+        <div class="grow"><h3>Hope</h3><small>Emily Brontë · from Narration Needs</small></div>
+      </div>
+    </div>
+
+    <div class="field-label">WHERE THE TEXT COMES FROM</div>
+    <div class="card tight" id="import.source">
+      <div class="list">
+        <div class="list-row"><div class="radio on"></div><div class="grow"><h3>Use the need’s source text</h3><small>Project Gutenberg · verified public domain</small></div></div>
+        <div class="list-row" id="import.files"><div class="radio"></div><div class="grow"><h3>A file on this iPhone</h3><small>EPUB, DOCX, Markdown, or plain text</small></div></div>
+        <div class="list-row" id="import.paste"><div class="radio"></div><div class="grow"><h3>Paste text</h3><small>Good for a single poem</small></div></div>
+        <div class="list-row" id="import.gutenberg"><div class="radio"></div><div class="grow"><h3>Fetch from Project Gutenberg</h3><small>Search by title or author</small></div></div>
+      </div>
+    </div>
+
+    <div class="field-label">TITLE</div>
+    <input class="field" id="wizard.title" value="Hope" readonly>
+    <div class="field-label">AUTHOR</div>
+    <input class="field" id="wizard.author" value="Emily Brontë" readonly>
+    <div class="field-label">NARRATOR</div>
+    <input class="field" id="wizard.narrator" value="John Burns" readonly>
+
+    <div class="field-label">WHERE THIS IS GOING</div>
+    <div class="card tight" id="wizard.purpose">
+      <div class="list">
+        <div class="list-row" id="wizard.purpose.librivox">
+          <div class="radio on"></div>
+          <div class="grow"><h3>LibriVox</h3><small>Free · 128 kbps mono MP3 · human narration only</small></div>
+        </div>
+        <div class="list-row" id="wizard.purpose.internetArchive">
+          <div class="radio"></div>
+          <div class="grow"><h3>Internet Archive</h3><small>Free · FLAC masters + MP3 derivatives</small></div>
+        </div>
+        <div class="list-row" id="wizard.purpose.personal">
+          <div class="radio"></div>
+          <div class="grow"><h3>Just for me</h3><small>Free · lossless WAV chapters</small></div>
+        </div>
+        <div class="list-row" id="wizard.purpose.commercial">
+          <div class="radio"></div>
+          <div class="grow"><h3>Commercial release</h3><small>ACX, Apple Books, aggregators</small></div>
+          <span class="chip brass">Pro</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-label">RIGHTS</div>
+    <div class="card tight">
+      <div class="list-row" id="wizard.attest">
+        <div class="checkbox on">✓</div>
+        <div class="grow"><small>I confirm this work is in the public domain where I am publishing it, and that I will narrate it in my own voice.</small></div>
+      </div>
+      <div class="field-label" style="margin-top:4px">SOURCE URL</div>
+      <input class="field" id="wizard.sourceURL" value="gutenberg.org/ebooks/768" readonly>
+      <p style="margin-top:10px" class="faint">Voxglass does not determine copyright status.</p>
+    </div>
+
+    <button class="btn primary" style="margin-top:16px" id="wizard.continueToImport">Continue</button>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

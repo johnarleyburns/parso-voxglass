@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>06c · Capture interruption — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>06c · Capture interruption &amp; recovery</b>§7.4. Every row of the interruption matrix ends the same way: a playable take, a named cause, and a way back. Never a silent loss.</div>
+
+<div class="phone warm">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <div class="nav"><span class="back">‹</span><span class="title">Chapter 3 · Recording</span><span class="step">¶ 1205</span></div>
+
+  <div class="content">
+
+    <div class="banner bad" id="capture.banner">
+      <div class="row between"><h3 class="bad-text">Your input device changed.</h3><span class="chip bad">Take saved</span></div>
+      <p style="margin-top:6px">The Scarlett Solo was unplugged 7 seconds into take 3. Everything recorded up to that point was saved and is playable.</p>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn small" id="capture.revealTake">Play what was saved</button>
+        <button class="btn small primary" id="capture.resumeRecording">Resume on iPhone mic</button>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="row between"><h3>Recovered take 3</h3><span class="chip brass">Interrupted</span></div>
+      <div class="wave" style="margin:10px 0"></div>
+      <div class="kv"><span>Duration</span><span class="mono">0:07 of about 0:14</span></div>
+      <div class="kv"><span>Written to</span><span class="mono">Autosave/takes</span></div>
+      <div class="kv"><span>File</span><span class="ok-text">Header repaired · valid</span></div>
+      <div class="btn-row" style="margin-top:11px">
+        <button class="btn small" id="capture.keepTake">Keep as take 3</button>
+        <button class="btn small danger" id="capture.discardTake">Discard</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Recovered after last launch</h2>
+    <div class="card tight" id="capture.recoveryList">
+      <div class="list">
+        <div class="list-row"><span class="lead">↺</span><div class="grow"><h3>¶ 1198 · take 2</h3><small>App was force-quit · 0:22 recovered</small></div><span class="chip ok">Playable</span></div>
+        <div class="list-row"><span class="lead">↺</span><div class="grow"><h3>¶ 1188 · take 1</h3><small>Phone call · 0:04 recovered</small></div><span class="chip ok">Playable</span></div>
+        <div class="list-row"><span class="lead">↺</span><div class="grow"><h3>¶ 1174 · take 4</h3><small>Storage filled · 0:31 recovered</small></div><span class="chip ok">Playable</span></div>
+      </div>
+      <p style="margin-top:9px">Recovered takes are inserted as ordinary takes and marked <b>Interrupted</b>. Nothing is selected for you.</p>
+    </div>
+
+    <div class="card tight">
+      <h3>What Voxglass survives</h3>
+      <div class="list">
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Phone call, Siri, alarms</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Route change, USB unplug, headphones removed</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Storage pressure while recording</small></div></div>
+        <div class="list-row"><span class="lead ok-text">✓</span><div class="grow"><small>Backgrounding, screen lock, force-quit</small></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

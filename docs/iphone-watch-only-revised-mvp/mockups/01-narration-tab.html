@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>01 · Narration tab — Voxglass</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="caption"><b>01 · Narration tab</b>Inside the Voxglass app — 5th tab of the existing glass dock. Need-first shelf on top, My Narrations below. No separate Studio app (R-1).</div>
+
+<div class="phone">
+  <div class="status"><span>9:41</span><span>▮▮▮ ᯤ ▰</span></div>
+  <h1 class="large-title">Narration</h1>
+
+  <div class="content with-dock">
+
+    <div class="eyebrow">This week’s poem</div>
+    <div class="card" id="needs.featured">
+      <div class="row top">
+        <div class="cover">HO</div>
+        <div class="grow">
+          <h3>Hope</h3>
+          <p>Emily Brontë · 24 lines · about 4 minutes</p>
+          <div class="chips">
+            <span class="chip ok">LibriVox-submittable</span>
+            <span class="chip">Public domain</span>
+            <span class="chip">Finishable in one sitting</span>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:13px">
+        <button class="btn primary" id="needs.startNarrating">Start narrating</button>
+        <button class="btn" style="flex:0 0 84px" id="needs.preview">Read</button>
+      </div>
+    </div>
+
+    <div class="row between section-title">
+      <h2 style="font-size:19px">Needs a narrator</h2>
+      <span class="faint" id="needs.browseAll" style="font-size:13px">See all ›</span>
+    </div>
+    <div class="card tight" id="needs.shelf">
+      <div class="list">
+        <div class="list-row" id="needs.row.0">
+          <div class="cover small cool">SC</div>
+          <div class="grow"><h3>Sonnet 29</h3><small>Shakespeare · 2 min · open for readers</small></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-row" id="needs.row.1">
+          <div class="cover small deep">TR</div>
+          <div class="grow"><h3>The Raven</h3><small>Poe · 9 min · still unrecorded this year</small></div>
+          <span class="chev">›</span>
+        </div>
+        <div class="list-row" id="needs.row.2">
+          <div class="cover small">RA</div>
+          <div class="grow"><h3>The Murder of Roger Ackroyd</h3><small>Christie · 8h 40m · 24 chapters</small></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <p style="margin-top:9px" class="faint">Long works record here too — one chapter at a time.</p>
+    </div>
+
+    <h2 class="section-title">My narrations</h2>
+
+    <div class="card" id="myNarrations.row.0">
+      <div class="row top">
+        <div class="cover">RA</div>
+        <div class="grow">
+          <div class="row between"><h3>Roger Ackroyd</h3><span class="chip brass">Recording</span></div>
+          <p>Chapter 3 of 24 · 1,204 of 2,884 ¶</p>
+          <div class="progress"><i style="width:42%"></i></div>
+          <div class="chips">
+            <span class="chip">8.4 GB on iPhone</span>
+            <span class="chip ok">Backed up</span>
+            <span class="chip bad">18 flagged</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="myNarrations.row.1">
+      <div class="row top">
+        <div class="cover cool">HO</div>
+        <div class="grow">
+          <div class="row between"><h3>Hope</h3><span class="chip ok">Ready to export</span></div>
+          <p>LibriVox lane · 6 of 6 ¶ approved</p>
+          <div class="progress ok"><i style="width:100%"></i></div>
+          <div class="chips"><span class="chip">18 MB</span><span class="chip ok">Validation clean</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="myNarrations.row.2">
+      <div class="row top">
+        <div class="cover deep">SC</div>
+        <div class="grow">
+          <div class="row between"><h3>Sonnet 29</h3><span class="chip">Hydrating</span></div>
+          <p>Older takes are in iCloud · 240 MB downloading</p>
+          <div class="progress"><i style="width:64%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tight" id="storage.card">
+      <div class="row between"><h3>Narration storage</h3><span class="chip">8.9 / 10 GB</span></div>
+      <div class="storagebar">
+        <i style="width:52%;background:var(--brass)"></i>
+        <i style="width:22%;background:var(--brass-deep)"></i>
+        <i style="width:15%;background:rgba(255,255,255,.22)"></i>
+      </div>
+      <div class="legend">
+        <span style="color:var(--brass)">Originals</span>
+        <span style="color:var(--brass-deep)">Renders</span>
+        <span style="color:rgba(255,255,255,.5)">Proxies</span>
+      </div>
+      <p style="margin-top:9px">Chapters verified in iCloud can be offloaded. Local-only takes are never removed.</p>
+      <button class="btn small" style="margin-top:10px" id="storage.manage">Manage storage</button>
+    </div>
+
+  </div>
+
+  <div class="dock">
+    <div class="tab"><span class="glyph">🎧</span>Listen</div>
+    <div class="tab"><span class="glyph">📚</span>My Books</div>
+    <div class="tab"><span class="glyph">▦</span>Explore</div>
+    <div class="tab"><span class="glyph">⌕</span>Search</div>
+    <div class="tab active" id="tab.narration"><span class="glyph">🎙</span>Narration</div>
+  </div>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>
