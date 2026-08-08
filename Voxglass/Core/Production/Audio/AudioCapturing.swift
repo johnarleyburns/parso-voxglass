@@ -3,6 +3,14 @@ import Foundation
 public protocol AudioCapturing: AnyObject, Sendable {
     var state: CaptureState { get }
     var levels: AsyncStream<CaptureLevels> { get }
+    /// The route the capture is using, fed by the app from
+    /// `AVAudioSession.currentRoute` (spec §7.1). Snapshotted at `prepare` and
+    /// again at `startRecording` so a take can record the route it was made on.
+    var currentRouteInfo: CaptureRouteInfo { get }
+    /// Set by the owning flow to receive in-flight interruption causes while
+    /// recording (spec §7.4). The concrete observes `AVAudioSession` route /
+    /// interruption notifications and app lifecycle and forwards the cause.
+    var onInterruption: ((CaptureInterruptionReason) -> Void)? { get set }
     func availableInputDevices() async -> [AudioDeviceInfo]
     func prepare(device: String?, format: RecordingDefaults) async throws
     func startMonitoring() async throws

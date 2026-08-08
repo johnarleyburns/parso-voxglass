@@ -76,6 +76,7 @@
 		47673AABDD458924EBD693C3 /* WatchFetchStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE5E31FFA303A4831A66963 /* WatchFetchStatusView.swift */; };
 		47FC57EF16AEBEFBB18870CB /* science_gettingrich_1005_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 39C00D54A32B0CDBB2B78CB5 /* science_gettingrich_1005_librivox.jpg */; };
 		4AC1391D0A25F33A7490BD6B /* WatchReviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850F4456DE697EF013A90246 /* WatchReviewModel.swift */; };
+		4B86384DDFE08A955A9703DA /* AudioSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5151457A11B54D1C07091BFC /* AudioSetupView.swift */; };
 		4DDE4563F7198BB014BFF4DD /* ProductionPreviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5691CFA693DFE224A476BCEC /* ProductionPreviewStore.swift */; };
 		4E85D43B3AC0834F16B06791 /* ListeningStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7281A4BB54139B5008C6D6 /* ListeningStatsView.swift */; };
 		4EAD6C535B3D4960C95229C4 /* love_freindship_cs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 179C62958C3F5174F0B0AF7D /* love_freindship_cs_librivox.jpg */; };
@@ -365,6 +366,7 @@
 		4F695ED501176D7E86BED918 /* american_indian_tales_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = american_indian_tales_librivox.jpg; sourceTree = "<group>"; };
 		502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionSync.swift; sourceTree = "<group>"; };
+		5151457A11B54D1C07091BFC /* AudioSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSetupView.swift; sourceTree = "<group>"; };
 		532142CAFAA3305FE98E66A2 /* anthem_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = anthem_librivox.jpg; sourceTree = "<group>"; };
 		5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryEnvironment.swift; sourceTree = "<group>"; };
 		53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = jane_eyre_ver03_0809_librivox.jpg; sourceTree = "<group>"; };
@@ -580,6 +582,7 @@
 			isa = PBXGroup;
 			children = (
 				396BF796DE405288AE846317 /* AudioSessionCapture.swift */,
+				5151457A11B54D1C07091BFC /* AudioSetupView.swift */,
 				5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */,
 				5B5AF4E9D3A269D27ABC1CBB /* DiscoveryViews.swift */,
 				DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */,
@@ -1348,6 +1351,7 @@
 				F6D05FC8D3665660DD1D83B2 /* AppServices.swift in Sources */,
 				6D1F2947C9F08205C5A4C991 /* ArtworkService.swift in Sources */,
 				00BD9E1FDB911BA9BC24D3CD /* AudioSessionCapture.swift in Sources */,
+				4B86384DDFE08A955A9703DA /* AudioSetupView.swift in Sources */,
 				293A63007EB15E38F0842E29 /* BookArtworkView.swift in Sources */,
 				B8D77B123CC0612D7FA46EF8 /* BookPageActionRow.swift in Sources */,
 				3033A4EB6B56EC2D70ABCDFB /* BookPageOverflowSheet.swift in Sources */,

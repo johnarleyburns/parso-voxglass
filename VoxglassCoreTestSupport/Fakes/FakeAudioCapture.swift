@@ -27,6 +27,17 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
     public var takeAmplitude: Float = 0.25
     public var levelScript: [Float] = []
     public var levelRate: TimeInterval = 0.033
+    /// When set, `stopRecording` throws this error after leaving the take file
+    /// on disk — the scripted mid-take failure (storage pressure) path.
+    public var interruptionError: Error?
+    /// When true, the WAV written by `startRecording` carries a stale header
+    /// that claims more data than is present, simulating a crashed writer
+    /// (force-quit / disk-pressure artifact) for the recovery tests.
+    public var staleHeaderFile = false
+    /// The route the fake reports. Defaults to a USB retail-ready route.
+    public var routeInfo: CaptureRouteInfo = CaptureRouteInfo(
+        transports: [.usb], sampleRate: 48_000, isSampleRateStable: true, inputLatencySeconds: 0.01
+    )
 
     public private(set) var state: CaptureState = .idle
     public private(set) var lastDestinationURL: URL?
@@ -35,6 +46,16 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
     public private(set) var peakDBFS: Double = -.infinity
     public private(set) var duration: TimeInterval = 0
     public private(set) var yieldCount = 0
+    public private(set) var currentRouteInfo: CaptureRouteInfo = CaptureRouteInfo()
+    public private(set) var forwardedInterruptions: [CaptureInterruptionReason] = []
+    public var onInterruption: ((CaptureInterruptionReason) -> Void)?
+
+    /// Simulates an in-flight interruption by forwarding the cause to the
+    /// registered handler (the path the real capture takes on a notification).
+    public func simulateInterruption(_ reason: CaptureInterruptionReason) {
+        forwardedInterruptions.append(reason)
+        onInterruption?(reason)
+    }
 
     public var levels: AsyncStream<CaptureLevels> {
         let stream = AsyncStream<CaptureLevels>(bufferingPolicy: .bufferingNewest(1)) { continuation in
@@ -66,6 +87,7 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
             state = .failed("Microphone access denied")
             throw FakeCaptureError.permissionDenied
         }
+        currentRouteInfo = routeInfo
         state = .prepared
     }
 
@@ -89,7 +111,7 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
         }
 
         let amplitude = takeAmplitude
-        try writeWAV(at: destinationURL, duration: takeDuration, amplitude: amplitude)
+        try writeWAV(at: destinationURL, duration: takeDuration, amplitude: amplitude, staleHeader: staleHeaderFile)
 
         lastDestinationURL = destinationURL
         recordedPeak = amplitude
@@ -105,6 +127,10 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
             throw FakeCaptureError.invalidState
         }
         stopLevelTask()
+        if let interruptionError {
+            state = .idle
+            throw interruptionError
+        }
         if deviceDisappearsOnStop {
             state = .idle
             throw FakeCaptureError.deviceDisappeared
@@ -176,7 +202,7 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
 
     // MARK: - WAV synthesis
 
-    private func writeWAV(at url: URL, duration: TimeInterval, amplitude: Float) throws {
+    private func writeWAV(at url: URL, duration: TimeInterval, amplitude: Float, staleHeader: Bool = false) throws {
         let sampleRate = 48_000
         let frameCount = Int(Double(sampleRate) * duration)
         var data = Data(capacity: 44 + frameCount * 2)
@@ -201,9 +227,13 @@ public final class FakeAudioCapture: AudioCapturing, @unchecked Sendable {
         appendLE16(2)                       // block align
         appendLE16(16)                      // bits per sample
         append(Array("data".utf8))
+        // A stale header claims the full frame count even though only a
+        // fraction of the audio is written — the artifact a force-quit or
+        // mid-take disk failure leaves behind. WAVHeaderRepair fixes it.
         appendLE32(UInt32(frameCount * 2))
 
-        for i in 0..<frameCount {
+        let writtenFrames = staleHeader ? frameCount / 3 : frameCount
+        for i in 0..<writtenFrames {
             let value = Int16((Double(amplitude) * sin(2.0 * .pi * 440.0 * Double(i) / Double(sampleRate)) * 32767.0).rounded())
             appendLE16(UInt16(bitPattern: value))
         }

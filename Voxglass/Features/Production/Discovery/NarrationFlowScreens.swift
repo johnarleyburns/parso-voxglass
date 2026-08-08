@@ -140,6 +140,7 @@ struct RecordView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToReview = false
+    @State private var showAudioSetup = false
 
     init(model: NarrationFlowModel, paragraphID: UUID, fromReview: Bool = false) {
         self.model = model
@@ -151,6 +152,9 @@ struct RecordView: View {
         ScrollView {
             VStack(spacing: 0) {
                 if let paragraph = model.paragraph(at: currentParagraphID) {
+                    routeStatusRow
+                    interruptionBanner
+                    recoveryList
                     teleprompter(paragraph)
                     errorCard
                     recordingBar
@@ -172,6 +176,9 @@ struct RecordView: View {
         .navigationDestination(isPresented: $navigateToReview) {
             ReviewView(model: model, isPushed: true)
         }
+        .sheet(isPresented: $showAudioSetup) {
+            AudioSetupView(model: model)
+        }
         .narrationFlowBackOnlyToolbar(if: fromReview)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -180,6 +187,141 @@ struct RecordView: View {
     /// paragraphs, so each paragraph does not push a new view onto the stack.
     private var currentParagraphID: UUID {
         model.currentParagraphID ?? paragraphID
+    }
+
+    /// Route + autosave status chips (mockup 06). The route chip opens the
+    /// Audio Setup sheet (06b).
+    private var routeStatusRow: some View {
+        HStack(spacing: 8) {
+            Button {
+                showAudioSetup = true
+            } label: {
+                Text(model.routeChipText)
+                    .scaledFont(size: 11, weight: .semibold)
+                    .foregroundStyle(routeChipColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(routeChipColor.opacity(0.12), in: Capsule())
+                    .overlay(Capsule().stroke(routeChipColor.opacity(0.4), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("record.routeChip")
+
+            Spacer()
+
+            if model.isRecording {
+                Text("Autosaving")
+                    .scaledFont(size: 11, weight: .semibold)
+                    .foregroundStyle(Palette.ink2)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Palette.ink2.opacity(0.08), in: Capsule())
+                    .accessibilityIdentifier("record.autosaveChip")
+            }
+        }
+        .padding(.bottom, 10)
+    }
+
+    private var routeChipColor: Color {
+        switch model.routeClass ?? CaptureRouteClassifier.classify(model.capture.currentRouteInfo) {
+        case .retailReady: return Palette.ok
+        case .communityReady: return Palette.brass
+        case .draftOnly: return Palette.danger
+        }
+    }
+
+    /// The in-flight interruption banner (mockup 06c): a named cause, a saved
+    /// take, and a way back.
+    @ViewBuilder
+    private var interruptionBanner: some View {
+        if let reason = model.interruptionBanner {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(reason.userDescription.uppercased())
+                        .scaledFont(size: 12, weight: .bold)
+                        .foregroundStyle(Palette.danger)
+                    Spacer()
+                    Text("Take saved")
+                        .scaledFont(size: 10, weight: .bold)
+                        .foregroundStyle(Palette.danger)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Palette.danger.opacity(0.12), in: Capsule())
+                }
+                Text("Everything recorded up to that point was saved and is playable. The recovered take is marked Interrupted and nothing is selected for you.")
+                    .scaledFont(size: 11.5)
+                    .foregroundStyle(Palette.ink2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 10) {
+                    Button("Play what was saved") {
+                        model.playLatestTake(currentParagraphID)
+                    }
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(Palette.ink)
+                    .accessibilityIdentifier("capture.revealTake")
+                    Button("Resume recording") {
+                        model.resumeRecordingOnCurrentRoute()
+                    }
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .accessibilityIdentifier("capture.resumeRecording")
+                }
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.danger.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Palette.danger.opacity(0.35), lineWidth: 1))
+            .accessibilityIdentifier("capture.banner")
+            .padding(.bottom, 10)
+        }
+    }
+
+    /// Takes recovered after a force-quit, awaiting keep/discard (mockup 06c).
+    @ViewBuilder
+    private var recoveryList: some View {
+        if !model.pendingRecoveries.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("RECOVERED AFTER LAST LAUNCH")
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                ForEach(model.pendingRecoveries) { recovery in
+                    HStack(alignment: .center, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(paragraphLabel(for: recovery.paragraphID))
+                                .scaledFont(size: 13, weight: .semibold)
+                                .foregroundStyle(Palette.ink)
+                            Text("\(recovery.reason.userDescription.lowercased()) · \(recovery.duration.formattedShort) recovered")
+                                .scaledFont(size: 11)
+                                .foregroundStyle(Palette.ink2)
+                        }
+                        Spacer()
+                        Button("Keep") {
+                            Task { await model.keepRecovered(recovery) }
+                        }
+                        .scaledFont(size: 12, weight: .bold)
+                        .foregroundStyle(Palette.brass)
+                        .accessibilityIdentifier("capture.keepTake")
+                        Button("Discard") {
+                            model.discardRecovered(recovery)
+                        }
+                        .scaledFont(size: 12, weight: .bold)
+                        .foregroundStyle(Palette.danger)
+                        .accessibilityIdentifier("capture.discardTake")
+                    }
+                    .padding(11)
+                    .glassSurface(cornerRadius: 12)
+                }
+            }
+            .padding(.bottom, 10)
+            .accessibilityIdentifier("capture.recoveryList")
+        }
+    }
+
+    private func paragraphLabel(for paragraphID: UUID?) -> String {
+        guard let paragraphID,
+              let index = model.paragraphs.firstIndex(where: { $0.id == paragraphID }) else {
+            return "Recovered take"
+        }
+        return "¶ \(index + 1)"
     }
 
     private func teleprompter(_ paragraph: FlowParagraph) -> some View {

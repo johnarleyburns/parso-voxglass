@@ -568,7 +568,7 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
     private func saveTake(_ db: ProjectDatabase, _ t: Take, paragraphID: UUID, projectID: UUID) async throws {
         let procJ = try String(data: encoder.encode(t.processing), encoding: .utf8)!
         let metJ = t.metrics.map { _ in try? String(data: encoder.encode(t.metrics!), encoding: .utf8)! } ?? nil
-        try await db.execute("INSERT INTO take (id,paragraph_id,project_id,asset_sha256,asset_path,asset_bytes,asset_content_type,origin_kind,origin_payload,recorded_at,duration,sample_rate,channels,bit_depth,codec,processing_json,metrics_json,label,text_hash_at_recording,is_archived) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+        try await db.execute("INSERT INTO take (id,paragraph_id,project_id,asset_sha256,asset_path,asset_bytes,asset_content_type,origin_kind,origin_payload,recorded_at,duration,sample_rate,channels,bit_depth,codec,processing_json,metrics_json,label,text_hash_at_recording,is_archived,capture_warning,route_class) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
             .string(t.id.uuidString), .string(paragraphID.uuidString), .string(projectID.uuidString),
             .string(t.assetRef.sha256), .string(t.assetRef.relativePath), .int(Int64(t.assetRef.byteCount)),
             .string(t.assetRef.contentType), .string(t.origin.storageKind),
@@ -577,7 +577,9 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
             .double(t.format.sampleRate), .int(Int64(t.format.channels)),
             t.format.bitDepth.map{.int(Int64($0))} ?? .null, .string(t.format.codec),
             .string(procJ), metJ.map{.string($0)} ?? .null,
-            t.label.map{.string($0)} ?? .null, .string(t.textHashAtRecording), .bool(t.isArchived)
+            t.label.map{.string($0)} ?? .null, .string(t.textHashAtRecording), .bool(t.isArchived),
+            .string(t.warning.rawValue),
+            t.routeClass.map { .string($0.rawValue) } ?? .null
         ])
     }
 
@@ -671,7 +673,9 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
             duration: row.double("duration") ?? 0,
             format: AudioFormatDescription(sampleRate: row.double("sample_rate") ?? 44100, channels: Int(row.int("channels") ?? 1), bitDepth: row.int("bit_depth").map(Int.init), codec: row.string("codec") ?? "pcm"),
             processing: proc, metrics: met, label: row.string("label"),
-            textHashAtRecording: row.string("text_hash_at_recording") ?? "", isArchived: row.bool("is_archived") ?? false)
+            textHashAtRecording: row.string("text_hash_at_recording") ?? "", isArchived: row.bool("is_archived") ?? false,
+            warning: CaptureWarning(rawValue: row.string("capture_warning") ?? "none") ?? .none,
+            routeClass: row.string("route_class").flatMap(CaptureRouteClass.init(rawValue:)))
     }
 
     private func loadEvent(from row: DatabaseRow) throws -> ReviewEvent? {

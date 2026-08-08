@@ -183,10 +183,12 @@ public final class NarrationProjectRepository {
         captured: CapturedTake,
         textHash: String,
         chapterID: UUID? = nil,
-        chapterOrdinal: Int? = nil
+        chapterOrdinal: Int? = nil,
+        warning: CaptureWarning = .none,
+        routeClass: CaptureRouteClass? = nil
     ) async throws -> Take {
         let assets = fileStore(for: projectID)
-        let ext = fileURL.pathExtension.isEmpty ? "caf" : fileURL.pathExtension
+        let ext = fileURL.pathExtension.isEmpty ? "wav" : fileURL.pathExtension
         let contentType = ext.lowercased() == "wav" ? "audio/wav" : "audio/x-caf"
         let ref = try await assets.ingest(fileAt: fileURL, ext: ext, contentType: contentType, subdirectory: .original, moving: true)
         let take = Take(
@@ -197,7 +199,9 @@ public final class NarrationProjectRepository {
             recordedAt: clock.now,
             duration: captured.duration,
             format: captured.format,
-            textHashAtRecording: textHash
+            textHashAtRecording: textHash,
+            warning: warning,
+            routeClass: routeClass
         )
         // The bytes are durable in the store; now persist the upload queue entry.
         // `.localOnly` is never evictable, and the record id becomes the

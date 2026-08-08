@@ -13,7 +13,8 @@ public struct ProductionMigration: Sendable {
 
     public static let all: [ProductionMigration] = [
         ProductionMigration(id: 1, name: "initial_production_schema", statements: schemaV1),
-        ProductionMigration(id: 2, name: "production_asset_table", statements: schemaV2)
+        ProductionMigration(id: 2, name: "production_asset_table", statements: schemaV2),
+        ProductionMigration(id: 3, name: "take_capture_fields", statements: schemaV3)
     ]
 
     static let schemaV1: [String] = [
@@ -235,5 +236,16 @@ public struct ProductionMigration: Sendable {
         "CREATE INDEX idx_production_asset_state ON production_asset(state)",
         "CREATE INDEX idx_production_asset_chapter ON production_asset(chapter_id)",
         "CREATE INDEX idx_production_asset_sha ON production_asset(sha256)"
+    ]
+
+    /// Per-take capture fields (spec §7.1, §7.4). `capture_warning` persists
+    /// the `CaptureWarning` for takes finalized after an interruption;
+    /// `route_class` persists the `CaptureRouteClass` of the route each take
+    /// was recorded on so `routeNotRetailReady` reads history, never the
+    /// route at export time. Both are additive with safe defaults; legacy
+    /// rows decode as `.none` / nil.
+    static let schemaV3: [String] = [
+        "ALTER TABLE take ADD COLUMN capture_warning TEXT NOT NULL DEFAULT 'none'",
+        "ALTER TABLE take ADD COLUMN route_class TEXT"
     ]
 }

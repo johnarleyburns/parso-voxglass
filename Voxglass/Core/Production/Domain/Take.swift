@@ -197,6 +197,13 @@ public struct Take: Codable, Sendable, Identifiable, Equatable {
     public var label: String?
     public var textHashAtRecording: String
     public var isArchived: Bool
+    /// Non-`.none` when the take was finalized after an interruption (spec
+    /// §7.4). Persisted so the history never hides a recovered take.
+    public var warning: CaptureWarning
+    /// The `CaptureRouteClass` of the route used to record this take (spec
+    /// §7.1), so `routeNotRetailReady` is computed from history, not from the
+    /// route at export time. `nil` for imported or legacy takes.
+    public var routeClass: CaptureRouteClass?
 
     public init(
         id: UUID,
@@ -210,7 +217,9 @@ public struct Take: Codable, Sendable, Identifiable, Equatable {
         metrics: AudioQualityMetrics? = nil,
         label: String? = nil,
         textHashAtRecording: String,
-        isArchived: Bool = false
+        isArchived: Bool = false,
+        warning: CaptureWarning = .none,
+        routeClass: CaptureRouteClass? = nil
     ) {
         self.id = id
         self.paragraphID = paragraphID
@@ -224,5 +233,7 @@ public struct Take: Codable, Sendable, Identifiable, Equatable {
         self.label = label
         self.textHashAtRecording = textHashAtRecording
         self.isArchived = isArchived
+        self.warning = warning
+        self.routeClass = routeClass
     }
 }

@@ -12,6 +12,10 @@ import VoxglassCore
 final class UITestAudioCapture: AudioCapturing, @unchecked Sendable {
     private(set) var state: CaptureState = .idle
     let levels: AsyncStream<CaptureLevels>
+    private(set) var currentRouteInfo = CaptureRouteInfo(
+        transports: [.builtIn], sampleRate: 44_100, isSampleRateStable: true, inputLatencySeconds: 0.02
+    )
+    var onInterruption: ((CaptureInterruptionReason) -> Void)?
 
     private var format = RecordingDefaults()
     private var lastDestinationURL: URL?

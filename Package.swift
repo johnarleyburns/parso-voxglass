@@ -11,7 +11,12 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "VoxglassRing",
+            path: "VoxglassRing"
+        ),
+        .target(
             name: "VoxglassCore",
+            dependencies: ["VoxglassRing"],
             path: "Voxglass/Core",
             exclude: ["Encoders"],
             resources: [

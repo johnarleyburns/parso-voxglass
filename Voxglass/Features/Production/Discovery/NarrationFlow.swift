@@ -48,6 +48,31 @@ struct FlowTake: Equatable {
     var clipped: Bool
 }
 
+/// A take recovered from an interruption, awaiting the user's keep/discard
+/// decision (mockup 06c). Recovered takes are inserted as ordinary takes,
+/// marked `Interrupted`, and never selected for the user.
+struct FlowRecoveredTake: Identifiable, Equatable {
+    let id: UUID
+    var reason: CaptureInterruptionReason
+    var duration: TimeInterval
+    var paragraphID: UUID?
+    var fileURL: URL
+
+    init(
+        id: UUID = UUID(), // presentation-only identity; not persisted
+        reason: CaptureInterruptionReason,
+        duration: TimeInterval,
+        paragraphID: UUID?,
+        fileURL: URL
+    ) {
+        self.id = id
+        self.reason = reason
+        self.duration = duration
+        self.paragraphID = paragraphID
+        self.fileURL = fileURL
+    }
+}
+
 /// The paragraph as the narration flow sees it — a Core `Paragraph` plus the
 /// flow's derived state, its latest review note, and the selected take's
 /// presentation. The flow screens read this; the model translates to/from the
@@ -106,6 +131,18 @@ final class NarrationFlowModel {
     var playbackPlayer: AVAudioPlayer?
     private var levelTask: Task<Void, Never>?
 
+    /// The route class of the current recording, snapshotted at record start
+    /// (spec §7.1). Persisted on the take so `routeNotRetailReady` is computed
+    /// from history.
+    var routeClass: CaptureRouteClass?
+    /// The cause of the most recent in-flight interruption; shown as the
+    /// recovery banner on the record screen (mockup 06c).
+    var interruptionBanner: CaptureInterruptionReason?
+    /// Takes recovered at launch or in-flight that await keep/discard.
+    var pendingRecoveries: [FlowRecoveredTake] = []
+    /// The destination URL of the in-flight take (also the autosave path).
+    private var recordingDestinationURL: URL?
+
     var assembly = AssemblySettings()
     var narrator = ""
     var language = "English"
@@ -135,6 +172,14 @@ final class NarrationFlowModel {
             draftTitle = existing.metadata.title
             draftAuthor = existing.metadata.author
             setSource(existing.rights.sourceURL?.absoluteString)
+        }
+        // The capture forwards in-flight interruptions (call, route change,
+        // USB unplug, headphones, background, disk pressure) to the flow,
+        // which finalizes and recovers the take (spec §7.4).
+        capture.onInterruption = { [weak self] reason in
+            Task { @MainActor in
+                await self?.handleInterruption(reason)
+            }
         }
     }
 
@@ -293,7 +338,7 @@ final class NarrationFlowModel {
             rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL.flatMap(URL.init(string:))),
             profile: ProductionProfile(
                 purpose: .publicDomainCommunity,
-                recording: RecordingDefaults(sampleRate: 44_100, bitDepth: 24),
+                recording: RecordingDefaults(),
                 intendedDestination: .librivox
             ),
             source: nil,
@@ -402,6 +447,7 @@ final class NarrationFlowModel {
         currentParagraphID = nil
         importError = nil
         micPermissionDenied = false
+        await checkForRecoveredSessions()
     }
 
     func paragraph(at id: UUID) -> FlowParagraph? {
@@ -446,19 +492,29 @@ final class NarrationFlowModel {
         currentParagraphID = id
         importError = nil
         micPermissionDenied = false
+        interruptionBanner = nil
         let directory = repository.autosaveTakesURL(for: project.id)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let url = directory.appendingPathComponent("\(repository.ids.next().uuidString).caf")
+        // §7.3: capture at 48 kHz / 24-bit mono WAV when the hardware supports
+        // it; the capture falls back to the actual hardware format otherwise.
+        let url = directory.appendingPathComponent("\(repository.ids.next().uuidString).wav")
+        recordingDestinationURL = url
+        // Autosave session (§7.7): written before the engine starts, deleted on
+        // a normal stop, present at launch iff a take needs recovery.
+        writeAutosaveSession(for: id, url: url, project: project)
         do {
-            try await capture.prepare(device: nil, format: RecordingDefaults(sampleRate: 44_100, bitDepth: 24))
+            try await capture.prepare(device: nil, format: RecordingDefaults())
             try await capture.startRecording(to: url)
+            routeClass = CaptureRouteClassifier.classify(capture.currentRouteInfo)
             isRecording = true
             monitorLevels()
         } catch let error as CaptureError where error == .permissionDenied {
             micPermissionDenied = true
             importError = "Microphone access is blocked. Allow the microphone in Settings → Privacy → Microphone, then try again."
+            AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
         } catch {
             importError = "Couldn't start recording. \(error.localizedDescription)"
+            AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
         }
     }
 
@@ -479,7 +535,9 @@ final class NarrationFlowModel {
                 captured: captured,
                 textHash: textHash,
                 chapterID: chapter?.id,
-                chapterOrdinal: chapter?.ordinal
+                chapterOrdinal: chapter?.ordinal,
+                warning: .none,
+                routeClass: routeClass
             )
             updateParagraph(id) { paragraph in
                 paragraph.takes.append(take)
@@ -492,10 +550,176 @@ final class NarrationFlowModel {
                 paragraph.updatedAt = repository.clock.now
             }
             currentTake = FlowTake(duration: captured.duration, peakDBFS: captured.peakDBFS, clipped: captured.clippedDuringCapture)
+            AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
             await persist()
         } catch {
             isRecording = false
+            levelTask?.cancel()
+            levelTask = nil
         }
+    }
+
+    /// In-flight interruption path (spec §7.4): the capture forwards a cause,
+    /// this stops and finalizes the take through `CaptureRecovery`, ingests it
+    /// marked `Interrupted`, and shows the recovery banner.
+    func handleInterruption(_ reason: CaptureInterruptionReason) async {
+        guard isRecording, let project, let id = currentParagraphID else { return }
+        isRecording = false
+        levelTask?.cancel()
+        levelTask = nil
+        guard let url = recordingDestinationURL else {
+            interruptionBanner = reason
+            return
+        }
+        do {
+            let recovered = try await CaptureRecovery.handleInFlightInterruption(
+                reason: reason, capture: capture, destinationURL: url
+            )
+            let textHash = project.allParagraphs.first { $0.id == id }?.textHash ?? ""
+            let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == id } }
+            let take = try await repository.ingestCapturedTake(
+                fileURL: recovered.fileURL,
+                paragraphID: id,
+                projectID: project.id,
+                captured: CapturedTake(
+                    fileURL: recovered.fileURL,
+                    duration: recovered.duration,
+                    format: recovered.format,
+                    clippedDuringCapture: recovered.clippedDuringCapture,
+                    peakDBFS: recovered.peakDBFS
+                ),
+                textHash: textHash,
+                chapterID: chapter?.id,
+                chapterOrdinal: chapter?.ordinal,
+                warning: .interrupted,
+                routeClass: routeClass
+            )
+            updateParagraph(id) { paragraph in
+                paragraph.takes.append(take)
+                // Recovered takes are never selected for the user
+                // (mockup 06c: "Nothing is selected for you").
+                paragraph.updatedAt = repository.clock.now
+            }
+            AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
+            await persist()
+        } catch {
+            // The take stays on disk and the session stays; it will be offered
+            // again at the next launch.
+            interruptionBanner = reason
+        }
+    }
+
+    /// Checks for a take left behind by a force-quit at the last launch and
+    /// offers it for keep/discard (spec §7.4 row 7). Idempotent.
+    func checkForRecoveredSessions() async {
+        guard let project, pendingRecoveries.isEmpty else { return }
+        let layout = repository.layout(for: project.id)
+        guard let recovered = try? CaptureRecovery.recoverAfterLaunch(sessionURL: layout.autosaveSessionURL) else { return }
+        let session = try? AutosaveSessionFile.read(from: layout.autosaveSessionURL)
+        pendingRecoveries.append(FlowRecoveredTake(
+            reason: recovered.reason,
+            duration: recovered.duration,
+            paragraphID: session?.paragraphID,
+            fileURL: recovered.fileURL
+        ))
+    }
+
+    /// "Keep as take": ingests a recovered take, marked `Interrupted`, never
+    /// selected for the user (mockup 06c).
+    func keepRecovered(_ recovery: FlowRecoveredTake) async {
+        guard let project else { return }
+        guard let paragraphID = recovery.paragraphID,
+              let paragraph = project.allParagraphs.first(where: { $0.id == paragraphID }),
+              let info = try? WAVFormatReader.read(url: recovery.fileURL) else {
+            discardRecovered(recovery)
+            return
+        }
+        do {
+            let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == paragraphID } }
+            let take = try await repository.ingestCapturedTake(
+                fileURL: recovery.fileURL,
+                paragraphID: paragraphID,
+                projectID: project.id,
+                captured: CapturedTake(
+                    fileURL: recovery.fileURL,
+                    duration: info.duration,
+                    format: info.audioFormat,
+                    clippedDuringCapture: false,
+                    peakDBFS: -60
+                ),
+                textHash: paragraph.textHash,
+                chapterID: chapter?.id,
+                chapterOrdinal: chapter?.ordinal,
+                warning: .interrupted,
+                routeClass: nil
+            )
+            updateParagraph(paragraphID) { paragraph in
+                paragraph.takes.append(take)
+                paragraph.updatedAt = repository.clock.now
+            }
+            AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
+            pendingRecoveries.removeAll { $0.id == recovery.id }
+            await persist()
+        } catch {
+            discardRecovered(recovery)
+        }
+    }
+
+    /// "Discard": removes the recovered file and its autosave session.
+    func discardRecovered(_ recovery: FlowRecoveredTake) {
+        try? FileManager.default.removeItem(at: recovery.fileURL)
+        pendingRecoveries.removeAll { $0.id == recovery.id }
+        if let project {
+            AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
+        }
+    }
+
+    /// Dismisses the in-flight interruption banner after it has been read.
+    func dismissInterruptionBanner() {
+        interruptionBanner = nil
+    }
+
+    /// "Resume on iPhone mic": starts a fresh take on the interrupted
+    /// paragraph (mockup 06c). The recovered take stays in the paragraph list.
+    func resumeRecordingOnCurrentRoute() {
+        interruptionBanner = nil
+        if let id = currentParagraphID {
+            Task { await startRecordingParagraph(id) }
+        }
+    }
+
+    /// The route chip text for the record screen (mockup 06): transport name
+    /// plus readiness class.
+    var routeChipText: String {
+        let transport = Self.transportLabel(capture.currentRouteInfo.transports)
+        let klass = routeClass ?? CaptureRouteClassifier.classify(capture.currentRouteInfo)
+        return "\(transport) · \(CaptureRouteClassifier.label(for: klass).lowercased())"
+    }
+
+    private static func transportLabel(_ transports: Set<CapturePortTransport>) -> String {
+        if transports.contains(.usb) { return "USB-C interface" }
+        if transports.contains(.bluetooth) { return "Bluetooth" }
+        if transports.contains(.wiredHeadset) { return "Wired headset" }
+        if transports.contains(.builtIn) { return "iPhone mic" }
+        if transports.contains(.airPlay) { return "AirPlay" }
+        return "Current input"
+    }
+
+    private func writeAutosaveSession(for paragraphID: UUID, url: URL, project: AudiobookProject) {
+        let layout = repository.layout(for: project.id)
+        let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == paragraphID } }
+        guard let relativePath = layout.relativePath(of: url) else { return }
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
+        let session = AutosaveSession(
+            takeID: repository.ids.next(),
+            paragraphID: paragraphID,
+            chapterID: chapter?.id,
+            filePath: relativePath,
+            format: AutosaveSession.Format(sampleRate: 48_000, channels: 1, bitDepth: 24),
+            startedAt: repository.clock.now.timeIntervalSince1970,
+            appVersion: version
+        )
+        try? AutosaveSessionFile.write(session, to: layout.autosaveSessionURL)
     }
 
     func acceptParagraph(_ id: UUID) {
@@ -553,8 +777,28 @@ final class NarrationFlowModel {
         return repository.takeURL(for: project.id, take: take)
     }
 
+    /// The URL of the most recent non-archived take on a paragraph — used to
+    /// "play what was saved" after an interruption, when the recovered take is
+    /// deliberately not selected (mockup 06c).
+    func latestTakePlaybackURL(for id: UUID) -> URL? {
+        guard let project, let paragraph = project.allParagraphs.first(where: { $0.id == id }),
+              let take = paragraph.takes.last(where: { !$0.isArchived }) else { return nil }
+        return repository.takeURL(for: project.id, take: take)
+    }
+
     func play(_ id: UUID) {
         guard let url = playbackURL(for: id) else { return }
+        play(url: url)
+    }
+
+    /// Plays the most recent take on a paragraph (the recovered one after an
+    /// interruption).
+    func playLatestTake(_ id: UUID) {
+        guard let url = latestTakePlaybackURL(for: id) else { return }
+        play(url: url)
+    }
+
+    private func play(url: URL) {
         // The capture session is `.record`; take playback needs `.playback`
         // or the audio is silent. Recording re-enters `.record` on the next
         // startRecordingParagraph call.
