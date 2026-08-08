@@ -48,7 +48,7 @@ scripts/test_guards.sh            # proves each gate can fail — every new gate
 scripts/test.sh --all             # UI smoke tests: LOCAL pre-commit gate only
 ```
 
-**CI runs no simulator** (`.github/workflows/ios.yml` is Linux: `swift test` plus grep gates). The simulator suite is a local pre-commit gate. Do not add anything to CI that needs a simulator.
+**CI runs no simulator.** `.github/workflows/ios.yml` runs `swift test` and the grep gates on `macos-latest`, with a separate `ubuntu-latest` `guarded-tests` job; no CI job boots a simulator. The simulator suite is a local pre-commit gate. Do not add anything to CI that needs a simulator.
 
 Watch UI test gotchas that have already cost this repo time: row taps need `.contentShape`; sheets are **not** `NavigationPath` destinations; the simulator must be pre-booted; build first then `test-without-building`; seeders must be idempotent.
 

@@ -70,7 +70,7 @@ These override `docs/voxglass-mvp/VOXGLASS_STUDIO_SPEC.md` for this MVP. Everyth
 | **M-4** | §12/§16: rendering and export are desktop-shaped (whole-book runs, no storage preflight). | Render and export are **chunked by chapter**, cancellable between chapters, preceded by a **free-space preflight** and a **hydration plan** (§11.2, §13.2). |
 | **M-5** | §3.4 CarPlay production review is part of the destination/review surface. | **Production CarPlay is DEFERRED.** Consumer CarPlay is a separate, free, standalone surface (`docs/CARPLAY_DESIGN.md`) and is untouched by this spec. |
 | **M-6** | §2: Pro is "Voxglass **Studio** Pro", product ID `guru.parso.voxglass.studio.pro`, $99 intro / $149. | **Renamed and repriced** (decisions D-1, D-2 in §19). Product ID `guru.parso.voxglass.narration.pro`, display name "Voxglass Narration Pro", **$49 intro / $79 standard**. Entitlement semantics are unchanged. The rename is safe because no purchase has ever existed (§19 D-1). |
-| **M-7** | §19: five UI smoke tests (iPhone, Watch, three macOS). | **Two** UI smoke tests: iPhone and Watch. Both are a **local pre-commit gate**; CI runs no simulator (Linux-only source + grep gates). Inherited from repo practice, not changed by this document. §16.3. |
+| **M-7** | §19: five UI smoke tests (iPhone, Watch, three macOS). | **Two** UI smoke tests: iPhone and Watch. Both are a **local pre-commit gate**; CI runs no simulator. CI runs on `macos-latest` (compile, logic tests, TestFlight) plus one `ubuntu-latest` job (`guarded-tests`: source + grep gates); no CI job boots a simulator. Inherited from repo practice, not changed by this document. §16.3. |
 
 ### 0.6 Corrections to NARRATION_NEEDS_SPEC (N-series)
 
@@ -811,6 +811,8 @@ All go in `VoxglassTests/Production/` per repo convention.
 
 ### 16.3 UI smoke tests (local pre-commit gate only — **CI runs no simulator**)
 
+CI itself runs on `macos-latest` (`compile`, `logic-tests`, `testflight`) and `ubuntu-latest` (`guarded-tests`); none of them boot a simulator, so the UI smoke tests below are a local pre-commit gate and never run in CI.
+
 **Two**, not five (M-7):
 
 1. **iPhone** — Narration tab → create a project from a need → record two paragraphs with the fake capture → review → validate → LibriVox export path. Folds in My Narrations reachability.
@@ -818,7 +820,7 @@ All go in `VoxglassTests/Production/` per repo convention.
 
 Watch UI test gotchas that already cost this repo time and MUST be respected: row taps need `.contentShape`; sheets are **not** `NavigationPath` destinations; the simulator must be pre-booted; use build-then-`test-without-building`; seeders must be idempotent.
 
-### 16.4 CI grep gates (Linux, no simulator)
+### 16.4 CI grep gates (ubuntu-latest, no simulator)
 
 Existing gates in `scripts/guard_production.sh` continue to apply. This MVP adds:
 
