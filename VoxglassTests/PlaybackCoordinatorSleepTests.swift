@@ -57,6 +57,10 @@ import Foundation
 
         coordinator.setSleepTimer(.off)
 
+        await waitUntil {
+            engine.calls.contains { if case .preloadNext = $0 { return true } else { return false } }
+        }
+
         let preloaded = engine.calls.contains { if case .preloadNext = $0 { return true } else { return false } }
         #expect(preloaded)  // Cancelling end-of-chapter re-arms the gapless preload
     }

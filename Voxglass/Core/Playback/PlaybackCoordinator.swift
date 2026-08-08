@@ -223,7 +223,7 @@ public final class PlaybackCoordinator {
             isEngineLoaded = true
             let bwc = BookWithChapters(book: session.book, chapters: session.chapters)
             prefetchNextChapter(from: bwc, currentChapter: session.chapter)
-            preloadImmediateNextChapter(in: session)
+            await preloadImmediateNextChapter(in: session)
             return true
         } catch {
             playbackError = error.localizedDescription
@@ -248,14 +248,19 @@ public final class PlaybackCoordinator {
         return value
     }
 
-    /// Keep remote chapters on their canonical URL even when the cache is
-    /// complete. `AVPlayerAudioEngine` routes that URL through
-    /// `CachingResourceLoader`, which can serve a pinned offline file and can
-    /// fall back to the network for a partial/missing cache. Passing the cache
-    /// file directly to AVPlayer bypasses that recovery path and can produce an
-    /// item that starts and immediately ends.
+    /// A fully downloaded chapter is a local file, not a stream. Bypass the
+    /// resource loader for complete cache entries; the engine supplies the MIME
+    /// type that the historical extensionless cache filename cannot provide.
+    /// Partial or missing cache entries retain the canonical remote URL and the
+    /// streaming loader's network fallback.
     private func playbackURL(for chapter: Chapter) async -> URL? {
         guard let url = chapter.resolvedPlayableURL() else { return nil }
+        guard StreamCacheUtils.isRemoteCacheable(url) else { return url }
+
+        let key = StreamCacheUtils.key(for: url)
+        if let cached = await cacheStore.completeAudioFileURL(for: key) {
+            return cached
+        }
         return url
     }
 
@@ -959,7 +964,9 @@ public final class PlaybackCoordinator {
         case .off:
             stopSleepTask()
             if wasEndOfChapter, let session = currentSession {
-                preloadImmediateNextChapter(in: session)
+                Task { [weak self] in
+                    await self?.preloadImmediateNextChapter(in: session)
+                }
             }
         }
     }
@@ -1015,10 +1022,10 @@ public final class PlaybackCoordinator {
         engine.volume = 1.0
     }
 
-    private func preloadImmediateNextChapter(in session: PlaybackSession) {
+    private func preloadImmediateNextChapter(in session: PlaybackSession) async {
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex),
-              let url = session.chapters[nextIndex].resolvedPlayableURL() else { return }
+              let url = await playbackURL(for: session.chapters[nextIndex]) else { return }
         engine.preloadNext(url: url)
     }
 
@@ -1242,14 +1249,14 @@ public final class PlaybackCoordinator {
         prefetchNextChapter(from: BookWithChapters(book: session.book, chapters: session.chapters),
                             currentChapter: nextChapter)
         // Preload the chapter after next for near-gapless
-        preloadChapterAfter(nextChapter, in: session)
+        await preloadChapterAfter(nextChapter, in: session)
     }
 
-    private func preloadChapterAfter(_ chapter: Chapter, in session: PlaybackSession) {
+    private func preloadChapterAfter(_ chapter: Chapter, in session: PlaybackSession) async {
         let nextIndex = session.chapterIndex + 2
         guard session.chapters.indices.contains(nextIndex) else { return }
         let afterNext = session.chapters[nextIndex]
-        guard let url = afterNext.resolvedPlayableURL() else { return }
+        guard let url = await playbackURL(for: afterNext) else { return }
         engine.preloadNext(url: url)
     }
 

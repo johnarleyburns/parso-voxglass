@@ -49,7 +49,11 @@ public final class WatchPlaybackEngine: AudioEngine {
         // differ. Keep it simple: direct AVPlayer usage.
         stopCurrentItem()
 
-        let playerItem = AVPlayerItem(url: url)
+        let options: [String: Any] = StreamCacheUtils.audioMIMEType(for: url).map {
+            [AVURLAssetOverrideMIMETypeKey: $0]
+        } ?? [:]
+        let asset = AVURLAsset(url: url, options: options)
+        let playerItem = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: playerItem)
         self.player = player
         currentItemURL = url

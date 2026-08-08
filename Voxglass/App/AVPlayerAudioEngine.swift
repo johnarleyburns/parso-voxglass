@@ -32,16 +32,20 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// speed (0.5–3.5x) keeps pitch correct and the gapless preloaded item carries
     /// the same algorithm across the auto-advance.
     private func makePlayerItem(for url: URL) -> AVPlayerItem {
+        let options: [String: Any] = StreamCacheUtils.audioMIMEType(for: url).map {
+            [AVURLAssetOverrideMIMETypeKey: $0]
+        } ?? [:]
         let item: AVPlayerItem
         if CachingResourceLoader.isRemoteCacheable(url) {
             let cacheURL = CachingResourceLoader.cacheURL(for: url)
             let loader = CachingResourceLoader(originalURL: url)
             loaders.append(loader)
-            let asset = AVURLAsset(url: cacheURL)
+            let asset = AVURLAsset(url: cacheURL, options: options)
             asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
             item = AVPlayerItem(asset: asset)
         } else {
-            item = AVPlayerItem(url: url)
+            let asset = AVURLAsset(url: url, options: options)
+            item = AVPlayerItem(asset: asset)
         }
         item.audioTimePitchAlgorithm = .spectral
         return item
@@ -175,6 +179,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         player.insert(item, after: nil)
         observe(item: item, isPreloaded: false)
 
+        let isPlayable = try await item.asset.load(.isPlayable)
+        guard isPlayable else { throw AudioEngineError.unplayableAudio }
+
         eqProcessor.attach(to: item)
         eqProcessor.setEQStagesEnabled(eqEngagedDesired)
 
@@ -205,6 +212,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private func tearDownCurrentItem() {
         eqProcessor.detachAll()
         removeObservers()
+        loaders.forEach { $0.shutdown() }
+        loaders.removeAll()
     }
 
     func cancelPreload() {

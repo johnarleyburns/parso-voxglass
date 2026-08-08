@@ -236,7 +236,7 @@ import Foundation
         #expect(h.engine.calls.contains(.play))
     }
 
-    @Test func downloadedRemoteChapterKeepsCanonicalURLForCacheLoader() async throws {
+    @Test func downloadedRemoteChapterLoadsCompleteCacheFileDirectly() async throws {
         let h = makeHarness()
         let remote = URL(string: "https://archive.org/download/item/ch1.mp3")!
         let key = StreamCacheUtils.key(for: remote)
@@ -244,13 +244,46 @@ import Foundation
             .appendingPathComponent("downloaded-\(UUID().uuidString).mp3")
         try Data(repeating: 9, count: 128).write(to: source)
         await h.cacheStore.ingestCompleteFile(at: source, key: key, totalBytes: 128)
-        #expect(await h.cacheStore.completeAudioFileURL(for: key) != nil)
+        let cachedURL = try #require(await h.cacheStore.completeAudioFileURL(for: key))
 
         await h.coordinator.play(makeRemoteBook(remoteURL: remote))
 
         #expect(h.engine.loadCalls.count == 1)
-        #expect(h.engine.loadCalls.first?.url == remote)
-        #expect(h.engine.loadCalls.first?.url.isFileURL == false)
+        #expect(h.engine.loadCalls.first?.url == cachedURL)
+        #expect(h.engine.loadCalls.first?.url.isFileURL == true)
         #expect(h.coordinator.currentSession?.isPlaying == true)
+    }
+
+    @Test func downloadedBookPreloadsTheNextChapterFromItsCompleteCacheFile() async throws {
+        let h = makeHarness()
+        let bookID = UUID()
+        let firstRemote = URL(string: "https://archive.org/download/item/ch1.mp3")!
+        let secondRemote = URL(string: "https://archive.org/download/item/ch2.mp3")!
+        let chapters = [
+            Chapter(bookID: bookID, title: "One", index: 0, duration: 100, remoteURL: firstRemote),
+            Chapter(bookID: bookID, title: "Two", index: 1, duration: 100, remoteURL: secondRemote)
+        ]
+        let book = BookWithChapters(
+            book: Book(id: bookID, title: "Downloaded", authors: ["A"], sourceID: UUID()),
+            chapters: chapters
+        )
+
+        var cachedURLs: [URL] = []
+        for (index, remote) in [firstRemote, secondRemote].enumerated() {
+            let source = FileManager.default.temporaryDirectory
+                .appendingPathComponent("downloaded-next-\(index)-\(UUID().uuidString).mp3")
+            try Data(repeating: UInt8(index + 1), count: 128).write(to: source)
+            await h.cacheStore.ingestCompleteFile(
+                at: source, key: StreamCacheUtils.key(for: remote), totalBytes: 128
+            )
+            cachedURLs.append(try #require(
+                await h.cacheStore.completeAudioFileURL(for: StreamCacheUtils.key(for: remote))
+            ))
+        }
+
+        await h.coordinator.play(book)
+
+        #expect(h.engine.loadCalls.first?.url == cachedURLs[0])
+        #expect(h.engine.calls.contains(.preloadNext(url: cachedURLs[1])))
     }
 }

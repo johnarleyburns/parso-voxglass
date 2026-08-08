@@ -226,9 +226,12 @@ public actor StreamCacheStore {
             try? fm.copyItem(at: tempURL, to: destination)
         }
 
-        let resolvedTotal = totalBytes > 0
-            ? totalBytes
-            : (Int64((try? fm.attributesOfItem(atPath: destination.path)[.size] as? Int) ?? 0))
+        // The completed file is authoritative. HTTP expected-length and
+        // URLSession byte counters can disagree with the actual transfer size;
+        // trusting either can make a valid download look truncated later.
+        let actualBytes = (try? fm.attributesOfItem(atPath: destination.path)[.size] as? NSNumber)?
+            .int64Value ?? 0
+        let resolvedTotal = actualBytes > 0 ? actualBytes : max(totalBytes, 0)
         let now = Date()
         var map = ByteRangeMap()
         if resolvedTotal > 0 { map.insert(0..<resolvedTotal) }
@@ -274,11 +277,27 @@ public actor StreamCacheStore {
         }
 
         let actualBytes = size.int64Value
-        let expectedBytes = meta.totalBytes ?? meta.cachedBytes
-        guard actualBytes > 0,
-              expectedBytes <= 0 || actualBytes >= expectedBytes else {
+        guard actualBytes > 0 else {
             discardCachedBytes(for: key, unpin: pinnedKeys.contains(key))
             return nil
+        }
+
+        // Repair complete legacy entries that trusted a response length rather
+        // than the finished file's actual size. A successful background
+        // download is complete; its on-disk byte count is the source of truth.
+        if meta.totalBytes != actualBytes ||
+            meta.cachedBytes != actualBytes ||
+            !meta.rangeMap.covers(total: actualBytes) {
+            var repaired = meta
+            var map = ByteRangeMap()
+            map.insert(0..<actualBytes)
+            repaired.totalBytes = actualBytes
+            repaired.cachedBytes = actualBytes
+            repaired.rangeMap = map
+            repaired.complete = true
+            repaired.lastAccessedAt = Date()
+            metas[key] = repaired
+            persistMeta(key)
         }
 
         touch(key)

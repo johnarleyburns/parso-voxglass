@@ -114,6 +114,18 @@ import Foundation
         #expect(try Data(contentsOf: url).count == 100)
     }
 
+    @Test func ingestUsesActualFileSizeInsteadOfReportedLength() async throws {
+        let source = directory.appendingPathComponent("length-source-\(UUID().uuidString).mp3")
+        try Data(repeating: 7, count: 100).write(to: source)
+
+        await store.ingestCompleteFile(at: source, key: "length-mp3", totalBytes: 140)
+
+        let url = try #require(await store.completeAudioFileURL(for: "length-mp3"))
+        #expect(try Data(contentsOf: url).count == 100)
+        #expect(await store.totalBytes(for: "length-mp3") == 100)
+        #expect(await store.cachedContiguousBytes(for: "length-mp3", from: 0) == 100)
+    }
+
     @Test func staleCompleteMetaWithoutBlobIsNotCompleteAndUnpins() async throws {
         let source = directory.appendingPathComponent("missing-source-\(UUID().uuidString).bin")
         try Data(repeating: 8, count: 64).write(to: source)

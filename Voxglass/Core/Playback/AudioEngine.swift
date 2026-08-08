@@ -39,11 +39,14 @@ public protocol AudioEngine: AnyObject {
 
 public enum AudioEngineError: Error, LocalizedError {
     case missingPlayableURL
+    case unplayableAudio
 
     public var errorDescription: String? {
         switch self {
         case .missingPlayableURL:
             "This chapter does not have a playable audio URL."
+        case .unplayableAudio:
+            "This chapter's downloaded audio could not be opened."
         }
     }
 }

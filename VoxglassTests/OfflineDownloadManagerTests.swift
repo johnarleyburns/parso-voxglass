@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import AVFoundation
 @testable import VoxglassCore
 
 @MainActor
@@ -86,5 +87,39 @@ import Foundation
         #expect(hex.count == 64)  // SHA256 hex digest is 64 characters
         #expect(hex.allSatisfy { $0.isHexDigit })
         #expect(!(key.hasPrefix("art_")))  // Audio keys must not collide with artwork keys
+    }
+
+    @Test func cacheBlobNameRetainsEnoughTypeInformationForAVFoundation() {
+        let remote = URL(string: "https://archive.org/download/item/chapter.mp3")!
+        let blob = URL(fileURLWithPath: "/tmp/\(StreamCacheUtils.key(for: remote))")
+
+        #expect(blob.pathExtension.isEmpty)
+        #expect(StreamCacheUtils.audioMIMEType(for: blob) == "audio/mpeg")
+        #expect(StreamCacheUtils.audioMIMEType(for: remote) == "audio/mpeg")
+    }
+
+    /// Regression guard for the original symptom: cache keys end in `-mp3`,
+    /// not `.mp3`, so AVFoundation rejects a downloaded blob unless playback
+    /// supplies the MIME type explicitly.
+    @Test func extensionlessDownloadedBlobNeedsAndAcceptsExplicitMIMEType() async throws {
+        let source = try #require(Bundle.module.url(
+            forResource: "tone-1khz-20dbfs", withExtension: "wav", subdirectory: "ReplayGain"
+        ))
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("extensionless-audio-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let blob = directory.appendingPathComponent("cache-key-wav")
+        try FileManager.default.copyItem(at: source, to: blob)
+
+        let withoutType = AVURLAsset(url: blob)
+        #expect((try? await withoutType.load(.isPlayable)) != true)
+
+        let withType = AVURLAsset(
+            url: blob,
+            options: [AVURLAssetOverrideMIMETypeKey: StreamCacheUtils.audioMIMEType(for: blob)!]
+        )
+        #expect(try await withType.load(.isPlayable))
     }
 }
