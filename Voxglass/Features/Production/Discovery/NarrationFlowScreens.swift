@@ -56,20 +56,18 @@ struct SourceReviewView: View {
                 .padding(13)
                 .glassSurface(cornerRadius: 16)
 
-                if let project = model.project {
-                    Text("📄 1 piece · \(project.paragraphs.count) spoken paragraphs · ~\(project.duration(of: project.paragraphs).formattedShort)")
-                        .scaledFont(size: 12)
-                        .foregroundStyle(Palette.ink2)
-                        .accessibilityIdentifier("import.chapterCount")
+                Text("📄 1 piece · \(model.paragraphs.count) spoken paragraphs · ~\(model.totalDuration.formattedShort)")
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Palette.ink2)
+                    .accessibilityIdentifier("import.chapterCount")
 
-                    Text("WHAT WILL BE RECORDED")
-                        .scaledFont(size: 13, weight: .bold)
-                        .foregroundStyle(Palette.ink3)
-                        .padding(.top, 8)
+                Text("WHAT WILL BE RECORDED")
+                    .scaledFont(size: 13, weight: .bold)
+                    .foregroundStyle(Palette.ink3)
+                    .padding(.top, 8)
 
-                    ForEach(Array(project.paragraphs.enumerated()), id: \.element.id) { index, paragraph in
-                        paragraphRow(index: index, paragraph: paragraph)
-                    }
+                ForEach(Array(model.paragraphs.enumerated()), id: \.element.id) { index, paragraph in
+                    paragraphRow(index: index, paragraph: paragraph)
                 }
 
                 Button {
@@ -91,14 +89,14 @@ struct SourceReviewView: View {
         }
         .background(VoxglassBackground())
         .navigationDestination(isPresented: $goRecord) {
-            if let first = model.project?.paragraphs.first {
+            if let first = model.paragraphs.first {
                 RecordView(model: model, paragraphID: first.id)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func paragraphRow(index: Int, paragraph: NarrationParagraph) -> some View {
+    private func paragraphRow(index: Int, paragraph: FlowParagraph) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(index + 1)")
                 .scaledFont(size: 11, weight: .bold)
@@ -121,10 +119,9 @@ struct SourceReviewView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(paragraph.role == .body ? Palette.hairline : Palette.brass.opacity(0.4), lineWidth: 1))
     }
 
-    private func roleLabel(_ role: NarrationParagraphRole) -> String {
+    private func roleLabel(_ role: FlowParagraphRole) -> String {
         switch role {
-        case .disclaimer: return "· disclaimer added"
-        case .intro: return "· intro added"
+        case .intro: return "· LibriVox intro added"
         case .outro: return "· outro added"
         case .body: return ""
         }
@@ -185,7 +182,7 @@ struct RecordView: View {
         model.currentParagraphID ?? paragraphID
     }
 
-    private func teleprompter(_ paragraph: NarrationParagraph) -> some View {
+    private func teleprompter(_ paragraph: FlowParagraph) -> some View {
         VStack(spacing: 8) {
             Text(roleLabel(paragraph.role).uppercased())
                 .scaledFont(size: 11, weight: .bold)
@@ -233,7 +230,7 @@ struct RecordView: View {
         VStack(spacing: 8) {
             if model.isRecording {
                 Text("● REC").scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.danger)
-            } else if let take = model.paragraph(at: currentParagraphID)?.selectedTake {
+            } else if let take = model.paragraph(at: currentParagraphID)?.take {
                 Text("Take \(take.duration.formattedShort) · \(String(format: "%.1f", take.peakDBFS ?? -40)) dBFS")
                     .scaledFont(size: 12).foregroundStyle(Palette.ink2)
             }
@@ -287,15 +284,15 @@ struct RecordView: View {
                 Image(systemName: "play.circle.fill").scaledFont(size: 40)
             }
             .foregroundStyle(Palette.ink2)
-            .disabled(model.paragraph(at: currentParagraphID)?.selectedTake == nil)
+            .disabled(model.paragraph(at: currentParagraphID)?.take == nil)
             .accessibilityIdentifier("record.transport.playTake")
         }
         .padding(.vertical, 10)
     }
 
-    private func takesRow(_ paragraph: NarrationParagraph) -> some View {
+    private func takesRow(_ paragraph: FlowParagraph) -> some View {
         HStack(spacing: 8) {
-            if let take = paragraph.selectedTake {
+            if let take = paragraph.take {
                 Text("Take · \(take.duration.formattedShort)")
                     .scaledFont(size: 11, weight: .semibold)
                     .padding(.horizontal, 10).padding(.vertical, 6)
@@ -310,7 +307,7 @@ struct RecordView: View {
         .padding(.vertical, 6)
     }
 
-    private func actions(_ paragraph: NarrationParagraph) -> some View {
+    private func actions(_ paragraph: FlowParagraph) -> some View {
         HStack(spacing: 10) {
             Button {
                 Task { await goPrevious(from: paragraph) }
@@ -349,7 +346,7 @@ struct RecordView: View {
             }
             .buttonStyle(.plain)
             .tactileTap()
-            .disabled(paragraph.selectedTake == nil)
+            .disabled(paragraph.take == nil)
             .accessibilityIdentifier("record.acceptAndNext")
         }
         .padding(.top, 8)
@@ -359,16 +356,16 @@ struct RecordView: View {
     /// and advances to the next one IN PLACE — no new view on the stack. The
     /// last paragraph finishes into the review list (or pops back to it when
     /// this view was pushed from the list).
-    private func goNext(from paragraph: NarrationParagraph, flag: Bool) async {
+    private func goNext(from paragraph: FlowParagraph, flag: Bool) async {
         if model.isRecording {
             await model.stopRecordingParagraph(paragraph.id)
         }
         if flag {
-            model.markNotRecorded(paragraph.id)
-            model.updateParagraph(paragraph.id) { $0.state = .flagged }
+            model.flagParagraph(paragraph.id, note: "")
         } else {
             model.acceptParagraph(paragraph.id)
         }
+        await model.persist()
         if let next = model.nextParagraph(after: paragraph.id) {
             model.currentParagraphID = next.id
         } else if fromReview {
@@ -379,7 +376,7 @@ struct RecordView: View {
         }
     }
 
-    private func goPrevious(from paragraph: NarrationParagraph) async {
+    private func goPrevious(from paragraph: FlowParagraph) async {
         if model.isRecording {
             await model.stopRecordingParagraph(paragraph.id)
         }
@@ -388,16 +385,12 @@ struct RecordView: View {
         }
     }
 
-    private func previousParagraph() -> NarrationParagraph? {
-        guard let project = model.project,
-              let index = project.paragraphs.firstIndex(where: { $0.id == currentParagraphID }) else { return nil }
-        guard index > 0 else { return nil }
-        return project.paragraphs[index - 1]
+    private func previousParagraph() -> FlowParagraph? {
+        model.previousParagraph(before: currentParagraphID)
     }
 
-    private func roleLabel(_ role: NarrationParagraphRole) -> String {
+    private func roleLabel(_ role: FlowParagraphRole) -> String {
         switch role {
-        case .disclaimer: return "LibriVox disclaimer"
         case .intro: return "Intro"
         case .outro: return "Outro"
         case .body: return "Paragraph"
@@ -430,31 +423,29 @@ struct ReviewView: View {
             .padding()
             .accessibilityIdentifier("paragraphList.filter")
 
-            if let project = model.project {
-                let rows = filtered(project.paragraphs)
-                List {
-                    ForEach(rows) { paragraph in
-                        row(paragraph)
-                    }
+            let rows = filtered(model.paragraphs)
+            List {
+                ForEach(rows) { paragraph in
+                    row(paragraph)
                 }
-                .listStyle(.plain)
-
-                Button {
-                    goAssemble = true
-                } label: {
-                    Text("Assemble the recording ▸")
-                        .scaledFont(size: 15, weight: .heavy)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 12)
-                }
-                .buttonStyle(.plain)
-                .disabled(!project.readyToAssemble)
-                .accessibilityIdentifier("review.toAssemble")
             }
+            .listStyle(.plain)
+
+            Button {
+                goAssemble = true
+            } label: {
+                Text("Assemble the recording ▸")
+                    .scaledFont(size: 15, weight: .heavy)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
+                    .foregroundStyle(Color(hex: 0x21170B))
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 12)
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.readyToAssemble)
+            .accessibilityIdentifier("review.toAssemble")
         }
         .background(VoxglassBackground())
         .navigationDestination(isPresented: $goAssemble) {
@@ -469,7 +460,7 @@ struct ReviewView: View {
 
     @State private var goAssemble = false
 
-    private func filtered(_ paragraphs: [NarrationParagraph]) -> [NarrationParagraph] {
+    private func filtered(_ paragraphs: [FlowParagraph]) -> [FlowParagraph] {
         switch filter {
         case .all: return paragraphs
         case .flagged: return paragraphs.filter { $0.state == .flagged }
@@ -477,7 +468,7 @@ struct ReviewView: View {
         }
     }
 
-    private func row(_ paragraph: NarrationParagraph) -> some View {
+    private func row(_ paragraph: FlowParagraph) -> some View {
         HStack(spacing: 12) {
             statusIcon(paragraph.state)
             VStack(alignment: .leading, spacing: 3) {
@@ -501,7 +492,7 @@ struct ReviewView: View {
                     .foregroundStyle(Palette.ink2)
             }
             .buttonStyle(.plain)
-            .disabled(paragraph.selectedTake == nil)
+            .disabled(paragraph.take == nil)
             .accessibilityIdentifier("paragraphList.playSelected")
 
             if paragraph.state == .flagged {
@@ -516,7 +507,7 @@ struct ReviewView: View {
         .padding(.vertical, 6)
     }
 
-    private func statusIcon(_ state: NarrationParagraphState) -> some View {
+    private func statusIcon(_ state: FlowParagraphState) -> some View {
         ZStack {
             Circle().fill(tint(state).opacity(0.16))
             switch state {
@@ -529,7 +520,7 @@ struct ReviewView: View {
         .frame(width: 26, height: 26)
     }
 
-    private func tint(_ state: NarrationParagraphState) -> Color {
+    private func tint(_ state: FlowParagraphState) -> Color {
         switch state {
         case .approved: return Palette.ok
         case .flagged: return Color(hex: 0xE6B877)
@@ -538,20 +529,19 @@ struct ReviewView: View {
         }
     }
 
-    private func caption(_ paragraph: NarrationParagraph) -> String {
+    private func caption(_ paragraph: FlowParagraph) -> String {
         var parts: [String] = []
         switch paragraph.role {
-        case .disclaimer: parts.append("Disclaimer")
         case .intro: parts.append("Intro")
         case .outro: parts.append("Outro")
         case .body: parts.append("¶")
         }
-        if let take = paragraph.selectedTake { parts.append(take.duration.formattedShort) }
+        if let take = paragraph.take { parts.append(take.duration.formattedShort) }
         parts.append(stateText(paragraph.state))
         return parts.joined(separator: " · ")
     }
 
-    private func stateText(_ state: NarrationParagraphState) -> String {
+    private func stateText(_ state: FlowParagraphState) -> String {
         switch state {
         case .approved: return "approved"
         case .recorded: return "recorded"
@@ -572,12 +562,12 @@ struct AssembleView: View {
             VStack(alignment: .leading, spacing: 12) {
                 if let project = model.project {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("\(project.title) — full recording")
+                        Text("\(project.metadata.title) — full recording")
                             .scaledFont(size: 16, weight: .heavy)
                             .foregroundStyle(Palette.ink)
-                        Text("\(project.author) · \(project.paragraphs.count) paragraphs assembled")
+                        Text("\(project.metadata.author) · \(model.paragraphs.count) paragraphs assembled")
                             .scaledFont(size: 12).foregroundStyle(Palette.ink2)
-                        Text("Total ~\(project.duration(of: project.paragraphs).formattedShort)")
+                        Text("Total ~\(model.totalDuration.formattedShort)")
                             .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.brass)
                     }
                     .padding(16)
@@ -669,17 +659,7 @@ struct MetadataView: View {
                         Text("Public domain in the United States").scaledFont(size: 12).foregroundStyle(Palette.ink2)
                     }
                     Button {
-                        model.rightsAttested = true
-                        if var project = model.project {
-                            project.metadata = NarrationMetadata(
-                                narrator: model.narrator,
-                                language: model.language,
-                                description: model.descriptionText,
-                                subjects: model.subjectsText.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) },
-                                sourceURL: model.sourceURLText
-                            )
-                            model.project = project
-                        }
+                        model.attest()
                     } label: {
                         Label(model.rightsAttested ? "Rights attested ✓" : "Attest public domain (US)", systemImage: model.rightsAttested ? "checkmark.circle.fill" : "circle")
                             .scaledFont(size: 13.5, weight: .semibold)
@@ -752,15 +732,23 @@ struct MetadataView: View {
 
     private var titleBinding: Binding<String> {
         Binding(
-            get: { model.project?.title ?? "" },
-            set: { if var p = model.project { p.title = $0; model.project = p } }
+            get: { model.project?.metadata.title ?? "" },
+            set: { if var project = model.project {
+                project.metadata.title = $0
+                project.modifiedAt = model.repository.clock.now
+                model.project = project
+            } }
         )
     }
 
     private var authorBinding: Binding<String> {
         Binding(
-            get: { model.project?.author ?? "" },
-            set: { if var p = model.project { p.author = $0; model.project = p } }
+            get: { model.project?.metadata.author ?? "" },
+            set: { if var project = model.project {
+                project.metadata.author = $0
+                project.modifiedAt = model.repository.clock.now
+                model.project = project
+            } }
         )
     }
 }
@@ -835,25 +823,23 @@ struct ValidateExportView: View {
 
     private var hasMetadata: Bool {
         guard let project = model.project else { return false }
-        return !project.title.isEmpty
-            && !project.author.isEmpty
+        return !project.metadata.title.isEmpty
+            && !project.metadata.author.isEmpty
             && !model.narrator.isEmpty
             && !model.language.isEmpty
     }
 
     private var hasDisclaimer: Bool {
-        guard let project = model.project else { return false }
         // A recorded-but-not-yet-accepted paragraph still has its take, so it
         // satisfies the LibriVox disclaimer requirement (matches
         // readyToAssemble, which only requires every paragraph recorded).
-        let recorded: Set<NarrationParagraphState> = [.recorded, .approved]
-        return project.paragraphs.contains { $0.role == .disclaimer && recorded.contains($0.state) }
-            && project.paragraphs.contains { $0.role == .outro && recorded.contains($0.state) }
+        let recorded: Set<FlowParagraphState> = [.recorded, .approved]
+        return model.paragraphs.contains { $0.role == .intro && recorded.contains($0.state) }
+            && model.paragraphs.contains { $0.role == .outro && recorded.contains($0.state) }
     }
 
     private var clippingDetected: Bool {
-        guard let project = model.project else { return false }
-        return project.paragraphs.contains { $0.selectedTake?.clipped == true }
+        model.paragraphs.contains { $0.take?.clipped == true }
     }
 
     private func checkRow(title: String, ok: Bool, note: String, id: String? = nil) -> some View {
@@ -923,7 +909,7 @@ struct SubmitView: View {
                     Text("Your recording is ready")
                         .scaledFont(size: 22, weight: .heavy).foregroundStyle(Palette.ink)
                     if let project = model.project {
-                        Text("\"\(project.title)\" by \(project.author) · a publishable public-domain recording")
+                        Text("\"\(project.metadata.title)\" by \(project.metadata.author) · a publishable public-domain recording")
                             .scaledFont(size: 12).foregroundStyle(Palette.ink2)
                             .multilineTextAlignment(.center)
                             .accessibilityIdentifier("export.packageReady")
@@ -1019,8 +1005,8 @@ struct SubmitView: View {
 
     private var archiveCommand: String {
         guard let bundle = model.exportBundle else { return "" }
-        let identifier = (model.project?.title ?? "voxglass").lowercased().replacingOccurrences(of: " ", with: "-")
-        return "ia upload \(identifier) --metadata='mediatype:audio' --metadata='collection:opensource_audio' --metadata='title:\(model.project?.title ?? "")' --metadata='creator:\(model.project?.author ?? "")' \(bundle.files.map(\.lastPathComponent).joined(separator: " "))"
+        let identifier = (model.project?.metadata.title ?? "voxglass").lowercased().replacingOccurrences(of: " ", with: "-")
+        return "ia upload \(identifier) --metadata='mediatype:audio' --metadata='collection:opensource_audio' --metadata='title:\(model.project?.metadata.title ?? "")' --metadata='creator:\(model.project?.metadata.author ?? "")' \(bundle.files.map(\.lastPathComponent).joined(separator: " "))"
     }
 
     private func submitStep(_ number: Int, _ text: String) -> some View {

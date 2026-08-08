@@ -451,8 +451,8 @@ struct NeedRow: View {
 struct MyNarrationsSection: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let findSomething: () -> Void
-    @State private var pendingDeletion: NarrationProject?
-    @State private var resumeProject: NarrationProject?
+    @State private var pendingDeletion: AudiobookProject?
+    @State private var resumeProject: AudiobookProject?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -504,7 +504,7 @@ struct MyNarrationsSection: View {
                                 Label("Delete Narration", systemImage: "trash")
                             }
                         }
-                        .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.title))")
+                        .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.metadata.title))")
                     }
                 }
             }
@@ -517,13 +517,13 @@ struct MyNarrationsSection: View {
             NarrationFlowRoot(existing: project)
         }
         .confirmationDialog(
-            pendingDeletion.map { "Delete \"\($0.title)\" and its recordings?" } ?? "",
+            pendingDeletion.map { "Delete \"\($0.metadata.title)\" and its recordings?" } ?? "",
             isPresented: deletionBinding,
             titleVisibility: .visible
         ) {
             Button("Delete Narration", role: .destructive) {
                 if let project = pendingDeletion {
-                    discovery.delete(project)
+                    Task { await discovery.delete(project) }
                 }
                 pendingDeletion = nil
             }
@@ -533,7 +533,9 @@ struct MyNarrationsSection: View {
         } message: {
             Text("This removes the project and its recorded takes from this device.")
         }
-        .onAppear { discovery.reloadNarrations() }
+        .onAppear {
+            Task { await discovery.reloadNarrations() }
+        }
     }
 
     private var deletionBinding: Binding<Bool> {
@@ -546,7 +548,7 @@ struct MyNarrationsSection: View {
         }
     }
 
-    private func projectRow(_ project: NarrationProject) -> some View {
+    private func projectRow(_ project: AudiobookProject) -> some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 9)
@@ -556,11 +558,11 @@ struct MyNarrationsSection: View {
             .frame(width: 46, height: 60)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(project.title)
+                Text(project.metadata.title)
                     .scaledFont(size: 14.5, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
-                Text("\(project.author) · \(project.paragraphs.count) ¶ · ~\(project.duration(of: project.paragraphs).formattedShort)")
+                Text("\(project.metadata.author) · \(project.totalCount) ¶ · ~\(projectTotalDuration(project).formattedShort)")
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink2)
 
@@ -586,7 +588,7 @@ struct MyNarrationsSection: View {
     }
 
     @ViewBuilder
-    private func statusPill(_ project: NarrationProject) -> some View {
+    private func statusPill(_ project: AudiobookProject) -> some View {
         let (text, tint) = project.statusPill
         Text(text)
             .scaledFont(size: 11, weight: .bold)
@@ -600,22 +602,30 @@ struct MyNarrationsSection: View {
     private func needSlugFromTitle(_ title: String) -> String {
         title.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).joined(separator: "-")
     }
+
+    private func projectTotalDuration(_ project: AudiobookProject) -> TimeInterval {
+        project.allParagraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
+    }
 }
 
-private extension NarrationProject {
+private extension AudiobookProject {
     var percent: Double {
-        guard !paragraphs.isEmpty else { return 0 }
-        return Double(recordedCount) / Double(paragraphs.count)
+        guard totalCount > 0 else { return 0 }
+        return Double(recordedCount) / Double(totalCount)
+    }
+
+    var approvedCount: Int {
+        allParagraphs.count { $0.reviewState == .approved }
     }
 
     var statusCaption: String {
-        if approvedCount == paragraphs.count && !paragraphs.isEmpty { return "LibriVox package ready" }
-        if recordedCount > 0 { return "\(recordedCount) of \(paragraphs.count) paragraphs recorded" }
+        if approvedCount == totalCount && totalCount > 0 { return "LibriVox package ready" }
+        if recordedCount > 0 { return "\(recordedCount) of \(totalCount) paragraphs recorded" }
         return "Draft — disclaimer & rights ready"
     }
 
     var statusPill: (String, Color) {
-        if approvedCount == paragraphs.count && !paragraphs.isEmpty { return ("Ready", Color(hex: 0x72D59F)) }
+        if approvedCount == totalCount && totalCount > 0 { return ("Ready", Color(hex: 0x72D59F)) }
         if recordedCount > 0 { return ("Recording", Palette.brass) }
         return ("Draft", Palette.ink3)
     }

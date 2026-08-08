@@ -17,14 +17,17 @@ public final class PhoneProductionEnvironment {
     public let previewStore: ProductionPreviewStore
     public let sync: PhoneProductionSync
     public let watchTransport: WatchConnectivityTransport
+    public let narrationRepository: NarrationProjectRepository
 
     public init(
         previewStore: ProductionPreviewStore? = nil,
-        watchTransport: WatchConnectivityTransport? = nil
+        watchTransport: WatchConnectivityTransport? = nil,
+        narrationRepository: NarrationProjectRepository = NarrationProjectRepository()
     ) {
         self.previewStore = previewStore ?? ProductionPreviewStore()
         self.sync = PhoneProductionSync(previewStore: self.previewStore)
         self.watchTransport = watchTransport ?? WatchConnectivityTransport()
+        self.narrationRepository = narrationRepository
         self.watchTransport.onEventReceived = { [weak self] event in
             self?.sync.enqueue(event)
         }
@@ -40,6 +43,20 @@ public final class PhoneProductionEnvironment {
     /// Pulls the latest projection and flushes the outbox (spec §14.5 Flow A).
     public func checkForUpdates() async {
         await sync.checkForUpdates()
+    }
+
+    /// Derives the local `AudiobookProject` into its projection and applies it
+    /// to the preview store and the watch (spec §4.3 / §13.6). The iPhone is the
+    /// writer: a freshly saved narration is visible to My Productions and to the
+    /// watch immediately, with no CloudKit round-trip.
+    public func localPublish(_ project: AudiobookProject) async {
+        let projectStore = narrationRepository.store(for: project.id)
+        guard let counts = try? await projectStore.counts() else { return }
+        let builder = ProjectionBuilder()
+        let revision = await narrationRepository.nextProjectionRevision(for: project.id)
+        guard let projection = builder.projection(from: project, counts: counts, revision: revision) else { return }
+        await previewStore.apply(projection)
+        await publishToWatch()
     }
 
     /// Pushes summaries for every project and the current flagged review queue plus

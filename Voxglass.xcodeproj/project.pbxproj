@@ -97,7 +97,6 @@
 		6491F6B3D3E24F36631B9C95 /* ScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */; };
 		6539622E0D5E728F474586F8 /* sense_sensibility_ver3_ek.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */; };
 		65921983DD70A9C16EA07F0D /* call_of_the_wild.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */; };
-		667EFD154543A8AE65E27256 /* NarrationProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9067EB13C87075C6227817C0 /* NarrationProjectStore.swift */; };
 		68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E0138B81F7532946A478D9 /* MiniPlayerView.swift */; };
 		696C1A68A6B01A3EAF5C5DF2 /* english_fairy_tales_joy_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 48AD36A085B88B984ACA97FE /* english_fairy_tales_joy_librivox.jpg */; };
 		6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F8ACEE07BAD813F34C6DBE /* EQView.swift */; };
@@ -136,6 +135,7 @@
 		9153C0963F9A39A8E0BCB7D8 /* 1601_0903_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6651677A03062028BC949542 /* 1601_0903_librivox.jpg */; };
 		917FC5B3C23CF26B23C9B79F /* CatalogDiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE26F9079A1C12E2BAD8E865 /* CatalogDiscoveryView.swift */; };
 		92DA452F703F3B8154D93E0A /* peter_pan_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BD276A6BF5801E2B15EBA44B /* peter_pan_0707_librivox.jpg */; };
+		9313773ED1C718003C5FC794 /* NarrationProjectRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */; };
 		95593DEA589E20BFC4BD27CC /* city_worlds_end_1203_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BD0F6CE7B0C3D96D9976A73F /* city_worlds_end_1203_librivox.jpg */; };
 		98806F3F21F08D77BCBF6FB9 /* tale_two_cities_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 34808794F915DD9ECCB1F970 /* tale_two_cities_librivox.jpg */; };
 		992D6E0AD8E875B135D7C2B2 /* 0_sense_and_sensibility_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2761AA70F89396E53EE93D01 /* 0_sense_and_sensibility_librivox.jpg */; };
@@ -421,7 +421,6 @@
 		8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gulliver_ld_librivox.jpg; sourceTree = "<group>"; };
 		8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationTabView.swift; sourceTree = "<group>"; };
 		8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = les_mis_vol01_0810_librivox.jpg; sourceTree = "<group>"; };
-		9067EB13C87075C6227817C0 /* NarrationProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationProjectStore.swift; sourceTree = "<group>"; };
 		92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = divine_comedy_librivox.jpg; sourceTree = "<group>"; };
 		93ECD54380A215C3A3831A60 /* SkipSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipSymbol.swift; sourceTree = "<group>"; };
 		9434A47A806A4EA4509EC595 /* terror_mystery_0707_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = terror_mystery_0707_librivox.jpg; sourceTree = "<group>"; };
@@ -490,6 +489,7 @@
 		DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationFlow.swift; sourceTree = "<group>"; };
 		DFB26A7DF361B7DB10762794 /* ThirdPartyNotices.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ThirdPartyNotices.md; sourceTree = "<group>"; };
 		E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionEnvironment.swift; sourceTree = "<group>"; };
+		E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationProjectRepository.swift; sourceTree = "<group>"; };
 		E27CA265F0603F339331C4A6 /* Voxglass-release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Voxglass-release.entitlements"; sourceTree = "<group>"; };
 		E472AB68F0B05BC2B6D85E9F /* WatchListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListeningView.swift; sourceTree = "<group>"; };
 		E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassTheme.swift; sourceTree = "<group>"; };
@@ -584,7 +584,7 @@
 				5B5AF4E9D3A269D27ABC1CBB /* DiscoveryViews.swift */,
 				DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */,
 				2FA8E1DA7900280C3F2E8925 /* NarrationFlowScreens.swift */,
-				9067EB13C87075C6227817C0 /* NarrationProjectStore.swift */,
+				E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */,
 				8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */,
 				04E0B8E527FDF636C42B6FAC /* UITestAudioCapture.swift */,
 				7F19E61B32B9CD25DA7F0CE5 /* URLSessionFetcher.swift */,
@@ -1377,7 +1377,7 @@
 				68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */,
 				B14B2AE1CA11BC46846AA0E9 /* NarrationFlow.swift in Sources */,
 				27C147259FE948D5158B6B06 /* NarrationFlowScreens.swift in Sources */,
-				667EFD154543A8AE65E27256 /* NarrationProjectStore.swift in Sources */,
+				9313773ED1C718003C5FC794 /* NarrationProjectRepository.swift in Sources */,
 				DBBDBF3E02DCB27296991885 /* NarrationTabView.swift in Sources */,
 				C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */,
 				CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */,

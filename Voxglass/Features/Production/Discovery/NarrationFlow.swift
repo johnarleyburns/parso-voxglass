@@ -3,6 +3,64 @@ import UniformTypeIdentifiers
 import AVFoundation
 import VoxglassCore
 
+// MARK: - Flow presentation model
+
+/// The selected `Take` of a paragraph, resolved through `selectedTakeID`.
+extension Paragraph {
+    var selectedTake: Take? {
+        guard let id = selectedTakeID else { return nil }
+        return takes.first { $0.id == id }
+    }
+}
+
+/// The state vocabulary the narration flow works in. Derived from a Core
+/// `Paragraph`: a recorded-but-unreviewed take, an approved take, a flagged
+/// paragraph, or nothing recorded yet.
+enum FlowParagraphState: Equatable {
+    case notRecorded
+    case recorded
+    case approved
+    case flagged
+}
+
+/// The flow's role vocabulary. Both LibriVox opening paragraphs (the disclaimer
+/// and the title intro) surface as `.intro`; the closing one as `.outro`.
+enum FlowParagraphRole: Equatable {
+    case intro
+    case body
+    case outro
+
+    var label: String {
+        switch self {
+        case .intro: return "Intro"
+        case .outro: return "Outro"
+        case .body: return "Paragraph"
+        }
+    }
+}
+
+/// The selected take as the flow presents it: duration plus the metrics that
+/// the record screen's status line and the validate screen's clipping check
+/// read.
+struct FlowTake: Equatable {
+    var duration: TimeInterval
+    var peakDBFS: Double?
+    var clipped: Bool
+}
+
+/// The paragraph as the narration flow sees it — a Core `Paragraph` plus the
+/// flow's derived state, its latest review note, and the selected take's
+/// presentation. The flow screens read this; the model translates to/from the
+/// `AudiobookProject` model underneath.
+struct FlowParagraph: Identifiable, Equatable {
+    let id: UUID
+    var text: String
+    var role: FlowParagraphRole
+    var state: FlowParagraphState
+    var note: String?
+    var take: FlowTake?
+}
+
 // MARK: - Flow model
 
 enum NarrationStep: Hashable {
@@ -18,7 +76,9 @@ enum NarrationStep: Hashable {
 
 /// The eight-step short-work production flow (NARRATION_NEEDS_SPEC §11.4,
 /// p01–p08). Single-work and short-only on iPhone. A project may be left and
-/// resumed at any step.
+/// resumed at any step. Projects are `AudiobookProject`s in the SQLite
+/// production store (spec §4.3); the flow is a storage client, not a second
+/// project model.
 @MainActor
 @Observable
 final class NarrationFlowModel {
@@ -29,7 +89,7 @@ final class NarrationFlowModel {
         case gutenberg
     }
 
-    var project: NarrationProject?
+    var project: AudiobookProject?
     var draftTitle = ""
     var draftAuthor = ""
     var draftText = ""
@@ -42,45 +102,96 @@ final class NarrationFlowModel {
     var isRecording = false
     var micPermissionDenied = false
     var level: Float = 0
-    var currentTake: NarrationTake?
+    var currentTake: FlowTake?
     var playbackPlayer: AVAudioPlayer?
     private var levelTask: Task<Void, Never>?
 
     var assembly = AssemblySettings()
-    var metadata = NarrationMetadata(narrator: "", language: "English", description: "", subjects: [], sourceURL: "")
     var narrator = ""
     var language = "English"
     var descriptionText = ""
     var subjectsText = ""
     var sourceURLText = ""
-    var rightsAttested = false
     var exportBundle: NarrationExportBundle?
 
-    let store: NarrationProjectStore
+    let repository: NarrationProjectRepository
     let fetcher: any HTTPFetching
 
+    /// Latest review-note text per paragraph, so a flag note survives relaunch
+    /// and shows on the review list (stored as `ReviewNote`s in the project DB).
+    private var paragraphNotes: [UUID: String] = [:]
+
     init(
-        store: NarrationProjectStore = NarrationProjectStore(),
+        repository: NarrationProjectRepository = NarrationProjectRepository(),
         fetcher: any HTTPFetching = URLSessionFetcher(),
-        existing: NarrationProject? = nil,
+        existing: AudiobookProject? = nil,
         capture: any AudioCapturing = AudioSessionCapture()
     ) {
-        self.store = store
+        self.repository = repository
         self.fetcher = fetcher
         self.capture = capture
         self.project = existing
         if let existing {
-            draftTitle = existing.title
-            draftAuthor = existing.author
-            setSource(existing.sourceURL)
-            pendingNeedID = existing.needID
+            draftTitle = existing.metadata.title
+            draftAuthor = existing.metadata.author
+            setSource(existing.rights.sourceURL?.absoluteString)
+        }
+    }
+
+    // MARK: - Presentation
+
+    var paragraphs: [FlowParagraph] {
+        guard let project else { return [] }
+        return project.allParagraphs.map { Self.flowParagraph($0, notes: paragraphNotes) }
+    }
+
+    var readyToAssemble: Bool {
+        guard let project, project.totalCount > 0 else { return false }
+        let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
+        return flagged == 0 && project.recordedCount == project.totalCount
+    }
+
+    var totalDuration: TimeInterval {
+        guard let project else { return 0 }
+        return project.allParagraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
+    }
+
+    var rightsAttested: Bool {
+        project?.rights.isAttested ?? false
+    }
+
+    private static func flowParagraph(_ paragraph: Paragraph, notes: [UUID: String]) -> FlowParagraph {
+        FlowParagraph(
+            id: paragraph.id,
+            text: paragraph.text,
+            role: flowRole(paragraph.role),
+            state: flowState(paragraph),
+            note: notes[paragraph.id],
+            take: paragraph.selectedTake.map { FlowTake(duration: $0.duration, peakDBFS: $0.metrics?.peakDBFS, clipped: ($0.metrics?.clipCount ?? 0) > 0) }
+        )
+    }
+
+    private static func flowRole(_ role: ParagraphRole) -> FlowParagraphRole {
+        switch role {
+        case .libriVoxIntro: return .intro
+        case .libriVoxOutro: return .outro
+        default: return .body
+        }
+    }
+
+    private static func flowState(_ paragraph: Paragraph) -> FlowParagraphState {
+        switch paragraph.reviewState {
+        case .approved: return .approved
+        case .flagged: return .flagged
+        default:
+            return paragraph.selectedTakeID != nil ? .recorded : .notRecorded
         }
     }
 
     // MARK: - Import
 
-    /// The Need ID of the work being imported; stamped onto the project so a
-    /// later start of the same need resumes this project (no duplicates).
+    /// The Need ID of the work being imported; stamped onto the project's sync
+    /// state so a later start of the same need resumes this project.
     var pendingNeedID: String?
 
     /// Keeps the project's source URL and the Metadata "Source URL" field in
@@ -140,13 +251,10 @@ final class NarrationFlowModel {
 
     // MARK: - Segmentation
 
-    /// Builds the paragraph list: auto-inserted LibriVox disclaimer intro/outro
-    /// plus the segmented body (p02).
-    func buildParagraphs() {
-        // Group lines into real paragraphs: blank lines are paragraph breaks,
-        // and over-long blocks (text without blank lines — e.g. poems or
-        // pasted prose) are split at sentence boundaries so a take is never
-        // an unwieldy wall of text (field fix: poems were split line by line).
+    /// Builds the project: auto-inserted LibriVox intro/outro paragraphs plus
+    /// the segmented body (p02), persisted as an `AudiobookProject` in the
+    /// production store.
+    func buildParagraphs() async {
         let body = Self.narrationParagraphs(from: draftText)
 
         // A work with no text on this device would produce a project whose
@@ -158,34 +266,59 @@ final class NarrationFlowModel {
             return
         }
 
-        var paragraphs: [NarrationParagraph] = []
-        paragraphs.append(NarrationParagraph(
-            text: "This is a LibriVox recording. All LibriVox recordings are in the public domain. For more information, or to volunteer, please visit librivox dot org.",
-            role: .disclaimer
-        ))
+        let now = repository.clock.now
         let title = draftTitle.isEmpty ? "This work" : draftTitle
-        paragraphs.append(NarrationParagraph(
-            text: "\(title), by \(draftAuthor.isEmpty ? "Unknown" : draftAuthor). Read for LibriVox by \(metadata.narrator.isEmpty ? "your name" : metadata.narrator).",
-            role: .intro
-        ))
-        for text in body {
-            paragraphs.append(NarrationParagraph(text: text, role: .body))
-        }
-        paragraphs.append(NarrationParagraph(
-            text: "End of \(title). This recording is in the public domain.",
-            role: .outro
-        ))
+        let author = draftAuthor.isEmpty ? "Unknown" : draftAuthor
+        let reader = narrator.isEmpty ? "your name" : narrator
 
-        let project = NarrationProject(
-            title: title,
-            author: draftAuthor,
-            sourceText: draftText,
-            sourceURL: sourceURL,
-            paragraphs: paragraphs,
-            needID: pendingNeedID
+        var paragraphs: [Paragraph] = []
+        var ordinal = 0
+        let disclaimer = "This is a LibriVox recording. All LibriVox recordings are in the public domain. For more information, or to volunteer, please visit librivox dot org."
+        paragraphs.append(paragraph(disclaimer, role: .libriVoxIntro, ordinal: ordinal, at: now))
+        ordinal += 1
+        let intro = "\(title), by \(author). Read for LibriVox by \(reader)."
+        paragraphs.append(paragraph(intro, role: .libriVoxIntro, ordinal: ordinal, at: now))
+        ordinal += 1
+        for text in body {
+            paragraphs.append(paragraph(text, role: .body, ordinal: ordinal, at: now))
+            ordinal += 1
+        }
+        let outro = "End of \(title). This recording is in the public domain."
+        paragraphs.append(paragraph(outro, role: .libriVoxOutro, ordinal: ordinal, at: now))
+
+        let chapter = ProductionChapter(id: repository.ids.next(), ordinal: 0, title: title, role: .body, paragraphs: paragraphs)
+        let project = AudiobookProject(
+            id: repository.ids.next(),
+            metadata: BookMetadata(title: title, author: author, narrator: "", language: "en-US"),
+            rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL.flatMap(URL.init(string:))),
+            profile: ProductionProfile(
+                purpose: .publicDomainCommunity,
+                recording: RecordingDefaults(sampleRate: 44_100, bitDepth: 24),
+                intendedDestination: .librivox
+            ),
+            source: nil,
+            chapters: [chapter],
+            createdAt: now,
+            modifiedAt: now
         )
         self.project = project
-        store.save(project)
+        if let needID = pendingNeedID {
+            try? await repository.setNeedID(needID, for: project.id)
+        }
+        if !draftText.isEmpty {
+            try? await repository.setSourceText(draftText, for: project.id)
+        }
+    }
+
+    private func paragraph(_ text: String, role: ParagraphRole, ordinal: Int, at date: Date) -> Paragraph {
+        Paragraph(
+            id: repository.ids.next(),
+            ordinal: ordinal,
+            text: text,
+            textHash: TextNormalizer.hash(text),
+            role: role,
+            updatedAt: date
+        )
     }
 
     /// Groups raw text into narration paragraphs. Blank lines are paragraph
@@ -244,63 +377,78 @@ final class NarrationFlowModel {
         return last
     }
 
+    // MARK: - Resume / navigation
+
     /// Finds an already-started project for the same need (by need ID, then
     /// legacy work identity) so re-tapping a need resumes it instead of
     /// creating a duplicate.
-    func existingProject(for need: NarrationNeed) -> NarrationProject? {
-        store.loadAll().first { project in
-            if let needID = project.needID {
-                return needID == need.id
-            }
-            guard project.title == need.work.title,
-                  project.author == need.work.author else { return false }
-            return project.sourceURL == need.work.sourcePageURL?.absoluteString
-        }
+    func existingProject(for need: NarrationNeed) async -> AudiobookProject? {
+        await repository.existingProject(for: need)
     }
 
     /// Loads an existing project into the flow (resume path).
-    func resume(_ project: NarrationProject) {
+    func resume(_ project: AudiobookProject) async {
         self.project = project
-        draftTitle = project.title
-        draftAuthor = project.author
-        draftText = project.sourceText
-        setSource(project.sourceURL)
-        pendingNeedID = project.needID
+        draftTitle = project.metadata.title
+        draftAuthor = project.metadata.author
+        setSource(project.rights.sourceURL?.absoluteString)
+        pendingNeedID = await repository.needID(for: project.id)
+        draftText = await repository.sourceText(for: project.id) ?? ""
+        narrator = project.metadata.narrator
+        language = project.metadata.language.isEmpty ? "English" : project.metadata.language
+        descriptionText = project.metadata.description
+        subjectsText = project.metadata.subjects.joined(separator: "; ")
+        paragraphNotes = await repository.latestNotes(for: project.id)
         currentParagraphID = nil
         importError = nil
         micPermissionDenied = false
     }
 
-    func paragraph(at id: UUID) -> NarrationParagraph? {
-        project?.paragraphs.first { $0.id == id }
+    func paragraph(at id: UUID) -> FlowParagraph? {
+        paragraphs.first { $0.id == id }
     }
 
-    func nextParagraph(after id: UUID) -> NarrationParagraph? {
+    func nextParagraph(after id: UUID) -> FlowParagraph? {
         guard let project else { return nil }
-        guard let index = project.paragraphs.firstIndex(where: { $0.id == id }) else { return nil }
-        let nextIndex = project.paragraphs.index(after: index)
-        guard project.paragraphs.indices.contains(nextIndex) else { return nil }
-        return project.paragraphs[nextIndex]
+        guard let index = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return nil }
+        let nextIndex = project.allParagraphs.index(after: index)
+        guard project.allParagraphs.indices.contains(nextIndex) else { return nil }
+        return Self.flowParagraph(project.allParagraphs[nextIndex], notes: paragraphNotes)
     }
 
-    func updateParagraph(_ id: UUID, _ transform: (inout NarrationParagraph) -> Void) {
+    func previousParagraph(before id: UUID) -> FlowParagraph? {
+        guard let project, let index = project.allParagraphs.firstIndex(where: { $0.id == id }), index > 0 else { return nil }
+        return Self.flowParagraph(project.allParagraphs[index - 1], notes: paragraphNotes)
+    }
+
+    func updateParagraph(_ id: UUID, _ transform: (inout Paragraph) -> Void) {
         guard var project else { return }
-        guard let index = project.paragraphs.firstIndex(where: { $0.id == id }) else { return }
-        transform(&project.paragraphs[index])
+        guard let chapterIndex = project.chapters.firstIndex(where: { $0.paragraphs.contains { $0.id == id } }),
+              let paragraphIndex = project.chapters[chapterIndex].paragraphs.firstIndex(where: { $0.id == id }) else { return }
+        transform(&project.chapters[chapterIndex].paragraphs[paragraphIndex])
+        project.modifiedAt = repository.clock.now
         self.project = project
-        store.save(project)
+    }
+
+    /// Durably saves the current project. Called from async action handlers
+    /// where the write must be ordered (take bytes first, then metadata);
+    /// the root view also persists through `DiscoveryEnvironment.save` on
+    /// change, so a missed call cannot strand a project.
+    func persist() async {
+        guard let project else { return }
+        try? await repository.save(project)
     }
 
     // MARK: - Recording
 
     func startRecordingParagraph(_ id: UUID) async {
-        guard let project, let paragraph = paragraph(at: id) else { return }
+        guard let project, paragraph(at: id) != nil else { return }
         currentParagraphID = id
         importError = nil
         micPermissionDenied = false
-        let dir = store.takesDirectory(for: project.id)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent("\(paragraph.id.uuidString).caf")
+        let directory = repository.autosaveTakesURL(for: project.id)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("\(repository.ids.next().uuidString).caf")
         do {
             try await capture.prepare(device: nil, format: RecordingDefaults(sampleRate: 44_100, bitDepth: 24))
             try await capture.startRecording(to: url)
@@ -317,17 +465,31 @@ final class NarrationFlowModel {
     func stopRecordingParagraph(_ id: UUID) async {
         guard isRecording else { return }
         do {
-            let take = try await capture.stopRecording()
+            let captured = try await capture.stopRecording()
             isRecording = false
             levelTask?.cancel()
             levelTask = nil
-            let fileName = "\(id.uuidString).caf"
-            let recorded = NarrationTake(fileName: fileName, duration: take.duration, peakDBFS: take.peakDBFS, clipped: take.clippedDuringCapture)
+            guard let project else { return }
+            let textHash = project.allParagraphs.first { $0.id == id }?.textHash ?? ""
+            let take = try await repository.ingestCapturedTake(
+                fileURL: captured.fileURL,
+                paragraphID: id,
+                projectID: project.id,
+                captured: captured,
+                textHash: textHash
+            )
             updateParagraph(id) { paragraph in
-                paragraph.selectedTake = recorded
-                paragraph.state = .recorded
+                paragraph.takes.append(take)
+                paragraph.selectedTakeID = take.id
+                paragraph.reviewState = .unreviewed
+                // A retake archives by state, never by file removal (§9.4).
+                for index in paragraph.takes.indices where paragraph.takes[index].id != take.id {
+                    paragraph.takes[index].isArchived = true
+                }
+                paragraph.updatedAt = repository.clock.now
             }
-            currentTake = recorded
+            currentTake = FlowTake(duration: captured.duration, peakDBFS: captured.peakDBFS, clipped: captured.clippedDuringCapture)
+            await persist()
         } catch {
             isRecording = false
         }
@@ -335,26 +497,39 @@ final class NarrationFlowModel {
 
     func acceptParagraph(_ id: UUID) {
         updateParagraph(id) { paragraph in
-            paragraph.state = .approved
-            if paragraph.selectedTake == nil {
-                paragraph.selectedTake = currentTake
-            }
+            paragraph.reviewState = .approved
+            paragraph.updatedAt = repository.clock.now
         }
         currentTake = nil
     }
 
     func flagParagraph(_ id: UUID, note: String) {
         updateParagraph(id) { paragraph in
-            paragraph.state = .flagged
-            paragraph.note = note.isEmpty ? paragraph.note : note
+            paragraph.reviewState = .flagged
+            paragraph.updatedAt = repository.clock.now
+        }
+        if !note.isEmpty {
+            paragraphNotes[id] = note
+            if let project {
+                let reviewNote = ReviewNote(paragraphID: id, text: note, device: .iPhone, createdAt: repository.clock.now)
+                Task { try? await repository.insertNote(reviewNote, projectID: project.id) }
+            }
         }
         currentTake = nil
     }
 
-    func markNotRecorded(_ id: UUID) {
-        updateParagraph(id) { paragraph in
-            paragraph.state = .notRecorded
-        }
+    /// Records the public-domain attestation and folds the metadata draft
+    /// fields into the project (p06).
+    func attest() {
+        guard var project else { return }
+        project.rights.attestedAt = repository.clock.now
+        project.rights.attestedBy = narrator.isEmpty ? "narrator" : narrator
+        project.metadata.narrator = narrator
+        project.metadata.language = language
+        project.metadata.description = descriptionText
+        project.metadata.subjects = subjectsText.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+        project.modifiedAt = repository.clock.now
+        self.project = project
     }
 
     // MARK: - Levels
@@ -370,8 +545,9 @@ final class NarrationFlowModel {
     }
 
     func playbackURL(for id: UUID) -> URL? {
-        guard let project, let paragraph = paragraph(at: id), let take = paragraph.selectedTake else { return nil }
-        return store.takeURL(projectID: project.id, fileName: take.fileName)
+        guard let project, let paragraph = project.allParagraphs.first(where: { $0.id == id }),
+              let take = paragraph.selectedTake else { return nil }
+        return repository.takeURL(for: project.id, take: take)
     }
 
     func play(_ id: UUID) {
@@ -389,15 +565,15 @@ final class NarrationFlowModel {
     // MARK: - Export
 
     func buildExport() {
-        guard var project, project.rightsAttested else { return }
+        guard let project, project.rights.isAttested else { return }
         // Build the package on iPhone; the selected destination's encoder is
         // responsible for producing the final audio files before handoff to Files.
         let sanitizer = FilenameSanitizer()
         let filename = sanitizer.librivoxFilename(
-            shortTitle: project.title,
+            shortTitle: project.metadata.title,
             section: 1,
             sectionCount: 1,
-            authorLastName: Self.lastWord(project.author)
+            authorLastName: Self.lastWord(project.metadata.author)
         ) + ".mp3"
         let exportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Voxglass/Exports/\(project.id.uuidString)", isDirectory: true)
@@ -419,14 +595,14 @@ final class NarrationFlowModel {
             directory: exportDir,
             filename: filename,
             files: [checklistURL, manifestURL, durationsURL],
-            totalDuration: project.duration(of: project.paragraphs)
+            totalDuration: totalDuration
         )
     }
 
-    private static func checklist(project: NarrationProject, filename: String) -> String {
-        let approved = project.paragraphs.filter { $0.state == .approved }
+    private static func checklist(project: AudiobookProject, filename: String) -> String {
+        let approved = project.allParagraphs.filter { $0.reviewState == .approved }
         var lines: [String] = []
-        lines.append("# LibriVox submission checklist — \(project.title) by \(project.author)")
+        lines.append("# LibriVox submission checklist — \(project.metadata.title) by \(project.metadata.author)")
         lines.append("")
         lines.append("**\(LegalStrings.userSubmits)**")
         lines.append("")
@@ -436,23 +612,23 @@ final class NarrationFlowModel {
         lines.append("")
         lines.append("## Content")
         lines.append("- [x] LibriVox disclaimer recorded (intro + outro)")
-        lines.append("- [x] \(approved.count) of \(project.paragraphs.count) paragraphs approved on this iPhone")
+        lines.append("- [x] \(approved.count) of \(project.totalCount) paragraphs approved on this iPhone")
         lines.append("- [ ] Final recording assembled on iPhone")
         lines.append("")
         lines.append("## Rights")
-        lines.append("- Source: \(project.sourceURL ?? "—")")
-        lines.append("- Basis: Public domain (US) — \(project.rightsAttested ? "attested in-app" : "not attested")")
+        lines.append("- Source: \(project.rights.sourceURL?.absoluteString ?? "—")")
+        lines.append("- Basis: Public domain (US) — \(project.rights.isAttested ? "attested in-app" : "not attested")")
         lines.append("")
         lines.append(LegalStrings.noCopyrightDetermination)
         lines.append("")
         return lines.joined(separator: "\n")
     }
 
-    private static func manifestJSON(project: NarrationProject, filename: String) -> Data {
+    private static func manifestJSON(project: AudiobookProject, filename: String) -> Data {
         let dict: [String: Any] = [
             "generator": "Voxglass iOS 1.1 (narration-needs)",
             "destination": "librivox",
-            "project": ["title": project.title, "author": project.author, "narrator": project.metadata?.narrator ?? ""],
+            "project": ["title": project.metadata.title, "author": project.metadata.author, "narrator": project.metadata.narrator],
             "audio": ["codec": "mp3", "bitrateKbps": 128, "cbr": true, "sampleRate": 44100, "channels": 1],
             "files": [["name": filename, "role": "chapter"]],
             "disclaimers": ["intro": "present", "outro": "present"]
@@ -460,12 +636,13 @@ final class NarrationFlowModel {
         return (try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys])) ?? Data()
     }
 
-    private static func sectionDurations(project: NarrationProject, filename: String) -> String {
-        var lines = project.paragraphs.enumerated().map { index, paragraph in
+    private static func sectionDurations(project: AudiobookProject, filename: String) -> String {
+        var lines = project.allParagraphs.enumerated().map { index, paragraph in
             let duration = paragraph.selectedTake?.duration ?? 0
             return "\(filename)\t\(clockTime(duration))"
         }
-        lines.append("TOTAL\t\t\(clockTime(project.duration(of: project.paragraphs)))")
+        let total = project.allParagraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
+        lines.append("TOTAL\t\t\(clockTime(total))")
         return lines.joined(separator: "\n") + "\n"
     }
 
@@ -520,10 +697,10 @@ struct NarrationFlowRoot: View {
     @State private var model: NarrationFlowModel
     @State private var showHelp = false
     @State private var confirmDelete = false
-    let existing: NarrationProject?
+    let existing: AudiobookProject?
     let startNeed: NarrationNeed?
 
-    init(existing: NarrationProject? = nil, startNeed: NarrationNeed? = nil) {
+    init(existing: AudiobookProject? = nil, startNeed: NarrationNeed? = nil) {
         self.existing = existing
         self.startNeed = startNeed
         #if DEBUG
@@ -575,13 +752,13 @@ struct NarrationFlowRoot: View {
             }
         }
         .confirmationDialog(
-            model.project.map { "Delete \"\($0.title)\" and its recordings?" } ?? "Delete this narration?",
+            model.project.map { "Delete \"\($0.metadata.title)\" and its recordings?" } ?? "Delete this narration?",
             isPresented: $confirmDelete,
             titleVisibility: .visible
         ) {
             Button("Delete Narration", role: .destructive) {
                 if let project = model.project {
-                    discovery.delete(project)
+                    Task { await discovery.delete(project) }
                 }
                 dismiss()
             }
@@ -592,10 +769,10 @@ struct NarrationFlowRoot: View {
         .task {
             if let startNeed {
                 model.importNeed(startNeed)
-                if let existing = model.existingProject(for: startNeed) {
-                    model.resume(existing)
+                if let existing = await model.existingProject(for: startNeed) {
+                    await model.resume(existing)
                 } else if startNeed.work.text?.isEmpty == false {
-                    model.buildParagraphs()
+                    await model.buildParagraphs()
                 } else {
                     // Textless need: stay on Import so the error is visible
                     // instead of opening an empty recording flow.
@@ -611,7 +788,9 @@ struct NarrationFlowRoot: View {
             NarrationHelpSheet()
         }
         .onChange(of: model.project) { _, newProject in
-            if let newProject { discovery.save(newProject) }
+            if let newProject {
+                Task { await discovery.save(newProject) }
+            }
         }
     }
 }
@@ -698,10 +877,10 @@ private struct FlowResumeRouter: View {
     @Bindable var model: NarrationFlowModel
 
     var body: some View {
-        if let project = model.project {
-            if let firstUnrecorded = project.paragraphs.first(where: { $0.state == .notRecorded || $0.state == .flagged }) {
+        if model.project != nil {
+            if let firstUnrecorded = model.paragraphs.first(where: { $0.state == .notRecorded || $0.state == .flagged }) {
                 RecordView(model: model, paragraphID: firstUnrecorded.id)
-            } else if !project.readyToAssemble {
+            } else if !model.readyToAssemble {
                 ReviewView(model: model)
             } else if !model.rightsAttested {
                 AssembleView(model: model)

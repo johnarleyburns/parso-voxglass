@@ -6,18 +6,27 @@ import VoxglassCore
 /// the ladder aggregator (all seven rungs), the last-good cache, the fetcher,
 /// the deterministic clock, and the My Narrations store. The surface is always
 /// full: the bundled seed floors it, live rungs enrich it, failures vanish.
+///
+/// My Narrations are `AudiobookProject`s in the SQLite production store (spec
+/// §4.3). Saving a narration also projects it into `ProductionPreviewStore` and
+/// relays it to the watch through `phoneProduction`.
 @MainActor
 @Observable
 public final class DiscoveryEnvironment {
     public let aggregator: LadderNeedsAggregator
-    public let store: NarrationProjectStore
+    public let repository: NarrationProjectRepository
     public let clock: any Clock
 
     public private(set) var needs: [NarrationNeed] = []
     public private(set) var featured: NarrationNeed?
     public private(set) var freshness: Freshness = .seedOnly
-    public private(set) var myNarrations: [NarrationProject] = []
+    public private(set) var myNarrations: [AudiobookProject] = []
     public private(set) var isRefreshing = false
+
+    /// The phone's production relay, set once at bootstrap so a narration saved
+    /// by the flow is projected into `ProductionPreviewStore` and pushed to the
+    /// watch (spec §4.3 / §13.6).
+    public var phoneProduction: PhoneProductionEnvironment?
 
     public var lastSnapshot: NeedsSnapshot?
 
@@ -26,20 +35,20 @@ public final class DiscoveryEnvironment {
         cache: any NeedsCaching = DiscoveryEnvironment.defaultCache(),
         fetcher: any HTTPFetching = URLSessionFetcher(),
         clock: any Clock = SystemClock(),
-        store: NarrationProjectStore = NarrationProjectStore()
+        repository: NarrationProjectRepository = NarrationProjectRepository()
     ) {
         self.aggregator = LadderNeedsAggregator(sources: sources, cache: cache, fetcher: fetcher, clock: clock)
-        self.store = store
+        self.repository = repository
         self.clock = clock
         #if DEBUG
         // `-uiTestResetNarrations` (phone smoke test) guarantees a fresh My
         // Narrations store so the record flow always starts at paragraph one,
         // regardless of what earlier test runs left behind.
         if ProcessInfo.processInfo.arguments.contains("-uiTestResetNarrations") {
-            store.deleteAll()
+            repository.resetAll()
         }
         #endif
-        self.myNarrations = store.loadAll()
+        Task { await self.reloadNarrations() }
     }
 
     /// All seven rungs, L0…L3.
@@ -87,17 +96,27 @@ public final class DiscoveryEnvironment {
 
     // MARK: - My Narrations
 
-    public func reloadNarrations() {
-        myNarrations = store.loadAll()
+    public func reloadNarrations() async {
+        myNarrations = await repository.allProjects()
     }
 
-    public func save(_ project: NarrationProject) {
-        store.save(project)
-        reloadNarrations()
+    /// Persists a narration project (the flow already wrote the bytes), projects
+    /// it to `ProductionPreviewStore`, and relays it to the watch. Idempotent.
+    public func save(_ project: AudiobookProject) async {
+        try? await repository.save(project)
+        await publish(project)
+        await reloadNarrations()
     }
 
-    public func delete(_ project: NarrationProject) {
-        store.delete(project.id)
-        reloadNarrations()
+    public func delete(_ project: AudiobookProject) async {
+        try? await repository.delete(project.id)
+        await reloadNarrations()
+    }
+
+    // MARK: - Projection to preview store + watch
+
+    private func publish(_ project: AudiobookProject) async {
+        guard let phoneProduction else { return }
+        await phoneProduction.localPublish(project)
     }
 }

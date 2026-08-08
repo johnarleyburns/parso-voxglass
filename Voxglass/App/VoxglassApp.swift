@@ -27,6 +27,7 @@ struct VoxglassApp: App {
                 .environmentObject(services.phoneAudioRelay)
                 .preferredColorScheme(.dark)
                 .task {
+                    discovery.phoneProduction = services.productionEnvironment
                     await services.bootstrapOnce()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
