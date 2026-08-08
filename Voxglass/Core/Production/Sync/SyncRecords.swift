@@ -3,12 +3,16 @@ import Foundation
 // MARK: - Record vocabulary
 
 /// CloudKit record types in the production zone (spec §5). Kept in Core as the
-/// shared vocabulary between the iPhone writer and the watch companion.
+/// shared vocabulary between the iPhone writer and the watch companion. The only
+/// additive schema change in this MVP is the `VGProductionAsset` record type
+/// (spec §6.2, §6.3): the content-addressed original uploads carry a `CKAsset`
+/// payload and are verified by SHA-256 before the local record becomes evictable.
 public enum ProductionRecordType: String, Sendable, Equatable {
     case project = "VGProductionProject"
     case chapter = "VGProductionChapter"
     case paragraph = "VGProductionParagraph"
     case event = "VGReviewEvent"
+    case asset = "VGProductionAsset"
 
     public static func recordName(prefix: String, id: UUID) -> String {
         "\(prefix)-\(id.uuidString)"
@@ -59,6 +63,14 @@ public enum ProductionField {
     public static let tag = "tag"
     public static let device = "device"
     public static let createdAt = "createdAt"
+    // Asset (VGProductionAsset, §6.2)
+    public static let assetID = "assetID"
+    public static let assetSHA = "sha256"
+    public static let assetByteCount = "byteCount"
+    public static let assetExt = "ext"
+    public static let assetContentType = "contentType"
+    public static let assetTakeID = "takeID"
+    public static let assetChapterID = "chapterID"
 }
 
 // MARK: - SyncFieldValue
@@ -119,6 +131,43 @@ public struct SyncRecord: Codable, Sendable, Equatable {
 /// detection (spec §13.2).
 public enum ProductionAssetField {
     public static let proxy = "proxyAsset"
+    /// The field the content-addressed original `CKAsset` is carried under for
+    /// `VGProductionAsset` records (spec §6.2).
+    public static let original = "originalAsset"
+}
+
+// MARK: - AssetMirrorRecord
+
+/// The mirrorable subset of a `ProductionAssetRecord` that round-trips through
+/// the `VGProductionAsset` CloudKit record (spec §6.2): the content identity and
+/// the linkage that lets a hydrated paragraph find its original. Phone-local
+/// bookkeeping (state, pinning, working set, last access, remote id) stays local.
+public struct AssetMirrorRecord: Codable, Sendable, Equatable {
+    public let id: UUID
+    public let sha256: String
+    public let byteCount: Int64
+    public let ext: String
+    public let contentType: String
+    public let takeID: UUID?
+    public let chapterID: UUID?
+
+    public init(
+        id: UUID,
+        sha256: String,
+        byteCount: Int64,
+        ext: String,
+        contentType: String,
+        takeID: UUID? = nil,
+        chapterID: UUID? = nil
+    ) {
+        self.id = id
+        self.sha256 = sha256
+        self.byteCount = byteCount
+        self.ext = ext
+        self.contentType = contentType
+        self.takeID = takeID
+        self.chapterID = chapterID
+    }
 }
 
 // MARK: - ProjectionRecordCodec
@@ -234,6 +283,50 @@ public struct ProjectionRecordCodec: Sendable {
             recordType: ProductionRecordType.event.rawValue,
             recordName: ProductionRecordType.recordName(prefix: "event", id: event.id),
             fields: fields
+        )
+    }
+
+    /// Encodes the content-addressed original as a `VGProductionAsset` record.
+    /// The record name is derived from the local asset id so a re-upload after a
+    /// mid-flight kill overwrites the same server record (idempotent). The
+    /// `CKAsset` payload is attached by the transport, which resolves the file by
+    /// `sha256`; the phone never embeds the blob in the record value itself.
+    public func assetRecord(from mirror: AssetMirrorRecord) -> SyncRecord {
+        var fields: [String: SyncFieldValue] = [
+            ProductionField.assetID: .string(mirror.id.uuidString),
+            ProductionField.assetSHA: .string(mirror.sha256),
+            ProductionField.assetByteCount: .int64(mirror.byteCount),
+            ProductionField.assetExt: .string(mirror.ext),
+            ProductionField.assetContentType: .string(mirror.contentType)
+        ]
+        if let takeID = mirror.takeID {
+            fields[ProductionField.assetTakeID] = .string(takeID.uuidString)
+        }
+        if let chapterID = mirror.chapterID {
+            fields[ProductionField.assetChapterID] = .string(chapterID.uuidString)
+        }
+        return SyncRecord(
+            recordType: ProductionRecordType.asset.rawValue,
+            recordName: ProductionRecordType.recordName(prefix: "asset", id: mirror.id),
+            fields: fields
+        )
+    }
+
+    /// Decodes a `VGProductionAsset` record back into its mirror. The `CKAsset`
+    /// blob arrives in `assetFields[ProductionAssetField.original]`; callers
+    /// verify its SHA-256 against `sha256` before writing it locally (§6.3).
+    public func assetMirror(from record: SyncRecord) -> AssetMirrorRecord? {
+        guard record.recordType == ProductionRecordType.asset.rawValue else { return nil }
+        let f = record.fields
+        guard let id = f[ProductionField.assetID]?.stringValue().flatMap(UUID.init(uuidString:)) else { return nil }
+        return AssetMirrorRecord(
+            id: id,
+            sha256: f[ProductionField.assetSHA]?.stringValue() ?? "",
+            byteCount: f[ProductionField.assetByteCount]?.int64Value() ?? 0,
+            ext: f[ProductionField.assetExt]?.stringValue() ?? "wav",
+            contentType: f[ProductionField.assetContentType]?.stringValue() ?? "audio/wav",
+            takeID: f[ProductionField.assetTakeID]?.stringValue().flatMap(UUID.init(uuidString:)),
+            chapterID: f[ProductionField.assetChapterID]?.stringValue().flatMap(UUID.init(uuidString:))
         )
     }
 

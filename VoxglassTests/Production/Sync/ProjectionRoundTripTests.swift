@@ -145,6 +145,38 @@ import Testing
         ))
     }
 
+    @Test func assetRecord_roundTripsThroughCodec() {
+        let mirror = AssetMirrorRecord(
+            id: UUID(uuidString: "6C6B36F5-AAAA-BBBB-CCCC-00000000000A")!,
+            sha256: "deadbeef",
+            byteCount: 42,
+            ext: "wav",
+            contentType: "audio/wav",
+            takeID: UUID(uuidString: "6C6B36F5-AAAA-BBBB-CCCC-00000000000B")!,
+            chapterID: UUID(uuidString: "6C6B36F5-AAAA-BBBB-CCCC-00000000000C")!
+        )
+
+        let record = codec.assetRecord(from: mirror)
+        #expect(record.recordType == "VGProductionAsset")
+        #expect(record.recordName == "asset-\(mirror.id.uuidString)")
+        #expect(record.fields["sha256"] == .string("deadbeef"))
+        #expect(record.fields["byteCount"] == .int64(42))
+        #expect(record.fields["ext"] == .string("wav"))
+
+        let decoded = codec.assetMirror(from: record)
+        #expect(decoded == mirror)
+    }
+
+    @Test func assetRecord_withoutLinkage_roundTripsWithNilLinkage() {
+        let mirror = AssetMirrorRecord(
+            id: UUID(), sha256: "sha", byteCount: 10, ext: "caf", contentType: "audio/x-caf"
+        )
+        let decoded = codec.assetMirror(from: codec.assetRecord(from: mirror))
+        #expect(decoded?.id == mirror.id)
+        #expect(decoded?.takeID == nil)
+        #expect(decoded?.chapterID == nil)
+    }
+
     // MARK: - Diff
 
     @Test func diff_noChangesWhenIdentical() {

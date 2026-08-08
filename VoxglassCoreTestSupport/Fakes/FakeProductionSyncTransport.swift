@@ -24,6 +24,16 @@ public final class FakeProductionSyncTransport: ProductionSyncTransport, @unchec
     /// The change tag the fake reports for a conflict.
     public var conflictChangeTag = "server-tag-1"
 
+    /// Simulates a server that stored different bytes than the phone pushed: on a
+    /// fetch, the `sha256` field of the named record is rewritten, so the uploader's
+    /// re-read verification (spec §6.3 step 3) sees a mismatch and refuses to mark
+    /// the asset `localAndRemote`.
+    public var rewrittenSHAOnFetch: [String: String] = [:]
+
+    /// When set, the next `fetchRecords` that includes this record name throws a
+    /// transient error once (a mid-download interruption for the resume tests).
+    public var failFetchOnceForRecord: String?
+
     public init() {}
 
     public func seed(_ records: [SyncRecord]) {
@@ -117,6 +127,24 @@ public final class FakeProductionSyncTransport: ProductionSyncTransport, @unchec
             for name in recordNames {
                 serverRecords[name] = nil
             }
+        }
+    }
+
+    public func fetchRecords(_ recordNames: [String]) async throws -> [SyncRecord] {
+        try locked {
+            if let failing = failFetchOnceForRecord, recordNames.contains(failing) {
+                failFetchOnceForRecord = nil
+                throw SyncError.transient(reason: "fake mid-fetch interruption", retryAfterSeconds: nil)
+            }
+            var result: [SyncRecord] = []
+            for name in recordNames {
+                guard var record = serverRecords[name]?.record else { continue }
+                if let rewritten = rewrittenSHAOnFetch[name] {
+                    record.fields[ProductionField.assetSHA] = .string(rewritten)
+                }
+                result.append(record)
+            }
+            return result
         }
     }
 

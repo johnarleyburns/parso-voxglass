@@ -67,8 +67,15 @@ public protocol ProductionSyncTransport: Sendable {
     /// server record's change tag so the engine can adopt it and retry once.
     func pushRecords(_ records: [SyncRecord]) async throws
 
+    /// Fetches records by name, returning the current server copies. Used by the
+    /// asset uploader to re-read a `VGProductionAsset` record after a push and
+    /// verify its `sha256` field (spec §6.3 step 3), and by the hydration
+    /// executor to download the blob (`assetFields`) it needs to restore a
+    /// `remoteOnly` original. `CKAsset` payloads arrive in `assetFields`.
+    func fetchRecords(_ recordNames: [String]) async throws -> [SyncRecord]
+
     /// Deletes records by name. Used to withdraw a hidden project and to consume
-    /// `VGReviewEvent` records after the Mac has applied them (spec §13.7).
+    /// `VGReviewEvent` records after they have been applied and folded.
     func deleteRecords(_ recordNames: [String]) async throws
 }
 
@@ -118,9 +125,9 @@ public enum PublishOutcome: Sendable, Equatable {
 public struct IngestReport: Sendable, Equatable {
     /// Review events decoded from fetched `VGReviewEvent` records, in fetch order.
     public var events: [ReviewEvent]
-    /// Record names of the consumed events; the Mac deletes them after applying.
+    /// Record names of the consumed events; the consumer deletes them after applying.
     public var eventRecordNames: [String]
-    /// The freshest projection in the zone (nil until the Mac has published once).
+    /// The freshest projection in the zone (nil until the phone has published once).
     public var projection: SyncProjection?
     /// Proxy audio downloaded with the fetch, keyed by paragraph ID (phone side).
     public var proxyAssets: [UUID: Data]

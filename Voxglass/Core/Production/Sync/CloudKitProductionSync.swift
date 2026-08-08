@@ -19,7 +19,8 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
     private let database: CKDatabase
     private let zoneID: CKRecordZone.ID
     private let codec = ProjectionRecordCodec()
-    /// Resolves a proxy SHA to a file the CKAsset can be backed by (Studio cache).
+    /// Resolves a content-addressed SHA to a file the `CKAsset` can be backed by
+    /// (paragraph proxies and `VGProductionAsset` originals in the project cache).
     private let proxyFileProvider: @Sendable (String) async throws -> URL?
 
     public init(
@@ -120,6 +121,41 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
                         changeTokenExpired: expired
                     )
                     continuation.resume(returning: outcome)
+                case .failure(let error):
+                    continuation.resume(throwing: Self.mapError(error))
+                }
+            }
+
+            self.database.add(operation)
+        }
+    }
+
+    /// Fetches records by name and returns their server copies. Used after a push
+    /// to re-read a `VGProductionAsset` record and verify its `sha256` field
+    /// (§6.3 step 3), and by hydration to download the blob — `CKAsset`s are
+    /// decoded into `assetFields` by `record(from:)`.
+    public func fetchRecords(_ recordNames: [String]) async throws -> [SyncRecord] {
+        guard !recordNames.isEmpty else { return [] }
+        try await ensureZoneExists()
+        let ids = recordNames.map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
+        let operation = CKFetchRecordsOperation(recordIDs: ids)
+
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[SyncRecord], Error>) in
+            var fetched: [SyncRecord] = []
+            let lock = NSLock()
+
+            operation.perRecordResultBlock = { _, result in
+                if case .success(let record) = result {
+                    lock.lock()
+                    fetched.append(Self.record(from: record))
+                    lock.unlock()
+                }
+            }
+
+            operation.fetchRecordsResultBlock = { result in
+                switch result {
+                case .success:
+                    continuation.resume(returning: fetched)
                 case .failure(let error):
                     continuation.resume(throwing: Self.mapError(error))
                 }
@@ -269,6 +305,12 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
                let sha = record.fields[ProductionField.proxySHA]?.stringValue(),
                let url = try await proxyFileProvider(sha) {
                 ck[ProductionAssetField.proxy] = CKAsset(fileURL: url)
+            }
+            // Attach the content-addressed original as a CKAsset (§6.3 step 2).
+            if record.recordType == ProductionRecordType.asset.rawValue,
+               let sha = record.fields[ProductionField.assetSHA]?.stringValue(),
+               let url = try await proxyFileProvider(sha) {
+                ck[ProductionAssetField.original] = CKAsset(fileURL: url)
             }
             result.append(ck)
         }

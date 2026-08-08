@@ -1,18 +1,21 @@
 import Foundation
 
-/// Applies fetched review events to the Mac's store and decides whether to republish.
-/// Implemented by the Studio; the fold semantics live in `ReviewEventFolder` (§14.2).
+/// Applies fetched review events to a store and decides whether to republish.
+/// The fold semantics live in `ReviewEventFolder` (§14.2). The phone as the sole
+/// writer folds watch/iPhone events into its local project store through
+/// `ProductionReviewEventApplicator`; this ingestor is the retained generic
+/// fetch→dedupe→append→fold loop for a caller that supplies its own sink.
 public protocol ProductionEventSink: Sendable {
     /// Appends events idempotently (`INSERT OR IGNORE` by event id), folds the newly
     /// applied events, and returns the paragraph IDs whose review state changed.
     func apply(events: [ReviewEvent]) async throws -> Set<UUID>
 
-    /// Called after applying when review state changed; the Mac republishes so the
-    /// phone/watch see the new state (§14.5 Flow A step 4).
+    /// Called after applying when review state changed; the caller republishes so
+    /// other devices see the new state (§14.5 Flow A step 4).
     func republishAfterReviewChange(changedParagraphIDs: Set<UUID>) async
 }
 
-/// Mac-side event ingestion (spec §13.7): fetch → dedupe → append → fold → delete
+/// Event ingestion (spec §13.7): fetch → dedupe → append → fold → delete
 /// consumed event records → republish if any review state changed. The dedupe/append/
 /// fold step is performed by the injected `ProductionEventSink`; `sinkProvider`
 /// returns the sink for the currently open project (the store changes per project).

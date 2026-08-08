@@ -2,8 +2,8 @@ import Foundation
 
 /// File-backed queue of review events the phone created while CloudKit was
 /// unreachable (spec §13.7 retry policy, §14.5 Flow D). Events are append-only and
-/// idempotent by their `id`, so a retried push can never duplicate a review action on
-/// the Mac. Reuses the existing per-event-file storage pattern from `WatchLink`.
+/// idempotent by their `id`, so a retried push can never duplicate a review action.
+/// Reuses the existing per-event-file storage pattern from `WatchLink`.
 public struct ReviewEventOutbox: Sendable {
 
     public struct FlushResult: Sendable, Equatable {
@@ -35,12 +35,21 @@ public struct ReviewEventOutbox: Sendable {
     }
 
     /// Pushes all pending events over the transport. On failure nothing is removed,
-    /// so the events are retried on the next flush; the Mac's fold dedupes by id.
+    /// so the events are retried on the next flush; the fold dedupes by id.
     public func flush(over engine: ProductionSyncEngine) async throws -> FlushResult {
         let pending = try storage.read()
         guard !pending.isEmpty else { return FlushResult() }
         try await engine.pushEvents(pending)
         try storage.remove(ids: pending.map(\.id))
         return FlushResult(pushed: pending, remaining: [])
+    }
+
+    /// Removes already-applied events from the queue. The phone folds events into
+    /// its local project store (the phone is the writer, spec §4.2) and calls this
+    /// only after the fold succeeded, so a retried fold can never duplicate an
+    /// action and an interrupted fold leaves the events queued for the next run.
+    public func consume(ids: [UUID]) throws {
+        guard !ids.isEmpty else { return }
+        try storage.remove(ids: ids)
     }
 }

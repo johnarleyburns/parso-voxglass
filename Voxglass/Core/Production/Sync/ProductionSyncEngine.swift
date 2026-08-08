@@ -175,8 +175,8 @@ public actor ProductionSyncEngine {
         )
     }
 
-    /// Deletes consumed `VGReviewEvent` records after the Mac has applied and folded
-    /// them (spec §13.7: "they are a queue, not a log of record").
+    /// Deletes consumed `VGReviewEvent` records after they have been applied and
+    /// folded (spec §13.7: "they are a queue, not a log of record").
     public func deleteConsumedEvents(_ recordNames: [String]) async throws {
         guard !recordNames.isEmpty else { return }
         try await withTransientRetry { try await self.transport.deleteRecords(recordNames) }
@@ -225,8 +225,10 @@ public actor ProductionSyncEngine {
             do {
                 try await self.transport.pushRecords(records)
             } catch SyncError.serverRecordChanged(let name, let tag, let serverRevision) {
-                // Retry once with the server record's change tag (the Mac is the only
-                // writer; this is nearly always a duplicate-publish race with itself).
+                // Retry once with the server record's change tag. The phone is the only
+                // writer; a conflict here is a reinstall racing an in-flight upload, so
+                // the branch degrades to adopt-server-tag, retry-once, phone wins
+                // (§4.2). No conflict is ever surfaced to the user.
                 // For a project record, adopt the server's revision (last-writer-wins).
                 var adopted: Int?
                 if let index = records.firstIndex(where: { $0.recordName == name }) {

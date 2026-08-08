@@ -172,20 +172,24 @@ public final class NarrationProjectRepository {
     }
 
     /// Moves a freshly captured take file into the content-addressed original
-    /// store and builds the `Take` row to attach to its paragraph (spec §9.4
-    /// step 4: bytes durable before metadata mutation).
+    /// store, builds the `Take` row to attach to its paragraph (spec §9.4
+    /// step 4: bytes durable before metadata mutation), and schedules the iCloud
+    /// upload by creating a `.localOnly` asset record (§9.4 step 6) — the durable
+    /// queue entry `CloudAssetUploader` verifies and flips to `.localAndRemote`.
     public func ingestCapturedTake(
         fileURL: URL,
         paragraphID: UUID,
         projectID: UUID,
         captured: CapturedTake,
-        textHash: String
+        textHash: String,
+        chapterID: UUID? = nil,
+        chapterOrdinal: Int? = nil
     ) async throws -> Take {
         let assets = fileStore(for: projectID)
         let ext = fileURL.pathExtension.isEmpty ? "caf" : fileURL.pathExtension
         let contentType = ext.lowercased() == "wav" ? "audio/wav" : "audio/x-caf"
         let ref = try await assets.ingest(fileAt: fileURL, ext: ext, contentType: contentType, subdirectory: .original, moving: true)
-        return Take(
+        let take = Take(
             id: ids.next(),
             paragraphID: paragraphID,
             assetRef: ref,
@@ -195,6 +199,20 @@ public final class NarrationProjectRepository {
             format: captured.format,
             textHashAtRecording: textHash
         )
+        // The bytes are durable in the store; now persist the upload queue entry.
+        // `.localOnly` is never evictable, and the record id becomes the
+        // `VGProductionAsset` record name (spec §6.2).
+        let assetRepository = SQLiteProductionAssetRepository(databaseURL: layout(for: projectID).databaseURL)
+        try await assetRepository.upsert(ProductionAssetRecord(
+            id: ids.next(),
+            sha256: ref.sha256,
+            byteCount: Int64(ref.byteCount),
+            state: .localOnly,
+            chapterID: chapterID,
+            chapterOrdinal: chapterOrdinal,
+            lastAccessedAt: clock.now
+        ))
+        return take
     }
 
     /// The on-disk URL of a take's audio in the package's content store.

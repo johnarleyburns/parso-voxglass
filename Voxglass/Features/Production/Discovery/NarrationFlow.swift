@@ -471,12 +471,15 @@ final class NarrationFlowModel {
             levelTask = nil
             guard let project else { return }
             let textHash = project.allParagraphs.first { $0.id == id }?.textHash ?? ""
+            let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == id } }
             let take = try await repository.ingestCapturedTake(
                 fileURL: captured.fileURL,
                 paragraphID: id,
                 projectID: project.id,
                 captured: captured,
-                textHash: textHash
+                textHash: textHash,
+                chapterID: chapter?.id,
+                chapterOrdinal: chapter?.ordinal
             )
             updateParagraph(id) { paragraph in
                 paragraph.takes.append(take)

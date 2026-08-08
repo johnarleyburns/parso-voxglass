@@ -25,9 +25,9 @@ public final class PhoneProductionEnvironment {
         narrationRepository: NarrationProjectRepository = NarrationProjectRepository()
     ) {
         self.previewStore = previewStore ?? ProductionPreviewStore()
-        self.sync = PhoneProductionSync(previewStore: self.previewStore)
-        self.watchTransport = watchTransport ?? WatchConnectivityTransport()
         self.narrationRepository = narrationRepository
+        self.sync = PhoneProductionSync(previewStore: self.previewStore, narrationRepository: narrationRepository)
+        self.watchTransport = watchTransport ?? WatchConnectivityTransport()
         self.watchTransport.onEventReceived = { [weak self] event in
             self?.sync.enqueue(event)
         }

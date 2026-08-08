@@ -36,6 +36,38 @@ import Testing
             || serverProject?.recordChangeTag == transport.conflictChangeTag)
     }
 
+    /// §4.2: the conflict branch degrades to adopt-server-tag, retry-once, phone
+    /// wins — no conflict is ever surfaced. The publish must never throw and must
+    /// always resolve to a published/withdrawn outcome, so there is no reachable
+    /// user-visible conflict UI path.
+    @Test func publishConflict_neverSurfacesToUser() async throws {
+        let project = ProjectFixtures.librivoxReady()
+        let projectName = "project-\(project.id.uuidString)"
+
+        let transport = FakeProductionSyncTransport()
+        transport.serverRevisionOnConflict = 4
+        transport.conflictOnRecord = projectName
+
+        let engine = ProductionSyncEngine(transport: transport, state: InMemorySyncStateStore(), config: noOpConfig)
+        let outcome = try await engine.publish(project: project, counts: counts(for: project))
+
+        // The conflict was absorbed: the outcome is a normal publish result and no
+        // error escaped to a caller that might render it.
+        switch outcome {
+        case .published(let revision, _, _):
+            #expect(revision == 5)
+        case .noChanges, .withdrawn:
+            Issue.record("conflict publish must land, got \(outcome)")
+        case .skipped:
+            Issue.record("conflict publish must not be skipped, got \(outcome)")
+        }
+
+        // The engine's snapshot now matches the server head, so the next publish is
+        // a clean no-change — the retry-once path fully converged.
+        let again = try await engine.publish(project: project, counts: counts(for: project))
+        #expect(again == .noChanges)
+    }
+
     @Test func identicalPublish_isNoChange() async throws {
         let project = ProjectFixtures.librivoxReady()
         let transport = FakeProductionSyncTransport()
