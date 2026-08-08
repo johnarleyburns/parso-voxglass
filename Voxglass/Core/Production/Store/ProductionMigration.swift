@@ -12,7 +12,8 @@ public struct ProductionMigration: Sendable {
     }
 
     public static let all: [ProductionMigration] = [
-        ProductionMigration(id: 1, name: "initial_production_schema", statements: schemaV1)
+        ProductionMigration(id: 1, name: "initial_production_schema", statements: schemaV1),
+        ProductionMigration(id: 2, name: "production_asset_table", statements: schemaV2)
     ]
 
     static let schemaV1: [String] = [
@@ -211,5 +212,28 @@ public struct ProductionMigration: Sendable {
             report_json    TEXT
         )
         """
+    ]
+
+    /// iCloud offload state for one original (or regenerable) asset (§6.1). The
+    /// columns mirror `ProductionAssetRecord` one-for-one; the eviction executor
+    /// reads the working cache from this table and never re-derives evictability.
+    static let schemaV2: [String] = [
+        """
+        CREATE TABLE production_asset (
+            id               TEXT PRIMARY KEY NOT NULL,
+            sha256           TEXT NOT NULL,
+            byte_count       INTEGER NOT NULL,
+            state            TEXT NOT NULL,
+            chapter_id       TEXT,
+            chapter_ordinal  INTEGER,
+            is_pinned        INTEGER NOT NULL DEFAULT 0,
+            is_working_set   INTEGER NOT NULL DEFAULT 0,
+            last_accessed_at REAL NOT NULL,
+            remote_asset_id  TEXT
+        )
+        """,
+        "CREATE INDEX idx_production_asset_state ON production_asset(state)",
+        "CREATE INDEX idx_production_asset_chapter ON production_asset(chapter_id)",
+        "CREATE INDEX idx_production_asset_sha ON production_asset(sha256)"
     ]
 }

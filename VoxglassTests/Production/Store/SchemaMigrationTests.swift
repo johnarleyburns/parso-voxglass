@@ -13,7 +13,7 @@ import VoxglassCoreTestSupport
             "schema_migrations", "project", "chapter", "paragraph",
             "take", "pronunciation", "paragraph_pronunciation",
             "review_note", "review_event", "render_cache",
-            "proxy_cache", "sync_state", "export_run"
+            "proxy_cache", "sync_state", "export_run", "production_asset"
         ]
 
         let rows = try await db.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -36,9 +36,18 @@ import VoxglassCoreTestSupport
         try await snapshotDB.open()
         try await snapshotDB.executeRaw(snapshotSQL)
 
-        // Build the current schema via the migration runner.
+        // Build the migration-1 schema in isolation. prepare() would apply the
+        // whole list (now including migration 2), but the v1 snapshot must
+        // match the DDL of migration 1 exactly — this is the drift guard that
+        // keeps the snapshot trustworthy for later migrations.
+        let v1 = try #require(ProductionMigration.all.first { $0.id == 1 })
         let migratedDB = ProjectDatabase.makeTemporary(named: "migrated_v1")
-        try await migratedDB.prepare()
+        try await migratedDB.open()
+        try await migratedDB.executeRaw("BEGIN IMMEDIATE TRANSACTION")
+        for statement in v1.statements {
+            try await migratedDB.executeRaw(statement)
+        }
+        try await migratedDB.executeRaw("COMMIT")
 
         let snapshotSchema = try await sqliteMaster(from: snapshotDB)
         let migratedSchema = try await sqliteMaster(from: migratedDB)
@@ -74,11 +83,12 @@ import VoxglassCoreTestSupport
         """)
         try await db.executeRaw("INSERT INTO schema_migrations (id, name, applied_at) VALUES (1, 'initial_production_schema', 0)")
 
-        // prepare() must be a no-op, not a schema conflict.
+        // prepare() must be a no-op for migration 1 and apply only the later
+        // migrations (now migration 2), not re-run anything already stamped.
         try await db.prepare()
 
         let rows = try await db.query("SELECT COUNT(*) AS cnt FROM schema_migrations")
-        #expect(Int(rows.first?.int("cnt") ?? 0) == 1)
+        #expect(Int(rows.first?.int("cnt") ?? 0) == ProductionMigration.all.count)
     }
 
     private func sqliteMaster(from db: ProjectDatabase) async throws -> [String] {

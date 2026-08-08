@@ -5,10 +5,13 @@ public struct ProjectPackage: Sendable, Equatable {
     public var integrityFindings: [IntegrityFinding] = []
     public var hasAutosaveRecovery: Bool = false
     public var autosaveSessionURL: URL?
-    public var manifestURL: URL { root.appendingPathComponent("manifest.json") }
-    public var databaseURL: URL { root.appendingPathComponent("project.sqlite") }
-    public var autosaveTakesDirectory: URL { root.appendingPathComponent("Autosave/takes") }
-    public var autosaveSessionFileURL: URL { root.appendingPathComponent("Autosave/session.json") }
+
+    private var layout: ProductionProjectLayout { ProductionProjectLayout(root: root) }
+
+    public var manifestURL: URL { layout.manifestURL }
+    public var databaseURL: URL { layout.databaseURL }
+    public var autosaveTakesDirectory: URL { layout.autosaveTakesURL }
+    public var autosaveSessionFileURL: URL { layout.autosaveSessionURL }
 
     public static func create(
         title: String,
@@ -19,6 +22,7 @@ public struct ProjectPackage: Sendable, Equatable {
         ids: any IDGenerator
     ) async throws -> ProjectPackage {
         let fm = FileManager.default
+        let layout = ProductionProjectLayout(root: directory)
 
         guard !fm.fileExists(atPath: directory.path) else {
             throw PackageError.notAPackage(directory)
@@ -27,13 +31,8 @@ public struct ProjectPackage: Sendable, Equatable {
         do {
             try fm.createDirectory(at: directory, withIntermediateDirectories: true)
 
-            let subdirs = [
-                "Audio/Original", "Audio/Render", "Audio/Proxy",
-                "Text/source", "Text/extracted",
-                "Artwork", "Exports", "Autosave/takes", "Trash", "tmp"
-            ]
-            for subdir in subdirs {
-                try fm.createDirectory(at: directory.appendingPathComponent(subdir, isDirectory: true), withIntermediateDirectories: true)
+            for subdir in layout.directories {
+                try fm.createDirectory(at: subdir, withIntermediateDirectories: true)
             }
 
             let projectID = ids.next()
@@ -52,9 +51,9 @@ public struct ProjectPackage: Sendable, Equatable {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let manifestData = try encoder.encode(manifest)
-            try manifestData.write(to: directory.appendingPathComponent("manifest.json"), options: .atomic)
+            try manifestData.write(to: layout.manifestURL, options: .atomic)
 
-            let db = ProjectDatabase(url: directory.appendingPathComponent("project.sqlite"))
+            let db = ProjectDatabase(url: layout.databaseURL)
             try await db.prepare()
 
             try setPackageFlag(at: directory)
@@ -69,12 +68,13 @@ public struct ProjectPackage: Sendable, Equatable {
 
     public static func open(_ url: URL) async throws -> ProjectPackage {
         let fm = FileManager.default
+        let layout = ProductionProjectLayout(root: url)
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
             throw PackageError.notAPackage(url)
         }
 
-        let manifestURL = url.appendingPathComponent("manifest.json")
+        let manifestURL = layout.manifestURL
         guard fm.fileExists(atPath: manifestURL.path) else {
             throw PackageError.notAPackage(url)
         }
@@ -92,19 +92,19 @@ public struct ProjectPackage: Sendable, Equatable {
         }
 
         // Open the DB and run migrations (spec §6.4).
-        let db = ProjectDatabase(url: url.appendingPathComponent("project.sqlite"))
+        let db = ProjectDatabase(url: layout.databaseURL)
         try await db.prepare()
 
         // Shallow integrity check: structure + asset presence (spec §6.4).
         var findings: [IntegrityFinding] = []
-        let store = SQLiteProductionStore(databaseURL: url.appendingPathComponent("project.sqlite"))
+        let store = SQLiteProductionStore(databaseURL: layout.databaseURL)
         if let project = try? await store.load() {
             let assets = FileAssetStore(root: url)
             findings = ProjectIntegrity.check(project, assets: assets)
         }
 
         // Surface autosave recovery if a session exists (spec §6.4).
-        let sessionURL = url.appendingPathComponent("Autosave/session.json")
+        let sessionURL = layout.autosaveSessionURL
         let hasRecovery = fm.fileExists(atPath: sessionURL.path)
 
         var pkg = ProjectPackage(root: url)
@@ -128,9 +128,12 @@ public struct ProjectPackage: Sendable, Equatable {
     public func copy(to url: URL) throws {
         let fm = FileManager.default
         let sourceRoot = root.resolvingSymlinksInPath().standardizedFileURL
-        let expandedExcludes = (["Audio/Render", "Audio/Proxy", "Exports", "Trash", "tmp"] as Set<String>).map {
-            sourceRoot.appendingPathComponent($0).standardizedFileURL.path
-        }
+        let layout = ProductionProjectLayout(root: sourceRoot)
+        let expandedExcludes = [layout.renderAudioURL, layout.proxyAudioURL,
+                                layout.exportStagingURL, layout.exportsURL,
+                                layout.trashURL, layout.tmpURL]
+            .compactMap { layout.relativePath(of: $0) }
+            .map { sourceRoot.appendingPathComponent($0).standardizedFileURL.path }
 
         try fm.createDirectory(at: url, withIntermediateDirectories: true)
 

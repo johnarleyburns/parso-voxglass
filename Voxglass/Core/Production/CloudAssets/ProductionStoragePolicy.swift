@@ -73,6 +73,16 @@ public struct ProductionCacheLimits: Codable, Sendable, Equatable {
     public static func isValidWorkingCacheSize(_ bytes: Int64) -> Bool {
         bytes >= 2 * 1024 * 1024 * 1024 && bytes <= 100 * 1024 * 1024 * 1024
     }
+
+    /// First-run default (D-5): clamp the 10 GB default down to about 15% of the
+    /// device's free space so a small device never adopts a cache it cannot
+    /// afford, while never falling below the 2 GB valid floor or above the
+    /// default. The user can raise the value deliberately afterwards.
+    public static func firstRunWorkingCache(freeBytes: Int64) -> Int64 {
+        let minimum: Int64 = 2 * 1024 * 1024 * 1024
+        let fifteenPercent = freeBytes * 15 / 100
+        return Swift.max(minimum, Swift.min(defaultWorkingCacheBytes, fifteenPercent))
+    }
 }
 
 public enum ProductionAssetKind: String, Codable, Sendable, Equatable {
