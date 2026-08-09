@@ -310,10 +310,10 @@ check_no_signin_ui() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-15: iPhone never records long works. The iOS discovery UI must gate any
-# start-narrating CTA on `narratableOn` (derived from lengthClass), and must
-# present only the handoff for long needs. Enforced here by requiring that any
-# iOS discovery file rendering a record CTA references the narratableOn gate.
+# G-15: The record action is offered for every need regardless of length (N-1).
+# The iOS discovery UI must gate any start-narrating CTA on `recordableOniOS`
+# (text presence), never on length, and the retired `LongWorkHandoffSheet` must
+# not reappear.
 # ──────────────────────────────────────────────────────────────
 check_iphone_never_records_long() {
   local dir="Voxglass/Features/Production/Discovery"
@@ -323,17 +323,33 @@ check_iphone_never_records_long() {
   local files
   files=$(find "$dir" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -lE 'Start narrating|Start ▸' 2>/dev/null || true)
   for f in $files; do
-    if ! grep -q 'narratableOn' "$f"; then
-      violate "G-15: $f renders a start-narrating CTA without a narratableOn gate"
+    if ! grep -q 'recordableOniOS' "$f"; then
+      violate "G-15: $f renders a start-narrating CTA without a recordableOniOS gate"
     fi
   done
-  # Long needs must route to the handoff, never a record button.
-  if [ -n "$files" ]; then
-    local handoff
-    handoff=$(find "$dir" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -l 'LongWorkHandoff' 2>/dev/null || true)
-    if [ -z "$handoff" ]; then
-      violate "G-15: iOS discovery must present the long-work handoff (LongWorkHandoff)"
-    fi
+  # The Mac handoff is retired (N-1): LongWorkHandoff must not be referenced.
+  local handoff
+  handoff=$(find "$dir" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -l 'LongWorkHandoff' 2>/dev/null || true)
+  if [ -n "$handoff" ]; then
+    while read -r line; do
+      violate "G-15: retired Mac handoff referenced (N-1): $line"
+    done <<< "$handoff"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-P5: No user-facing string in `Voxglass/Features/Production/**` or
+# `VoxglassWatch/Production/**` may contain "Mac" (N-1, §15.6). The Mac is gone;
+# "Mac" as a word anywhere in the shipping production surfaces is a regression.
+# ──────────────────────────────────────────────────────────────
+check_no_mac_strings() {
+  local dirs="Voxglass/Features/Production VoxglassWatch/Production"
+  local matches
+  matches=$(grep -rnw --include='*.swift' 'Mac' $dirs 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-P5: 'Mac' reference in production surface: $line"
+    done <<< "$matches"
   fi
 }
 
@@ -482,6 +498,7 @@ check_no_auto_upload
 check_discovery_total
 check_no_signin_ui
 check_iphone_never_records_long
+check_no_mac_strings
 check_pd_gate
 check_discovery_io_seam
 check_seed_floor

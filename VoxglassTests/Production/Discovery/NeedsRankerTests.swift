@@ -18,16 +18,19 @@ import VoxglassCoreTestSupport
         #expect(ranked.map(\.work.title) == ["Open", "Proof", "Weekly", "Gap", "Evergreen"])
     }
 
-    @Test func platformActionabilityWithLongNeeds() {
-        // On iPhone, short needs (actionable) rank above handoff-only long needs
-        // within the same signal.
+    @Test func allNeedsAreActionableOnIPhoneUnderN1() {
+        // N-1: the record action is offered for every need regardless of length,
+        // so length no longer gates actionability on iPhone. Both short and long
+        // needs are narratable; the actionability tie-break is neutral.
         let long = makeNeed(title: "Frankenstein", author: "Mary Shelley", estSeconds: 28800)
         let short = makeNeed(title: "Hope", author: "Emily Dickinson", estSeconds: 40, signal: .evergreen)
-        let ranked = ranker.rank([long, short], for: .iOS)
-        #expect(ranked.first!.work.title == "Hope")
-        #expect(ranked.last!.work.title == "Frankenstein")
-        #expect(long.narratableOn == [.mac])
+        #expect(long.narratableOn == [.iOS, .mac])
         #expect(short.narratableOn == [.iOS, .mac])
+
+        // Same signal → actionability tie → taste tie → short-first only applies
+        // within the short rail, so the deterministic id tie-break decides.
+        let ranked = ranker.rank([long, short], for: .iOS)
+        #expect(Set(ranked.map(\.work.title)) == ["Frankenstein", "Hope"])
     }
 
     @Test func shortestFirstWithinShortRail() {

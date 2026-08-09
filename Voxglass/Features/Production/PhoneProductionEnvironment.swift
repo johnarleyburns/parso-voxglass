@@ -8,8 +8,8 @@ import VoxglassCore
 /// after every sync (spec §13.6).
 ///
 /// Watch review events are decoded by the transport and enqueued into the phone's
-/// outbox here, so an offline watch action reaches the Mac exactly once: the outbox
-/// is idempotent by event id and the Mac's fold is idempotent too.
+/// outbox here, so an offline watch action reaches the iPhone exactly once: the outbox
+/// is idempotent by event id and the iPhone's fold is idempotent too.
 @MainActor
 @Observable
 public final class PhoneProductionEnvironment {

@@ -86,12 +86,12 @@ extension NarrationNeed {
 }
 
 /// "Start a Narration" shelf on the Narration tab (n01): This Week's Poem +
-/// short rail + long rail.
+/// short rail + long rail. Every need is narratable (N-1); length only frames
+/// the card, it never gates the record action.
 struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let presentBrowse: () -> Void
     let startProject: (NarrationNeed) -> Void
-    let presentHandoff: (NarrationNeed) -> Void
 
     var body: some View {
         // NOTE: no accessibilityIdentifier on this container — a plain VStack
@@ -136,9 +136,9 @@ struct NarrationHomeShelf: View {
 
     @ViewBuilder
     private func featuredCard(_ need: NarrationNeed) -> some View {
-        let actionable = need.narratableOn.contains(.iOS)
+        let actionable = need.recordableOniOS
         Button {
-            if actionable { startProject(need) } else { presentHandoff(need) }
+            if actionable { startProject(need) }
         } label: {
             HStack(spacing: 12) {
                 ZStack {
@@ -191,11 +191,11 @@ struct NarrationHomeShelf: View {
 
     private var longRail: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionTitle(title: "More on Your Mac", actionTitle: nil)
+            SectionTitle(title: "Long Works to Narrate", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(discovery.needs.filter { $0.work.lengthClass == .long }.prefix(10)) { need in
-                        LongNeedCard(need: need, presentHandoff: { presentHandoff(need) })
+                    ForEach(discovery.needs.filter { $0.recordableOniOS && $0.work.lengthClass == .long }.prefix(10)) { need in
+                        LongNeedCard(need: need, start: { startProject(need) })
                     }
                 }
                 .padding(.horizontal, 2)
@@ -244,11 +244,11 @@ struct ShortNeedCard: View {
     }
 }
 
-// MARK: - Long need card (handoff only, no record CTA — G-15)
+// MARK: - Long need card (narratable on iPhone — N-1)
 
 struct LongNeedCard: View {
     let need: NarrationNeed
-    let presentHandoff: () -> Void
+    let start: () -> Void
 
     var body: some View {
         VStack(spacing: 6) {
@@ -265,18 +265,17 @@ struct LongNeedCard: View {
                 .foregroundStyle(Palette.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-            Text(need.work.author)
+            Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))")
                 .scaledFont(size: 10)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
-            Button(action: presentHandoff) {
+            Button(action: start) {
                 Text("Start recording")
                     .scaledFont(size: 10, weight: .bold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .foregroundStyle(Color(hex: 0xA9C3FF))
-                    .background(Color(hex: 0x7896DC).opacity(0.14), in: Capsule())
-                    .overlay(Capsule().stroke(Color(hex: 0x7896DC).opacity(0.35), lineWidth: 1))
+                    .foregroundStyle(Color(hex: 0x21170B))
+                    .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: Capsule())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("need.startRecording.\(needSlug(need))")
@@ -310,7 +309,6 @@ struct NarrationNeedsView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @State private var filter: NeedFilter = .all
     let startProject: (NarrationNeed) -> Void
-    let presentHandoff: (NarrationNeed) -> Void
 
     var body: some View {
         VoxglassScreen(title: "Narration Needs") {
@@ -338,7 +336,7 @@ struct NarrationNeedsView: View {
 
                 let rows = discovery.needs
                     .filter(filter.matches)
-                    .filter { $0.narratableOn.contains(.iOS) ? $0.recordableOniOS : true }
+                    .filter(\.recordableOniOS)
                 if rows.isEmpty {
                     EmptyStatePanel(
                         title: "Nothing Here Yet",
@@ -348,7 +346,7 @@ struct NarrationNeedsView: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(rows.prefix(40)) { need in
-                            NeedRow(need: need, startProject: startProject, presentHandoff: presentHandoff)
+                            NeedRow(need: need, startProject: startProject)
                             VoxglassListDivider()
                         }
                     }
@@ -384,7 +382,6 @@ struct NarrationNeedsView: View {
 struct NeedRow: View {
     let need: NarrationNeed
     let startProject: (NarrationNeed) -> Void
-    let presentHandoff: (NarrationNeed) -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -414,30 +411,19 @@ struct NeedRow: View {
             Spacer(minLength: 8)
 
             Button {
-                if need.narratableOn.contains(.iOS) {
-                    startProject(need)
-                } else {
-                    presentHandoff(need)
-                }
+                startProject(need)
             } label: {
-                Text(need.narratableOn.contains(.iOS) ? "Start" : "On Mac")
+                Text("Start")
                     .scaledFont(size: 12, weight: .heavy)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .foregroundStyle(need.narratableOn.contains(.iOS) ? Color(hex: 0x21170B) : Color(hex: 0xA9C3FF))
-                    .background(need.narratableOn.contains(.iOS)
-                        ? AnyShapeStyle(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom))
-                        : AnyShapeStyle(Color.clear))
-                    .overlay(need.narratableOn.contains(.iOS)
-                        ? nil
-                        : RoundedRectangle(cornerRadius: 11).stroke(Color(hex: 0x7896DC).opacity(0.45), lineWidth: 1))
+                    .foregroundStyle(Color(hex: 0x21170B))
+                    .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 11))
                     .clipShape(RoundedRectangle(cornerRadius: 11))
             }
             .buttonStyle(.plain)
             .tactileTap()
-            .accessibilityIdentifier(need.narratableOn.contains(.iOS)
-                ? "need.startNarrating.\(needSlug(need))"
-                : "need.startRecording.\(needSlug(need))")
+            .accessibilityIdentifier("need.startNarrating.\(needSlug(need))")
         }
         .padding(.vertical, 10)
         .accessibilityIdentifier("needs.card.\(needSlug(need))")
@@ -446,13 +432,13 @@ struct NeedRow: View {
 
 // MARK: - n03 My Narrations
 
-/// My Narrations content — embedded in the Narration tab (n03). Rows resume
-/// the flow at the first unrecorded paragraph.
+/// My Narrations content — embedded in the Narration tab (n03). Rows push the
+/// project dashboard (04), which leads with "Record next" (§15.5).
 struct MyNarrationsSection: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let findSomething: () -> Void
     @State private var pendingDeletion: AudiobookProject?
-    @State private var resumeProject: AudiobookProject?
+    @State private var dashboardProject: AudiobookProject?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -488,11 +474,11 @@ struct MyNarrationsSection: View {
             } else {
                 VStack(spacing: 10) {
                     ForEach(projects) { project in
-                        // Presented as a cover (not a NavigationLink push) so
-                        // the flow owns its navigation bar: the root shows only
-                        // Close, never an extra Back from the tab's stack.
+                        // Pushes the dashboard (04); the dashboard's "Record
+                        // next" opens the flow at the first paragraph with no
+                        // selected take.
                         Button {
-                            resumeProject = project
+                            dashboardProject = project
                         } label: {
                             projectRow(project)
                         }
@@ -513,8 +499,10 @@ struct MyNarrationsSection: View {
         // with one overrides every child's identifier (SwiftUI quirk), which
         // would make `myNarrations.project.*` / `myNarrations.newFromNeed`
         // unreachable from UI tests.
-        .fullScreenCover(item: $resumeProject) { project in
-            NarrationFlowRoot(existing: project)
+        .navigationDestination(isPresented: dashboardBinding) {
+            if let dashboardProject {
+                ProjectDashboardView(project: dashboardProject)
+            }
         }
         .confirmationDialog(
             pendingDeletion.map { "Delete \"\($0.metadata.title)\" and its recordings?" } ?? "",
@@ -544,6 +532,16 @@ struct MyNarrationsSection: View {
         } set: { isPresented in
             if !isPresented {
                 pendingDeletion = nil
+            }
+        }
+    }
+
+    private var dashboardBinding: Binding<Bool> {
+        Binding {
+            dashboardProject != nil
+        } set: { isPresented in
+            if !isPresented {
+                dashboardProject = nil
             }
         }
     }
@@ -633,108 +631,5 @@ private extension AudiobookProject {
 
 // MARK: - n04 Long-work handoff
 
-struct LongWorkHandoffSheet: View {
-    let need: NarrationNeed
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Spacer()
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(LinearGradient(colors: [Color(hex: 0x101A14), Color(hex: 0x2F5A3E), Color(hex: 0xC7B06A)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    Text(need.work.title.uppercased())
-                        .scaledFont(size: 14, weight: .heavy)
-                        .foregroundStyle(Color(hex: 0xF8E8C7))
-                        .multilineTextAlignment(.center)
-                        .padding(8)
-                }
-                .frame(width: 120, height: 160)
-
-                Text(need.work.title)
-                    .scaledFont(size: 21, weight: .heavy)
-                    .foregroundStyle(Palette.ink)
-                    .padding(.top, 14)
-                Text("\(need.work.author) · \(shortDuration(need.work.estSeconds)) · a full book")
-                    .scaledFont(size: 13)
-                    .foregroundStyle(Palette.ink2)
-                    .padding(.top, 2)
-
-                Text("This is a book. Voxglass keeps the workflow chapter-by-chapter while you record, review, validate, and export on iPhone.")
-                    .scaledFont(size: 13.5)
-                    .multilineTextAlignment(.center)
-                    .padding(15)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.hairline, lineWidth: 1))
-                    .padding(.top, 12)
-
-                steps
-
-                Spacer()
-
-                Button {
-                    // Open the Studio Learn More deep link when available.
-                } label: {
-                        Text("How iPhone production works")
-                        .scaledFont(size: 15, weight: .heavy)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
-                }
-                .buttonStyle(.plain)
-                .tactileTap()
-                .accessibilityIdentifier("production.learnMore")
-
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Find a short work instead")
-                        .scaledFont(size: 14, weight: .bold)
-                        .foregroundStyle(Palette.ink)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("handoff.dismiss")
-
-                Text(LegalStrings.noCopyrightDetermination)
-                    .scaledFont(size: 11)
-                    .foregroundStyle(Palette.ink3)
-                    .padding(.top, 4)
-            }
-            .padding(24)
-            .background(VoxglassBackground())
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") { dismiss() }
-                }
-            }
-        }
-        .accessibilityIdentifier("handoff.title")
-    }
-
-    private var steps: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            step(1, "Start a project on iPhone and choose a source document.")
-            step(2, "Find \"\(need.work.title)\" under Start a Narration → Needs a Narrator — one click sets up the whole book.")
-            step(3, "Record paragraph by paragraph, then review, validate, and export from this iPhone.")
-        }
-        .padding(.top, 8)
-    }
-
-    private func step(_ number: Int, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text("\(number)")
-                .scaledFont(size: 12, weight: .heavy)
-                .foregroundStyle(Palette.brass)
-                .frame(width: 22, height: 22)
-                .background(Palette.brass.opacity(0.16), in: Circle())
-                .overlay(Circle().stroke(Palette.brass.opacity(0.4), lineWidth: 1))
-            Text(LocalizedStringKey(text))
-                .scaledFont(size: 13)
-                .foregroundStyle(Palette.ink)
-        }
-    }
-}
+// The long-work handoff sheet is retired (N-1): long works are narratable on
+// iPhone as multi-session projects (§8.3, §15.6).

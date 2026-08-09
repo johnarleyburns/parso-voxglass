@@ -150,10 +150,12 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
     /// Open-project needs expire; evergreen needs are nil.
     public let expiresAt: Date?
 
-    /// DERIVED, never stored (§10): short works are narratable everywhere;
-    /// long works are Mac-only for the record action.
+    /// DERIVED, never stored (§10): the record action is offered for every need
+    /// regardless of length (N-1). The short-work ceiling survives only as a
+    /// *discovery* signal ("finishable in one sitting"), never as a gate on the
+    /// record action (§0.6 N-1, §8.3).
     public var narratableOn: Set<Platform> {
-        work.lengthClass == .short ? [.iOS, .mac] : [.mac]
+        [.iOS, .mac]
     }
 
     public var isSubmittable: Bool { work.grade == .submittable }

@@ -59,7 +59,7 @@ public final class ProductionDetailModel {
 
 /// Review player (mockup `03-production-player`): plays proxy audio paragraph by
 /// paragraph and emits review events. Actions are debounced, give haptic feedback,
-/// and are queued through the phone outbox (they reach the Mac exactly once).
+/// and are queued through the phone outbox (they reach the iPhone exactly once).
 @MainActor
 @Observable
 public final class ProductionPlayerModel: NSObject, AVAudioPlayerDelegate {

@@ -43,6 +43,12 @@ import VoxglassCoreTestSupport
         "queueBuilder.downloadToWatch", "queueBuilder.start",
         "note.category.", "note.text", "note.dictate", "note.save", "note.cancel",
         "sync.checkForUpdates", "sync.downloadAll", "sync.removeAudio", "sync.refreshWatch", "sync.pending",
+        "dashboard.recordNext", "dashboard.flagged", "dashboard.pickups", "dashboard.drift",
+        "dashboard.startReviewQueue", "dashboard.storage", "dashboard.manageStorage",
+        "dashboard.script", "dashboard.assemble", "dashboard.metadata", "dashboard.validate", "dashboard.chapter.",
+        "script.filter", "script.filter.all", "script.filter.drift", "script.filter.unrecorded", "script.row.",
+        "script.inspector", "script.inspector.text", "script.inspector.direction", "script.inspector.pronunciation",
+        "script.inspector.splitHere", "script.inspector.mergeNext", "script.inspector.save",
     ]
 
     private static let watchRegistry: [String] = [

@@ -180,6 +180,7 @@
 		CA2AF75687570E66B1AD5EB6 /* little_princess_krs.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7D05BD54482E13A57D007AE1 /* little_princess_krs.jpg */; };
 		CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06CDA895FD619425E8633059 /* OnboardingPreferencesView.swift */; };
 		CB393B89133F1DEC7773461E /* WatchReviewQueueListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F32768922968DB717A1230 /* WatchReviewQueueListView.swift */; };
+		CC2598452C9D23E8D3A636BE /* ProjectDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8256968CBF2960299BAEAF24 /* ProjectDashboardView.swift */; };
 		CD5A1AA8C2CF7A853985C18B /* ProductionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 448E8B1340B985F0C62F1958 /* ProductionsListView.swift */; };
 		CD5F9F386CBBD79CE6BB523B /* alice_wonderland_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CC9FC90F429E3A6FF0763EF3 /* alice_wonderland_0711_librivox.jpg */; };
 		CF5B708D0222E8900BB02D3D /* memoirs_holmes_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A863A5C2B74DE190C0ED26CB /* memoirs_holmes_0709_librivox.jpg */; };
@@ -229,6 +230,7 @@
 		F14C7CF0EA99F6CF748CF52A /* CarPlayTemplateRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9FF2C66B604A483005DF1CF /* CarPlayTemplateRenderer.swift */; };
 		F15464A41C029B457BC3D6D1 /* WatchBookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DEF7AEC3EC06D2401F4B097 /* WatchBookDetailView.swift */; };
 		F16486C499C074C1BD162E69 /* art_war_ps_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 034B5DB162C110775DD52953 /* art_war_ps_librivox.jpg */; };
+		F47B97B3095214949D078D8A /* ScriptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CFFA4CFF485791A9300AA1 /* ScriptEditorView.swift */; };
 		F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841534B2BAC23D46DACCD5B1 /* LibraryView.swift */; };
 		F599D1C5F53B2038A34866A0 /* huck_finn_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B954A59F4997A15A1DF6DB40 /* huck_finn_librivox.jpg */; };
 		F6D05FC8D3665660DD1D83B2 /* AppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0BA6B47E170D692135105 /* AppServices.swift */; };
@@ -413,6 +415,7 @@
 		80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = call_of_the_wild.jpg; sourceTree = "<group>"; };
 		81D6DA9D5820F6FADE950782 /* WatchSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncModel.swift; sourceTree = "<group>"; };
+		8256968CBF2960299BAEAF24 /* ProjectDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDashboardView.swift; sourceTree = "<group>"; };
 		82ACAE08A854D9C0B7A70CA9 /* mysterious_island_ms_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mysterious_island_ms_librivox.jpg; sourceTree = "<group>"; };
 		841534B2BAC23D46DACCD5B1 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		84A1AC3F062A5AC1804A3500 /* beowulf_te_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beowulf_te_librivox.jpg; sourceTree = "<group>"; };
@@ -491,6 +494,7 @@
 		DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationFlow.swift; sourceTree = "<group>"; };
 		DFB26A7DF361B7DB10762794 /* ThirdPartyNotices.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ThirdPartyNotices.md; sourceTree = "<group>"; };
 		E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionEnvironment.swift; sourceTree = "<group>"; };
+		E1CFFA4CFF485791A9300AA1 /* ScriptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEditorView.swift; sourceTree = "<group>"; };
 		E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationProjectRepository.swift; sourceTree = "<group>"; };
 		E27CA265F0603F339331C4A6 /* Voxglass-release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Voxglass-release.entitlements"; sourceTree = "<group>"; };
 		E472AB68F0B05BC2B6D85E9F /* WatchListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListeningView.swift; sourceTree = "<group>"; };
@@ -589,6 +593,8 @@
 				2FA8E1DA7900280C3F2E8925 /* NarrationFlowScreens.swift */,
 				E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */,
 				8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */,
+				8256968CBF2960299BAEAF24 /* ProjectDashboardView.swift */,
+				E1CFFA4CFF485791A9300AA1 /* ScriptEditorView.swift */,
 				04E0B8E527FDF636C42B6FAC /* UITestAudioCapture.swift */,
 				7F19E61B32B9CD25DA7F0CE5 /* URLSessionFetcher.swift */,
 			);
@@ -1395,9 +1401,11 @@
 				4DDE4563F7198BB014BFF4DD /* ProductionPreviewStore.swift in Sources */,
 				36D2D07C3CCD608C1140CDFB /* ProductionSmokeSeed.swift in Sources */,
 				FC33D751EFBC0E3AFFEB7F68 /* ProductionViews.swift in Sources */,
+				CC2598452C9D23E8D3A636BE /* ProjectDashboardView.swift in Sources */,
 				10A6A4A2FD59778AC73503B0 /* RootView.swift in Sources */,
 				2A4888B85BC0DAF92BCA1393 /* RoutePickerButton.swift in Sources */,
 				EB56E7CCC961186FDBB57669 /* ScaledFontModifier.swift in Sources */,
+				F47B97B3095214949D078D8A /* ScriptEditorView.swift in Sources */,
 				6491F6B3D3E24F36631B9C95 /* ScrubberView.swift in Sources */,
 				5F0DF26D3A418D5EA6C2BEB9 /* SearchView.swift in Sources */,
 				A720762200E37ED3E6C1B405 /* SettingsView.swift in Sources */,

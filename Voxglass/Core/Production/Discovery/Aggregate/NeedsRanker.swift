@@ -16,7 +16,8 @@ public struct NeedsRanker: Sendable {
             if lhsSignal != rhsSignal { return lhsSignal < rhsSignal }
 
             // Actionability: needs narratable on this platform rank above
-            // handoff-only needs within the same rail.
+            // others within the same rail (N-1: every need is narratable on
+            // iPhone, so this is a neutral tie-break rather than a gate).
             let lhsActionable = lhs.narratableOn.contains(platform) ? 0 : 1
             let rhsActionable = rhs.narratableOn.contains(platform) ? 0 : 1
             if lhsActionable != rhsActionable { return lhsActionable < rhsActionable }

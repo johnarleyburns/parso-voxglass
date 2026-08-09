@@ -610,7 +610,7 @@ public struct ProductionSyncStorageView: View {
 
     public var body: some View {
         Form {
-            Section("Mac Preview") {
+            Section("iPhone Preview") {
                 LabeledContent("Status", value: statusText)
                 LabeledContent("Revision", value: "\(model.lastReceivedRevision ?? 0)")
                 LabeledContent("Last received", value: model.lastSyncDate?.formatted(date: .abbreviated, time: .shortened) ?? "never")
@@ -658,7 +658,7 @@ public struct ProductionSyncStorageView: View {
 
     private var statusText: String {
         switch model.accountStatus {
-        case .available: return "Current with Mac"
+        case .available: return "Current with iPhone"
         case .notAuthenticated: return "Sign in to iCloud to preview on your devices"
         case .quotaExceeded: return "iCloud storage full"
         case .unavailable: return "iCloud unavailable"

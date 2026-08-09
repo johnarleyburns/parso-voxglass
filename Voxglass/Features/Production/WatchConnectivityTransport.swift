@@ -7,7 +7,7 @@ import Observation
 /// production summaries and the active review queue to the watch as application
 /// context, transfers proxy audio and artwork as queued file transfers, and hands
 /// decoded review events to `onEventReceived` so the phone can enqueue them for the
-/// Mac — offline watch actions reach the Mac exactly once (§13.7).
+/// iPhone — offline watch actions reach the iPhone exactly once (§13.7).
 ///
 /// `WCSession` permits a single delegate, which the consumer relay
 /// (`PhoneAudioRelay`) owns, so this transport does not register a delegate of its
@@ -21,7 +21,7 @@ public final class WatchConnectivityTransport: WatchTransport {
     public private(set) var activationState: WatchLinkState = .notActivated
 
     /// Decoded review events the watch sent. The phone enqueues these into its
-    /// outbox so they are pushed to the Mac exactly once.
+    /// outbox so they are pushed to the iPhone exactly once.
     public var onEventReceived: ((ReviewEvent) -> Void)?
 
     /// Called when the shared `WCSession` reports a reachability change.

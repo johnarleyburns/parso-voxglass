@@ -84,6 +84,10 @@ struct FlowParagraph: Identifiable, Equatable {
     var state: FlowParagraphState
     var note: String?
     var take: FlowTake?
+    /// True when the selected take was recorded against different text than the
+    /// paragraph now holds (spec §9.5 step 4). The script editor's "Changed"
+    /// filter and chips read this.
+    var isDrifted: Bool
 }
 
 // MARK: - Flow model
@@ -201,6 +205,16 @@ final class NarrationFlowModel {
         return project.allParagraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
     }
 
+    /// §15.5 "Record next": the first paragraph in document order with no
+    /// selected take, or — if everything is recorded — the first `needsPickup`.
+    var recordNextParagraphID: UUID? {
+        guard let project else { return nil }
+        if let id = project.allParagraphs.first(where: { $0.selectedTakeID == nil })?.id {
+            return id
+        }
+        return project.allParagraphs.first { $0.reviewState == .needsPickup }?.id
+    }
+
     var rightsAttested: Bool {
         project?.rights.isAttested ?? false
     }
@@ -212,8 +226,15 @@ final class NarrationFlowModel {
             role: flowRole(paragraph.role),
             state: flowState(paragraph),
             note: notes[paragraph.id],
-            take: paragraph.selectedTake.map { FlowTake(duration: $0.duration, peakDBFS: $0.metrics?.peakDBFS, clipped: ($0.metrics?.clipCount ?? 0) > 0) }
+            take: paragraph.selectedTake.map { FlowTake(duration: $0.duration, peakDBFS: $0.metrics?.peakDBFS, clipped: ($0.metrics?.clipCount ?? 0) > 0) },
+            isDrifted: hasDrift(paragraph)
         )
+    }
+
+    private static func hasDrift(_ paragraph: Paragraph) -> Bool {
+        guard let selected = paragraph.selectedTakeID,
+              let take = paragraph.takes.first(where: { $0.id == selected }) else { return false }
+        return paragraph.textHash != take.textHashAtRecording
     }
 
     private static func flowRole(_ role: ParagraphRole) -> FlowParagraphRole {
@@ -355,6 +376,41 @@ final class NarrationFlowModel {
         }
     }
 
+    /// Builds a multi-chapter project from an imported source document (file
+    /// import path). Chapter structure from the `Segmenter` is preserved so a
+    /// long work reaches the dashboard with correct per-chapter counts (P5).
+    func buildFromDocument(_ document: ExtractedDocument) async {
+        let builder = NarrationProjectBuilder()
+        let title = draftTitle.isEmpty ? "This work" : draftTitle
+        let author = draftAuthor.isEmpty ? "Unknown" : draftAuthor
+
+        let build = builder.build(
+            document: document,
+            title: title,
+            author: author,
+            narrator: narrator,
+            sourceURL: URL(string: sourceURL ?? ""),
+            ids: repository.ids,
+            clock: repository.clock
+        )
+
+        guard !build.project.allParagraphs.isEmpty else {
+            importError = "This work doesn't have its text on this device yet. Try another work."
+            return
+        }
+
+        if let needID = pendingNeedID {
+            try? await repository.setNeedID(needID, for: build.project.id)
+        }
+        if !document.plainText.isEmpty {
+            try? await repository.setSourceText(document.plainText, for: build.project.id)
+        }
+        draftText = document.plainText
+        draftTitle = title
+        draftAuthor = author
+        project = build.project
+    }
+
     private func paragraph(_ text: String, role: ParagraphRole, ordinal: Int, at date: Date) -> Paragraph {
         Paragraph(
             id: repository.ids.next(),
@@ -483,6 +539,71 @@ final class NarrationFlowModel {
     func persist() async {
         guard let project else { return }
         try? await repository.save(project)
+    }
+
+    // MARK: - Script editing (spec §8.4)
+
+    /// The global document position of a paragraph (1-based), as the script
+    /// editor numbers its rows ("¶ 1205").
+    func globalNumber(of id: UUID) -> Int? {
+        project?.allParagraphs.firstIndex(where: { $0.id == id }).map { $0 + 1 }
+    }
+
+    /// Splits a paragraph at a character offset. The existing take stays on the
+    /// first half; the second half starts unrecorded (mockup 05 banner). Never
+    /// deletes a take.
+    func splitParagraph(_ id: UUID, atCharacterOffset offset: Int) async {
+        guard var project,
+              let chapterIndex = project.chapters.firstIndex(where: { $0.paragraphs.contains { $0.id == id } }),
+              let paragraphIndex = project.chapters[chapterIndex].paragraphs.firstIndex(where: { $0.id == id }) else { return }
+        let paragraph = project.chapters[chapterIndex].paragraphs[paragraphIndex]
+        let split = ParagraphSplitter().split(paragraph, atCharacterOffset: offset, ids: repository.ids, clock: repository.clock)
+        project.chapters[chapterIndex].paragraphs.remove(at: paragraphIndex)
+        project.chapters[chapterIndex].paragraphs.insert(contentsOf: [split.first, split.second], at: paragraphIndex)
+        renumberParagraphs(in: &project.chapters[chapterIndex])
+        project.modifiedAt = repository.clock.now
+        self.project = project
+        await persist()
+    }
+
+    /// Merges a paragraph into the previous one. The merged paragraph keeps the
+    /// first's id and selected take; the second's takes are archived, never
+    /// deleted.
+    func mergeParagraph(_ id: UUID) async {
+        guard var project,
+              let chapterIndex = project.chapters.firstIndex(where: { $0.paragraphs.contains { $0.id == id } }),
+              let paragraphIndex = project.chapters[chapterIndex].paragraphs.firstIndex(where: { $0.id == id }),
+              paragraphIndex > 0 else { return }
+        var chapter = project.chapters[chapterIndex]
+        let second = chapter.paragraphs.remove(at: paragraphIndex)
+        let first = chapter.paragraphs[paragraphIndex - 1]
+        let merged = ParagraphSplitter().merge(first, second, clock: repository.clock)
+        chapter.paragraphs[paragraphIndex - 1] = merged
+        renumberParagraphs(in: &chapter)
+        project.chapters[chapterIndex] = chapter
+        project.modifiedAt = repository.clock.now
+        self.project = project
+        await persist()
+    }
+
+    /// Applies an edited paragraph text. Editing a paragraph that has a selected
+    /// take raises the drift indicator immediately (mockup 05) because the rule
+    /// engine compares `textHash` to `take.textHashAtRecording`.
+    func editParagraphText(_ id: UUID, to text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        updateParagraph(id) { paragraph in
+            paragraph.text = trimmed
+            paragraph.textHash = TextNormalizer.hash(trimmed)
+            paragraph.updatedAt = repository.clock.now
+        }
+        await persist()
+    }
+
+    private func renumberParagraphs(in chapter: inout ProductionChapter) {
+        for index in chapter.paragraphs.indices {
+            chapter.paragraphs[index].ordinal = index
+        }
     }
 
     // MARK: - Recording
@@ -1125,8 +1246,10 @@ private struct FlowResumeRouter: View {
 
     var body: some View {
         if model.project != nil {
-            if let firstUnrecorded = model.paragraphs.first(where: { $0.state == .notRecorded || $0.state == .flagged }) {
-                RecordView(model: model, paragraphID: firstUnrecorded.id)
+            // §15.5: "Record next" = first paragraph with no selected take, or
+            // the first needsPickup when everything is recorded.
+            if let next = model.recordNextParagraphID {
+                RecordView(model: model, paragraphID: next)
             } else if !model.readyToAssemble {
                 ReviewView(model: model)
             } else if !model.rightsAttested {
@@ -1154,7 +1277,7 @@ struct WorkImportView: View {
                 Text("New Narration")
                     .scaledFont(size: 26, weight: .heavy)
                     .foregroundStyle(Palette.ink)
-                Text("Record a public-domain short work — a poem, a short story, an essay.")
+                Text("Record a public-domain work — a poem, a short story, or a whole book, chapter by chapter.")
                     .scaledFont(size: 13)
                     .foregroundStyle(Palette.ink2)
 
@@ -1164,7 +1287,7 @@ struct WorkImportView: View {
                 importOption(icon: "📝", title: "Paste text", caption: "Paste a poem or short piece", id: "import.paste") {
                     showPaste = true
                 }
-                importOption(icon: "📄", title: "Import EPUB from Files", caption: "An .epub on your iPhone or iCloud Drive", id: "import.files") {
+                importOption(icon: "📄", title: "Import a file", caption: "EPUB, TXT, Markdown, or DOCX from Files", id: "import.files") {
                     presentFilesPicker()
                 }
                 importOption(icon: "🌐", title: "Fetch from Project Gutenberg", caption: "Paste a gutenberg.org link or ebook number", id: "import.gutenberg") {
@@ -1200,11 +1323,24 @@ struct WorkImportView: View {
         .sheet(isPresented: $showGutenberg) {
             GutenbergSheet(model: model)
         }
-        .fileImporter(isPresented: Binding(get: { pickedFileURL != nil }, set: { if !$0 { pickedFileURL = nil } }), allowedContentTypes: [.epub]) { result in
+        .fileImporter(isPresented: Binding(get: { pickedFileURL != nil }, set: { if !$0 { pickedFileURL = nil } }), allowedContentTypes: importContentTypes) { result in
             if case .success(let url) = result {
-                importEpub(url)
+                importFile(url)
             }
         }
+    }
+
+    /// The file types the import picker accepts, mirroring
+    /// `SourceImporterRegistry`: EPUB, plain text, Markdown, and DOCX.
+    private var importContentTypes: [UTType] {
+        var types: [UTType] = [.epub, .plainText, .text]
+        if let markdown = UTType("net.daringfireball.markdown") ?? UTType(filenameExtension: "md") {
+            types.append(markdown)
+        }
+        if let docx = UTType("org.openxmlformats.wordprocessingml.document") ?? UTType(filenameExtension: "docx") {
+            types.append(docx)
+        }
+        return types
     }
 
     private func importOption(icon: String, title: String, tag: String? = nil, caption: String, id: String, action: @escaping () -> Void) -> some View {
@@ -1244,18 +1380,25 @@ struct WorkImportView: View {
         pickedFileURL = URL(fileURLWithPath: "/") // triggers the sheet
     }
 
-    private func importEpub(_ url: URL) {
+    /// Imports a source document through `SourceImporterRegistry` and builds a
+    /// multi-chapter project from it (P5: file imports keep their chapter
+    /// structure instead of being flattened).
+    private func importFile(_ url: URL) {
         Task {
             model.isImporting = true
             defer { model.isImporting = false }
             do {
-                let doc = try await EPUBImporter().extract(from: url)
+                guard let importer = SourceImporterRegistry.importer(for: url) else {
+                    model.importError = "Couldn't find an importer for that file."
+                    return
+                }
+                let doc = try await importer.extract(from: url)
                 model.draftTitle = doc.title ?? ""
                 model.draftAuthor = doc.author ?? ""
-                model.draftText = doc.plainText
                 model.setSource(url.lastPathComponent)
+                await model.buildFromDocument(doc)
             } catch {
-                model.importError = "Couldn't read that EPUB."
+                model.importError = "Couldn't read that file."
             }
         }
     }
@@ -1268,7 +1411,7 @@ private struct NeedPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            let needs = discovery.needs.filter { $0.narratableOn.contains(.iOS) && ($0.work.text?.isEmpty == false) }
+            let needs = discovery.needs.filter { $0.recordableOniOS }
             List {
                 if needs.isEmpty {
                     Text("No ready-to-record needs with embedded text right now — try Paste text.")

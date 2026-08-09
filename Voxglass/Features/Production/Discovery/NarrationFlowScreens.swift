@@ -933,7 +933,7 @@ struct ValidateExportView: View {
                     id: "export.destination.internetArchive"
                 )
 
-                Text("FLAC/MP3 encoding is available on iPhone and Mac. Your paragraph takes transfer with the project.")
+                Text("FLAC/MP3 encoding happens on this iPhone. Your paragraph takes transfer with the project.")
                     .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
 
                 Button {
@@ -1096,7 +1096,7 @@ struct SubmitView: View {
                 Text("SUBMIT TO LIBRIVOX")
                     .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3).padding(.top, 6)
                 submitStep(1, "Open this week's Weekly Poetry thread and claim the poem.")
-                submitStep(2, "Upload the MP3 to the LibriVox uploader (from your Mac).")
+                submitStep(2, "Upload the MP3 to the LibriVox uploader (from your iPhone).")
                 submitStep(3, "Post the link in the thread with your reader name. The checklist has the exact steps.")
 
                 Link(destination: URL(string: "https://forum.librivox.org/viewforum.php?f=28")!) {

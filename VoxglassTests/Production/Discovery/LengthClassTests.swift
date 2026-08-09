@@ -15,8 +15,9 @@ import VoxglassCore
     @Test func narratableOnIsDerived() {
         let short = makeNeed(title: "Poem", estSeconds: 40)
         let long = makeNeed(title: "Book", estSeconds: 28800)
+        // N-1: the record action is offered for every need regardless of length.
         #expect(short.narratableOn == [.iOS, .mac])
-        #expect(long.narratableOn == [.mac])
+        #expect(long.narratableOn == [.iOS, .mac])
     }
 
     @Test func derivedInWorkInit() {
