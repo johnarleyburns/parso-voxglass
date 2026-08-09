@@ -92,6 +92,10 @@ public actor StreamCacheStore {
         limitBytes = Self.defaultLimit
         metas = Self.loadMetas(from: metaDir, and: offlineMetaDir)
         pinnedKeys = Self.loadPinnedKeys(from: pinsURL)
+        Task { await finishLegacyMigration() }
+    }
+
+    private func finishLegacyMigration() {
         droppedLegacyPinKeys = migrateLegacyPinnedBlobs()
     }
 
