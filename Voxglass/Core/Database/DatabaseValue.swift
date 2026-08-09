@@ -1,6 +1,6 @@
 import Foundation
 
-public enum DatabaseValue: Equatable {
+public enum DatabaseValue: Equatable, Sendable {
     case null
     case int(Int64)
     case double(Double)
@@ -48,7 +48,7 @@ public enum DatabaseValue: Equatable {
     }
 }
 
-public struct DatabaseRow {
+public struct DatabaseRow: Sendable {
     public let values: [String: DatabaseValue]
 
     public func string(_ column: String) -> String? {
@@ -94,4 +94,3 @@ public enum DatabaseError: Error, LocalizedError {
         }
     }
 }
-

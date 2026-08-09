@@ -183,6 +183,7 @@ enum NarrationStep: Hashable {
 /// project model.
 @MainActor
 @Observable
+@MainActor
 final class NarrationFlowModel {
     enum ImportSource {
         case need(NarrationNeed)
@@ -272,7 +273,7 @@ final class NarrationFlowModel {
     /// The current entitlement, kept fresh from `LicenseProvider.updates` so the
     /// destination picker can flip between free and Pro without re-querying.
     var proEntitlement: EntitlementState = .free
-    nonisolated(unsafe) private var proObservationTask: Task<Void, Never>?
+    private var proObservationTask: Task<Void, Never>?
 
     var isProUnlocked: Bool {
         if case .pro = proEntitlement { return true }

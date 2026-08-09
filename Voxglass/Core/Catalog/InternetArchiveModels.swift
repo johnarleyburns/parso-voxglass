@@ -392,23 +392,23 @@ public enum IADateFormatting {
         ("yyyy", true)
     ]
 
-    private static let isoFormatter = ISO8601DateFormatter()
+    private static var isoFormatter: ISO8601DateFormatter { ISO8601DateFormatter() }
 
-    private static let monthYearFormatter: DateFormatter = {
+    private static var monthYearFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "UTC")
         formatter.dateFormat = "MMM yyyy"
         return formatter
-    }()
+    }
 
-    private static let yearFormatter: DateFormatter = {
+    private static var yearFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "UTC")
         formatter.dateFormat = "yyyy"
         return formatter
-    }()
+    }
 }
 
 public extension String {

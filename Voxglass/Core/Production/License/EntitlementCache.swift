@@ -12,7 +12,7 @@ import Foundation
 /// - If confirmation cannot complete (offline) the cached value stands
 ///   **indefinitely** — the cache never expires, so a narrator on a plane with
 ///   a deadline does not lose their exporter.
-public struct EntitlementCache: Sendable {
+public struct EntitlementCache {
     public static let proSinceKey = "voxglass.narration.pro.since"
     public static let transactionIDKey = "voxglass.narration.pro.transaction"
 

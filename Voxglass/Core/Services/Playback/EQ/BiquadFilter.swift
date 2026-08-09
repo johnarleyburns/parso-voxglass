@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BiquadFilter {
+public struct BiquadFilter: Sendable {
     private var b0: Float = 1
     private var b1: Float = 0
     private var b2: Float = 0
@@ -166,7 +166,7 @@ public final class EQEngine {
     }
 }
 
-public struct EQPreset: Identifiable, Codable, Equatable {
+public struct EQPreset: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var name: String
     public var gains: [Float]

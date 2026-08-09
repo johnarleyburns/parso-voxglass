@@ -1,6 +1,8 @@
 import Foundation
 
-public final class SyncMutationLog {
+/// The underlying state store is actor-isolated, so this reference is safe at
+/// the database service boundary.
+public final class SyncMutationLog: @unchecked Sendable {
     private let stateStore: CloudSyncStateStore
 
     public init(stateStore: CloudSyncStateStore) {

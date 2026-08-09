@@ -16,4 +16,5 @@ cd "$REPO_ROOT"
 echo ""
 echo "=== pre-commit guard (UI smoke tests) ==="
 echo ""
+bash scripts/test_logic.sh
 bash scripts/test.sh

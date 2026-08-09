@@ -1,6 +1,6 @@
 import Foundation
 
-public enum AudioCodec: Int, Comparable, CaseIterable {
+public enum AudioCodec: Int, Comparable, CaseIterable, Sendable {
     case flac = 3
     case opus = 2
     case vorbis = 1
@@ -20,7 +20,7 @@ public enum AudioCodec: Int, Comparable, CaseIterable {
     }
 }
 
-public struct AudioFormatSelection {
+public struct AudioFormatSelection: Sendable {
     private static let acceptedFormats: [AudioCodec: Set<String>] = [
         .flac: ["Flac", "24bit Flac"],
         .opus: ["Opus"],
@@ -99,8 +99,8 @@ public struct AudioFormatSelection {
     }
 }
 
-public struct DerivativePolicy {
-    public enum NetworkCondition {
+public struct DerivativePolicy: Sendable {
+    public enum NetworkCondition: Sendable {
         case wifi
         case cellular
         case offline

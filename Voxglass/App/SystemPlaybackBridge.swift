@@ -162,24 +162,24 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         observers.append(center.addObserver(
             forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.coordinator?.handleWillResignActive() }
+            Task { @MainActor in self?.coordinator?.handleWillResignActive() }
         })
         observers.append(center.addObserver(
             forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.coordinator?.handleWillBackgroundOrTerminate() }
+            Task { @MainActor in self?.coordinator?.handleWillBackgroundOrTerminate() }
         })
         observers.append(center.addObserver(
             forName: UIApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.coordinator?.handleWillBackgroundOrTerminate() }
+            Task { @MainActor in self?.coordinator?.handleWillBackgroundOrTerminate() }
         })
         observers.append(center.addObserver(
             forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
         ) { [weak self] note in
             guard let typeValue = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 switch type {
                 case .began: self?.coordinator?.handleAudioInterruptionBegan()
                 case .ended: self?.coordinator?.handleAudioInterruptionEnded()
@@ -190,7 +190,7 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         observers.append(center.addObserver(
             forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.coordinator?.handleAudioRouteChanged() }
+            Task { @MainActor in self?.coordinator?.handleAudioRouteChanged() }
         })
     }
 

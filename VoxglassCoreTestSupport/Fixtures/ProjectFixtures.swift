@@ -3,17 +3,28 @@ import CryptoKit
 import VoxglassCore
 
 public enum SimplePRNG {
-    private nonisolated(unsafe) static var seed: UInt64 = 42
+    private static let state = LockedSeed()
 
-    public static func reseed(_ s: UInt64) { seed = s }
+    public static func reseed(_ s: UInt64) { state.reseed(s) }
 
     public static func next() -> UInt64 {
-        seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
-        return seed
+        state.next()
     }
 
     public static func nextDouble() -> Double {
         Double(next() >> 11) * 0x1.0p-53
+    }
+
+    private final class LockedSeed: @unchecked Sendable {
+        private let lock = NSLock()
+        private var seed: UInt64 = 42
+
+        func reseed(_ value: UInt64) { lock.lock(); defer { lock.unlock() }; seed = value }
+        func next() -> UInt64 {
+            lock.lock(); defer { lock.unlock() }
+            seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            return seed
+        }
     }
 }
 

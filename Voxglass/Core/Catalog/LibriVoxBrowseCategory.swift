@@ -1,6 +1,6 @@
 import Foundation
 
-public struct LibriVoxBrowseGroup: Identifiable, Equatable {
+public struct LibriVoxBrowseGroup: Identifiable, Equatable, Sendable {
     public var id: String
     public var title: String
     public var categories: [LibriVoxBrowseCategory]
@@ -51,7 +51,7 @@ public struct LibriVoxBrowseGroup: Identifiable, Equatable {
     }
 }
 
-public struct LibriVoxBrowseCategory: Identifiable, Equatable {
+public struct LibriVoxBrowseCategory: Identifiable, Equatable, Sendable {
     public var id: String
     public var title: String
     public var systemImage: String

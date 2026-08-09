@@ -24,8 +24,7 @@ let package = Package(
                 .copy("Production/Discovery/Resources/needs-seed.json")
             ],
             swiftSettings: [
-                .swiftLanguageMode(.v5),
-                .enableUpcomingFeature("StrictConcurrency")
+                .swiftLanguageMode(.v6)
             ],
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
@@ -79,14 +78,18 @@ let package = Package(
             dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders"],
             path: "VoxglassTests",
             exclude: ["Info.plist", "Performance"],
-            resources: [.copy("Fixtures/ReplayGain")],
-            swiftSettings: [.swiftLanguageMode(.v5)]
+            resources: [
+                .copy("Fixtures/ReplayGain"),
+                .copy("Fixtures/InternetArchive"),
+                .copy("Fixtures/LibriVox")
+            ],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "VoxglassPerformanceTests",
             dependencies: ["VoxglassCore", "VoxglassCoreTestSupport"],
             path: "VoxglassTests/Performance",
-            swiftSettings: [.swiftLanguageMode(.v5)]
+            swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]
 )

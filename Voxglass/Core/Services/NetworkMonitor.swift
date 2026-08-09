@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import Network
 
+@MainActor
 public final class NetworkMonitor: ObservableObject {
     public static let shared = NetworkMonitor()
 
