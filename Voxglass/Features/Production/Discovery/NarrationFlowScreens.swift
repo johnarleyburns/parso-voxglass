@@ -170,7 +170,13 @@ struct RecordView: View {
             .padding(18)
         }
         .background(VoxglassBackground())
+        .onAppear {
+            // The recording remote (mockup watch-04, §14.3) is live for the
+            // whole time the record screen is on screen.
+            model.beginRecordingRemoteSession()
+        }
         .onDisappear {
+            model.endRecordingRemoteSession()
             if model.isRecording {
                 Task { await model.stopRecordingParagraph(currentParagraphID) }
             }
@@ -1204,6 +1210,7 @@ struct ValidateExportView: View {
     var isPushed = false
     @State private var goSubmit = false
     @State private var showAudioSetup = false
+    @State private var showProPurchase = false
 
     var body: some View {
         ScrollView {
@@ -1211,13 +1218,15 @@ struct ValidateExportView: View {
                 Text("PUBLISH TO")
                     .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
 
-                HStack(spacing: 8) {
-                    destinationButton(.librivox, label: "LibriVox", id: "validation.destination.librivox")
-                    destinationButton(.internetArchive, label: "Internet Archive", id: "validation.destination.internetArchive")
+                VStack(spacing: 0) {
+                    destinationRow(.librivox, label: "LibriVox", subtitle: "128 kbps MP3 per section", id: "validation.destination.librivox")
+                    VoxglassListDivider()
+                    destinationRow(.internetArchive, label: "Internet Archive", subtitle: "FLAC masters + MP3 derivatives", id: "validation.destination.internetArchive")
+                    VoxglassListDivider()
+                    destinationRow(.acx, label: "Commercial retail", subtitle: "ACX, Apple Books, aggregator, M4B", id: "validation.destination.retail", proChip: true)
                 }
-                .accessibilityIdentifier("validation.destination")
-                .padding(8)
                 .glassSurface(cornerRadius: 14)
+                .accessibilityIdentifier("validation.destination")
 
                 if model.isValidating {
                     HStack(spacing: 8) {
@@ -1302,6 +1311,11 @@ struct ValidateExportView: View {
         .sheet(isPresented: $showAudioSetup) {
             AudioSetupView(model: model)
         }
+        .sheet(isPresented: $showProPurchase) {
+            ProPurchaseView(provider: model.licenseProvider, model: model) { _ in
+                Task { await model.runValidation() }
+            }
+        }
         .navigationDestination(isPresented: $goSubmit) {
             SubmitView(model: model, isPushed: true)
         }
@@ -1318,27 +1332,53 @@ struct ValidateExportView: View {
     }
 
     private var destinationName: String {
-        model.validationDestination == .internetArchive ? "Internet Archive" : "LibriVox"
+        switch model.validationDestination {
+        case .internetArchive: return "Internet Archive"
+        case .acx: return "ACX / Audible"
+        case .appleBooksAggregator: return "Apple Books / Aggregator"
+        default: return "LibriVox"
+        }
     }
 
-    private func destinationButton(_ destination: DestinationID, label: String, id: String) -> some View {
+    /// A full-width destination row (mockup 14). Retail carries a Pro chip and is
+    /// the only destination that consults `LicenseGate` — the destination-picker
+    /// gate placement (§2.2). Tapping locked retail opens the purchase sheet.
+    private func destinationRow(_ destination: DestinationID, label: String, subtitle: String, id: String, proChip: Bool = false) -> some View {
         let selected = model.validationDestination == destination
+        let isRetail = destination == .acx || destination == .appleBooksAggregator
+        let unlocked = !isRetail || model.isProUnlocked
         return Button {
-            model.selectValidationDestination(destination)
-        } label: {
-            VStack(spacing: 4) {
-                Text(label).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
-                    .foregroundStyle(selected ? Color(hex: 0x21170B) : Palette.ink2)
+            if unlocked {
+                model.selectValidationDestination(destination)
+            } else {
+                showProPurchase = true
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 11)
-            .background(
-                selected
-                    ? AnyShapeStyle(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom))
-                    : AnyShapeStyle(.clear),
-                in: RoundedRectangle(cornerRadius: 10)
-            )
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? Palette.brass : Palette.hairline, lineWidth: 1))
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(label).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                            .foregroundStyle(selected ? Palette.ink : Palette.ink2)
+                        if proChip {
+                            Text("Pro")
+                                .scaledFont(size: 10, weight: .bold)
+                                .foregroundStyle(model.isProUnlocked ? Palette.ok : Palette.brass)
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background((model.isProUnlocked ? Palette.ok : Palette.brass).opacity(0.14), in: Capsule())
+                                .overlay(Capsule().stroke((model.isProUnlocked ? Palette.ok : Palette.brass).opacity(0.4), lineWidth: 1))
+                        }
+                    }
+                    Text(subtitle).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                }
+                Spacer()
+                if selected {
+                    Image(systemName: "checkmark.circle.fill").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.brass)
+                } else if !unlocked {
+                    Image(systemName: "lock.fill").scaledFont(size: 13).foregroundStyle(Palette.ink3)
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(id)

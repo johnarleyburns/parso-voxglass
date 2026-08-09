@@ -32,8 +32,12 @@ import VoxglassCoreTestSupport
     /// Builds a database at the given historical schema exactly as a shipped
     /// install would have left it: the captured snapshot DDL, the rows a real
     /// user created, and the migration bookkeeping stamped up to that version.
+    ///
+    /// The temp database name is unique per call, so the matrix cases can run in
+    /// parallel without two tests opening the same SQLite file ("database is
+    /// locked").
     private func historicalDatabase(_ version: String) async throws -> ProjectDatabase {
-        let db = ProjectDatabase.makeTemporary(named: "matrix_\(version)")
+        let db = ProjectDatabase.makeTemporary(named: "matrix_\(version)_\(UUID().uuidString)")
         try await db.open()
         try await db.executeRaw(try schemaSQL(version))
         try await insertRowSet(db, version: version)
@@ -153,7 +157,7 @@ import VoxglassCoreTestSupport
         let db = try await historicalDatabase(version)
         try await db.prepare()
 
-        let current = ProjectDatabase.makeTemporary(named: "matrix_current_\(version)")
+        let current = ProjectDatabase.makeTemporary(named: "matrix_current_\(version)_\(UUID().uuidString)")
         try await current.prepare()
 
         func schema(of db: ProjectDatabase) async throws -> Set<String> {

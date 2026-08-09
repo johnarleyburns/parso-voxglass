@@ -27,4 +27,15 @@ public enum ProductionWatchAccessibility {
     public static let syncStatus = "watch.sync.status"
     public static let offlineStart = "watch.offline.start"
     public static let offlineRemove = "watch.offline.remove"
+
+    // Recording remote (mockup watch-04, §14.3).
+    public static let recordingRemote = "watch.remote"
+    public static let remoteContext = "watch.remote.context"
+    public static let remoteLevel = "watch.remote.level"
+    public static let remotePlayTake = "watch.remote.playTake"
+    public static let remoteRecord = "watch.remote.record"
+    public static let remoteRetake = "watch.remote.retake"
+    public static let remoteFlag = "watch.remote.flag"
+    public static let remoteAcceptAndNext = "watch.remote.acceptAndNext"
+    public static let remoteIdle = "watch.remote.idle"
 }

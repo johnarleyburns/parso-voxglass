@@ -33,11 +33,15 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
 
     private(set) public var summaries: [ProjectSummary] = []
     private(set) public var activeQueue: ResolvedQueuePayload?
+    private(set) public var recordingRemoteStatus: RecordingRemoteStatus?
 
     public var onSummariesChanged: (([ProjectSummary]) -> Void)?
     public var onActiveQueueChanged: ((ResolvedQueuePayload) -> Void)?
     public var onReachabilityChanged: ((Bool) -> Void)?
     public var onAudioFileReceived: ((UUID, URL) -> Void)?
+    public var onRecordingRemoteStatusChanged: ((RecordingRemoteStatus) -> Void)?
+
+    private var statusContinuations: [AsyncStream<RecordingRemoteStatus>.Continuation] = []
 
     public override init() {
         session = WCSession.default
@@ -98,6 +102,45 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
             }
         } else {
             session.transferUserInfo(message)
+        }
+    }
+
+    // MARK: Recording remote (§14.3)
+
+    public func sendRecordingRemoteCommand(_ command: RecordingRemoteCommand) async throws {
+        guard WCSession.isSupported() else { throw WatchLinkTransportError.unsupported }
+        guard session.activationState == .activated else { throw WatchLinkTransportError.notActivated }
+        let message = try WatchPhoneMessageCodec.message(
+            action: ProductionTransportAction.recordingRemoteCommand,
+            payload: command
+        )
+        // sendMessage when reachable (live feedback); transferUserInfo when not,
+        // so a queued command is still delivered once the phone catches up. The
+        // phone dedupes by (sessionID, sequence), so the retry can never act twice.
+        if session.isReachable {
+            try await withCheckedThrowingContinuation { continuation in
+                session.sendMessage(
+                    message,
+                    replyHandler: { _ in continuation.resume() },
+                    errorHandler: { continuation.resume(throwing: $0) }
+                )
+            }
+        } else {
+            session.transferUserInfo(message)
+        }
+    }
+
+    public func sendRecordingRemoteStatus(_ status: RecordingRemoteStatus) async throws {
+        recordingRemoteStatus = status
+        onRecordingRemoteStatusChanged?(status)
+        for continuation in statusContinuations {
+            continuation.yield(status)
+        }
+    }
+
+    public func receiveRecordingRemoteStatus() -> AsyncStream<RecordingRemoteStatus> {
+        AsyncStream { continuation in
+            statusContinuations.append(continuation)
         }
     }
 
@@ -172,6 +215,10 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
             if let value = try? WatchPhoneMessageCodec.payload(ResolvedQueuePayload.self, from: context) {
                 Task { try? await sendActiveQueue(value) }
             }
+        case ProductionTransportAction.recordingRemoteStatus:
+            if let value = try? WatchPhoneMessageCodec.payload(RecordingRemoteStatus.self, from: context) {
+                Task { try? await sendRecordingRemoteStatus(value) }
+            }
         default:
             break
         }
@@ -187,6 +234,10 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
         case ProductionTransportAction.sendActiveQueue:
             if let value = try? WatchPhoneMessageCodec.payload(ResolvedQueuePayload.self, from: message) {
                 Task { try? await sendActiveQueue(value) }
+            }
+        case ProductionTransportAction.recordingRemoteStatus:
+            if let value = try? WatchPhoneMessageCodec.payload(RecordingRemoteStatus.self, from: message) {
+                Task { try? await sendRecordingRemoteStatus(value) }
             }
         default:
             break

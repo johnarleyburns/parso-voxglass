@@ -14,6 +14,7 @@ public final class FakeWatchTransport: WatchTransport, @unchecked Sendable {
         case nextSendArtwork
         case nextSendEvents
         case nextRequestRefresh
+        case nextSendRecordingCommand
     }
 
     private let lock = NSLock()
@@ -27,6 +28,12 @@ public final class FakeWatchTransport: WatchTransport, @unchecked Sendable {
     public private(set) var sentArtwork: [[UUID: Data]] = []
     public private(set) var sentEvents: [ReviewEvent] = []
     public private(set) var refreshRequests = 0
+    public private(set) var sentRecordingCommands: [RecordingRemoteCommand] = []
+    public private(set) var sentRecordingStatuses: [RecordingRemoteStatus] = []
+
+    /// Commands the fake received on the phone side (surfaced through
+    /// `receiveRecordingRemoteCommand`).
+    public var receivedRecordingCommands: [RecordingRemoteCommand] = []
 
     /// Events the fake surfaces on `receiveEvents()` (simulating the phone side
     /// receiving what the watch transferred).
@@ -34,6 +41,10 @@ public final class FakeWatchTransport: WatchTransport, @unchecked Sendable {
 
     private let eventContinuation: AsyncStream<ReviewEvent>.Continuation
     public let eventStream: AsyncStream<ReviewEvent>
+    private let commandContinuation: AsyncStream<RecordingRemoteCommand>.Continuation
+    public let commandStream: AsyncStream<RecordingRemoteCommand>
+    private let statusContinuation: AsyncStream<RecordingRemoteStatus>.Continuation
+    public let statusStream: AsyncStream<RecordingRemoteStatus>
 
     public init(
         isReachable: Bool = true,
@@ -46,11 +57,36 @@ public final class FakeWatchTransport: WatchTransport, @unchecked Sendable {
         var continuation: AsyncStream<ReviewEvent>.Continuation!
         eventStream = AsyncStream { continuation = $0 }
         eventContinuation = continuation
+        var commandContinuation: AsyncStream<RecordingRemoteCommand>.Continuation!
+        commandStream = AsyncStream { commandContinuation = $0 }
+        self.commandContinuation = commandContinuation
+        var statusContinuation: AsyncStream<RecordingRemoteStatus>.Continuation!
+        statusStream = AsyncStream { statusContinuation = $0 }
+        self.statusContinuation = statusContinuation
     }
 
     /// Relays events into the stream (phone side) / records watch-sent events.
     public func receiveEvents() -> AsyncStream<ReviewEvent> {
         eventStream
+    }
+
+    public func sendRecordingRemoteCommand(_ command: RecordingRemoteCommand) async throws {
+        try consumeFailPointIfSet(.nextSendRecordingCommand)
+        let snapshot = locked { () -> RecordingRemoteCommand in
+            self.sentRecordingCommands.append(command)
+            self.receivedRecordingCommands.append(command)
+            return command
+        }
+        commandContinuation.yield(snapshot)
+    }
+
+    public func sendRecordingRemoteStatus(_ status: RecordingRemoteStatus) async throws {
+        locked { self.sentRecordingStatuses.append(status) }
+        statusContinuation.yield(status)
+    }
+
+    public func receiveRecordingRemoteStatus() -> AsyncStream<RecordingRemoteStatus> {
+        statusStream
     }
 
     public func sendSummaries(_ summaries: [ProjectSummary]) async throws {
@@ -96,9 +132,19 @@ public final class FakeWatchTransport: WatchTransport, @unchecked Sendable {
         queues: [ResolvedQueuePayload],
         audio: [[WatchAudioItem]],
         events: [ReviewEvent],
-        refreshes: Int
+        refreshes: Int,
+        recordingCommands: [RecordingRemoteCommand],
+        recordingStatuses: [RecordingRemoteStatus]
     ) {
-        locked { (self.sentSummaries, self.sentQueues, self.sentAudio, self.sentEvents, self.refreshRequests) }
+        locked { (
+            self.sentSummaries,
+            self.sentQueues,
+            self.sentAudio,
+            self.sentEvents,
+            self.refreshRequests,
+            self.sentRecordingCommands,
+            self.sentRecordingStatuses
+        ) }
     }
 
     private func consumeFailPointIfSet(_ point: FailPoint) throws {

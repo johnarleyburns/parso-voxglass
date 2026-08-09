@@ -39,6 +39,9 @@ public enum ProductionWatchSmoke {
             self.seedSummaries = seed.summaries
             self.seedQueue = seed.queue
             self.seedAudio = seed.audio
+            var statusContinuation: AsyncStream<RecordingRemoteStatus>.Continuation!
+            statusStream = AsyncStream { statusContinuation = $0 }
+            self.statusContinuation = statusContinuation
         }
 
         public func sendSummaries(_ summaries: [ProjectSummary]) async throws {}
@@ -52,5 +55,21 @@ public enum ProductionWatchSmoke {
             AsyncStream { _ in }
         }
         public func requestRefresh() async throws {}
+
+        public func sendRecordingRemoteCommand(_ command: RecordingRemoteCommand) async throws {
+            sentRecordingCommands.append(command)
+        }
+        public func sendRecordingRemoteStatus(_ status: RecordingRemoteStatus) async throws {
+            lastRecordingStatus = status
+            statusContinuation.yield(status)
+        }
+        public func receiveRecordingRemoteStatus() -> AsyncStream<RecordingRemoteStatus> {
+            statusStream
+        }
+
+        public private(set) var sentRecordingCommands: [RecordingRemoteCommand] = []
+        public private(set) var lastRecordingStatus: RecordingRemoteStatus?
+        private let statusContinuation: AsyncStream<RecordingRemoteStatus>.Continuation
+        public let statusStream: AsyncStream<RecordingRemoteStatus>
     }
 }

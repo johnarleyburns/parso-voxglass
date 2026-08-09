@@ -33,6 +33,10 @@ struct SettingsView: View {
                     WatchSyncCard()
                 }
 
+                settingsGroup("Narration") {
+                    NarrationProCard()
+                }
+
                 settingsGroup("Audio") {
                     EQSettingsRow()
                 }
@@ -105,6 +109,87 @@ struct SettingsView: View {
     ) -> some View {
         VoxglassGroupedSection(title: title) {
             content()
+        }
+    }
+}
+
+private struct NarrationProCard: View {
+    @State private var showProPurchase = false
+    @State private var isRestoring = false
+    @State private var restoreResult: String?
+
+    private var provider: any LicenseProvider {
+        NarrationProStore.shared.provider
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button {
+                showProPurchase = true
+            } label: {
+                DisclosureListRow(
+                    icon: "sparkles",
+                    title: "Commercial release",
+                    detail: "Retail profiles, mastering, M4B, reports",
+                    count: nil,
+                    isEnabled: true
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.pro")
+
+            VoxglassListDivider()
+
+            Button {
+                Task { await restore() }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.clockwise.circle")
+                        .scaledFont(size: 14)
+                        .foregroundStyle(Palette.brass)
+                        .frame(width: 32, height: 32)
+                        .background {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Color.white.opacity(0.07))
+                        }
+                    Text(isRestoring ? "Restoring…" : "Restore purchase")
+                        .scaledFont(size: 14, weight: .medium)
+                        .foregroundStyle(Palette.ink)
+                    Spacer()
+                }
+                .padding(.vertical, 11)
+            }
+            .buttonStyle(.plain)
+            .disabled(isRestoring)
+            .accessibilityIdentifier("settings.restore")
+
+            if let restoreResult {
+                VoxglassListDivider()
+                Text(restoreResult)
+                    .scaledFont(size: 11.5)
+                    .foregroundStyle(Palette.ink2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14).padding(.vertical, 9)
+            }
+        }
+        .glassSurface(cornerRadius: 18)
+        .sheet(isPresented: $showProPurchase) {
+            ProPurchaseView(provider: provider, model: nil) { _ in }
+        }
+    }
+
+    private func restore() async {
+        isRestoring = true
+        defer { isRestoring = false }
+        do {
+            let state = try await provider.restore()
+            if case .pro = state {
+                restoreResult = "Voxglass Narration Pro restored on this device."
+            } else {
+                restoreResult = "No previous purchase was found to restore."
+            }
+        } catch {
+            restoreResult = "Restore failed: \(error.localizedDescription)"
         }
     }
 }

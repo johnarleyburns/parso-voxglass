@@ -55,6 +55,7 @@
 		32CAAABEAB686600BB671219 /* AnimatedSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 614EDDFDEE2D6D46377341C6 /* AnimatedSplashView.swift */; };
 		33A6B19C8EBABB66672DC421 /* frankenstein_shelley.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 04FCC00384E0A94423E5BF7C /* frankenstein_shelley.jpg */; };
 		34A99B897AF32EA6CBDCBB5A /* WatchOnDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C9D59444DDC29A0F7429CB /* WatchOnDeviceView.swift */; };
+		34BE8C0F86E8877EF30E6985 /* WatchRecordingRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC4160A969025FEACDABA46 /* WatchRecordingRemoteView.swift */; };
 		354513B397ABB4AC56935EB6 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5061FBEF9FB1D37EA33526A /* WatchConnectivity.framework */; };
 		36D2D07C3CCD608C1140CDFB /* ProductionSmokeSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */; };
 		3AFC314231FBC67DF480EFA5 /* solo_pride_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3616511B3047863DE929EEC4 /* solo_pride_librivox.jpg */; };
@@ -128,14 +129,17 @@
 		8859F6D8F7FAEF25CDA90091 /* WatchPlaybackCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B2ABB79E1F18C6C9DE4EBA /* WatchPlaybackCoordinator.swift */; };
 		8A1CD38DD828054566ABEF1C /* GlassDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420E11400AB1535B94D3D0B5 /* GlassDock.swift */; };
 		8A8B968AE4222A958541D20F /* reluctant_dragon_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = AF64D2E09DF828C94AC30C1F /* reluctant_dragon_librivox.jpg */; };
+		8ACC0DC19F8FCEE0FD18915D /* StoreKitLicenseProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002282F116F378F36244C4B6 /* StoreKitLicenseProvider.swift */; };
 		8B8EE3584FA8FB99E93666D0 /* mysterious_island_ms_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 82ACAE08A854D9C0B7A70CA9 /* mysterious_island_ms_librivox.jpg */; };
 		8BC90F324FEC05698A1D8DA8 /* WatchProductionHomeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDDFC415F85AA424800030DA /* WatchProductionHomeModel.swift */; };
 		8C6B21C9D4DCE4D3AAFB642E /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49FA6D58EC651570824B18FE /* AudioToolbox.framework */; };
 		8D2D7F580BB053F16527B3DC /* swiss_family_robinson_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4DE029504EEF4954467251CA /* swiss_family_robinson_librivox.jpg */; };
+		8DFCBC80C8009C8385C6AABB /* ProPurchaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A67FE91F8E886CFACCFFD23 /* ProPurchaseView.swift */; };
 		8F385E9F8DA031A3C2E31D6C /* secret_garden_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F0CAA54FADE549D2158FAB93 /* secret_garden_librivox.jpg */; };
 		9005B6ABE5E61D5BEAA71186 /* WatchRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE058162DB1348D28317C06A /* WatchRootView.swift */; };
 		9153C0963F9A39A8E0BCB7D8 /* 1601_0903_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6651677A03062028BC949542 /* 1601_0903_librivox.jpg */; };
 		917FC5B3C23CF26B23C9B79F /* CatalogDiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE26F9079A1C12E2BAD8E865 /* CatalogDiscoveryView.swift */; };
+		919AF19D70F45887044613C2 /* WatchRecordingRemoteModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A334C8959A68820AAAD854 /* WatchRecordingRemoteModel.swift */; };
 		92DA452F703F3B8154D93E0A /* peter_pan_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BD276A6BF5801E2B15EBA44B /* peter_pan_0707_librivox.jpg */; };
 		9313773ED1C718003C5FC794 /* NarrationProjectRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */; };
 		95593DEA589E20BFC4BD27CC /* city_worlds_end_1203_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BD0F6CE7B0C3D96D9976A73F /* city_worlds_end_1203_librivox.jpg */; };
@@ -144,6 +148,7 @@
 		9A64C2D2E69FD9609615B505 /* VoxglassUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */; };
 		9CA56629A3B915EE187107DD /* WatchAudioRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BE14BEA49984C7C2023811 /* WatchAudioRelay.swift */; };
 		9E60B177F487CA22A0E624CD /* alices_adventures_1003.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */; };
+		9EABB6FA26D2E80437AAF302 /* NarrationProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F827B2D592C6F51EF49127A6 /* NarrationProStore.swift */; };
 		A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739CF70CFD45FD09DC69EB64 /* ListenView.swift */; };
 		A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347795F23ED3EA940FB4D8BE /* SystemPlaybackBridge.swift */; };
 		A4A9DF4E0A8D66C0B6CDB936 /* ProductionRenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5023830EA677771F7C38078C /* ProductionRenderCache.swift */; };
@@ -292,6 +297,7 @@
 
 /* Begin PBXFileReference section */
 		00206E2895F3BD8366845490 /* ProductionCarPlayPhoneSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionCarPlayPhoneSupport.swift; sourceTree = "<group>"; };
+		002282F116F378F36244C4B6 /* StoreKitLicenseProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitLicenseProvider.swift; sourceTree = "<group>"; };
 		018C274D1C0769FF60E74A17 /* amateur_cracksman_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = amateur_cracksman_librivox.jpg; sourceTree = "<group>"; };
 		034B5DB162C110775DD52953 /* art_war_ps_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = art_war_ps_librivox.jpg; sourceTree = "<group>"; };
 		04B66C3C492D866E4776DDF9 /* WatchAppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAppServices.swift; sourceTree = "<group>"; };
@@ -303,6 +309,8 @@
 		07B47F8B73E93AF8A2A3E0ED /* treasure_island_ap_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = treasure_island_ap_librivox.jpg; sourceTree = "<group>"; };
 		088AA4A9A7602E0A0C49E97C /* 1891_collection_bt_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 1891_collection_bt_librivox.jpg; sourceTree = "<group>"; };
 		08BCFD8ACA913E9EFA9AD767 /* adventures_sherlockholmes_1007_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_sherlockholmes_1007_librivox.jpg; sourceTree = "<group>"; };
+		0A67FE91F8E886CFACCFFD23 /* ProPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProPurchaseView.swift; sourceTree = "<group>"; };
+		0AC4160A969025FEACDABA46 /* WatchRecordingRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRecordingRemoteView.swift; sourceTree = "<group>"; };
 		0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassComponents.swift; sourceTree = "<group>"; };
 		0EA653ABDAA7D0F2AE6ACE7E /* war_worlds_solo_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = war_worlds_solo_librivox.jpg; sourceTree = "<group>"; };
 		0F48A6F704ECEB52D975C945 /* BookPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPageView.swift; sourceTree = "<group>"; };
@@ -433,6 +441,7 @@
 		8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gulliver_ld_librivox.jpg; sourceTree = "<group>"; };
 		8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationTabView.swift; sourceTree = "<group>"; };
 		8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = les_mis_vol01_0810_librivox.jpg; sourceTree = "<group>"; };
+		92A334C8959A68820AAAD854 /* WatchRecordingRemoteModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRecordingRemoteModel.swift; sourceTree = "<group>"; };
 		92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = divine_comedy_librivox.jpg; sourceTree = "<group>"; };
 		93ECD54380A215C3A3831A60 /* SkipSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipSymbol.swift; sourceTree = "<group>"; };
 		9434A47A806A4EA4509EC595 /* terror_mystery_0707_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = terror_mystery_0707_librivox.jpg; sourceTree = "<group>"; };
@@ -519,6 +528,7 @@
 		F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionModels.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F8133D9EE165903ECF80F723 /* CarPlayNowPlayingConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNowPlayingConfigurator.swift; sourceTree = "<group>"; };
+		F827B2D592C6F51EF49127A6 /* NarrationProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationProStore.swift; sourceTree = "<group>"; };
 		F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sense_sensibility_ver3_ek.jpg; sourceTree = "<group>"; };
 		F9C1AC88D4122B2F6085A567 /* VoxglassCarPlaySmokeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassCarPlaySmokeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9E93D1A57F80DF8FFB3D8A7 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
@@ -579,6 +589,8 @@
 				46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */,
 				CDDFC415F85AA424800030DA /* WatchProductionHomeModel.swift */,
 				8783A01744671DE2947FDAB5 /* WatchProductionsModel.swift */,
+				92A334C8959A68820AAAD854 /* WatchRecordingRemoteModel.swift */,
+				0AC4160A969025FEACDABA46 /* WatchRecordingRemoteView.swift */,
 				BCDFB7EAA0868C2F31B9A628 /* WatchReviewConfirmationView.swift */,
 				850F4456DE697EF013A90246 /* WatchReviewModel.swift */,
 				6B5E6FC5BCE9A4BD773B627E /* WatchReviewPlayerView.swift */,
@@ -789,6 +801,7 @@
 			isa = PBXGroup;
 			children = (
 				F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */,
+				F827B2D592C6F51EF49127A6 /* NarrationProStore.swift */,
 				E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */,
 				503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */,
 				F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */,
@@ -796,6 +809,8 @@
 				5023830EA677771F7C38078C /* ProductionRenderCache.swift */,
 				D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */,
 				61E847AE08C9D96DEA828D08 /* ProductionViews.swift */,
+				0A67FE91F8E886CFACCFFD23 /* ProPurchaseView.swift */,
+				002282F116F378F36244C4B6 /* StoreKitLicenseProvider.swift */,
 				443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */,
 				11936CC254801B6E56EF9602 /* Discovery */,
 			);
@@ -1336,6 +1351,8 @@
 				B372589F6E12945120DD6305 /* WatchProductionAudioStore.swift in Sources */,
 				8BC90F324FEC05698A1D8DA8 /* WatchProductionHomeModel.swift in Sources */,
 				A6B231C65FE03E552C384F02 /* WatchProductionsModel.swift in Sources */,
+				919AF19D70F45887044613C2 /* WatchRecordingRemoteModel.swift in Sources */,
+				34BE8C0F86E8877EF30E6985 /* WatchRecordingRemoteView.swift in Sources */,
 				7EC439A601E4836960F68EE5 /* WatchReviewConfirmationView.swift in Sources */,
 				4AC1391D0A25F33A7490BD6B /* WatchReviewModel.swift in Sources */,
 				3FEB78A0B834F4FC9B163B33 /* WatchReviewPlayerView.swift in Sources */,
@@ -1401,6 +1418,7 @@
 				68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */,
 				B14B2AE1CA11BC46846AA0E9 /* NarrationFlow.swift in Sources */,
 				27C147259FE948D5158B6B06 /* NarrationFlowScreens.swift in Sources */,
+				9EABB6FA26D2E80437AAF302 /* NarrationProStore.swift in Sources */,
 				9313773ED1C718003C5FC794 /* NarrationProjectRepository.swift in Sources */,
 				DBBDBF3E02DCB27296991885 /* NarrationTabView.swift in Sources */,
 				C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */,
@@ -1409,6 +1427,7 @@
 				2C2E08B90C9BCF92211C7D2E /* PhoneProductionEnvironment.swift in Sources */,
 				1F13275BAA7575015FAB1589 /* PhoneProductionSync.swift in Sources */,
 				307531D63A9AD0EB05D94E43 /* PlaylistsView.swift in Sources */,
+				8DFCBC80C8009C8385C6AABB /* ProPurchaseView.swift in Sources */,
 				26C9EE1831A340B02F72CD5C /* ProductionCarPlayPhoneSupport.swift in Sources */,
 				2BA88E35A6E580D7FDE04127 /* ProductionCarPlayRenderer.swift in Sources */,
 				1B46EECFEAF97CAB79A85E43 /* ProductionModels.swift in Sources */,
@@ -1426,6 +1445,7 @@
 				A720762200E37ED3E6C1B405 /* SettingsView.swift in Sources */,
 				134B624097E3351CD2CBA06A /* SkipSymbol.swift in Sources */,
 				DF3D0923DF3DD5A7465F7EF8 /* SplashView.swift in Sources */,
+				8ACC0DC19F8FCEE0FD18915D /* StoreKitLicenseProvider.swift in Sources */,
 				A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */,
 				B81B94ADA69B5E21B5DFF130 /* TakeComparisonView.swift in Sources */,
 				7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */,

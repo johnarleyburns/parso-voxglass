@@ -9,4 +9,5 @@ public enum ProductionRoute: Hashable {
     case dictation
     case syncStatus
     case offlineQueue
+    case recordingRemote
 }

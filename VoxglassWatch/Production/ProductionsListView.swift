@@ -66,6 +66,8 @@ struct ProductionsListView: View {
             WatchSyncStatusView()
         case .offlineQueue:
             WatchOfflineQueueView()
+        case .recordingRemote:
+            WatchRecordingRemoteView()
         }
     }
 }

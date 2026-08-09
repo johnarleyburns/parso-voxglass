@@ -66,6 +66,12 @@ struct ProductionHomeView: View {
                 .accessibilityIdentifier(ProductionWatchAccessibility.reviewQueues)
                 .contentShape(Rectangle())
 
+                NavigationLink(value: ProductionRoute.recordingRemote) {
+                    Label("Recording remote", systemImage: "record.circle")
+                }
+                .accessibilityIdentifier(ProductionWatchAccessibility.recordingRemote)
+                .contentShape(Rectangle())
+
                 NavigationLink(value: ProductionRoute.syncStatus) {
                     Label("Sync Status", systemImage: "arrow.triangle.2.circlepath.circle")
                 }

@@ -220,6 +220,18 @@ final class NarrationFlowModel {
     /// The destination URL of the in-flight take (also the autosave path).
     private var recordingDestinationURL: URL?
 
+    /// The phone production relay the record screen registers its recording-remote
+    /// session with (spec §14.3). Set by the flow root from the discovery
+    /// environment so the watch can start/stop/accept/retake/flag this session.
+    var phoneProduction: PhoneProductionEnvironment?
+
+    /// The active recording-remote coordinator while the record screen is up.
+    private var recordingRemoteCoordinator: RecordingRemoteCoordinator?
+    private var recordingRemoteStatusTask: Task<Void, Never>?
+    /// Latest telemetry fed by the capture's level stream, relayed to the watch.
+    private var remoteElapsedSeconds: TimeInterval = 0
+    private var remoteLevelDBFS: Float = -60
+
     var assembly = AssemblySettings()
     var narrator = ""
     var language = "English"
@@ -247,6 +259,24 @@ final class NarrationFlowModel {
     let repository: NarrationProjectRepository
     let fetcher: any HTTPFetching
 
+    /// The license seam the export destination picker and the export runner
+    /// consult (spec §2.2: LicenseGate appears only in the destination picker,
+    /// the export runner, and Settings). Recording, review, validation, and
+    /// storage never touch it.
+    let licenseProvider: any LicenseProvider
+
+    /// The current entitlement, kept fresh from `LicenseProvider.updates` so the
+    /// destination picker can flip between free and Pro without re-querying.
+    var proEntitlement: EntitlementState = .free
+    nonisolated(unsafe) private var proObservationTask: Task<Void, Never>?
+
+    var isProUnlocked: Bool {
+        if case .pro = proEntitlement { return true }
+        return false
+    }
+
+    var licenseGate: LicenseGate { LicenseGate(provider: licenseProvider) }
+
     /// Latest review-note text per paragraph, so a flag note survives relaunch
     /// and shows on the review list (stored as `ReviewNote`s in the project DB).
     private var paragraphNotes: [UUID: String] = [:]
@@ -255,11 +285,13 @@ final class NarrationFlowModel {
         repository: NarrationProjectRepository = NarrationProjectRepository(),
         fetcher: any HTTPFetching = URLSessionFetcher(),
         existing: AudiobookProject? = nil,
-        capture: any AudioCapturing = AudioSessionCapture()
+        capture: any AudioCapturing = AudioSessionCapture(),
+        licenseProvider: any LicenseProvider = NarrationProStore.shared.provider
     ) {
         self.repository = repository
         self.fetcher = fetcher
         self.capture = capture
+        self.licenseProvider = licenseProvider
         self.project = existing
         if let existing {
             draftTitle = existing.metadata.title
@@ -274,6 +306,20 @@ final class NarrationFlowModel {
                 await self?.handleInterruption(reason)
             }
         }
+        // Keep the Pro entitlement fresh from the license seam so the export
+        // destination picker reflects purchases, restores, and revocations
+        // (§13.5). A revocation reverts to free; no project is touched.
+        proObservationTask = Task { [weak self] in
+            guard let self else { return }
+            self.proEntitlement = await self.licenseProvider.entitlement
+            for await state in self.licenseProvider.updates {
+                self.proEntitlement = state
+            }
+        }
+    }
+
+    deinit {
+        proObservationTask?.cancel()
     }
 
     // MARK: - Presentation
@@ -905,10 +951,123 @@ final class NarrationFlowModel {
         }
     }
 
+    // MARK: - Recording remote (spec §14.3)
+
+    /// Registers this flow as the phone's active recording-remote session. Called
+    /// when the record screen appears: a fresh `sessionID` scopes command
+    /// idempotency, and a relay task pushes live status to the watch.
+    func beginRecordingRemoteSession() {
+        guard let phoneProduction else { return }
+        let sessionID = repository.ids.next()
+        let coordinator = RecordingRemoteCoordinator(
+            sessionID: sessionID,
+            state: { [weak self] in self?.capture.state ?? .idle },
+            handler: { [weak self] action in
+                await self?.handleRemoteAction(action)
+            }
+        )
+        recordingRemoteCoordinator = coordinator
+        phoneProduction.recordingRemoteCoordinator = coordinator
+        recordingRemoteStatusTask?.cancel()
+        recordingRemoteStatusTask = Task { [weak self] in
+            await self?.relayRecordingRemoteStatus(sessionID: sessionID)
+        }
+    }
+
+    /// Unregisters the session when the record screen disappears.
+    func endRecordingRemoteSession() {
+        recordingRemoteStatusTask?.cancel()
+        recordingRemoteStatusTask = nil
+        recordingRemoteCoordinator = nil
+        phoneProduction?.recordingRemoteCoordinator = nil
+    }
+
+    /// Maps a watch command onto the same phone-only actions the record screen
+    /// drives. All five are gated by the coordinator to the armed/recording
+    /// states, and all run on the main actor, so the watch can never mutate
+    /// project state out from under the UI.
+    private func handleRemoteAction(_ action: RecordingRemoteAction) async {
+        switch action {
+        case .record:
+            if !isRecording, let id = currentParagraphID {
+                await startRecordingParagraph(id)
+            }
+        case .stop:
+            if isRecording, let id = currentParagraphID {
+                await stopRecordingParagraph(id)
+            }
+        case .retake:
+            if isRecording, let id = currentParagraphID {
+                await stopRecordingParagraph(id)
+            }
+            if let id = currentParagraphID {
+                await startRecordingParagraph(id)
+            }
+        case .accept:
+            if isRecording, let id = currentParagraphID {
+                await stopRecordingParagraph(id)
+            }
+            if let id = currentParagraphID {
+                acceptParagraph(id)
+                await persist()
+                advanceAfterRemoteCompletion(from: id, flag: false)
+            }
+        case .flag:
+            if isRecording, let id = currentParagraphID {
+                await stopRecordingParagraph(id)
+            }
+            if let id = currentParagraphID {
+                flagParagraph(id, note: "")
+                await persist()
+                advanceAfterRemoteCompletion(from: id, flag: true)
+            }
+        }
+    }
+
+    private func advanceAfterRemoteCompletion(from id: UUID, flag: Bool) {
+        if let next = nextParagraph(after: id) {
+            currentParagraphID = next.id
+        } else {
+            currentParagraphID = nil
+        }
+        _ = flag
+    }
+
+    /// Pushes a status frame to the watch at a phone-friendly cadence. The watch
+    /// shows paragraph, elapsed take time, and input level; no audio crosses the
+    /// link (spec §14.3).
+    private func relayRecordingRemoteStatus(sessionID: UUID) async {
+        while !Task.isCancelled {
+            let paragraphNumber: Int
+            let chapterTitle: String
+            if let project, let id = currentParagraphID {
+                paragraphNumber = project.allParagraphs.firstIndex(where: { $0.id == id }).map { $0 + 1 } ?? 0
+                let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == id } }
+                chapterTitle = chapter?.title ?? ""
+            } else {
+                paragraphNumber = 0
+                chapterTitle = ""
+            }
+            let state = capture.state
+            let isRecordingNow = state == .recording
+            let status = RecordingRemoteStatus(
+                sessionID: sessionID,
+                paragraphID: currentParagraphID,
+                paragraphNumber: paragraphNumber,
+                chapterTitle: chapterTitle,
+                elapsedSeconds: isRecordingNow ? remoteElapsedSeconds : 0,
+                levelDBFS: isRecordingNow ? remoteLevelDBFS : -60,
+                isRecording: isRecordingNow,
+                isArmed: isRecordingNow || state == .prepared || state == .monitoring
+            )
+            await phoneProduction?.pushRecordingRemoteStatus(status)
+            try? await Task.sleep(for: .milliseconds(350))
+        }
+    }
+
     /// The route chip text for the record screen (mockup 06): transport name
     /// plus readiness class.
-    var routeChipText: String {
-        let transport = Self.transportLabel(capture.currentRouteInfo.transports)
+    var routeChipText: String {        let transport = Self.transportLabel(capture.currentRouteInfo.transports)
         let klass = routeClass ?? CaptureRouteClassifier.classify(capture.currentRouteInfo)
         return "\(transport) · \(CaptureRouteClassifier.label(for: klass).lowercased())"
     }
@@ -984,6 +1143,10 @@ final class NarrationFlowModel {
             guard let self else { return }
             for await levels in self.capture.levels {
                 self.level = max(levels.peakDBFS, -60)
+                // The recording remote relays the same telemetry to the watch
+                // (spec §14.3): elapsed take time and input level.
+                self.remoteElapsedSeconds = levels.sampleTime
+                self.remoteLevelDBFS = levels.peakDBFS
             }
         }
     }
@@ -1403,20 +1566,52 @@ final class NarrationFlowModel {
         Task { await runValidation() }
     }
 
+    /// ACX readiness preview for the Pro purchase sheet (mockup 14c). Validation
+    /// is never gated (§2.2): a free user sees their full retail report before
+    /// buying. Does not change the selected export destination.
+    func acxReadinessPreview() async -> [ValidationIssue] {
+        guard let project else { return [] }
+        let assets = (try? await SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL).records()) ?? []
+        let preflight = ExportPreflight.compute(
+            project: project,
+            assets: assets,
+            scope: .wholeBook,
+            freeBytes: FreeSpaceProvider.availableBytes
+        )
+        return ValidationRuleEngine().evaluate(
+            project: project,
+            metrics: PackagingSupport.selectedTakeMetrics(project),
+            profile: DestinationProfile.profile(for: .acx),
+            eligibility: EligibilityProfile.evaluate(project),
+            assembly: project.profile.assembly,
+            context: ValidationContext(exportPreflight: preflight.exportPreflightContext)
+        )
+    }
+
     /// Blocking issues that gate *starting* an export — the four preflight
     /// codes plus the destination's other blocking rules.
     var blockingValidationIssues: [ValidationIssue] {
         validationIssues.filter { $0.severity == .blocking }
     }
 
-    /// P7 (§13): produces the real package for `validationDestination` through
-    /// the free builder + `ResumableExportRunner`, zips it for Save to Files,
-    /// and hands it to the Submit screen. Free lanes never touch a license gate.
+    /// P7/P8 (§13): produces the real package for `validationDestination` through
+    /// the free builders or the Pro retail builder, via `ResumableExportRunner`,
+    /// zips it for Save to Files, and hands it to the Submit screen. Free lanes
+    /// never touch a license gate; retail consults it in the runner (§2.2).
     func runExport() async {
         guard let project, project.rights.isAttested, !isExporting else { return }
         guard blockingValidationIssues.isEmpty else {
             exportError = "Resolve the blocking validation issues before exporting."
             return
+        }
+        let isRetail = validationDestination == .acx || validationDestination == .appleBooksAggregator
+        if isRetail {
+            do {
+                try await licenseGate.require(.retailPresets)
+            } catch {
+                exportError = "Commercial retail export is a Voxglass Narration Pro feature."
+                return
+            }
         }
         isExporting = true
         exportError = nil
@@ -1424,18 +1619,29 @@ final class NarrationFlowModel {
         exportRunRecord = nil
         defer { isExporting = false }
 
-        let builder: any PackageBuilder = validationDestination == .internetArchive
-            ? InternetArchivePackageBuilder()
-            : LibriVoxPackageBuilder()
+        let builder: any PackageBuilder
+        var options = ExportOptions(
+            generatedAt: repository.clock.now,
+            appVersion: "Voxglass \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1")"
+        )
+        switch validationDestination {
+        case .librivox:
+            builder = LibriVoxPackageBuilder()
+        case .internetArchive:
+            builder = InternetArchivePackageBuilder()
+            options.includeMP3Derivatives = true
+        case .acx, .appleBooksAggregator:
+            builder = RetailMasterPackageBuilder(destination: validationDestination)
+            options.applyMastering = true
+            options.writeValidationReport = true
+            options.retailSample = defaultRetailSample()
+        case .personalMaster:
+            exportError = "Lossless personal masters aren't wired into this build yet."
+            return
+        }
         let layout = repository.layout(for: project.id)
         let renderer = AVChapterRenderer(assetsRoot: layout.root)
         let assets = repository.fileStore(for: project.id)
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
-        let options = ExportOptions(
-            includeMP3Derivatives: validationDestination == .internetArchive,
-            generatedAt: repository.clock.now,
-            appVersion: "Voxglass \(appVersion)"
-        )
 
         do {
             let outcome = try await ResumableExportRunner(store: repository.store(for: project.id)).run(
@@ -1468,6 +1674,15 @@ final class NarrationFlowModel {
         } catch {
             exportError = "Export failed: \(error.localizedDescription)"
         }
+    }
+
+    /// The default retail sample: the first recorded body paragraph, ~90 seconds —
+    /// the [60, 300] s retail window is enforced by validation. The export wizard
+    /// offers a fixed sample in MVP; a sample picker is future work.
+    private func defaultRetailSample() -> RetailSampleSelection? {
+        guard let project else { return nil }
+        guard let id = project.allParagraphs.first(where: { $0.selectedTakeID != nil })?.id else { return nil }
+        return RetailSampleSelection(startParagraphID: id, duration: 90)
     }
 
     func startExport() {
@@ -1605,6 +1820,9 @@ struct NarrationFlowRoot: View {
             Text("This removes the project and its recorded takes from this device.")
         }
         .task {
+            // The watch recording-remote (spec §14.3) targets this flow's active
+            // recording session through the phone production relay.
+            model.phoneProduction = discovery.phoneProduction
             if let startNeed {
                 model.importNeed(startNeed)
                 if let existing = await model.existingProject(for: startNeed) {

@@ -24,6 +24,10 @@ public final class WatchConnectivityTransport: WatchTransport {
     /// outbox so they are pushed to the iPhone exactly once.
     public var onEventReceived: ((ReviewEvent) -> Void)?
 
+    /// A recording-remote command the watch sent while a recording session is
+    /// active (§14.3). The phone routes it to the active session's coordinator.
+    public var onRecordingRemoteCommandReceived: ((RecordingRemoteCommand) -> Void)?
+
     /// Called when the shared `WCSession` reports a reachability change.
     public var onReachabilityChanged: ((Bool) -> Void)?
 
@@ -96,6 +100,25 @@ public final class WatchConnectivityTransport: WatchTransport {
         }
     }
 
+    // MARK: - Recording remote (§14.3)
+
+    /// The phone never creates commands; the watch sends them. No-op.
+    public func sendRecordingRemoteCommand(_ command: RecordingRemoteCommand) async throws {
+        _ = command
+    }
+
+    /// Pushes the live recording-session telemetry down to the watch as
+    /// application context (the most-recent-state channel, matching how
+    /// summaries and the active queue are relayed).
+    public func sendRecordingRemoteStatus(_ status: RecordingRemoteStatus) async throws {
+        try pushContext(action: ProductionTransportAction.recordingRemoteStatus, payload: status)
+    }
+
+    /// The phone produces status; nothing to stream back.
+    public func receiveRecordingRemoteStatus() -> AsyncStream<RecordingRemoteStatus> {
+        AsyncStream { _ in }
+    }
+
     // MARK: - Incoming (called by PhoneAudioRelay's WCSession delegate)
 
     /// Routes an incoming production message (delivered as userInfo, message, or
@@ -109,6 +132,9 @@ public final class WatchConnectivityTransport: WatchTransport {
             for continuation in eventContinuations {
                 continuation.yield(event)
             }
+        case ProductionTransportAction.recordingRemoteCommand:
+            guard let command = try? WatchPhoneMessageCodec.payload(RecordingRemoteCommand.self, from: message) else { return }
+            onRecordingRemoteCommandReceived?(command)
         case ProductionTransportAction.requestRefresh:
             Task { try? await requestRefresh() }
         default:

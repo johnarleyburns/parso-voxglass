@@ -74,6 +74,8 @@ public enum ProductionTransportAction {
     public static let sendArtwork = "production.sendArtwork"
     public static let reviewEvent = "production.reviewEvent"
     public static let requestRefresh = "production.requestRefresh"
+    public static let recordingRemoteCommand = "production.recordingRemoteCommand"
+    public static let recordingRemoteStatus = "production.recordingRemoteStatus"
 }
 
 /// Resolves which queue items the watch should have audio for, per spec §13.6 rule 2:

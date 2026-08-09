@@ -407,8 +407,10 @@ extension PhoneAudioRelay: WCSessionDelegate {
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
         Task { @MainActor in
-            if WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.requestRefresh {
-                // The watch asked the phone to re-push its projection; acknowledge.
+            if WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.requestRefresh
+                || WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.recordingRemoteCommand {
+                // The watch asked the phone to re-push, or sent a recording-remote
+                // command; forward to the production relay and acknowledge.
                 forwardProduction(message)
                 replyHandler(["received": true])
                 return

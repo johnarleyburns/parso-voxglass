@@ -19,6 +19,12 @@ public final class PhoneProductionEnvironment {
     public let watchTransport: WatchConnectivityTransport
     public let narrationRepository: NarrationProjectRepository
 
+    /// The flow's active recording-remote coordinator, registered while the
+    /// record screen is on screen (§14.3). Commands the watch sends are routed
+    /// here; `nil` means no session is active, so a command is acknowledged and
+    /// dropped by the coordinator's absence.
+    public var recordingRemoteCoordinator: RecordingRemoteCoordinator?
+
     public init(
         previewStore: ProductionPreviewStore? = nil,
         watchTransport: WatchConnectivityTransport? = nil,
@@ -31,6 +37,10 @@ public final class PhoneProductionEnvironment {
         self.watchTransport.onEventReceived = { [weak self] event in
             self?.sync.enqueue(event)
         }
+        self.watchTransport.onRecordingRemoteCommandReceived = { [weak self] command in
+            guard let self, let coordinator = self.recordingRemoteCoordinator else { return }
+            Task { await coordinator.deliver(command) }
+        }
         self.watchTransport.onReachabilityChanged = { [weak self] reachable in
             guard reachable else { return }
             Task { await self?.publishToWatch() }
@@ -38,6 +48,12 @@ public final class PhoneProductionEnvironment {
         sync.onProjectionsUpdated = { [weak self] in
             Task { await self?.publishToWatch() }
         }
+    }
+
+    /// Relays one live recording-session status frame to the watch (§14.3).
+    /// Best-effort: the transport drops it when the session or link is not ready.
+    public func pushRecordingRemoteStatus(_ status: RecordingRemoteStatus) async {
+        try? await watchTransport.sendRecordingRemoteStatus(status)
     }
 
     /// Pulls the latest projection and flushes the outbox (spec §14.5 Flow A).
