@@ -141,6 +141,8 @@ struct RecordView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToReview = false
     @State private var showAudioSetup = false
+    @State private var showCompare = false
+    @State private var showImport = false
 
     init(model: NarrationFlowModel, paragraphID: UUID, fromReview: Bool = false) {
         self.model = model
@@ -178,6 +180,12 @@ struct RecordView: View {
         }
         .sheet(isPresented: $showAudioSetup) {
             AudioSetupView(model: model)
+        }
+        .sheet(isPresented: $showCompare) {
+            TakeComparisonView(model: model, paragraphID: currentParagraphID)
+        }
+        .sheet(isPresented: $showImport) {
+            ImportAudioView(model: model)
         }
         .narrationFlowBackOnlyToolbar(if: fromReview)
         .navigationBarTitleDisplayMode(.inline)
@@ -444,6 +452,32 @@ struct RecordView: View {
             } else {
                 Text("No take yet").scaledFont(size: 11).foregroundStyle(Palette.ink3)
             }
+
+            if model.takeCount(for: paragraph.id) >= 2 {
+                Button {
+                    showCompare = true
+                } label: {
+                    Label("Compare", systemImage: "arrow.left.arrow.right")
+                        .scaledFont(size: 11, weight: .bold)
+                        .foregroundStyle(Palette.brass)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .overlay(Capsule().stroke(Palette.brass.opacity(0.5), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("record.take.compare")
+            }
+
+            Button {
+                showImport = true
+            } label: {
+                Label("Import audio", systemImage: "square.and.arrow.down")
+                    .scaledFont(size: 11, weight: .bold)
+                    .foregroundStyle(Palette.ink2)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .overlay(Capsule().stroke(Palette.hairline, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("record.take.import")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 6)
@@ -698,40 +732,39 @@ struct ReviewView: View {
 struct AssembleView: View {
     @Bindable var model: NarrationFlowModel
     var isPushed = false
+    @State private var sceneGap: TimeInterval = 1.0
+    @State private var tailSilence: TimeInterval = 1.5
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let project = model.project {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("\(project.metadata.title) — full recording")
-                            .scaledFont(size: 16, weight: .heavy)
-                            .foregroundStyle(Palette.ink)
-                        Text("\(project.metadata.author) · \(model.paragraphs.count) paragraphs assembled")
-                            .scaledFont(size: 12).foregroundStyle(Palette.ink2)
-                        Text("Total ~\(model.totalDuration.formattedShort)")
-                            .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.brass)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .glassSurface(cornerRadius: 18)
-                    .accessibilityIdentifier("assemble.renderPreview")
+                    chapterCard(project)
                 }
 
                 Text("SPACING")
                     .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                spacingCard
 
-                sliderRow("Pause between paragraphs", value: $model.assembly.paragraphGap, range: 0...2, step: 0.05, id: "assemble.paragraphGap")
-                sliderRow("Silence at start", value: $model.assembly.chapterHeadSilence, range: 0...2, step: 0.05, id: "assemble.headSilence")
-                sliderRow("Silence at end", value: $model.assembly.chapterTailSilence, range: 0...2, step: 0.05, id: "assemble.tailSilence")
+                Text("TAKE HANDLING")
+                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .padding(.top, 4)
+                togglesCard
 
-                Text("Room-tone padding keeps the file clean for LibriVox and IA. Nothing is re-encoded until you export.")
-                    .scaledFont(size: 12).foregroundStyle(Palette.ink3)
+                Text("RENDER CACHE")
+                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .padding(.top, 4)
+                renderCacheCard
+
+                preflightCard
+
+                Text("Assembly is a plan. Your original takes are never modified or trimmed on disk.")
+                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
 
                 Button {
                     goMetadata = true
                 } label: {
-                    Text("Add details ▸")
+                    Text("Continue ▸")
                         .scaledFont(size: 15, weight: .heavy)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -740,7 +773,7 @@ struct AssembleView: View {
                 }
                 .buttonStyle(.plain)
                 .tactileTap()
-                .accessibilityIdentifier("assemble.toMetadata")
+                .accessibilityIdentifier("assemble.continue")
             }
             .padding(18)
         }
@@ -750,22 +783,291 @@ struct AssembleView: View {
         }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            sceneGap = model.assembly.sceneBreakExtraGap
+            tailSilence = model.assembly.chapterTailSilence
+            await model.refreshRenderStatuses()
+        }
     }
 
     @State private var goMetadata = false
 
-    private func sliderRow(_ label: String, value: Binding<TimeInterval>, range: ClosedRange<Double>, step: Double, id: String) -> some View {
-        HStack {
-            Text(label).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
-            Spacer()
-            Text(String(format: "%.2f s", value.wrappedValue))
-                .scaledFont(size: 12, weight: .bold)
-                .foregroundStyle(Palette.brass)
-                .accessibilityIdentifier(id)
+    // MARK: - Cards
+
+    private func chapterCard(_ project: AudiobookProject) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(project.metadata.title).scaledFont(size: 16, weight: .heavy).foregroundStyle(Palette.ink)
+                    Text("\(project.metadata.author) · \(project.chapters.count) chapter\(project.chapters.count == 1 ? "" : "s") · ~\(model.totalDuration.formattedShort)")
+                        .scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                }
+                Spacer()
+                Text("\(project.recordedCount) ¶")
+                    .scaledFont(size: 11, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Palette.brass.opacity(0.12), in: Capsule())
+            }
+            Text("Renders are chunked by chapter and can be cancelled — finished chapters stay cached and resume from there.")
+                .scaledFont(size: 11.5)
+                .foregroundStyle(Palette.ink3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 16)
+        .accessibilityIdentifier("assemble.renderPreview")
+    }
+
+    private var spacingCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sliderRow("Between paragraphs", value: assemblyBinding(\.paragraphGap), range: 0.1...2.0, step: 0.05, id: "assemble.paragraphGap")
+            sliderRow("Between scenes", value: sceneGapBinding, range: 0.1...4.0, step: 0.05, id: "assemble.sceneGap")
+            sliderRow("Room tone at head", value: assemblyBinding(\.chapterHeadSilence), range: 0...3.0, step: 0.05, id: "assemble.headSilence")
+            sliderRow("Room tone at tail", value: tailSilenceBinding, range: 0...5.0, step: 0.05, id: "assemble.roomTone")
+            Text("ACX requires room tone at the head and tail of every file. These defaults satisfy it.")
+                .scaledFont(size: 11).foregroundStyle(Palette.ink3)
         }
         .padding(13)
         .glassSurface(cornerRadius: 14)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.hairline, lineWidth: 1))
+    }
+
+    private var togglesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            toggleRow("Trim silence at take edges", caption: "Detected, not guessed — uses the same analysis as import", isOn: trimBinding, id: "assemble.trimSilence")
+            VoxglassListDivider()
+            toggleRow("Normalise take-to-take loudness", caption: "ReplayGain, applied at render", isOn: normalizeBinding, id: "assemble.normalise")
+        }
+        .padding(13)
+        .glassSurface(cornerRadius: 14)
+    }
+
+    private var renderCacheCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Render cache").scaledFont(size: 14, weight: .bold).foregroundStyle(Palette.ink)
+                Spacer()
+                if model.isRendering {
+                    Text("Rendering…")
+                        .scaledFont(size: 11, weight: .bold)
+                        .foregroundStyle(Palette.brass)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Palette.brass.opacity(0.12), in: Capsule())
+                        .accessibilityIdentifier("assemble.rendering")
+                }
+            }
+
+            if let project = model.project {
+                VStack(spacing: 0) {
+                    ForEach(project.chapters) { chapter in
+                        renderRow(chapter, project: project)
+                        if chapter.id != project.chapters.last?.id { VoxglassListDivider() }
+                    }
+                }
+                .padding(.horizontal, 11)
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    model.startRenderAllChapters()
+                } label: {
+                    Text(model.isRendering ? "Cancel render" : "Render all")
+                        .scaledFont(size: 13, weight: .bold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Palette.brass.opacity(0.14), in: RoundedRectangle(cornerRadius: 11))
+                        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.brass.opacity(0.45), lineWidth: 1))
+                        .foregroundStyle(Palette.brass)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(model.isRendering ? "assemble.cancelRender" : "assemble.renderAll")
+
+                Button {
+                    Task { await model.clearRenderCache() }
+                } label: {
+                    Text("Clear cache")
+                        .scaledFont(size: 13, weight: .bold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.hairline, lineWidth: 1))
+                        .foregroundStyle(Palette.ink)
+                }
+                .buttonStyle(.plain)
+                .disabled(model.isRendering)
+                .accessibilityIdentifier("assemble.clearCache")
+            }
+
+            if model.isRendering, let progress = model.renderProgress {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: progress.totalChapterCount > 0 ? Double(progress.completedChapterCount) / Double(progress.totalChapterCount) : 0)
+                        .tint(Palette.brass)
+                    Text(renderProgressText(progress))
+                        .scaledFont(size: 11)
+                        .foregroundStyle(Palette.ink3)
+                }
+                .accessibilityIdentifier("assemble.renderProgress")
+            }
+
+            if let error = model.renderError {
+                Text(error).scaledFont(size: 11.5).foregroundStyle(Palette.danger)
+            }
+
+            Text("Renders can be cleared any time — they rebuild from your takes. They are the first thing evicted under storage pressure.")
+                .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+        }
+        .padding(13)
+        .glassSurface(cornerRadius: 14)
+    }
+
+    private func renderRow(_ chapter: ProductionChapter, project: AudiobookProject) -> some View {
+        let state = model.renderStatuses[chapter.id] ?? .stale
+        return HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(chapter.title).scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(subtitle(for: chapter, project: project)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+            }
+            Spacer()
+            switch state {
+            case .notRecorded:
+                Text("—").scaledFont(size: 11).foregroundStyle(Palette.ink3)
+            case .current:
+                Text("Current")
+                    .scaledFont(size: 10, weight: .bold)
+                    .foregroundStyle(Palette.ok)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Palette.ok.opacity(0.12), in: Capsule())
+            case .stale:
+                Text("Stale")
+                    .scaledFont(size: 10, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Palette.brass.opacity(0.12), in: Capsule())
+            }
+        }
+        .padding(.vertical, 9)
+        .accessibilityIdentifier("assemble.chapter.\(chapter.ordinal)")
+    }
+
+    private func subtitle(for chapter: ProductionChapter, project: AudiobookProject) -> String {
+        let recorded = chapter.paragraphs.count { $0.selectedTakeID != nil }
+        if recorded == 0 { return "Not recorded yet" }
+        let segments = SegmentQueueBuilder().build(.chapter(chapter.id), from: project, settings: model.assembly)
+        let duration = AssemblyDuration.duration(of: segments)
+        return "\(recorded) ¶ · \(duration.formattedShort)"
+    }
+
+    private func renderProgressText(_ progress: ChunkedRenderCoordinator.Progress) -> String {
+        if let title = progress.currentChapterTitle {
+            return "\(title) · \(Int(progress.currentChapterFraction * 100))%"
+        }
+        return "\(progress.completedChapterCount) of \(progress.totalChapterCount) chapters"
+    }
+
+    private var preflightCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Preflight").scaledFont(size: 14, weight: .bold).foregroundStyle(Palette.ink)
+                Spacer()
+                if let preflight = model.renderPreflight {
+                    Text("\(ByteCountFormatter.string(fromByteCount: preflight.neededBytes, countStyle: .file)) needed · \(ByteCountFormatter.string(fromByteCount: preflight.freeBytes, countStyle: .file)) free")
+                        .scaledFont(size: 11, weight: .bold)
+                        .foregroundStyle(preflight.freeBytes >= preflight.neededBytes ? Palette.ok : Palette.danger)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background((preflight.freeBytes >= preflight.neededBytes ? Palette.ok : Palette.danger).opacity(0.12), in: Capsule())
+                        .accessibilityIdentifier("assemble.preflight")
+                }
+            }
+            Text("Assets in iCloud: none for a fresh render — every take is local until you offload.")
+                .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+        }
+        .padding(13)
+        .glassSurface(cornerRadius: 14)
+    }
+
+    // MARK: - Bindings
+
+    /// Binds one `AssemblySettings` property and persists the plan (mockup 10:
+    /// the plan is metadata, never a destructive edit).
+    private func assemblyBinding<Value>(_ keyPath: WritableKeyPath<AssemblySettings, Value>) -> Binding<Value> {
+        Binding(
+            get: { model.assembly[keyPath: keyPath] },
+            set: { newValue in
+                model.assembly[keyPath: keyPath] = newValue
+                Task { await model.applyAssembly(model.assembly) }
+            }
+        )
+    }
+
+    private var sceneGapBinding: Binding<TimeInterval> {
+        Binding(
+            get: { sceneGap },
+            set: { value in
+                sceneGap = value
+                model.assembly.sceneBreakExtraGap = value
+                Task { await model.applyAssembly(model.assembly) }
+            }
+        )
+    }
+
+    private var tailSilenceBinding: Binding<TimeInterval> {
+        Binding(
+            get: { tailSilence },
+            set: { value in
+                tailSilence = value
+                model.assembly.chapterTailSilence = value
+                Task { await model.applyAssembly(model.assembly) }
+            }
+        )
+    }
+
+    private var trimBinding: Binding<Bool> {
+        Binding(
+            get: { model.assembly.isTrimmingSilenceAtEdges },
+            set: { value in
+                model.assembly.trimSilenceAtEdges = value
+                Task { await model.applyAssembly(model.assembly) }
+            }
+        )
+    }
+
+    private var normalizeBinding: Binding<Bool> {
+        Binding(
+            get: { model.assembly.isNormalizingLoudness },
+            set: { value in
+                model.assembly.normalizeLoudness = value
+                Task { await model.applyAssembly(model.assembly) }
+            }
+        )
+    }
+
+    private func toggleRow(_ title: String, caption: String, isOn: Binding<Bool>, id: String) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(caption).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+            }
+            Spacer()
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(Palette.brass)
+                .accessibilityIdentifier(id)
+        }
+    }
+
+    private func sliderRow(_ label: String, value: Binding<TimeInterval>, range: ClosedRange<Double>, step: Double, id: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(label).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
+                Spacer()
+                Text(String(format: "%.2f s", value.wrappedValue))
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .accessibilityIdentifier(id)
+            }
+            Slider(value: value, in: range, step: step)
+                .tint(Palette.brass)
+        }
     }
 }
 
@@ -911,7 +1213,7 @@ struct ValidateExportView: View {
                 checkRow(title: "Title, author, narrator, language", ok: hasMetadata, note: hasMetadata ? "present" : "missing", id: "validate.report")
                 checkRow(title: "Rights attested · public domain (US)", ok: model.rightsAttested, note: model.rightsAttested ? "ok" : "required")
                 checkRow(title: "LibriVox disclaimer recorded", ok: hasDisclaimer, note: hasDisclaimer ? "intro + outro" : "missing")
-                checkRow(title: "Human narration (no AI audio)", ok: true, note: "eligible")
+                checkRow(title: "Human narration (no AI audio)", ok: humanNarration, note: humanNarration ? "eligible" : "blocked", id: "validate.origin")
                 checkRow(title: "No clipping", ok: !clippingDetected, note: clippingDetected ? "check takes" : "ok")
                 checkRow(title: "Level", ok: true, note: "acceptable")
 
@@ -978,6 +1280,13 @@ struct ValidateExportView: View {
         let recorded: Set<FlowParagraphState> = [.recorded, .approved]
         return model.paragraphs.contains { $0.role == .intro && recorded.contains($0.state) }
             && model.paragraphs.contains { $0.role == .outro && recorded.contains($0.state) }
+    }
+
+    /// Spec §10: an imported non-human or unknown take blocks LibriVox. The
+    /// eligibility profile reads the selected takes' declared origins.
+    private var humanNarration: Bool {
+        guard let project = model.project else { return true }
+        return EligibilityProfile.evaluate(project).librivoxEligible
     }
 
     private var clippingDetected: Bool {

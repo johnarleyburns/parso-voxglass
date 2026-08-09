@@ -225,6 +225,50 @@ public final class NarrationProjectRepository {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
+    /// Ingests one imported-audio slice into the content-addressed original
+    /// store and builds its `Take` (spec §10). Identical durability contract to
+    /// `ingestCapturedTake`: bytes durable in the store first, then the
+    /// metadata row and the `.localOnly` upload-queue record.
+    public func ingestImportedSlice(
+        fileURL: URL,
+        paragraphID: UUID,
+        projectID: UUID,
+        origin: AudioOrigin,
+        metrics: AudioQualityMetrics?,
+        duration: TimeInterval,
+        format: AudioFormatDescription,
+        textHash: String,
+        chapterID: UUID? = nil,
+        chapterOrdinal: Int? = nil
+    ) async throws -> Take {
+        let assets = fileStore(for: projectID)
+        let ext = fileURL.pathExtension.isEmpty ? "wav" : fileURL.pathExtension
+        let contentType = ext.lowercased() == "wav" ? "audio/wav" : "audio/x-caf"
+        let ref = try await assets.ingest(fileAt: fileURL, ext: ext, contentType: contentType, subdirectory: .original, moving: true)
+        let take = Take(
+            id: ids.next(),
+            paragraphID: paragraphID,
+            assetRef: ref,
+            origin: origin,
+            recordedAt: clock.now,
+            duration: duration,
+            format: format,
+            metrics: metrics,
+            textHashAtRecording: textHash
+        )
+        let assetRepository = SQLiteProductionAssetRepository(databaseURL: layout(for: projectID).databaseURL)
+        try await assetRepository.upsert(ProductionAssetRecord(
+            id: ids.next(),
+            sha256: ref.sha256,
+            byteCount: Int64(ref.byteCount),
+            state: .localOnly,
+            chapterID: chapterID,
+            chapterOrdinal: chapterOrdinal,
+            lastAccessedAt: clock.now
+        ))
+        return take
+    }
+
     // MARK: - Projection revision (watch staleness)
 
     /// Returns the next monotonic projection revision for a project, advancing

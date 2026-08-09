@@ -75,8 +75,21 @@ public struct SegmentQueueBuilder: Sendable {
                     trailing = chapter.tailSilenceOverride ?? settings.chapterTailSilence
                 }
 
+                // Assembly plan defaults (mockup 10 toggles, §11.1). Trims and
+                // loudness come from the take's own measurements — never
+                // guessed — and per-take explicit `processing` overrides them.
                 var trimRange = 0.0..<take.duration
                 var gain: Double = 0
+                if settings.isTrimmingSilenceAtEdges, let m = take.metrics {
+                    let leading = min(m.leadingSilence, take.duration * 0.5)
+                    let trailing = min(m.trailingSilence, take.duration * 0.5)
+                    if leading > 0 || trailing > 0 {
+                        trimRange = leading..<max(leading, take.duration - trailing)
+                    }
+                }
+                if settings.isNormalizingLoudness, let m = take.metrics, m.replayGainDB != 0 {
+                    gain = -m.replayGainDB
+                }
                 var fadeIn: TimeInterval = 0
                 var fadeOut: TimeInterval = 0
 

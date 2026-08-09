@@ -98,6 +98,7 @@
 		6491F6B3D3E24F36631B9C95 /* ScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */; };
 		6539622E0D5E728F474586F8 /* sense_sensibility_ver3_ek.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */; };
 		65921983DD70A9C16EA07F0D /* call_of_the_wild.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */; };
+		67626E8072FA87A36903DC64 /* ImportAudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E4F547147A2C3B9F1F8ABD /* ImportAudioView.swift */; };
 		68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E0138B81F7532946A478D9 /* MiniPlayerView.swift */; };
 		696C1A68A6B01A3EAF5C5DF2 /* english_fairy_tales_joy_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 48AD36A085B88B984ACA97FE /* english_fairy_tales_joy_librivox.jpg */; };
 		6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F8ACEE07BAD813F34C6DBE /* EQView.swift */; };
@@ -145,6 +146,7 @@
 		9E60B177F487CA22A0E624CD /* alices_adventures_1003.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */; };
 		A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739CF70CFD45FD09DC69EB64 /* ListenView.swift */; };
 		A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347795F23ED3EA940FB4D8BE /* SystemPlaybackBridge.swift */; };
+		A4A9DF4E0A8D66C0B6CDB936 /* ProductionRenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5023830EA677771F7C38078C /* ProductionRenderCache.swift */; };
 		A5E03289F79AB195949E7F75 /* ProductionNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDEA3324DB509FE3F4D2D2A /* ProductionNavigation.swift */; };
 		A6B231C65FE03E552C384F02 /* WatchProductionsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8783A01744671DE2947FDAB5 /* WatchProductionsModel.swift */; };
 		A720762200E37ED3E6C1B405 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F701EDCDE2BB625656606A03 /* SettingsView.swift */; };
@@ -164,6 +166,8 @@
 		B372589F6E12945120DD6305 /* WatchProductionAudioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
 		B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2D878648CFAE6A1DA9323D89 /* 2br02b_0801_librivox.jpg */; };
+		B81166F9E83FE40C68D7DCE5 /* AVChapterRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */; };
+		B81B94ADA69B5E21B5DFF130 /* TakeComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4725E461AC38924B64E0F1F9 /* TakeComparisonView.swift */; };
 		B8BBDD56E99C8F49BF022ED2 /* andersensfairy_1307_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */; };
 		B8D77B123CC0612D7FA46EF8 /* BookPageActionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8DFE7B33D0A5AB70593632 /* BookPageActionRow.swift */; };
 		BB92423FB45EE5D963ED7BAA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF296A86B135507051DFBBD2 /* AVFoundation.framework */; };
@@ -359,6 +363,7 @@
 		45A607753DCA596271DC8EC7 /* beowulf.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beowulf.jpg; sourceTree = "<group>"; };
 		46112C3EC2F946392FFA38CA /* WatchProductionAudioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProductionAudioStore.swift; sourceTree = "<group>"; };
 		46BECBB89F17D12CFB910BC9 /* BookRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookRowView.swift; sourceTree = "<group>"; };
+		4725E461AC38924B64E0F1F9 /* TakeComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeComparisonView.swift; sourceTree = "<group>"; };
 		480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPageOverflowSheet.swift; sourceTree = "<group>"; };
 		48AD36A085B88B984ACA97FE /* english_fairy_tales_joy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = english_fairy_tales_joy_librivox.jpg; sourceTree = "<group>"; };
 		49FA6D58EC651570824B18FE /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -366,6 +371,7 @@
 		4D4C14EF3CC1FDD728821195 /* alice_in_wonderland_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alice_in_wonderland_librivox.jpg; sourceTree = "<group>"; };
 		4DE029504EEF4954467251CA /* swiss_family_robinson_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = swiss_family_robinson_librivox.jpg; sourceTree = "<group>"; };
 		4F695ED501176D7E86BED918 /* american_indian_tales_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = american_indian_tales_librivox.jpg; sourceTree = "<group>"; };
+		5023830EA677771F7C38078C /* ProductionRenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionRenderCache.swift; sourceTree = "<group>"; };
 		502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionSync.swift; sourceTree = "<group>"; };
 		5151457A11B54D1C07091BFC /* AudioSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSetupView.swift; sourceTree = "<group>"; };
@@ -412,6 +418,7 @@
 		7FFF648C1C68BCEA7325C2C9 /* fabulas_esopo_01_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fabulas_esopo_01_librivox.jpg; sourceTree = "<group>"; };
 		80C8886548A2D672DC6DD80A /* adventures_sherlock_holmes_rg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_sherlock_holmes_rg_librivox.jpg; sourceTree = "<group>"; };
 		80E124B6655D526143C78AD7 /* WatchDictationCategoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDictationCategoryView.swift; sourceTree = "<group>"; };
+		80E4F547147A2C3B9F1F8ABD /* ImportAudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportAudioView.swift; sourceTree = "<group>"; };
 		80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = call_of_the_wild.jpg; sourceTree = "<group>"; };
 		81D6DA9D5820F6FADE950782 /* WatchSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncModel.swift; sourceTree = "<group>"; };
@@ -507,6 +514,7 @@
 		EF0934FA0F60D5D328F61320 /* WatchNowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNowPlayingView.swift; sourceTree = "<group>"; };
 		F048D421BA997703B42A14D4 /* VoxglassWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoxglassWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0CAA54FADE549D2158FAB93 /* secret_garden_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = secret_garden_librivox.jpg; sourceTree = "<group>"; };
+		F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVChapterRenderer.swift; sourceTree = "<group>"; };
 		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
 		F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionModels.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -589,12 +597,14 @@
 				5151457A11B54D1C07091BFC /* AudioSetupView.swift */,
 				5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */,
 				5B5AF4E9D3A269D27ABC1CBB /* DiscoveryViews.swift */,
+				80E4F547147A2C3B9F1F8ABD /* ImportAudioView.swift */,
 				DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */,
 				2FA8E1DA7900280C3F2E8925 /* NarrationFlowScreens.swift */,
 				E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */,
 				8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */,
 				8256968CBF2960299BAEAF24 /* ProjectDashboardView.swift */,
 				E1CFFA4CFF485791A9300AA1 /* ScriptEditorView.swift */,
+				4725E461AC38924B64E0F1F9 /* TakeComparisonView.swift */,
 				04E0B8E527FDF636C42B6FAC /* UITestAudioCapture.swift */,
 				7F19E61B32B9CD25DA7F0CE5 /* URLSessionFetcher.swift */,
 			);
@@ -778,10 +788,12 @@
 		588814AB95EACD4D81EDD11F /* Production */ = {
 			isa = PBXGroup;
 			children = (
+				F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */,
 				E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */,
 				503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */,
 				F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */,
 				5691CFA693DFE224A476BCEC /* ProductionPreviewStore.swift */,
+				5023830EA677771F7C38078C /* ProductionRenderCache.swift */,
 				D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */,
 				61E847AE08C9D96DEA828D08 /* ProductionViews.swift */,
 				443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */,
@@ -1351,6 +1363,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B81166F9E83FE40C68D7DCE5 /* AVChapterRenderer.swift in Sources */,
 				5E3A2634A58DF800FBC119D0 /* AVPlayerAudioEngine.swift in Sources */,
 				7D9C2E22E6DF8072E4EA774F /* AdaptiveGlass.swift in Sources */,
 				32CAAABEAB686600BB671219 /* AnimatedSplashView.swift in Sources */,
@@ -1380,6 +1393,7 @@
 				6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */,
 				754A7A41F77C785EFA367369 /* FolderWatchView.swift in Sources */,
 				8A1CD38DD828054566ABEF1C /* GlassDock.swift in Sources */,
+				67626E8072FA87A36903DC64 /* ImportAudioView.swift in Sources */,
 				F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */,
 				A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */,
 				4E85D43B3AC0834F16B06791 /* ListeningStatsView.swift in Sources */,
@@ -1399,6 +1413,7 @@
 				2BA88E35A6E580D7FDE04127 /* ProductionCarPlayRenderer.swift in Sources */,
 				1B46EECFEAF97CAB79A85E43 /* ProductionModels.swift in Sources */,
 				4DDE4563F7198BB014BFF4DD /* ProductionPreviewStore.swift in Sources */,
+				A4A9DF4E0A8D66C0B6CDB936 /* ProductionRenderCache.swift in Sources */,
 				36D2D07C3CCD608C1140CDFB /* ProductionSmokeSeed.swift in Sources */,
 				FC33D751EFBC0E3AFFEB7F68 /* ProductionViews.swift in Sources */,
 				CC2598452C9D23E8D3A636BE /* ProjectDashboardView.swift in Sources */,
@@ -1412,6 +1427,7 @@
 				134B624097E3351CD2CBA06A /* SkipSymbol.swift in Sources */,
 				DF3D0923DF3DD5A7465F7EF8 /* SplashView.swift in Sources */,
 				A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */,
+				B81B94ADA69B5E21B5DFF130 /* TakeComparisonView.swift in Sources */,
 				7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */,
 				FB3DB5ABAA0A94A95ED12DC0 /* UITestAudioCapture.swift in Sources */,
 				0CCC875C4BD9872DC6981FBB /* URLSessionFetcher.swift in Sources */,

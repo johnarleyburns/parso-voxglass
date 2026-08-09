@@ -49,6 +49,17 @@ import VoxglassCoreTestSupport
         "script.filter", "script.filter.all", "script.filter.drift", "script.filter.unrecorded", "script.row.",
         "script.inspector", "script.inspector.text", "script.inspector.direction", "script.inspector.pronunciation",
         "script.inspector.splitHere", "script.inspector.mergeNext", "script.inspector.save",
+        "record.take.compare", "record.take.import",
+        "compare.takeA", "compare.takeA.play", "compare.takeA.inContext",
+        "compare.takeB", "compare.takeB.play", "compare.takeB.inContext",
+        "compare.matchedLoudness", "compare.useTakeA", "compare.useTakeB", "compare.done",
+        "importAudio.pick", "importAudio.trashOriginal", "importAudio.mode",
+        "importAudio.mode.silence", "importAudio.mode.sequential", "importAudio.mode.whole",
+        "importAudio.origin", "importAudio.origin.selfRecorded", "importAudio.origin.humanExternal",
+        "importAudio.origin.aiImported", "importAudio.origin.unknown", "importAudio.start", "importAudio.done",
+        "assemble.sceneGap", "assemble.roomTone", "assemble.trimSilence", "assemble.normalise",
+        "assemble.renderAll", "assemble.cancelRender", "assemble.clearCache", "assemble.continue",
+        "assemble.rendering", "assemble.renderProgress", "assemble.preflight", "assemble.chapter.",
     ]
 
     private static let watchRegistry: [String] = [

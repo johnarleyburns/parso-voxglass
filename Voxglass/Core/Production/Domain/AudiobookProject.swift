@@ -53,6 +53,19 @@ public struct AssemblySettings: Codable, Sendable, Equatable {
     public var chapterTailSilence: TimeInterval = 1.5
     public var sceneBreakExtraGap: TimeInterval = 1.0
     public var normalizeGapsFromTakeSilence: Bool = true
+    /// Mockup 10 toggles (§11.1). Optional so projects persisted before these
+    /// existed decode unchanged: synthesized Codable leaves a missing key nil.
+    /// The computed accessors give each toggle a stable default.
+    public var trimSilenceAtEdges: Bool?
+    public var normalizeLoudness: Bool?
+
+    /// Spec §11.1 / mockup 10 "Trim silence at take edges": detected from the
+    /// take's measured edge silence (same analysis as import), never guessed.
+    public var isTrimmingSilenceAtEdges: Bool { trimSilenceAtEdges ?? true }
+
+    /// Mockup 10 "Normalise take-to-take loudness": ReplayGain applied at
+    /// render, not as a destructive edit of the original.
+    public var isNormalizingLoudness: Bool { normalizeLoudness ?? true }
 
     public init(
         paragraphGap: TimeInterval = 0.45,
@@ -60,7 +73,9 @@ public struct AssemblySettings: Codable, Sendable, Equatable {
         chapterHeadSilence: TimeInterval = 0.75,
         chapterTailSilence: TimeInterval = 1.5,
         sceneBreakExtraGap: TimeInterval = 1.0,
-        normalizeGapsFromTakeSilence: Bool = true
+        normalizeGapsFromTakeSilence: Bool = true,
+        trimSilenceAtEdges: Bool? = nil,
+        normalizeLoudness: Bool? = nil
     ) {
         self.paragraphGap = paragraphGap
         self.sentenceGapBonus = sentenceGapBonus
@@ -68,6 +83,8 @@ public struct AssemblySettings: Codable, Sendable, Equatable {
         self.chapterTailSilence = chapterTailSilence
         self.sceneBreakExtraGap = sceneBreakExtraGap
         self.normalizeGapsFromTakeSilence = normalizeGapsFromTakeSilence
+        self.trimSilenceAtEdges = trimSilenceAtEdges
+        self.normalizeLoudness = normalizeLoudness
     }
 }
 

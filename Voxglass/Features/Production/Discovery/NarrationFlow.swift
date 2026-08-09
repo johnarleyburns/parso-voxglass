@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import AVFoundation
 import VoxglassCore
+import VoxglassEncoders
 
 // MARK: - Flow presentation model
 
@@ -88,6 +89,78 @@ struct FlowParagraph: Identifiable, Equatable {
     /// paragraph now holds (spec §9.5 step 4). The script editor's "Changed"
     /// filter and chips read this.
     var isDrifted: Bool
+}
+
+/// A picked audio file waiting for its import decision (mockup 07). Holds the
+/// decoded waveform dimensions so the storage-impact card can be truthful
+/// before anything is written.
+struct FlowImportedAudio: Equatable, Identifiable {
+    let id: UUID
+    var sourceURL: URL
+    var originalSize: Int64
+    var fileName: String
+    var format: AudioFormatDescription?
+    var duration: TimeInterval
+    var decodedSampleRate: Double
+    var decodedSampleCount: Int
+
+    init(
+        id: UUID = UUID(), // presentation-only identity; not persisted
+        sourceURL: URL,
+        originalSize: Int64,
+        fileName: String,
+        format: AudioFormatDescription?,
+        duration: TimeInterval,
+        decodedSampleRate: Double,
+        decodedSampleCount: Int
+    ) {
+        self.id = id
+        self.sourceURL = sourceURL
+        self.originalSize = originalSize
+        self.fileName = fileName
+        self.format = format
+        self.duration = duration
+        self.decodedSampleRate = decodedSampleRate
+        self.decodedSampleCount = decodedSampleCount
+    }
+}
+
+/// The mandatory origin declaration for imported audio (§10). Compliance
+/// metadata, not a UI nicety: it must survive SQLite, CloudKit, the manifest,
+/// and the validation report. Non-human or unknown origins block LibriVox
+/// export once such a take is selected.
+enum FlowImportOrigin: String, CaseIterable, Identifiable {
+    case selfRecorded
+    case humanExternal
+    case aiImported
+    case unknown
+
+    var id: String { rawValue }
+
+    var isHumanNarration: Bool {
+        self == .selfRecorded || self == .humanExternal
+    }
+
+    func audioOrigin(fileName: String) -> AudioOrigin {
+        switch self {
+        case .selfRecorded, .humanExternal:
+            return .importedHuman(sourceFilename: fileName)
+        case .aiImported:
+            return .aiImported(providerLabel: fileName)
+        case .unknown:
+            return .unknownImport(sourceFilename: fileName)
+        }
+    }
+}
+
+/// Free space on the volume that holds the app's support directory — the
+/// number the assembly preflight and the import screen show before work starts.
+enum FreeSpaceProvider {
+    static var availableBytes: Int64? {
+        guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+              let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]) else { return nil }
+        return values.volumeAvailableCapacityForImportantUsage
+    }
 }
 
 // MARK: - Flow model
@@ -510,6 +583,13 @@ final class NarrationFlowModel {
         paragraphs.first { $0.id == id }
     }
 
+    /// The number of takes recorded or imported for a paragraph, including
+    /// archived ones — drives the take-comparison affordance (mockup 08).
+    func takeCount(for paragraphID: UUID) -> Int {
+        guard let project, let paragraph = project.allParagraphs.first(where: { $0.id == paragraphID }) else { return 0 }
+        return paragraph.takes.count
+    }
+
     func nextParagraph(after id: UUID) -> FlowParagraph? {
         guard let project else { return nil }
         guard let index = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return nil }
@@ -928,6 +1008,343 @@ final class NarrationFlowModel {
         try? session.setActive(true)
         playbackPlayer = try? AVAudioPlayer(contentsOf: url)
         playbackPlayer?.play()
+    }
+
+    // MARK: - Take selection (spec §9.5)
+
+    /// URL of any take's audio, not just the selected one — the take
+    /// comparison (mockup 08) plays archived takes too.
+    func takeURL(_ takeID: UUID, in paragraphID: UUID) -> URL? {
+        guard let project,
+              let paragraph = project.allParagraphs.first(where: { $0.id == paragraphID }),
+              let take = paragraph.takes.first(where: { $0.id == takeID }) else { return nil }
+        return repository.takeURL(for: project.id, take: take)
+    }
+
+    /// Plays a specific take (mockup 08 "Play").
+    func play(_ takeID: UUID, in paragraphID: UUID) {
+        guard let url = takeURL(takeID, in: paragraphID) else { return }
+        play(url: url)
+    }
+
+    /// Selects a take for a paragraph — a project mutation, therefore
+    /// phone-only (spec §9.5). The other takes are archived by state, never
+    /// deleted (§9.4).
+    func selectTake(_ takeID: UUID, for paragraphID: UUID) async {
+        guard let project, project.allParagraphs.contains(where: { $0.id == paragraphID }) else { return }
+        updateParagraph(paragraphID) { paragraph in
+            guard paragraph.takes.contains(where: { $0.id == takeID }) else { return }
+            paragraph.selectedTakeID = takeID
+            paragraph.reviewState = .approved
+            for index in paragraph.takes.indices {
+                paragraph.takes[index].isArchived = paragraph.takes[index].id != takeID
+            }
+            paragraph.updatedAt = repository.clock.now
+        }
+        await persist()
+    }
+
+    /// The A/B comparison for a paragraph's two most recent takes (mockup 08).
+    /// Archived takes stay comparable — a retake archives by state, never by
+    /// deletion (§9.4) — and the newer take is `takeA`.
+    func takeComparison(for paragraphID: UUID) -> TakeComparison? {
+        guard let project, let paragraph = project.allParagraphs.first(where: { $0.id == paragraphID }),
+              paragraph.takes.count >= 2 else { return nil }
+        let ordered = Array(paragraph.takes.suffix(2).reversed())
+        return TakeComparison(
+            takeA: comparisonSide(ordered[0], in: paragraph),
+            takeB: comparisonSide(ordered[1], in: paragraph)
+        )
+    }
+
+    private func comparisonSide(_ take: Take, in paragraph: Paragraph) -> TakeComparison.Side {
+        let number = (paragraph.takes.firstIndex(where: { $0.id == take.id }) ?? 0) + 1
+        let m = take.metrics
+        return TakeComparison.Side(
+            takeID: take.id,
+            label: take.label ?? "Take \(number)",
+            isSelected: take.id == paragraph.selectedTakeID,
+            isArchived: take.isArchived,
+            recordedAt: take.recordedAt,
+            routeClass: take.routeClass,
+            duration: take.duration,
+            peakDBFS: m?.peakDBFS,
+            rmsDBFS: m?.rmsDBFS,
+            noiseFloorDBFS: m?.noiseFloorDBFS,
+            replayGainDB: m?.replayGainDB
+        )
+    }
+
+    // MARK: - Assembly settings (mockup 10)
+
+    /// Applies the assembly spacing/toggle plan to the project profile and
+    /// persists it. The plan is non-destructive: gaps, trims, and loudness are
+    /// metadata the renderer applies, never edits to the original takes
+    /// (spec §11.1).
+    func applyAssembly(_ updated: AssemblySettings) async {
+        assembly = updated
+        guard var project else { return }
+        project.profile.assembly = updated
+        project.modifiedAt = repository.clock.now
+        self.project = project
+        await persist()
+    }
+
+    // MARK: - Assembly rendering (spec §11.2, M-4)
+
+    /// The render state the assembly screen shows per chapter (mockup 10):
+    /// current, stale (spacing/takes changed since the last render), or not
+    /// recorded yet.
+    enum ChapterRenderState: Equatable {
+        case notRecorded
+        case current
+        case stale
+    }
+
+    var isRendering = false
+    var renderProgress: ChunkedRenderCoordinator.Progress?
+    var renderError: String?
+    var renderStatuses: [UUID: ChapterRenderState] = [:]
+    private var renderTask: Task<Void, Never>?
+
+    /// The render cache and store for the current project, resolved once per
+    /// call. Renders live in `Audio/Render/` and are the first eviction class.
+    private func renderComponents(for project: AudiobookProject) -> (renderer: AVChapterRenderer, cache: ProductionRenderCache, assets: FileAssetStore) {
+        let layout = repository.layout(for: project.id)
+        let fileStore = repository.fileStore(for: project.id)
+        return (
+            AVChapterRenderer(assetsRoot: layout.root),
+            ProductionRenderCache(root: layout.renderAudioURL, fileStore: fileStore),
+            fileStore
+        )
+    }
+
+    /// Recomputes each chapter's render state against the current cache key.
+    func refreshRenderStatuses() async {
+        guard let project else { return }
+        let components = renderComponents(for: project)
+        var statuses: [UUID: ChapterRenderState] = [:]
+        for chapter in project.chapters {
+            let recorded = chapter.paragraphs.contains { $0.selectedTakeID != nil }
+            guard recorded else {
+                statuses[chapter.id] = .notRecorded
+                continue
+            }
+            let plan = PackagingSupport.renderPlan(for: chapter, in: project)
+            let cached = try? await components.cache.cachedRender(for: plan.cacheKey)
+            statuses[chapter.id] = cached != nil ? .current : .stale
+        }
+        renderStatuses = statuses
+    }
+
+    /// Renders every recorded chapter, chunked by chapter and cancellable
+    /// (§11.2). Cached chapters are skipped, so cancelling and re-running
+    /// resumes at the first incomplete chapter. Chapters with no recorded takes
+    /// are never rendered — the cache list shows them as not recorded.
+    func renderAllChapters() async {
+        guard let project, !isRendering else { return }
+        let recordedChapters = project.chapters.filter { $0.paragraphs.contains { $0.selectedTakeID != nil } }
+        guard !recordedChapters.isEmpty else { return }
+        isRendering = true
+        renderError = nil
+        renderProgress = ChunkedRenderCoordinator.Progress(completedChapterCount: 0, totalChapterCount: recordedChapters.count)
+        defer { isRendering = false }
+        let components = renderComponents(for: project)
+        do {
+            _ = try await ChunkedRenderCoordinator().render(
+                chapters: recordedChapters,
+                in: project,
+                renderer: components.renderer,
+                cache: components.cache,
+                assets: components.assets,
+                progress: { [weak self] p in
+                    Task { @MainActor in self?.renderProgress = p }
+                }
+            )
+            await refreshRenderStatuses()
+        } catch is CancellationError {
+            await refreshRenderStatuses()
+        } catch {
+            renderError = "Rendering stopped: \(error.localizedDescription)"
+        }
+    }
+
+    /// Starts a cancellable render in the background; the assembly screen
+    /// drives it and offers a Cancel control.
+    func startRenderAllChapters() {
+        renderTask?.cancel()
+        renderTask = Task { @MainActor in
+            await renderAllChapters()
+        }
+    }
+
+    func cancelRendering() {
+        renderTask?.cancel()
+    }
+
+    func clearRenderCache() async {
+        guard let project else { return }
+        let components = renderComponents(for: project)
+        try? await components.cache.clear()
+        await refreshRenderStatuses()
+    }
+
+    /// Free space actually needed by the recorded chapters vs what is free, for
+    /// the assembly preflight card (mockup 10). Render estimates are lossless
+    /// masters of the recorded takes; a rough byte estimate keeps the card
+    /// truthful without decoding audio.
+    var renderPreflight: (neededBytes: Int64, freeBytes: Int64)? {
+        guard let project else { return nil }
+        var needed: Int64 = 0
+        for chapter in project.chapters {
+            for paragraph in chapter.paragraphs {
+                if let take = paragraph.selectedTake, !take.isArchived {
+                    needed += Int64(take.assetRef.byteCount)
+                }
+            }
+        }
+        needed = needed > 0 ? needed : 1
+        let free = FreeSpaceProvider.availableBytes ?? 0
+        return (needed, free)
+    }
+
+    // MARK: - Imported audio (spec §10)
+
+    var importSelection: FlowImportedAudio?
+    var importPlan: AudioImportPlan?
+    var importMode: AudioImportMode = .splitBySilence
+    var importOrigin: FlowImportOrigin = .selfRecorded
+    var importTrashOriginal = true
+    var isImportingAudio = false
+    var importFileURL: URL?
+
+    /// Inspects a picked audio file: size, format, and a silence-split plan
+    /// against the current project's paragraphs. The import screen reads this
+    /// before anything is written (§10: storage impact stated first).
+    func inspectAudioFile(_ url: URL) async {
+        importError = nil
+        importFileURL = url
+        let decoder = RoutingAudioDecoder()
+        do {
+            let format = try await decoder.describe(url)
+            let decoded = try await decoder.decodeToMonoFloat(url, targetSampleRate: nil)
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            importSelection = FlowImportedAudio(
+                sourceURL: url,
+                originalSize: Int64(size),
+                fileName: url.lastPathComponent,
+                format: format,
+                duration: decoded.duration,
+                decodedSampleRate: decoded.sampleRate,
+                decodedSampleCount: decoded.samples.count
+            )
+            rebuildImportPlan(samples: decoded.samples, sampleRate: decoded.sampleRate)
+        } catch {
+            importError = "Couldn't read that audio file. Try WAV, AIFF, CAF, M4A, MP3, or FLAC."
+        }
+    }
+
+    /// Recomputes the assignment plan for the current mode against the decoded
+    /// file.
+    func rebuildImportPlan(samples: [Float], sampleRate: Double) {
+        guard let project else { return }
+        let targets = project.allParagraphs.filter { $0.role == .body }.map(\.id)
+        importPlan = AudioImportPlanner().plan(
+            samples: samples,
+            sampleRate: sampleRate,
+            mode: importMode,
+            targetParagraphIDs: targets
+        )
+    }
+
+    /// Executes the approved import: writes each planned slice as a take with
+    /// the declared origin and computed metrics, then persists (§9.4 ordering:
+    /// bytes durable before metadata mutation). Non-human origins carry the
+    /// compliance flag the validation engine turns into a LibriVox block (§10).
+    func runAudioImport() async {
+        guard let selection = importSelection, let plan = importPlan, let project else { return }
+        guard !isImportingAudio else { return }
+        isImportingAudio = true
+        importError = nil
+        defer { isImportingAudio = false }
+
+        let decoder = RoutingAudioDecoder()
+        do {
+            let decoded = try await decoder.decodeToMonoFloat(selection.sourceURL, targetSampleRate: nil)
+            let rate = decoded.sampleRate
+
+            for slice in plan.slices {
+                try Task.checkCancellation()
+                guard let paragraphID = slice.paragraphID,
+                      let paragraph = project.allParagraphs.first(where: { $0.id == paragraphID }) else { continue }
+
+                let sliceSamples = Array(decoded.samples[slice.startFrame..<min(decoded.samples.count, slice.startFrame + slice.frameCount)])
+                guard !sliceSamples.isEmpty else { continue }
+
+                let url = try Self.writeSliceCAF(sliceSamples, sampleRate: rate)
+                let duration = Double(sliceSamples.count) / rate
+                let metrics = AudioMetricsCalculator().metrics(for: sliceSamples, sampleRate: rate, channels: 1)
+                let format = AudioFormatDescription(sampleRate: rate, channels: 1, bitDepth: 32, codec: "pcm")
+                let origin = importOrigin.audioOrigin(fileName: selection.fileName)
+
+                let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == paragraphID } }
+                let take = try await repository.ingestImportedSlice(
+                    fileURL: url,
+                    paragraphID: paragraphID,
+                    projectID: project.id,
+                    origin: origin,
+                    metrics: metrics,
+                    duration: duration,
+                    format: format,
+                    textHash: paragraph.textHash,
+                    chapterID: chapter?.id,
+                    chapterOrdinal: chapter?.ordinal
+                )
+                updateParagraph(paragraphID) { p in
+                    p.takes.append(take)
+                    p.selectedTakeID = take.id
+                    p.reviewState = .approved
+                    for index in p.takes.indices where p.takes[index].id != take.id {
+                        p.takes[index].isArchived = true
+                    }
+                    p.updatedAt = repository.clock.now
+                }
+            }
+
+            if importTrashOriginal {
+                try? FileManager.default.removeItem(at: selection.sourceURL)
+            }
+            await persist()
+        } catch is CancellationError {
+            // Partial import stays persisted by the per-slice writes above.
+        } catch {
+            importError = "Import failed: \(error.localizedDescription)"
+        }
+    }
+
+    /// Writes a mono Float32 CAF slice so the content store can hash it.
+    private static func writeSliceCAF(_ samples: [Float], sampleRate: Double) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("import-slice-\(UUID().uuidString).caf") // determinism-exempt: transient temp filename, never persisted
+        try? FileManager.default.removeItem(at: url)
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: sampleRate,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 32,
+            AVLinearPCMIsFloatKey: true,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsNonInterleaved: false
+        ]
+        let file = try AVAudioFile(forWriting: url, settings: settings)
+        let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1, interleaved: false)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples.count))!
+        buffer.frameLength = AVAudioFrameCount(samples.count)
+        if let channel = buffer.floatChannelData?[0] {
+            samples.withUnsafeBufferPointer { channel.update(from: $0.baseAddress!, count: samples.count) }
+        }
+        try file.write(from: buffer)
+        return url
     }
 
     // MARK: - Export
