@@ -37,18 +37,56 @@ public struct ValidationContext: Sendable {
     public var artworkPixelSize: (width: Int, height: Int)?
     public var truncationEdgeLevels: [UUID: EdgeLevels]
 
+    public var exportPreflight: ExportPreflightContext?
+
     public init(
         integrityFindings: [IntegrityFinding] = [],
         aiDisclosurePresent: Bool = false,
         retailSample: RetailSampleSelection? = nil,
         artworkPixelSize: (width: Int, height: Int)? = nil,
-        truncationEdgeLevels: [UUID: EdgeLevels] = [:]
+        truncationEdgeLevels: [UUID: EdgeLevels] = [:],
+        exportPreflight: ExportPreflightContext? = nil
     ) {
         self.integrityFindings = integrityFindings
         self.aiDisclosurePresent = aiDisclosurePresent
         self.retailSample = retailSample
         self.artworkPixelSize = artworkPixelSize
         self.truncationEdgeLevels = truncationEdgeLevels
+        self.exportPreflight = exportPreflight
+    }
+}
+
+/// Export-pipeline inputs for the four iPhone issue codes (§12.2, §13.2).
+/// Populated by the storage and hydration preflight before validation runs; an
+/// absent `ValidationContext.exportPreflight` leaves the preflight rules
+/// unevaluated, so pure metadata/structure validation never touches I/O.
+public struct ExportPreflightContext: Sendable, Equatable {
+    /// Bytes of selected-take audio that live only in iCloud and must hydrate
+    /// before export. `> 0` fires `assetRemoteOnlyForExport`.
+    public var remoteHydrationBytes: Int64
+    /// Chapters whose selected-take audio must hydrate (display only).
+    public var remoteHydrationChapterCount: Int
+    /// Bytes of export staging the working volume must be able to hold.
+    public var storageRequiredBytes: Int64
+    /// Bytes currently available on the working volume.
+    public var storageAvailableBytes: Int64
+    /// SHA-256 of selected takes whose assets are still `.localOnly` — never
+    /// verified against iCloud, so never backed up (§6.1). Non-empty fires
+    /// `backupNotVerified`.
+    public var unverifiedSelectedTakeHashes: Set<String>
+
+    public init(
+        remoteHydrationBytes: Int64 = 0,
+        remoteHydrationChapterCount: Int = 0,
+        storageRequiredBytes: Int64 = 0,
+        storageAvailableBytes: Int64 = 0,
+        unverifiedSelectedTakeHashes: Set<String> = []
+    ) {
+        self.remoteHydrationBytes = remoteHydrationBytes
+        self.remoteHydrationChapterCount = remoteHydrationChapterCount
+        self.storageRequiredBytes = storageRequiredBytes
+        self.storageAvailableBytes = storageAvailableBytes
+        self.unverifiedSelectedTakeHashes = unverifiedSelectedTakeHashes
     }
 }
 
@@ -126,6 +164,8 @@ private struct Evaluator {
         evaluateChapterDurations()
         evaluateAudio()
         evaluateLoudness()
+        evaluateRouteReadiness()
+        evaluatePreflight()
         return issues
     }
 
@@ -491,6 +531,67 @@ private struct Evaluator {
         }
     }
 
+    // MARK: - Group 6 — iPhone preflight (§12.2)
+
+    /// `routeNotRetailReady`: computed from the *recorded* route history, not
+    /// the route at export time (§7.1). Draft-only routes are never blocked —
+    /// the honest warning appears only on a retail destination, where it would
+    /// actually fail submission. LibriVox / Internet Archive are unaffected.
+    private mutating func evaluateRouteReadiness() {
+        guard isRetail else { return }
+        let draftTakes = orderedTakes.filter { $0.take.routeClass == .draftOnly }
+        if !draftTakes.isEmpty {
+            let first = draftTakes[0]
+            add(
+                .routeNotRetailReady,
+                "Recorded on a draft-quality input",
+                "\(draftTakes.count) take\(draftTakes.count == 1 ? "" : "s") \(draftTakes.count == 1 ? "was" : "were") recorded on a Bluetooth or built-in input; this deliverable may not pass retail review.",
+                paragraphID: first.paragraph.id,
+                takeID: first.take.id,
+                fix: .openAudioSetup
+            )
+        }
+    }
+
+    /// The hydration, storage, and backup preflight codes. These are
+    /// operational — they gate *starting* an export — not quality findings.
+    private mutating func evaluatePreflight() {
+        guard let preflight = context.exportPreflight else { return }
+
+        if preflight.remoteHydrationBytes > 0 {
+            let chapterCount = preflight.remoteHydrationChapterCount
+            add(
+                .assetRemoteOnlyForExport,
+                chapterCount == 1 ? "1 chapter is in iCloud" : "\(chapterCount) chapters are in iCloud",
+                "\(PackagingSupport.formattedBytes(preflight.remoteHydrationBytes)) must download before export can start.",
+                measured: Double(preflight.remoteHydrationBytes),
+                expected: "all selected-take audio local",
+                fix: .hydrateAssets
+            )
+        }
+
+        if preflight.storageRequiredBytes > preflight.storageAvailableBytes {
+            add(
+                .localStorageInsufficient,
+                "Not enough free space",
+                "Export needs \(PackagingSupport.formattedBytes(preflight.storageRequiredBytes)) but only \(PackagingSupport.formattedBytes(preflight.storageAvailableBytes)) is free.",
+                measured: Double(preflight.storageRequiredBytes),
+                expected: "≤ \(PackagingSupport.formattedBytes(preflight.storageAvailableBytes)) available",
+                fix: .manageStorage
+            )
+        }
+
+        if !preflight.unverifiedSelectedTakeHashes.isEmpty {
+            let count = preflight.unverifiedSelectedTakeHashes.count
+            add(
+                .backupNotVerified,
+                "Not backed up yet",
+                "\(count) take\(count == 1 ? "" : "s") exist\(count == 1 ? "s" : "") only on this iPhone; iCloud backup has not verified.",
+                fix: .backupNow
+            )
+        }
+    }
+
     // MARK: - Plumbing
 
     /// Append an issue iff this destination evaluates the code at all.
@@ -637,6 +738,20 @@ private struct Evaluator {
 
         // Group 5 — loudness
         case (.librivox, .perceivedVolumeOutOfBand): return .warning
+
+        // Group 6 — iPhone preflight (§12.2). These are export-operational
+        // gates, never quality findings, and they apply to every destination
+        // that needs local audio to start.
+        case (.librivox, .assetRemoteOnlyForExport), (.internetArchive, .assetRemoteOnlyForExport),
+             (.acx, .assetRemoteOnlyForExport), (.appleBooksAggregator, .assetRemoteOnlyForExport),
+             (.personalMaster, .assetRemoteOnlyForExport): return .blocking
+        case (.librivox, .localStorageInsufficient), (.internetArchive, .localStorageInsufficient),
+             (.acx, .localStorageInsufficient), (.appleBooksAggregator, .localStorageInsufficient),
+             (.personalMaster, .localStorageInsufficient): return .blocking
+        case (.librivox, .backupNotVerified), (.internetArchive, .backupNotVerified),
+             (.acx, .backupNotVerified), (.appleBooksAggregator, .backupNotVerified),
+             (.personalMaster, .backupNotVerified): return .warning
+        case (.acx, .routeNotRetailReady), (.appleBooksAggregator, .routeNotRetailReady): return .warning
 
         default: return nil
         }

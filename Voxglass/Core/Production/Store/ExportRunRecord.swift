@@ -13,7 +13,9 @@ public enum ExportRunStatus: String, Codable, Sendable, Equatable {
 /// written as files are produced, and closed on completion. `fileHashes`
 /// (relativePath → sha256) is what makes skip-unchanged re-exports possible:
 /// a planned output whose content hash matches the recorded hash is reported
-/// "unchanged" instead of re-encoded.
+/// "unchanged" instead of re-encoded. `fileDurations` keeps the same
+/// relative-path keys so a resumed run can still report correct section
+/// durations without re-decoding (§13.3).
 public struct ExportRunRecord: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
     public var projectID: UUID
@@ -26,6 +28,7 @@ public struct ExportRunRecord: Codable, Sendable, Equatable, Identifiable {
     public var fileCount: Int
     public var totalBytes: Int64
     public var fileHashes: [String: String]
+    public var fileDurations: [String: TimeInterval]
 
     public init(
         id: UUID = UUID(), // determinism-exempt: storage identifier; tests inject explicit ids
@@ -38,7 +41,8 @@ public struct ExportRunRecord: Codable, Sendable, Equatable, Identifiable {
         errorCode: String? = nil,
         fileCount: Int = 0,
         totalBytes: Int64 = 0,
-        fileHashes: [String: String] = [:]
+        fileHashes: [String: String] = [:],
+        fileDurations: [String: TimeInterval] = [:]
     ) {
         self.id = id
         self.projectID = projectID
@@ -51,5 +55,6 @@ public struct ExportRunRecord: Codable, Sendable, Equatable, Identifiable {
         self.fileCount = fileCount
         self.totalBytes = totalBytes
         self.fileHashes = fileHashes
+        self.fileDurations = fileDurations
     }
 }

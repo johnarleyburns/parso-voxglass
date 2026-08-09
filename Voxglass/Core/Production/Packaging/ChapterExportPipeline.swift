@@ -33,6 +33,27 @@ struct ChapterExportPipeline: Sendable {
         options: ExportOptions,
         mastering: MasteringTarget?
     ) async throws -> ExportedFile {
+        // §13.3 resume: when the caller asked to reuse an interrupted run's
+        // outputs and the file on disk still matches the recorded content hash,
+        // reuse it verbatim — no render, no re-encode. The builder still emits
+        // its `.chapterFinished` progress after appending this file.
+        let relativePath = outputURL.lastPathComponent
+        if !options.overwriteExisting,
+           let knownHash = options.resumeHashes[relativePath],
+           FileManager.default.fileExists(atPath: outputURL.path),
+           let existingHash = try? SHA256Hex.hex(contentsOf: outputURL),
+           existingHash == knownHash {
+            let size = (try? FileManager.default.attributesOfItem(atPath: outputURL.path)[.size] as? Int) ?? 0
+            return ExportedFile(
+                url: outputURL,
+                role: .chapter,
+                chapterID: chapter.id,
+                duration: options.resumeDurations[relativePath],
+                byteCount: Int64(size),
+                sha256: knownHash
+            )
+        }
+
         let plan = PackagingSupport.renderPlan(for: chapter, in: project)
         let renderURL = tempDirectory.appendingPathComponent("render-\(chapter.id.uuidString).caf")
         progress(ExportProgress(phase: .rendering, currentFileName: chapter.title))

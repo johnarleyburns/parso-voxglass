@@ -228,6 +228,22 @@ final class NarrationFlowModel {
     var sourceURLText = ""
     var exportBundle: NarrationExportBundle?
 
+    /// P7: the live validation report for the selected export destination
+    /// (§12). Driven by the real rule engine with the export preflight context,
+    /// so a free user sees the exact issues the export pipeline will enforce.
+    var validationDestination: DestinationID = .librivox
+    var validationIssues: [ValidationIssue] = []
+    var preflight: ExportPreflightResult?
+    var isValidating = false
+    var validationError: String?
+
+    /// P7: the resumable export run state (§13.3).
+    var isExporting = false
+    var exportError: String?
+    var exportProgress: ExportProgress?
+    var exportRunRecord: ExportRunRecord?
+    private var exportTask: Task<Void, Never>?
+
     let repository: NarrationProjectRepository
     let fetcher: any HTTPFetching
 
@@ -1349,98 +1365,134 @@ final class NarrationFlowModel {
 
     // MARK: - Export
 
-    func buildExport() {
-        guard let project, project.rights.isAttested else { return }
-        // Build the package on iPhone; the selected destination's encoder is
-        // responsible for producing the final audio files before handoff to Files.
-        let sanitizer = FilenameSanitizer()
-        let filename = sanitizer.librivoxFilename(
-            shortTitle: project.metadata.title,
-            section: 1,
-            sectionCount: 1,
-            authorLastName: Self.lastWord(project.metadata.author)
-        ) + ".mp3"
-        let exportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("Voxglass/Exports/\(project.id.uuidString)", isDirectory: true)
-        try? FileManager.default.createDirectory(at: exportDir, withIntermediateDirectories: true)
+    /// The root directory exports are written into: `Application Support/Voxglass/Exports`.
+    var exportsDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Voxglass/Exports", isDirectory: true)
+    }
 
-        let checklist = Self.checklist(project: project, filename: filename)
-        let checklistURL = exportDir.appendingPathComponent("librivox-checklist.md")
-        try? checklist.write(to: checklistURL, atomically: true, encoding: .utf8)
-
-        let manifest = Self.manifestJSON(project: project, filename: filename)
-        let manifestURL = exportDir.appendingPathComponent("metadata.json")
-        try? manifest.write(to: manifestURL, options: .atomic)
-
-        let durations = Self.sectionDurations(project: project, filename: filename)
-        let durationsURL = exportDir.appendingPathComponent("section-durations.txt")
-        try? durations.write(to: durationsURL, atomically: true, encoding: .utf8)
-
-        exportBundle = NarrationExportBundle(
-            directory: exportDir,
-            filename: filename,
-            files: [checklistURL, manifestURL, durationsURL],
-            totalDuration: totalDuration
+    /// P7 (§12, §13.2): runs the full rule engine for `validationDestination`
+    /// with the hydration + storage preflight context fed in, so the screen and
+    /// the export pipeline agree about what blocks the run.
+    func runValidation() async {
+        guard let project else { return }
+        isValidating = true
+        validationError = nil
+        defer { isValidating = false }
+        let assets = (try? await SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL).records()) ?? []
+        let preflight = ExportPreflight.compute(
+            project: project,
+            assets: assets,
+            scope: .wholeBook,
+            freeBytes: FreeSpaceProvider.availableBytes
+        )
+        self.preflight = preflight
+        validationIssues = ValidationRuleEngine().evaluate(
+            project: project,
+            metrics: PackagingSupport.selectedTakeMetrics(project),
+            profile: DestinationProfile.profile(for: validationDestination),
+            eligibility: EligibilityProfile.evaluate(project),
+            assembly: project.profile.assembly,
+            context: ValidationContext(exportPreflight: preflight.exportPreflightContext)
         )
     }
 
-    private static func checklist(project: AudiobookProject, filename: String) -> String {
-        let approved = project.allParagraphs.filter { $0.reviewState == .approved }
-        var lines: [String] = []
-        lines.append("# LibriVox submission checklist — \(project.metadata.title) by \(project.metadata.author)")
-        lines.append("")
-        lines.append("**\(LegalStrings.userSubmits)**")
-        lines.append("")
-        lines.append("## Technical")
-        lines.append("- [ ] MP3 \(Int(DestinationProfile.librivox.audio.bitrateKbps ?? 128)) kbps CBR, mono, 44.1 kHz — export from Voxglass on iPhone")
-        lines.append("- [ ] File: \(filename)")
-        lines.append("")
-        lines.append("## Content")
-        lines.append("- [x] LibriVox disclaimer recorded (intro + outro)")
-        lines.append("- [x] \(approved.count) of \(project.totalCount) paragraphs approved on this iPhone")
-        lines.append("- [ ] Final recording assembled on iPhone")
-        lines.append("")
-        lines.append("## Rights")
-        lines.append("- Source: \(project.rights.sourceURL?.absoluteString ?? "—")")
-        lines.append("- Basis: Public domain (US) — \(project.rights.isAttested ? "attested in-app" : "not attested")")
-        lines.append("")
-        lines.append(LegalStrings.noCopyrightDetermination)
-        lines.append("")
-        return lines.joined(separator: "\n")
+    func selectValidationDestination(_ destination: DestinationID) {
+        guard destination != validationDestination else { return }
+        validationDestination = destination
+        Task { await runValidation() }
     }
 
-    private static func manifestJSON(project: AudiobookProject, filename: String) -> Data {
-        let dict: [String: Any] = [
-            "generator": "Voxglass iOS 1.1 (narration-needs)",
-            "destination": "librivox",
-            "project": ["title": project.metadata.title, "author": project.metadata.author, "narrator": project.metadata.narrator],
-            "audio": ["codec": "mp3", "bitrateKbps": 128, "cbr": true, "sampleRate": 44100, "channels": 1],
-            "files": [["name": filename, "role": "chapter"]],
-            "disclaimers": ["intro": "present", "outro": "present"]
-        ]
-        return (try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys])) ?? Data()
+    /// Blocking issues that gate *starting* an export — the four preflight
+    /// codes plus the destination's other blocking rules.
+    var blockingValidationIssues: [ValidationIssue] {
+        validationIssues.filter { $0.severity == .blocking }
     }
 
-    private static func sectionDurations(project: AudiobookProject, filename: String) -> String {
-        var lines = project.allParagraphs.enumerated().map { index, paragraph in
-            let duration = paragraph.selectedTake?.duration ?? 0
-            return "\(filename)\t\(clockTime(duration))"
+    /// P7 (§13): produces the real package for `validationDestination` through
+    /// the free builder + `ResumableExportRunner`, zips it for Save to Files,
+    /// and hands it to the Submit screen. Free lanes never touch a license gate.
+    func runExport() async {
+        guard let project, project.rights.isAttested, !isExporting else { return }
+        guard blockingValidationIssues.isEmpty else {
+            exportError = "Resolve the blocking validation issues before exporting."
+            return
         }
-        let total = project.allParagraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
-        lines.append("TOTAL\t\t\(clockTime(total))")
-        return lines.joined(separator: "\n") + "\n"
+        isExporting = true
+        exportError = nil
+        exportProgress = nil
+        exportRunRecord = nil
+        defer { isExporting = false }
+
+        let builder: any PackageBuilder = validationDestination == .internetArchive
+            ? InternetArchivePackageBuilder()
+            : LibriVoxPackageBuilder()
+        let layout = repository.layout(for: project.id)
+        let renderer = AVChapterRenderer(assetsRoot: layout.root)
+        let assets = repository.fileStore(for: project.id)
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
+        let options = ExportOptions(
+            includeMP3Derivatives: validationDestination == .internetArchive,
+            generatedAt: repository.clock.now,
+            appVersion: "Voxglass \(appVersion)"
+        )
+
+        do {
+            let outcome = try await ResumableExportRunner(store: repository.store(for: project.id)).run(
+                builder: builder,
+                project: project,
+                renders: renderer,
+                transcoder: VoxTranscoder(),
+                assets: assets,
+                into: exportsDirectory,
+                options: options,
+                progress: { [weak self] event in
+                    Task { @MainActor in self?.exportProgress = event }
+                }
+            )
+            exportRunRecord = outcome.run
+            guard let bundle = outcome.bundle else {
+                exportError = "Export was cancelled. Finished chapters are kept — run it again to resume."
+                return
+            }
+            let slug = PackagingSupport.directorySlug(project.metadata.title)
+            let zipURL = exportsDirectory.appendingPathComponent("\(slug)-\(builder.destination.rawValue).zip")
+            let shareURL = try ExportPackageZipper.zipContents(of: bundle.rootURL, to: zipURL)
+            exportBundle = NarrationExportBundle(
+                directory: bundle.rootURL,
+                shareURL: shareURL,
+                filename: bundle.files.first { $0.role == .chapter }?.url.lastPathComponent ?? "",
+                files: bundle.files.map(\.url),
+                totalDuration: bundle.totalDuration
+            )
+        } catch {
+            exportError = "Export failed: \(error.localizedDescription)"
+        }
     }
 
-    private static func clockTime(_ interval: TimeInterval) -> String {
-        let total = Int(interval)
-        return String(format: "%d:%02d", total / 60, total % 60)
+    func startExport() {
+        exportTask?.cancel()
+        exportTask = Task { @MainActor in
+            await runExport()
+        }
     }
 
-    private static func lastWord(_ name: String) -> String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-            .split(whereSeparator: \.isWhitespace)
-            .last
-            .map(String.init) ?? ""
+    func cancelExport() {
+        exportTask?.cancel()
+    }
+
+    /// P7 (§13.3): removes the local staging for the last run once the package
+    /// has been handed off to Files (mockup 14 `export.evictAfterSave`).
+    func evictLastExportStaging() async {
+        guard let project, let run = exportRunRecord, let outputPath = run.outputPath else { return }
+        let url = URL(fileURLWithPath: outputPath)
+        try? FileManager.default.removeItem(at: url)
+        exportRunRecord = nil
+        if let zip = exportBundle?.shareURL {
+            try? FileManager.default.removeItem(at: zip)
+            exportBundle = nil
+        }
+        _ = project
     }
 
     private func stripProjectGutenberg(_ text: String) -> String {
@@ -1466,6 +1518,7 @@ final class NarrationFlowModel {
 
 struct NarrationExportBundle: Equatable {
     var directory: URL
+    var shareURL: URL
     var filename: String
     var files: [URL]
     var totalDuration: TimeInterval

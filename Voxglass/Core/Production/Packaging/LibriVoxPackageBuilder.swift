@@ -62,8 +62,7 @@ public struct LibriVoxPackageBuilder: PackageBuilder, Sendable {
         }
 
         let slug = PackagingSupport.directorySlug(project.metadata.title)
-        let directory = exportsRoot.appendingPathComponent("LibriVox", isDirectory: true)
-            .appendingPathComponent(slug, isDirectory: true)
+        let directory = PackagingSupport.exportDirectory(for: .librivox, project: project, exportsRoot: exportsRoot)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let tempDirectory = exportsRoot.appendingPathComponent(".voxglass-tmp", isDirectory: true)
@@ -112,6 +111,7 @@ public struct LibriVoxPackageBuilder: PackageBuilder, Sendable {
             )
             files.append(file)
             rows.append((filename, file.duration ?? 0))
+            progress(ExportProgress(phase: .chapterFinished, completedUnits: files.count, totalUnits: totalSections, currentFileName: filename, completedDuration: file.duration))
         }
 
         // section-durations.txt (§16.4, forum-ready).

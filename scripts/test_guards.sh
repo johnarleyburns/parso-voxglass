@@ -136,6 +136,21 @@ unplant "$probe"
 expect_guard_passes "destination constant probe"
 
 # ──────────────────────────────────────────────────────────────
+# G-P2 probe: a license gate in the Internet Archive builder.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Core/Production/Packaging/InternetArchivePackageBuilder.swift"
+if [ -f "$probe" ]; then
+  mv "$probe" "${probe}.probe-hidden"
+  printf '%s\n' "public struct InternetArchivePackageBuilder { let gate: LicenseGate?; let f: ProFeature? }" > "$probe"
+  expect_guard_fails "P2" "license gate referenced in Internet Archive builder"
+  rm -f "$probe"
+  mv "${probe}.probe-hidden" "$probe"
+  expect_guard_passes "Internet Archive builder clean"
+else
+  fail "G-P2 probe: $probe does not exist"
+fi
+
+# ──────────────────────────────────────────────────────────────
 # G-P6 probes: the deleted Studio module in a source file, in a project
 # manifest, and as a reappearing directory.
 # ──────────────────────────────────────────────────────────────

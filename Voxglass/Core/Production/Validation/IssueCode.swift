@@ -78,4 +78,20 @@ public enum IssueCode: String, Sendable, Codable, CaseIterable {
     // MARK: Group 5 — Loudness (LibriVox)
 
     case perceivedVolumeOutOfBand
+
+    // MARK: Group 6 — iPhone preflight (§12.2)
+
+    /// Export cannot start until the listed assets hydrate; carries the byte
+    /// estimate. Blocking-for-export only, never a quality failure.
+    case assetRemoteOnlyForExport
+    /// Export is blocked until the user frees space or reduces scope; carries
+    /// required vs available bytes.
+    case localStorageInsufficient
+    /// A long project still has `localOnly` originals that have never verified
+    /// against iCloud (§6.1).
+    case backupNotVerified
+    /// Selected takes were recorded on `draftOnly` routes (§7.1); retail
+    /// readiness is computed from the recorded route history, not the route at
+    /// export time.
+    case routeNotRetailReady
 }

@@ -438,6 +438,27 @@ PY
 }
 
 # ──────────────────────────────────────────────────────────────
+# G-P2: The Internet Archive builder never consults a license gate. FLAC on the
+# IA lane is free forever (§2.2, R-9); the builder must stay clean of
+# `ProFeature`/`LicenseGate`/`EntitlementState` so a partial revert cannot
+# reintroduce a paywall on the free lane.
+# ──────────────────────────────────────────────────────────────
+check_ia_no_license_gate() {
+  local builder="Voxglass/Core/Production/Packaging/InternetArchivePackageBuilder.swift"
+  if [ ! -f "$builder" ]; then
+    violate "G-P2: InternetArchivePackageBuilder.swift does not exist"
+    return
+  fi
+  local matches
+  matches=$(grep -nE 'ProFeature|LicenseGate|EntitlementState|\.isPro\b' "$builder" 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-P2: license gate in Internet Archive builder: $line"
+    done <<< "$matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
 # G-P6: No VoxglassStudio. The deleted macOS Studio tree must never be
 # reintroduced by a partial revert (D-3). No source file and no project
 # manifest (project.yml / Package.swift) may reference VoxglassStudio or
@@ -502,6 +523,7 @@ check_no_mac_strings
 check_pd_gate
 check_discovery_io_seam
 check_seed_floor
+check_ia_no_license_gate
 check_no_studio
 check_no_legacy_product_id
 

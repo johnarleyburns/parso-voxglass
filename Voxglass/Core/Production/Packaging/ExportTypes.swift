@@ -37,6 +37,13 @@ public struct ExportOptions: Sendable, Equatable {
     public var generatedAt: Date
     /// The version string stamped into manifests and checklists.
     public var appVersion: String
+    /// Relative-path → sha256 of output files a previous interrupted run already
+    /// finished. When `overwriteExisting` is false and the on-disk file still
+    /// matches, the pipeline skips re-encoding and reuses it (§13.3).
+    public var resumeHashes: [String: String]
+    /// Relative-path → duration of the resumed files, so a resumed run still
+    /// reports correct section durations without re-decoding (§13.3).
+    public var resumeDurations: [String: TimeInterval]
 
     public init(
         includeMP3Derivatives: Bool = false,
@@ -48,7 +55,9 @@ public struct ExportOptions: Sendable, Equatable {
         writeValidationReport: Bool = true,
         scope: ExportScope = .wholeBook,
         generatedAt: Date = Date(), // determinism-exempt: convenience default; re-export passes explicit values from SystemClock
-        appVersion: String = "Voxglass Studio 1.0"
+        appVersion: String = "Voxglass Studio 1.0",
+        resumeHashes: [String: String] = [:],
+        resumeDurations: [String: TimeInterval] = [:]
     ) {
         self.includeMP3Derivatives = includeMP3Derivatives
         self.useTestCollection = useTestCollection
@@ -60,6 +69,8 @@ public struct ExportOptions: Sendable, Equatable {
         self.scope = scope
         self.generatedAt = generatedAt
         self.appVersion = appVersion
+        self.resumeHashes = resumeHashes
+        self.resumeDurations = resumeDurations
     }
 }
 
@@ -158,6 +169,10 @@ public struct ExportProgress: Sendable, Equatable {
     public var currentFileName: String?
     public var fractionCompleted: Double
     public var estimatedRemaining: TimeInterval?
+    /// Duration of the file named by `currentFileName` when `phase` is
+    /// `.chapterFinished` — carried so `ResumableExportRunner` can persist
+    /// resumed section durations without re-decoding (§13.3).
+    public var completedDuration: TimeInterval?
 
     public init(
         phase: ExportPhase,
@@ -165,7 +180,8 @@ public struct ExportProgress: Sendable, Equatable {
         totalUnits: Int = 0,
         currentFileName: String? = nil,
         fractionCompleted: Double = 0,
-        estimatedRemaining: TimeInterval? = nil
+        estimatedRemaining: TimeInterval? = nil,
+        completedDuration: TimeInterval? = nil
     ) {
         self.phase = phase
         self.completedUnits = completedUnits
@@ -173,6 +189,7 @@ public struct ExportProgress: Sendable, Equatable {
         self.currentFileName = currentFileName
         self.fractionCompleted = fractionCompleted
         self.estimatedRemaining = estimatedRemaining
+        self.completedDuration = completedDuration
     }
 }
 
@@ -184,5 +201,10 @@ public enum ExportPhase: String, Sendable {
     case tagging
     case writingArtifacts
     case hashing
+    /// Emitted once per completed chapter output set, with `currentFileName`
+    /// naming the chapter's primary output and `completedUnits` the chapter
+    /// count finished. `ResumableExportRunner` keys its incremental
+    /// `ExportRunRecord` updates on this event (§13.3).
+    case chapterFinished
     case done
 }

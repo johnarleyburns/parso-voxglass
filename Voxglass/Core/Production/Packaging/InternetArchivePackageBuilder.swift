@@ -63,8 +63,7 @@ public struct InternetArchivePackageBuilder: PackageBuilder, Sendable {
             throw PackagingError.projectNotReady("no chapters in export scope")
         }
 
-        let directory = exportsRoot.appendingPathComponent("InternetArchive", isDirectory: true)
-            .appendingPathComponent(identifier, isDirectory: true)
+        let directory = PackagingSupport.exportDirectory(for: .internetArchive, project: project, exportsRoot: exportsRoot)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let tempDirectory = exportsRoot.appendingPathComponent(".voxglass-tmp", isDirectory: true)
@@ -125,6 +124,8 @@ public struct InternetArchivePackageBuilder: PackageBuilder, Sendable {
                 marked.role = .secondaryAudio
                 files.append(marked)
             }
+
+            progress(ExportProgress(phase: .chapterFinished, completedUnits: files.count, totalUnits: chapters.count, currentFileName: masterName, completedDuration: masterFile.duration))
         }
 
         // Cover art.

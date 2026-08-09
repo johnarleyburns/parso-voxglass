@@ -18,4 +18,8 @@ public enum FixAction: Sendable, Equatable, Codable {
     case setRetailSample
     case reanalyzeTake(UUID)
     case clearPickup(UUID)
+    case hydrateAssets
+    case manageStorage
+    case backupNow
+    case openAudioSetup
 }

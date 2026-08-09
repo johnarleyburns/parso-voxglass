@@ -60,6 +60,10 @@ import VoxglassCoreTestSupport
         "assemble.sceneGap", "assemble.roomTone", "assemble.trimSilence", "assemble.normalise",
         "assemble.renderAll", "assemble.cancelRender", "assemble.clearCache", "assemble.continue",
         "assemble.rendering", "assemble.renderProgress", "assemble.preflight", "assemble.chapter.",
+        "validation.destination", "validation.destination.librivox", "validation.destination.internetArchive",
+        "validation.issue.needsPickup", "validation.issue.assetRemoteOnly", "validation.issue.routeNotRetailReady",
+        "validation.issue.backupNotVerified", "validation.issue.drift", "validation.issue.artwork",
+        "validation.continueToExport", "export.evictAfterSave", "exportRun.step",
     ]
 
     private static let watchRegistry: [String] = [

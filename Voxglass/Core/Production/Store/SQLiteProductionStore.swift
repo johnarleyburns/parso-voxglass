@@ -385,7 +385,8 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
 
     public func updateExportRun(_ run: ExportRunRecord) async throws {
         try await db.prepare()
-        let report = try JSONEncoder().encode(run.fileHashes)
+        let payload = RunReportPayload(hashes: run.fileHashes, durations: run.fileDurations)
+        let report = try JSONEncoder().encode(payload)
         try await db.execute("""
             UPDATE export_run SET
                 finished_at = ?,
@@ -426,12 +427,26 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         return try rows.first.map(runRecord)
     }
 
+    /// The JSON document in `export_run.report_json`. Encoded with a stable
+    /// shape so `fileHashes` (sha256 per output) and `fileDurations` travel
+    /// together; rows written before `fileDurations` existed decode with an
+    /// empty durations map.
+    private struct RunReportPayload: Codable {
+        var hashes: [String: String]
+        var durations: [String: TimeInterval]
+
+        init(hashes: [String: String], durations: [String: TimeInterval]) {
+            self.hashes = hashes
+            self.durations = durations
+        }
+    }
+
     private func runRecord(_ row: DatabaseRow) throws -> ExportRunRecord {
-        let hashes: [String: String]
+        let payload: RunReportPayload?
         if let json = row.string("report_json") {
-            hashes = (try? JSONDecoder().decode([String: String].self, from: Data(json.utf8))) ?? [:]
+            payload = try? JSONDecoder().decode(RunReportPayload.self, from: Data(json.utf8))
         } else {
-            hashes = [:]
+            payload = nil
         }
         return ExportRunRecord(
             id: try uuid(from: row, column: "id"),
@@ -444,7 +459,8 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
             errorCode: row.string("error_code"),
             fileCount: Int(row.int("file_count") ?? 0),
             totalBytes: row.int("total_bytes") ?? 0,
-            fileHashes: hashes
+            fileHashes: payload?.hashes ?? [:],
+            fileDurations: payload?.durations ?? [:]
         )
     }
 

@@ -1202,68 +1202,112 @@ struct MetadataView: View {
 struct ValidateExportView: View {
     @Bindable var model: NarrationFlowModel
     var isPushed = false
-    @State private var librivoxEnabled = true
-    @State private var archiveEnabled = true
+    @State private var goSubmit = false
+    @State private var showAudioSetup = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("CHECKS")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
-                checkRow(title: "Title, author, narrator, language", ok: hasMetadata, note: hasMetadata ? "present" : "missing", id: "validate.report")
-                checkRow(title: "Rights attested · public domain (US)", ok: model.rightsAttested, note: model.rightsAttested ? "ok" : "required")
-                checkRow(title: "LibriVox disclaimer recorded", ok: hasDisclaimer, note: hasDisclaimer ? "intro + outro" : "missing")
-                checkRow(title: "Human narration (no AI audio)", ok: humanNarration, note: humanNarration ? "eligible" : "blocked", id: "validate.origin")
-                checkRow(title: "No clipping", ok: !clippingDetected, note: clippingDetected ? "check takes" : "ok")
-                checkRow(title: "Level", ok: true, note: "acceptable")
-
                 Text("PUBLISH TO")
                     .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
-                    .padding(.top, 6)
 
-                destinationCard(
-                    icon: "📻", title: "LibriVox",
-                    formats: ["MP3", "128 kbps CBR", "mono", "44.1 kHz", "ID3 tags"],
-                    enabled: $librivoxEnabled,
-                    id: "export.destination.librivox",
-                    filename: model.exportBundle?.filename
-                )
-                destinationCard(
-                    icon: "🏛️", title: "Internet Archive",
-                    formats: ["FLAC master", "+ MP3 derivative", "metadata.json", "checksums"],
-                    enabled: $archiveEnabled,
-                    id: "export.destination.internetArchive"
-                )
+                HStack(spacing: 8) {
+                    destinationButton(.librivox, label: "LibriVox", id: "validation.destination.librivox")
+                    destinationButton(.internetArchive, label: "Internet Archive", id: "validation.destination.internetArchive")
+                }
+                .accessibilityIdentifier("validation.destination")
+                .padding(8)
+                .glassSurface(cornerRadius: 14)
 
-                Text("FLAC/MP3 encoding happens on this iPhone. Your paragraph takes transfer with the project.")
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                if model.isValidating {
+                    HStack(spacing: 8) {
+                        ProgressView().tint(Palette.brass)
+                        Text("Checking \(destinationName)…").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                    }
+                    .padding(.vertical, 10)
+                } else {
+                    let blocking = model.blockingValidationIssues
+                    let warnings = model.validationIssues.filter { $0.severity == .warning }
+
+                    HStack {
+                        Text("\(destinationName)")
+                            .scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
+                        Spacer()
+                        Text("\(blocking.count) blocking · \(warnings.count) warnings")
+                            .scaledFont(size: 11, weight: .bold).foregroundStyle(blocking.isEmpty ? Palette.ok : Palette.danger)
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background((blocking.isEmpty ? Palette.ok : Palette.danger).opacity(0.14), in: Capsule())
+                    }
+                    .accessibilityIdentifier("validate.report")
+
+                    if !blocking.isEmpty {
+                        issueSection(title: "BLOCKS EXPORT", issues: blocking)
+                    }
+                    if !warnings.isEmpty {
+                        issueSection(title: "WARNINGS", issues: warnings)
+                    }
+                    if blocking.isEmpty && warnings.isEmpty {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checkmark.seal.fill").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.ok)
+                            Text("Ready to export — every check passed for \(destinationName).")
+                                .scaledFont(size: 12.5).foregroundStyle(Palette.ink2)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .glassSurface(cornerRadius: 14)
+                    }
+                }
+
+                if let preflight = model.preflight, preflight.hydrationPlan.byteCount > 0 {
+                    hydrationBanner(preflight)
+                }
+
+                if model.isExporting {
+                    exportProgressCard
+                }
+
+                if let error = model.exportError {
+                    Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger).padding(.top, 4)
+                }
 
                 Button {
-                    model.buildExport()
-                    goSubmit = true
+                    model.startExport()
                 } label: {
-                    Text("Produce files ▸")
-                        .scaledFont(size: 15, weight: .heavy)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
+                    HStack(spacing: 8) {
+                        if model.isExporting {
+                            ProgressView().tint(Color(hex: 0x21170B))
+                        }
+                        Text(model.isExporting ? "Producing files…" : "Produce files ▸")
+                            .scaledFont(size: 15, weight: .heavy)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
+                            .foregroundStyle(Color(hex: 0x21170B))
+                    }
                 }
                 .buttonStyle(.plain)
-                .disabled(!hasMetadata)
-                .accessibilityIdentifier("export.run")
+                .disabled(!hasMetadata || !model.blockingValidationIssues.isEmpty || model.isExporting)
+                .accessibilityIdentifier("validation.continueToExport")
+
+                Text("FLAC/MP3 encoding happens on this iPhone. Validation and export are free for LibriVox and Internet Archive.")
+                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
             }
             .padding(18)
         }
         .background(VoxglassBackground())
+        .task { await model.runValidation() }
+        .onChange(of: model.exportBundle) { _, newValue in
+            if newValue != nil { goSubmit = true }
+        }
+        .sheet(isPresented: $showAudioSetup) {
+            AudioSetupView(model: model)
+        }
         .navigationDestination(isPresented: $goSubmit) {
             SubmitView(model: model, isPushed: true)
         }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }
-
-    @State private var goSubmit = false
 
     private var hasMetadata: Bool {
         guard let project = model.project else { return false }
@@ -1273,75 +1317,178 @@ struct ValidateExportView: View {
             && !model.language.isEmpty
     }
 
-    private var hasDisclaimer: Bool {
-        // A recorded-but-not-yet-accepted paragraph still has its take, so it
-        // satisfies the LibriVox disclaimer requirement (matches
-        // readyToAssemble, which only requires every paragraph recorded).
-        let recorded: Set<FlowParagraphState> = [.recorded, .approved]
-        return model.paragraphs.contains { $0.role == .intro && recorded.contains($0.state) }
-            && model.paragraphs.contains { $0.role == .outro && recorded.contains($0.state) }
+    private var destinationName: String {
+        model.validationDestination == .internetArchive ? "Internet Archive" : "LibriVox"
     }
 
-    /// Spec §10: an imported non-human or unknown take blocks LibriVox. The
-    /// eligibility profile reads the selected takes' declared origins.
-    private var humanNarration: Bool {
-        guard let project = model.project else { return true }
-        return EligibilityProfile.evaluate(project).librivoxEligible
-    }
-
-    private var clippingDetected: Bool {
-        model.paragraphs.contains { $0.take?.clipped == true }
-    }
-
-    private func checkRow(title: String, ok: Bool, note: String, id: String? = nil) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: ok ? "checkmark" : "exclamationmark")
-                .scaledFont(size: 13, weight: .heavy)
-                .foregroundStyle(ok ? Palette.ok : Color(hex: 0xE6B877))
-                .frame(width: 22)
-            Text(title).scaledFont(size: 13).foregroundStyle(Palette.ink)
-            Spacer()
-            Text(note).scaledFont(size: 11).foregroundStyle(Palette.ink3)
-        }
-        .padding(8)
-        .accessibilityIdentifier(id ?? "validate.report")
-    }
-
-    private func destinationCard(icon: String, title: String, formats: [String], enabled: Binding<Bool>, id: String, filename: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(icon).scaledFont(size: 18)
-                Text(title).scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
-                Spacer()
-                Toggle("", isOn: enabled).labelsHidden().tint(Palette.brass)
+    private func destinationButton(_ destination: DestinationID, label: String, id: String) -> some View {
+        let selected = model.validationDestination == destination
+        return Button {
+            model.selectValidationDestination(destination)
+        } label: {
+            VStack(spacing: 4) {
+                Text(label).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                    .foregroundStyle(selected ? Color(hex: 0x21170B) : Palette.ink2)
             }
-            HStack(spacing: 8) {
-                ForEach(formats, id: \.self) { format in
-                    Text(format)
-                        .scaledFont(size: 11, weight: .bold)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .foregroundStyle(Color(hex: 0xCFD6E0))
-                        .background(Color(hex: 0x0F1316), in: RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Palette.hairline, lineWidth: 1))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(
+                selected
+                    ? AnyShapeStyle(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom))
+                    : AnyShapeStyle(.clear),
+                in: RoundedRectangle(cornerRadius: 10)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? Palette.brass : Palette.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
+    private func issueSection(title: String, issues: [ValidationIssue]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                .padding(.top, 6)
+            VStack(spacing: 0) {
+                ForEach(Array(issueRows(issues).enumerated()), id: \.element.issue.id) { index, row in
+                    issueRow(row.issue, id: row.id, index: index)
                 }
             }
-            if let filename {
-                Text(filename)
-                    .scaledFont(size: 11)
-                    .foregroundStyle(Palette.ink3)
-                    .monospaced()
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(hex: 0x0F1316), in: RoundedRectangle(cornerRadius: 8))
-                    .accessibilityIdentifier("export.filename")
-            }
-            Text("Encoding is unavailable in this build. Save your project and try again after enabling the on-device export codecs.")
-                .scaledFont(size: 11).foregroundStyle(Color(hex: 0xE6B877))
+            .glassSurface(cornerRadius: 14)
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.hairline, lineWidth: 1))
         }
-        .padding(14)
-        .glassSurface(cornerRadius: 16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.brass.opacity(0.45), lineWidth: 1))
+    }
+
+    /// Assigns each issue a stable `validation.issue.<key>` identifier, the
+    /// mockup 13 contract; repeated codes get `.N` suffixes so rows stay
+    /// addressable.
+    private func issueRows(_ issues: [ValidationIssue]) -> [(issue: ValidationIssue, id: String)] {
+        var counts: [String: Int] = [:]
+        return issues.map { issue in
+            let key = Self.issueKey(issue.code)
+            let ordinal = (counts[key] ?? 0) + 1
+            counts[key] = ordinal
+            let base = Self.issueIDs[issue.code] ?? "validation.issue.generic"
+            return (issue, ordinal == 1 ? base : "\(base).\(ordinal)")
+        }
+    }
+
+    private func issueRow(_ issue: ValidationIssue, id: String, index: Int) -> some View {
+        let danger = issue.severity == .blocking
+        return VStack(spacing: 0) {
+            if index > 0 { VoxglassListDivider() }
+            HStack(spacing: 10) {
+                Image(systemName: danger ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill")
+                    .scaledFont(size: 14, weight: .bold)
+                    .foregroundStyle(danger ? Palette.danger : Palette.brass)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(issue.title).scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(issue.message).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                        .lineLimit(2)
+                }
+                Spacer()
+                if let fix = issue.fix {
+                    Button {
+                        apply(fix)
+                    } label: {
+                        Text(fixLabel(fix))
+                            .scaledFont(size: 11, weight: .bold)
+                            .foregroundStyle(Palette.brass)
+                            .padding(.horizontal, 9).padding(.vertical, 5)
+                            .background(Palette.brass.opacity(0.12), in: Capsule())
+                            .overlay(Capsule().stroke(Palette.brass.opacity(0.45), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 13).padding(.vertical, 10)
+        }
         .accessibilityIdentifier(id)
+    }
+
+    private func apply(_ fix: FixAction) {
+        switch fix {
+        case .openAudioSetup:
+            showAudioSetup = true
+        case .hydrateAssets, .backupNow, .manageStorage, .recordParagraph, .clearPickup, .goToParagraph, .goToChapter,
+             .openMetadata, .openRights, .regenerateDisclaimers, .regenerateCredits, .selectTake, .chooseArtwork,
+             .setRetailSample, .reanalyzeTake, .splitChapter, .applyMastering:
+            break
+        }
+    }
+
+    private func fixLabel(_ fix: FixAction) -> String {
+        switch fix {
+        case .hydrateAssets: return "Download"
+        case .manageStorage: return "Storage"
+        case .backupNow: return "Back up"
+        case .openAudioSetup: return "Audio setup"
+        case .recordParagraph: return "Record"
+        case .clearPickup: return "Clear"
+        case .regenerateDisclaimers, .regenerateCredits: return "Regenerate"
+        case .reanalyzeTake: return "Re-analyze"
+        case .setRetailSample: return "Sample"
+        case .splitChapter: return "Split"
+        case .chooseArtwork: return "Artwork"
+        case .applyMastering: return "Master"
+        case .goToParagraph, .goToChapter: return "Open"
+        case .openMetadata: return "Edit"
+        case .openRights: return "Rights"
+        case .selectTake: return "Select"
+        }
+    }
+
+    private func hydrationBanner(_ preflight: ExportPreflightResult) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "icloud.and.arrow.down").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.brass)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(preflight.remoteHydrationChapterCount) chapter\(preflight.remoteHydrationChapterCount == 1 ? "" : "s") are in iCloud")
+                    .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                Text("\(PackagingSupport.formattedBytes(preflight.hydrationPlan.byteCount)) must download before export can start.")
+                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+            }
+            Spacer()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.45), lineWidth: 1))
+        .accessibilityIdentifier("validation.issue.assetRemoteOnly")
+    }
+
+    private var exportProgressCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Exporting…")
+                .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+            if let progress = model.exportProgress, let file = progress.currentFileName {
+                Text(file).scaledFont(size: 11).foregroundStyle(Palette.ink3).lineLimit(1)
+            }
+            ProgressView(value: model.exportProgress?.fractionCompleted ?? 0, total: 1).tint(Palette.brass)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+        .accessibilityIdentifier("exportRun.step")
+    }
+
+    /// The mockup's issue-key per code — the stable `validation.issue.<key>`
+    /// identifier suffix (mockup 13). Literal values are the audit registry's
+    /// contract.
+    private static let issueIDs: [IssueCode: String] = [
+        .unresolvedNeedsPickup: "validation.issue.needsPickup",
+        .assetRemoteOnlyForExport: "validation.issue.assetRemoteOnly",
+        .routeNotRetailReady: "validation.issue.routeNotRetailReady",
+        .backupNotVerified: "validation.issue.backupNotVerified",
+        .textChangedAfterRecording: "validation.issue.drift",
+        .textChangedCosmetically: "validation.issue.drift",
+        .artworkTooSmall: "validation.issue.artwork",
+        .artworkNotSquare: "validation.issue.artwork",
+        .missingCoverArt: "validation.issue.artwork",
+    ]
+
+    private static func issueKey(_ code: IssueCode) -> String {
+        issueIDs[code] ?? "validation.issue.generic"
     }
 }
 
@@ -1402,6 +1549,25 @@ struct SubmitView: View {
                 }
                 .accessibilityIdentifier("export.share")
 
+                if model.exportRunRecord != nil {
+                    Button {
+                        Task { await model.evictLastExportStaging() }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "trash").scaledFont(size: 13, weight: .semibold)
+                            Text("Free the staging space")
+                                .scaledFont(size: 13, weight: .semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Palette.ink2.opacity(0.08), in: RoundedRectangle(cornerRadius: 13))
+                        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Palette.hairline, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Palette.ink2)
+                    .accessibilityIdentifier("export.evictAfterSave")
+                }
+
                 Text("SUBMIT TO LIBRIVOX")
                     .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3).padding(.top, 6)
                 submitStep(1, "Open this week's Weekly Poetry thread and claim the poem.")
@@ -1450,7 +1616,8 @@ struct SubmitView: View {
     }
 
     private var shareItem: URL {
-        model.exportBundle?.directory
+        model.exportBundle?.shareURL
+            ?? model.exportBundle?.directory
             ?? FileManager.default.temporaryDirectory
     }
 

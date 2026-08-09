@@ -142,4 +142,44 @@ public enum PackagingSupport {
         }
         return String(format: "%02d:%02d", minutes, seconds)
     }
+
+    /// A deterministic byte-count label ("3.4 GB", "512 MB") for preflight
+    /// messages and export summaries. Locale-independent so reports are stable.
+    public static func formattedBytes(_ bytes: Int64) -> String {
+        let b = Double(bytes)
+        if b >= 1024 * 1024 * 1024 {
+            return String(format: "%.1f GB", b / 1024 / 1024 / 1024)
+        }
+        if b >= 1024 * 1024 {
+            return String(format: "%.0f MB", b / 1024 / 1024)
+        }
+        if b >= 1024 {
+            return String(format: "%.0f KB", b / 1024)
+        }
+        return "\(bytes) B"
+    }
+
+    /// The output directory a builder writes into for `destination` — the one
+    /// source of truth shared by the builders and `ResumableExportRunner`, so a
+    /// resumed run reopens exactly the staging the builders produced.
+    public static func exportDirectory(
+        for destination: DestinationID,
+        project: AudiobookProject,
+        exportsRoot: URL
+    ) -> URL {
+        switch destination {
+        case .librivox:
+            return exportsRoot
+                .appendingPathComponent("LibriVox", isDirectory: true)
+                .appendingPathComponent(directorySlug(project.metadata.title), isDirectory: true)
+        case .internetArchive:
+            let identifier = project.metadata.archiveIdentifier ?? "book"
+            return exportsRoot
+                .appendingPathComponent("InternetArchive", isDirectory: true)
+                .appendingPathComponent(identifier, isDirectory: true)
+        default:
+            return exportsRoot
+                .appendingPathComponent(destination.rawValue.capitalized, isDirectory: true)
+        }
+    }
 }
