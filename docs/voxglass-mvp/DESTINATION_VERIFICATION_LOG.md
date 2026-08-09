@@ -14,6 +14,7 @@ updated to match the most recent check for each destination, and
 | 2026-08-02 | 4. ACX submission requirements (RMS/peak/noise floor, file length, credits, retail sample) | Voxglass Studio agentic audit | https://help.acx.com/hc/en-us/articles/ | 192 kbps CBR, 44.1 kHz, −23…−18 dBFS, −60 dB noise floor, 2400 px square cover; constants unchanged; `RetailMasterPackageBuilder` compliance block matches |
 | 2026-08-02 | 5. Internet Archive metadata and derivative docs (`test_collection`) | Voxglass Studio agentic audit | https://archive.org/developers/ | FLAC master preferred, MP3 192 kbps derivative; `test_collection` dry-run behavior unchanged; constants unchanged |
 | 2026-08-02 | 6. Apple Books / aggregator intake requirements | Voxglass Studio agentic audit | Apple Books audiobook requirements | Chapterized M4B, AAC, square cover 2400 px, −20 dBFS RMS window; constants unchanged |
+| 2026-08-09 | 1–6. P9 release re-verification (§16.6): iPhone-only destination lanes (LibriVox free, IA free, Retail Pro) | P9 agentic audit | Same sources as above rows | `DestinationProfiles.swift` constants (`// verified 2026-08-02`) and `ValidationThresholds.swift` unchanged since 2026-08-02; `DestinationProfileTests` green; the revised MVP's export lanes (P7 LibriVox, IA with FLAC masters, P8 retail) all read the same centralized constants — no destination value lives in app/flow code |
 
 Re-verify each row and update `DestinationProfiles.swift` citations before
 every release (§21.3).

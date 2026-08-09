@@ -418,6 +418,7 @@ struct RecordView: View {
             }
             .foregroundStyle(Palette.ink2)
             .accessibilityIdentifier("record.transport.playInContext")
+            .accessibilityLabel("Play the take for this paragraph in context")
 
             Button {
                 Task {
@@ -433,6 +434,7 @@ struct RecordView: View {
                     .foregroundStyle(model.isRecording ? Palette.danger : Palette.brass)
             }
             .accessibilityIdentifier("record.transport.record")
+            .accessibilityLabel(model.isRecording ? "Stop recording this take" : "Record a take for this paragraph")
 
             Button {
                 model.play(currentParagraphID)
@@ -442,6 +444,7 @@ struct RecordView: View {
             .foregroundStyle(Palette.ink2)
             .disabled(model.paragraph(at: currentParagraphID)?.take == nil)
             .accessibilityIdentifier("record.transport.playTake")
+            .accessibilityLabel("Play back the latest take for this paragraph")
         }
         .padding(.vertical, 10)
     }
@@ -515,6 +518,7 @@ struct RecordView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("record.flagAndNext")
+            .accessibilityLabel("Flag this paragraph for review and go to the next paragraph")
 
             Button {
                 Task { await goNext(from: paragraph, flag: false) }

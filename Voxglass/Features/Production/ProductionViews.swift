@@ -306,26 +306,32 @@ public struct ProductionReviewPlayerView: View {
                 Image(systemName: "backward.end.fill")
             }
             .accessibilityIdentifier("player.previousParagraph")
+            .accessibilityLabel("Go to the previous paragraph")
 
             Button { Task { await model.skip(by: -15) } } label: {
                 Text("-15")
             }
             .accessibilityIdentifier("player.skipBack")
+            .accessibilityLabel("Skip back 15 seconds")
 
             Button { Task { if model.isPlaying { await model.pause() } else { await model.play() } } } label: {
                 Image(systemName: model.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .scaledFont(size: 56)
             }
+            .accessibilityIdentifier("player.playPause")
+            .accessibilityLabel(model.isPlaying ? "Pause the review player" : "Play the review player")
 
             Button { Task { await model.skip(by: 30) } } label: {
                 Text("+30")
             }
             .accessibilityIdentifier("player.skipForward")
+            .accessibilityLabel("Skip forward 30 seconds")
 
             Button { Task { await model.next() } } label: {
                 Image(systemName: "forward.end.fill")
             }
             .accessibilityIdentifier("player.nextParagraph")
+            .accessibilityLabel("Go to the next paragraph")
         }
         .font(.title2)
         .padding(.vertical, 20)
@@ -339,6 +345,7 @@ public struct ProductionReviewPlayerView: View {
                 Label("Flag", systemImage: "flag").labelStyle(.iconOnly)
             }
             .accessibilityIdentifier("player.flag")
+            .accessibilityLabel("Flag this paragraph for review")
 
             Button {
                 Task { await model.approve() }
@@ -346,6 +353,7 @@ public struct ProductionReviewPlayerView: View {
                 Label("Approve", systemImage: "checkmark.circle")
             }
             .accessibilityIdentifier("player.approve")
+            .accessibilityLabel("Approve this paragraph")
 
             Button {
                 Task { await model.pickup() }
@@ -353,6 +361,7 @@ public struct ProductionReviewPlayerView: View {
                 Label("Pickup", systemImage: "arrow.counterclockwise")
             }
             .accessibilityIdentifier("player.pickup")
+            .accessibilityLabel("Mark this paragraph as needing a pickup")
 
             Button {
                 showNote = true
@@ -360,6 +369,7 @@ public struct ProductionReviewPlayerView: View {
                 Label("Note", systemImage: "text.bubble")
             }
             .accessibilityIdentifier("player.addNote")
+            .accessibilityLabel("Add a review note to this paragraph")
         }
         .font(.title2)
         .padding(.bottom, 24)

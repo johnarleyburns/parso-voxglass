@@ -259,6 +259,10 @@ final class NarrationFlowModel {
     let repository: NarrationProjectRepository
     let fetcher: any HTTPFetching
 
+    /// P9 storage hardening: evicts remote-verified originals after a take is
+    /// saved so the working cache never silently exceeds its cap (§6.5, M-5).
+    private let storageCoordinator: ProductionStorageCoordinator
+
     /// The license seam the export destination picker and the export runner
     /// consult (spec §2.2: LicenseGate appears only in the destination picker,
     /// the export runner, and Settings). Recording, review, validation, and
@@ -293,6 +297,7 @@ final class NarrationFlowModel {
         self.capture = capture
         self.licenseProvider = licenseProvider
         self.project = existing
+        self.storageCoordinator = ProductionStorageCoordinator(repository: repository)
         if let existing {
             draftTitle = existing.metadata.title
             draftAuthor = existing.metadata.author
@@ -815,6 +820,13 @@ final class NarrationFlowModel {
             currentTake = FlowTake(duration: captured.duration, peakDBFS: captured.peakDBFS, clipped: captured.clippedDuringCapture)
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
             await persist()
+            // P9 storage hardening (§6.5): the new take is `.localOnly` (never
+            // evictable); if the working cache has grown past its cap, oldest
+            // remote-verified chapters are offloaded to fit.
+            await storageCoordinator.evictIfOverLimit(
+                projectID: project.id,
+                activeChapterOrdinal: chapter?.ordinal
+            )
         } catch {
             isRecording = false
             levelTask?.cancel()
@@ -865,6 +877,10 @@ final class NarrationFlowModel {
             }
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
             await persist()
+            await storageCoordinator.evictIfOverLimit(
+                projectID: project.id,
+                activeChapterOrdinal: chapter?.ordinal
+            )
         } catch {
             // The take stays on disk and the session stays; it will be offered
             // again at the next launch.

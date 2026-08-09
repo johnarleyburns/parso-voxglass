@@ -81,7 +81,7 @@ public protocol ProductionSyncTransport: Sendable {
 
 // MARK: - SyncError
 
-public enum SyncError: Error, Sendable, Equatable {
+public enum SyncError: Error, Sendable, Equatable, LocalizedError {
     /// A pushed record conflicted (`serverRecordChanged`). Carries the server record
     /// name, its change tag, and — when available — the server record's revision, so
     /// the engine can adopt it and retry once (last-writer-wins on revision, §13.7).
@@ -98,6 +98,25 @@ public enum SyncError: Error, Sendable, Equatable {
     case transport(String)
     /// Stale token: callers must discard the token and refetch from scratch.
     case changeTokenExpired
+
+    public var errorDescription: String? {
+        switch self {
+        case .serverRecordChanged(let recordName, _, _):
+            return "A conflicting change was received for \(recordName); adopting the server copy."
+        case .transient(let reason, _):
+            return reason
+        case .auth:
+            return "Not signed in to iCloud."
+        case .quotaExceeded:
+            return "Your iCloud storage is full. Narration data could not be backed up. Free up iCloud space or change the iCloud plan in Settings."
+        case .zoneNotFound:
+            return "The narration backup zone does not exist yet."
+        case .transport(let reason):
+            return reason
+        case .changeTokenExpired:
+            return "The sync token expired; refreshing from scratch."
+        }
+    }
 }
 
 // MARK: - PublishReason

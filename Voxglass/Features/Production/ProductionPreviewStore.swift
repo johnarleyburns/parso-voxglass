@@ -66,6 +66,17 @@ public final class ProductionPreviewStore {
         await refreshDownloadedBytes()
     }
 
+    /// Removes every persisted preview snapshot. Used by the UI-test reset so a
+    /// fresh run starts with exactly the seeded project (WP-G): the seed card
+    /// sorts alphabetically and must not be pushed below the fold by stale
+    /// previews left by earlier test runs.
+    public func resetAll() async {
+        projections = []
+        lastReceivedDate = nil
+        try? FileManager.default.removeItem(at: baseDirectory)
+        downloadedBytes = 0
+    }
+
     public func saveProxy(data: Data, paragraphID: UUID, projectID: UUID) async {
         let proxies = directory(for: projectID).appendingPathComponent("proxies", isDirectory: true)
         try? FileManager.default.createDirectory(at: proxies, withIntermediateDirectories: true)

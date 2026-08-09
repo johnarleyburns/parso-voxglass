@@ -175,9 +175,16 @@ final class AppServices: ObservableObject {
     /// `-uiTestSeed onePreviewProject` seeds one previewable production so the
     /// iPhone smoke test can assert the My Productions surface is reachable
     /// (§18.2, WP-G). Debug-only; release builds ignore the argument.
+    ///
+    /// The reset flag first wipes the preview store's on-disk cache so the
+    /// seeded card is the only project and cannot be pushed below the fold by
+    /// stale previews left by earlier test runs (WP-G).
     #if DEBUG
     private func seedProductionPreviewIfRequested() async {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-uiTestResetNarrations") {
+            await productionEnvironment.previewStore.resetAll()
+        }
         guard let index = arguments.firstIndex(of: "-uiTestSeed"),
               arguments.indices.contains(index + 1),
               arguments[index + 1] == "onePreviewProject" else { return }

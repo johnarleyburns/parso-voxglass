@@ -33,13 +33,16 @@ public final class PhoneProductionSync {
     private let narrationRepository: NarrationProjectRepository
     private let outbox: ReviewEventOutbox
     private let applicator = ProductionReviewEventApplicator()
+    private let powerPolicy: ProductionPowerPolicy
 
     public init(
         previewStore: ProductionPreviewStore,
-        narrationRepository: NarrationProjectRepository = NarrationProjectRepository()
+        narrationRepository: NarrationProjectRepository = NarrationProjectRepository(),
+        powerPolicy: ProductionPowerPolicy = ProductionPowerPolicy()
     ) {
         self.previewStore = previewStore
         self.narrationRepository = narrationRepository
+        self.powerPolicy = powerPolicy
         let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         self.outbox = ReviewEventOutbox(
@@ -76,29 +79,51 @@ public final class PhoneProductionSync {
         accountStatus = await syncCore.transport.accountStatus()
         if accountStatus == .available {
             do {
-                await syncCore.transport.ensureSubscription()
-
-                // The phone is the writer: mirror every local project, then upload
-                // originals that are not yet verified.
-                let projects = await narrationRepository.allProjects()
-                for project in projects {
-                    _ = try? await publishProject(project)
-                }
-                try await uploadPendingAssets()
-
-                // Fetch the mirror back (recovery / second device) and apply it.
-                let report = try await syncCore.engine.pump()
-                if let projection = report.projection {
-                    await previewStore.apply(projection)
-                    lastReceivedRevision = projection.revision
-                    for (paragraphID, data) in report.proxyAssets {
-                        await previewStore.saveProxy(data: data, paragraphID: paragraphID, projectID: projection.project.id)
+                // P9 low-power hardening (§17 P9): on Low Power Mode, still pull
+                // the mirror (cheap, small) and fold local events, but defer the
+                // expensive upload/hydrate radio and disk work to a normal-power
+                // pass. Nothing local is lost by deferring.
+                let deferBackground = powerPolicy.shouldDeferBackgroundSync
+                if deferBackground {
+                    let report = try await syncCore.engine.pump()
+                    if let projection = report.projection {
+                        await previewStore.apply(projection)
+                        lastReceivedRevision = projection.revision
+                        for (paragraphID, data) in report.proxyAssets {
+                            await previewStore.saveProxy(data: data, paragraphID: paragraphID, projectID: projection.project.id)
+                        }
                     }
-                }
+                } else {
+                    await syncCore.transport.ensureSubscription()
 
-                // Restore any remote-only originals.
-                try await hydrateRemoteAssets()
+                    // The phone is the writer: mirror every local project, then upload
+                    // originals that are not yet verified.
+                    let projects = await narrationRepository.allProjects()
+                    for project in projects {
+                        _ = try? await publishProject(project)
+                    }
+                    try await uploadPendingAssets()
+
+                    // Fetch the mirror back (recovery / second device) and apply it.
+                    let report = try await syncCore.engine.pump()
+                    if let projection = report.projection {
+                        await previewStore.apply(projection)
+                        lastReceivedRevision = projection.revision
+                        for (paragraphID, data) in report.proxyAssets {
+                            await previewStore.saveProxy(data: data, paragraphID: paragraphID, projectID: projection.project.id)
+                        }
+                    }
+
+                    // Restore any remote-only originals.
+                    try await hydrateRemoteAssets()
+                }
                 syncError = nil
+            } catch let error as SyncError where error == .quotaExceeded {
+                // §6.5 quota behavior: the pass halts cleanly, the entitlement to
+                // offload is unchanged (assets stay un-evictable), and the UI
+                // surfaces a real quota message instead of a generic failure.
+                accountStatus = .quotaExceeded
+                syncError = error.localizedDescription
             } catch {
                 syncError = error.localizedDescription
             }
