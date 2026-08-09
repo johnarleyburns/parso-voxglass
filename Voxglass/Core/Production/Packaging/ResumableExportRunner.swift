@@ -156,11 +156,7 @@ private final class ChapterRecorder: @unchecked Sendable {
     /// per chapter, so a crash after any of them leaves a partial-but-resumable
     /// record.
     func drain() async {
-        let items: [ChapterCompletion]
-        lock.lock()
-        items = completions
-        completions = []
-        lock.unlock()
+        let items = takePendingCompletions()
         for item in items {
             run.fileHashes[item.filename] = item.hash
             run.fileDurations[item.filename] = item.duration
@@ -169,6 +165,14 @@ private final class ChapterRecorder: @unchecked Sendable {
             run.outputPath = outputDir.path
             try? await store.updateExportRun(run)
         }
+    }
+
+    private func takePendingCompletions() -> [ChapterCompletion] {
+        lock.lock()
+        defer { lock.unlock() }
+        let items = completions
+        completions = []
+        return items
     }
 
     /// Drains pending checkpoints, then writes the terminal status. On success

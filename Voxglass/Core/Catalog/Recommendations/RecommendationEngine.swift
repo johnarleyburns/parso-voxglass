@@ -178,7 +178,7 @@ public final class RecommendationEngine {
         return Array(Set(queries)).shuffled()
     }
 
-    private func withTimeout<T>(_ seconds: Double, _ op: @escaping () async throws -> T) async throws -> T {
+    private func withTimeout<T: Sendable>(_ seconds: Double, _ op: @escaping @Sendable () async throws -> T) async throws -> T {
         try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask { try await op() }
             group.addTask {

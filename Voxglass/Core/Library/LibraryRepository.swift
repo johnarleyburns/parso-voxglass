@@ -59,7 +59,7 @@ public struct LocalAudioImport: Equatable, Sendable {
     public let duration: TimeInterval?
 }
 
-public final class LibraryRepository {
+public final class LibraryRepository: @unchecked Sendable {
     private let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
     public var mutationLog: SyncMutationLog?

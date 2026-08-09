@@ -22,7 +22,7 @@ public final class SleepTimer: ObservableObject {
     /// Called exactly once when a `.duration` deadline passes.
     public var onFire: (() -> Void)?
 
-    public nonisolated init(now: @escaping () -> Date = Date.init) {
+    public init(now: @escaping () -> Date = Date.init) {
         self.now = now
     }
 

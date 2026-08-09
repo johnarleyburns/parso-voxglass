@@ -23,7 +23,7 @@ public final class FolderWatchService: ObservableObject {
     private let bookmarksKey = "voxglass.folderWatch.bookmarks"
     private weak var libraryStore: LibraryStore?
     private var presenters: [FolderPresenter] = []
-    private var foregroundObserver: NSObjectProtocol?
+    private var foregroundObserver: ObserverToken?
 
     public init(repository: LibraryRepository, defaults: UserDefaults = .standard) {
         self.repository = repository
@@ -32,12 +32,14 @@ public final class FolderWatchService: ObservableObject {
         #if canImport(UIKit) && !os(watchOS)
         // A foreground rescan keeps watched folders live; the notification is
         // iOS-only, so on the host (swift test) there is simply no rescan hook.
-        foregroundObserver = NotificationCenter.default.addObserver(
+        if let observer = NotificationCenter.default.addObserver(
             forName: UIApplication.willEnterForegroundNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in await self?.rescanAll() }
+        } {
+            foregroundObserver = ObserverToken(observer)
         }
         #endif
     }
@@ -47,7 +49,7 @@ public final class FolderWatchService: ObservableObject {
             NSFileCoordinator.removeFilePresenter(presenter)
         }
         if let foregroundObserver {
-            NotificationCenter.default.removeObserver(foregroundObserver)
+            NotificationCenter.default.removeObserver(foregroundObserver.value)
         }
     }
 
@@ -192,7 +194,15 @@ public final class FolderWatchService: ObservableObject {
 
 /// Live folder watcher: fires the change handler when the folder's contents
 /// change so a rescan can pick up newly added files without a relaunch.
-private final class FolderPresenter: NSObject, NSFilePresenter {
+private struct ObserverToken: @unchecked Sendable {
+    let value: NSObjectProtocol
+
+    init(_ value: NSObjectProtocol) {
+        self.value = value
+    }
+}
+
+private final class FolderPresenter: NSObject, NSFilePresenter, @unchecked Sendable {
     public let presentedItemURL: URL?
     public let presentedItemOperationQueue: OperationQueue = .main
     private let onChange: () -> Void

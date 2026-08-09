@@ -16,7 +16,7 @@ public protocol SyncStateStore: Sendable {
 
 /// Default `SyncStateStore` over `UserDefaults`, JSON-encoded. Fine for the MVP
 /// scale; the Studio may substitute a store inside the `.voxproject`.
-public struct DefaultsSyncStateStore: SyncStateStore {
+public struct DefaultsSyncStateStore: SyncStateStore, @unchecked Sendable {
     private let defaults: UserDefaults
     private let suite: String
 
