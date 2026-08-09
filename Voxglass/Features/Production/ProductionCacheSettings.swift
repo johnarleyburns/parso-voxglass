@@ -5,7 +5,7 @@ import VoxglassCore
 /// D-5). The default is clamped at first run to about 15% of free space so a
 /// small device never adopts a 10 GB cache it cannot afford; the user can then
 /// raise it within the valid 2–100 GB range.
-public struct ProductionCacheSettings: Sendable {
+public struct ProductionCacheSettings: @unchecked Sendable {
     public static let workingCacheKey = "voxglass.production.workingCacheBytes"
     private let defaults: UserDefaults
 

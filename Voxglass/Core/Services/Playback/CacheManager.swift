@@ -3,7 +3,7 @@ import Foundation
 public actor CacheManager {
     public static let shared = CacheManager()
 
-    public enum CachePreset: Int64, CaseIterable {
+    public enum CachePreset: Int64, CaseIterable, Sendable {
         case m500MB = 524_288_000
         case g2GB = 2_147_483_648
         case g10GB = 10_737_418_240

@@ -82,12 +82,12 @@ public struct StorageAnalyzer: Sendable {
             }
         }
 
-        let exportsDir = package.root.appendingPathComponent("Exports", isDirectory: true)
+        let exportsDir = package.layout.exportsURL
         if fm.fileExists(atPath: exportsDir.path) {
             report.exportBytes = totalBytesRecursive(at: exportsDir)
         }
 
-        let trashDir = package.root.appendingPathComponent("Trash", isDirectory: true)
+        let trashDir = package.layout.trashURL
         if fm.fileExists(atPath: trashDir.path) {
             report.trashBytes = totalBytesRecursive(at: trashDir)
         }

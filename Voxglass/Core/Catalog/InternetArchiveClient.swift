@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol InternetArchiveCatalogClient {
+public protocol InternetArchiveCatalogClient: Sendable {
     func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult]
     func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult]
@@ -100,7 +100,7 @@ public enum LibriVoxCatalogScope {
     }
 }
 
-public final class InternetArchiveClient: InternetArchiveCatalogClient {
+public final class InternetArchiveClient: @unchecked Sendable, InternetArchiveCatalogClient {
     private let session: URLSession
     private let decoder: JSONDecoder
 

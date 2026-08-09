@@ -3,7 +3,7 @@ import Foundation
 /// CRUD for playlist shelves (P1-3). Kept separate from `LibraryRepository`
 /// (already 590+ lines). No cross-book continuous playback — playlists are
 /// shelves: tap a book → normal per-book PlaybackSession.
-public final class PlaylistRepository {
+public final class PlaylistRepository: @unchecked Sendable {
     private let database: AppDatabase
 
     public init(database: AppDatabase) {

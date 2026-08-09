@@ -15,7 +15,7 @@ import Observation
 /// never initializes CloudKit (gate G-5); it speaks only through this seam.
 @MainActor
 @Observable
-public final class WatchConnectivityTransport: WatchTransport {
+public final class WatchConnectivityTransport: @preconcurrency WatchTransport {
 
     public private(set) var isReachable = false
     public private(set) var activationState: WatchLinkState = .notActivated

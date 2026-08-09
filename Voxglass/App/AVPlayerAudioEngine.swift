@@ -5,9 +5,20 @@ import VoxglassCore
 @MainActor
 final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private let player = AVQueuePlayer()
-    private var endObserver: NSObjectProtocol?
+    /// End-of-playback observers keyed by item identity. Kept per item so a
+    /// `preloadNext` (or a second `load`) never replaces — and thereby leaks —
+    /// the current item's observer: with the old single-slot `endObserver` every
+    /// gapless advance leaked the previous item's observer, and a stale observer
+    /// could keep firing for an item that was never at its end.
+    private var endObservers: [ObjectIdentifier: ObserverToken] = [:]
     private var currentItemObserver: NSKeyValueObservation?
     private var preloadedItem: AVPlayerItem?
+
+    /// Playback position and reported duration of the item whose end event was
+    /// most recently seen, read from the item itself before the queue advances.
+    /// Used by the coordinator to reject a spurious item change (§consumer).
+    private(set) var lastEndPosition: TimeInterval = 0
+    private(set) var lastEndDuration: TimeInterval?
     private let eqProcessor = EQAudioProcessor()
     private let loaderQueue = DispatchQueue(label: "guru.parso.voxglass.loaders")
     private var loaders: [CachingResourceLoader] = []
@@ -219,6 +230,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     func cancelPreload() {
         if let item = preloadedItem {
             eqProcessor.detach(from: item)
+            removeEndObserver(for: item)
             player.remove(item)
             preloadedItem = nil
         }
@@ -244,21 +256,26 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
 
     private func observe(item: AVPlayerItem, isPreloaded: Bool) {
         let center = NotificationCenter.default
-
-        endObserver = center.addObserver(
+        let key = ObjectIdentifier(item)
+        // A given item is observed once; replace any stale token for it rather
+        // than stacking observers that would each fire onPlaybackEnded.
+        if let existing = endObservers[key] {
+            center.removeObserver(existing.value)
+        }
+        let token = ObserverToken(value: center.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
-            queue: .main
-        ) { [weak self] notification in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let endedItem = notification.object as? AVPlayerItem,
-                   endedItem == self.preloadedItem {
-                    self.preloadedItem = nil
+            queue: .main,
+            using: { [weak self] notification in
+                let notification = UncheckedSendable(value: notification)
+                Task { @MainActor [weak self] in
+                    guard let self,
+                          let endedItem = notification.value.object as? AVPlayerItem else { return }
+                    self.handleItemDidPlayToEnd(endedItem)
                 }
-                self.onPlaybackEnded?()
             }
-        }
+        ))
+        endObservers[key] = token
 
         if isPreloaded {
             currentItemObserver = player.observe(\.currentItem, options: [.new]) { [weak self] player, _ in
@@ -276,20 +293,72 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         }
     }
 
-    private func removeObservers() {
-        if let endObserver {
-            NotificationCenter.default.removeObserver(endObserver)
-            self.endObserver = nil
+    /// Handles an end-of-playback event. AVFoundation can report
+    /// `AVPlayerItemDidPlayToEndTime` prematurely on some device/file
+    /// combinations (a 20-minute chapter "ending" at 5:00); advancing then
+    /// loses the user's place. Only a *genuine* end — the item's playback
+    /// position is at its reported duration — advances playback. A spurious end
+    /// resumes the player if it stopped and never notifies the coordinator.
+    private func handleItemDidPlayToEnd(_ item: AVPlayerItem) {
+        if item == preloadedItem {
+            preloadedItem = nil
         }
+        let position = item.currentTime().seconds
+        let duration = item.duration.seconds
+        let durationIsUsable = duration.isFinite && duration > 0
+        if durationIsUsable && position.isFinite {
+            lastEndPosition = position
+            lastEndDuration = duration
+        } else {
+            // Unknown duration (e.g. streaming): cannot verify, and a stale
+            // value must not make the coordinator reject a genuine advance.
+            lastEndPosition = 0
+            lastEndDuration = nil
+        }
+
+        let isGenuineEnd = !durationIsUsable || !position.isFinite || position >= duration - 0.75
+        if isGenuineEnd {
+            // Real end: the item will not end again, so drop its observer and
+            // let the coordinator advance.
+            removeEndObserver(for: item)
+            onPlaybackEnded?()
+        } else {
+            // Spurious end: resume if the player stopped, never advance.
+            if player.timeControlStatus == .paused, player.currentItem != nil {
+                player.play()
+            }
+        }
+    }
+
+    private func removeEndObserver(for item: AVPlayerItem) {
+        let key = ObjectIdentifier(item)
+        guard let token = endObservers.removeValue(forKey: key) else { return }
+        NotificationCenter.default.removeObserver(token.value)
+    }
+
+    private func removeObservers() {
+        for token in endObservers.values {
+            NotificationCenter.default.removeObserver(token.value)
+        }
+        endObservers.removeAll()
         currentItemObserver?.invalidate()
         currentItemObserver = nil
     }
 
     deinit {
         // Inline cleanup: deinit is nonisolated but these operations are safe
-        if let observer = endObserver {
-            NotificationCenter.default.removeObserver(observer)
+        for token in endObservers.values {
+            NotificationCenter.default.removeObserver(token.value)
         }
         currentItemObserver?.invalidate()
+    }
+
+    private final class ObserverToken: @unchecked Sendable {
+        let value: NSObjectProtocol
+        init(value: NSObjectProtocol) { self.value = value }
+    }
+
+    private struct UncheckedSendable<Value>: @unchecked Sendable {
+        let value: Value
     }
 }

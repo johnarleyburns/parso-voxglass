@@ -10,7 +10,7 @@ public final class VoxglassCloudSync: ObservableObject {
     private let userDefaults: UserDefaults
     private let database: AppDatabase
     private var bookmarkStore: (any BookmarkStore)?
-    private var observer: NSObjectProtocol?
+    private var observer: ObserverToken?
 
     public var isEnabled: Bool {
         get {
@@ -46,15 +46,17 @@ public final class VoxglassCloudSync: ObservableObject {
         self.userDefaults = userDefaults
         self.bookmarkStore = bookmarkStore
         self.lastSyncDate = store.object(forKey: Key.lastSync) as? Date
-        observer = NotificationCenter.default.addObserver(
+        let observer = NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
             object: store,
             queue: .main
         ) { [weak self] notification in
+            let notification = NotificationBox(notification)
             Task { @MainActor in
-                await self?.handleExternalChange(notification)
+                await self?.handleExternalChange(notification.value)
             }
         }
+        self.observer = ObserverToken(value: observer)
         Task { @MainActor [weak self] in
             self?.store.synchronize()
         }
@@ -62,7 +64,7 @@ public final class VoxglassCloudSync: ObservableObject {
 
     deinit {
         if let observer {
-            NotificationCenter.default.removeObserver(observer)
+            NotificationCenter.default.removeObserver(observer.value)
         }
     }
 
@@ -467,4 +469,13 @@ public final class VoxglassCloudSync: ObservableObject {
             syncError = error.localizedDescription
         }
     }
+}
+
+private struct ObserverToken: @unchecked Sendable {
+    let value: NSObjectProtocol
+}
+
+private struct NotificationBox: @unchecked Sendable {
+    let value: Notification
+    init(_ value: Notification) { self.value = value }
 }

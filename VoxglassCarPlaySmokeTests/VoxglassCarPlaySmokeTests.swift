@@ -73,6 +73,9 @@ final class VoxglassCarPlaySmokeTests: XCTestCase {
 
 /// Hosted fakes for the production CarPlay smoke path: preloaded with the
 /// `oneFlaggedQueue` seed (18 flagged paragraphs), records every delivered event.
+/// `@preconcurrency` relaxes only the Sendable/actor-isolation check on the
+/// conformance: these doubles are constructed and read exclusively on the main
+/// actor by the hosted tests, so the relaxed checking is safe.
 @MainActor
 final class CarPlayTestEnvironment {
 
@@ -98,7 +101,7 @@ final class CarPlayTestEnvironment {
 }
 
 @MainActor
-final class CarPlayTestStore: CarPlayProductionDataProviding {
+final class CarPlayTestStore: @preconcurrency CarPlayProductionDataProviding {
     private let summaries: [ProjectSummary]
     private let queue: ResolvedQueuePayload
 
@@ -115,7 +118,7 @@ final class CarPlayTestStore: CarPlayProductionDataProviding {
 }
 
 @MainActor
-final class CarPlayTestSync: CarPlayEventDelivering {
+final class CarPlayTestSync: @preconcurrency CarPlayEventDelivering {
     private(set) var emittedEvents: [ReviewEvent] = []
 
     func send(_ events: [ReviewEvent]) throws {
@@ -136,7 +139,7 @@ final class CarPlayTestPlayer: CarPlayProductionPlaying {
 
 /// Records every confirmation earcon the controller asks for (§18.3 rule 6).
 @MainActor
-final class CarPlayTestCuePlayer: CarPlayCuePlaying {
+final class CarPlayTestCuePlayer: @preconcurrency CarPlayCuePlaying {
     private(set) var playedCues: [CarPlayCueKind] = []
 
     func play(_ cue: CarPlayCueKind) {

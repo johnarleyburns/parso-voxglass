@@ -1,7 +1,7 @@
 import Foundation
 @testable import VoxglassCore
 
-final class FakeLibriVoxClient: LibriVoxCatalogClient {
+final class FakeLibriVoxClient: @unchecked Sendable, LibriVoxCatalogClient {
     var sectionsToReturn: [LibriVoxSection] = []
     var shouldThrow: Error?
 

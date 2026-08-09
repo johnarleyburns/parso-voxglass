@@ -22,6 +22,17 @@ public protocol AudioEngine: AnyObject {
     var onItemChanged: (@MainActor () -> Void)? { get set }
     var onSilenceChanged: (@MainActor (Bool) -> Void)? { get set }
 
+    /// Playback position and reported duration of the item that most recently
+    /// reached (or prematurely reported) its end, captured from the item itself
+    /// at the moment of the end event. `nil` duration means the end could not be
+    /// verified (e.g. a streaming item with an unknown duration), and the
+    /// coordinator then treats the next item change as genuine. The coordinator
+    /// uses these to reject a *spurious* item change — AVFoundation can emit
+    /// `AVPlayerItemDidPlayToEndTime` early on some device/file combinations,
+    /// which would otherwise skip the chapter the user was listening to.
+    var lastEndPosition: TimeInterval { get }
+    var lastEndDuration: TimeInterval? { get }
+
     func configureAudioSession()
     func load(url: URL, startTime: TimeInterval) async throws
     func play()

@@ -91,8 +91,8 @@ struct ScriptEditorView: View {
                         .scaledFont(size: 11.5, weight: item == filter ? .heavy : .semibold)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .foregroundStyle(item == filter ? Color(hex: 0x111111) : Palette.ink2)
-                        .background(item == filter ? Color(hex: 0xF6F2EA) : Color.white.opacity(0.06), in: Capsule())
+                        .foregroundStyle(item == filter ? NarrationPalette.nearBlack : Palette.ink2)
+                        .background(item == filter ? NarrationPalette.cream : Color.white.opacity(0.06), in: Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(scriptFilterID(for: item))
@@ -149,7 +149,7 @@ struct ScriptEditorView: View {
                 if paragraph.isDrifted, let take = paragraph.take {
                     HStack(spacing: 6) {
                         chip("Take selected · \(take.duration.formattedShort)", tint: Palette.ink3)
-                        chip("Recording no longer matches", tint: Color(hex: 0xE6B877))
+                        chip("Recording no longer matches", tint: NarrationPalette.brassSoft)
                     }
                 }
             }
@@ -166,19 +166,19 @@ struct ScriptEditorView: View {
     @ViewBuilder
     private func stateChip(_ paragraph: FlowParagraph) -> some View {
         if paragraph.isDrifted {
-            chip("Text changed", tint: Color(hex: 0xE6B877))
+            chip("Text changed", tint: NarrationPalette.brassSoft)
         } else {
             switch paragraph.state {
             case .approved: chip("Recorded", tint: Palette.ok)
             case .recorded: chip("Recorded", tint: Palette.ok)
-            case .flagged: chip("Needs pickup", tint: Color(hex: 0xE6B877))
+            case .flagged: chip("Needs pickup", tint: NarrationPalette.brassSoft)
             case .notRecorded: chip("Unrecorded", tint: Palette.ink3)
             }
         }
     }
 
     private func borderTint(_ paragraph: FlowParagraph) -> Color {
-        paragraph.isDrifted ? Color(hex: 0xE6B877) : Palette.hairline
+        paragraph.isDrifted ? NarrationPalette.brassSoft : Palette.hairline
     }
 
     private func chip(_ text: String, tint: Color) -> some View {
@@ -206,6 +206,9 @@ private struct ScriptInspectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var direction = ""
     @State private var pronunciation = ""
+    /// Debounced flush of text edits (§8.4: edits flush 400 ms after the last
+    /// keystroke; an explicit Save flushes immediately).
+    @State private var textDebounceTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -213,6 +216,9 @@ private struct ScriptInspectorSheet: View {
                 Section("Text") {
                     TextEditor(text: $text)
                         .frame(minHeight: 140)
+                        .onChange(of: text) { _, _ in
+                            scheduleDebouncedFlush()
+                        }
                         .accessibilityIdentifier("script.inspector.text")
                 }
 
@@ -248,6 +254,8 @@ private struct ScriptInspectorSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        textDebounceTask?.cancel()
+                        textDebounceTask = nil
                         Task { await model.editParagraphText(paragraphID, to: text) }
                         dismiss()
                     }
@@ -261,6 +269,23 @@ private struct ScriptInspectorSheet: View {
             guard let paragraph = model.project?.allParagraphs.first(where: { $0.id == paragraphID }) else { return }
             direction = paragraph.directionNote ?? ""
             pronunciation = paragraph.pronunciationRefs.isEmpty ? "" : "Set"
+        }
+        .onDisappear {
+            // A discarded edit (Cancel) must not be silently flushed later.
+            textDebounceTask?.cancel()
+            textDebounceTask = nil
+        }
+    }
+
+    /// Debounces text edits: 400 ms after the last keystroke the paragraph's
+    /// text is flushed to the store (§8.4). Raising the drift indicator is
+    /// computed by the rule engine from the stored text hash.
+    private func scheduleDebouncedFlush() {
+        textDebounceTask?.cancel()
+        textDebounceTask = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await model.editParagraphText(paragraphID, to: text)
         }
     }
 

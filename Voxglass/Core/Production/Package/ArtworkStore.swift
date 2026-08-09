@@ -15,13 +15,16 @@ public protocol ArtworkStore: Sendable {
 
 public struct FileArtworkStore: ArtworkStore {
     public let root: URL
+    /// The `.voxproject` layout for this store — the single source of the
+    /// package's path rules (§4.4).
+    private var layout: ProductionProjectLayout { ProductionProjectLayout(root: root) }
 
     public init(root: URL) {
         self.root = root
     }
 
     private func url(for role: ArtworkRole, ext: String? = nil) throws -> URL {
-        let dir = root.appendingPathComponent("Artwork", isDirectory: true)
+        let dir = layout.artworkURL
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let name: String
         switch role {
@@ -66,7 +69,7 @@ public struct FileArtworkStore: ArtworkStore {
     }
 
     public func allReferences() async throws -> [AudioAssetReference] {
-        let dir = root.appendingPathComponent("Artwork", isDirectory: true)
+        let dir = layout.artworkURL
         guard FileManager.default.fileExists(atPath: dir.path) else { return [] }
         var refs: [AudioAssetReference] = []
         let enumerator = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil)

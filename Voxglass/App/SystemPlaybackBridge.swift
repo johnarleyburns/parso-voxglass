@@ -20,7 +20,9 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
 
     private var latestInfo: NowPlayingInfo?
     private var currentArtwork: MPMediaItemArtwork?
-    private var observers: [NSObjectProtocol] = []
+    /// Observer tokens in a `@unchecked Sendable` registry so the nonisolated
+    /// `deinit` can tear them down without a Sendable crossing (Swift 6).
+    private let observerRegistry = ObserverRegistry()
 
     override init() {
         super.init()
@@ -159,22 +161,22 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         let center = NotificationCenter.default
         // willResignActive is the last moment a synchronous main-thread write is
         // guaranteed to run before background/kill. No Task hop on purpose.
-        observers.append(center.addObserver(
+        observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.coordinator?.handleWillResignActive() }
         })
-        observers.append(center.addObserver(
+        observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.coordinator?.handleWillBackgroundOrTerminate() }
         })
-        observers.append(center.addObserver(
+        observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.coordinator?.handleWillBackgroundOrTerminate() }
         })
-        observers.append(center.addObserver(
+        observerRegistry.tokens.append(center.addObserver(
             forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
         ) { [weak self] note in
             guard let typeValue = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -187,7 +189,7 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
                 }
             }
         })
-        observers.append(center.addObserver(
+        observerRegistry.tokens.append(center.addObserver(
             forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.coordinator?.handleAudioRouteChanged() }
@@ -195,8 +197,14 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     }
 
     deinit {
-        for observer in observers {
+        for observer in observerRegistry.tokens {
             NotificationCenter.default.removeObserver(observer)
         }
     }
+}
+
+/// Holds observer tokens so the `@MainActor` bridge's nonisolated deinit can
+/// remove them without crossing a Sendable boundary.
+private final class ObserverRegistry: @unchecked Sendable {
+    var tokens: [NSObjectProtocol] = []
 }

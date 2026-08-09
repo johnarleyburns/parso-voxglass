@@ -1,5 +1,5 @@
 import Foundation
-import WatchConnectivity
+@preconcurrency import WatchConnectivity
 import VoxglassCore
 import Observation
 
@@ -25,7 +25,7 @@ public enum WatchLinkTransportError: Error, LocalizedError, Equatable {
 /// and asks the phone to refresh. The watch never initializes CloudKit (gate G-5).
 @MainActor
 @Observable
-public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessionDelegate {
+public final class WatchConnectivityTransport: NSObject, @preconcurrency WatchTransport, WCSessionDelegate {
 
     private let session: WCSession
     private(set) public var isReachable = false
@@ -151,18 +151,21 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
         activationDidCompleteWith activationState: WCSessionActivationState,
         error: Error?
     ) {
+        let reachable = session.isReachable
+        let context = UncheckedSendable(value: session.receivedApplicationContext)
         Task { @MainActor in
             self.activationState = activationState == .activated ? .activated : .notActivated
-            self.isReachable = session.isReachable
-            self.onReachabilityChanged?(session.isReachable)
-            self.ingestApplicationContext(session.receivedApplicationContext)
+            self.isReachable = reachable
+            self.onReachabilityChanged?(reachable)
+            self.ingestApplicationContext(context.value)
         }
     }
 
     nonisolated public func sessionReachabilityDidChange(_ session: WCSession) {
+        let reachable = session.isReachable
         Task { @MainActor in
-            self.isReachable = session.isReachable
-            self.onReachabilityChanged?(session.isReachable)
+            self.isReachable = reachable
+            self.onReachabilityChanged?(reachable)
         }
     }
 
@@ -170,21 +173,24 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
         _ session: WCSession,
         didReceiveApplicationContext applicationContext: [String: Any]
     ) {
-        Task { @MainActor in self.ingestApplicationContext(applicationContext) }
+        let context = UncheckedSendable(value: applicationContext)
+        Task { @MainActor in self.ingestApplicationContext(context.value) }
     }
 
     nonisolated public func session(
         _ session: WCSession,
         didReceiveUserInfo userInfo: [String: Any]
     ) {
-        Task { @MainActor in self.ingestMessage(userInfo) }
+        let userInfo = UncheckedSendable(value: userInfo)
+        Task { @MainActor in self.ingestMessage(userInfo.value) }
     }
 
     nonisolated public func session(
         _ session: WCSession,
         didReceiveMessage message: [String: Any]
     ) {
-        Task { @MainActor in self.ingestMessage(message) }
+        let message = UncheckedSendable(value: message)
+        Task { @MainActor in self.ingestMessage(message.value) }
     }
 
     nonisolated public func session(
@@ -192,14 +198,17 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
+        let message = UncheckedSendable(value: message)
+        let replyHandler = UncheckedSendable(value: replyHandler)
         Task { @MainActor in
-            self.ingestMessage(message)
-            replyHandler(["received": true])
+            self.ingestMessage(message.value)
+            replyHandler.value(["received": true])
         }
     }
 
     nonisolated public func session(_ session: WCSession, didReceive file: WCSessionFile) {
-        Task { @MainActor in self.ingest(file: file) }
+        let file = UncheckedSendable(value: file)
+        Task { @MainActor in self.ingest(file: file.value) }
     }
 
     // MARK: Ingest
@@ -252,4 +261,8 @@ public final class WatchConnectivityTransport: NSObject, WatchTransport, WCSessi
               let paragraphID = UUID(uuidString: rawID) else { return }
         onAudioFileReceived?(paragraphID, file.fileURL)
     }
+}
+
+private struct UncheckedSendable<Value>: @unchecked Sendable {
+    let value: Value
 }

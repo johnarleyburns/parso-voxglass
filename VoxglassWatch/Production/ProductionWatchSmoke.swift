@@ -26,7 +26,7 @@ public enum ProductionWatchSmoke {
     /// review events so the offline outbox flush completes without a phone.
     @MainActor
     @Observable
-    public final class SmokeWatchTransport: WatchTransport {
+    public final class SmokeWatchTransport: @preconcurrency WatchTransport {
         public let seedSummaries: [ProjectSummary]
         public let seedQueue: ResolvedQueuePayload
         public let seedAudio: [WatchAudioItem]

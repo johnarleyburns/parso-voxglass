@@ -68,6 +68,26 @@ public final class PhoneProductionSync {
         pendingOutboxCount = (try? outbox.pending().count) ?? 0
     }
 
+    /// Hydrates just the originals backing the requested asset records — the
+    /// per-paragraph playback affordance (spec §6.3). Each blob is SHA-256
+    /// verified against its record before it flips to `localAndRemote`; failures
+    /// stay `.remoteOnly` and are retried by the next sync pass.
+    public func hydrateAssets(_ assetIDs: Set<UUID>, in projectID: UUID) async -> AssetHydrationReport {
+        guard !assetIDs.isEmpty else { return AssetHydrationReport() }
+        let repository = SQLiteProductionAssetRepository(databaseURL: narrationRepository.layout(for: projectID).databaseURL)
+        let records = (try? await repository.records()) ?? []
+        let wanted = records.filter { assetIDs.contains($0.id) }
+        guard !wanted.isEmpty else { return AssetHydrationReport() }
+        let plan = ProductionHydrationPlanner().plan(for: wanted, purpose: .originalTake)
+        guard !plan.assetIDs.isEmpty else { return AssetHydrationReport(alreadyLocal: wanted.map(\.id)) }
+        let executor = AssetHydrationExecutor(
+            repository: repository,
+            transport: syncCore.transport,
+            assetStore: narrationRepository.fileStore(for: projectID)
+        )
+        return (try? await executor.hydrate(plan)) ?? AssetHydrationReport()
+    }
+
     /// One phone-as-writer sync pass: publish local projects, upload originals,
     /// fetch the mirror, and hydrate remote-only originals when iCloud is
     /// available; then fold queued review events — which is local-only and never
@@ -259,7 +279,7 @@ private final class PhoneSyncCore: @unchecked Sendable {
             let fm = FileManager.default
             guard let directories = try? fm.contentsOfDirectory(at: projectsRoot, includingPropertiesForKeys: nil) else { return nil }
             for directory in directories where directory.hasDirectoryPath {
-                let original = directory.appendingPathComponent("Audio/Original", isDirectory: true)
+                let original = ProductionProjectLayout(root: directory).originalAudioURL
                 guard let files = try? fm.contentsOfDirectory(at: original, includingPropertiesForKeys: nil) else { continue }
                 if let match = files.first(where: { $0.lastPathComponent.hasPrefix(sha + ".") }) {
                     return match

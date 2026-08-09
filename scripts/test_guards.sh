@@ -199,6 +199,24 @@ unplant "$probe"
 expect_guard_passes "G-15 handoff-retired probe"
 
 # ──────────────────────────────────────────────────────────────
+# G-P3 probe: a ProductionStudio reference under a shipping surface.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Features/Production/Discovery/ProbeGP3.swift"
+plant "$probe" 'struct X { let studio = ProductionStudio }'
+expect_guard_fails "P3" "ProductionStudio reference under Features"
+unplant "$probe"
+expect_guard_passes "G-P3 ProductionStudio probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-P4 probe: a color literal in a production surface.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Features/Production/Discovery/ProbeGP4.swift"
+plant "$probe" 'struct X { let c = Color(hex: 0x21170B) }'
+expect_guard_fails "P4" "color literal in production surface"
+unplant "$probe"
+expect_guard_passes "G-P4 color literal probe"
+
+# ──────────────────────────────────────────────────────────────
 # G-P5 probe: a "Mac" user-facing string in a production surface.
 # ──────────────────────────────────────────────────────────────
 probe="Voxglass/Features/Production/ProbeGP5.swift"

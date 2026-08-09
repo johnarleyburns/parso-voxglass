@@ -1,13 +1,13 @@
 #if !os(watchOS)
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 import CryptoKit
 import UniformTypeIdentifiers
 
 /// Intercepts AVPlayer byte-range requests via a custom URL scheme, streams data
 /// from the network, writes it to a sparse on-disk cache, and serves cached bytes
 /// on subsequent plays without re-downloading.
-public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
+public final class CachingResourceLoader: NSObject, @unchecked Sendable, AVAssetResourceLoaderDelegate {
     public static let scheme = StreamCacheUtils.scheme
 
     private let originalURL: URL
@@ -62,9 +62,10 @@ public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegat
                         shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         stateLock.lock()
         guard !didShutdown else { stateLock.unlock(); return false }
-        let task = Task { [weak self] in
+        let request = LoadingRequestBox(loadingRequest)
+        let task = Task { [weak self, request] in
             guard let self else { return }
-            await self.handle(loadingRequest)
+            await self.handle(request.value)
         }
         inFlight.append(task)
         stateLock.unlock()
@@ -246,5 +247,10 @@ public final class CachingResourceLoader: NSObject, AVAssetResourceLoaderDelegat
         try? handle.seek(toOffset: UInt64(offset))
         try? handle.write(contentsOf: data)
     }
+}
+
+private final class LoadingRequestBox: @unchecked Sendable {
+    let value: AVAssetResourceLoadingRequest
+    init(_ value: AVAssetResourceLoadingRequest) { self.value = value }
 }
 #endif

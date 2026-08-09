@@ -1,6 +1,6 @@
 import Foundation
 
-public final class CloudSyncStateStore {
+public final class CloudSyncStateStore: @unchecked Sendable {
     private let database: AppDatabase
 
     public init(database: AppDatabase) {

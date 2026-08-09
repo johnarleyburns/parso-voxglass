@@ -89,6 +89,31 @@ struct FlowParagraph: Identifiable, Equatable {
     /// paragraph now holds (spec §9.5 step 4). The script editor's "Changed"
     /// filter and chips read this.
     var isDrifted: Bool
+    /// Byte count of the selected take's original when it lives on iCloud only
+    /// (`.remoteOnly`/`.missing`), nil when the audio is local or there is no
+    /// selected take. Playback and export are disabled until it is hydrated
+    /// (spec §6.3).
+    var remoteTakeByteCount: Int64?
+
+    init(
+        id: UUID,
+        text: String,
+        role: FlowParagraphRole,
+        state: FlowParagraphState,
+        note: String?,
+        take: FlowTake?,
+        isDrifted: Bool,
+        remoteTakeByteCount: Int64? = nil
+    ) {
+        self.id = id
+        self.text = text
+        self.role = role
+        self.state = state
+        self.note = note
+        self.take = take
+        self.isDrifted = isDrifted
+        self.remoteTakeByteCount = remoteTakeByteCount
+    }
 }
 
 /// A picked audio file waiting for its import decision (mockup 07). Holds the
@@ -183,7 +208,6 @@ enum NarrationStep: Hashable {
 /// project model.
 @MainActor
 @Observable
-@MainActor
 final class NarrationFlowModel {
     enum ImportSource {
         case need(NarrationNeed)
@@ -255,6 +279,11 @@ final class NarrationFlowModel {
     var exportError: String?
     var exportProgress: ExportProgress?
     var exportRunRecord: ExportRunRecord?
+    /// How many already-finished files the current run reused instead of
+    /// re-encoding — the mockup 14b "N chapters kept" resume banner (§13.3).
+    var exportReusedFileCount = 0
+    /// When the current run started, for the run screen's elapsed timer.
+    var exportStartedAt: Date?
     private var exportTask: Task<Void, Never>?
 
     let repository: NarrationProjectRepository
@@ -273,7 +302,9 @@ final class NarrationFlowModel {
     /// The current entitlement, kept fresh from `LicenseProvider.updates` so the
     /// destination picker can flip between free and Pro without re-querying.
     var proEntitlement: EntitlementState = .free
-    private var proObservationTask: Task<Void, Never>?
+    /// `nonisolated(unsafe)`: `Task` is `Sendable` and `cancel()` is thread-safe,
+    /// so the nonisolated `deinit` may cancel it without a data race.
+    nonisolated(unsafe) private var proObservationTask: Task<Void, Never>?
 
     var isProUnlocked: Bool {
         if case .pro = proEntitlement { return true }
@@ -285,6 +316,18 @@ final class NarrationFlowModel {
     /// Latest review-note text per paragraph, so a flag note survives relaunch
     /// and shows on the review list (stored as `ReviewNote`s in the project DB).
     private var paragraphNotes: [UUID: String] = [:]
+
+    /// SHA-256 → byte count of originals that are `.remoteOnly`/`.missing` — the
+    /// selected take's audio is on iCloud only and cannot play or export until
+    /// hydrated (§6.3). Refreshed whenever the review screen appears and after
+    /// each hydration; the review row derives its download chip from this.
+    private var remoteAssetBytesBySHA: [String: Int64] = [:]
+    /// The paragraph currently downloading its take, so the review row can show
+    /// progress in place (spec §6.3 step 2: queue hydration, show byte estimate).
+    private(set) var hydratingParagraphID: UUID?
+    /// A hydration that could not complete (iCloud unavailable, hash mismatch);
+    /// surfaced as an alert on the review screen.
+    var hydrationError: String?
 
     init(
         repository: NarrationProjectRepository = NarrationProjectRepository(),
@@ -332,7 +375,7 @@ final class NarrationFlowModel {
 
     var paragraphs: [FlowParagraph] {
         guard let project else { return [] }
-        return project.allParagraphs.map { Self.flowParagraph($0, notes: paragraphNotes) }
+        return project.allParagraphs.map { Self.flowParagraph($0, notes: paragraphNotes, remoteBytesBySHA: remoteAssetBytesBySHA) }
     }
 
     var readyToAssemble: Bool {
@@ -360,7 +403,7 @@ final class NarrationFlowModel {
         project?.rights.isAttested ?? false
     }
 
-    private static func flowParagraph(_ paragraph: Paragraph, notes: [UUID: String]) -> FlowParagraph {
+    private static func flowParagraph(_ paragraph: Paragraph, notes: [UUID: String], remoteBytesBySHA: [String: Int64]) -> FlowParagraph {
         FlowParagraph(
             id: paragraph.id,
             text: paragraph.text,
@@ -368,7 +411,8 @@ final class NarrationFlowModel {
             state: flowState(paragraph),
             note: notes[paragraph.id],
             take: paragraph.selectedTake.map { FlowTake(duration: $0.duration, peakDBFS: $0.metrics?.peakDBFS, clipped: ($0.metrics?.clipCount ?? 0) > 0) },
-            isDrifted: hasDrift(paragraph)
+            isDrifted: hasDrift(paragraph),
+            remoteTakeByteCount: paragraph.selectedTake.flatMap { remoteBytesBySHA[$0.assetRef.sha256] }
         )
     }
 
@@ -663,12 +707,12 @@ final class NarrationFlowModel {
         guard let index = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return nil }
         let nextIndex = project.allParagraphs.index(after: index)
         guard project.allParagraphs.indices.contains(nextIndex) else { return nil }
-        return Self.flowParagraph(project.allParagraphs[nextIndex], notes: paragraphNotes)
+        return Self.flowParagraph(project.allParagraphs[nextIndex], notes: paragraphNotes, remoteBytesBySHA: remoteAssetBytesBySHA)
     }
 
     func previousParagraph(before id: UUID) -> FlowParagraph? {
         guard let project, let index = project.allParagraphs.firstIndex(where: { $0.id == id }), index > 0 else { return nil }
-        return Self.flowParagraph(project.allParagraphs[index - 1], notes: paragraphNotes)
+        return Self.flowParagraph(project.allParagraphs[index - 1], notes: paragraphNotes, remoteBytesBySHA: remoteAssetBytesBySHA)
     }
 
     func updateParagraph(_ id: UUID, _ transform: (inout Paragraph) -> Void) {
@@ -1206,6 +1250,50 @@ final class NarrationFlowModel {
         playbackPlayer?.play()
     }
 
+    // MARK: - Hydrate-then-play (spec §6.3)
+
+    /// Reloads the project's asset table into the SHA → byte-count map the
+    /// review rows read. `.remoteOnly`/`.missing` originals become download
+    /// chips; playback of those takes stays disabled until hydration.
+    func refreshRemoteAssetStates() async {
+        guard let project else {
+            remoteAssetBytesBySHA = [:]
+            return
+        }
+        let repository = SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL)
+        let records = (try? await repository.records()) ?? []
+        var bySHA: [String: Int64] = [:]
+        for record in records where record.state == .remoteOnly || record.state == .missing {
+            bySHA[record.sha256, default: 0] += record.byteCount
+        }
+        remoteAssetBytesBySHA = bySHA
+    }
+
+    /// Hydrates the selected take's original so the paragraph can play and
+    /// export (§6.3 step 4). SHA-verifies the download before the record flips
+    /// to `localAndRemote`; a failure keeps the paragraph on its download chip
+    /// and surfaces `hydrationError`.
+    func hydrateForPlayback(_ paragraphID: UUID) async {
+        guard let project,
+              let paragraph = project.allParagraphs.first(where: { $0.id == paragraphID }),
+              let take = paragraph.selectedTake,
+              hydratingParagraphID == nil,
+              let phoneProduction else { return }
+        let repository = SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL)
+        let records = (try? await repository.records()) ?? []
+        let targets = records.filter { $0.sha256 == take.assetRef.sha256 && ($0.state == .remoteOnly || $0.state == .missing) }
+        guard !targets.isEmpty else { return }
+
+        hydratingParagraphID = paragraphID
+        hydrationError = nil
+        let report = await phoneProduction.sync.hydrateAssets(Set(targets.map(\.id)), in: project.id)
+        hydratingParagraphID = nil
+        await refreshRemoteAssetStates()
+        if report.hydrated.isEmpty, !report.failed.isEmpty {
+            hydrationError = "Couldn't download this recording — \(report.failed.first?.1 ?? "the iCloud copy is unavailable")."
+        }
+    }
+
     // MARK: - Take selection (spec §9.5)
 
     /// URL of any take's audio, not just the selected one — the take
@@ -1634,6 +1722,8 @@ final class NarrationFlowModel {
         exportError = nil
         exportProgress = nil
         exportRunRecord = nil
+        exportReusedFileCount = 0
+        exportStartedAt = repository.clock.now
         defer { isExporting = false }
 
         let builder: any PackageBuilder
@@ -1674,6 +1764,7 @@ final class NarrationFlowModel {
                 }
             )
             exportRunRecord = outcome.run
+            exportReusedFileCount = outcome.reusedFileCount
             guard let bundle = outcome.bundle else {
                 exportError = "Export was cancelled. Finished chapters are kept — run it again to resume."
                 return
@@ -1904,7 +1995,7 @@ struct NarrationHelpSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                             .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                            .foregroundStyle(Color(hex: 0x21170B))
+                            .foregroundStyle(NarrationPalette.espresso)
                     }
                     .buttonStyle(.plain)
                     .tactileTap()
@@ -2053,7 +2144,7 @@ struct WorkImportView: View {
             HStack(spacing: 13) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(LinearGradient(colors: [Color(hex: 0x2A2417), Color(hex: 0x5A4A2B)], startPoint: .top, endPoint: .bottom))
+                        .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
                     Text(icon).scaledFont(size: 20)
                 }
                 .frame(width: 42, height: 42)

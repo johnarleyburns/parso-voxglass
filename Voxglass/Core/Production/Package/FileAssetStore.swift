@@ -3,6 +3,9 @@ import Foundation
 public actor FileAssetStore: ContentAddressedStore {
     public let root: URL
     private let fm = FileManager.default
+    /// The `.voxproject` layout for this store — the single source of the
+    /// package's path rules (§4.4).
+    private var layout: ProductionProjectLayout { ProductionProjectLayout(root: root) }
 
     public init(root: URL) {
         self.root = root
@@ -31,7 +34,7 @@ public actor FileAssetStore: ContentAddressedStore {
         let dir = destURL.deletingLastPathComponent()
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
 
-        let tmpURL = root.appendingPathComponent("tmp/\(UUID().uuidString)") // determinism-exempt: transient temp filename, never persisted
+        let tmpURL = layout.tmpURL.appendingPathComponent(UUID().uuidString) // determinism-exempt: transient temp filename, never persisted
         let tmpDir = tmpURL.deletingLastPathComponent()
         try fm.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         do {
@@ -106,7 +109,7 @@ public actor FileAssetStore: ContentAddressedStore {
 
     public func trash(_ ref: AudioAssetReference) async throws {
         let sourceURL = url(for: ref)
-        let trashDir = root.appendingPathComponent("Trash", isDirectory: true)
+        let trashDir = layout.trashURL
         // Mirror the content-addressed path under Trash/ so restore is
         // unambiguous without scanning every asset root.
         let destURL = trashDir.appendingPathComponent(ref.relativePath)
@@ -117,7 +120,7 @@ public actor FileAssetStore: ContentAddressedStore {
     /// Moves every asset under `Trash/` back to its content-addressed
     /// location. Returns the restored references.
     public func restoreFromTrash() async throws -> [AudioAssetReference] {
-        let trashDir = root.appendingPathComponent("Trash", isDirectory: true)
+        let trashDir = layout.trashURL
         guard fm.fileExists(atPath: trashDir.path) else { return [] }
 
         let trashPrefix = trashDir.resolvingSymlinksInPath().path
@@ -145,13 +148,13 @@ public actor FileAssetStore: ContentAddressedStore {
     }
 
     public func emptyTrash() async throws {
-        let trashDir = root.appendingPathComponent("Trash", isDirectory: true)
+        let trashDir = layout.trashURL
         guard fm.fileExists(atPath: trashDir.path) else { return }
         try fm.removeItem(at: trashDir)
     }
 
     public func trashContents() async throws -> [AudioAssetReference] {
-        let trashDir = root.appendingPathComponent("Trash", isDirectory: true)
+        let trashDir = layout.trashURL
         guard fm.fileExists(atPath: trashDir.path) else { return [] }
         let trashPrefix = trashDir.resolvingSymlinksInPath().path
         var refs: [AudioAssetReference] = []

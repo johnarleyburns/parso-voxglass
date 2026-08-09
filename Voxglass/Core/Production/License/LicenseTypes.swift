@@ -149,7 +149,10 @@ public struct StaticLicenseProvider: LicenseProvider {
     public init(
         entitlement: EntitlementState = .free,
         productInfo: ProductInfo = ProductInfo(
-            displayPrice: "$79.00",
+            // The price is deliberately not in code (§2.2, D-2): it lives in App
+            // Store Connect and is read back by `StoreKitLicenseProvider.product()`.
+            // This scaffold leaves the field empty so a real value is never invented.
+            displayPrice: "",
             displayName: NarrationProProduct.displayName,
             description: "Unlock professional retail delivery: mastered MP3/WAV/FLAC chapter files, chapterized M4B, retail samples, batch export, and exportable validation reports. One-time purchase, no subscription."
         )

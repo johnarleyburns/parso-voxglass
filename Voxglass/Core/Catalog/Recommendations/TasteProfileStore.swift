@@ -1,12 +1,12 @@
 import Foundation
 
-public struct TasteTerm: Equatable {
+public struct TasteTerm: Equatable, Sendable {
     public let axis: String
     public let term: String
     public let weight: Double
 }
 
-public struct ProfileBucket: Equatable {
+public struct ProfileBucket: Equatable, Sendable {
     public let bucket: String
     public let creatorTerms: [TasteTerm]
     public let subjectTerms: [TasteTerm]

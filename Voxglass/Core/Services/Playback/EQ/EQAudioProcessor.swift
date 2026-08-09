@@ -1,7 +1,7 @@
 #if !os(watchOS)
 import AudioToolbox
 #endif
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 
 #if !os(watchOS)
@@ -10,7 +10,7 @@ import Foundation
 /// is the fix for EQ silently dying on every gapless auto-advance: the preloaded
 /// item receives its own tap while the current item keeps playing through its
 /// own, so `AVQueuePlayer` advancing no longer drops the `audioMix`.
-public final class EQAudioProcessor {
+public final class EQAudioProcessor: @unchecked Sendable {
     private let registry = EQTapRegistry()
     private var contexts: [ObjectIdentifier: TapContext] = [:]
     private var gains: [Float] = Array(repeating: 0, count: EQEngine.isoBands.count)

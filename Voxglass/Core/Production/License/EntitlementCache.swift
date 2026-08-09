@@ -12,7 +12,10 @@ import Foundation
 /// - If confirmation cannot complete (offline) the cached value stands
 ///   **indefinitely** — the cache never expires, so a narrator on a plane with
 ///   a deadline does not lose their exporter.
-public struct EntitlementCache {
+///
+/// `@unchecked Sendable`: `UserDefaults` is thread-safe in practice but not
+/// annotated Sendable in this SDK (same contract as `ProductionCacheSettings`).
+public struct EntitlementCache: @unchecked Sendable {
     public static let proSinceKey = "voxglass.narration.pro.since"
     public static let transactionIDKey = "voxglass.narration.pro.transaction"
 

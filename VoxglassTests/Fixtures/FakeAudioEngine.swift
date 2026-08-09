@@ -43,6 +43,13 @@ final class FakeAudioEngine: AudioEngine {
     var onItemChanged: (@MainActor () -> Void)?
     var onSilenceChanged: (@MainActor (Bool) -> Void)?
 
+    /// Position and duration of the item whose end event was most recently seen.
+    /// Defaults (`0`, `nil`) tell the coordinator that the end was genuine (or
+    /// unverifiable), preserving existing behaviour unless a test explicitly
+    /// simulates a spurious end.
+    var lastEndPosition: TimeInterval = 0
+    var lastEndDuration: TimeInterval?
+
     /// When set, the next `load` records the call and then throws (lazy-load
     /// failure path: the presented session must survive the error).
     var loadError: Error?

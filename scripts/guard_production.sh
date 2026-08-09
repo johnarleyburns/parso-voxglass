@@ -338,6 +338,40 @@ check_iphone_never_records_long() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# G-P3: The deleted `ProductionStudio` module must never be reintroduced under a
+# shipping surface (R-2). No file under `Voxglass/Features/` or `VoxglassWatch/`
+# may contain the string `ProductionStudio`.
+# ──────────────────────────────────────────────────────────────
+check_no_production_studio() {
+  local matches
+  matches=$(grep -rn --include='*.swift' 'ProductionStudio' \
+              Voxglass/Features VoxglassWatch 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-P3: ProductionStudio reference under a shipping surface: $line"
+    done <<< "$matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
+# G-P4: No new color literals (§15.3 rule 7). `Color(hex:` MUST NOT appear in
+# the production surfaces this MVP governs — colors come from the DesignSystem
+# (`Palette` / `NarrationPalette`). Scoped to the production surfaces because the
+# pre-existing consumer feature surfaces predate the rule and are not part of
+# this MVP's delta.
+# ──────────────────────────────────────────────────────────────
+check_no_color_literals() {
+  local dirs="Voxglass/Features/Production VoxglassWatch/Production"
+  local matches
+  matches=$(grep -rn --include='*.swift' 'Color(hex:' $dirs 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do
+      violate "G-P4: color literal outside DesignSystem in production surface: $line"
+    done <<< "$matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
 # G-P5: No user-facing string in `Voxglass/Features/Production/**` or
 # `VoxglassWatch/Production/**` may contain "Mac" (N-1, §15.6). The Mac is gone;
 # "Mac" as a word anywhere in the shipping production surfaces is a regression.
@@ -520,6 +554,8 @@ check_discovery_total
 check_no_signin_ui
 check_iphone_never_records_long
 check_no_mac_strings
+check_no_production_studio
+check_no_color_literals
 check_pd_gate
 check_discovery_io_seam
 check_seed_floor

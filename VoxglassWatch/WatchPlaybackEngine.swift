@@ -23,13 +23,15 @@ public final class WatchPlaybackEngine: AudioEngine {
         set { player?.volume = newValue }
     }
     public var isEQEngaged: Bool { false }
+    public private(set) var lastEndPosition: TimeInterval = 0
+    public private(set) var lastEndDuration: TimeInterval?
 
     private var player: AVPlayer?
     private var currentItemURL: URL?
-    private var timeObserverToken: Any?
+    private var timeObserverToken: ObserverToken?
     private var statusObserver: NSKeyValueObservation?
     private var rateObserver: NSKeyValueObservation?
-    private var boundaryObserver: Any?
+    private var boundaryObserver: ObserverToken?
     private let audioSession = AVAudioSession.sharedInstance()
 
     public init() {}
@@ -97,19 +99,32 @@ public final class WatchPlaybackEngine: AudioEngine {
 
         // Periodic time observer
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
-        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+        timeObserverToken = ObserverToken(value: player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
             self.currentTime = time.seconds
-        }
+        })
 
         // End-of-item notification
         NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: playerItem,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self, weak playerItem] _ in
             Task { @MainActor in
-                self?.onPlaybackEnded?()
+                guard let self else { return }
+                // Capture the ended item's position/duration so the coordinator
+                // can reject a spurious end (a premature AVPlayerItemDidPlayToEndTime
+                // must not advance the review queue).
+                if let item = playerItem {
+                    let pos = item.currentTime().seconds
+                    let dur = item.duration.seconds
+                    self.lastEndPosition = pos.isFinite ? pos : 0
+                    self.lastEndDuration = (dur.isFinite && dur > 0) ? dur : nil
+                } else {
+                    self.lastEndPosition = 0
+                    self.lastEndDuration = nil
+                }
+                self.onPlaybackEnded?()
             }
         }
     }
@@ -164,7 +179,7 @@ public final class WatchPlaybackEngine: AudioEngine {
 
     private func stopCurrentItem() {
         if let observer = timeObserverToken {
-            player?.removeTimeObserver(observer)
+            player?.removeTimeObserver(observer.value)
             timeObserverToken = nil
         }
         statusObserver?.invalidate()
@@ -172,7 +187,7 @@ public final class WatchPlaybackEngine: AudioEngine {
         rateObserver?.invalidate()
         rateObserver = nil
         if let observer = boundaryObserver {
-            player?.removeTimeObserver(observer)
+            player?.removeTimeObserver(observer.value)
             boundaryObserver = nil
         }
         player?.pause()
@@ -185,15 +200,23 @@ public final class WatchPlaybackEngine: AudioEngine {
 
     deinit {
         if let observer = timeObserverToken {
-            player?.removeTimeObserver(observer)
+            player?.removeTimeObserver(observer.value)
         }
         statusObserver?.invalidate()
         rateObserver?.invalidate()
         if let observer = boundaryObserver {
-            player?.removeTimeObserver(observer)
+            player?.removeTimeObserver(observer.value)
         }
         player?.pause()
         player?.replaceCurrentItem(with: nil)
+    }
+
+    private final class ObserverToken: @unchecked Sendable {
+        let value: Any
+
+        init(value: Any) {
+            self.value = value
+        }
     }
 }
 

@@ -4,7 +4,11 @@ import SQLite3
 public actor ProjectDatabase {
     public nonisolated let url: URL
     private let clock: any Clock
-    private var handle: OpaquePointer?
+    private let handleState = LockedOpaquePointer()
+    private var handle: OpaquePointer? {
+        get { handleState.read() }
+        set { handleState.write(newValue) }
+    }
     private var didMigrate = false
 
     public init(url: URL, clock: any Clock = SystemClock()) {
@@ -13,7 +17,7 @@ public actor ProjectDatabase {
     }
 
     deinit {
-        if let handle {
+        if let handle = handleState.read() {
             sqlite3_close(handle)
         }
     }
@@ -215,6 +219,13 @@ public actor ProjectDatabase {
         guard let handle else { return "database is not open" }
         return String(cString: sqlite3_errmsg(handle))
     }
+}
+
+private final class LockedOpaquePointer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: OpaquePointer?
+    func read() -> OpaquePointer? { lock.lock(); defer { lock.unlock() }; return value }
+    func write(_ value: OpaquePointer?) { lock.lock(); self.value = value; lock.unlock() }
 }
 
 private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)

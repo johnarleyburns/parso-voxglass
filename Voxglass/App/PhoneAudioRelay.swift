@@ -345,10 +345,15 @@ extension PhoneAudioRelay: WCSessionDelegate {
         activationDidCompleteWith activationState: WCSessionActivationState,
         error: Error?
     ) {
+        // Extract Sendable scalars before crossing into the MainActor task —
+        // `WCSession` is non-Sendable, so capturing it would be a data race.
+        let reachable = session.isReachable
+        let installed = session.isWatchAppInstalled
+        let activated = session.activationState == .activated
         Task { @MainActor in
-            isReachable = session.isReachable
-            isWatchAppInstalled = session.isWatchAppInstalled
-            productionTransport?.updateReachability(reachable: session.isReachable, activated: activationState == .activated)
+            isReachable = reachable
+            isWatchAppInstalled = installed
+            productionTransport?.updateReachability(reachable: reachable, activated: activated)
             await publishLibrarySnapshot()
         }
     }
@@ -360,10 +365,12 @@ extension PhoneAudioRelay: WCSessionDelegate {
     }
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        let reachable = session.isReachable
+        let activated = session.activationState == .activated
         Task { @MainActor in
-            isReachable = session.isReachable
-            productionTransport?.updateReachability(reachable: session.isReachable, activated: session.activationState == .activated)
-            if session.isReachable {
+            isReachable = reachable
+            productionTransport?.updateReachability(reachable: reachable, activated: activated)
+            if reachable {
                 await publishLibrarySnapshot()
             }
         }
@@ -373,9 +380,10 @@ extension PhoneAudioRelay: WCSessionDelegate {
         _ session: WCSession,
         didReceiveMessage message: [String: Any]
     ) {
+        let box = UncheckedBox(message)
         Task { @MainActor in
-            forwardProduction(message)
-            await handleReceivedMessageWithoutReply(message)
+            forwardProduction(box.value)
+            await handleReceivedMessageWithoutReply(box.value)
         }
     }
 
@@ -383,8 +391,9 @@ extension PhoneAudioRelay: WCSessionDelegate {
         _ session: WCSession,
         didReceiveUserInfo userInfo: [String: Any]
     ) {
+        let box = UncheckedBox(userInfo)
         Task { @MainActor in
-            forwardProduction(userInfo)
+            forwardProduction(box.value)
         }
     }
 
@@ -392,10 +401,11 @@ extension PhoneAudioRelay: WCSessionDelegate {
         _ session: WCSession,
         didReceiveApplicationContext applicationContext: [String: Any]
     ) {
+        let box = UncheckedBox(applicationContext)
         Task { @MainActor in
-            forwardProduction(applicationContext)
-            if WatchPhoneMessageCodec.action(from: applicationContext) == WatchPhoneAction.reportWatchStorage,
-               let snapshot = try? WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: applicationContext) {
+            forwardProduction(box.value)
+            if WatchPhoneMessageCodec.action(from: box.value) == WatchPhoneAction.reportWatchStorage,
+               let snapshot = try? WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: box.value) {
                 applyWatchStorageSnapshot(snapshot)
             }
         }
@@ -406,16 +416,26 @@ extension PhoneAudioRelay: WCSessionDelegate {
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
+        let messageBox = UncheckedBox(message)
+        let replyBox = UncheckedBox(replyHandler)
         Task { @MainActor in
-            if WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.requestRefresh
-                || WatchPhoneMessageCodec.action(from: message) == ProductionTransportAction.recordingRemoteCommand {
+            if WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.requestRefresh
+                || WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.recordingRemoteCommand {
                 // The watch asked the phone to re-push, or sent a recording-remote
                 // command; forward to the production relay and acknowledge.
-                forwardProduction(message)
-                replyHandler(["received": true])
+                forwardProduction(messageBox.value)
+                replyBox.value(["received": true])
                 return
             }
-            replyHandler(await reply(for: message))
+            replyBox.value(await reply(for: messageBox.value))
         }
     }
+}
+
+/// Bridges a non-Sendable value across an isolation boundary when the call site
+/// guarantees single-threaded handoff (WCSession delivers delegate callbacks
+/// synchronously; the value is only consumed inside the MainActor task).
+private struct UncheckedBox<Value>: @unchecked Sendable {
+    let value: Value
+    init(_ value: Value) { self.value = value }
 }

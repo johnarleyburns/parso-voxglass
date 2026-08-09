@@ -19,7 +19,7 @@ import Testing
 
     /// A fake action executor that records how many times each action was
     /// dispatched — "one take" means `stop`/`accept`/`retake` ran once.
-    private final class FakeExecutor {
+    private final class FakeExecutor: @unchecked Sendable {
         var invocations: [RecordingRemoteAction] = []
         var takeCount = 0
 

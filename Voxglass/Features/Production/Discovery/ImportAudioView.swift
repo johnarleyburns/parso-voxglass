@@ -83,7 +83,7 @@ struct ImportAudioView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 13))
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("importAudio.pick")
@@ -221,7 +221,7 @@ struct ImportAudioView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
                 .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(Color(hex: 0x21170B))
+                .foregroundStyle(NarrationPalette.espresso)
         }
         .buttonStyle(.plain)
         .tactileTap()

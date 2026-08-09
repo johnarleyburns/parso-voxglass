@@ -72,7 +72,7 @@ struct TakeComparisonView: View {
                 if side.isSelected {
                     Text("Selected")
                         .scaledFont(size: 10, weight: .bold)
-                        .foregroundStyle(Color(hex: 0x21170B))
+                        .foregroundStyle(NarrationPalette.espresso)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Palette.brass, in: Capsule())
                 } else if side.isArchived {
@@ -173,7 +173,7 @@ struct TakeComparisonView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 13))
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
             }
             .buttonStyle(.plain)
             .tactileTap()

@@ -2,8 +2,9 @@ import SwiftUI
 import VoxglassCore
 
 /// The Pro purchase sheet (mockup 14c, §13.5). Reachable from exactly two places:
-/// the export destination picker (retail) and Settings. Name and price per
-/// decisions D-1 / D-2: "Voxglass Narration Pro", $49 introductory.
+/// the export destination picker (retail) and Settings. Display name per decision
+/// D-1 ("Voxglass Narration Pro"); the price is read from StoreKit at runtime —
+/// it is never hardcoded in code (§2.2, D-2).
 ///
 /// Validation is free for every destination, so the sheet previews the project's
 /// ACX readiness before any purchase. Restore Purchases is always visible. A
@@ -68,7 +69,7 @@ struct ProPurchaseView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(LinearGradient(colors: [Palette.brass.opacity(0.9), Palette.brassDeep], startPoint: .top, endPoint: .bottom))
-                Image(systemName: "sparkles").scaledFont(size: 34, weight: .bold).foregroundStyle(Color(hex: 0x21170B))
+                Image(systemName: "sparkles").scaledFont(size: 34, weight: .bold).foregroundStyle(NarrationPalette.espresso)
             }
             .frame(width: 84, height: 84)
             .padding(.top, 10)
@@ -162,14 +163,14 @@ struct ProPurchaseView: View {
         } label: {
             HStack(spacing: 8) {
                 if isPurchasing {
-                    ProgressView().tint(Color(hex: 0x21170B))
+                    ProgressView().tint(NarrationPalette.espresso)
                 }
                 Text(purchaseTitle)
                     .scaledFont(size: 15, weight: .heavy)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
             }
         }
         .buttonStyle(.plain)

@@ -259,21 +259,22 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
         updatedSearchText searchText: String,
         completionHandler: @escaping ([CPListItem]) -> Void
     ) {
+        let completionBox = UncheckedBox(completionHandler)
         Task { @MainActor in
             self.searchTask?.cancel()
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard trimmed.count >= 2 else {
-                completionHandler([])
+                completionBox.value([])
                 return
             }
             self.searchTask = Task { [weak self] in
                 let results = (try? await InternetArchiveClient().searchLibriVox(query: trimmed, rows: 12)) ?? []
                 guard let self, !Task.isCancelled else {
-                    completionHandler([])
+                    completionBox.value([])
                     return
                 }
                 self.latestResults = results
-                completionHandler(results.map { result in
+                completionBox.value(results.map { result in
                     let item = CPListItem(text: result.title, detailText: result.authorLine)
                     item.handler = { [weak self] _, done in
                         Task { @MainActor in
@@ -292,11 +293,20 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
         selectedResult item: CPListItem,
         completionHandler: @escaping () -> Void
     ) {
+        let completionBox = UncheckedBox(completionHandler)
         Task { @MainActor in
             if let match = self.latestResults.first(where: { $0.title == item.text }) {
                 self.dispatcher?.dispatch(.playCatalogItem(identifier: match.identifier))
             }
-            completionHandler()
+            completionBox.value()
         }
     }
+}
+
+/// Bridges a non-Sendable CarPlay completion handler across an isolation
+/// boundary; CarPlay delivers delegate callbacks synchronously and the handler
+/// is only invoked inside the MainActor task.
+private struct UncheckedBox<Value>: @unchecked Sendable {
+    let value: Value
+    init(_ value: Value) { self.value = value }
 }

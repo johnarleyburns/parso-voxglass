@@ -35,6 +35,21 @@ struct SettingsView: View {
 
                 settingsGroup("Narration") {
                     NarrationProCard()
+
+                    VoxglassListDivider()
+
+                    NavigationLink {
+                        StorageSettingsView()
+                    } label: {
+                        DisclosureListRow(
+                            icon: "internaldrive.fill",
+                            title: "Storage & iCloud",
+                            detail: "Working cache, backups, offload",
+                            count: nil
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("settings.storage")
                 }
 
                 settingsGroup("Audio") {

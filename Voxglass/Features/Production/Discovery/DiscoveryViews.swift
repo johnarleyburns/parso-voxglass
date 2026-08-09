@@ -27,10 +27,10 @@ struct SignalBadge: View {
 
     private var tint: Color {
         switch signal {
-        case .openProjectNeedsReader: return Color(hex: 0x72D59F)
-        case .proofListenerNeeded: return Color(hex: 0xE6B877)
+        case .openProjectNeedsReader: return NarrationPalette.mint
+        case .proofListenerNeeded: return NarrationPalette.brassSoft
         case .weeklyFeatured: return Palette.brass
-        case .catalogGap: return Color(hex: 0xC9B6FF)
+        case .catalogGap: return NarrationPalette.lavender
         case .evergreen: return Palette.ink3
         }
     }
@@ -143,7 +143,7 @@ struct NarrationHomeShelf: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(LinearGradient(colors: [Color(hex: 0x3A2F1C), Color(hex: 0x6B5432)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .fill(LinearGradient(colors: [NarrationPalette.umber, NarrationPalette.sand], startPoint: .topLeading, endPoint: .bottomTrailing))
                     Text("🎙️").scaledFont(size: 26)
                 }
                 .frame(width: 56, height: 56)
@@ -230,7 +230,7 @@ struct ShortNeedCard: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 10))
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
             }
             .buttonStyle(.plain)
             .tactileTap()
@@ -254,10 +254,10 @@ struct LongNeedCard: View {
         VStack(spacing: 6) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(LinearGradient(colors: [Color(hex: 0x101A14), Color(hex: 0x2F5A3E)], startPoint: .top, endPoint: .bottom))
+                    .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .top, endPoint: .bottom))
                 Text(initials(need.work.title))
                     .scaledFont(size: 14, weight: .heavy)
-                    .foregroundStyle(Color(hex: 0xF8E8C7))
+                    .foregroundStyle(NarrationPalette.creamWarm)
             }
             .frame(width: 88, height: 118)
             Text(need.work.title)
@@ -274,7 +274,7 @@ struct LongNeedCard: View {
                     .scaledFont(size: 10, weight: .bold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: Capsule())
             }
             .buttonStyle(.plain)
@@ -325,8 +325,8 @@ struct NarrationNeedsView: View {
                                     .scaledFont(size: 11, weight: item == filter ? .heavy : .semibold)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
-                                    .foregroundStyle(item == filter ? Color(hex: 0x111111) : Palette.ink2)
-                                    .background(item == filter ? Color(hex: 0xF6F2EA) : Color.white.opacity(0.06), in: Capsule())
+                                    .foregroundStyle(item == filter ? NarrationPalette.nearBlack : Palette.ink2)
+                                    .background(item == filter ? NarrationPalette.cream : Color.white.opacity(0.06), in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
@@ -387,7 +387,7 @@ struct NeedRow: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 9)
-                    .fill(LinearGradient(colors: [Color(hex: 0x2A2417), Color(hex: 0x5A4A2B)], startPoint: .top, endPoint: .bottom))
+                    .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
                 Text(need.work.lengthClass == .short ? "📜" : "📕")
                     .scaledFont(size: 18)
             }
@@ -417,7 +417,7 @@ struct NeedRow: View {
                     .scaledFont(size: 12, weight: .heavy)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 11))
                     .clipShape(RoundedRectangle(cornerRadius: 11))
             }
@@ -550,7 +550,7 @@ struct MyNarrationsSection: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 9)
-                    .fill(LinearGradient(colors: [Color(hex: 0x2A2417), Color(hex: 0x5A4A2B)], startPoint: .top, endPoint: .bottom))
+                    .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
                 Text("🎙️").scaledFont(size: 18)
             }
             .frame(width: 46, height: 60)
@@ -623,7 +623,7 @@ private extension AudiobookProject {
     }
 
     var statusPill: (String, Color) {
-        if approvedCount == totalCount && totalCount > 0 { return ("Ready", Color(hex: 0x72D59F)) }
+        if approvedCount == totalCount && totalCount > 0 { return ("Ready", NarrationPalette.mint) }
         if recordedCount > 0 { return ("Recording", Palette.brass) }
         return ("Draft", Palette.ink3)
     }

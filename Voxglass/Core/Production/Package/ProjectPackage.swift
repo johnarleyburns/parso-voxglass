@@ -6,7 +6,9 @@ public struct ProjectPackage: Sendable, Equatable {
     public var hasAutosaveRecovery: Bool = false
     public var autosaveSessionURL: URL?
 
-    private var layout: ProductionProjectLayout { ProductionProjectLayout(root: root) }
+    /// The `.voxproject` layout for this package — the single source of the
+    /// package's path rules (§4.4).
+    var layout: ProductionProjectLayout { ProductionProjectLayout(root: root) }
 
     public var manifestURL: URL { layout.manifestURL }
     public var databaseURL: URL { layout.databaseURL }

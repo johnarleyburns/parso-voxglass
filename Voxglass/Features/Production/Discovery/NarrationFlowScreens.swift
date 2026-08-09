@@ -33,7 +33,7 @@ struct SourceReviewView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 9)
-                            .fill(LinearGradient(colors: [Color(hex: 0x101A14), Color(hex: 0x2F5A3E)], startPoint: .top, endPoint: .bottom))
+                            .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .top, endPoint: .bottom))
                         Text("📗").scaledFont(size: 22)
                     }
                     .frame(width: 48, height: 62)
@@ -78,7 +78,7 @@ struct SourceReviewView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
+                        .foregroundStyle(NarrationPalette.espresso)
                 }
                 .buttonStyle(.plain)
                 .tactileTap()
@@ -455,8 +455,8 @@ struct RecordView: View {
                 Text("Take · \(take.duration.formattedShort)")
                     .scaledFont(size: 11, weight: .semibold)
                     .padding(.horizontal, 10).padding(.vertical, 6)
-                    .foregroundStyle(Color(hex: 0x111111))
-                    .background(Color(hex: 0xF6F2EA), in: Capsule())
+                    .foregroundStyle(NarrationPalette.nearBlack)
+                    .background(NarrationPalette.cream, in: Capsule())
                     .accessibilityIdentifier("record.take.1")
             } else {
                 Text("No take yet").scaledFont(size: 11).foregroundStyle(Palette.ink3)
@@ -511,10 +511,10 @@ struct RecordView: View {
             } label: {
                 Image(systemName: "flag")
                     .scaledFont(size: 16, weight: .bold)
-                    .foregroundStyle(Color(hex: 0xE6B877))
+                    .foregroundStyle(NarrationPalette.brassSoft)
                     .frame(width: 54, height: 46)
-                    .background(Color(hex: 0xE0A44F).opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xE0A44F).opacity(0.4), lineWidth: 1))
+                    .background(NarrationPalette.brassMid.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(NarrationPalette.brassMid.opacity(0.4), lineWidth: 1))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("record.flagAndNext")
@@ -525,7 +525,7 @@ struct RecordView: View {
             } label: {
                 Text("Accept & Next ▸")
                     .scaledFont(size: 14, weight: .heavy)
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 12))
@@ -625,7 +625,7 @@ struct ReviewView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                    .foregroundStyle(Color(hex: 0x21170B))
+                    .foregroundStyle(NarrationPalette.espresso)
                     .padding(.horizontal, 18)
                     .padding(.bottom, 12)
             }
@@ -634,6 +634,12 @@ struct ReviewView: View {
             .accessibilityIdentifier("review.toAssemble")
         }
         .background(VoxglassBackground())
+        .task { await model.refreshRemoteAssetStates() }
+        .alert("Couldn't download this recording", isPresented: hydrationErrorPresented) {
+            Button("OK", role: .cancel) { model.hydrationError = nil }
+        } message: {
+            Text(model.hydrationError ?? "")
+        }
         .navigationDestination(isPresented: $goAssemble) {
             AssembleView(model: model, isPushed: true)
         }
@@ -645,6 +651,13 @@ struct ReviewView: View {
     }
 
     @State private var goAssemble = false
+
+    private var hydrationErrorPresented: Binding<Bool> {
+        Binding(
+            get: { model.hydrationError != nil },
+            set: { if !$0 { model.hydrationError = nil } }
+        )
+    }
 
     private func filtered(_ paragraphs: [FlowParagraph]) -> [FlowParagraph] {
         switch filter {
@@ -666,20 +679,43 @@ struct ReviewView: View {
                     .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
                 if let note = paragraph.note {
-                    Text(note).scaledFont(size: 11).foregroundStyle(Color(hex: 0xE6C79C))
+                    Text(note).scaledFont(size: 11).foregroundStyle(NarrationPalette.tan)
                 }
             }
             Spacer()
-            Button {
-                model.play(paragraph.id)
-            } label: {
-                Image(systemName: "play.circle")
-                    .scaledFont(size: 26)
-                    .foregroundStyle(Palette.ink2)
+            if let bytes = paragraph.remoteTakeByteCount {
+                Button {
+                    Task { await model.hydrateForPlayback(paragraph.id) }
+                } label: {
+                    HStack(spacing: 5) {
+                        if model.hydratingParagraphID == paragraph.id {
+                            ProgressView().controlSize(.small).tint(Palette.brass)
+                        } else {
+                            Image(systemName: "icloud.and.arrow.down").scaledFont(size: 12, weight: .semibold)
+                        }
+                        Text(model.hydratingParagraphID == paragraph.id ? "Downloading" : byteEstimate(bytes))
+                            .scaledFont(size: 11, weight: .bold)
+                    }
+                    .foregroundStyle(Palette.brass)
+                    .padding(.horizontal, 9).padding(.vertical, 6)
+                    .background(Palette.brass.opacity(0.12), in: Capsule())
+                    .overlay(Capsule().stroke(Palette.brass.opacity(0.45), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .disabled(model.hydratingParagraphID != nil && model.hydratingParagraphID != paragraph.id)
+                .accessibilityIdentifier("paragraphList.hydrate")
+            } else {
+                Button {
+                    model.play(paragraph.id)
+                } label: {
+                    Image(systemName: "play.circle")
+                        .scaledFont(size: 26)
+                        .foregroundStyle(Palette.ink2)
+                }
+                .buttonStyle(.plain)
+                .disabled(paragraph.take == nil)
+                .accessibilityIdentifier("paragraphList.playSelected")
             }
-            .buttonStyle(.plain)
-            .disabled(paragraph.take == nil)
-            .accessibilityIdentifier("paragraphList.playSelected")
 
             if paragraph.state == .flagged {
                 Button("Re-record ▸") {
@@ -709,7 +745,7 @@ struct ReviewView: View {
     private func tint(_ state: FlowParagraphState) -> Color {
         switch state {
         case .approved: return Palette.ok
-        case .flagged: return Color(hex: 0xE6B877)
+        case .flagged: return NarrationPalette.brassSoft
         case .recorded: return Palette.brass
         case .notRecorded: return Palette.ink3
         }
@@ -725,6 +761,10 @@ struct ReviewView: View {
         if let take = paragraph.take { parts.append(take.duration.formattedShort) }
         parts.append(stateText(paragraph.state))
         return parts.joined(separator: " · ")
+    }
+
+    private func byteEstimate(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
     private func stateText(_ state: FlowParagraphState) -> String {
@@ -779,7 +819,7 @@ struct AssembleView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
+                        .foregroundStyle(NarrationPalette.espresso)
                 }
                 .buttonStyle(.plain)
                 .tactileTap()
@@ -1107,9 +1147,9 @@ struct MetadataView: View {
                         Text("LV").scaledFont(size: 9, weight: .heavy).foregroundStyle(Palette.brass)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Palette.brass.opacity(0.14), in: Capsule())
-                        Text("IA").scaledFont(size: 9, weight: .heavy).foregroundStyle(Color(hex: 0x8FD0FF))
+                        Text("IA").scaledFont(size: 9, weight: .heavy).foregroundStyle(NarrationPalette.sky)
                             .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Color(hex: 0x8FD0FF).opacity(0.14), in: Capsule())
+                            .background(NarrationPalette.sky.opacity(0.14), in: Capsule())
                         Text("Public domain in the United States").scaledFont(size: 12).foregroundStyle(Palette.ink2)
                     }
                     Button {
@@ -1137,7 +1177,7 @@ struct MetadataView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
+                        .foregroundStyle(NarrationPalette.espresso)
                 }
                 .buttonStyle(.plain)
                 .disabled(!model.rightsAttested)
@@ -1163,7 +1203,7 @@ struct MetadataView: View {
                 .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink)
                 .padding(11)
-                .background(Color(hex: 0x0F1316), in: RoundedRectangle(cornerRadius: 11))
+                .background(NarrationPalette.panelInk, in: RoundedRectangle(cornerRadius: 11))
                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.hairline, lineWidth: 1))
                 .accessibilityIdentifier(id)
         }
@@ -1178,7 +1218,7 @@ struct MetadataView: View {
                 .foregroundStyle(Palette.ink)
                 .frame(minHeight: 60)
                 .padding(6)
-                .background(Color(hex: 0x0F1316), in: RoundedRectangle(cornerRadius: 11))
+                .background(NarrationPalette.panelInk, in: RoundedRectangle(cornerRadius: 11))
                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.hairline, lineWidth: 1))
                 .accessibilityIdentifier(id)
         }
@@ -1215,6 +1255,7 @@ struct ValidateExportView: View {
     @State private var goSubmit = false
     @State private var showAudioSetup = false
     @State private var showProPurchase = false
+    @State private var showExportRun = false
 
     var body: some View {
         ScrollView {
@@ -1275,27 +1316,24 @@ struct ValidateExportView: View {
                     hydrationBanner(preflight)
                 }
 
-                if model.isExporting {
-                    exportProgressCard
-                }
-
                 if let error = model.exportError {
                     Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger).padding(.top, 4)
                 }
 
                 Button {
+                    showExportRun = true
                     model.startExport()
                 } label: {
                     HStack(spacing: 8) {
                         if model.isExporting {
-                            ProgressView().tint(Color(hex: 0x21170B))
+                            ProgressView().tint(NarrationPalette.espresso)
                         }
                         Text(model.isExporting ? "Producing files…" : "Produce files ▸")
                             .scaledFont(size: 15, weight: .heavy)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
                             .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                            .foregroundStyle(Color(hex: 0x21170B))
+                            .foregroundStyle(NarrationPalette.espresso)
                     }
                 }
                 .buttonStyle(.plain)
@@ -1318,6 +1356,12 @@ struct ValidateExportView: View {
         .sheet(isPresented: $showProPurchase) {
             ProPurchaseView(provider: model.licenseProvider, model: model) { _ in
                 Task { await model.runValidation() }
+            }
+        }
+        .fullScreenCover(isPresented: $showExportRun) {
+            ExportRunView(model: model) {
+                showExportRun = false
+                goSubmit = true
             }
         }
         .navigationDestination(isPresented: $goSubmit) {
@@ -1501,21 +1545,6 @@ struct ValidateExportView: View {
         .accessibilityIdentifier("validation.issue.assetRemoteOnly")
     }
 
-    private var exportProgressCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Exporting…")
-                .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
-            if let progress = model.exportProgress, let file = progress.currentFileName {
-                Text(file).scaledFont(size: 11).foregroundStyle(Palette.ink3).lineLimit(1)
-            }
-            ProgressView(value: model.exportProgress?.fractionCompleted ?? 0, total: 1).tint(Palette.brass)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
-        .accessibilityIdentifier("exportRun.step")
-    }
-
     /// The mockup's issue-key per code — the stable `validation.issue.<key>`
     /// identifier suffix (mockup 13). Literal values are the audit registry's
     /// contract.
@@ -1533,6 +1562,344 @@ struct ValidateExportView: View {
 
     private static func issueKey(_ code: IssueCode) -> String {
         issueIDs[code] ?? "validation.issue.generic"
+    }
+}
+
+// MARK: - p07b Export run & resume (screen 14b)
+
+/// Full-screen progress for a resumable export run (mockup 14b, §13.3).
+/// Runs are chunked by chapter and recorded in `ExportRunRecord`, so a relaunch
+/// resumes at the first incomplete chapter rather than from zero; the reused
+/// chapters are reported by `ResumableExportRunner` and shown as "kept".
+struct ExportRunView: View {
+    @Bindable var model: NarrationFlowModel
+    /// Called when the run finishes with a package ready to hand off.
+    var onFinished: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var keepScreenOn = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if model.exportReusedFileCount > 0 {
+                        resumedBanner
+                    }
+
+                    progressCard
+
+                    pipelineCard
+
+                    chaptersCard
+
+                    keepScreenOnCard
+
+                    Text("If storage runs low mid-run the export pauses rather than failing, and tells you exactly how much to free.")
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.ink3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .glassSurface(cornerRadius: 14)
+                        .accessibilityIdentifier("exportRun.storageNote")
+
+                    if !model.isExporting && model.exportBundle == nil {
+                        terminalActions
+                    }
+                }
+                .padding(18)
+            }
+            .background(VoxglassBackground())
+            .navigationTitle("Exporting")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        if model.isExporting {
+                            model.cancelExport()
+                        }
+                        dismiss()
+                    } label: {
+                        Text("Close").scaledFont(size: 13).foregroundStyle(Palette.ink2)
+                    }
+                    .accessibilityIdentifier("exportRun.close")
+                }
+            }
+        }
+        .onChange(of: model.exportBundle) { _, newValue in
+            if newValue != nil { onFinished() }
+        }
+        .onChange(of: keepScreenOn) { _, enabled in
+            UIApplication.shared.isIdleTimerDisabled = enabled
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+    }
+
+    // MARK: Resume banner
+
+    private var resumedBanner: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Resumed where it stopped")
+                    .scaledFont(size: 14, weight: .heavy).foregroundStyle(Palette.ok)
+                Spacer()
+                Text("\(model.exportReusedFileCount) chapters kept")
+                    .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ok)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Palette.ok.opacity(0.14), in: Capsule())
+                    .overlay(Capsule().stroke(Palette.ok.opacity(0.4), lineWidth: 1))
+            }
+            Text("Voxglass closed while another chapter was encoding. Chapters 1–\(model.exportReusedFileCount) were already finished and verified, so they were not re-rendered.")
+                .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.ok.opacity(0.45), lineWidth: 1))
+        .accessibilityIdentifier("exportRun.resumed")
+    }
+
+    // MARK: Progress
+
+    private var progressCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Chapter \(currentChapter) of \(totalChapters)")
+                    .scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
+                Spacer()
+                Text("\(Int((model.exportProgress?.fractionCompleted ?? 0) * 100))%")
+                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.brass)
+            }
+            ProgressView(value: model.exportProgress?.fractionCompleted ?? 0, total: 1)
+                .tint(Palette.brass)
+                .accessibilityIdentifier("exportRun.progress")
+            HStack(spacing: 0) {
+                Text("Step")
+                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                    .frame(width: 74, alignment: .leading)
+                Text(stepText)
+                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink)
+                    .accessibilityIdentifier("exportRun.step")
+            }
+            HStack(spacing: 0) {
+                Text("Elapsed")
+                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                    .frame(width: 74, alignment: .leading)
+                Text(elapsedText)
+                    .scaledFont(size: 11.5, weight: .semibold).foregroundStyle(Palette.ink)
+            }
+            if let remaining = remainingText {
+                HStack(spacing: 0) {
+                    Text("Remaining")
+                        .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                        .frame(width: 74, alignment: .leading)
+                    Text(remaining)
+                        .scaledFont(size: 11.5, weight: .semibold).foregroundStyle(Palette.ink)
+                }
+            }
+
+            if model.isExporting {
+                Button {
+                    model.cancelExport()
+                } label: {
+                    Text("Cancel after this chapter")
+                        .scaledFont(size: 13, weight: .semibold)
+                        .foregroundStyle(Palette.danger)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Palette.danger.opacity(0.08), in: RoundedRectangle(cornerRadius: 13))
+                        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Palette.danger.opacity(0.35), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("exportRun.cancel")
+                Text("Cancelling never discards finished chapters — resuming later picks up from chapter \(min(currentChapter + 1, totalChapters)).")
+                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+    }
+
+    private var terminalActions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let error = model.exportError {
+                Text(error).scaledFont(size: 12.5).foregroundStyle(Palette.danger)
+            }
+            Button {
+                model.startExport()
+            } label: {
+                Text(model.exportRunRecord?.status == .cancelled ? "Resume export ▸" : "Try again ▸")
+                    .scaledFont(size: 15, weight: .heavy)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
+                    .foregroundStyle(NarrationPalette.espresso)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("exportRun.resume")
+        }
+    }
+
+    // MARK: Pipeline
+
+    private var pipelineCard: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("PIPELINE").scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+                .padding(.bottom, 2)
+            pipelineRow(verified: true, step: "Hydrate chapters from iCloud", chip: "Verified")
+            pipelineRow(verified: model.blockingValidationIssues.isEmpty, step: "Validate", chip: model.blockingValidationIssues.isEmpty ? "Passed" : nil)
+            pipelineRow(step: "Render → transcode → tag", chip: running ? "\(min(currentChapter, totalChapters)) / \(totalChapters)" : (model.exportBundle != nil ? "Done" : "Interrupted"), active: running)
+            pipelineRow(step: "Checksums")
+            pipelineRow(step: "Checklist & package")
+            pipelineRow(step: "Save to Files")
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+    }
+
+    private func pipelineRow(verified: Bool? = nil, step: String, chip: String? = nil, active: Bool = false) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: verified == true ? "checkmark" : (active ? "circle.fill" : "circle"))
+                .scaledFont(size: 12, weight: .bold)
+                .foregroundStyle(verified == true ? Palette.ok : (active ? Palette.brass : Palette.ink3))
+                .frame(width: 18)
+            Text(step).scaledFont(size: 12.5).foregroundStyle(Palette.ink)
+            Spacer()
+            if let chip {
+                Text(chip)
+                    .scaledFont(size: 10.5, weight: .bold)
+                    .foregroundStyle(active ? Palette.brass : (verified == true ? Palette.ok : Palette.ink2))
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background((active ? Palette.brass : (verified == true ? Palette.ok : Palette.ink2)).opacity(0.12), in: Capsule())
+            }
+        }
+        .padding(.vertical, 5)
+    }
+
+    // MARK: Chapters
+
+    private var chaptersCard: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("CHAPTERS").scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+                .padding(.bottom, 2)
+            if doneChapterCount > 0 {
+                chapterRow(range: "1 – \(doneChapterCount)", chip: "Done", chipColor: Palette.ok)
+            }
+            if running {
+                chapterRow(range: chapterLabel(currentChapter), chip: "Encoding", chipColor: Palette.brass)
+            } else if model.exportBundle == nil && doneChapterCount > 0 {
+                chapterRow(range: "\(doneChapterCount + 1) – \(totalChapters)", chip: "Queued", chipColor: nil)
+            }
+            if currentChapter < totalChapters {
+                chapterRow(range: "\(currentChapter + 1) – \(totalChapters)", chip: "Queued", chipColor: nil)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+    }
+
+    private func chapterRow(range: String, chip: String, chipColor: Color?) -> some View {
+        HStack(spacing: 10) {
+            Text(range).scaledFont(size: 12.5).foregroundStyle(Palette.ink)
+            Spacer()
+            Text(chip)
+                .scaledFont(size: 10.5, weight: .bold)
+                .foregroundStyle(chipColor ?? Palette.ink2)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background((chipColor ?? Palette.ink2).opacity(0.12), in: Capsule())
+        }
+        .padding(.vertical, 5)
+    }
+
+    // MARK: Keep screen on
+
+    private var keepScreenOnCard: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Keep the screen on")
+                    .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                Text("Exports continue in the background, but finish faster in the foreground")
+                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+            }
+            Spacer()
+            Toggle("", isOn: $keepScreenOn)
+                .labelsHidden()
+                .tint(Palette.brass)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 14)
+        .accessibilityIdentifier("exportRun.keepAwake")
+    }
+
+    // MARK: Derived state
+
+    private var running: Bool { model.isExporting }
+
+    private var totalChapters: Int {
+        if let p = model.exportProgress, p.totalUnits > 0 { return p.totalUnits }
+        return max(model.project?.chapters.count ?? 0, 1)
+    }
+
+    private var currentChapter: Int {
+        if model.exportBundle != nil { return totalChapters }
+        let done = model.exportProgress?.completedUnits ?? 0
+        return min(max(done + 1, 1), totalChapters)
+    }
+
+    /// Chapters finished in this run (or the kept set on a resumed run).
+    private var doneChapterCount: Int {
+        if model.exportReusedFileCount > 0 { return model.exportReusedFileCount }
+        return model.exportProgress?.completedUnits ?? 0
+    }
+
+    private func chapterLabel(_ ordinal: Int) -> String {
+        if let chapter = model.project?.chapters.first(where: { $0.ordinal == ordinal }), !chapter.title.isEmpty {
+            return chapter.title
+        }
+        return "\(ordinal)"
+    }
+
+    private var stepText: String {
+        guard let progress = model.exportProgress else {
+            return model.isExporting ? "Preparing…" : "Preparing"
+        }
+        let file = progress.currentFileName.map { " \($0)" } ?? ""
+        switch progress.phase {
+        case .validating: return "Validating project…"
+        case .rendering: return "Rendering\(file)"
+        case .mastering: return "Mastering\(file)"
+        case .transcoding: return "Encoding\(file)"
+        case .tagging: return "Tagging\(file)"
+        case .writingArtifacts: return "Writing\(file)"
+        case .hashing: return "Hashing\(file)"
+        case .chapterFinished: return "Chapter \(progress.completedUnits) of \(totalChapters) done"
+        case .done: return "Package ready"
+        }
+    }
+
+    private var elapsedText: String {
+        guard let started = model.exportStartedAt else { return "—" }
+        return Self.durationText(Date().timeIntervalSince(started))
+    }
+
+    private var remainingText: String? {
+        if model.exportBundle != nil { return nil }
+        if let remaining = model.exportProgress?.estimatedRemaining, remaining.isFinite, remaining > 0 {
+            return "about \(Self.durationText(remaining))"
+        }
+        return nil
+    }
+
+    private static func durationText(_ interval: TimeInterval) -> String {
+        let total = Int(interval)
+        let minutes = total / 60
+        let seconds = total % 60
+        return String(format: "%dm %02ds", minutes, seconds)
     }
 }
 
@@ -1589,7 +1956,7 @@ struct SubmitView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(Color(hex: 0x21170B))
+                        .foregroundStyle(NarrationPalette.espresso)
                 }
                 .accessibilityIdentifier("export.share")
 
@@ -1636,11 +2003,11 @@ struct SubmitView: View {
                 } label: {
                     Label("Prepare Archive upload (opensource_audio) →", systemImage: "doc.on.clipboard")
                         .scaledFont(size: 14, weight: .bold)
-                        .foregroundStyle(Color(hex: 0x9FC3FF))
+                        .foregroundStyle(NarrationPalette.skySoft)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color(hex: 0x7896DC).opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0x7896DC).opacity(0.4), lineWidth: 1))
+                        .background(NarrationPalette.periwinkle.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(NarrationPalette.periwinkle.opacity(0.4), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("export.uploadToArchive")

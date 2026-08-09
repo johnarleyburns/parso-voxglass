@@ -1,12 +1,12 @@
 import Foundation
 
-public struct CandidateQuery: Equatable {
+public struct CandidateQuery: Equatable, Sendable {
     public let iaQuery: String
     public let anchorTerm: String
     public let noveltyClass: NoveltyClass
     public let requestedCount: Int
 
-    public enum NoveltyClass: String, Equatable {
+    public enum NoveltyClass: String, Equatable, Sendable {
         case exploit
         case explore
         case serendipity

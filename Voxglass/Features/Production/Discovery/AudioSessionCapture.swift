@@ -409,7 +409,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
                     }
                 } else {
                     // Nothing to write; wait for the tap or cancellation.
-                    _ = self.writeSemaphore.wait(timeout: .now() + 0.05)
+                    try? await Task.sleep(for: .milliseconds(50))
                 }
             }
         }

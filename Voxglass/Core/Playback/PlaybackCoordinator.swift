@@ -1214,6 +1214,27 @@ public final class PlaybackCoordinator {
     private func handleItemChanged() async {
         guard let session = currentSession else { return }
         resetSilenceBoost()
+
+        // AVQueuePlayer can advance to the preloaded item even when the current
+        // item did not genuinely end — AVFoundation sometimes reports a
+        // premature end-of-playback on device (§consumer playback). If the last
+        // end the engine saw was nowhere near the chapter's duration, treat the
+        // change as spurious and revert to the chapter the session was on so the
+        // user's place is not lost.
+        if let endDuration = engine.lastEndDuration,
+           endDuration.isFinite,
+           endDuration > 0,
+           engine.lastEndPosition.isFinite,
+           engine.lastEndPosition < endDuration - 0.75 {
+            await loadChapter(
+                session.chapter,
+                in: session,
+                startTime: max(0, engine.lastEndPosition),
+                shouldPlay: engine.isPlaying
+            )
+            return
+        }
+
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else {
             updateNowPlayingInfo()

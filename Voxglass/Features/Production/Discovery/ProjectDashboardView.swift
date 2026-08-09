@@ -49,8 +49,8 @@ struct ProjectDashboardView: View {
         .navigationDestination(isPresented: $showScriptEditor) {
             ScriptEditorView(project: project)
         }
-        .sheet(isPresented: $showStorage) {
-            DashboardStorageSheet(project: project, dashboard: dashboard)
+        .navigationDestination(isPresented: $showStorage) {
+            StorageSettingsView()
         }
         .task {
             await discovery.reloadNarrations()
@@ -63,10 +63,10 @@ struct ProjectDashboardView: View {
         VStack(spacing: 0) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(LinearGradient(colors: [Color(hex: 0x101A14), Color(hex: 0x2F5A3E)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .topLeading, endPoint: .bottomTrailing))
                 Text(initials)
                     .scaledFont(size: 30, weight: .heavy)
-                    .foregroundStyle(Color(hex: 0xF8E8C7))
+                    .foregroundStyle(NarrationPalette.creamWarm)
             }
             .frame(width: 120, height: 160)
 
@@ -83,7 +83,7 @@ struct ProjectDashboardView: View {
             HStack(spacing: 6) {
                 chip(project.profile.intendedDestination.label, tint: Palette.brass)
                 if dashboard.flaggedCount > 0 {
-                    chip("\(dashboard.flaggedCount) flagged", tint: Color(hex: 0xE6B877))
+                    chip("\(dashboard.flaggedCount) flagged", tint: NarrationPalette.brassSoft)
                 }
             }
             .padding(.top, 8)
@@ -102,7 +102,7 @@ struct ProjectDashboardView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
                 .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(Color(hex: 0x21170B))
+                .foregroundStyle(NarrationPalette.espresso)
         }
         .buttonStyle(.plain)
         .tactileTap()
@@ -159,11 +159,11 @@ struct ProjectDashboardView: View {
             }
             .padding(.bottom, 4)
 
-            attentionRow("Flagged", "\(dashboard.flaggedCount) ¶", systemImage: "flag.fill", tint: Color(hex: 0xE6B877), id: "dashboard.flagged")
+            attentionRow("Flagged", "\(dashboard.flaggedCount) ¶", systemImage: "flag.fill", tint: NarrationPalette.brassSoft, id: "dashboard.flagged")
             VoxglassListDivider()
-            attentionRow("Needs pickup", "\(dashboard.needsPickupCount) ¶ · blocks export", systemImage: "arrow.clockwise", tint: Color(hex: 0xE6B877), id: "dashboard.pickups")
+            attentionRow("Needs pickup", "\(dashboard.needsPickupCount) ¶ · blocks export", systemImage: "arrow.clockwise", tint: NarrationPalette.brassSoft, id: "dashboard.pickups")
             VoxglassListDivider()
-            attentionRow("Text changed after recording", "\(dashboard.driftCount) ¶", systemImage: "pencil", tint: Color(hex: 0xE6B877), id: "dashboard.drift")
+            attentionRow("Text changed after recording", "\(dashboard.driftCount) ¶", systemImage: "pencil", tint: NarrationPalette.brassSoft, id: "dashboard.drift")
 
             Button {
                 flowProject = project
@@ -205,9 +205,9 @@ struct ProjectDashboardView: View {
         Text(text)
             .scaledFont(size: 11, weight: .bold)
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .foregroundStyle(Color(hex: 0xE6B877))
-            .background(Color(hex: 0xE6B877).opacity(0.14), in: Capsule())
-            .overlay(Capsule().stroke(Color(hex: 0xE6B877).opacity(0.4), lineWidth: 1))
+            .foregroundStyle(NarrationPalette.brassSoft)
+            .background(NarrationPalette.brassSoft.opacity(0.14), in: Capsule())
+            .overlay(Capsule().stroke(NarrationPalette.brassSoft.opacity(0.4), lineWidth: 1))
     }
 
     // MARK: - Storage
@@ -364,43 +364,6 @@ struct ProjectDashboardView: View {
 }
 
 // MARK: - Storage sheet
-
-private struct DashboardStorageSheet: View {
-    let project: AudiobookProject
-    let dashboard: ProjectDashboard
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    LabeledContent("Recorded takes", value: onDeviceBytes)
-                    LabeledContent("Chapters", value: "\(dashboard.chapterCount)")
-                } header: {
-                    Text("On iPhone")
-                } footer: {
-                    Text("Takes verified in iCloud can be offloaded. Local-only takes are never removed. Full storage controls arrive with the storage screen.")
-                }
-            }
-            .navigationTitle("Storage & iCloud")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-
-    private var onDeviceBytes: String {
-        let bytes = project.allParagraphs.reduce(Int64(0)) { total, paragraph in
-            total + paragraph.takes.reduce(Int64(0)) { partial, take in
-                partial + Int64(take.assetRef.byteCount)
-            }
-        }
-        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-    }
-}
 
 private extension DestinationID {
     var label: String {

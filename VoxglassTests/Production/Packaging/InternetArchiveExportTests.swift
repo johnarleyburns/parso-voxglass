@@ -19,7 +19,7 @@ import VoxglassCoreTestSupport
         try FileManager.default.createDirectory(at: exportsRoot, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: exportsRoot) }
 
-        var reportedPhases: [ExportPhase] = []
+        let reportedPhases = LockedIAPhases()
         let bundle = try await InternetArchivePackageBuilder().build(
             project: project,
             renders: ToneChapterRenderer(),
@@ -80,4 +80,11 @@ import VoxglassCoreTestSupport
         let project = DestinationFixtures.iaReady()
         #expect(project.metadata.archiveIdentifier == "ready_book_author_narrator")
     }
+}
+
+private final class LockedIAPhases: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [ExportPhase] = []
+    func append(_ value: ExportPhase) { lock.lock(); values.append(value); lock.unlock() }
+    var isEmpty: Bool { lock.lock(); defer { lock.unlock() }; return values.isEmpty }
 }

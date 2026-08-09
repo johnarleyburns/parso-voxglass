@@ -77,7 +77,7 @@ import Foundation
 
 /// A non-SQLite BookmarkStore conformer — verifies that VoxglassCloudSync
 /// works with any BookmarkStore, not just SQLiteBookmarkStore.
-private final class FakeBookmarkStore: BookmarkStore {
+private final class FakeBookmarkStore: @unchecked Sendable, BookmarkStore {
     private var storage: [Bookmark] = []
 
     func add(_ bookmark: Bookmark) async throws -> Bookmark { bookmark }

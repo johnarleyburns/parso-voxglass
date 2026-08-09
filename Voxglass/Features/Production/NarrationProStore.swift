@@ -4,6 +4,7 @@ import VoxglassCore
 /// App-level container for the Narration Pro license (§13.5): owns the StoreKit 2
 /// provider and exposes the gate. Core never imports StoreKit; this app-target
 /// singleton is the only place a concrete provider is constructed for shipping.
+@MainActor
 final class NarrationProStore {
     static let shared = NarrationProStore()
 

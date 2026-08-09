@@ -1,5 +1,5 @@
 import Foundation
-import WatchConnectivity
+@preconcurrency import WatchConnectivity
 import VoxglassCore
 
 @MainActor
@@ -223,7 +223,7 @@ final class WatchAudioRelay: NSObject, ObservableObject {
         }
     }
 
-    private func request<Response: Decodable, Payload: Encodable>(
+    private func request<Response: Decodable & Sendable, Payload: Encodable>(
         action: String,
         payload: Payload
     ) async throws -> Response {
@@ -355,13 +355,16 @@ extension WatchAudioRelay: WCSessionDelegate {
         activationDidCompleteWith activationState: WCSessionActivationState,
         error: Error?
     ) {
+        let reachable = session.isReachable
+        let installed = session.isCompanionAppInstalled
+        let context = UncheckedSendable(value: session.receivedApplicationContext)
         Task { @MainActor in
-            isReachable = session.isReachable
-            isCompanionAppInstalled = session.isCompanionAppInstalled
-            onReachabilityChanged?(session.isReachable)
+            isReachable = reachable
+            isCompanionAppInstalled = installed
+            onReachabilityChanged?(reachable)
             if let context = try? WatchPhoneMessageCodec.payload(
                 WatchPhoneLibrarySnapshot.self,
-                from: session.receivedApplicationContext
+                from: context.value
             ) {
                 applyLibrarySnapshot(context)
             }
@@ -369,9 +372,10 @@ extension WatchAudioRelay: WCSessionDelegate {
     }
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        let reachable = session.isReachable
         Task { @MainActor in
-            isReachable = session.isReachable
-            onReachabilityChanged?(session.isReachable)
+            isReachable = reachable
+            onReachabilityChanged?(reachable)
         }
     }
 
@@ -379,10 +383,11 @@ extension WatchAudioRelay: WCSessionDelegate {
         _ session: WCSession,
         didReceiveApplicationContext applicationContext: [String: Any]
     ) {
+        let context = UncheckedSendable(value: applicationContext)
         Task { @MainActor in
             if let snapshot = try? WatchPhoneMessageCodec.payload(
                 WatchPhoneLibrarySnapshot.self,
-                from: applicationContext
+                from: context.value
             ) {
                 applyLibrarySnapshot(snapshot)
             }
@@ -393,8 +398,9 @@ extension WatchAudioRelay: WCSessionDelegate {
         _ session: WCSession,
         didReceive file: WCSessionFile
     ) {
+        let file = UncheckedSendable(value: file)
         Task { @MainActor in
-            handleReceivedFile(file)
+            handleReceivedFile(file.value)
         }
     }
 
@@ -402,8 +408,9 @@ extension WatchAudioRelay: WCSessionDelegate {
         _ session: WCSession,
         didReceiveMessage message: [String: Any]
     ) {
+        let message = UncheckedSendable(value: message)
         Task { @MainActor in
-            handleReceivedMessage(message)
+            handleReceivedMessage(message.value)
         }
     }
 
@@ -412,11 +419,17 @@ extension WatchAudioRelay: WCSessionDelegate {
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
+        let message = UncheckedSendable(value: message)
+        let replyHandler = UncheckedSendable(value: replyHandler)
         Task { @MainActor in
-            handleReceivedMessage(message)
-            replyHandler(["received": true])
+            handleReceivedMessage(message.value)
+            replyHandler.value(["received": true])
         }
     }
+}
+
+private struct UncheckedSendable<Value>: @unchecked Sendable {
+    let value: Value
 }
 
 private enum WatchRelayError: Error, LocalizedError {
