@@ -201,6 +201,13 @@ enum NarrationStep: Hashable {
     case submit
 }
 
+/// A thread-safe holder for the entitlement observer task. `@unchecked Sendable`
+/// is justified because the box is touched only on the main actor except for the
+/// nonisolated `deinit` cancellation, and `Task.cancel()` is thread-safe.
+private final class EntitlementTaskBox: @unchecked Sendable {
+    var task: Task<Void, Never>?
+}
+
 /// The eight-step short-work production flow (NARRATION_NEEDS_SPEC §11.4,
 /// p01–p08). Single-work and short-only on iPhone. A project may be left and
 /// resumed at any step. Projects are `AudiobookProject`s in the SQLite
@@ -302,9 +309,11 @@ final class NarrationFlowModel {
     /// The current entitlement, kept fresh from `LicenseProvider.updates` so the
     /// destination picker can flip between free and Pro without re-querying.
     var proEntitlement: EntitlementState = .free
-    /// `nonisolated(unsafe)`: `Task` is `Sendable` and `cancel()` is thread-safe,
-    /// so the nonisolated `deinit` may cancel it without a data race.
-    nonisolated(unsafe) private var proObservationTask: Task<Void, Never>?
+    /// The entitlement observer task, held in a `@unchecked Sendable` box so the
+    /// nonisolated `deinit` can cancel it: `Task` is `Sendable` and `cancel()`
+    /// is thread-safe, so cancellation needs no actor hop and no `unsafe` escape
+    /// hatch. The box is only ever mutated on the main actor.
+    private let entitlementTask = EntitlementTaskBox()
 
     var isProUnlocked: Bool {
         if case .pro = proEntitlement { return true }
@@ -358,7 +367,7 @@ final class NarrationFlowModel {
         // Keep the Pro entitlement fresh from the license seam so the export
         // destination picker reflects purchases, restores, and revocations
         // (§13.5). A revocation reverts to free; no project is touched.
-        proObservationTask = Task { [weak self] in
+        entitlementTask.task = Task { [weak self] in
             guard let self else { return }
             self.proEntitlement = await self.licenseProvider.entitlement
             for await state in self.licenseProvider.updates {
@@ -368,7 +377,7 @@ final class NarrationFlowModel {
     }
 
     deinit {
-        proObservationTask?.cancel()
+        entitlementTask.task?.cancel()
     }
 
     // MARK: - Presentation
