@@ -26,7 +26,7 @@
    destination in the picker → the Pro sheet appears (`14c`). Purchase in
    sandbox. Entitlement returns after reinstall (Restore Purchases);
    a revocation reverts to free **while preserving user projects** (M-12).
-5. **Export** (`export.destination.retail`): run the retail export. The runner
+5. **Export** (`validation.destination.retail`): run the retail export. The runner
    hydrates remote-only chapters (SHA-verified), resumes after an interruption,
    and applies the mastering chain. Export the validation report alongside.
 6. Open the M4B in a player: chapter marks are playable, the retail sample is

@@ -6,6 +6,37 @@
 tree. §5's inventory is deliberately *not* used as the yardstick — it describes
 the pre-implementation tree and its 🆕 rows are stale by construction.
 
+## Closure record (2026-08-10)
+
+All thirteen gaps were closed per `GAP_FIX_BRIEF.md` F1–F8 (see the commit
+history of the `feat/revised-mvp-gap-close` merge):
+
+- **G1** — mockup ids reconciled to the shipped identifiers (D-G1) and
+  `AccessibilityAuditTests` repointed to parse the mockup HTML.
+- **G2** — `LicenseGatePlacementTests` added to `LicenseGateTests.swift`; the
+  `StudioEnvironment` allow-list entry removed from gate G-2.
+- **G3** — a failability probe for G-5 added to `test_guards.sh`.
+- **G4** — the iPhone smoke test now creates, records (with a flag + re-record
+  review leg), validates, and exports a narration, then verifies the produced
+  package bytes (128 kbps CBR / 44.1 kHz / mono, ID3, checksums, checklist,
+  metadata.json).
+- **G5** — Command-R record/stop keyboard shortcut and a scoped media-button
+  claim on the armed record screen.
+- **G6** — progressive source parsing (`extractProgressively` on EPUB) with a
+  live preview and a working cancel on the import screen.
+- **G7** — "Save a copy" of the `.voxproject` package on the Submit screen.
+- **G8** — the folder share path already existed (ShareLink directory fallback).
+- **G9** — `RELEASE_CHECKLIST.md` no longer names the deleted screenshot script.
+- **G10** — stale "Mac" prose in `SyncConflictTests` corrected.
+- **G11** — the four §13.2 export scopes built and threaded through preflight
+  and `ExportOptions.scope`, plus the hydrate/local-only/cancel banner.
+- **G12** — a four-way purpose picker on the new-project step; the choice
+  persists through SQLite, the LibriVox manifest, and the CloudKit projection.
+- **G13** — Audio Setup opens from Settings.
+
+`swift test` is green (1319 tests / 189 suites), all grep gates green with the
+new probes, and the extended iPhone smoke test passes locally.
+
 ## Verdict
 
 The MVP is substantially implemented. All ten stages P0–P9 landed as commits

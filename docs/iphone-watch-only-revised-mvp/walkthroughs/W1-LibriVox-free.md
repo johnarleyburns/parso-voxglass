@@ -13,26 +13,29 @@
 
 ## Steps
 
-1. **Narration tab** (`tab.narration`) → Start narrating a need, or ＋ → paste /
+1. **Narration tab** (`narration.tab`) → Start narrating a need, or ＋ → paste /
    import the manuscript. Accept the structure on the source review screen
    (`import.acceptStructure`).
 2. **Dashboard** (`dashboard.*`): confirm the project appears, "Record next"
    resolves to paragraph 1, and the storage card shows the on-device take size.
 3. **Audio setup** (`audioSetup.*`): open Audio Setup from the recording toolbar
-   and confirm the route is classified (`retailReady`/`communityReady`/`draftOnly`).
+   (`record.routeChip`) and confirm the route is classified
+   (`retailReady`/`communityReady`/`draftOnly`).
 4. **Record** (`record.transport.record`): record the two LibriVox disclaimer
    paragraphs plus several body paragraphs, using **Accept & Next**
    (`record.acceptAndNext`) and flagging at least one paragraph
    (`record.flagAndNext`).
-5. **Review** (`reviewList`/`player.*`): play the queue, approve the good ones,
-   pick up the flagged one (`player.pickup`), add a note (`player.addNote`).
-   Confirm a flagged paragraph lands back as `needsPickup`.
-6. **Validation** (`validateExport`, `validation.destination.librivox`): run
-   validation. The report is readable **without any Pro purchase** (validation is
-   never gated — hard constraint 5).
-7. **Export** (`export.destination.librivox`): export to Files. **No purchase
-   prompt.** The destination picker offers LibriVox and Internet Archive freely;
-   Retail shows the Pro sheet instead (that is the only gate location).
+5. **Review** (`paragraphList.filter`/`player.*`): play the queue, approve the
+   good ones, pick up the flagged one (`player.pickup`), add a note
+   (`player.addNote`). Confirm a flagged paragraph lands back as `needsPickup`.
+6. **Validation** (`validation.destination` / `validation.destination.librivox`):
+   run validation. The report is readable **without any Pro purchase**
+   (validation is never gated — hard constraint 5).
+7. **Export** (scope picker `export.scope.*`, then `validation.destination.librivox`):
+   choose the scope — a single chapter (`export.scope.chapter`) is the LibriVox
+   per-post workflow — and export to Files. **No purchase prompt.** The
+   destination picker offers LibriVox and Internet Archive freely; Retail shows
+   the Pro sheet instead (that is the only gate location).
 8. Save the exported package to Files and open it.
 
 ## Pass criteria

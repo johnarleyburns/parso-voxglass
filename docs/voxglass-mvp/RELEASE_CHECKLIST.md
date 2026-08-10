@@ -65,8 +65,9 @@ be executed on a real interface before shipping:
 
 ## Store
 
-- [ ] Screenshots for all screens shipped — `scripts/capture_studio_screenshots.sh`
-      output reviewed against the mockup set
+- [ ] Screenshots for all shipped screens reviewed against the mockup set
+      (captured on the iPhone simulator — the macOS screenshot script was
+      removed with the Studio tree in P0)
 - [ ] IAP configured (`guru.parso.voxglass.studio.pro`, $149, non-consumable),
       sandbox-tested, Family Sharing on
 - [ ] Privacy label: data not collected; audio and text stay in the user's

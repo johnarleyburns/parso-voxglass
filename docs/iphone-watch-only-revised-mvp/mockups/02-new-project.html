@@ -24,7 +24,7 @@
     </div>
 
     <div class="field-label">WHERE THE TEXT COMES FROM</div>
-    <div class="card tight" id="import.source">
+    <div class="card tight">
       <div class="list">
         <div class="list-row"><div class="radio on"></div><div class="grow"><h3>Use the need’s source text</h3><small>Project Gutenberg · verified public domain</small></div></div>
         <div class="list-row" id="import.files"><div class="radio"></div><div class="grow"><h3>A file on this iPhone</h3><small>EPUB, DOCX, Markdown, or plain text</small></div></div>
@@ -34,11 +34,11 @@
     </div>
 
     <div class="field-label">TITLE</div>
-    <input class="field" id="wizard.title" value="Hope" readonly>
+    <input class="field" id="metadata.title" value="Hope" readonly>
     <div class="field-label">AUTHOR</div>
-    <input class="field" id="wizard.author" value="Emily Brontë" readonly>
+    <input class="field" id="metadata.author" value="Emily Brontë" readonly>
     <div class="field-label">NARRATOR</div>
-    <input class="field" id="wizard.narrator" value="John Burns" readonly>
+    <input class="field" id="metadata.narrator" value="John Burns" readonly>
 
     <div class="field-label">WHERE THIS IS GOING</div>
     <div class="card tight" id="wizard.purpose">
@@ -65,16 +65,16 @@
 
     <div class="field-label">RIGHTS</div>
     <div class="card tight">
-      <div class="list-row" id="wizard.attest">
+      <div class="list-row" id="metadata.attest">
         <div class="checkbox on">✓</div>
         <div class="grow"><small>I confirm this work is in the public domain where I am publishing it, and that I will narrate it in my own voice.</small></div>
       </div>
       <div class="field-label" style="margin-top:4px">SOURCE URL</div>
-      <input class="field" id="wizard.sourceURL" value="gutenberg.org/ebooks/768" readonly>
+      <input class="field" id="metadata.sourceURL" value="gutenberg.org/ebooks/768" readonly>
       <p style="margin-top:10px" class="faint">Voxglass does not determine copyright status.</p>
     </div>
 
-    <button class="btn primary" style="margin-top:16px" id="wizard.continueToImport">Continue</button>
+    <button class="btn primary" style="margin-top:16px" id="metadata.toExport">Continue</button>
   </div>
 </div>
 

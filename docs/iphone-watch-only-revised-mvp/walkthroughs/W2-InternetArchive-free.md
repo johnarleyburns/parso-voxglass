@@ -20,7 +20,7 @@
 3. **Validation** (`validation.destination.internetArchive`): run validation.
    Note: a non-human-origin take blocks LibriVox validation but the IA lane has
    **no license check on the path** (gate G-P2).
-4. **Export** (`export.destination.internetArchive`): export to Files. **No
+4. **Export** (`validation.destination.internetArchive`): export to Files. **No
    purchase prompt.** The package contains FLAC masters + MP3 derivatives +
    checksums + checklist.
 5. Save the package and inspect it in Files.
