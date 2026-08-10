@@ -120,10 +120,9 @@ final class VoxglassWatchUITests: XCTestCase {
             waitForClock(elapsed, toAdvancePast: initialElapsed ?? 0, timeout: 20),
             "Elapsed time did not advance while Alice was playing. Initial: \(elapsed.label)"
         )
-        XCTAssertLessThan(
-            seconds(fromClock: remaining.label) ?? Int.max,
-            initialRemaining ?? Int.max,
-            "Remaining time did not decrease while Alice was playing"
+        XCTAssertTrue(
+            waitForClock(remaining, toDecreaseBelow: initialRemaining ?? Int.max, timeout: 20),
+            "Remaining time did not decrease while Alice was playing. Initial: \(remaining.label)"
         )
 
         let playPause = app.buttons[WatchAccessibilityID.npPlayPause]
@@ -230,6 +229,19 @@ final class VoxglassWatchUITests: XCTestCase {
             if element.exists,
                let current = seconds(fromClock: element.label),
                current > initial {
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        }
+        return false
+    }
+
+    private func waitForClock(_ element: XCUIElement, toDecreaseBelow initial: Int, timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if element.exists,
+               let current = seconds(fromClock: element.label),
+               current < initial {
                 return true
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.5))
