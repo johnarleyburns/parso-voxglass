@@ -211,4 +211,28 @@ import VoxglassCoreTestSupport
         #expect(!FileManager.default.fileExists(atPath: dstTmp.appendingPathComponent("Exports").path))
         #expect(!FileManager.default.fileExists(atPath: dstTmp.appendingPathComponent("Trash").path))
     }
+
+    @Test func savedCopyReimportsIntoAWorkingProject() async throws {
+        // G7 acceptance: a "Save a copy" `.voxproject` re-imports into a
+        // working project — the copy opens cleanly and the project round-trips.
+        let srcTmp = FileManager.default.temporaryDirectory.appendingPathComponent("test_savecopy_src_\(UUID().uuidString)")
+        let dstTmp = FileManager.default.temporaryDirectory.appendingPathComponent("test_savecopy_dst_\(UUID().uuidString)")
+        defer {
+            try? FileManager.default.removeItem(at: srcTmp)
+            try? FileManager.default.removeItem(at: dstTmp)
+        }
+
+        let pkg = try await ProjectPackage.create(title: "Portable", author: "A", narrator: "N", at: srcTmp, clock: SystemClock(), ids: UUIDGenerator())
+        let project = ProjectFixtures.typical()
+        let store = SQLiteProductionStore(databaseURL: pkg.databaseURL)
+        try await store.save(project)
+
+        try pkg.copy(to: dstTmp)
+
+        let reopened = try await ProjectPackage.open(dstTmp)
+        let loaded = try await SQLiteProductionStore(databaseURL: dstTmp.appendingPathComponent("project.sqlite")).load()
+        #expect(loaded.id == project.id)
+        #expect(loaded.metadata.title == project.metadata.title)
+        #expect(loaded.chapters.count == project.chapters.count)
+    }
 }

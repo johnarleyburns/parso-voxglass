@@ -89,6 +89,9 @@ import VoxglassCoreTestSupport
         let audio = metadata?["audio"] as? [String: Any]
         #expect(audio?["cbr"] as? Bool == true)
         #expect(audio?["bitrateKbps"] as? Int == 128)
+        // G12/F5: the user-chosen purpose ships in the manifest.
+        let manifestProject = metadata?["project"] as? [String: Any]
+        #expect(manifestProject?["purpose"] as? String == project.profile.purpose.rawValue)
 
         let checksums = try String(contentsOf: bundle.rootURL.appendingPathComponent("checksums.sha256"), encoding: .utf8)
         for file in chapters {

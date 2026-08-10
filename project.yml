@@ -158,6 +158,8 @@ targets:
       - VoxglassUITests
     dependencies:
       - target: Voxglass
+      - package: VoxglassCore
+        product: VoxglassCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.uitests

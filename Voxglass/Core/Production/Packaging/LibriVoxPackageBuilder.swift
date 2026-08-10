@@ -256,6 +256,7 @@ public struct LibriVoxPackageBuilder: PackageBuilder, Sendable {
         var author: String
         var narrator: String
         var language: String
+        var purpose: String
     }
 
     private struct RightsEntry: Codable {
@@ -326,7 +327,8 @@ public struct LibriVoxPackageBuilder: PackageBuilder, Sendable {
             destination: "librivox",
             project: ProjectEntry(
                 title: metadata.title, author: metadata.author,
-                narrator: metadata.narrator, language: metadata.language
+                narrator: metadata.narrator, language: metadata.language,
+                purpose: project.profile.purpose.rawValue
             ),
             rights: RightsEntry(
                 basis: rights.basis.rawValue,

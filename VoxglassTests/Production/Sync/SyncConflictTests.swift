@@ -13,7 +13,7 @@ import Testing
         let project = ProjectFixtures.librivoxReady()
         let projectName = "project-\(project.id.uuidString)"
 
-        // A competing Mac already published revision 2; our publish conflicts once.
+        // A competing phone already published revision 2; our publish conflicts once.
         let transport = FakeProductionSyncTransport()
         transport.serverRevisionOnConflict = 2
         transport.conflictOnRecord = projectName

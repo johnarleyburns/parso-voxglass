@@ -9,7 +9,7 @@ import VoxglassEncoders
 /// Identifiers: `audioSetup.classification`, `audioSetup.runTest`,
 /// `audioSetup.done`.
 struct AudioSetupView: View {
-    @Bindable var model: NarrationFlowModel
+    let capture: any AudioCapturing
     @Environment(\.dismiss) private var dismiss
 
     @State private var routeInfo: CaptureRouteInfo
@@ -18,9 +18,9 @@ struct AudioSetupView: View {
     @State private var result: RoomTestResult?
     @State private var errorText: String?
 
-    init(model: NarrationFlowModel) {
-        self.model = model
-        let info = model.capture.currentRouteInfo
+    init(capture: any AudioCapturing) {
+        self.capture = capture
+        let info = capture.currentRouteInfo
         _routeInfo = State(initialValue: info)
         _classification = State(initialValue: CaptureRouteClassifier.classify(info))
     }
@@ -230,10 +230,10 @@ struct AudioSetupView: View {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("room-test-\(UUID().uuidString).wav")
         do {
-            try await model.capture.prepare(device: nil, format: RecordingDefaults())
-            try await model.capture.startRecording(to: url)
+            try await capture.prepare(device: nil, format: RecordingDefaults())
+            try await capture.startRecording(to: url)
             try await Task.sleep(for: .seconds(10))
-            let take = try await model.capture.stopRecording()
+            let take = try await capture.stopRecording()
             let metrics = try await AudioMetricsCalculator(decoder: AVFoundationDecoder()).metrics(for: take.fileURL)
             let updated = CaptureRouteInfo(
                 transports: routeInfo.transports,

@@ -223,13 +223,31 @@ final class NarrationFlowModel {
         case gutenberg
     }
 
+    /// The §8.2 progressive-parse preview shown on the import screen: how many
+    /// chapters have been parsed so far and whether the parse finished.
+    struct ImportPreview: Equatable {
+        var chapterCount: Int
+        var isComplete: Bool
+    }
+
     var project: AudiobookProject?
     var draftTitle = ""
     var draftAuthor = ""
     var draftText = ""
+    /// The purpose the user picked on the new-project step (mockup 02
+    /// `wizard.purpose.*`, spec §2.2/§13). Informational — it does not gate
+    /// destinations — but it is persisted into the project profile, the
+    /// package manifest, and the CloudKit projection so the value the user
+    /// chose is the value that ships.
+    var draftPurpose: ProjectPurpose = .publicDomainCommunity
     var sourceURL: String?
     var importError: String?
     var isImporting = false
+    /// §8.2 progressive parse preview: how much structure has been parsed so
+    /// far, shown while the import runs so a 400-page EPUB never blocks the
+    /// screen on a full parse.
+    var importPreview: ImportPreview?
+    var importTask: Task<Void, Never>?
 
     var currentParagraphID: UUID?
     let capture: any AudioCapturing
@@ -280,6 +298,99 @@ final class NarrationFlowModel {
     var preflight: ExportPreflightResult?
     var isValidating = false
     var validationError: String?
+
+    /// P7/F1 (§13.2 step 1): the chosen export scope. The four spec'd choices
+    /// map onto `ExportScope` via `PackagingSupport.scope`, so the preflight
+    /// byte estimates and the produced package both reflect the scope the user
+    /// picked — single-section export is LibriVox's real per-post workflow.
+    var exportScopeChoice: ExportScopeSelection = .wholeBook
+    /// Chapter ids for the `.selectedChapters` choice (mockup 14 "Pick from a
+    /// list").
+    var exportSelectedChapterIDs: Set<UUID> = []
+
+    /// The chapter the user most recently worked in, for the
+    /// `.currentChapter` scope. Falls back to the first chapter so the choice
+    /// always resolves to a real section.
+    var currentExportChapterID: UUID? {
+        guard let project else { return nil }
+        if let paragraphID = currentParagraphID ?? recordNextParagraphID,
+           let chapter = project.chapters.first(where: { $0.paragraphs.contains(where: { $0.id == paragraphID }) }) {
+            return chapter.id
+        }
+        return project.chapters.first?.id
+    }
+
+    /// The `ExportScope` the current selection resolves to.
+    var exportScope: ExportScope {
+        guard let project else { return .wholeBook }
+        return PackagingSupport.scope(
+            for: exportScopeChoice,
+            project: project,
+            currentChapterID: currentExportChapterID,
+            selectedChapterIDs: exportSelectedChapterIDs
+        )
+    }
+
+    /// Whether the chosen scope resolves to at least one chapter — false when
+    /// "Selected chapters" has no picks or "Review queue range" has no flagged
+    /// paragraphs, which disables the produce button (nothing to export).
+    var exportScopeIsValid: Bool {
+        guard let project else { return false }
+        switch exportScopeChoice {
+        case .selectedChapters:
+            return project.chapters.contains { exportSelectedChapterIDs.contains($0.id) }
+        case .reviewQueue:
+            return project.chapters.contains { $0.paragraphs.contains { $0.reviewState == .flagged } }
+        default:
+            return true
+        }
+    }
+
+    /// Changes the export scope and re-runs validation so the preflight byte
+    /// estimate reflects the new scope, not the whole book (§13.2).
+    func selectExportScope(_ choice: ExportScopeSelection) {
+        guard choice != exportScopeChoice else { return }
+        exportScopeChoice = choice
+        Task { await runValidation() }
+    }
+
+    /// P9/F1 (§6.3, §13.2): hydrates every asset the chosen scope needs from
+    /// iCloud, then re-runs validation. "Hydrate all" on the export banner.
+    func hydrateAllForExport() async {
+        guard let project, let plan = preflight?.hydrationPlan, !plan.assetIDs.isEmpty else { return }
+        let report = await phoneProduction?.sync.hydrateAssets(Set(plan.assetIDs), in: project.id)
+        if let report, !report.failed.isEmpty {
+            hydrationError = "Couldn't download \(report.failed.count) recording\(report.failed.count == 1 ? "" : "s") — \(report.failed.first?.1 ?? "the iCloud copy is unavailable")."
+        } else {
+            hydrationError = nil
+        }
+        await runValidation()
+    }
+
+    /// P9/F1 (§13.2): narrows the scope to chapters whose selected takes are all
+    /// local and starts the export — "Export the local chapters" on the banner.
+    func exportLocalOnly() async {
+        guard let project else { return }
+        let assets = (try? await SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL).records()) ?? []
+        let remoteHashes = Set(assets.filter { $0.state == .remoteOnly || $0.state == .missing }.map(\.sha256))
+        let localChapterIDs = project.chapters
+            .filter { chapter in
+                chapter.paragraphs.allSatisfy { paragraph in
+                    guard let takeID = paragraph.selectedTakeID,
+                          let take = paragraph.takes.first(where: { $0.id == takeID }) else { return true }
+                    return !remoteHashes.contains(take.assetRef.sha256)
+                }
+            }
+            .map(\.id)
+        guard !localChapterIDs.isEmpty else {
+            exportError = "No chapters are fully available locally. Download them first, or choose a different scope."
+            return
+        }
+        exportScopeChoice = .selectedChapters
+        exportSelectedChapterIDs = Set(localChapterIDs)
+        await runValidation()
+        startExport()
+    }
 
     /// P7: the resumable export run state (§13.3).
     var isExporting = false
@@ -462,6 +573,15 @@ final class NarrationFlowModel {
         sourceURLText = url ?? ""
     }
 
+    /// §8.2: cancels an in-flight progressive import; the partially parsed
+    /// structure is discarded and the screen returns to the import options.
+    func cancelImport() {
+        importTask?.cancel()
+        importTask = nil
+        isImporting = false
+        importPreview = nil
+    }
+
     func importNeed(_ need: NarrationNeed) {
         pendingNeedID = need.id
         draftTitle = need.work.title
@@ -511,9 +631,12 @@ final class NarrationFlowModel {
 
     // MARK: - Segmentation
 
-    /// Builds the project: auto-inserted LibriVox intro/outro paragraphs plus
-    /// the segmented body (p02), persisted as an `AudiobookProject` in the
-    /// production store.
+    /// Builds the project: the segmented body plus the LibriVox intro/outro
+    /// disclaimers generated by the *same* `ScriptApplier` + `LibriVoxScriptGenerator`
+    /// the validation engine expects (p02). Mirrors `NarrationProjectBuilder` so
+    /// the text/need path and the file-import path produce identical disclaimer
+    /// structure — validation's `staleDisclaimerText` rule compares the recorded
+    /// paragraphs against the generator's plan, so anything else blocks export.
     func buildParagraphs() async {
         let body = Self.narrationParagraphs(from: draftText)
 
@@ -531,25 +654,15 @@ final class NarrationFlowModel {
         let author = draftAuthor.isEmpty ? "Unknown" : draftAuthor
         let reader = narrator.isEmpty ? "your name" : narrator
 
-        var paragraphs: [Paragraph] = []
-        var ordinal = 0
-        let disclaimer = "This is a LibriVox recording. All LibriVox recordings are in the public domain. For more information, or to volunteer, please visit librivox dot org."
-        paragraphs.append(paragraph(disclaimer, role: .libriVoxIntro, ordinal: ordinal, at: now))
-        ordinal += 1
-        let intro = "\(title), by \(author). Read for LibriVox by \(reader)."
-        paragraphs.append(paragraph(intro, role: .libriVoxIntro, ordinal: ordinal, at: now))
-        ordinal += 1
-        for text in body {
-            paragraphs.append(paragraph(text, role: .body, ordinal: ordinal, at: now))
-            ordinal += 1
+        var bodyParagraphs: [Paragraph] = []
+        for (index, text) in body.enumerated() {
+            bodyParagraphs.append(paragraph(text, role: .body, ordinal: index, at: now))
         }
-        let outro = "End of \(title). This recording is in the public domain."
-        paragraphs.append(paragraph(outro, role: .libriVoxOutro, ordinal: ordinal, at: now))
 
-        let chapter = ProductionChapter(id: repository.ids.next(), ordinal: 0, title: title, role: .body, paragraphs: paragraphs)
-        let project = AudiobookProject(
+        let chapter = ProductionChapter(id: repository.ids.next(), ordinal: 0, title: title, role: .body, paragraphs: bodyParagraphs)
+        var project = AudiobookProject(
             id: repository.ids.next(),
-            metadata: BookMetadata(title: title, author: author, narrator: "", language: "en-US"),
+            metadata: BookMetadata(title: title, author: author, narrator: reader, language: "en-US"),
             rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL.flatMap(URL.init(string:))),
             profile: ProductionProfile(
                 purpose: .publicDomainCommunity,
@@ -561,6 +674,13 @@ final class NarrationFlowModel {
             createdAt: now,
             modifiedAt: now
         )
+        _ = ScriptApplier().apply(
+            LibriVoxScriptGenerator().plan(for: project),
+            to: &project,
+            ids: repository.ids,
+            clock: repository.clock
+        )
+        project.profile.purpose = draftPurpose
         self.project = project
         if let needID = pendingNeedID {
             try? await repository.setNeedID(needID, for: project.id)
@@ -602,7 +722,9 @@ final class NarrationFlowModel {
         draftText = document.plainText
         draftTitle = title
         draftAuthor = author
-        project = build.project
+        var project = build.project
+        project.profile.purpose = draftPurpose
+        self.project = project
     }
 
     private func paragraph(_ text: String, role: ParagraphRole, ordinal: Int, at date: Date) -> Paragraph {
@@ -1201,6 +1323,9 @@ final class NarrationFlowModel {
         project.metadata.language = language
         project.metadata.description = descriptionText
         project.metadata.subjects = subjectsText.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+        if let url = URL(string: sourceURLText.trimmingCharacters(in: .whitespacesAndNewlines)), !sourceURLText.isEmpty {
+            project.rights.sourceURL = url
+        }
         project.modifiedAt = repository.clock.now
         self.project = project
     }
@@ -1642,9 +1767,17 @@ final class NarrationFlowModel {
 
     // MARK: - Export
 
-    /// The root directory exports are written into: `Application Support/Voxglass/Exports`.
+    /// The root directory exports are written into. Defaults to
+    /// `Application Support/Voxglass/Exports`; the UI smoke test redirects it to
+    /// a shared host path via `-uiTestExportDirectory <dir>` so it can read and
+    /// verify the produced bytes itself (the argument is inert in normal runs).
     var exportsDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "-uiTestExportDirectory"),
+           arguments.indices.contains(index + 1) {
+            return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
+        }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("Voxglass/Exports", isDirectory: true)
     }
 
@@ -1660,7 +1793,7 @@ final class NarrationFlowModel {
         let preflight = ExportPreflight.compute(
             project: project,
             assets: assets,
-            scope: .wholeBook,
+            scope: exportScope,
             freeBytes: FreeSpaceProvider.availableBytes
         )
         self.preflight = preflight
@@ -1689,7 +1822,7 @@ final class NarrationFlowModel {
         let preflight = ExportPreflight.compute(
             project: project,
             assets: assets,
-            scope: .wholeBook,
+            scope: exportScope,
             freeBytes: FreeSpaceProvider.availableBytes
         )
         return ValidationRuleEngine().evaluate(
@@ -1737,6 +1870,7 @@ final class NarrationFlowModel {
 
         let builder: any PackageBuilder
         var options = ExportOptions(
+            scope: exportScope,
             generatedAt: repository.clock.now,
             appVersion: "Voxglass \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1")"
         )
@@ -1827,8 +1961,31 @@ final class NarrationFlowModel {
         _ = project
     }
 
-    private func stripProjectGutenberg(_ text: String) -> String {
-        var t = text
+    /// P9/G7 (§4.4): "Save a copy" — copies the `.voxproject` package (render
+    /// and export caches excluded, recordings included) into the exports
+    /// directory and zips it, so the project can be backed up or moved between
+    /// devices outside iCloud. Reuses the export zipper.
+    func saveCopyOfProject() async -> URL? {
+        guard let project else { return nil }
+        let layout = repository.layout(for: project.id)
+        let fm = FileManager.default
+        let copyRoot = exportsDirectory
+            .appendingPathComponent("ProjectCopies", isDirectory: true)
+            .appendingPathComponent(layout.root.lastPathComponent, isDirectory: true)
+        try? fm.removeItem(at: copyRoot)
+        do {
+            let pkg = try await ProjectPackage.open(layout.root)
+            try pkg.copy(to: copyRoot)
+            let zipURL = exportsDirectory
+                .appendingPathComponent("\(PackagingSupport.directorySlug(project.metadata.title))-project.voxproject.zip")
+            try? fm.removeItem(at: zipURL)
+            return try ExportPackageZipper.zipContents(of: copyRoot, to: zipURL)
+        } catch {
+            return nil
+        }
+    }
+
+    private func stripProjectGutenberg(_ text: String) -> String {        var t = text
         if let range = t.range(of: "*** START OF THE PROJECT GUTENBERG EBOOK") {
             t = String(t[range.upperBound...])
         }
@@ -2100,15 +2257,35 @@ struct WorkImportView: View {
                 }
 
                 if model.isImporting {
-                    HStack(spacing: 8) {
-                        ProgressView().tint(Palette.brass)
-                        Text("Fetching…").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 8) {
+                            ProgressView().tint(Palette.brass)
+                            Text("Parsing…").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                            Spacer()
+                            if let preview = model.importPreview {
+                                Text("\(preview.chapterCount) chapter\(preview.chapterCount == 1 ? "" : "s") so far")
+                                    .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.brass)
+                            }
+                        }
+                        // §8.2: the import must be cancellable — a 400-page EPUB
+                        // parses progressively and never blocks the screen.
+                        Button("Cancel import") {
+                            model.cancelImport()
+                        }
+                        .scaledFont(size: 12, weight: .semibold)
+                        .foregroundStyle(Palette.danger)
+                        .accessibilityIdentifier("import.cancel")
                     }
+                    .padding(13)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glassSurface(cornerRadius: 14)
                     .padding(.top, 8)
                 }
                 if let error = model.importError {
                     Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger)
                 }
+
+                purposePicker
 
                 Text(LegalStrings.noCopyrightDetermination)
                     .scaledFont(size: 11)
@@ -2185,23 +2362,95 @@ struct WorkImportView: View {
         pickedFileURL = URL(fileURLWithPath: "/") // triggers the sheet
     }
 
+    /// The four-way purpose picker (mockup 02 "WHERE THIS IS GOING"). Purpose
+    /// is informational — it never gates a destination — but the choice is
+    /// persisted into the project profile, the package manifest, and the
+    /// CloudKit projection. The mockup's two free community lanes both map to
+    /// `ProjectPurpose.publicDomainCommunity`.
+    private var purposePicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("WHERE THIS IS GOING")
+                .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                .padding(.top, 6)
+            VStack(spacing: 0) {
+                purposeRow(title: "LibriVox", caption: "Free · 128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", purpose: .publicDomainCommunity)
+                VoxglassListDivider()
+                purposeRow(title: "Internet Archive", caption: "Free · FLAC masters + MP3 derivatives", id: "wizard.purpose.internetArchive", purpose: .publicDomainCommunity)
+                VoxglassListDivider()
+                purposeRow(title: "Just for me", caption: "Free · lossless WAV chapters", id: "wizard.purpose.personal", purpose: .personal)
+                VoxglassListDivider()
+                purposeRow(title: "Commercial release", caption: "ACX, Apple Books, aggregators", id: "wizard.purpose.commercial", purpose: .commercial, proChip: true)
+            }
+            .glassSurface(cornerRadius: 14)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("wizard.purpose")
+    }
+
+    private func purposeRow(title: String, caption: String, id: String, purpose: ProjectPurpose, proChip: Bool = false) -> some View {
+        let selected = model.draftPurpose == purpose
+        return Button {
+            model.draftPurpose = purpose
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                    .scaledFont(size: 16, weight: .semibold)
+                    .foregroundStyle(selected ? Palette.brass : Palette.ink3)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(title).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                            .foregroundStyle(Palette.ink)
+                        if proChip {
+                            Text("Pro")
+                                .scaledFont(size: 10, weight: .bold)
+                                .foregroundStyle(Palette.brass)
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Palette.brass.opacity(0.14), in: Capsule())
+                        }
+                    }
+                    Text(caption).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
     /// Imports a source document through `SourceImporterRegistry` and builds a
     /// multi-chapter project from it (P5: file imports keep their chapter
-    /// structure instead of being flattened).
+    /// structure instead of being flattened). Consumes the progressive parse
+    /// (§8.2): the preview updates as chapters finish and the import can be
+    /// cancelled at any time.
     private func importFile(_ url: URL) {
-        Task {
+        model.importTask?.cancel()
+        model.importTask = Task {
             model.isImporting = true
+            model.importError = nil
+            model.importPreview = nil
             defer { model.isImporting = false }
             do {
                 guard let importer = SourceImporterRegistry.importer(for: url) else {
                     model.importError = "Couldn't find an importer for that file."
                     return
                 }
-                let doc = try await importer.extract(from: url)
-                model.draftTitle = doc.title ?? ""
-                model.draftAuthor = doc.author ?? ""
-                model.setSource(url.lastPathComponent)
-                await model.buildFromDocument(doc)
+                let stream = try await importer.extractProgressively(from: url)
+                for try await update in stream {
+                    if Task.isCancelled { return }
+                    model.importPreview = NarrationFlowModel.ImportPreview(chapterCount: update.sections.count, isComplete: update.isComplete)
+                    if update.isComplete, let doc = update.completedDocument {
+                        model.draftTitle = doc.title ?? ""
+                        model.draftAuthor = doc.author ?? ""
+                        model.setSource(url.lastPathComponent)
+                        await model.buildFromDocument(doc)
+                        return
+                    }
+                }
+            } catch is CancellationError {
+                return
             } catch {
                 model.importError = "Couldn't read that file."
             }

@@ -13,6 +13,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
+    @State private var showAudioSetup = false
 
     var body: some View {
         VoxglassScreen(title: "More") {
@@ -35,6 +36,21 @@ struct SettingsView: View {
 
                 settingsGroup("Narration") {
                     NarrationProCard()
+
+                    VoxglassListDivider()
+
+                    Button {
+                        showAudioSetup = true
+                    } label: {
+                        DisclosureListRow(
+                            icon: "waveform.badge.mic",
+                            title: "Audio setup",
+                            detail: "Classify your mic and run a room test",
+                            count: nil
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("settings.audioSetup")
 
                     VoxglassListDivider()
 
@@ -115,6 +131,9 @@ struct SettingsView: View {
                 }
             }
             .padding(.top, 12)
+        }
+        .sheet(isPresented: $showAudioSetup) {
+            AudioSetupView(capture: AudioSessionCapture())
         }
     }
 

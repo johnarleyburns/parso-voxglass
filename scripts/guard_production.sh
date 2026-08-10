@@ -59,7 +59,7 @@ check_no_synthesis() {
 check_pro_gate_placement() {
   local banned='LicenseGate|\.isPro\b|ProFeature|EntitlementState'
   # §17.5 allow-list, by FILENAME.
-  local allowed='Export|Packaging|RetailMaster|Master|License|Settings|StudioEnvironment'
+  local allowed='Export|Packaging|RetailMaster|Master|License|Settings'
   local forbidden='Recording|Review|Preview|Capture|Assembly|Segment|Sync|Watch|CarPlay|Validation'
   local matches
   matches=$(find Voxglass/Core Voxglass VoxglassWatch -name '*.swift' 2>/dev/null \

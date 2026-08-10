@@ -9,6 +9,30 @@ public enum ExportScope: Sendable, Equatable, Hashable {
     case chapters([UUID])
 }
 
+// MARK: - ExportScopeSelection
+
+/// The four spec'd export scopes (§13.2 step 1, mockup 14 "WHAT TO EXPORT").
+/// Each maps onto `ExportScope` — `.wholeBook` or `.chapters([UUID])` — via
+/// `PackagingSupport.scope(for:project:currentChapterID:selectedChapterIDs:)`,
+/// so no case was added to `ExportScope` to express any of them.
+public enum ExportScopeSelection: String, Sendable, Equatable, CaseIterable, Identifiable {
+    case currentChapter
+    case selectedChapters
+    case wholeBook
+    case reviewQueue
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .currentChapter: return "This chapter"
+        case .selectedChapters: return "Selected chapters"
+        case .wholeBook: return "Whole book"
+        case .reviewQueue: return "Review queue range"
+        }
+    }
+}
+
 // MARK: - ExportOptions
 
 public struct ExportOptions: Sendable, Equatable {

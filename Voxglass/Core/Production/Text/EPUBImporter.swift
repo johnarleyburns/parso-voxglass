@@ -41,7 +41,6 @@ public struct EPUBImporter: SourceImporting {
 
         for item in opf.spine {
             let href = resolveHREF(item.1, relativeTo: opfDir)
-
             guard let xhtmlEntry = zip.entry(named: href),
                   let xhtmlData = try? zip.read(xhtmlEntry),
                   let xhtmlString = String(data: xhtmlData, encoding: .utf8) else {
@@ -81,6 +80,96 @@ public struct EPUBImporter: SourceImporting {
             warnings: warnings,
             plainText: plainTextParts.joined(separator: "\n\n")
         )
+    }
+
+    /// §8.2 progressive parse: yields an update as each spine section finishes,
+    /// so the import screen can show a live preview (chapter count) and cancel
+    /// without blocking on a 400-page EPUB. The final update carries the
+    /// completed document.
+    public func extractProgressively(from url: URL) async throws -> AsyncThrowingStream<ProgressiveImportUpdate, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let zipData = try Data(contentsOf: url)
+                    let zip = try ZipReader(data: zipData)
+                    guard let containerEntry = zip.entry(named: "META-INF/container.xml") else {
+                        let doc = ExtractedDocument(
+                            sections: [],
+                            title: url.deletingPathExtension().lastPathComponent,
+                            warnings: [ImportWarning(kind: .emptySection, message: "Not a valid EPUB")]
+                        )
+                        continuation.yield(ProgressiveImportUpdate(sections: [], isComplete: true, completedDocument: doc))
+                        continuation.finish()
+                        return
+                    }
+                    let containerXML = try zip.read(containerEntry)
+                    guard let opfPath = try? self.parseOPFPath(from: containerXML),
+                          let opfEntry = zip.entry(named: opfPath) else {
+                        let doc = ExtractedDocument(
+                            sections: [],
+                            title: url.deletingPathExtension().lastPathComponent,
+                            warnings: [ImportWarning(kind: .emptySection, message: "Not a valid EPUB")]
+                        )
+                        continuation.yield(ProgressiveImportUpdate(sections: [], isComplete: true, completedDocument: doc))
+                        continuation.finish()
+                        return
+                    }
+                    let opfXML = try zip.read(opfEntry)
+                    let opfDir = (opfPath as NSString).deletingLastPathComponent
+                    let opf = try parseOPF(opfXML)
+                    var warnings: [ImportWarning] = []
+                    var allSections: [ExtractedSection] = []
+                    var plainTextParts: [String] = []
+
+                    for item in opf.spine {
+                        if Task.isCancelled {
+                            continuation.finish()
+                            return
+                        }
+                        let href = resolveHREF(item.1, relativeTo: opfDir)
+                        guard let xhtmlEntry = zip.entry(named: href),
+                              let xhtmlData = try? zip.read(xhtmlEntry),
+                              let xhtmlString = String(data: xhtmlData, encoding: .utf8) else { continue }
+                        let parsed = parseXHTML(xhtmlString)
+                        if parsed.blocks.isEmpty {
+                            warnings.append(ImportWarning(kind: .emptySection, message: "Empty section: \(href)"))
+                            continue
+                        }
+                        let sectionPlain = parsed.blocks.map(\.text).joined(separator: "\n\n")
+                        let sourceStart = plainTextParts.map(\.count).reduce(0, +) + max(0, plainTextParts.count) * 2
+                        allSections.append(ExtractedSection(
+                            heading: parsed.heading,
+                            blocks: parsed.blocks.map { block in
+                                let start = plainTextParts.map(\.count).reduce(0, +) + max(0, plainTextParts.count) * 2
+                                return ExtractedBlock(
+                                    kind: block.kind, text: block.text,
+                                    sourceRange: start..<(start + block.text.count),
+                                    headingLevel: block.headingLevel
+                                )
+                            },
+                            sourceStart: sourceStart
+                        ))
+                        plainTextParts.append(sectionPlain)
+                        warnings.append(contentsOf: parsed.warnings)
+                        continuation.yield(ProgressiveImportUpdate(sections: allSections, isComplete: false))
+                    }
+
+                    let doc = ExtractedDocument(
+                        sections: allSections,
+                        title: opf.title,
+                        author: opf.author,
+                        language: opf.language,
+                        warnings: warnings,
+                        plainText: plainTextParts.joined(separator: "\n\n")
+                    )
+                    continuation.yield(ProgressiveImportUpdate(sections: allSections, isComplete: true, completedDocument: doc))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 
     // MARK: - XML helpers

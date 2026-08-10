@@ -1,4 +1,5 @@
 import SwiftUI
+import MediaPlayer
 import VoxglassCore
 
 /// Pushed narration-flow screens: replaces the root's "Close"/help toolbar
@@ -143,6 +144,9 @@ struct RecordView: View {
     @State private var showAudioSetup = false
     @State private var showCompare = false
     @State private var showImport = false
+    /// The media-button claim for this armed session (spec §9.3), removed on
+    /// disappear so the consumer player's claim is untouched outside recording.
+    @State private var mediaButtonToken: Any?
 
     init(model: NarrationFlowModel, paragraphID: UUID, fromReview: Bool = false) {
         self.model = model
@@ -174,9 +178,11 @@ struct RecordView: View {
             // The recording remote (mockup watch-04, §14.3) is live for the
             // whole time the record screen is on screen.
             model.beginRecordingRemoteSession()
+            claimMediaButton()
         }
         .onDisappear {
             model.endRecordingRemoteSession()
+            releaseMediaButton()
             if model.isRecording {
                 Task { await model.stopRecordingParagraph(currentParagraphID) }
             }
@@ -185,7 +191,7 @@ struct RecordView: View {
             ReviewView(model: model, isPushed: true)
         }
         .sheet(isPresented: $showAudioSetup) {
-            AudioSetupView(model: model)
+            AudioSetupView(capture: model.capture)
         }
         .sheet(isPresented: $showCompare) {
             TakeComparisonView(model: model, paragraphID: currentParagraphID)
@@ -435,6 +441,9 @@ struct RecordView: View {
             }
             .accessibilityIdentifier("record.transport.record")
             .accessibilityLabel(model.isRecording ? "Stop recording this take" : "Record a take for this paragraph")
+            // §9.3 external controls: a connected hardware keyboard records and
+            // stops with Command-R while the record screen is armed.
+            .keyboardShortcut("r", modifiers: [.command])
 
             Button {
                 model.play(currentParagraphID)
@@ -582,6 +591,33 @@ struct RecordView: View {
         case .body: return "Paragraph"
         }
     }
+
+    // MARK: - External controls (§9.3)
+
+    /// Maps the Bluetooth media button / headset stem to Record/Stop while this
+    /// record screen is armed. The consumer player's own `togglePlayPauseCommand`
+    /// target stays registered and is inert here (no consumer playback is active
+    /// during a session); removing this claim on disappear restores the player's
+    /// exclusive use of the button outside recording — listening is never
+    /// degraded.
+    private func claimMediaButton() {
+        guard mediaButtonToken == nil else { return }
+        mediaButtonToken = MPRemoteCommandCenter.shared().togglePlayPauseCommand.addTarget { [weak model] _ in
+            guard let model, let paragraphID = model.currentParagraphID else { return .commandFailed }
+            if model.isRecording {
+                Task { @MainActor in await model.stopRecordingParagraph(paragraphID) }
+            } else {
+                Task { @MainActor in await model.startRecordingParagraph(paragraphID) }
+            }
+            return .success
+        }
+    }
+
+    private func releaseMediaButton() {
+        guard let token = mediaButtonToken else { return }
+        MPRemoteCommandCenter.shared().togglePlayPauseCommand.removeTarget(token)
+        mediaButtonToken = nil
+    }
 }
 
 // MARK: - p04 Review
@@ -719,6 +755,10 @@ struct ReviewView: View {
 
             if paragraph.state == .flagged {
                 Button("Re-record ▸") {
+                    // Target the tapped paragraph: `currentParagraphID` may be
+                    // stale after the flow routed to review, and RecordView
+                    // prefers it over its `paragraphID` argument.
+                    model.currentParagraphID = paragraph.id
                     reRecordID = paragraph.id
                 }
                 .scaledFont(size: 12, weight: .bold)
@@ -1185,6 +1225,7 @@ struct MetadataView: View {
             }
             .padding(18)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(VoxglassBackground())
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
@@ -1256,10 +1297,16 @@ struct ValidateExportView: View {
     @State private var showAudioSetup = false
     @State private var showProPurchase = false
     @State private var showExportRun = false
+    @State private var showChapterPicker = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                Text("WHAT TO EXPORT")
+                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+
+                scopePicker
+
                 Text("PUBLISH TO")
                     .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
 
@@ -1337,7 +1384,7 @@ struct ValidateExportView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .disabled(!hasMetadata || !model.blockingValidationIssues.isEmpty || model.isExporting)
+                .disabled(!hasMetadata || !model.blockingValidationIssues.isEmpty || model.isExporting || !model.exportScopeIsValid)
                 .accessibilityIdentifier("validation.continueToExport")
 
                 Text("FLAC/MP3 encoding happens on this iPhone. Validation and export are free for LibriVox and Internet Archive.")
@@ -1351,7 +1398,10 @@ struct ValidateExportView: View {
             if newValue != nil { goSubmit = true }
         }
         .sheet(isPresented: $showAudioSetup) {
-            AudioSetupView(model: model)
+            AudioSetupView(capture: model.capture)
+        }
+        .sheet(isPresented: $showChapterPicker) {
+            chapterPickerSheet
         }
         .sheet(isPresented: $showProPurchase) {
             ProPurchaseView(provider: model.licenseProvider, model: model) { _ in
@@ -1385,6 +1435,154 @@ struct ValidateExportView: View {
         case .acx: return "ACX / Audible"
         case .appleBooksAggregator: return "Apple Books / Aggregator"
         default: return "LibriVox"
+        }
+    }
+
+    // MARK: Export scope (mockup 14 "WHAT TO EXPORT", §13.2 step 1)
+
+    /// The four spec'd scope choices. Every row maps onto `ExportScope` via the
+    /// model; "Selected chapters" opens the chapter picker. NOTE: no container
+    /// identifier — a plain container's id overrides every child's (SwiftUI
+    /// quirk), which would collapse `export.scope.chapter` etc. into
+    /// `export.scope`.
+    private var scopePicker: some View {
+        VStack(spacing: 0) {
+            scopeRow(.currentChapter, subtitle: currentChapterSubtitle)
+            VoxglassListDivider()
+            scopeRow(.selectedChapters, subtitle: selectedChaptersSubtitle)
+            VoxglassListDivider()
+            scopeRow(.wholeBook, subtitle: wholeBookSubtitle)
+            VoxglassListDivider()
+            scopeRow(.reviewQueue, subtitle: reviewQueueSubtitle)
+        }
+        .glassSurface(cornerRadius: 14)
+    }
+
+    private func scopeRow(_ choice: ExportScopeSelection, subtitle: String) -> some View {
+        let selected = model.exportScopeChoice == choice
+        let disabled = scopeDisabled(choice)
+        return Button {
+            if choice == .selectedChapters {
+                showChapterPicker = true
+            } else {
+                model.selectExportScope(choice)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                    .scaledFont(size: 16, weight: .semibold)
+                    .foregroundStyle(selected ? Palette.brass : Palette.ink3)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(choice.title).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                        .foregroundStyle(disabled ? Palette.ink3 : Palette.ink)
+                    Text(subtitle).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                }
+                Spacer()
+                if choice == .selectedChapters {
+                    Image(systemName: "chevron.right").scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .accessibilityIdentifier(scopeID(choice))
+    }
+
+    private func scopeDisabled(_ choice: ExportScopeSelection) -> Bool {
+        switch choice {
+        case .currentChapter: return model.project?.chapters.isEmpty ?? true
+        case .selectedChapters: return model.project?.chapters.isEmpty ?? true
+        case .reviewQueue: return !model.exportScopeIsValid
+        case .wholeBook: return false
+        }
+    }
+
+    private func scopeID(_ choice: ExportScopeSelection) -> String {
+        switch choice {
+        case .currentChapter: return "export.scope.chapter"
+        case .selectedChapters: return "export.scope.selected"
+        case .wholeBook: return "export.scope.whole"
+        case .reviewQueue: return "export.scope.queue"
+        }
+    }
+
+    private var currentChapterSubtitle: String {
+        guard let project = model.project, let id = model.currentExportChapterID,
+              let chapter = project.chapters.first(where: { $0.id == id }) else {
+            return model.project?.chapters.isEmpty == false ? "\(model.project?.chapters.first?.title ?? "Chapter 1")" : "No chapters yet"
+        }
+        return chapter.title + " · " + PackagingSupport.clockTime(chapterDuration(chapter))
+    }
+
+    private var selectedChaptersSubtitle: String {
+        let count = model.exportSelectedChapterIDs.count
+        return count == 0 ? "Pick from a list" : "\(count) chapter\(count == 1 ? "" : "s")"
+    }
+
+    private var wholeBookSubtitle: String {
+        guard let project = model.project else { return "" }
+        return "\(project.chapters.count) chapter\(project.chapters.count == 1 ? "" : "s") · " + PackagingSupport.clockTime(model.totalDuration)
+    }
+
+    private var reviewQueueSubtitle: String {
+        guard let project = model.project else { return "No flagged paragraphs" }
+        let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
+        return flagged == 0 ? "No flagged paragraphs" : "\(flagged) flagged paragraph\(flagged == 1 ? "" : "s")"
+    }
+
+    private func chapterDuration(_ chapter: ProductionChapter) -> TimeInterval {
+        chapter.paragraphs.reduce(0) { $0 + ($1.selectedTake?.duration ?? 0) }
+    }
+
+    private var chapterPickerSheet: some View {
+        NavigationStack {
+            List {
+                ForEach(model.project?.chapters ?? []) { chapter in
+                    Button {
+                        toggleChapterSelection(chapter.id)
+                    } label: {
+                        HStack {
+                            Image(systemName: model.exportSelectedChapterIDs.contains(chapter.id) ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(model.exportSelectedChapterIDs.contains(chapter.id) ? Palette.brass : Palette.ink3)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(chapter.title).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
+                                Text("\(chapter.paragraphs.count) paragraph\(chapter.paragraphs.count == 1 ? "" : "s") · " + PackagingSupport.clockTime(chapterDuration(chapter)))
+                                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                            }
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("export.chapter.\(chapter.ordinal)")
+                }
+            }
+            .navigationTitle("Selected chapters")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { showChapterPicker = false }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        showChapterPicker = false
+                        model.selectExportScope(.selectedChapters)
+                    }
+                    .accessibilityIdentifier("export.chapters.done")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func toggleChapterSelection(_ chapterID: UUID) {
+        if model.exportSelectedChapterIDs.contains(chapterID) {
+            model.exportSelectedChapterIDs.remove(chapterID)
+        } else {
+            model.exportSelectedChapterIDs.insert(chapterID)
         }
     }
 
@@ -1530,11 +1728,38 @@ struct ValidateExportView: View {
     private func hydrationBanner(_ preflight: ExportPreflightResult) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "icloud.and.arrow.down").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.brass)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("\(preflight.remoteHydrationChapterCount) chapter\(preflight.remoteHydrationChapterCount == 1 ? "" : "s") are in iCloud")
                     .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
                 Text("\(PackagingSupport.formattedBytes(preflight.hydrationPlan.byteCount)) must download before export can start.")
                     .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                HStack(spacing: 8) {
+                    Button {
+                        Task { await model.hydrateAllForExport() }
+                    } label: {
+                        Text("Download \(PackagingSupport.formattedBytes(preflight.hydrationPlan.byteCount))")
+                            .scaledFont(size: 12, weight: .bold)
+                            .foregroundStyle(NarrationPalette.espresso)
+                            .padding(.horizontal, 11).padding(.vertical, 7)
+                            .background(Palette.brass, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(model.isValidating)
+                    .accessibilityIdentifier("export.hydrateAll")
+
+                    Button {
+                        Task { await model.exportLocalOnly() }
+                    } label: {
+                        Text("Export the local chapters")
+                            .scaledFont(size: 12, weight: .bold)
+                            .foregroundStyle(Palette.brass)
+                            .padding(.horizontal, 11).padding(.vertical, 7)
+                            .overlay(Capsule().stroke(Palette.brass.opacity(0.5), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(model.isValidating || model.isExporting)
+                    .accessibilityIdentifier("export.localOnly")
+                }
             }
             Spacer()
         }
@@ -1909,6 +2134,7 @@ struct SubmitView: View {
     @Bindable var model: NarrationFlowModel
     var isPushed = false
     @Environment(\.dismiss) private var dismiss
+    @State private var projectCopyURL: URL?
 
     var body: some View {
         ScrollView {
@@ -1959,6 +2185,19 @@ struct SubmitView: View {
                         .foregroundStyle(NarrationPalette.espresso)
                 }
                 .accessibilityIdentifier("export.share")
+
+                if let projectCopyURL {
+                    ShareLink(item: projectCopyURL) {
+                        Label("Save a copy of the project", systemImage: "shippingbox")
+                            .scaledFont(size: 14, weight: .semibold)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Palette.ink2.opacity(0.08), in: RoundedRectangle(cornerRadius: 13))
+                            .overlay(RoundedRectangle(cornerRadius: 13).stroke(Palette.hairline, lineWidth: 1))
+                            .foregroundStyle(Palette.ink2)
+                    }
+                    .accessibilityIdentifier("project.saveCopy")
+                }
 
                 if model.exportRunRecord != nil {
                     Button {
@@ -2022,6 +2261,12 @@ struct SubmitView: View {
             .padding(18)
         }
         .background(VoxglassBackground())
+        .task {
+            // §4.4 "Save a copy": prepare the zipped .voxproject package once.
+            if projectCopyURL == nil {
+                projectCopyURL = await model.saveCopyOfProject()
+            }
+        }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }

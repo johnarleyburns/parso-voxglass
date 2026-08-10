@@ -170,6 +170,37 @@ import VoxglassCoreTestSupport
         #expect(doc.sections.isEmpty)
         #expect(!doc.warnings.isEmpty)
     }
+
+    @Test func progressiveParseYieldsPreviewBeforeCompletion() async throws {
+        // §8.2: the progressive stream must expose chapter structure before the
+        // parse finishes, and its completed result must match the synchronous
+        // `extract`.
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("epub-prog-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let url = try ImportFixtures.makeEPUB(in: dir)
+        let importer = EPUBImporter()
+        let expected = try await importer.extract(from: url)
+
+        var updates: [ProgressiveImportUpdate] = []
+        let stream = try await importer.extractProgressively(from: url)
+        for try await update in stream {
+            updates.append(update)
+        }
+
+        // The fixture has two spine items: at least one intermediate preview
+        // update is yielded before the final complete one.
+        #expect(updates.count >= 2)
+        #expect(updates.dropLast().allSatisfy { !$0.isComplete })
+        #expect(updates.last?.isComplete == true)
+
+        let final = try #require(updates.last?.completedDocument)
+        #expect(final.sections.count == expected.sections.count)
+        #expect(final.title == expected.title)
+        #expect(final.author == expected.author)
+        #expect(final.plainText == expected.plainText)
+    }
 }
 
 @Suite struct DOCXImporterTests {

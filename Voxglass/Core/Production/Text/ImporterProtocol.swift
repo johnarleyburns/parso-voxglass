@@ -6,6 +6,54 @@ public protocol SourceImporting: Sendable {
     func extract(from url: URL) async throws -> ExtractedDocument
 }
 
+/// A snapshot of a progressive parse (spec §8.2): large documents parse
+/// incrementally, with a preview available before the parse completes, and the
+/// import screen must never block on a full parse. Importers that can stream
+/// (EPUB, whose spine items parse one at a time) yield an update per unit; the
+/// final update carries the completed document. Simpler importers inherit the
+/// single-update default.
+public struct ProgressiveImportUpdate: Sendable, Equatable {
+    /// Sections fully parsed so far.
+    public var sections: [ExtractedSection]
+    /// True on the final update, which carries `completedDocument`.
+    public var isComplete: Bool
+    /// The finished document on the final update.
+    public var completedDocument: ExtractedDocument?
+
+    public init(
+        sections: [ExtractedSection],
+        isComplete: Bool,
+        completedDocument: ExtractedDocument? = nil
+    ) {
+        self.sections = sections
+        self.isComplete = isComplete
+        self.completedDocument = completedDocument
+    }
+}
+
+public extension SourceImporting {
+    /// Default streaming implementation: one update with the completed
+    /// document. Importers that can parse progressively override this.
+    func extractProgressively(from url: URL) async throws -> AsyncThrowingStream<ProgressiveImportUpdate, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let document = try await extract(from: url)
+                    continuation.yield(ProgressiveImportUpdate(
+                        sections: document.sections,
+                        isComplete: true,
+                        completedDocument: document
+                    ))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+}
+
 public struct ExtractedDocument: Sendable, Equatable {
     public var sections: [ExtractedSection]
     public var title: String?

@@ -118,6 +118,15 @@ else
 fi
 
 # ──────────────────────────────────────────────────────────────
+# G-5 probe: CloudKit in the watch target (spec G-W1 / R-7).
+# ──────────────────────────────────────────────────────────────
+probe="VoxglassWatch/Production/ProbeG5.swift"
+plant "$probe" "import CloudKit"
+expect_guard_fails 5 "CloudKit import in VoxglassWatch"
+unplant "$probe"
+expect_guard_passes "watch CloudKit isolation probe"
+
+# ──────────────────────────────────────────────────────────────
 # G-7 probe: bare UUID() in Core/Production/Domain.
 # ──────────────────────────────────────────────────────────────
 probe="Voxglass/Core/Production/Domain/ProbeG7.swift"

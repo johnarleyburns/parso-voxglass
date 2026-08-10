@@ -3,19 +3,23 @@ import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
 
-/// Accessibility audit (spec §12 / §22.1). The identifier registry in the spec
-/// is the normative list of every interactive control across the production
-/// surfaces. These tests keep the registry honest in three ways:
+/// Accessibility audit (revised MVP §15.3 rule 2). The mockup HTML `id`
+/// attributes are the normative identifier contract — index.html states that
+/// "HTML `id` attributes on interactive elements are the `.accessibilityIdentifier`
+/// values the implementation must use". These tests keep the two in sync:
 ///
-/// 1. Every registry identifier resolves to a real control in the source
-///    (exact string match, or prefix match for template patterns like
-///    `record.take.<n>`), or is a documented absence whose control the MVP
-///    implementation does not ship.
+/// 1. Every mockup `id` resolves to a real control in the app source (exact
+///    string match, or template-prefix match for patterns like
+///    `needs.card.<slug>`), or is explicitly pending a named fix stage.
 /// 2. The identifiers the UI smoke tests key on can never be renamed
 ///    silently — they are the contract between the test and the app.
-/// 3. Every identifier used in the new surfaces is well-formed
-///    (`area.segment.segment`, lowercase, no spaces) so VoiceOver and the
-///    XCUITest `accessibilityIdentifier` lookups keep working.
+/// 3. Every identifier in the production surfaces and the mockups is
+///    well-formed (`area.segment.segment`, lowercase, no spaces).
+///
+/// This replaces the Studio-era §22.1 hand-copied registry, which is exactly
+/// what let the identifier drift go unnoticed while the old suite stayed green
+/// (GAP_ANALYSIS G1). Parsing the mockups means a changed mockup id without a
+/// matching app change fails here.
 @Suite struct AccessibilityAuditTests {
 
     enum Area: String, CaseIterable {
@@ -25,77 +29,18 @@ import VoxglassCoreTestSupport
         case carPlay = "Voxglass/Core/CarPlay"
     }
 
-    struct Entry {
-        let id: String
-        let area: Area
-        init(_ id: String, _ area: Area) { self.id = id; self.area = area }
-    }
-
-    // MARK: - The §22.1 registry (verbatim, template suffixes normalized)
-
-    private static let iphoneRegistry: [String] = [
-        "shelf.myProductions", "production.",
-        "detail.playWholeBook", "detail.reviewFlagged", "detail.mode.", "detail.chapter.",
-        "player.flag", "player.approve", "player.pickup", "player.addNote", "player.autoAdvance",
-        "player.previousParagraph", "player.nextParagraph", "player.skipBack", "player.skipForward", "player.queue",
-        "paragraphList.filter.", "paragraphList.row.", "paragraphList.playSelected",
-        "queueBuilder.predicate.", "queueBuilder.autoAdvance", "queueBuilder.skipApproved",
-        "queueBuilder.downloadToWatch", "queueBuilder.start",
-        "note.category.", "note.text", "note.dictate", "note.save", "note.cancel",
-        "sync.checkForUpdates", "sync.downloadAll", "sync.removeAudio", "sync.refreshWatch", "sync.pending",
-        "dashboard.recordNext", "dashboard.flagged", "dashboard.pickups", "dashboard.drift",
-        "dashboard.startReviewQueue", "dashboard.storage", "dashboard.manageStorage",
-        "dashboard.script", "dashboard.assemble", "dashboard.metadata", "dashboard.validate", "dashboard.chapter.",
-        "script.filter", "script.filter.all", "script.filter.drift", "script.filter.unrecorded", "script.row.",
-        "script.inspector", "script.inspector.text", "script.inspector.direction", "script.inspector.pronunciation",
-        "script.inspector.splitHere", "script.inspector.mergeNext", "script.inspector.save",
-        "record.take.compare", "record.take.import",
-        "compare.takeA", "compare.takeA.play", "compare.takeA.inContext",
-        "compare.takeB", "compare.takeB.play", "compare.takeB.inContext",
-        "compare.matchedLoudness", "compare.useTakeA", "compare.useTakeB", "compare.done",
-        "importAudio.pick", "importAudio.trashOriginal", "importAudio.mode",
-        "importAudio.mode.silence", "importAudio.mode.sequential", "importAudio.mode.whole",
-        "importAudio.origin", "importAudio.origin.selfRecorded", "importAudio.origin.humanExternal",
-        "importAudio.origin.aiImported", "importAudio.origin.unknown", "importAudio.start", "importAudio.done",
-        "assemble.sceneGap", "assemble.roomTone", "assemble.trimSilence", "assemble.normalise",
-        "assemble.renderAll", "assemble.cancelRender", "assemble.clearCache", "assemble.continue",
-        "assemble.rendering", "assemble.renderProgress", "assemble.preflight", "assemble.chapter.",
-        "validation.destination", "validation.destination.librivox", "validation.destination.internetArchive",
-        "validation.issue.needsPickup", "validation.issue.assetRemoteOnly", "validation.issue.routeNotRetailReady",
-        "validation.issue.backupNotVerified", "validation.issue.drift", "validation.issue.artwork",
-        "validation.continueToExport", "export.evictAfterSave", "exportRun.step",
-    ]
-
-    private static let watchRegistry: [String] = [
-        "watch.production.", "watch.reviewFlagged", "watch.queue.", "watch.continue",
-        "watch.player.flag", "watch.player.approve", "watch.player.pickup", "watch.player.previous", "watch.player.next",
-        "watch.player.autoNext", "watch.paragraphText", "watch.confirmation.approved", "watch.confirmation.flagged",
-        "watch.confirmation.pickup", "watch.playNext", "watch.dictate", "watch.dictation.category.",
-        "watch.dictation.save", "watch.dictation.redictate", "watch.sync.status", "watch.offline.start",
-        "watch.offline.remove",
-    ]
-
-    private static let carPlayRegistry: [String] = [
-        "carplay.tab.", "carplay.production.", "carplay.queue.",
-        "carplay.approve", "carplay.pickup", "carplay.keepFlagged", "carplay.playNext", "carplay.undo",
-        "carplay.settings.autoAdvance", "carplay.settings.playContext", "carplay.settings.audioConfirmations",
-    ]
-
-    /// Registry entries whose controls the MVP implementation does not ship,
-    /// each with the reason (kept truthful; adding the control requires
-    /// removing the row here).
-    private static let documentedAbsences: [String: String] = [
-        "note.dictate": "dictation is a watch-only affordance",
-        "carplay.playNext": "CPAlertTemplate actions expose no identifiers",
-        "carplay.undo": "CPAlertTemplate actions expose no identifiers",
+    /// Directories the phone mockup ids must resolve in: the narration
+    /// production surface plus Settings (mockup 15's `settings.*` rows live in
+    /// `Features/Settings`, outside the production area).
+    private static let phoneMockupSources = [
+        "Voxglass/Features/Production",
+        "Voxglass/Features/Settings",
     ]
 
     // MARK: - Sources under audit
 
-    private static func sourceFiles(in area: Area) -> [String] {
-        let root = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent() // repo root
-        let areaURL = root.appendingPathComponent(area.rawValue)
+    private static func sourceFiles(in directory: String) -> [String] {
+        let areaURL = repositoryRoot().appendingPathComponent(directory)
         guard let enumerator = FileManager.default.enumerator(
             at: areaURL,
             includingPropertiesForKeys: nil,
@@ -107,34 +52,80 @@ import VoxglassCoreTestSupport
         }
     }
 
+    private static func repositoryRoot() -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    }
+
     private static func areaContains(_ area: Area, _ fragment: String) -> Bool {
-        sourceFiles(in: area).contains { $0.contains("\"\(fragment)") }
+        sourceFiles(in: area.rawValue).contains { $0.contains("\"\(fragment)") }
+    }
+
+    // MARK: - Mockup parsing
+
+    private struct MockupEntry: CustomStringConvertible {
+        let file: String
+        let id: String
+        var description: String { "\(file): \(id)" }
+    }
+
+    private static func mockupEntries() -> [MockupEntry] {
+        let dir = repositoryRoot()
+            .appendingPathComponent("docs/iphone-watch-only-revised-mvp/mockups")
+        guard let enumerator = FileManager.default.enumerator(
+            at: dir,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+        var entries: [MockupEntry] = []
+        while let url = enumerator.nextObject() as? URL {
+            guard url.pathExtension == "html", let content = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            let file = url.lastPathComponent
+            for match in content.matches(of: #/id="([^"]+)"/#) {
+                entries.append(MockupEntry(file: file, id: String(match.output.1)))
+            }
+        }
+        return entries
+    }
+
+    /// A mockup id resolves when the source contains it literally, or contains a
+    /// template whose static prefix the id instantiates (`needs.card.hope` ←
+    /// `"needs.card.\(needSlug(need))"`). `watch-` pages resolve against the
+    /// watch surface (including `ProductionWatchAccessibility` constants); all
+    /// other pages against the phone production + settings surfaces.
+    private static func identifierResolves(_ entry: MockupEntry) -> Bool {
+        let dirs = entry.file.hasPrefix("watch-") ? ["VoxglassWatch"] : phoneMockupSources
+        for directory in dirs {
+            let sources = sourceFiles(in: directory)
+            if sources.contains(where: { $0.contains("\"\(entry.id)") }) { return true }
+            for source in sources {
+                for match in source.matchingStrings(of: #/"[a-z][a-zA-Z0-9.-]*\.\\\(/#) {
+                    let prefix = match.dropFirst().dropLast(2) // drop the quote and the `\(`
+                    if entry.id.hasPrefix(prefix) { return true }
+                }
+            }
+        }
+        return false
     }
 
     // MARK: - Tests
 
-    @Test func registryIdentifiersResolveInPhoneSource() {
-        let missing = AccessibilityAuditTests.iphoneRegistry.filter { id in
-            guard Self.documentedAbsences[id] == nil else { return false }
-            return !Self.areaContains(.iphone, id)
-        }
-        #expect(missing.isEmpty, "iPhone identifiers missing from source: \(missing)")
+    @Test func mockupIdentifiersResolveInAppSource() {
+        let entries = Self.mockupEntries()
+        let unresolved = entries.filter { !Self.identifierResolves($0) }
+        #expect(
+            unresolved.isEmpty,
+            "Mockup identifiers the app does not ship (D-G1: mockups follow the app): \(unresolved)"
+        )
+        #expect(!entries.isEmpty, "No mockup ids parsed — the mockup directory is the contract")
     }
 
-    @Test func registryIdentifiersResolveInWatchSource() {
-        let missing = AccessibilityAuditTests.watchRegistry.filter { id in
-            guard Self.documentedAbsences[id] == nil else { return false }
-            return !Self.areaContains(.watch, id)
-        }
-        #expect(missing.isEmpty, "Watch identifiers missing from source: \(missing)")
-    }
-
-    @Test func registryIdentifiersResolveInCarPlaySource() {
-        let missing = AccessibilityAuditTests.carPlayRegistry.filter { id in
-            guard Self.documentedAbsences[id] == nil else { return false }
-            return !Self.areaContains(.carPlay, id) && !Self.areaContains(.phoneCarPlay, id)
-        }
-        #expect(missing.isEmpty, "CarPlay identifiers missing from source: \(missing)")
+    @Test func mockupIdentifiersAreWellFormed() {
+        let pattern = #/^[a-z][a-zA-Z0-9-]*(?:\.[a-zA-Z0-9-]+)+$/#
+        let malformed = Self.mockupEntries()
+            .map(\.id)
+            .filter { $0.wholeMatch(of: pattern) == nil }
+        #expect(malformed.isEmpty, "Malformed mockup identifiers: \(malformed)")
     }
 
     @Test func smokePathIdentifiersAreNeverRenamed() {
@@ -155,7 +146,7 @@ import VoxglassCoreTestSupport
         let pattern = #/^[a-z][a-zA-Z0-9-]*(?:\.[a-zA-Z0-9-]+)+$/#
         var offenders: [String] = []
         for area in Area.allCases {
-            for source in Self.sourceFiles(in: area) {
+            for source in Self.sourceFiles(in: area.rawValue) {
                 for match in source.matchingStrings(of: #/"[a-z]+\.[a-zA-Z0-9.-]+"/#) {
                     let id = match.dropFirst().dropLast()
                     if id.wholeMatch(of: pattern) == nil {

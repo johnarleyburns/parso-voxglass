@@ -122,6 +122,7 @@
 		7DB5CC2B3BF0575DBC9072D6 /* WatchSegmentPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA03C6CBCA75C6CEDDD744DC /* WatchSegmentPlayer.swift */; };
 		7EC439A601E4836960F68EE5 /* WatchReviewConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDFB7EAA0868C2F31B9A628 /* WatchReviewConfirmationView.swift */; };
 		7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */; };
+		80A80266C5F84B32A0F214B2 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CD3C1E4D608137C5EB95024 /* VoxglassCore */; };
 		820D00B93DC516BA64E2AD9A /* WatchConnectivityTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26154085AE1966AEB526A2CE /* WatchConnectivityTransport.swift */; };
 		846BF99F1EBD8A2AB2914127 /* CarPlayCues in Resources */ = {isa = PBXBuildFile; fileRef = 17E06DEE185B6A8309E3F8BA /* CarPlayCues */; };
 		8645A692BC33932A36BAB264 /* your_invisible_power_2104_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6F0D99DCD6D4A6A80BC79732 /* your_invisible_power_2104_librivox.jpg */; };
@@ -573,6 +574,14 @@
 				AF037E9CC64723CFEAB0E678 /* WatchConnectivity.framework in Frameworks */,
 				A787A01E2BC926D7A17297CA /* UniformTypeIdentifiers.framework in Frameworks */,
 				E9377FC490F1E5406F211C28 /* libsqlite3.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CD2CFB05A0B81E5022E80313 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				80A80266C5F84B32A0F214B2 /* VoxglassCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1101,6 +1110,7 @@
 			buildConfigurationList = 07ADB34AF3B7FBF0A72A444D /* Build configuration list for PBXNativeTarget "VoxglassUITests" */;
 			buildPhases = (
 				ACADA05FCB1AEFA97EAF768F /* Sources */,
+				CD2CFB05A0B81E5022E80313 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1109,6 +1119,7 @@
 			);
 			name = VoxglassUITests;
 			packageProductDependencies = (
+				2CD3C1E4D608137C5EB95024 /* VoxglassCore */,
 			);
 			productName = VoxglassUITests;
 			productReference = 502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */;
@@ -1896,6 +1907,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		2CAA5CA27C7FB6ED43B55A2A /* VoxglassCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoxglassCore;
+		};
+		2CD3C1E4D608137C5EB95024 /* VoxglassCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassCore;
 		};

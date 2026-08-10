@@ -81,6 +81,44 @@ public enum PackagingSupport {
         }
     }
 
+    /// Maps one of the four spec'd export choices (§13.2) onto `ExportScope`.
+    /// "Review queue range" resolves to the chapters that contain flagged
+    /// paragraphs via the same `ReviewQueueResolver` the review screen uses, so
+    /// the export wizard and the review queue agree about what is in scope.
+    public static func scope(
+        for selection: ExportScopeSelection,
+        project: AudiobookProject,
+        currentChapterID: UUID?,
+        selectedChapterIDs: Set<UUID>
+    ) -> ExportScope {
+        switch selection {
+        case .wholeBook:
+            return .wholeBook
+        case .currentChapter:
+            if let currentChapterID, project.chapters.contains(where: { $0.id == currentChapterID }) {
+                return .chapters([currentChapterID])
+            }
+            if let first = project.chapters.first {
+                return .chapters([first.id])
+            }
+            return .wholeBook
+        case .selectedChapters:
+            let ids = project.chapters.filter { selectedChapterIDs.contains($0.id) }.map(\.id)
+            return ids.isEmpty ? .wholeBook : .chapters(ids)
+        case .reviewQueue:
+            let flagged = Set(
+                ReviewQueueResolver().resolve(
+                    ReviewQueueDefinition(projectID: project.id, predicate: .flagged, order: .documentOrder),
+                    in: project
+                )
+            )
+            let ids = project.chapters
+                .filter { chapter in chapter.paragraphs.contains { flagged.contains($0.id) } }
+                .map(\.id)
+            return ids.isEmpty ? .wholeBook : .chapters(ids)
+        }
+    }
+
     /// Collects metrics for every selected take, keyed by take ID — the shape
     /// `ValidationRuleEngine.evaluate` expects (see `ValidationModel.evaluate`).
     public static func selectedTakeMetrics(_ project: AudiobookProject) -> [UUID: AudioQualityMetrics] {
