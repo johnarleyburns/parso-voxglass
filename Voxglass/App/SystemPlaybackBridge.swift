@@ -29,6 +29,9 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         currentArtwork = Self.fallbackArtwork
         configureRemoteCommands()
         configureNotifications()
+        if ProcessInfo.processInfo.arguments.contains("-uiTestExerciseArtworkOffMain") {
+            exerciseArtworkHandlerOffMain()
+        }
     }
 
     // MARK: - PlaybackPlatformBridge
@@ -44,7 +47,7 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
 
     func setArtwork(_ imageData: Data?) {
         if let imageData, let image = UIImage(data: imageData) {
-            currentArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            currentArtwork = Self.makeArtwork(image: image, bounds: image.size)
         } else {
             currentArtwork = Self.fallbackArtwork
         }
@@ -107,8 +110,40 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
                 symbol.draw(at: origin)
             }
         }
-        return MPMediaItemArtwork(boundsSize: size) { _ in image }
+        return SystemPlaybackBridge.makeArtwork(image: image, bounds: size)
     }()
+
+    /// Builds an `MPMediaItemArtwork` whose requestHandler is explicitly
+    /// nonisolated. MediaPlayer invokes the handler from one of its own
+    /// background queues while rendering Now Playing, so a contextually
+    /// `@MainActor` handler (inferred from this `@MainActor` class) traps the
+    /// executor assertion on device. The handler only returns a pre-rendered
+    /// image, so it has no actor dependency and can safely run off-main.
+    private nonisolated static func makeArtwork(image: UIImage, bounds: CGSize) -> MPMediaItemArtwork {
+        MPMediaItemArtwork(boundsSize: bounds) { _ in image }
+    }
+
+    /// Reproduces MediaPlayer's device behavior for the simulator smoke test.
+    /// On a physical device `MPNowPlayingInfoCenter` renders Now Playing artwork
+    /// by invoking the `MPMediaItemArtwork` requestHandler from one of its own
+    /// background queues; that off-main call traps a contextually `@MainActor`
+    /// handler and kills the app on launch (TestFlight crash). The iPhone smoke
+    /// test launches with `-uiTestExerciseArtworkOffMain` so the same off-main
+    /// call runs on the simulator, where MediaPlayer never renders Now Playing
+    /// and therefore would never exercise this path on its own.
+    private func exerciseArtworkHandlerOffMain() {
+        let artwork = ArtworkBox(currentArtwork)
+        DispatchQueue.global(qos: .utility).async {
+            _ = artwork.artwork?.image(at: CGSize(width: 128, height: 128))
+        }
+    }
+
+    /// Wraps the non-Sendable `MPMediaItemArtwork` so the `@Sendable` background
+    /// closure can reach it (same pattern as `ObserverRegistry`).
+    private final class ArtworkBox: @unchecked Sendable {
+        let artwork: MPMediaItemArtwork?
+        init(_ artwork: MPMediaItemArtwork?) { self.artwork = artwork }
+    }
 
     // MARK: - Remote command center
 

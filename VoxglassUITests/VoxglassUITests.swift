@@ -30,14 +30,28 @@ final class VoxglassUITests: XCTestCase {
             "-uiTestFakeCapture",
             // Seeds one previewable production (WP-G) and keeps the G-8 guard
             // honest that no UI test runs without a declared test environment.
-            "-uiTestSeed", "onePreviewProject"
+            "-uiTestSeed", "onePreviewProject",
+            // On a real device MediaPlayer invokes the MPMediaItemArtwork
+            // requestHandler from a background queue; a contextually @MainActor
+            // handler traps there and kills the app on launch. This hook runs
+            // that same off-main call on the simulator, where MediaPlayer never
+            // renders Now Playing and would otherwise never exercise the path.
+            "-uiTestExerciseArtworkOffMain"
         ]
         app.launch()
 
-        // Boots into the Listen tab.
+        // Boots into the Listen tab. The artwork requestHandler was already
+        // invoked from a background queue during launch, so this proves the
+        // app survived the off-main call that crashes contextually-isolated
+        // handlers on device (TestFlight startup crash).
         XCTAssertTrue(
             app.staticTexts["Recommended for You"].waitForExistence(timeout: 15),
-            "App did not boot into the Listen tab"
+            "App did not boot into the Listen tab — artwork requestHandler may have crashed off-main.\n\(app.debugDescription)"
+        )
+        XCTAssertEqual(
+            app.state,
+            .runningForeground,
+            "App terminated after the off-main artwork requestHandler call (executor isolation trap)."
         )
 
         // Every tab is reachable and renders a stable anchor without crashing.

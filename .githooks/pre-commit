@@ -1,12 +1,12 @@
 #!/bin/bash
-# .githooks/pre-commit — UI smoke-test gate.
+# .githooks/pre-commit — the full verification gate.
 # Install with: git config core.hooksPath .githooks
 #
-# Runs the local UI smoke tests (scripts/test.sh — phone + watch simulators).
-# The UI suite moved here from pre-push: it takes minutes, and a long-running
-# pre-push hook over SSH made GitHub drop the push connection. Swift test
-# (scripts/test_logic.sh) runs on every push instead, so a commit that is never
-# pushed costs nothing extra and every pushed commit is still logic-tested.
+# Runs the wiring guards (scripts/guard_wiring.sh), the logic suites
+# (scripts/test_logic.sh), and the local UI smoke tests (scripts/test.sh —
+# phone + watch simulators) on every commit. Push runs no tests at all (see
+# pre-push): CI verifies pushed commits with logic tests, the Swift 6 contract
+# guard, and iOS/watchOS builds.
 
 set -euo pipefail
 
@@ -14,7 +14,8 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 echo ""
-echo "=== pre-commit guard (UI smoke tests) ==="
+echo "=== pre-commit guard (wiring guards + logic + UI smoke tests) ==="
 echo ""
+bash scripts/guard_wiring.sh
 bash scripts/test_logic.sh
 bash scripts/test.sh
