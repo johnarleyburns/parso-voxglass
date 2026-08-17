@@ -96,12 +96,6 @@ struct GlassTabBar: View {
                     .foregroundStyle(selection == tab ? Palette.brass : Palette.ink3)
                     .frame(minHeight: 48)
                     .frame(maxWidth: .infinity)
-                    .background {
-                        if selection == tab {
-                            Capsule()
-                                .fill(Palette.brass.opacity(0.14))
-                        }
-                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(label)

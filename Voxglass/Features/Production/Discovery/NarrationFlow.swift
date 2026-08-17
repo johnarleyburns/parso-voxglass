@@ -256,7 +256,11 @@ final class NarrationFlowModel {
     var level: Float = 0
     var currentTake: FlowTake?
     var playbackPlayer: AVAudioPlayer?
+    var isPlayingTake = false
+    var playbackPosition: TimeInterval = 0
+    var playbackDuration: TimeInterval = 0
     private var levelTask: Task<Void, Never>?
+    private var playbackTask: Task<Void, Never>?
 
     /// The route class of the current recording, snapshotted at record start
     /// (spec §7.1). Persisted on the take so `routeNotRetailReady` is computed
@@ -283,12 +287,14 @@ final class NarrationFlowModel {
     private var remoteLevelDBFS: Float = -60
 
     var assembly = AssemblySettings()
-    var narrator = ""
+    var narrator = UserDefaults.standard.string(forKey: "voxglass.narratorName") ?? ""
+    var needsNarratorPrompt = false
     var language = "English"
     var descriptionText = ""
     var subjectsText = ""
     var sourceURLText = ""
     var exportBundle: NarrationExportBundle?
+    var artworkData: Data?
 
     /// P7: the live validation report for the selected export destination
     /// (§12). Driven by the real rule engine with the export preflight context,
@@ -523,6 +529,37 @@ final class NarrationFlowModel {
         project?.rights.isAttested ?? false
     }
 
+    func saveNarratorName(_ name: String) {
+        let value = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        narrator = value
+        UserDefaults.standard.set(value, forKey: "voxglass.narratorName")
+        if var project {
+            project.metadata.narrator = value
+            project.modifiedAt = repository.clock.now
+            self.project = project
+            Task { await persist() }
+        }
+        needsNarratorPrompt = false
+    }
+
+    func setArtwork(_ data: Data) async {
+        guard var project else { return }
+        do {
+            let ref = try await repository.fileStore(for: project.id).put(data, ext: "jpg", contentType: "image/jpeg", subdirectory: .artwork)
+            project.metadata.coverRef = ref
+            project.modifiedAt = repository.clock.now
+            self.project = project
+            artworkData = data
+            await persist()
+        } catch { }
+    }
+
+    func loadArtwork() async {
+        guard let project, let ref = project.metadata.coverRef else { return }
+        artworkData = try? await repository.fileStore(for: project.id).data(for: ref)
+    }
+
     private static func flowParagraph(_ paragraph: Paragraph, notes: [UUID: String], remoteBytesBySHA: [String: Int64]) -> FlowParagraph {
         FlowParagraph(
             id: paragraph.id,
@@ -652,7 +689,7 @@ final class NarrationFlowModel {
         let now = repository.clock.now
         let title = draftTitle.isEmpty ? "This work" : draftTitle
         let author = draftAuthor.isEmpty ? "Unknown" : draftAuthor
-        let reader = narrator.isEmpty ? "your name" : narrator
+        let reader = narrator.trimmingCharacters(in: .whitespacesAndNewlines)
 
         var bodyParagraphs: [Paragraph] = []
         for (index, text) in body.enumerated() {
@@ -1317,9 +1354,11 @@ final class NarrationFlowModel {
     /// fields into the project (p06).
     func attest() {
         guard var project else { return }
+        let reader = narrator.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !reader.isEmpty else { needsNarratorPrompt = true; return }
         project.rights.attestedAt = repository.clock.now
-        project.rights.attestedBy = narrator.isEmpty ? "narrator" : narrator
-        project.metadata.narrator = narrator
+        project.rights.attestedBy = reader
+        project.metadata.narrator = reader
         project.metadata.language = language
         project.metadata.description = descriptionText
         project.metadata.subjects = subjectsText.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
@@ -1328,6 +1367,8 @@ final class NarrationFlowModel {
         }
         project.modifiedAt = repository.clock.now
         self.project = project
+        UserDefaults.standard.set(reader, forKey: "voxglass.narratorName")
+        Task { await persist() }
     }
 
     // MARK: - Levels
@@ -1380,8 +1421,37 @@ final class NarrationFlowModel {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? session.setActive(true)
+        playbackTask?.cancel()
+        playbackPlayer?.stop()
         playbackPlayer = try? AVAudioPlayer(contentsOf: url)
+        playbackPlayer?.prepareToPlay()
+        playbackDuration = playbackPlayer?.duration ?? 0
+        playbackPosition = 0
         playbackPlayer?.play()
+        isPlayingTake = true
+        playbackTask = Task { @MainActor [weak self] in
+            while let self, !Task.isCancelled, self.playbackPlayer?.isPlaying == true {
+                self.playbackPosition = self.playbackPlayer?.currentTime ?? 0
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.playbackPosition = self.playbackPlayer?.currentTime ?? self.playbackDuration
+            self.isPlayingTake = false
+        }
+    }
+
+    func togglePlayback(_ id: UUID) {
+        guard let player = playbackPlayer, isPlayingTake else { play(id); return }
+        player.pause()
+        isPlayingTake = false
+        playbackPosition = player.currentTime
+    }
+
+    func stopPlayback() {
+        playbackTask?.cancel()
+        playbackPlayer?.stop()
+        isPlayingTake = false
+        playbackPosition = 0
     }
 
     // MARK: - Hydrate-then-play (spec §6.3)
@@ -1781,6 +1851,10 @@ final class NarrationFlowModel {
             .appendingPathComponent("Voxglass/Exports", isDirectory: true)
     }
 
+    var completedNarrationsDirectory: URL {
+        exportsDirectory.deletingLastPathComponent().appendingPathComponent("My Completed Narrations", isDirectory: true)
+    }
+
     /// P7 (§12, §13.2): runs the full rule engine for `validationDestination`
     /// with the hydration + storage preflight context fed in, so the screen and
     /// the export pipeline agree about what blocks the run.
@@ -1886,8 +1960,9 @@ final class NarrationFlowModel {
             options.writeValidationReport = true
             options.retailSample = defaultRetailSample()
         case .personalMaster:
-            exportError = "Lossless personal masters aren't wired into this build yet."
-            return
+            builder = RetailMasterPackageBuilder(destination: .personalMaster)
+            options.applyMastering = false
+            options.writeValidationReport = true
         }
         let layout = repository.layout(for: project.id)
         let renderer = AVChapterRenderer(assetsRoot: layout.root)
@@ -1915,6 +1990,12 @@ final class NarrationFlowModel {
             let slug = PackagingSupport.directorySlug(project.metadata.title)
             let zipURL = exportsDirectory.appendingPathComponent("\(slug)-\(builder.destination.rawValue).zip")
             let shareURL = try ExportPackageZipper.zipContents(of: bundle.rootURL, to: zipURL)
+            if validationDestination == .personalMaster {
+                let completed = completedNarrationsDirectory.appendingPathComponent(slug, isDirectory: true)
+                try FileManager.default.createDirectory(at: completedNarrationsDirectory, withIntermediateDirectories: true)
+                try? FileManager.default.removeItem(at: completed)
+                try FileManager.default.copyItem(at: bundle.rootURL, to: completed)
+            }
             exportBundle = NarrationExportBundle(
                 directory: bundle.rootURL,
                 shareURL: shareURL,
@@ -2217,7 +2298,7 @@ private struct FlowResumeRouter: View {
             } else if !model.rightsAttested {
                 AssembleView(model: model)
             } else {
-                SubmitView(model: model)
+                ReviewView(model: model)
             }
         }
     }

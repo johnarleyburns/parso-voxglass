@@ -1,5 +1,7 @@
 import SwiftUI
 import MediaPlayer
+import PhotosUI
+import UIKit
 import VoxglassCore
 
 /// Pushed narration-flow screens: replaces the root's "Close"/help toolbar
@@ -27,6 +29,7 @@ private extension View {
 struct SourceReviewView: View {
     @Bindable var model: NarrationFlowModel
     @State private var goRecord = false
+    @State private var narratorName = ""
 
     var body: some View {
         ScrollView {
@@ -95,6 +98,18 @@ struct SourceReviewView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if model.narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                model.needsNarratorPrompt = true
+            }
+        }
+        .alert("Choose your narration name", isPresented: $model.needsNarratorPrompt) {
+            TextField("Narrator name", text: $narratorName)
+            Button("Save") { model.saveNarratorName(narratorName) }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("This name is saved on this iPhone and used in future narrations and LibriVox metadata.")
+        }
     }
 
     private func paragraphRow(index: Int, paragraph: FlowParagraph) -> some View {
@@ -415,6 +430,7 @@ struct RecordView: View {
         return CGFloat(max(0, min(1, (db + 60) / 60)))
     }
 
+    @ViewBuilder
     private var transport: some View {
         HStack(spacing: 20) {
             Button {
@@ -446,9 +462,9 @@ struct RecordView: View {
             .keyboardShortcut("r", modifiers: [.command])
 
             Button {
-                model.play(currentParagraphID)
+                model.togglePlayback(currentParagraphID)
             } label: {
-                Image(systemName: "play.circle.fill").scaledFont(size: 40)
+                Image(systemName: model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill").scaledFont(size: 40)
             }
             .foregroundStyle(Palette.ink2)
             .disabled(model.paragraph(at: currentParagraphID)?.take == nil)
@@ -456,6 +472,22 @@ struct RecordView: View {
             .accessibilityLabel("Play back the latest take for this paragraph")
         }
         .padding(.vertical, 10)
+        if model.playbackDuration > 0 {
+            VStack(spacing: 3) {
+                Slider(value: Binding(get: { model.playbackPosition }, set: { value in
+                    model.playbackPosition = value
+                    model.playbackPlayer?.currentTime = value
+                }), in: 0...model.playbackDuration)
+                HStack {
+                    Text(model.playbackPosition.formattedShort)
+                    Spacer()
+                    Text("-(max(0, model.playbackDuration - model.playbackPosition).formattedShort)")
+                }
+                .scaledFont(size: 11, design: .monospaced)
+                .foregroundStyle(Palette.ink3)
+            }
+            .accessibilityIdentifier("record.playbackProgress")
+        }
     }
 
     private func takesRow(_ paragraph: FlowParagraph) -> some View {
@@ -647,8 +679,28 @@ struct ReviewView: View {
 
             let rows = filtered(model.paragraphs)
             List {
-                ForEach(rows) { paragraph in
-                    row(paragraph)
+                if let project = model.project {
+                    ForEach(project.chapters) { chapter in
+                        let chapterRows = rows.filter { paragraph in chapter.paragraphs.contains { $0.id == paragraph.id } }
+                        DisclosureGroup {
+                            ForEach(chapterRows) { paragraph in row(paragraph) }
+                        } label: {
+                            HStack {
+                                Text("Chapter (chapter.ordinal + 1): (chapter.title)")
+                                Spacer()
+                                Text("\(chapterRows.filter { $0.state == .approved }.count)/\(chapterRows.count)")
+                                    .font(.caption).foregroundStyle(Palette.ink3)
+                                Button("Complete") {
+                                    for paragraph in chapterRows where paragraph.state == .recorded { model.acceptParagraph(paragraph.id) }
+                                }
+                                .font(.caption.weight(.semibold))
+                                .disabled(chapterRows.isEmpty || chapterRows.contains { $0.state == .flagged || $0.state == .notRecorded })
+                            }
+                        }
+                        .accessibilityIdentifier("review.chapter.\(chapter.ordinal)")
+                    }
+                } else {
+                    ForEach(rows) { paragraph in row(paragraph) }
                 }
             }
             .listStyle(.plain)
@@ -668,6 +720,19 @@ struct ReviewView: View {
             .buttonStyle(.plain)
             .disabled(!model.readyToAssemble)
             .accessibilityIdentifier("review.toAssemble")
+
+            if model.readyToAssemble && model.rightsAttested {
+                Button {
+                    goExport = true
+                } label: {
+                    Label("Export this narration", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.brass)
+                .accessibilityIdentifier("review.toExport")
+            }
         }
         .background(VoxglassBackground())
         .task { await model.refreshRemoteAssetStates() }
@@ -679,6 +744,9 @@ struct ReviewView: View {
         .navigationDestination(isPresented: $goAssemble) {
             AssembleView(model: model, isPushed: true)
         }
+        .navigationDestination(isPresented: $goExport) {
+            ValidateExportView(model: model, isPushed: true)
+        }
         .navigationDestination(item: $reRecordID) { id in
             RecordView(model: model, paragraphID: id, fromReview: true)
         }
@@ -687,6 +755,7 @@ struct ReviewView: View {
     }
 
     @State private var goAssemble = false
+    @State private var goExport = false
 
     private var hydrationErrorPresented: Binding<Bool> {
         Binding(
@@ -742,7 +811,7 @@ struct ReviewView: View {
                 .accessibilityIdentifier("paragraphList.hydrate")
             } else {
                 Button {
-                    model.play(paragraph.id)
+                    model.togglePlayback(paragraph.id)
                 } label: {
                     Image(systemName: "play.circle")
                         .scaledFont(size: 26)
@@ -751,6 +820,17 @@ struct ReviewView: View {
                 .buttonStyle(.plain)
                 .disabled(paragraph.take == nil)
                 .accessibilityIdentifier("paragraphList.playSelected")
+            }
+
+            if paragraph.state == .recorded {
+                Button {
+                    model.acceptParagraph(paragraph.id)
+                } label: {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundStyle(Palette.ok)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Mark paragraph reviewed")
             }
 
             if paragraph.state == .flagged {
@@ -1166,6 +1246,7 @@ struct AssembleView: View {
 struct MetadataView: View {
     @Bindable var model: NarrationFlowModel
     var isPushed = false
+    @State private var artworkItem: PhotosPickerItem?
 
     var body: some View {
         ScrollView {
@@ -1177,6 +1258,22 @@ struct MetadataView: View {
                 areaRow("Description", text: $model.descriptionText, id: "metadata.description")
                 fieldRow("Subjects", text: $model.subjectsText, id: "metadata.subjects")
                 fieldRow("Source URL", text: $model.sourceURLText, id: "metadata.sourceURL")
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("ARTWORK").scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+                    HStack(spacing: 12) {
+                        if let data = model.artworkData, let image = UIImage(data: data) {
+                            Image(uiImage: image).resizable().scaledToFill().frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 10))
+                        } else {
+                            RoundedRectangle(cornerRadius: 10).fill(Palette.hairline).frame(width: 72, height: 72)
+                                .overlay(Image(systemName: "photo").foregroundStyle(Palette.ink3))
+                        }
+                        PhotosPicker(selection: $artworkItem, matching: .images) {
+                            Label(model.artworkData == nil ? "Add artwork" : "Replace artwork", systemImage: "photo.badge.plus")
+                        }
+                        .accessibilityIdentifier("metadata.artwork")
+                    }
+                }
 
                 Text("Chips show where each field is used. LibriVox (LV) · Internet Archive (IA).")
                     .scaledFont(size: 11).foregroundStyle(Palette.ink3)
@@ -1229,6 +1326,10 @@ struct MetadataView: View {
         .background(VoxglassBackground())
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
+        .task { await model.loadArtwork() }
+        .onChange(of: artworkItem) { _, item in
+            Task { if let data = try? await item?.loadTransferable(type: Data.self) { await model.setArtwork(data) } }
+        }
         .navigationDestination(isPresented: $goExport) {
             ValidateExportView(model: model, isPushed: true)
         }
@@ -1314,6 +1415,8 @@ struct ValidateExportView: View {
                     destinationRow(.librivox, label: "LibriVox", subtitle: "128 kbps MP3 per section", id: "validation.destination.librivox")
                     VoxglassListDivider()
                     destinationRow(.internetArchive, label: "Internet Archive", subtitle: "FLAC masters + MP3 derivatives", id: "validation.destination.internetArchive")
+                    VoxglassListDivider()
+                    destinationRow(.personalMaster, label: "Personal Voxglass Listening", subtitle: "Free chapterized M4B + Files copy", id: "validation.destination.personal")
                     VoxglassListDivider()
                     destinationRow(.acx, label: "Commercial retail", subtitle: "ACX, Apple Books, aggregator, M4B", id: "validation.destination.retail", proChip: true)
                 }
@@ -1434,6 +1537,7 @@ struct ValidateExportView: View {
         case .internetArchive: return "Internet Archive"
         case .acx: return "ACX / Audible"
         case .appleBooksAggregator: return "Apple Books / Aggregator"
+        case .personalMaster: return "Personal Voxglass Listening"
         default: return "LibriVox"
         }
     }

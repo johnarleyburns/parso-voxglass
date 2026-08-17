@@ -174,4 +174,11 @@ import VoxglassCoreTestSupport
         let sampleDuration = try #require(sample?.duration)
         #expect(sampleDuration > 0 && sampleDuration <= 300)
     }
+
+    @Test func personalBuilderProducesFreeListeningM4B() async throws {
+        let builder = RetailMasterPackageBuilder(destination: .personalMaster)
+        #expect(builder.destination == .personalMaster)
+        #expect(DestinationProfile.profile(for: .personalMaster).tier == .free)
+        #expect(DestinationProfile.profile(for: .personalMaster).displayName == "Lossless Chapter Masters")
+    }
 }

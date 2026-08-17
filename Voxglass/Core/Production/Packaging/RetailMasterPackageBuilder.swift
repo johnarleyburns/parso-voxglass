@@ -30,7 +30,7 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
     public let destination: DestinationID
 
     public init(destination: DestinationID = .acx) {
-        precondition(destination == .acx || destination == .appleBooksAggregator)
+        precondition(destination == .acx || destination == .appleBooksAggregator || destination == .personalMaster)
         self.destination = destination
     }
 
@@ -90,6 +90,9 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
         defer { try? FileManager.default.removeItem(at: tempDirectory) }
 
         let mastering = masteringTarget(for: profile, options: options)
+        let chapterAudio = destination == .personalMaster
+            ? AudioSpec(container: .m4a, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: 128)
+            : profile.audio
         let pipeline = ChapterExportPipeline(renders: renders, transcoder: transcoder, tempDirectory: tempDirectory, progress: progress)
         let sanitizer = FilenameSanitizer()
         var files: [ExportedFile] = []
@@ -99,8 +102,9 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
 
         for (offset, chapter) in chapters.enumerated() {
             let section = offset + 1
+            let chapterExtension = destination == .personalMaster ? "m4a" : "mp3"
             let fileBase = sanitizer.freeformNumbered(
-                section: section, sectionCount: chapters.count, chapterTitle: chapter.title, ext: "mp3"
+                section: section, sectionCount: chapters.count, chapterTitle: chapter.title, ext: chapterExtension
             )
             let outputURL = directory.appendingPathComponent(fileBase)
             let tags = retailTags(for: chapter, in: project, section: section, totalSections: chapters.count)
@@ -108,7 +112,7 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
             progress(ExportProgress(phase: .rendering, completedUnits: offset, totalUnits: chapters.count, currentFileName: fileBase))
             let file = try await pipeline.export(
                 chapter: chapter, in: project,
-                destinationAudio: profile.audio, tags: tags,
+                destinationAudio: chapterAudio, tags: tags,
                 outputURL: outputURL, options: options, mastering: mastering
             )
             files.append(file)
@@ -178,7 +182,7 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
                 masteredMasters,
                 to: AudioSpec(container: .m4b, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: options.m4bBitrateKbps),
                 chapters: marks,
-                tags: retailTags(forTitle: project.metadata.title, in: project, section: nil, totalSections: nil),
+                tags: retailTags(forTitle: destination == .personalMaster ? "Personal Voxglass Listening" : project.metadata.title, in: project, section: nil, totalSections: nil),
                 output: m4bURL
             )
             files.append(m4b)

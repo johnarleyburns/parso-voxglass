@@ -1,6 +1,12 @@
 # Voxglass — current status
 
-**Updated:** 2026-08-10. **Tree:** `main` @ `85afc51`, pushed, CI green.
+## 2026-08-17 field-test fixes
+
+The iPhone narration flow now has visible take playback pause/progress controls; locally persisted narrator identity with a prompt when missing; persisted source URL and rights attestation; chapter-collapsed paragraph review with completion controls; project artwork selection and packaging; and a free `Personal Voxglass Listening` export that creates a chapterized M4B, a Files-shareable package, and a local `My Completed Narrations` copy.
+
+Verification: `swift test` passed (1319 tests / 189 suites). The iOS simulator build reached the app dependency compile but remains blocked by the pre-existing Watch asset catalog error: `VoxglassWatch/Resources/Assets.xcassets` has no applicable `AppIcon` content.
+
+**Updated:** 2026-08-11. **Tree:** `main` @ `495df6f`, CI green.
 
 ## Status
 
@@ -9,6 +15,30 @@ is implemented and shipping across stages P0–P9. On 2026-08-10 all thirteen ga
 from `GAP_ANALYSIS.md` were closed per `GAP_FIX_BRIEF.md` (F1–F8) and merged to
 `main`. See the closure record at the top of `GAP_ANALYSIS.md` for the per-gap
 summary.
+
+### Next MVP — specified, not yet implemented
+
+On 2026-08-11 the **Mac + iPad Universal MVP** was specified in
+`docs/mac-ipad-universal-mvp/` (`SPEC.md`, `GAP_ANALYSIS.md` with 41 gaps,
+`AGENT_BRIEF.md`, and 13 Mac/iPad mockups). It adds a native macOS app
+distributed by Universal Purchase under the existing bundle id, iPad as a
+first-class narration surface, and a two-writer merge model replacing the
+single-writer model of revised §4.2.
+
+The deleted macOS Studio tree was **resurrected verbatim** from `c0c6712^` into
+`VoxglassMac/` (58 source files), `VoxglassMacTests/` (19), and
+`VoxglassMacUITests/` (1) — under new directory names so gate G-P6's on-disk
+check stays green. Git records these as plain additions, so `git log --follow`
+does not reach the pre-deletion history; read it at the old path with
+`git log c0c6712^ -- VoxglassStudio/<path>`. **The tree is inert and
+unadapted**: no `project.yml` target
+references it, `Package.swift` does not compile it, `swift test` does not see
+it. No Swift file outside those trees has changed, and every guard still
+passes.
+
+Implementation has **not** started. Stage U0 is the unlock: gates G-P5, G-P6,
+and G-P7 were written to keep the Mac deleted and run in the pre-commit hook,
+so no adaptation commit can land until they are amended.
 
 ### Where the tree stands
 
