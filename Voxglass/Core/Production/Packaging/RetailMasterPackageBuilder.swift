@@ -90,9 +90,7 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
         defer { try? FileManager.default.removeItem(at: tempDirectory) }
 
         let mastering = masteringTarget(for: profile, options: options)
-        let chapterAudio = destination == .personalMaster
-            ? AudioSpec(container: .m4a, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: 128)
-            : profile.audio
+        let chapterAudio = destination == .personalMaster ? DestinationProfile.personalListeningAudio : profile.audio
         let pipeline = ChapterExportPipeline(renders: renders, transcoder: transcoder, tempDirectory: tempDirectory, progress: progress)
         let sanitizer = FilenameSanitizer()
         var files: [ExportedFile] = []

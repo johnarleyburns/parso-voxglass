@@ -186,17 +186,21 @@ final class VoxglassUITests: XCTestCase {
         )
         app.buttons["assemble.continue"].tap()
 
-        // Metadata: narrator is required by `hasMetadata` and, because the
-        // LibriVox disclaimers were generated with the empty-narrator fallback,
-        // entering that same value keeps the recorded disclaimers matching the
-        // validation engine's script plan (staleDisclaimerText would otherwise
-        // block export). Title/author come from the need and must not change.
+        // Metadata: narrator is required by `hasMetadata`. The app now restores
+        // the locally saved narrator name, so preserve it when present; only
+        // seed the legacy fallback for a completely fresh simulator profile.
+        // This keeps the recorded disclaimers matching the validation engine's
+        // script plan (staleDisclaimerText would otherwise block export).
+        // Title/author come from the need and must not change.
         // The featured need carries no source edition URL, so one is entered
         // here (the metadata screen persists it via `attest()`).
         let narrator = app.textFields["metadata.narrator"]
         XCTAssertTrue(narrator.waitForExistence(timeout: 10), "Metadata screen did not open.\n\(app.debugDescription)")
-        narrator.tap()
-        narrator.typeText("your name")
+        let savedNarrator = (narrator.value as? String) ?? ""
+        if savedNarrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            narrator.tap()
+            narrator.typeText("your name")
+        }
 
         app.swipeUp()
         let sourceURLField = app.textFields["metadata.sourceURL"]

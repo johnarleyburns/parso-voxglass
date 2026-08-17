@@ -11,6 +11,11 @@ import Foundation
 // only the literals and the registry live here (§4.1).
 
 extension DestinationProfile {
+    /// Personal Voxglass Listening — free local AAC/M4A playback copy.
+    public static let personalListeningAudio = AudioSpec(
+        container: .m4a, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: 128
+    )
+
     /// LibriVox Contribution — mono MP3, 44.1 kHz, 128 kbps CBR.
     // verified 2026-08-02: LibriVox tech specs (128 kbps CBR MP3, 44.1 kHz mono); human-narration and disclaimer required
     public static let librivox = DestinationProfile(

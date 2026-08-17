@@ -682,11 +682,16 @@ struct ReviewView: View {
                 if let project = model.project {
                     ForEach(project.chapters) { chapter in
                         let chapterRows = rows.filter { paragraph in chapter.paragraphs.contains { $0.id == paragraph.id } }
-                        DisclosureGroup {
+                        DisclosureGroup(
+                            isExpanded: Binding(
+                                get: { chapterRows.contains { $0.state != .approved } },
+                                set: { _ in }
+                            )
+                        ) {
                             ForEach(chapterRows) { paragraph in row(paragraph) }
                         } label: {
                             HStack {
-                                Text("Chapter (chapter.ordinal + 1): (chapter.title)")
+                                Text("Chapter \(chapter.ordinal + 1): \(chapter.title)")
                                 Spacer()
                                 Text("\(chapterRows.filter { $0.state == .approved }.count)/\(chapterRows.count)")
                                     .font(.caption).foregroundStyle(Palette.ink3)
