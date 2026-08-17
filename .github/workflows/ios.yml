@@ -51,7 +51,10 @@ jobs:
   logic-tests:
     name: Logic Tests (swift test)
     runs-on: macos-latest
-    timeout-minutes: 15
+    # Hosted macOS runners occasionally spend several minutes compiling the
+    # package before the serial suites begin; keep the test budget above that
+    # runner variance while retaining a finite hang guard.
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
