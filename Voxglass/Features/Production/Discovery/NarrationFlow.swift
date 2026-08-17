@@ -259,8 +259,11 @@ final class NarrationFlowModel {
     var isPlayingTake = false
     var playbackPosition: TimeInterval = 0
     var playbackDuration: TimeInterval = 0
+    var playbackParagraphID: UUID?
+    var playbackChapterID: UUID?
     private var levelTask: Task<Void, Never>?
     private var playbackTask: Task<Void, Never>?
+    private var chapterPlaybackTask: Task<Void, Never>?
 
     /// The route class of the current recording, snapshotted at record start
     /// (spec §7.1). Persisted on the take so `routeNotRetailReady` is computed
@@ -289,6 +292,7 @@ final class NarrationFlowModel {
     var assembly = AssemblySettings()
     var narrator = UserDefaults.standard.string(forKey: "voxglass.narratorName") ?? ""
     var needsNarratorPrompt = false
+    var needsSourceURLPrompt = false
     var language = "English"
     var descriptionText = ""
     var subjectsText = ""
@@ -541,6 +545,19 @@ final class NarrationFlowModel {
             Task { await persist() }
         }
         needsNarratorPrompt = false
+    }
+
+    func saveSourceURL(_ value: String) {
+        let raw = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: raw), !raw.isEmpty else { return }
+        sourceURL = raw
+        sourceURLText = raw
+        guard var project else { return }
+        project.rights.sourceURL = url
+        project.modifiedAt = repository.clock.now
+        self.project = project
+        needsSourceURLPrompt = false
+        Task { await persist() }
     }
 
     func setArtwork(_ data: Data) async {
@@ -842,21 +859,42 @@ final class NarrationFlowModel {
 
     /// Loads an existing project into the flow (resume path).
     func resume(_ project: AudiobookProject) async {
-        self.project = project
+        var repairedProject = project
+        var didBackfill = false
+        let savedNarrator = UserDefaults.standard.string(forKey: "voxglass.narratorName")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if repairedProject.metadata.narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           !savedNarrator.isEmpty {
+            repairedProject.metadata.narrator = savedNarrator
+            didBackfill = true
+        }
+        // A project opened from a narration need can still carry the need's
+        // source URL in the flow while its older persisted rights record is
+        // empty. Preserve that URL instead of clearing it during resume.
+        if repairedProject.rights.sourceURL == nil,
+           let pendingSource = sourceURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !pendingSource.isEmpty,
+           let url = URL(string: pendingSource) {
+            repairedProject.rights.sourceURL = url
+            didBackfill = true
+        }
+        needsSourceURLPrompt = repairedProject.rights.sourceURL == nil
+        self.project = repairedProject
         draftTitle = project.metadata.title
         draftAuthor = project.metadata.author
-        setSource(project.rights.sourceURL?.absoluteString)
-        pendingNeedID = await repository.needID(for: project.id)
-        draftText = await repository.sourceText(for: project.id) ?? ""
-        narrator = project.metadata.narrator
-        language = project.metadata.language.isEmpty ? "English" : project.metadata.language
-        descriptionText = project.metadata.description
-        subjectsText = project.metadata.subjects.joined(separator: "; ")
-        paragraphNotes = await repository.latestNotes(for: project.id)
+        setSource(repairedProject.rights.sourceURL?.absoluteString ?? sourceURL)
+        pendingNeedID = await repository.needID(for: repairedProject.id)
+        draftText = await repository.sourceText(for: repairedProject.id) ?? ""
+        narrator = repairedProject.metadata.narrator
+        language = repairedProject.metadata.language.isEmpty ? "English" : repairedProject.metadata.language
+        descriptionText = repairedProject.metadata.description
+        subjectsText = repairedProject.metadata.subjects.joined(separator: "; ")
+        paragraphNotes = await repository.latestNotes(for: repairedProject.id)
         currentParagraphID = nil
         importError = nil
         micPermissionDenied = false
         await checkForRecoveredSessions()
+        if didBackfill { await persist() }
     }
 
     func paragraph(at id: UUID) -> FlowParagraph? {
@@ -1404,7 +1442,7 @@ final class NarrationFlowModel {
 
     func play(_ id: UUID) {
         guard let url = playbackURL(for: id) else { return }
-        play(url: url)
+        play(url: url, paragraphID: id)
     }
 
     /// Plays the most recent take on a paragraph (the recovered one after an
@@ -1414,7 +1452,7 @@ final class NarrationFlowModel {
         play(url: url)
     }
 
-    private func play(url: URL) {
+    private func play(url: URL, paragraphID: UUID? = nil) {
         // The capture session is `.record`; take playback needs `.playback`
         // or the audio is silent. Recording re-enters `.record` on the next
         // startRecordingParagraph call.
@@ -1427,6 +1465,7 @@ final class NarrationFlowModel {
         playbackPlayer?.prepareToPlay()
         playbackDuration = playbackPlayer?.duration ?? 0
         playbackPosition = 0
+        playbackParagraphID = paragraphID
         playbackPlayer?.play()
         isPlayingTake = true
         playbackTask = Task { @MainActor [weak self] in
@@ -1437,21 +1476,54 @@ final class NarrationFlowModel {
             guard let self, !Task.isCancelled else { return }
             self.playbackPosition = self.playbackPlayer?.currentTime ?? self.playbackDuration
             self.isPlayingTake = false
+            self.playbackParagraphID = nil
+        }
+    }
+
+    /// Plays every recorded paragraph in a chapter, in document order.
+    func playChapter(_ chapterID: UUID) {
+        chapterPlaybackTask?.cancel()
+        stopPlayback()
+        guard let project,
+              let chapter = project.chapters.first(where: { $0.id == chapterID }) else { return }
+        let paragraphIDs = chapter.paragraphs.compactMap { paragraph in
+            paragraph.selectedTakeID == nil ? nil : paragraph.id
+        }
+        guard !paragraphIDs.isEmpty else { return }
+        playbackChapterID = chapterID
+        chapterPlaybackTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for paragraphID in paragraphIDs {
+                guard !Task.isCancelled else { return }
+                self.play(paragraphID)
+                while !Task.isCancelled,
+                      self.isPlayingTake,
+                      self.playbackParagraphID == paragraphID {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+            }
+            guard !Task.isCancelled else { return }
+            self.playbackChapterID = nil
         }
     }
 
     func togglePlayback(_ id: UUID) {
-        guard let player = playbackPlayer, isPlayingTake else { play(id); return }
+        chapterPlaybackTask?.cancel()
+        playbackChapterID = nil
+        guard let player = playbackPlayer, playbackParagraphID == id, isPlayingTake else { play(id); return }
         player.pause()
         isPlayingTake = false
         playbackPosition = player.currentTime
     }
 
     func stopPlayback() {
+        chapterPlaybackTask?.cancel()
         playbackTask?.cancel()
         playbackPlayer?.stop()
         isPlayingTake = false
         playbackPosition = 0
+        playbackParagraphID = nil
+        playbackChapterID = nil
     }
 
     // MARK: - Hydrate-then-play (spec §6.3)

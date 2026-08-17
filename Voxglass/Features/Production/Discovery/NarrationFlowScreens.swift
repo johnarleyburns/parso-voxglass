@@ -661,6 +661,7 @@ struct ReviewView: View {
     var isPushed = false
     @State private var filter: ReviewFilter = .all
     @State private var reRecordID: UUID?
+    @State private var sourceURLBackfill = ""
 
     enum ReviewFilter: String, CaseIterable {
         case all, flagged, pickup
@@ -695,6 +696,18 @@ struct ReviewView: View {
                                 Spacer()
                                 Text("\(chapterRows.filter { $0.state == .approved }.count)/\(chapterRows.count)")
                                     .font(.caption).foregroundStyle(Palette.ink3)
+                                Button {
+                                    if model.playbackChapterID == chapter.id && model.isPlayingTake {
+                                        model.stopPlayback()
+                                    } else {
+                                        model.playChapter(chapter.id)
+                                    }
+                                } label: {
+                                    Image(systemName: model.playbackChapterID == chapter.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill")
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(model.playbackChapterID == chapter.id && model.isPlayingTake ? "Pause chapter" : "Play chapter")
+                                .accessibilityIdentifier("review.chapter.play.\(chapter.ordinal)")
                                 Button("Complete") {
                                     for paragraph in chapterRows where paragraph.state == .recorded { model.acceptParagraph(paragraph.id) }
                                 }
@@ -710,34 +723,36 @@ struct ReviewView: View {
             }
             .listStyle(.plain)
 
-            Button {
-                goAssemble = true
-            } label: {
-                Text("Assemble the recording ▸")
-                    .scaledFont(size: 15, weight: .heavy)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
+            VStack(spacing: 10) {
+                Button {
+                    goAssemble = true
+                } label: {
+                    Text("Assemble the recording ▸")
+                        .scaledFont(size: 15, weight: .heavy)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.plain)
+                .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
+                .foregroundStyle(NarrationPalette.espresso)
+                .disabled(!model.readyToAssemble)
+                .accessibilityIdentifier("review.toAssemble")
+
+                if model.readyToAssemble && model.rightsAttested {
+                    Button {
+                        goExport = true
+                    } label: {
+                        Label("Export this narration", systemImage: "square.and.arrow.up")
+                            .scaledFont(size: 15, weight: .heavy)
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(.plain)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
                     .foregroundStyle(NarrationPalette.espresso)
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 12)
-            }
-            .buttonStyle(.plain)
-            .disabled(!model.readyToAssemble)
-            .accessibilityIdentifier("review.toAssemble")
-
-            if model.readyToAssemble && model.rightsAttested {
-                Button {
-                    goExport = true
-                } label: {
-                    Label("Export this narration", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
+                    .accessibilityIdentifier("review.toExport")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Palette.brass)
-                .accessibilityIdentifier("review.toExport")
             }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 12)
         }
         .background(VoxglassBackground())
         .task { await model.refreshRemoteAssetStates() }
@@ -745,6 +760,18 @@ struct ReviewView: View {
             Button("OK", role: .cancel) { model.hydrationError = nil }
         } message: {
             Text(model.hydrationError ?? "")
+        }
+        .alert("Add source URL", isPresented: $model.needsSourceURLPrompt) {
+            TextField("https://…", text: $sourceURLBackfill)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.URL)
+            Button("Save") { model.saveSourceURL(sourceURLBackfill) }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("This older narration has no saved source URL. Add the page or edition used for the text so future exports include it.")
+        }
+        .onAppear {
+            sourceURLBackfill = model.sourceURLText
         }
         .navigationDestination(isPresented: $goAssemble) {
             AssembleView(model: model, isPushed: true)
@@ -818,12 +845,13 @@ struct ReviewView: View {
                 Button {
                     model.togglePlayback(paragraph.id)
                 } label: {
-                    Image(systemName: "play.circle")
+                    Image(systemName: model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle")
                         .scaledFont(size: 26)
                         .foregroundStyle(Palette.ink2)
                 }
                 .buttonStyle(.plain)
                 .disabled(paragraph.take == nil)
+                .accessibilityLabel(model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
                 .accessibilityIdentifier("paragraphList.playSelected")
             }
 
@@ -852,6 +880,11 @@ struct ReviewView: View {
             }
         }
         .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            model.currentParagraphID = paragraph.id
+            reRecordID = paragraph.id
+        }
     }
 
     private func statusIcon(_ state: FlowParagraphState) -> some View {

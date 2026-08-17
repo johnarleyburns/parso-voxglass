@@ -2,6 +2,21 @@
 
 ## 2026-08-17 field-test fixes
 
+## Follow-up review fixes
+
+Review playback now shows the active paragraph's pause state, clears it when
+the take ends, and can play all recorded paragraphs in chapter order. Paragraph
+rows open the selected paragraph in the recording screen for inspection and
+re-recording. Review actions share one full-width button treatment. Existing
+projects backfill the saved local narrator and preserve a narration-need source
+URL; older projects without any recoverable source URL prompt for one and save
+it for future exports.
+
+Verification: iPhone simulator app build succeeded; the broader smoke test was
+rerun but remains intermittently flaky in its pre-existing library/detail
+navigation assertions. Core logic and remote CI verification are pending for
+this follow-up commit.
+
 The iPhone narration flow now has visible take playback pause/progress controls; locally persisted narrator identity with a prompt when missing; persisted source URL and rights attestation; chapter-collapsed paragraph review with completion controls; project artwork selection and packaging; and a free `Personal Voxglass Listening` export that creates a chapterized M4B, a Files-shareable package, and a local `My Completed Narrations` copy.
 
 Verification: `swift test` passed (1319 tests / 189 suites). The iOS simulator build reached the app dependency compile but remains blocked by the pre-existing Watch asset catalog error: `VoxglassWatch/Resources/Assets.xcassets` has no applicable `AppIcon` content.
