@@ -180,7 +180,7 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
                 masteredMasters,
                 to: AudioSpec(container: .m4b, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: options.m4bBitrateKbps),
                 chapters: marks,
-                tags: retailTags(forTitle: destination == .personalMaster ? "Personal Voxglass Listening" : project.metadata.title, in: project, section: nil, totalSections: nil),
+                tags: retailTags(forTitle: project.metadata.title, in: project, section: nil, totalSections: nil),
                 output: m4bURL
             )
             files.append(m4b)
@@ -289,7 +289,7 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
         let metadata = project.metadata
         return AudioTags(
             title: title,
-            artist: metadata.author,
+            artist: metadata.narrator.isEmpty ? metadata.author : metadata.narrator,
             album: metadata.title,
             composer: metadata.narrator,
             track: section.map { ($0, totalSections ?? 0) },

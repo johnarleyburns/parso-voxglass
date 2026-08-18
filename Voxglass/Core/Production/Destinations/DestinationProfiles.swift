@@ -11,6 +11,18 @@ import Foundation
 // only the literals and the registry live here (§4.1).
 
 extension DestinationProfile {
+    public static func destination(for purpose: ProjectPurpose) -> DestinationID {
+        switch purpose {
+        case .personal: return .personalMaster
+        case .commercial: return .acx
+        case .publicDomainCommunity: return .librivox
+        }
+    }
+
+    public static func requiresRightsAttestation(_ destination: DestinationID) -> Bool {
+        destination != .personalMaster
+    }
+
     /// Personal Voxglass Listening — free local AAC/M4A playback copy.
     public static let personalListeningAudio = AudioSpec(
         container: .m4a, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: 128

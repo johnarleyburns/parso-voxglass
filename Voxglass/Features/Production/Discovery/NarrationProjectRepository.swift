@@ -17,6 +17,7 @@ public final class NarrationProjectRepository {
     public let ids: any IDGenerator
 
     private static let revisionKey = "narration.projectionRevision"
+    private static let detailsBackfillKey = "narration.backfill.details.v1"
 
     /// Sync-state key for a project's monotonic projection revision (spec §13.3
     /// staleness check). Shared with `PhoneProductionEnvironment.localPublish`.
@@ -143,6 +144,29 @@ public final class NarrationProjectRepository {
 
     public func setSourceText(_ value: String, for id: UUID) async throws {
         try await store(for: id).setSyncValue(NarrationMigration.sourceTextKey, value)
+    }
+
+    /// Repairs legacy projects once without overwriting user-entered details.
+    public func backfillProjectDetailsIfNeeded(knownNeeds: [NarrationNeed]) async {
+        for project in await allProjects() {
+            let projectStore = store(for: project.id)
+            guard (try? await projectStore.syncValue(Self.detailsBackfillKey)) == nil else { continue }
+            var repaired = project
+            var changed = false
+            if repaired.metadata.narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               let saved = UserDefaults.standard.string(forKey: "voxglass.narratorName"),
+               !saved.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                repaired.metadata.narrator = saved.trimmingCharacters(in: .whitespacesAndNewlines)
+                changed = true
+            }
+            if repaired.rights.sourceURL == nil, let id = await needID(for: project.id),
+               let need = knownNeeds.first(where: { $0.id == id }), let source = need.work.sourcePageURL {
+                repaired.rights.sourceURL = source
+                changed = true
+            }
+            if changed { try? await save(repaired) }
+            try? await projectStore.setSyncValue(Self.detailsBackfillKey, "1")
+        }
     }
 
     // MARK: - Notes

@@ -39,6 +39,7 @@ public struct NarrationProjectBuilder: Sendable {
         author: String,
         narrator: String,
         sourceURL: URL?,
+        purpose: ProjectPurpose = .publicDomainCommunity,
         ids: any IDGenerator,
         clock: any Clock
     ) -> NarrationProjectBuild {
@@ -60,7 +61,7 @@ public struct NarrationProjectBuilder: Sendable {
             profile: ProductionProfile(
                 purpose: .publicDomainCommunity,
                 recording: RecordingDefaults(),
-                intendedDestination: .librivox
+                intendedDestination: DestinationProfile.destination(for: purpose)
             ),
             source: nil,
             chapters: segmented.chapters,

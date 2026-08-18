@@ -2,6 +2,29 @@ import Foundation
 import Observation
 import VoxglassCore
 
+@MainActor
+protocol NarrationLibraryImporting: AnyObject {
+    func importNarration(directory: URL, title: String, files: [LocalAudioImport]) async throws -> BookWithChapters
+    func play(_ book: BookWithChapters) async
+}
+
+@MainActor
+final class NarrationLibraryImporter: NarrationLibraryImporting {
+    private let services: AppServices
+
+    init(services: AppServices) { self.services = services }
+
+    func importNarration(directory: URL, title: String, files: [LocalAudioImport]) async throws -> BookWithChapters {
+        let book = try await services.libraryRepository.importLocalFolder(folderURL: directory, folderName: title, files: files)
+        await services.libraryStore.refresh()
+        return book
+    }
+
+    func play(_ book: BookWithChapters) async {
+        await services.playbackCoordinator.play(book)
+    }
+}
+
 /// The phone's discovery composition root (NARRATION_NEEDS_SPEC §11.1): owns
 /// the ladder aggregator (all seven rungs), the last-good cache, the fetcher,
 /// the deterministic clock, and the My Narrations store. The surface is always
@@ -27,6 +50,7 @@ public final class DiscoveryEnvironment {
     /// by the flow is projected into `ProductionPreviewStore` and pushed to the
     /// watch (spec §4.3 / §13.6).
     public var phoneProduction: PhoneProductionEnvironment?
+    public var library: (any NarrationLibraryImporting)?
 
     public var lastSnapshot: NeedsSnapshot?
 
@@ -97,6 +121,8 @@ public final class DiscoveryEnvironment {
     // MARK: - My Narrations
 
     public func reloadNarrations() async {
+        myNarrations = await repository.allProjects()
+        await repository.backfillProjectDetailsIfNeeded(knownNeeds: needs)
         myNarrations = await repository.allProjects()
     }
 

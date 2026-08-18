@@ -44,7 +44,7 @@ struct ProjectDashboardView: View {
         .navigationTitle(project.metadata.title)
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(item: $flowProject) { project in
-            NarrationFlowRoot(existing: project)
+            NarrationFlowRoot(existing: project, startAt: dashboard.recordNext == nil ? .reviewList : nil)
         }
         .navigationDestination(isPresented: $showScriptEditor) {
             ScriptEditorView(project: project)
@@ -106,7 +106,6 @@ struct ProjectDashboardView: View {
         }
         .buttonStyle(.plain)
         .tactileTap()
-        .disabled(dashboard.recordNext == nil)
         .accessibilityIdentifier("dashboard.recordNext")
     }
 

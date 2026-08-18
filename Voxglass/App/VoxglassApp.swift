@@ -28,6 +28,7 @@ struct VoxglassApp: App {
                 .preferredColorScheme(.dark)
                 .task {
                     discovery.phoneProduction = services.productionEnvironment
+                    discovery.library = NarrationLibraryImporter(services: services)
                     await services.bootstrapOnce()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
