@@ -13,8 +13,10 @@
 #   phase 1 — all logic suites, serial:  swift test --no-parallel --skip VoxglassPerformanceTests
 #   phase 2 — timing budgets, serial:    VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests
 #
-# CI (.github/workflows/ios.yml) and the pre-commit/pre-push hooks use this script so
-# the serialization invariant cannot rot. The EXIT trap reaps orphaned test-helper
+# The pre-commit hook uses this script so the full local suite, including timing
+# budgets, remains a single serialized gate. GitHub Actions intentionally runs
+# only the non-performance phase because hosted macOS CPU performance is too
+# variable for the timing budgets. The EXIT trap reaps orphaned test-helper
 # processes left behind by a crashed runner (see kill_zombie_test_helpers.sh).
 
 set -euo pipefail
