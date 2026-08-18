@@ -57,6 +57,13 @@ public struct LocalAudioImport: Equatable, Sendable {
     public let title: String
     public let sortKey: String
     public let duration: TimeInterval?
+
+    public init(url: URL, title: String, sortKey: String, duration: TimeInterval?) {
+        self.url = url
+        self.title = title
+        self.sortKey = sortKey
+        self.duration = duration
+    }
 }
 
 public final class LibraryRepository: @unchecked Sendable {

@@ -190,6 +190,23 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp.uitests
         TEST_TARGET_NAME: VoxglassWatch
         CODE_SIGNING_ALLOWED: NO
+  VoxglassNarrationE2E:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - VoxglassNarrationE2E
+    dependencies:
+      - target: Voxglass
+      - package: VoxglassCore
+        product: VoxglassCore
+      - package: VoxglassCore
+        product: VoxglassEncoders
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.narratione2e
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
@@ -210,3 +227,11 @@ schemes:
         VOXGLASS_WATCH_SMOKE_ALICE: "1"
       targets:
         - VoxglassWatchUITests
+  VoxglassNarrationE2E:
+    build:
+      targets:
+        Voxglass: all
+    test:
+      gatherCoverageData: false
+      targets:
+        - VoxglassNarrationE2E

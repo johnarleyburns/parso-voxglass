@@ -12,6 +12,7 @@ import VoxglassCore
 ///
 /// Run locally on iPhone 16 — CI runs `swift test` only and never runs this
 /// target. One UI smoke test per device by repo convention.
+@MainActor
 final class VoxglassUITests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -163,10 +164,18 @@ final class VoxglassUITests: XCTestCase {
         )
         XCTAssertFalse(assembleButton.isEnabled, "A flagged paragraph must disable assemble (review gate).")
 
+        assertReviewPlaybackShowsState(app: app)
+        assertChapterCollapseRoundTrips(app: app)
+        assertFilterEmptyState(app: app)
+        assertCountsSeparateRecordedFromApproved(app: app)
+        assertRowOpensParagraphReview(app: app)
+        assertPrimaryButtonsShareGeometry(app: app)
+        assertValidationReachableEarly(app: app)
+
         // Re-record the flagged paragraph from the review list, which clears the
         // flag (a take overwrites reviewState). Re-recording advances through
         // the remaining paragraphs, so run the same record loop again.
-        let rerecord = app.buttons["Re-record ▸"]
+        let rerecord = app.buttons["review.row.rerecord.0"]
         XCTAssertTrue(rerecord.waitForExistence(timeout: 10), "Flagged row has no Re-record action.\n\(app.debugDescription)")
         rerecord.tap()
         recorded = recordParagraphs(in: app, flagFirst: false)
@@ -290,6 +299,8 @@ final class VoxglassUITests: XCTestCase {
         let coverGone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.staticTexts["export.packageReady"])
         wait(for: [coverGone], timeout: 10)
 
+        assertCompletedDashboardRoutesToReview(app: app)
+
         // The EQ step needs the Listen tab anyway; switch there first (also
         // forces a clean tab re-render after the cover dismissal), then Search.
         app.buttons["Listen"].tap()
@@ -339,6 +350,108 @@ final class VoxglassUITests: XCTestCase {
         let start = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
         start.press(forDuration: 0.1, thenDragTo: end)
+    }
+
+    // MARK: - Narration review regression legs
+
+    private func assertCompletedDashboardRoutesToReview(app: XCUIApplication) {
+        app.buttons["Narration"].tap()
+        let project = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'myNarrations.project.'"))
+            .firstMatch
+        XCTAssertTrue(project.waitForExistence(timeout: 10), "Completed narration was not listed in My Narrations.")
+        project.tap()
+        let recordNext = app.buttons["dashboard.recordNext"]
+        XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
+        XCTAssertTrue(recordNext.isEnabled, "A completed project must route Record next to review.")
+        recordNext.tap()
+        XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 10))
+        app.buttons["Close"].tap()
+        XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
+    }
+
+    private func assertReviewPlaybackShowsState(app: XCUIApplication) {
+        let play = app.buttons["review.row.play.0"]
+        XCTAssertTrue(play.waitForExistence(timeout: 10))
+        play.tap()
+        let bar = app.descendants(matching: .any)["review.nowPlaying"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5), "Paragraph playback did not expose now-playing state.")
+        XCTAssertEqual(play.label, "Pause paragraph")
+
+        let pause = app.buttons["review.nowPlaying.pause"]
+        pause.tap()
+        XCTAssertTrue(bar.exists, "Pausing must keep the now-playing bar visible.")
+        XCTAssertEqual(play.label, "Play paragraph")
+        play.tap()
+        XCTAssertEqual(play.label, "Pause paragraph")
+        app.buttons["review.nowPlaying.stop"].tap()
+    }
+
+    private func assertChapterCollapseRoundTrips(app: XCUIApplication) {
+        let header = app.buttons["review.chapter.header.0"]
+        XCTAssertTrue(header.waitForExistence(timeout: 5))
+        header.tap()
+        XCTAssertFalse(app.descendants(matching: .any)["review.row.0"].exists)
+        header.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["review.row.0"].waitForExistence(timeout: 5))
+    }
+
+    private func assertFilterEmptyState(app: XCUIApplication) {
+        let toRecord = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'To record'")).element(boundBy: 0)
+        XCTAssertTrue(toRecord.waitForExistence(timeout: 5))
+        toRecord.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["review.empty"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["review.chapter.counts.0"].exists)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'All'")).element(boundBy: 0).tap()
+    }
+
+    private func assertCountsSeparateRecordedFromApproved(app: XCUIApplication) {
+        let counts = app.descendants(matching: .any)["review.chapter.counts.0"]
+        XCTAssertTrue(counts.waitForExistence(timeout: 5))
+        let before = counts.label
+        XCTAssertTrue(before.contains("recorded"))
+        XCTAssertTrue(before.contains("approved"))
+        XCTAssertFalse(before.contains("/"))
+
+        let approval = app.buttons["review.row.approve.1"]
+        XCTAssertTrue(approval.waitForExistence(timeout: 5))
+        approval.tap()
+        XCTAssertNotEqual(counts.label, before)
+        approval.tap() // restore the accepted state for the export leg
+    }
+
+    private func assertRowOpensParagraphReview(app: XCUIApplication) {
+        let row = app.descendants(matching: .any)["review.row.1"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["paragraphReview.title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["paragraphReview.text"].exists)
+        XCTAssertTrue(app.buttons["paragraphReview.rerecord"].exists)
+
+        let play = app.buttons["paragraphReview.play"]
+        XCTAssertTrue(play.exists)
+        play.tap()
+        XCTAssertTrue(app.buttons["paragraphReview.pause"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons["review.toAssemble"].waitForExistence(timeout: 5))
+    }
+
+    private func assertPrimaryButtonsShareGeometry(app: XCUIApplication) {
+        let assemble = app.buttons["review.toAssemble"]
+        let export = app.buttons["review.toExport"]
+        XCTAssertTrue(assemble.exists && export.exists)
+        XCTAssertEqual(assemble.frame.width, export.frame.width, accuracy: 1)
+        XCTAssertEqual(assemble.frame.height, export.frame.height, accuracy: 1)
+    }
+
+    private func assertValidationReachableEarly(app: XCUIApplication) {
+        let check = app.buttons["review.checkRecording"]
+        XCTAssertTrue(check.waitForExistence(timeout: 5))
+        check.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["validation.reportSheet"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any)["validate.report"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["review.toAssemble"].waitForExistence(timeout: 5))
     }
 
     // MARK: - Narration recording helper

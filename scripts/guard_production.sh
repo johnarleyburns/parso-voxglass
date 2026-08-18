@@ -37,6 +37,7 @@ check_no_synthesis() {
   matches=$(grep -rn --include='*.swift' -E "$banned" \
               Voxglass VoxglassWatch VoxglassCoreTestSupport 2>/dev/null \
             | grep -v 'isLikelyGeneratedTTSAudio' \
+            | grep -v 'Voxglass/Features/Production/Discovery/TTSAudioCapture.swift' \
             | grep -v 'synthesis-exempt:' || true)
   if [ -n "$matches" ]; then
     while read -r line; do
@@ -50,6 +51,57 @@ check_no_synthesis() {
     while read -r line; do
       violate "G-1: banned import (synthesis-adjacent AI): $line"
     done <<< "$import_matches"
+  fi
+}
+
+# G-1A: Speech synthesis is permitted only in the development-only narration
+# harness. The source must remain DEBUG-wrapped and referenced only by the
+# separately invoked hosted E2E target.
+check_test_only_speech_capture() {
+  local capture="Voxglass/Features/Production/Discovery/TTSAudioCapture.swift"
+  if [ ! -f "$capture" ]; then
+    return
+  fi
+  if [ "$(head -n 1 "$capture")" != "#if DEBUG" ] || [ "$(tail -n 1 "$capture")" != "#endif" ]; then
+    violate "G-1A: TTSAudioCapture must be wholly wrapped in #if DEBUG"
+  fi
+  if ! grep -q 'VoxglassNarrationE2E' project.yml || ! grep -q 'TTSAudioCapture' VoxglassNarrationE2E/*.swift; then
+    violate "G-1A: TTSAudioCapture must be used only by the narration E2E harness"
+  fi
+  local shipping_refs
+  shipping_refs=$(grep -rn --include='*.swift' 'TTSAudioCapture' Voxglass VoxglassWatch 2>/dev/null \
+    | grep -vF "$capture" || true)
+  if [ -n "$shipping_refs" ]; then
+    while read -r line; do
+      violate "G-1A: test speech capture referenced by shipping source: $line"
+    done <<< "$shipping_refs"
+  fi
+}
+
+# G-12: Every FixAction must be represented by a Features-layer handler, and
+# handlers must not contain a bare `break` that turns a visible fix into a no-op.
+check_fix_action_coverage() {
+  local action_file="Voxglass/Core/Production/Validation/FixAction.swift"
+  local handler_files
+  handler_files=$(grep -rl --include='*.swift' 'func apply(_ fix: FixAction)' Voxglass/Features 2>/dev/null || true)
+  if [ -z "$handler_files" ]; then
+    violate "G-12: no Features-layer FixAction handler exists"
+    return
+  fi
+  local action
+  while read -r action; do
+    [ -z "$action" ] && continue
+    if ! grep -qE "\\.${action}([^[:alnum:]_]|$)" $handler_files; then
+      violate "G-12: FixAction .$action has no Features-layer handler"
+    fi
+  done < <(sed -nE 's/^[[:space:]]*case[[:space:]]+([A-Za-z][A-Za-z0-9_]*).*/\1/p' "$action_file")
+
+  local dead_breaks
+  dead_breaks=$(grep -nE '^[[:space:]]*break[[:space:]]*$' $handler_files 2>/dev/null || true)
+  if [ -n "$dead_breaks" ]; then
+    while read -r line; do
+      violate "G-12: bare break in a FixAction handler file: $line"
+    done <<< "$dead_breaks"
   fi
 }
 
@@ -539,6 +591,7 @@ check_no_legacy_product_id() {
 # Run all checks.
 # ──────────────────────────────────────────────────────────────
 check_no_synthesis
+check_test_only_speech_capture
 check_pro_gate_placement
 check_no_observable_object
 check_stable_hashing
@@ -562,6 +615,7 @@ check_seed_floor
 check_ia_no_license_gate
 check_no_studio
 check_no_legacy_product_id
+check_fix_action_coverage
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

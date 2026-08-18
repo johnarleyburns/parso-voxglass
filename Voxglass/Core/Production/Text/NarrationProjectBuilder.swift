@@ -59,7 +59,7 @@ public struct NarrationProjectBuilder: Sendable {
             ),
             rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL),
             profile: ProductionProfile(
-                purpose: .publicDomainCommunity,
+                purpose: purpose,
                 recording: RecordingDefaults(),
                 intendedDestination: DestinationProfile.destination(for: purpose)
             ),

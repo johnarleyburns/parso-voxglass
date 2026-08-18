@@ -50,7 +50,7 @@ public final class DiscoveryEnvironment {
     /// by the flow is projected into `ProductionPreviewStore` and pushed to the
     /// watch (spec §4.3 / §13.6).
     public var phoneProduction: PhoneProductionEnvironment?
-    public var library: (any NarrationLibraryImporting)?
+    var library: (any NarrationLibraryImporting)?
 
     public var lastSnapshot: NeedsSnapshot?
 

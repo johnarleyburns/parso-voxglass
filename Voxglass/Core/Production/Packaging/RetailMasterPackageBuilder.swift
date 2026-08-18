@@ -176,13 +176,16 @@ public struct RetailMasterPackageBuilder: PackageBuilder, Sendable {
                 cursor += row.duration
             }
             progress(ExportProgress(phase: .transcoding, currentFileName: m4bURL.lastPathComponent))
-            let m4b = try await transcoder.concatenate(
+            var m4b = try await transcoder.concatenate(
                 masteredMasters,
                 to: AudioSpec(container: .m4b, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: options.m4bBitrateKbps),
                 chapters: marks,
                 tags: retailTags(forTitle: project.metadata.title, in: project, section: nil, totalSections: nil),
                 output: m4bURL
             )
+            // The transcoder's generic AAC result defaults to `.chapter`.
+            // Keep the whole-book audiobook out of per-chapter library imports.
+            m4b.role = .secondaryAudio
             files.append(m4b)
         }
 

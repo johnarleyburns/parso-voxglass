@@ -11,11 +11,16 @@ struct ProjectDashboardView: View {
     @State private var flowProject: AudiobookProject?
     @State private var showScriptEditor = false
     @State private var showStorage = false
+    @State private var model: NarrationFlowModel
+    @State private var showValidationReport = false
+    @State private var narratorBackfill = ""
+    @State private var sourceURLBackfill = ""
     let project: AudiobookProject
 
     init(project: AudiobookProject) {
         self.project = project
         _dashboard = State(initialValue: ProjectDashboard(project: project))
+        _model = State(initialValue: NarrationFlowModel(existing: project))
     }
 
     var body: some View {
@@ -26,6 +31,16 @@ struct ProjectDashboardView: View {
                 recordNextButton
 
                 progressCard
+
+                detailsCard
+
+                NarrationSecondaryButton(title: "Check my recording", systemImage: "checkmark.circle", isBusy: model.isValidating, identifier: "dashboard.checkRecording") {
+                    Task {
+                        model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
+                        await model.runValidation()
+                        showValidationReport = true
+                    }
+                }
 
                 needsAttentionCard
 
@@ -53,8 +68,22 @@ struct ProjectDashboardView: View {
             StorageSettingsView()
         }
         .task {
+            await model.load(project)
+            narratorBackfill = model.narrator
+            sourceURLBackfill = model.sourceURLText
             await discovery.reloadNarrations()
         }
+        .sheet(isPresented: $showValidationReport) { ValidationReportSheet(model: model) }
+        .alert("Add narrator name", isPresented: $model.needsNarratorPrompt) {
+            TextField("Narrator name", text: $narratorBackfill)
+            Button("Save") { model.saveNarratorName(narratorBackfill) }
+            Button("Not now", role: .cancel) {}
+        } message: { Text("Add the narrator name used in this recording.") }
+        .alert("Add source URL", isPresented: $model.needsSourceURLPrompt) {
+            TextField("https://…", text: $sourceURLBackfill)
+            Button("Save") { model.saveSourceURL(sourceURLBackfill) }
+            Button("Not now", role: .cancel) {}
+        } message: { Text("Add the source page or edition used for this narration.") }
     }
 
     // MARK: - Header
@@ -94,19 +123,9 @@ struct ProjectDashboardView: View {
     // MARK: - Record next
 
     private var recordNextButton: some View {
-        Button {
+        NarrationPrimaryButton(title: recordNextCaption, identifier: "dashboard.recordNext") {
             flowProject = project
-        } label: {
-            Text(recordNextCaption)
-                .scaledFont(size: 15, weight: .heavy)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-                .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(NarrationPalette.espresso)
         }
-        .buttonStyle(.plain)
-        .tactileTap()
-        .accessibilityIdentifier("dashboard.recordNext")
     }
 
     private var recordNextCaption: String {
@@ -133,6 +152,40 @@ struct ProjectDashboardView: View {
         .padding(14)
         .glassSurface(cornerRadius: 16)
         .accessibilityIdentifier("dashboard.progress")
+    }
+
+    private var detailsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Details").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
+            detailField("Title", field: .title, value: model.project?.metadata.title ?? "")
+            detailField("Author", field: .author, value: model.project?.metadata.author ?? "")
+            detailField("Narrator", field: .narrator, value: model.project?.metadata.narrator ?? "")
+            detailField("Language", field: .language, value: model.project?.metadata.language ?? "")
+            detailField("Source URL", field: .sourceURL, value: model.project?.rights.sourceURL?.absoluteString ?? "")
+        }
+        .padding(14)
+        .glassSurface(cornerRadius: 16)
+    }
+
+    private func detailField(_ label: String, field: MetadataField, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label.uppercased()).scaledFont(size: 10.5, weight: .bold).foregroundStyle(Palette.ink3)
+            TextField(label, text: Binding(
+                get: {
+                    switch field {
+                    case .title: model.project?.metadata.title ?? ""
+                    case .author: model.project?.metadata.author ?? ""
+                    case .narrator: model.project?.metadata.narrator ?? ""
+                    case .language: model.project?.metadata.language ?? ""
+                    case .sourceURL: model.project?.rights.sourceURL?.absoluteString ?? ""
+                    default: value
+                    }
+                },
+                set: { model.saveMetadataField(field, value: $0) }
+            ))
+            .textInputAutocapitalization(field == .sourceURL ? .never : .sentences)
+            .accessibilityIdentifier("dashboard.details.\(field.rawValue)")
+        }
     }
 
     private func progressBar(value: Double) -> some View {
@@ -164,21 +217,10 @@ struct ProjectDashboardView: View {
             VoxglassListDivider()
             attentionRow("Text changed after recording", "\(dashboard.driftCount) ¶", systemImage: "pencil", tint: NarrationPalette.brassSoft, id: "dashboard.drift")
 
-            Button {
+            NarrationSecondaryButton(title: "Start review queue", identifier: "dashboard.startReviewQueue") {
                 flowProject = project
-            } label: {
-                Text("Start review queue")
-                    .scaledFont(size: 13, weight: .bold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Palette.brass.opacity(0.14), in: RoundedRectangle(cornerRadius: 11))
-                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.brass.opacity(0.5), lineWidth: 1))
-                    .foregroundStyle(Palette.brass)
             }
-            .buttonStyle(.plain)
-            .tactileTap()
             .padding(.top, 11)
-            .accessibilityIdentifier("dashboard.startReviewQueue")
         }
         .padding(14)
         .glassSurface(cornerRadius: 16)

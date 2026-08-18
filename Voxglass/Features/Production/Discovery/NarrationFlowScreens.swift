@@ -7,7 +7,7 @@ import VoxglassCore
 /// Pushed narration-flow screens: replaces the root's "Close"/help toolbar
 /// with an empty one so only the system Back button shows (field fix: the
 /// flow must show Close or Back, never both).
-private extension View {
+extension View {
     func narrationFlowBackOnlyToolbar() -> some View {
         toolbar {
             ToolbarItem(placement: .topBarLeading) { EmptyView() }
@@ -453,7 +453,7 @@ struct RecordView: View {
                 Image(systemName: "arrow.uturn.backward.circle.fill").scaledFont(size: 40)
             }
             .foregroundStyle(Palette.ink2)
-            .accessibilityIdentifier("record.transport.playInContext")
+            .accessibilityIdentifier("record.transport.previous")
             .accessibilityLabel("Previous paragraph")
 
             Button {
@@ -679,6 +679,12 @@ struct ReviewView: View {
     @State private var collapsedChapterIDs: Set<UUID> = []
     @AppStorage(AppPreferencesStore.Keys.narrationCollapsedChapters) private var collapsedChapterIDsRaw = ""
     @State private var sourceURLBackfill = ""
+    @State private var narratorBackfill = ""
+    @State private var showValidationReport = false
+    @State private var showFixMetadata = false
+    @State private var showFixStorage = false
+    @State private var showFixAudioSetup = false
+    @State private var showFixScript = false
 
     enum ReviewFilter: String, CaseIterable {
         case all, flagged, pickup
@@ -687,9 +693,9 @@ struct ReviewView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("Filter", selection: $filter) {
-                Text("All").tag(ReviewFilter.all)
-                Text("Flagged").tag(ReviewFilter.flagged)
-                Text("To record").tag(ReviewFilter.pickup)
+                Text("All (\(model.paragraphs.count))").tag(ReviewFilter.all)
+                Text("Flagged (\(model.paragraphs.count { $0.state == .flagged }))").tag(ReviewFilter.flagged)
+                Text("To record (\(model.paragraphs.count { $0.state == .notRecorded }))").tag(ReviewFilter.pickup)
             }
             .pickerStyle(.segmented)
             .padding()
@@ -708,39 +714,7 @@ struct ReviewView: View {
                     ForEach(project.chapters) { chapter in
                         let chapterRows = rows.filter { paragraph in chapter.paragraphs.contains { $0.id == paragraph.id } }
                         if !chapterRows.isEmpty {
-                            HStack {
-                                Button {
-                                    if collapsedChapterIDs.contains(chapter.id) { collapsedChapterIDs.remove(chapter.id) }
-                                    else { collapsedChapterIDs.insert(chapter.id) }
-                                    collapsedChapterIDsRaw = collapsedChapterIDs.map(\.uuidString).sorted().joined(separator: ",")
-                                } label: {
-                                    Image(systemName: collapsedChapterIDs.contains(chapter.id) ? "chevron.right" : "chevron.down")
-                                    Text("Chapter \(chapter.ordinal + 1): \(chapter.title)")
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("review.chapter.header.\(chapter.ordinal)")
-                                Spacer()
-                                let progress = ProjectDashboard(project: project).chapters.first { $0.id == chapter.id }
-                                Text("\(progress?.recordedCount ?? 0) recorded · \(progress?.approvedCount ?? 0) approved")
-                                    .font(.caption).foregroundStyle(Palette.ink3)
-                                Button {
-                                    if model.playbackChapterID == chapter.id && model.isPlayingTake {
-                                        model.stopPlayback()
-                                    } else {
-                                        model.playChapter(chapter.id)
-                                    }
-                                } label: {
-                                    Image(systemName: model.playbackChapterID == chapter.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill")
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("review.chapter.play.\(chapter.ordinal)")
-                                Button("Approve chapter") {
-                                    for paragraph in chapterRows where paragraph.state == .recorded { model.acceptParagraph(paragraph.id) }
-                                }
-                                .font(.caption.weight(.semibold))
-                                .disabled(chapterRows.isEmpty || chapterRows.contains { $0.state == .flagged || $0.state == .notRecorded })
-                            }
-                            .padding(.vertical, 8)
+                            chapterHeader(chapter, rows: chapterRows, project: project)
                             if !collapsedChapterIDs.contains(chapter.id) {
                                 ForEach(chapterRows) { paragraph in row(paragraph) }
                             }
@@ -752,33 +726,28 @@ struct ReviewView: View {
             }
             .listStyle(.plain)
 
-            VStack(spacing: 10) {
-                Button {
-                    goAssemble = true
-                } label: {
-                    Text("Assemble the recording ▸")
-                        .scaledFont(size: 15, weight: .heavy)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                }
-                .buttonStyle(.plain)
-                .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(NarrationPalette.espresso)
-                .disabled(!model.readyToAssemble)
-                .accessibilityIdentifier("review.toAssemble")
+            if model.takePlayback != .idle { nowPlayingBar }
 
-                if model.readyToAssemble {
-                    Button {
-                        goExport = true
-                    } label: {
-                        Label("Export this narration", systemImage: "square.and.arrow.up")
-                            .scaledFont(size: 15, weight: .heavy)
-                            .frame(maxWidth: .infinity, minHeight: 48)
+            VStack(spacing: 10) {
+                NarrationSecondaryButton(title: "Check my recording", systemImage: "checkmark.circle", isBusy: model.isValidating, identifier: "review.checkRecording") {
+                    Task {
+                        model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
+                        await model.runValidation()
+                        showValidationReport = true
                     }
-                    .buttonStyle(.plain)
-                    .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                    .foregroundStyle(NarrationPalette.espresso)
-                    .accessibilityIdentifier("review.toExport")
                 }
+                NarrationPrimaryButton(
+                    title: "Assemble the recording ▸",
+                    disabledReason: model.readyToAssemble ? nil : "Record every paragraph and clear flags first.",
+                    identifier: "review.toAssemble"
+                ) { goAssemble = true }
+
+                NarrationPrimaryButton(
+                    title: "Export this narration",
+                    systemImage: "square.and.arrow.up",
+                    disabledReason: model.readyToAssemble ? nil : "Record every paragraph and clear flags first.",
+                    identifier: "review.toExport"
+                ) { goExport = true }
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 12)
@@ -787,7 +756,7 @@ struct ReviewView: View {
         .task { await model.refreshRemoteAssetStates() }
         .onDisappear { model.stopPlayback() }
         .onAppear {
-            collapsedChapterIDs = Set(collapsedChapterIDsRaw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+            collapsedChapterIDs = restoredCollapsedChapters()
         }
         .alert("Playback unavailable", isPresented: Binding(get: { model.playbackError != nil }, set: { if !$0 { model.playbackError = nil } })) {
             Button("OK", role: .cancel) { model.playbackError = nil }
@@ -806,8 +775,16 @@ struct ReviewView: View {
         } message: {
             Text("This older narration has no saved source URL. Add the page or edition used for the text so future exports include it.")
         }
+        .alert("Add narrator name", isPresented: $model.needsNarratorPrompt) {
+            TextField("Narrator name", text: $narratorBackfill)
+            Button("Save") { model.saveNarratorName(narratorBackfill) }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("Add the narrator name used in this recording so published files carry the correct credit.")
+        }
         .onAppear {
             sourceURLBackfill = model.sourceURLText
+            narratorBackfill = model.narrator
         }
         .navigationDestination(isPresented: $goAssemble) {
             AssembleView(model: model, isPushed: true)
@@ -820,6 +797,44 @@ struct ReviewView: View {
         }
         .navigationDestination(item: $paragraphReviewID) { id in
             ParagraphReviewView(model: model, paragraphID: id)
+        }
+        .navigationDestination(isPresented: $showFixMetadata) {
+            MetadataView(model: model, isPushed: true)
+        }
+        .navigationDestination(isPresented: $showFixStorage) {
+            StorageSettingsView()
+        }
+        .navigationDestination(isPresented: $showFixScript) {
+            if let project = model.project { ScriptEditorView(project: project) }
+        }
+        .sheet(isPresented: $showValidationReport) {
+            ValidationReportSheet(model: model)
+        }
+        .sheet(isPresented: $showFixAudioSetup) {
+            AudioSetupView(capture: model.capture)
+        }
+        .onChange(of: model.pendingFixAction) { _, action in
+            guard let action else { return }
+            model.pendingFixAction = nil
+            switch action {
+            case .goToParagraph(let id), .selectTake(let id, _): paragraphReviewID = id
+            case .recordParagraph(let id): reRecordID = id
+            case .goToChapter(let id): collapsedChapterIDs.remove(id); persistCollapsedChapters()
+            case .splitChapter: showFixScript = true
+            case .openMetadata, .openRights, .chooseArtwork: showFixMetadata = true
+            case .manageStorage: showFixStorage = true
+            case .openAudioSetup: showFixAudioSetup = true
+            case .reanalyzeTake, .regenerateDisclaimers, .regenerateCredits, .applyMastering,
+                 .setRetailSample, .clearPickup, .hydrateAssets, .backupNow:
+                return // Executed directly by ValidationReportSheet before dismissal.
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Play all") { model.playAll() }
+                    .disabled(!model.paragraphs.contains { $0.take != nil })
+                    .accessibilityIdentifier("review.playAll")
+            }
         }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
@@ -843,21 +858,169 @@ struct ReviewView: View {
         }
     }
 
-    private func row(_ paragraph: FlowParagraph) -> some View {
-        HStack(spacing: 12) {
-            statusIcon(paragraph.state)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(paragraph.text)
-                    .scaledFont(size: 13.5, weight: .semibold)
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(2)
-                Text(caption(paragraph))
-                    .scaledFont(size: 11)
-                    .foregroundStyle(Palette.ink3)
-                if let note = paragraph.note {
-                    Text(note).scaledFont(size: 11).foregroundStyle(NarrationPalette.tan)
+    private func chapterHeader(_ chapter: ProductionChapter, rows: [FlowParagraph], project: AudiobookProject) -> some View {
+        let progress = ProjectDashboard(project: project).chapters.first { $0.id == chapter.id }
+        let hasUnreviewed = chapter.paragraphs.contains { $0.selectedTakeID != nil && $0.reviewState == .unreviewed }
+        let blocked = chapter.paragraphs.contains { $0.reviewState == .flagged || $0.selectedTakeID == nil }
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 9) {
+                Button {
+                    toggleChapter(chapter.id)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chevron.down")
+                            .rotationEffect(.degrees(collapsedChapterIDs.contains(chapter.id) ? -90 : 0))
+                            .accessibilityIdentifier("review.chapter.toggle.\(chapter.ordinal)")
+                        Text("Chapter \(chapter.ordinal + 1): \(chapter.title)")
+                            .scaledFont(size: 14, weight: .bold)
+                            .foregroundStyle(Palette.ink)
+                            .lineLimit(1)
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("review.chapter.header.\(chapter.ordinal)")
+                Spacer()
+                Button {
+                    if model.playbackChapterID == chapter.id { model.toggleCurrentPlayback() }
+                    else { model.playChapter(chapter.id) }
+                } label: {
+                    Image(systemName: model.playbackChapterID == chapter.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill")
+                        .scaledFont(size: 24)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("review.chapter.play.\(chapter.ordinal)")
+                Button("Approve chapter") {
+                    for paragraph in chapter.paragraphs where paragraph.selectedTakeID != nil && paragraph.reviewState == .unreviewed {
+                        model.acceptParagraph(paragraph.id)
+                    }
+                    Task { await model.persist() }
+                }
+                .scaledFont(size: 11, weight: .bold)
+                .buttonStyle(.borderless)
+                .disabled(!hasUnreviewed)
+                .accessibilityIdentifier("review.chapter.approveAll.\(chapter.ordinal)")
             }
+            chapterCountsText(progress: progress, chapter: chapter)
+            .scaledFont(size: 11)
+            .foregroundStyle(Palette.ink3)
+            .accessibilityIdentifier("review.chapter.counts.\(chapter.ordinal)")
+            if blocked && hasUnreviewed {
+                Text("Flagged or unrecorded paragraphs remain.")
+                    .scaledFont(size: 10.5).foregroundStyle(Palette.ink3)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func chapterCountsText(progress: ChapterProgress?, chapter: ProductionChapter) -> Text {
+        var text = Text("\(progress?.recordedCount ?? 0) recorded · \(progress?.approvedCount ?? 0) approved · \(chapter.paragraphs.compactMap(\.selectedTake).reduce(0) { $0 + $1.duration }.formattedShort)")
+        if let flagged = progress?.flaggedCount, flagged > 0 {
+            text = text + Text(" · \(flagged) flagged").foregroundStyle(NarrationPalette.brassSoft)
+        }
+        return text
+    }
+
+    private var nowPlayingBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "waveform")
+                .frame(width: 1, height: 1)
+                .opacity(0.01)
+                .accessibilityIdentifier("review.nowPlaying")
+            VStack(alignment: .leading, spacing: 4) {
+                Text(nowPlayingLabel)
+                    .scaledFont(size: 12, weight: .bold)
+                    .accessibilityIdentifier("review.nowPlaying.label")
+                ProgressView(value: model.playbackDuration > 0 ? model.playbackPosition / model.playbackDuration : 0)
+                    .tint(Palette.brass)
+            }
+            Button { model.toggleCurrentPlayback() } label: {
+                Image(systemName: model.isPlayingTake ? "pause.fill" : "play.fill")
+            }
+            .accessibilityLabel(model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
+            .accessibilityIdentifier("review.nowPlaying.pause")
+            Button { model.nextPlaybackParagraph() } label: { Image(systemName: "forward.end.fill") }
+                .disabled(model.playbackChapterID == nil)
+                .accessibilityIdentifier("review.nowPlaying.next")
+            Button { model.stopPlayback() } label: { Image(systemName: "stop.fill") }
+                .accessibilityIdentifier("review.nowPlaying.stop")
+        }
+        .padding(.horizontal, 18).padding(.vertical, 10)
+        .background(.thinMaterial)
+    }
+
+    private var nowPlayingLabel: String {
+        guard let project = model.project, let id = model.playbackParagraphID,
+              let chapter = project.chapters.first(where: { $0.paragraphs.contains(where: { $0.id == id }) }),
+              let paragraphIndex = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return "Playing" }
+        return "Chapter \(chapter.ordinal + 1) · ¶ \(paragraphIndex + 1)"
+    }
+
+    private func toggleChapter(_ id: UUID) {
+        if collapsedChapterIDs.contains(id) { collapsedChapterIDs.remove(id) }
+        else { collapsedChapterIDs.insert(id) }
+        persistCollapsedChapters()
+    }
+
+    private func restoredCollapsedChapters() -> Set<UUID> {
+        guard let projectID = model.project?.id else { return [] }
+        let prefix = "\(projectID.uuidString)/"
+        return Set(collapsedChapterIDsRaw.split(separator: ",").compactMap { item in
+            let value = String(item)
+            guard value.hasPrefix(prefix) else { return nil }
+            return UUID(uuidString: String(value.dropFirst(prefix.count)))
+        })
+    }
+
+    private func persistCollapsedChapters() {
+        guard let projectID = model.project?.id else { return }
+        collapsedChapterIDsRaw = collapsedChapterIDs
+            .map { "\(projectID.uuidString)/\($0.uuidString)" }
+            .sorted().joined(separator: ",")
+    }
+
+    private func row(_ paragraph: FlowParagraph) -> some View {
+        let index = model.paragraphs.firstIndex(where: { $0.id == paragraph.id }) ?? 0
+        return HStack(spacing: 12) {
+            Button {
+                switch paragraph.state {
+                case .recorded:
+                    model.acceptParagraph(paragraph.id)
+                    Task { await model.persist() }
+                case .approved:
+                    model.unacceptParagraph(paragraph.id)
+                case .flagged, .notRecorded:
+                    paragraphReviewID = paragraph.id
+                }
+            } label: {
+                Image(systemName: checkboxSymbol(paragraph.state))
+                    .scaledFont(size: 24)
+                    .foregroundStyle(tint(paragraph.state))
+                    .frame(width: 30, height: 30)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(checkboxLabel(paragraph.state))
+            .accessibilityIdentifier("review.row.approve.\(index)")
+
+            Button {
+                model.currentParagraphID = paragraph.id
+                paragraphReviewID = paragraph.id
+            } label: {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(paragraph.text)
+                        .scaledFont(size: 13.5, weight: .semibold)
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(2)
+                    Text(caption(paragraph)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    if let note = paragraph.note {
+                        Text(note).scaledFont(size: 11).foregroundStyle(NarrationPalette.tan)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityIdentifier("review.row.\(index)")
             Spacer()
             if let bytes = paragraph.remoteTakeByteCount {
                 Button {
@@ -879,7 +1042,7 @@ struct ReviewView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(model.hydratingParagraphID != nil && model.hydratingParagraphID != paragraph.id)
-                .accessibilityIdentifier("paragraphList.hydrate")
+                .accessibilityIdentifier("review.row.play.\(index)")
             } else {
                 Button {
                     model.togglePlayback(paragraph.id)
@@ -891,18 +1054,7 @@ struct ReviewView: View {
                 .buttonStyle(.plain)
                 .disabled(paragraph.take == nil)
                 .accessibilityLabel(model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
-                .accessibilityIdentifier("paragraphList.playSelected")
-            }
-
-            if paragraph.state == .recorded {
-                Button {
-                    model.acceptParagraph(paragraph.id)
-                } label: {
-                    Image(systemName: "checkmark.circle")
-                        .foregroundStyle(Palette.ok)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Mark paragraph reviewed")
+                .accessibilityIdentifier("review.row.play.\(index)")
             }
 
             if paragraph.state == .flagged {
@@ -916,27 +1068,29 @@ struct ReviewView: View {
                 .scaledFont(size: 12, weight: .bold)
                 .foregroundStyle(Palette.brass)
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("review.row.rerecord.\(index)")
             }
+            Image(systemName: "chevron.right").scaledFont(size: 11).foregroundStyle(Palette.ink3)
         }
         .padding(.vertical, 6)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            model.currentParagraphID = paragraph.id
-            paragraphReviewID = paragraph.id
+    }
+
+    private func checkboxSymbol(_ state: FlowParagraphState) -> String {
+        switch state {
+        case .notRecorded: "circle.dashed"
+        case .recorded: "circle"
+        case .approved: "checkmark.circle.fill"
+        case .flagged: "flag.fill"
         }
     }
 
-    private func statusIcon(_ state: FlowParagraphState) -> some View {
-        ZStack {
-            Circle().fill(tint(state).opacity(0.16))
-            switch state {
-            case .approved: Text("✓").scaledFont(size: 13, weight: .heavy).foregroundStyle(tint(state))
-            case .flagged: Text("⚑").scaledFont(size: 13).foregroundStyle(tint(state))
-            case .recorded: Text("·").scaledFont(size: 13, weight: .heavy).foregroundStyle(tint(state))
-            case .notRecorded: Text("○").scaledFont(size: 13).foregroundStyle(Palette.ink3)
-            }
+    private func checkboxLabel(_ state: FlowParagraphState) -> String {
+        switch state {
+        case .notRecorded: "Not recorded"
+        case .recorded: "Approve paragraph"
+        case .approved: "Approved — tap to un-approve"
+        case .flagged: "Flagged"
         }
-        .frame(width: 26, height: 26)
     }
 
     private func tint(_ state: FlowParagraphState) -> Color {
@@ -981,6 +1135,7 @@ struct AssembleView: View {
     var isPushed = false
     @State private var sceneGap: TimeInterval = 1.0
     @State private var tailSilence: TimeInterval = 1.5
+    @State private var showValidationReport = false
 
     var body: some View {
         ScrollView {
@@ -1008,19 +1163,14 @@ struct AssembleView: View {
                 Text("Assembly is a plan. Your original takes are never modified or trimmed on disk.")
                     .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
 
-                Button {
-                    goMetadata = true
-                } label: {
-                    Text("Continue ▸")
-                        .scaledFont(size: 15, weight: .heavy)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(NarrationPalette.espresso)
+                NarrationSecondaryButton(title: "Check my recording", systemImage: "checkmark.circle", isBusy: model.isValidating, identifier: "assemble.checkRecording") {
+                    Task {
+                        model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
+                        await model.runValidation()
+                        showValidationReport = true
+                    }
                 }
-                .buttonStyle(.plain)
-                .tactileTap()
-                .accessibilityIdentifier("assemble.continue")
+                NarrationPrimaryButton(title: "Continue ▸", identifier: "assemble.continue") { goMetadata = true }
             }
             .padding(18)
         }
@@ -1028,6 +1178,7 @@ struct AssembleView: View {
         .navigationDestination(isPresented: $goMetadata) {
             MetadataView(model: model, isPushed: true)
         }
+        .sheet(isPresented: $showValidationReport) { ValidationReportSheet(model: model) }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -1326,6 +1477,7 @@ struct MetadataView: View {
     @State private var artworkItem: PhotosPickerItem?
 
     var body: some View {
+        let hasArtwork = model.artworkData != nil
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 fieldRow("Title", text: titleBinding, id: "metadata.title")
@@ -1346,7 +1498,7 @@ struct MetadataView: View {
                                 .overlay(Image(systemName: "photo").foregroundStyle(Palette.ink3))
                         }
                         PhotosPicker(selection: $artworkItem, matching: .images) {
-                            Label(model.artworkData == nil ? "Add artwork" : "Replace artwork", systemImage: "photo.badge.plus")
+                            Label(hasArtwork ? "Replace artwork" : "Add artwork", systemImage: "photo.badge.plus")
                         }
                         .accessibilityIdentifier("metadata.artwork")
                     }
@@ -1383,19 +1535,13 @@ struct MetadataView: View {
                 .glassSurface(cornerRadius: 14)
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.35), lineWidth: 1))
 
-                Button {
+                NarrationPrimaryButton(
+                    title: "Validate & export ▸",
+                    disabledReason: model.rightsAttested ? nil : "Attest the public-domain rights before publishing.",
+                    identifier: "metadata.toExport"
+                ) {
                     goExport = true
-                } label: {
-                    Text("Validate & export ▸")
-                        .scaledFont(size: 15, weight: .heavy)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(NarrationPalette.espresso)
                 }
-                .buttonStyle(.plain)
-                .disabled(!model.rightsAttested)
-                .accessibilityIdentifier("metadata.toExport")
             }
             .padding(18)
         }
@@ -1476,6 +1622,11 @@ struct ValidateExportView: View {
     @State private var showProPurchase = false
     @State private var showExportRun = false
     @State private var showChapterPicker = false
+    @State private var fixParagraphID: UUID?
+    @State private var fixRecordID: UUID?
+    @State private var showFixMetadata = false
+    @State private var showFixStorage = false
+    @State private var showFixReview = false
 
     var body: some View {
         ScrollView {
@@ -1507,36 +1658,7 @@ struct ValidateExportView: View {
                     }
                     .padding(.vertical, 10)
                 } else {
-                    let blocking = model.blockingValidationIssues
-                    let warnings = model.validationIssues.filter { $0.severity == .warning }
-
-                    HStack {
-                        Text("\(destinationName)")
-                            .scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
-                        Spacer()
-                        Text("\(blocking.count) blocking · \(warnings.count) warnings")
-                            .scaledFont(size: 11, weight: .bold).foregroundStyle(blocking.isEmpty ? Palette.ok : Palette.danger)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background((blocking.isEmpty ? Palette.ok : Palette.danger).opacity(0.14), in: Capsule())
-                    }
-                    .accessibilityIdentifier("validate.report")
-
-                    if !blocking.isEmpty {
-                        issueSection(title: "BLOCKS EXPORT", issues: blocking)
-                    }
-                    if !warnings.isEmpty {
-                        issueSection(title: "WARNINGS", issues: warnings)
-                    }
-                    if blocking.isEmpty && warnings.isEmpty {
-                        HStack(spacing: 10) {
-                            Image(systemName: "checkmark.seal.fill").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.ok)
-                            Text("Ready to export — every check passed for \(destinationName).")
-                                .scaledFont(size: 12.5).foregroundStyle(Palette.ink2)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .glassSurface(cornerRadius: 14)
-                    }
+                    ValidationReportView(model: model, onFix: apply)
                 }
 
                 if let preflight = model.preflight, preflight.hydrationPlan.byteCount > 0 {
@@ -1547,25 +1669,15 @@ struct ValidateExportView: View {
                     Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger).padding(.top, 4)
                 }
 
-                Button {
+                NarrationPrimaryButton(
+                    title: model.isExporting ? "Producing files…" : "Produce files ▸",
+                    isBusy: model.isExporting,
+                    disabledReason: exportDisabledReason,
+                    identifier: "validation.continueToExport"
+                ) {
                     showExportRun = true
                     model.startExport()
-                } label: {
-                    HStack(spacing: 8) {
-                        if model.isExporting {
-                            ProgressView().tint(NarrationPalette.espresso)
-                        }
-                        Text(model.isExporting ? "Producing files…" : "Produce files ▸")
-                            .scaledFont(size: 15, weight: .heavy)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                            .foregroundStyle(NarrationPalette.espresso)
-                    }
                 }
-                .buttonStyle(.plain)
-                .disabled(!model.missingRequiredMetadata(for: model.validationDestination).isEmpty || !model.blockingValidationIssues.isEmpty || model.isExporting || !model.exportScopeIsValid)
-                .accessibilityIdentifier("validation.continueToExport")
 
                 Text("FLAC/MP3 encoding happens on this iPhone. Validation and export are free for LibriVox and Internet Archive.")
                     .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
@@ -1597,6 +1709,21 @@ struct ValidateExportView: View {
         .navigationDestination(isPresented: $goSubmit) {
             SubmitView(model: model, isPushed: true)
         }
+        .navigationDestination(item: $fixParagraphID) { id in
+            ParagraphReviewView(model: model, paragraphID: id)
+        }
+        .navigationDestination(item: $fixRecordID) { id in
+            RecordView(model: model, paragraphID: id, fromReview: true)
+        }
+        .navigationDestination(isPresented: $showFixMetadata) {
+            MetadataView(model: model, isPushed: true)
+        }
+        .navigationDestination(isPresented: $showFixStorage) {
+            StorageSettingsView()
+        }
+        .navigationDestination(isPresented: $showFixReview) {
+            ReviewView(model: model, isPushed: true)
+        }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -1609,6 +1736,28 @@ struct ValidateExportView: View {
         case .personalMaster: return "Personal listening"
         default: return "LibriVox"
         }
+    }
+
+    private var exportDisabledReason: String? {
+        if let field = model.missingRequiredMetadata(for: model.validationDestination).first {
+            switch field {
+            case .title: return "Add a title before exporting."
+            case .narrator: return "Add a narrator name before exporting."
+            case .author: return "Add an author before exporting."
+            case .language: return "Add a language before exporting."
+            case .sourceURL: return "Add a source URL before exporting."
+            default: return "Complete the required metadata before exporting."
+            }
+        }
+        if !model.blockingValidationIssues.isEmpty {
+            let count = model.blockingValidationIssues.count
+            return "\(count) blocking issue\(count == 1 ? "" : "s") to fix first."
+        }
+        if !model.exportScopeIsValid { return "Pick at least one chapter to export." }
+        if let bytes = model.preflight?.hydrationPlan.byteCount, bytes > 0 {
+            return "Downloading \(PackagingSupport.formattedBytes(bytes)) from iCloud…"
+        }
+        return nil
     }
 
     // MARK: Export scope (mockup 14 "WHAT TO EXPORT", §13.2 step 1)
@@ -1870,10 +2019,39 @@ struct ValidateExportView: View {
         switch fix {
         case .openAudioSetup:
             showAudioSetup = true
-        case .hydrateAssets, .backupNow, .manageStorage, .recordParagraph, .clearPickup, .goToParagraph, .goToChapter,
-             .openMetadata, .openRights, .regenerateDisclaimers, .regenerateCredits, .selectTake, .chooseArtwork,
-             .setRetailSample, .reanalyzeTake, .splitChapter, .applyMastering:
-            break
+        case .hydrateAssets:
+            Task { await model.hydrateAllForExport(); await model.runValidation() }
+        case .backupNow:
+            Task { _ = await model.saveCopyOfProject() }
+        case .manageStorage:
+            showFixStorage = true
+        case .recordParagraph(let id):
+            model.currentParagraphID = id
+            fixRecordID = id
+        case .clearPickup(let id):
+            Task { await model.clearPickup(id) }
+        case .goToParagraph(let id):
+            fixParagraphID = id
+        case .goToChapter:
+            showFixReview = true
+        case .openMetadata, .openRights, .chooseArtwork:
+            showFixMetadata = true
+        case .regenerateDisclaimers:
+            Task { await model.regenerateScript(for: .librivox) }
+        case .regenerateCredits:
+            Task { await model.regenerateScript(for: .acx) }
+        case .selectTake(let paragraphID, _):
+            fixParagraphID = paragraphID
+        case .setRetailSample:
+            Task { await model.setDefaultRetailSampleForExport() }
+        case .reanalyzeTake(let takeID):
+            Task { await model.recomputeMetrics(takeIDs: [takeID]); await model.runValidation() }
+        case .splitChapter:
+            model.pendingFixAction = fix
+            showFixReview = true
+        case .applyMastering:
+            model.applyMasteringForExport = true
+            Task { await model.runValidation() }
         }
     }
 
@@ -2350,16 +2528,15 @@ struct SubmitView: View {
                 }
 
                 if model.validationDestination == .personalMaster {
-                    Button {
+                    NarrationPrimaryButton(
+                        title: "Play in Voxglass",
+                        systemImage: "play.fill",
+                        disabledReason: model.importedBook == nil ? "Adding this narration to My Books…" : nil,
+                        identifier: "submit.playInVoxglass"
+                    ) {
                         guard let book = model.importedBook else { return }
                         Task { await model.library?.play(book); dismiss() }
-                    } label: {
-                        Label("Play in Voxglass", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(model.importedBook == nil)
-                    .accessibilityIdentifier("submit.playInVoxglass")
                     if let project = model.project {
                         Text("Added to My Books as \"\(project.metadata.title)\".")
                             .font(.caption).foregroundStyle(Palette.ink2)
@@ -2392,22 +2569,13 @@ struct SubmitView: View {
                 }
 
                 if model.exportRunRecord != nil {
-                    Button {
+                    NarrationSecondaryButton(
+                        title: "Free the staging space",
+                        systemImage: "trash",
+                        identifier: "export.evictAfterSave"
+                    ) {
                         Task { await model.evictLastExportStaging() }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "trash").scaledFont(size: 13, weight: .semibold)
-                            Text("Free the staging space")
-                                .scaledFont(size: 13, weight: .semibold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(Palette.ink2.opacity(0.08), in: RoundedRectangle(cornerRadius: 13))
-                        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Palette.hairline, lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Palette.ink2)
-                    .accessibilityIdentifier("export.evictAfterSave")
                 }
 
                 if model.validationDestination != .personalMaster {
@@ -2492,70 +2660,5 @@ struct SubmitView: View {
     private func byteString(_ url: URL) -> String {
         let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
         return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
-    }
-}
-
-struct ParagraphReviewView: View {
-    @Bindable var model: NarrationFlowModel
-    let paragraphID: UUID
-    @Environment(\.dismiss) private var dismiss
-    @State private var showFlag = false
-    @State private var flagNote = ""
-
-    private var paragraph: FlowParagraph? { model.paragraph(at: paragraphID) }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if let paragraph {
-                    Text("Paragraph review")
-                        .font(.headline)
-                        .accessibilityIdentifier("paragraphReview.title")
-                    HStack {
-                        Text(paragraph.state == .approved ? "Approved" : paragraph.state == .flagged ? "Flagged" : paragraph.take == nil ? "Not recorded" : "Recorded")
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(Palette.brass.opacity(0.14), in: Capsule())
-                            .accessibilityIdentifier("paragraphReview.state")
-                        Spacer()
-                        Text(paragraph.role.label).font(.caption).foregroundStyle(Palette.ink3)
-                    }
-                    Text(paragraph.text)
-                        .textSelection(.enabled)
-                        .accessibilityIdentifier("paragraphReview.text")
-                    if paragraph.isDrifted {
-                        Label("The text changed after this was recorded", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Palette.brass)
-                    }
-                    Button {
-                        model.togglePlayback(paragraphID)
-                    } label: {
-                        Label(model.playbackParagraphID == paragraphID && model.isPlayingTake ? "Pause" : "Play take", systemImage: model.playbackParagraphID == paragraphID && model.isPlayingTake ? "pause.fill" : "play.fill")
-                            .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(paragraph.take == nil || paragraph.remoteTakeByteCount != nil)
-                    .accessibilityIdentifier("paragraphReview.play")
-                    HStack {
-                        Button("Approve") { model.acceptParagraph(paragraphID) }
-                            .accessibilityIdentifier("paragraphReview.approve")
-                        Button("Flag") { showFlag = true }
-                            .accessibilityIdentifier("paragraphReview.flag")
-                        Button("Re-record") { model.currentParagraphID = paragraphID; dismiss() }
-                            .accessibilityIdentifier("paragraphReview.rerecord")
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            .padding(18)
-        }
-        .background(VoxglassBackground())
-        .onDisappear { model.stopPlayback() }
-        .alert("Flag paragraph", isPresented: $showFlag) {
-            TextField("Note (optional)", text: $flagNote)
-            Button("Save") { model.flagParagraph(paragraphID, note: flagNote) }
-            Button("Cancel", role: .cancel) {}
-        }
-        .navigationTitle("Review")
     }
 }

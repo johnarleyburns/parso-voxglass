@@ -240,7 +240,7 @@ private final class EntitlementTaskBox: @unchecked Sendable {
 /// project model.
 @MainActor
 @Observable
-final class NarrationFlowModel {
+final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     enum ImportSource {
         case need(NarrationNeed)
         case paste
@@ -291,7 +291,8 @@ final class NarrationFlowModel {
     var playbackChapterID: UUID? { takePlayback.chapterID }
     private var levelTask: Task<Void, Never>?
     private var playbackTask: Task<Void, Never>?
-    private var chapterPlaybackTask: Task<Void, Never>?
+    private var playbackQueue: [(paragraphID: UUID, chapterID: UUID?)] = []
+    private var playbackQueueIndex = 0
 
     /// The route class of the current recording, snapshotted at record start
     /// (spec §7.1). Persisted on the take so `routeNotRetailReady` is computed
@@ -334,10 +335,22 @@ final class NarrationFlowModel {
     /// (§12). Driven by the real rule engine with the export preflight context,
     /// so a free user sees the exact issues the export pipeline will enforce.
     var validationDestination: DestinationID = .librivox
+    var destinationName: String {
+        switch validationDestination {
+        case .personalMaster: "Personal listening"
+        case .librivox: "LibriVox"
+        case .internetArchive: "Internet Archive"
+        case .acx, .appleBooksAggregator: "Commercial retail"
+        }
+    }
     var validationIssues: [ValidationIssue] = []
     var preflight: ExportPreflightResult?
     var isValidating = false
     var validationError: String?
+    var metricsProgress: (done: Int, total: Int)?
+    var pendingFixAction: FixAction?
+    var applyMasteringForExport = true
+    var retailSampleOverride: RetailSampleSelection?
 
     /// P7/F1 (§13.2 step 1): the chosen export scope. The four spec'd choices
     /// map onto `ExportScope` via `PackagingSupport.scope`, so the preflight
@@ -503,6 +516,7 @@ final class NarrationFlowModel {
         self.licenseProvider = licenseProvider
         self.project = existing
         self.storageCoordinator = ProductionStorageCoordinator(repository: repository)
+        super.init()
         if let existing {
             draftTitle = existing.metadata.title
             draftAuthor = existing.metadata.author
@@ -664,6 +678,50 @@ final class NarrationFlowModel {
                 // Validation reports missing metrics when analysis is unavailable.
             }
         }
+    }
+
+    func recomputeMetrics(takeIDs: [UUID]) async {
+        guard let project else { return }
+        let requested = Set(takeIDs)
+        let takes = project.allParagraphs.flatMap(\.takes).filter { requested.contains($0.id) }
+        metricsProgress = (0, takes.count)
+        defer { metricsProgress = nil }
+        let store = repository.store(for: project.id)
+        let calculator = AudioMetricsCalculator(decoder: AVFoundationDecoder())
+        for (index, take) in takes.enumerated() {
+            if let url = repository.takeURL(for: project.id, take: take),
+               let metrics = try? await calculator.metrics(for: url) {
+                try? await store.setTakeMetrics(metrics, forTake: take.id)
+            }
+            metricsProgress = (index + 1, takes.count)
+        }
+        if let refreshed = try? await repository.load(project.id) { self.project = refreshed }
+    }
+
+    func recomputeAllMetrics() async {
+        guard let project else { return }
+        await recomputeMetrics(takeIDs: project.allParagraphs.flatMap(\.takes).map(\.id))
+        await runValidation()
+    }
+
+    func clearPickup(_ paragraphID: UUID) async {
+        updateParagraph(paragraphID) { paragraph in
+            paragraph.reviewState = .unreviewed
+            paragraph.updatedAt = repository.clock.now
+        }
+        await persist()
+        await runValidation()
+    }
+
+    func regenerateScript(for destination: DestinationID) async {
+        guard var project else { return }
+        let generator: any ScriptGenerating = destination == .librivox
+            ? LibriVoxScriptGenerator()
+            : RetailScriptGenerator()
+        _ = ScriptApplier().apply(generator.plan(for: project), to: &project, ids: repository.ids, clock: repository.clock)
+        self.project = project
+        await persist()
+        await runValidation()
     }
 
     private static func flowState(_ paragraph: Paragraph) -> FlowParagraphState {
@@ -942,6 +1000,7 @@ final class NarrationFlowModel {
             didBackfill = true
         }
         needsSourceURLPrompt = repairedProject.rights.sourceURL == nil
+        needsNarratorPrompt = repairedProject.metadata.narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         self.project = repairedProject
         draftTitle = project.metadata.title
         draftAuthor = project.metadata.author
@@ -963,6 +1022,23 @@ final class NarrationFlowModel {
 
     func load(_ project: AudiobookProject) async {
         await resume(project)
+    }
+
+    /// The persisted takes behind a review row. The UI deliberately receives
+    /// values, never the mutable project graph.
+    func takes(for paragraphID: UUID) -> [Take] {
+        project?.allParagraphs.first(where: { $0.id == paragraphID })?.takes ?? []
+    }
+
+    func selectedTakeID(for paragraphID: UUID) -> UUID? {
+        project?.allParagraphs.first(where: { $0.id == paragraphID })?.selectedTakeID
+    }
+
+    func paragraphContext(for paragraphID: UUID) -> (chapterOrdinal: Int, number: Int, count: Int, role: ParagraphRole)? {
+        guard let project,
+              let chapter = project.chapters.first(where: { $0.paragraphs.contains(where: { $0.id == paragraphID }) }),
+              let index = chapter.paragraphs.firstIndex(where: { $0.id == paragraphID }) else { return nil }
+        return (chapter.ordinal, index + 1, chapter.paragraphs.count, chapter.paragraphs[index].role)
     }
 
     func paragraph(at id: UUID) -> FlowParagraph? {
@@ -996,6 +1072,46 @@ final class NarrationFlowModel {
         transform(&project.chapters[chapterIndex].paragraphs[paragraphIndex])
         project.modifiedAt = repository.clock.now
         self.project = project
+    }
+
+    func unacceptParagraph(_ id: UUID) {
+        updateParagraph(id) { paragraph in
+            paragraph.reviewState = .unreviewed
+            paragraph.updatedAt = repository.clock.now
+        }
+        Task { await persist() }
+    }
+
+    /// Confirms that the selected audio still matches an edited paragraph.
+    /// This only updates the take's text receipt; the audio remains untouched.
+    func acceptDrift(paragraphID: UUID) async {
+        updateParagraph(paragraphID) { paragraph in
+            guard let selected = paragraph.selectedTakeID,
+                  let index = paragraph.takes.firstIndex(where: { $0.id == selected }) else { return }
+            paragraph.takes[index].textHashAtRecording = paragraph.textHash
+            paragraph.updatedAt = repository.clock.now
+        }
+        await persist()
+    }
+
+    func saveMetadataField(_ field: MetadataField, value: String) {
+        guard var project else { return }
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch field {
+        case .title: project.metadata.title = value
+        case .subtitle: project.metadata.subtitle = value
+        case .author: project.metadata.author = value
+        case .narrator: project.metadata.narrator = value
+        case .language: project.metadata.language = value
+        case .description: project.metadata.description = value
+        case .subjects: project.metadata.subjects = value.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+        case .sourceURL:
+            project.rights.sourceURL = value.isEmpty ? nil : URL(string: value)
+        default: return
+        }
+        project.modifiedAt = repository.clock.now
+        self.project = project
+        Task { await persist() }
     }
 
     /// Durably saves the current project. Called from async action handlers
@@ -1076,6 +1192,12 @@ final class NarrationFlowModel {
 
     func startRecordingParagraph(_ id: UUID) async {
         guard let project, paragraph(at: id) != nil else { return }
+#if DEBUG
+        if let scripted = capture as? any TestCaptureScripting,
+           let text = project.allParagraphs.first(where: { $0.id == id })?.text {
+            scripted.stage(text: text)
+        }
+#endif
         currentParagraphID = id
         importError = nil
         micPermissionDenied = false
@@ -1139,7 +1261,9 @@ final class NarrationFlowModel {
             currentTake = FlowTake(duration: captured.duration, peakDBFS: captured.peakDBFS, clipped: captured.clippedDuringCapture)
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
             await persist()
-            analyzeMetricsLater(takeID: take.id, projectID: project.id, url: repository.takeURL(for: project.id, take: take))
+            if let takeURL = repository.takeURL(for: project.id, take: take) {
+                analyzeMetricsLater(takeID: take.id, projectID: project.id, url: takeURL)
+            }
             // P9 storage hardening (§6.5): the new take is `.localOnly` (never
             // evictable); if the working cache has grown past its cap, oldest
             // remote-verified chapters are offloaded to fit.
@@ -1510,6 +1634,8 @@ final class NarrationFlowModel {
     }
 
     func play(_ id: UUID) {
+        playbackQueue = []
+        playbackQueueIndex = 0
         guard let url = playbackURL(for: id) else {
             playbackError = "Couldn't play this recording — the audio file is missing."
             return
@@ -1521,7 +1647,8 @@ final class NarrationFlowModel {
     /// interruption).
     func playLatestTake(_ id: UUID) {
         guard let url = latestTakePlaybackURL(for: id) else { return }
-        play(url: url)
+        playbackQueue = []
+        _ = play(url: url, paragraphID: id, chapterID: nil)
     }
 
     @discardableResult
@@ -1539,21 +1666,17 @@ final class NarrationFlowModel {
             let player = try AVAudioPlayer(contentsOf: url)
             guard player.prepareToPlay() else { throw CocoaError(.fileReadCorruptFile) }
             player.currentTime = at
+            player.delegate = self
             guard player.play() else { throw CocoaError(.fileReadCorruptFile) }
             playbackTask?.cancel()
-            chapterPlaybackTask = nil
             playbackPlayer?.stop()
             playbackPlayer = player
             playbackDuration = player.duration
             playbackPosition = at
             playbackError = nil
-            takePlayback = .playing(paragraph: paragraphID ?? UUID(), chapter: chapterID)
+            guard let paragraphID else { throw CocoaError(.fileReadUnknown) }
+            takePlayback = .playing(paragraph: paragraphID, chapter: chapterID)
         } catch {
-            playbackPlayer = nil
-            playbackTask?.cancel()
-            takePlayback = .idle
-            playbackPosition = 0
-            playbackDuration = 0
             playbackError = "Couldn't start audio playback."
             return false
         }
@@ -1562,46 +1685,75 @@ final class NarrationFlowModel {
                 self.playbackPosition = self.playbackPlayer?.currentTime ?? 0
                 try? await Task.sleep(for: .milliseconds(100))
             }
-            guard let self, !Task.isCancelled else { return }
-            self.playbackPosition = self.playbackPlayer?.currentTime ?? self.playbackDuration
-            if case .playing(let paragraph, let chapter) = self.takePlayback,
-               paragraph == paragraphID {
-                self.takePlayback = .paused(paragraph: paragraph, chapter: chapter, at: self.playbackPosition)
-            }
         }
         return true
     }
 
     /// Plays every recorded paragraph in a chapter, in document order.
-    func playChapter(_ chapterID: UUID) {
-        chapterPlaybackTask?.cancel()
+    func playChapter(_ chapterID: UUID, from paragraphID: UUID? = nil) {
         stopPlayback()
         guard let project,
               let chapter = project.chapters.first(where: { $0.id == chapterID }) else { return }
-        let paragraphIDs = chapter.paragraphs.compactMap { paragraph in
-            paragraph.selectedTakeID == nil ? nil : paragraph.id
+        var skipped = 0
+        var items = chapter.paragraphs.compactMap { paragraph -> (paragraphID: UUID, chapterID: UUID?)? in
+            guard let take = paragraph.selectedTake else { return nil }
+            if remoteAssetBytesBySHA[take.assetRef.sha256] != nil { skipped += 1; return nil }
+            return (paragraph.id, chapterID)
         }
-        guard !paragraphIDs.isEmpty else { return }
-        playbackNotice = nil
-        chapterPlaybackTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            for paragraphID in paragraphIDs {
-                guard !Task.isCancelled else { return }
-                guard let url = self.playbackURL(for: paragraphID),
-                      self.play(url: url, paragraphID: paragraphID, chapterID: chapterID) else { continue }
-                while !Task.isCancelled,
-                      self.isPlayingTake,
-                      self.playbackParagraphID == paragraphID {
-                    try? await Task.sleep(for: .milliseconds(100))
-                }
+        if let paragraphID, let start = items.firstIndex(where: { $0.paragraphID == paragraphID }) {
+            items = Array(items[start...])
+        }
+        playbackNotice = skipped == 0 ? nil : "\(skipped) paragraph\(skipped == 1 ? " is" : "s are") in iCloud — download \(skipped == 1 ? "it" : "them") to include \(skipped == 1 ? "it" : "them")."
+        beginPlaybackQueue(items)
+    }
+
+    func playAll(from paragraphID: UUID? = nil) {
+        stopPlayback()
+        guard let project else { return }
+        var skipped = 0
+        var items: [(paragraphID: UUID, chapterID: UUID?)] = []
+        for chapter in project.chapters {
+            for paragraph in chapter.paragraphs {
+                guard let take = paragraph.selectedTake else { continue }
+                if remoteAssetBytesBySHA[take.assetRef.sha256] != nil { skipped += 1; continue }
+                items.append((paragraph.id, chapter.id))
             }
-            guard !Task.isCancelled else { return }
-            self.takePlayback = .idle
+        }
+        if let paragraphID, let start = items.firstIndex(where: { $0.paragraphID == paragraphID }) {
+            items = Array(items[start...])
+        }
+        playbackNotice = skipped == 0 ? nil : "\(skipped) paragraph\(skipped == 1 ? " is" : "s are") in iCloud — download \(skipped == 1 ? "it" : "them") to include \(skipped == 1 ? "it" : "them")."
+        beginPlaybackQueue(items)
+    }
+
+    private func beginPlaybackQueue(_ items: [(paragraphID: UUID, chapterID: UUID?)]) {
+        playbackQueue = items
+        playbackQueueIndex = 0
+        playCurrentQueueItem()
+    }
+
+    private func playCurrentQueueItem() {
+        guard playbackQueue.indices.contains(playbackQueueIndex) else {
+            stopPlayback()
+            return
+        }
+        let item = playbackQueue[playbackQueueIndex]
+        guard let url = playbackURL(for: item.paragraphID),
+              play(url: url, paragraphID: item.paragraphID, chapterID: item.chapterID) else {
+            playbackQueueIndex += 1
+            playCurrentQueueItem()
+            return
         }
     }
 
+    func nextPlaybackParagraph() {
+        guard !playbackQueue.isEmpty else { return }
+        playbackQueueIndex += 1
+        playCurrentQueueItem()
+    }
+
     func togglePlayback(_ id: UUID) {
-        chapterPlaybackTask?.cancel()
+        playbackQueue = []
         let chapter: UUID? = nil
         if case .playing(let paragraph, _) = takePlayback, paragraph == id,
            let player = playbackPlayer {
@@ -1621,14 +1773,58 @@ final class NarrationFlowModel {
         }
     }
 
+    /// Pauses/resumes the active queue without turning a chapter or whole-book
+    /// run into single-paragraph playback.
+    func toggleCurrentPlayback() {
+        guard let player = playbackPlayer else { return }
+        switch takePlayback {
+        case .playing(let paragraph, let chapter):
+            player.pause()
+            playbackTask?.cancel()
+            playbackPosition = player.currentTime
+            takePlayback = .paused(paragraph: paragraph, chapter: chapter, at: playbackPosition)
+        case .paused(let paragraph, let chapter, let at):
+            player.currentTime = at
+            guard player.play() else {
+                playbackError = "Couldn't start audio playback."
+                return
+            }
+            takePlayback = .playing(paragraph: paragraph, chapter: chapter)
+            playbackTask = Task { @MainActor [weak self] in
+                while let self, !Task.isCancelled, self.playbackPlayer?.isPlaying == true {
+                    self.playbackPosition = self.playbackPlayer?.currentTime ?? 0
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+            }
+        case .idle:
+            break
+        }
+    }
+
     func stopPlayback() {
-        chapterPlaybackTask?.cancel()
         playbackTask?.cancel()
         playbackPlayer?.stop()
+        playbackQueue = []
+        playbackQueueIndex = 0
         takePlayback = .idle
         playbackPosition = 0
         playbackNotice = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+    }
+
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.playbackTask?.cancel()
+            self.playbackPosition = self.playbackDuration
+            if !self.playbackQueue.isEmpty {
+                self.playbackQueueIndex += 1
+                self.playCurrentQueueItem()
+            } else {
+                self.takePlayback = .idle
+                self.playbackPosition = 0
+            }
+        }
     }
 
     // MARK: - Hydrate-then-play (spec §6.3)
@@ -1689,7 +1885,8 @@ final class NarrationFlowModel {
     /// Plays a specific take (mockup 08 "Play").
     func play(_ takeID: UUID, in paragraphID: UUID) {
         guard let url = takeURL(takeID, in: paragraphID) else { return }
-        play(url: url)
+        playbackQueue = []
+        _ = play(url: url, paragraphID: paragraphID)
     }
 
     /// Selects a take for a paragraph — a project mutation, therefore
@@ -2019,6 +2216,9 @@ final class NarrationFlowModel {
     /// a shared host path via `-uiTestExportDirectory <dir>` so it can read and
     /// verify the produced bytes itself (the argument is inert in normal runs).
     var exportsDirectory: URL {
+        if let path = ProcessInfo.processInfo.environment["VOXGLASS_E2E_OUTPUT"], !path.isEmpty {
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
         let arguments = ProcessInfo.processInfo.arguments
         if let index = arguments.firstIndex(of: "-uiTestExportDirectory"),
            arguments.indices.contains(index + 1) {
@@ -2137,9 +2337,9 @@ final class NarrationFlowModel {
             options.includeMP3Derivatives = true
         case .acx, .appleBooksAggregator:
             builder = RetailMasterPackageBuilder(destination: validationDestination)
-            options.applyMastering = true
+            options.applyMastering = applyMasteringForExport
             options.writeValidationReport = true
-            options.retailSample = defaultRetailSample()
+            options.retailSample = retailSampleOverride ?? defaultRetailSample()
         case .personalMaster:
             builder = RetailMasterPackageBuilder(destination: .personalMaster)
             options.applyMastering = false
@@ -2177,11 +2377,16 @@ final class NarrationFlowModel {
                 try? FileManager.default.removeItem(at: completed)
                 try FileManager.default.copyItem(at: bundle.rootURL, to: completed)
                 if let project = self.project, let library {
-                    let chapterFiles = bundle.files.filter { $0.role == .chapter }.sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
-                    let imports = chapterFiles.enumerated().map { index, file in
-                        LocalAudioImport(url: completed.appendingPathComponent(file.url.lastPathComponent), title: project.chapters.indices.contains(index) ? project.chapters[index].title : file.url.deletingPathExtension().lastPathComponent, sortKey: file.url.lastPathComponent, duration: file.duration)
+                    let imports = PersonalExportImportPlanner().plan(
+                        project: project,
+                        bundle: bundle,
+                        copiedDirectory: completed
+                    )
+                    do {
+                        importedBook = try await library.importNarration(directory: completed, title: project.metadata.title, files: imports)
+                    } catch {
+                        exportError = "Your files are ready, but Voxglass couldn't add them to My Books: \(error.localizedDescription)"
                     }
-                    importedBook = try? await library.importNarration(directory: completed, title: project.metadata.title, files: imports)
                 }
             }
             exportBundle = NarrationExportBundle(
@@ -2203,6 +2408,11 @@ final class NarrationFlowModel {
         guard let project else { return nil }
         guard let id = project.allParagraphs.first(where: { $0.selectedTakeID != nil })?.id else { return nil }
         return RetailSampleSelection(startParagraphID: id, duration: 90)
+    }
+
+    func setDefaultRetailSampleForExport() async {
+        retailSampleOverride = defaultRetailSample()
+        await runValidation()
     }
 
     func startExport() {
@@ -2420,26 +2630,16 @@ struct NarrationHelpSheet: View {
                     step(1, "Tap the record button and read the paragraph on screen.", icon: "record.circle")
                     step(2, "Tap stop when you're done. The take appears below the transport.", icon: "stop.fill")
                     step(3, "Listen back with play. Tap \"Accept & Next\" to move on, or flag a paragraph to re-record it later.", icon: "checkmark.circle.fill")
-                    step(4, "After the last paragraph, review the list, add title and rights, and produce your files.", icon: "list.bullet")
+                    step(4, "After the last paragraph, review the list — tap any paragraph to listen, approve or re-record it, or play a whole chapter — then produce your files.", icon: "list.bullet")
                     step(5, "Encoding to MP3/FLAC happens on your iPhone. Save the finished package to Files and submit it yourself.", icon: "iphone")
 
                     Text("If a recording doesn't start, check that the microphone is allowed in Settings → Privacy → Microphone.")
                         .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
 
-                    Button {
+                    NarrationPrimaryButton(title: "Got it", identifier: "narration.helpSheet.dismiss") {
                         dismiss()
-                    } label: {
-                        Text("Got it")
-                            .scaledFont(size: 15, weight: .heavy)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
-                            .foregroundStyle(NarrationPalette.espresso)
                     }
-                    .buttonStyle(.plain)
-                    .tactileTap()
-                    .accessibilityIdentifier("narration.helpSheet.dismiss")
                 }
                 .padding(18)
             }
