@@ -75,6 +75,7 @@
 		423DFA0E519EE3E7FB5969AF /* DiscoveryEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */; };
 		4316D94382F1DD709A02C4F0 /* terror_mystery_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9434A47A806A4EA4509EC595 /* terror_mystery_0707_librivox.jpg */; };
 		4487DE27D4F87CDA5EA2ADE6 /* adventures_holmes.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B0F652B44CEB7E5C6E362184 /* adventures_holmes.jpg */; };
+		45AB33D1AE3848D610C4ABDC /* NarrationStateFreshnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2993CB8F5B2A3A7B506245 /* NarrationStateFreshnessTests.swift */; };
 		461421576EA62442A0CEBD15 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = F3AC8EE75DFDED03283E4DC1 /* VoxglassCore */; };
 		464D30D8D889C3939F986AC8 /* WatchDictationCategoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E124B6655D526143C78AD7 /* WatchDictationCategoryView.swift */; };
 		47673AABDD458924EBD693C3 /* WatchFetchStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE5E31FFA303A4831A66963 /* WatchFetchStatusView.swift */; };
@@ -568,6 +569,7 @@
 		FC9CFADA2FB72CE4657D4958 /* ProductionWatchEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionWatchEnvironment.swift; sourceTree = "<group>"; };
 		FCBA4FCCF47EA1619C25179B /* flag.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = flag.wav; sourceTree = "<group>"; };
 		FCE3308D3D3F5B6D29FD3563 /* WatchSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSearchView.swift; sourceTree = "<group>"; };
+		FD2993CB8F5B2A3A7B506245 /* NarrationStateFreshnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationStateFreshnessTests.swift; sourceTree = "<group>"; };
 		FFE080C02F84A3F3C3C682AC /* count_monte_cristo_0711_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = count_monte_cristo_0711_librivox.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1078,6 +1080,7 @@
 			children = (
 				5BA040539B746FC98946D3D5 /* NarrateBookE2ETests.swift */,
 				784B723EEBDD956370DAC471 /* NarrationE2EFixture.swift */,
+				FD2993CB8F5B2A3A7B506245 /* NarrationStateFreshnessTests.swift */,
 			);
 			path = VoxglassNarrationE2E;
 			sourceTree = "<group>";
@@ -1465,6 +1468,7 @@
 			files = (
 				91F6B6F98B06B976D3339722 /* NarrateBookE2ETests.swift in Sources */,
 				5AFE4EE447AFE5A13DB146F5 /* NarrationE2EFixture.swift in Sources */,
+				45AB33D1AE3848D610C4ABDC /* NarrationStateFreshnessTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

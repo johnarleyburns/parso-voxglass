@@ -62,6 +62,11 @@ public struct NarratableWork: Sendable, Codable, Equatable {
     public var title: String
     public var author: String
     public var subject: String?
+    /// A short blurb about the work, carried from the catalogue so a project
+    /// started from a need reaches export with a description already filled in
+    /// (field report 2026-08-19, item 6). Optional so existing persisted needs
+    /// decode unchanged.
+    public var summary: String?
     public var lengthClass: LengthClass
     public var grade: WorkGrade
     public var estSeconds: Int
@@ -75,6 +80,7 @@ public struct NarratableWork: Sendable, Codable, Equatable {
         title: String,
         author: String,
         subject: String? = nil,
+        summary: String? = nil,
         lengthClass: LengthClass? = nil,
         grade: WorkGrade = .submittable,
         estSeconds: Int = 0,
@@ -87,6 +93,7 @@ public struct NarratableWork: Sendable, Codable, Equatable {
         self.title = title
         self.author = author
         self.subject = subject
+        self.summary = summary
         self.lengthClass = lengthClass ?? LengthClass.classification(forEstSeconds: estSeconds)
         self.grade = grade
         self.estSeconds = estSeconds

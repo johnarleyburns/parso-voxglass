@@ -129,6 +129,14 @@ public final class DiscoveryEnvironment {
     /// Persists a narration project (the flow already wrote the bytes), projects
     /// it to `ProductionPreviewStore`, and relays it to the watch. Idempotent.
     public func save(_ project: AudiobookProject) async {
+        // The narration flow mirrors every model change through here, so a
+        // screen holding an older copy of the project could overwrite newer
+        // work (field report 2026-08-19: approvals reverting, source URLs and
+        // regenerated disclaimers disappearing). Nothing in the app
+        // legitimately saves an older revision, so refuse it outright.
+        if let stored = try? await repository.load(project.id), stored.modifiedAt > project.modifiedAt {
+            return
+        }
         try? await repository.save(project)
         await publish(project)
         await reloadNarrations()

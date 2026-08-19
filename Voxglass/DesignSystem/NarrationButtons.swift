@@ -1,5 +1,25 @@
 import SwiftUI
 
+/// The one press appearance for narration controls. A press must be *visible*,
+/// not merely felt: `.buttonStyle(.plain)` supplies no pressed state at all, so
+/// approving a paragraph looked identical whether or not the tap landed
+/// (field report 2026-08-19, item 1).
+struct NarrationPressStyle: ButtonStyle {
+    var haptics = true
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.72 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                // Only on press, and only through the button itself — the old
+                // `.tactileTap()` gesture fired even on a disabled button.
+                if isPressed, haptics { TactileFeedback.tap() }
+            }
+    }
+}
+
 /// Shared narration-flow call to action. Keeping the disabled explanation in
 /// the component makes a blocked export understandable instead of merely dim.
 struct NarrationPrimaryButton: View {
@@ -26,8 +46,7 @@ struct NarrationPrimaryButton: View {
                     in: RoundedRectangle(cornerRadius: 14)
                 )
             }
-            .buttonStyle(.plain)
-            .tactileTap()
+            .buttonStyle(NarrationPressStyle())
             .disabled(disabledReason != nil || isBusy)
             .accessibilityIdentifier(identifier)
 
@@ -62,7 +81,7 @@ struct NarrationSecondaryButton: View {
                 .foregroundStyle(Palette.brass)
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.55), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NarrationPressStyle())
             .disabled(disabledReason != nil || isBusy)
             .accessibilityIdentifier(identifier)
 

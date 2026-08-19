@@ -1,6 +1,154 @@
 # Voxglass — current status
 
-**Updated:** 2026-08-19. **Tree:** `main` + the CI-hang fix and the playback-diagnostics fix (see below).
+**Updated:** 2026-08-19 (evening). **Tree:** `main` + the 2026-08-19 narration field-test fixes,
+**uncommitted and paused mid-verification** — start at "Resume here" below.
+
+---
+
+## 2026-08-19 (evening) — narration field-test fixes: written, partly verified, PAUSED
+
+**Plan of record:** `docs/NARRATION_FIELD_FIXES_2026_08_19_PLAN.md` (local only — `docs/` is
+gitignored as of `6f841e5`). **Baseline:** `cf2d0a1`. **Nothing is committed, staged, or pushed.**
+
+The work was paused by request while machine load was high. Everything below is on disk in the
+working tree.
+
+### Resume here
+
+Remaining steps, in order:
+
+1. `xcodebuild build-for-testing -project Voxglass.xcodeproj -scheme VoxglassNarrationE2E \
+   -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/dd CODE_SIGNING_ALLOWED=NO`
+   — this compile was killed mid-run when the pause came in; it has **never completed**, so
+   `VoxglassNarrationE2E/NarrationStateFreshnessTests.swift` is the one new file whose
+   compilation is still unproven.
+2. `swift test --no-parallel --skip VoxglassPerformanceTests` — full suite. Only the new/updated
+   tests have been run so far (22 passing); the rest of the 1300+ have not been re-run since these
+   changes.
+3. `scripts/test.sh --device "<a throwaway simulator>"` — the phone smoke test, which now carries a
+   new leg (`assertNarrationDetailsAndReviewPersist`). Create the simulator, run, delete it.
+4. `git add -A` then one commit, then push, then check CI.
+   **`git add` matters before running the guards**: `guard_wiring.sh`'s xcodeproj-drift check
+   regenerates and `git diff`s `Voxglass.xcodeproj`, so it reports FAIL purely because the already
+   regenerated `project.pbxproj` is unstaged. Everything else in that script passes.
+5. Optionally run the E2E harness itself (`-scheme VoxglassNarrationE2E`) — it is deliberately
+   outside `scripts/test.sh`, the pre-commit hook and CI, so it is on-demand only.
+
+### Verified so far
+
+| Check | Result |
+|---|---|
+| `swift build` | clean |
+| `xcodebuild build -scheme Voxglass -destination generic/platform=iOS` | **BUILD SUCCEEDED** |
+| `xcodebuild build-for-testing -scheme Voxglass` (app + `VoxglassUITests`) | **TEST BUILD SUCCEEDED** |
+| New/updated logic tests (22, six suites) | all pass |
+| `scripts/check-swift6.sh` | OK |
+| `scripts/guard_wiring.sh` | all pass except xcodeproj-drift (unstaged pbxproj, see above) |
+| `xcodebuild build-for-testing -scheme VoxglassNarrationE2E` | **TEST BUILD SUCCEEDED** |
+| Full `swift test --no-parallel --skip VoxglassPerformanceTests` | **1340 tests / 197 suites pass** (79.7 s) |
+| Phone smoke test | **still unproven — see below** |
+
+Four failures surfaced on the first full run and were fixed:
+
+- `NarrationStateFreshnessTests` did not compile — `XCTUnwrap`'s autoclosure cannot `await`; the
+  four `try XCTUnwrap(await …)` calls were hoisted into `let`s.
+- `AssemblySettingsTests.trimAndNormaliseShapeSegments` asserted `gainDB == -replayGainDB`. That
+  assertion encoded the sign bug, so it was inverted (with the reasoning in a comment). ReplayGain is
+  the gain *to apply*, which the validator's own `perceived = target - replayGainDB` confirms, and
+  `PackageBuilder.renderPlan` proves the exported audio really is built from `project.profile.assembly`.
+- `DisclaimerIssueIdentityTests` changed the *narrator* to make both disclaimers stale; only the
+  intro interpolates the narrator, so the test now changes the *title*, which both scripts carry.
+- `ValidationRuleEngineTests.perceivedVolumeOutOfBand` expected the warning with normalization on.
+  With the sign fixed, normalization genuinely brings that take into band, so the test now asserts
+  the raw-audio case, the attached `.normalizeLoudness` fix, **and** that turning normalization on
+  clears it.
+
+### Phone smoke test — two runs, neither a pass, neither a regression
+
+1. **Throwaway `Voxglass-Agent-iPhone-16`, `CODE_SIGNING_ALLOWED=NO`** — the app crashed at launch in
+   `CKContainer.init(identifier:)` inside `AppServices.init()`. Unsigned builds have no CloudKit
+   entitlement. **Do not pass `CODE_SIGNING_ALLOWED=NO` to `xcodebuild test`**; `scripts/test.sh`
+   deliberately does not.
+2. **Same simulator, signing left alone** — reached `VoxglassUITests.swift:251` with
+   `1 blocking · 21 warnings`, the single blocker being `staleDisclaimerText`. This is **exactly the
+   pre-existing N1 defect** recorded under "What is left" and specified below, not a regression: a
+   simulator with no saved narrator name records *"Recording by ."*. It is the only configuration
+   that reproduces it.
+3. **Shared `iPhone 16` (the device the pre-commit hook actually uses)** — failed after 916 s at
+   `VoxglassUITests.swift:117` with `Failed to tap "Narration" Button: Timed out while synthesizing
+   event`. That is simulator contention on a loaded machine, not a logic failure; the run never
+   reached any narration assertion. **This needs one clean re-run before committing.**
+
+That third run also fixed a real regression it exposed on run 2: `attest()` assigned
+`project.metadata.description = descriptionText`, so attesting **blanked** the description W6 had just
+filled in (`missingDescription` was still in the report). `buildParagraphs` now seeds
+`descriptionText`, and a new `resolvedDescription(title:author:narrator:existing:)` prefers the
+narrator's draft, then the stored description, then the generated one — so nothing can blank it.
+
+### Next actions
+
+1. Re-run the phone smoke test on an idle machine:
+   `xcodebuild test -scheme Voxglass -project Voxglass.xcodeproj -destination "platform=iOS Simulator,name=iPhone 16" -derivedDataPath .build/dd`
+   (no `CODE_SIGNING_ALLOWED=NO`). It must reach the new `assertNarrationDetailsAndReviewPersist` leg.
+2. `git add -A`, one commit, push, watch CI.
+3. N1 stays out of this change set — see "Still open, deliberately".
+
+### What changed, by work item
+
+Implemented in the plan's order: W9 → W7 → W10 → W4/W3/W6 → W5/W11 → W1/W2/W8.
+
+| Item | Change |
+|---|---|
+| **W9** | `ScriptApplier` resolves every paragraph index against the live array instead of a chapter snapshot taken before the intro is inserted. That snapshot made the outro script overwrite the preceding **recorded** body paragraph while the real outro stayed stale, so "Regenerate" could never clear `staleDisclaimerText`. Its retail branch also now actually writes an existing credits chapter's text (it used to count `report.updated` and change nothing). |
+| **W7** | `NarrationFlowRoot` takes `existingID: UUID?` and loads the project from the store; `ProjectDashboardView` holds `@State project`, adopts newer revisions from the model, and re-reads the store when the flow closes; `DiscoveryEnvironment.save` refuses a write whose `modifiedAt` is older than the stored row. This is the defect that reverted approvals, resurrected the source-URL prompt, and undid regenerated disclaimers. |
+| **W10** | `SQLiteProductionStore.save` (and `InMemoryProductionStore.save`) carry forward `metrics_json` for takes whose incoming graph has none, so the delete-and-reinsert no longer erases analysis written by `setTakeMetrics`. `runValidation()` now reloads from the store and calls the new `analyzeMissingMetrics()`; `analyzeMetricsLater` / `recomputeMetrics` patch the one take in place instead of swapping in a whole reloaded project. The report sheet is presented *before* the check runs and shows `validation.analyzing` while it does. |
+| **W4** | New `reloadProjectFromStore()` and `storedProject(_:)` on the model; the review screen drops focus before checking. |
+| **W3** | The dashboard Details card is read-only until an `dashboard.details.edit` button is pressed, holds edits in a draft dictionary committed once on Done, and gained a Description field. |
+| **W6** | `NarratableWork.summary`, `BookMetadata.defaultDescription(title:author:narrator:)`, populated by `importNeed` / `buildParagraphs` / `NarrationProjectBuilder`, plus a description repair in `backfillProjectDetailsIfNeeded` with the key bumped to `narration.backfill.details.v2` so already-marked projects are revisited. |
+| **W5** | The intro and outro disclaimer issues now carry distinct titles, messages and `variant`s; `ValidationRuleEngine.add` refuses to append a second issue sharing an id. |
+| **W11** | New `AssemblyLoudness` — `normalizationGainDB` **adds** ReplayGain (the old `SegmentQueueBuilder` negated it, doubling the deviation) and clamps against a true-peak ceiling. New `FixAction.normalizeLoudness` + `NarrationFlowModel.normalizeLoudness()`, wired into both fix-action switches. `evaluateLoudness` judges the audio that will actually export, and paragraph review shows each take's estimated dB. |
+| **W1** | `NarrationPressStyle` (scale + opacity + haptic on press) replaces `.buttonStyle(.plain)` + `.tactileTap()` on the narration buttons — the old gesture also fired on disabled buttons. |
+| **W2** | Approve / Flag / Re-record / Import each get their own full-width 48pt row in `ParagraphReviewView`, and Approve reads "Approved" once it lands. |
+| **W8** | "Check my recording" removed from the dashboard and the assemble screen; it lives only on Review. |
+
+### Files touched
+
+Core: `ScriptApplier.swift`, `ScriptGenerator` consumers, `ValidationRuleEngine.swift`,
+`FixAction.swift`, `SegmentQueueBuilder.swift`, new `Assembly/AssemblyLoudness.swift`,
+`SQLiteProductionStore.swift`, `InMemoryProductionStore.swift`, `BookMetadata.swift`,
+`NarrationNeed.swift`, `NarrationProjectBuilder.swift`.
+
+Features: `NarrationFlow.swift`, `NarrationFlowScreens.swift`, `ProjectDashboardView.swift`,
+`ParagraphReviewView.swift`, `ValidationReportView.swift`, `DiscoveryEnvironment.swift`,
+`NarrationProjectRepository.swift`, `DesignSystem/NarrationButtons.swift`.
+
+Tests: new `VoxglassTests/Production/Text/ScriptApplierIndexTests.swift`,
+`Production/Validation/DisclaimerIssueIdentityTests.swift`,
+`Production/Assembly/LoudnessNormalizationTests.swift`,
+`Production/Store/TakeMetricsPersistenceTests.swift`,
+`Production/Text/NarrationDescriptionTests.swift`; updated
+`Production/Validation/FixActionCoverageTests.swift` (19 cases now); new
+`VoxglassNarrationE2E/NarrationStateFreshnessTests.swift`; new leg
+`assertNarrationDetailsAndReviewPersist` in `VoxglassUITests/VoxglassUITests.swift`
+(still exactly one UI test function per device). `Voxglass.xcodeproj/project.pbxproj` regenerated
+via `xcodegen generate` for the new E2E file.
+
+### Known consequences to watch on the first real run
+
+- The dashboard no longer offers "Check my recording", so any manual script that taps
+  `dashboard.checkRecording` will fail by design.
+- `NarrationFlowRoot(existing:)` no longer exists; the resume path is `existingID:`. The
+  value-taking `NarrationFlowModel(existing:)` initializer is unchanged and still used by the
+  smoke test and the E2E harness.
+- The details-backfill key bump means every existing project is repaired once more on next launch.
+
+### Still open, deliberately
+
+**"Plan — pick the narrator name up front (N1)" below is NOT closed by this work.** W9 makes
+Regenerate actually fix a stale disclaimer and W5 makes the two issues legible, but a first-time
+narrator with no saved name still records an intro that says *"Recording by ."*, because tapping a
+featured need goes straight to the record screen and skips the name prompt. That is a separate,
+still-unimplemented plan.
 
 ---
 
@@ -82,10 +230,7 @@ goes the wrong way — harmless on a 10+ core dev Mac, fatal on a 3-core hosted 
    re-applies the script plan, so the recorded text and the engine's expectation diverge and LibriVox
    export is blocked behind the `Regenerate` fix action.
 
-   Suggested fix: re-apply the LibriVox plan to disclaimer paragraphs that have **no takes yet**
-   whenever `saveNarratorName` or `attest()` changes narrator/title/author, and prompt for the narrator
-   on the record entry point as well as the paragraph list. A disclaimer that is already recorded must
-   keep raising `staleDisclaimerText` — its audio really does say the wrong name.
+   Fix plan: **[Pick the narrator name up front](#plan--pick-the-narrator-name-up-front-n1)** below.
 
    This is invisible on the shared `iPhone 16` simulator and on any real device where the narrator name
    has ever been saved, which is why the gate has been green.
@@ -151,6 +296,101 @@ xcrun simctl delete   "Voxglass-Agent-iPhone-16" "Voxglass-Agent-Watch"
 ```
 
 As of this update no agent simulators exist and none are booted.
+
+---
+
+## Plan — pick the narrator name up front (N1)
+
+**Status:** specified 2026-08-19, not started. **Fixes:** the first-run `staleDisclaimerText` block
+recorded above.
+
+### The decision
+
+Ask for the narrator name **the first time the user opens the Narration tab with no name saved**, not
+somewhere inside the recording flow. The name is an identity choice, not a per-project field: it is the
+one piece of metadata every LibriVox disclaimer interpolates, and it must be known *before* any
+disclaimer text is generated. Asking at the tab is the earliest point where the user has expressed
+intent to narrate and the latest point that is still before `buildParagraphs()`.
+
+Prompt copy, exactly:
+
+> **Your narrator name**
+>
+> Pick your name to use as a narrator, it can be your real name or a pseudonym, up to you.
+
+### Why the current design fails
+
+`voxglass.narratorName` (`UserDefaults.standard`) is read in three places and written in two, and the
+only two prompts that can set it live *inside* the flow:
+
+| Site | Role |
+|---|---|
+| `NarrationFlow.swift:322` | `var narrator = UserDefaults…string(forKey:) ?? ""` — read at model init |
+| `NarrationFlow.swift:985` | `resume(_:)` backfill of `project.metadata.narrator` |
+| `NarrationProjectRepository.swift:157` | read when materialising a project |
+| `NarrationFlow.saveNarratorName(_:)` | write — reached only from the two in-flow alerts |
+| `NarrationFlow.attest()` (`:1601`) | write — the metadata screen, *after* recording |
+| `NarrationFlowScreens.swift:103` | prompt on the paragraph-list screen |
+| `NarrationFlowScreens.swift:778`, `ProjectDashboardView.swift:77` | prompt on review/dashboard |
+
+Tapping a featured need goes straight to `RecordView`, so **none** of those prompts is on the path a
+first-time narrator actually takes. The intro is generated with `narrator == ""`, recorded as
+*"Recording by ."*, and only then does the metadata screen set the real name — at which point the
+recorded text and `LibriVoxScriptGenerator`'s expectation diverge and LibriVox export is blocked.
+
+### Steps
+
+**N1.1 — one owner for the name.** Add `NarratorIdentity` (a small `Sendable` store over
+`UserDefaults`, in `Voxglass/Features/Production/Discovery/`) exposing `current: String`,
+`isSet: Bool`, and `save(_:)`. Route all five sites in the table above through it; nothing else reads
+or writes the raw key. `NarrationTabView` needs the name before any `NarrationFlow` exists, so the
+store must not depend on the flow model.
+
+**N1.2 — ask on the Narration tab.** In `NarrationTabView` (`NarrationTabView.swift:14`), on first
+appearance with `!NarratorIdentity.isSet`, present the prompt above as an `.alert` with a `TextField`
+(matching the existing prompts' treatment), identifier `narration.narratorPrompt`. Save trims
+whitespace and is disabled while the field is blank. Offer **"Not now"** — the tab must stay usable —
+but re-ask on each fresh appearance until a name is saved, and record the decline only for the current
+app run (no persisted "never ask" flag).
+
+**N1.3 — never bake a blank name into a disclaimer.** `buildParagraphs()` must not generate LibriVox
+intro text while the narrator is empty. Two guards, both needed:
+
+- If `NarratorIdentity.isSet` is false when a need or import is opened, present the same prompt before
+  the flow builds paragraphs.
+- If the user still declines, `saveNarratorName(_:)` and `attest()` re-apply the LibriVox plan
+  (`ScriptApplier().apply(LibriVoxScriptGenerator().plan(for:)…)`) to disclaimer paragraphs that have
+  **no takes yet**. A disclaimer that is already recorded is deliberately left stale — its audio really
+  does say the wrong name, so `staleDisclaimerText` must keep asking for a re-record. That asymmetry is
+  the whole point and must be stated in the code comment.
+
+**N1.4 — changeable later.** Add a "Narrator name" row to the Settings → Narration group
+(`SettingsView.swift:36`), identifier `settings.narratorName`, writing through `NarratorIdentity`.
+Changing it there must run the same N1.3 resync so unrecorded disclaimers follow the new name.
+
+**N1.5 — guard it.** Extend `check_pref_key_writers` in `scripts/guard_wiring.sh` so `voxglass.narratorName`
+may only appear inside `NarratorIdentity`. This is the guard that keeps N1.1 from rotting.
+
+### Tests
+
+- **Logic tests** (`VoxglassTests`, the real coverage): a fresh store reports `isSet == false`; saving
+  trims and persists; `buildParagraphs()` after a save produces an intro whose text equals
+  `LibriVoxScriptGenerator().plan(for:)`; `saveNarratorName` resyncs an unrecorded disclaimer and
+  **leaves a recorded one stale**; a project whose disclaimer is recorded still raises
+  `staleDisclaimerText` after a rename.
+- **One UI smoke test per device stays the rule.** Extend
+  `VoxglassUITests.testAppBootsVisitsAllTabsEQAndProductions` in place with a leg that answers the new
+  tab prompt; do **not** add a second smoke test. This also removes the test's dependence on ambient
+  simulator state — the reason the `:251` failure was invisible on the shared `iPhone 16`.
+- **Verify on a throwaway simulator with no saved name**, per the simulator-hygiene convention below.
+  That is the only configuration that reproduces the bug.
+
+### Risk
+
+The smoke test currently reaches the record screen with no interstitial. N1.2 adds an alert on the
+Narration tab that fires before the "Start a Narration" shelf is usable, so every UI test leg that taps
+`Narration` needs the prompt answered or dismissed first — that is the one change most likely to break
+the gate, and it should land together with the test update rather than before it.
 
 ---
 

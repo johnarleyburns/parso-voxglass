@@ -671,11 +671,30 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             do {
                 let metrics = try await AudioMetricsCalculator(decoder: AVFoundationDecoder()).metrics(for: url)
                 try await self.repository.store(for: projectID).setTakeMetrics(metrics, forTake: takeID)
-                if let refreshed = try? await self.repository.load(projectID), self.project?.id == projectID {
-                    self.project = refreshed
+                if self.project?.id == projectID {
+                    // Patch the one take rather than swapping in a whole
+                    // reloaded project: analysis runs in the background, and a
+                    // full swap would silently undo anything the narrator did
+                    // while it was running.
+                    self.applyMetricsInPlace(metrics, takeID: takeID)
                 }
             } catch {
                 // Validation reports missing metrics when analysis is unavailable.
+            }
+        }
+    }
+
+    /// Writes measured metrics onto the in-memory take, leaving every other
+    /// part of the project graph untouched.
+    private func applyMetricsInPlace(_ metrics: AudioQualityMetrics, takeID: UUID) {
+        guard var project else { return }
+        for chapterIndex in project.chapters.indices {
+            for paragraphIndex in project.chapters[chapterIndex].paragraphs.indices {
+                guard let takeIndex = project.chapters[chapterIndex].paragraphs[paragraphIndex]
+                    .takes.firstIndex(where: { $0.id == takeID }) else { continue }
+                project.chapters[chapterIndex].paragraphs[paragraphIndex].takes[takeIndex].metrics = metrics
+                self.project = project
+                return
             }
         }
     }
@@ -692,10 +711,23 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             if let url = repository.takeURL(for: project.id, take: take),
                let metrics = try? await calculator.metrics(for: url) {
                 try? await store.setTakeMetrics(metrics, forTake: take.id)
+                applyMetricsInPlace(metrics, takeID: take.id)
             }
             metricsProgress = (index + 1, takes.count)
         }
-        if let refreshed = try? await repository.load(project.id) { self.project = refreshed }
+    }
+
+    /// Measures every selected take that has no metrics, or metrics from an
+    /// older analyzer, publishing `metricsProgress` as it goes. Called by
+    /// `runValidation()` so "Check my recording" analyzes instead of merely
+    /// reporting that nothing was analyzed (field report 2026-08-19, item 12).
+    func analyzeMissingMetrics() async {
+        guard let project else { return }
+        let pending = project.allParagraphs.compactMap(\.selectedTake).filter {
+            $0.metrics.map { $0.analyzerVersion != AudioMetricsCalculator.analyzerVersion } ?? true
+        }
+        guard !pending.isEmpty else { return }
+        await recomputeMetrics(takeIDs: pending.map(\.id))
     }
 
     func recomputeAllMetrics() async {
@@ -709,6 +741,21 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             paragraph.reviewState = .unreviewed
             paragraph.updatedAt = repository.clock.now
         }
+        await persist()
+        await runValidation()
+    }
+
+    /// Turns on render-time loudness normalization for the whole project and
+    /// re-validates. Non-destructive: the recorded takes on disk are never
+    /// rewritten (§11.1, mockup 10). This is the remedy for
+    /// `perceivedVolumeOutOfBand`, which previously had none at all on the free
+    /// lanes (field report 2026-08-19, item 13).
+    func normalizeLoudness() async {
+        guard var project else { return }
+        project.profile.assembly.normalizeLoudness = true
+        project.modifiedAt = repository.clock.now
+        self.project = project
+        assembly = project.profile.assembly
         await persist()
         await runValidation()
     }
@@ -756,11 +803,24 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         importPreview = nil
     }
 
+    /// The description a new project starts with: the narrator's own draft when
+    /// they have one, the catalogue summary when the need carried one, and the
+    /// conventional one-liner otherwise. Never empty — an empty description is
+    /// a warning on both free lanes and is never what the narrator meant.
+    func resolvedDescription(title: String, author: String, narrator: String, existing: String = "") -> String {
+        let draft = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !draft.isEmpty { return draft }
+        let saved = existing.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !saved.isEmpty { return saved }
+        return BookMetadata.defaultDescription(title: title, author: author, narrator: narrator)
+    }
+
     func importNeed(_ need: NarrationNeed) {
         pendingNeedID = need.id
         draftTitle = need.work.title
         draftAuthor = need.work.author
         draftText = need.work.text ?? ""
+        descriptionText = need.work.summary ?? ""
         setSource(need.work.sourcePageURL?.absoluteString)
     }
 
@@ -827,6 +887,10 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         let title = draftTitle.isEmpty ? "This work" : draftTitle
         let author = draftAuthor.isEmpty ? "Unknown" : draftAuthor
         let reader = narrator.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Keep the draft in step with the project: `attest()` folds the draft
+        // back in, so leaving it empty here would blank the description the
+        // moment the narrator attests (field report 2026-08-19, item 6).
+        descriptionText = resolvedDescription(title: title, author: author, narrator: reader)
 
         var bodyParagraphs: [Paragraph] = []
         for (index, text) in body.enumerated() {
@@ -836,7 +900,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         let chapter = ProductionChapter(id: repository.ids.next(), ordinal: 0, title: title, role: .body, paragraphs: bodyParagraphs)
         var project = AudiobookProject(
             id: repository.ids.next(),
-            metadata: BookMetadata(title: title, author: author, narrator: reader, language: "en-US"),
+            metadata: BookMetadata(
+                title: title,
+                author: author,
+                narrator: reader,
+                language: "en-US",
+                description: resolvedDescription(title: title, author: author, narrator: reader)
+            ),
             rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL.flatMap(URL.init(string:))),
             profile: ProductionProfile(
                 purpose: .publicDomainCommunity,
@@ -1008,6 +1078,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         pendingNeedID = await repository.needID(for: repairedProject.id)
         draftText = await repository.sourceText(for: repairedProject.id) ?? ""
         narrator = repairedProject.metadata.narrator
+        assembly = repairedProject.profile.assembly
         language = repairedProject.metadata.language.isEmpty ? "English" : repairedProject.metadata.language
         descriptionText = repairedProject.metadata.description
         subjectsText = repairedProject.metadata.subjects.joined(separator: "; ")
@@ -1022,6 +1093,21 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
     func load(_ project: AudiobookProject) async {
         await resume(project)
+    }
+
+    /// The stored revision of a project. The flow and the dashboard both open
+    /// projects by id and read them through here, so no screen can resume a
+    /// snapshot another screen has already moved past.
+    func storedProject(_ id: UUID) async -> AudiobookProject? {
+        try? await repository.load(id)
+    }
+
+    /// Re-reads the open project before anything judges it. A check must never
+    /// report a field the user can see on screen (field report 2026-08-19),
+    /// and another model instance may have written since this one loaded.
+    func reloadProjectFromStore() async {
+        guard let id = project?.id, let fresh = try? await repository.load(id) else { return }
+        project = fresh
     }
 
     /// The persisted takes behind a review row. The UI deliberately receives
@@ -1591,7 +1677,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         project.rights.attestedBy = reader
         project.metadata.narrator = reader
         project.metadata.language = language
-        project.metadata.description = descriptionText
+        // Never blank an existing description just because the draft is empty.
+        project.metadata.description = resolvedDescription(
+            title: project.metadata.title,
+            author: project.metadata.author,
+            narrator: reader,
+            existing: project.metadata.description
+        )
         project.metadata.subjects = subjectsText.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
         if let url = URL(string: sourceURLText.trimmingCharacters(in: .whitespacesAndNewlines)), !sourceURLText.isEmpty {
             project.rights.sourceURL = url
@@ -2252,10 +2344,16 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// with the hydration + storage preflight context fed in, so the screen and
     /// the export pipeline agree about what blocks the run.
     func runValidation() async {
-        guard let project else { return }
+        guard project != nil else { return }
         isValidating = true
         validationError = nil
         defer { isValidating = false }
+        // The store is the authority — another screen may have written since
+        // this model loaded — and a check that reports missing metrics it could
+        // have measured itself is not a check (field report 2026-08-19).
+        await reloadProjectFromStore()
+        await analyzeMissingMetrics()
+        guard let project else { return }
         let assets = (try? await SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL).records()) ?? []
         let preflight = ExportPreflight.compute(
             project: project,
@@ -2519,14 +2617,20 @@ struct NarrationFlowRoot: View {
     @State private var model: NarrationFlowModel
     @State private var showHelp = false
     @State private var confirmDelete = false
-    let existing: AudiobookProject?
+    @State private var isResuming: Bool
+    /// Resume path: the **id** of the project to open, never a value. A value
+    /// captured by a parent view goes stale the moment the flow saves, and the
+    /// mirror below would then write that stale graph back over the store
+    /// (field report 2026-08-19: approvals reverting, prompts returning).
+    let existingID: UUID?
     let startNeed: NarrationNeed?
     let startAt: NarrationStep?
 
-    init(existing: AudiobookProject? = nil, startNeed: NarrationNeed? = nil, startAt: NarrationStep? = nil) {
-        self.existing = existing
+    init(existingID: UUID? = nil, startNeed: NarrationNeed? = nil, startAt: NarrationStep? = nil) {
+        self.existingID = existingID
         self.startNeed = startNeed
         self.startAt = startAt
+        _isResuming = State(initialValue: existingID != nil)
         #if DEBUG
         // The smoke test drives the whole flow with a scripted capture
         // (spec §12.3) so recording is deterministic with no mic or audio
@@ -2537,7 +2641,7 @@ struct NarrationFlowRoot: View {
         #else
         let capture: any AudioCapturing = AudioSessionCapture()
         #endif
-        _model = State(initialValue: NarrationFlowModel(existing: existing, capture: capture))
+        _model = State(initialValue: NarrationFlowModel(capture: capture))
     }
 
     var body: some View {
@@ -2545,6 +2649,13 @@ struct NarrationFlowRoot: View {
             Group {
                 if model.project != nil {
                     FlowResumeRouter(model: model)
+                } else if isResuming {
+                    // The resume path reads the project from the store, so the
+                    // import screen must not flash while that load is in flight.
+                    ProgressView("Opening your narration…")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(VoxglassBackground())
+                        .accessibilityIdentifier("narration.resuming")
                 } else {
                     WorkImportView(model: model)
                 }
@@ -2596,7 +2707,15 @@ struct NarrationFlowRoot: View {
             model.phoneProduction = discovery.phoneProduction
             model.library = discovery.library
             model.requestedStep = startAt
-            if let existing, startNeed == nil { await model.load(existing) }
+            if let existingID, startNeed == nil {
+                // Always the stored revision, never a value the presenting view
+                // captured earlier: that snapshot is what used to erase
+                // approvals, source URLs and regenerated disclaimers.
+                if let fresh = await model.storedProject(existingID) {
+                    await model.load(fresh)
+                }
+                isResuming = false
+            }
             if let startNeed {
                 model.importNeed(startNeed)
                 if let existing = await model.existingProject(for: startNeed) {

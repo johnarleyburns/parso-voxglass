@@ -681,6 +681,7 @@ struct ReviewView: View {
     @State private var sourceURLBackfill = ""
     @State private var narratorBackfill = ""
     @State private var showValidationReport = false
+    @FocusState private var editorFocus: Bool
     @State private var showFixMetadata = false
     @State private var showFixStorage = false
     @State private var showFixAudioSetup = false
@@ -730,10 +731,16 @@ struct ReviewView: View {
 
             VStack(spacing: 10) {
                 NarrationSecondaryButton(title: "Check my recording", systemImage: "checkmark.circle", isBusy: model.isValidating, identifier: "review.checkRecording") {
+                    // Drop focus so a field the user is still editing is
+                    // committed before anything judges it, and show the sheet
+                    // *first* so its analysis progress is visible while the
+                    // check runs (field report 2026-08-19, items 4 and 12).
+                    editorFocus = false
+                    showValidationReport = true
                     Task {
+                        await Task.yield()
                         model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
                         await model.runValidation()
-                        showValidationReport = true
                     }
                 }
                 NarrationPrimaryButton(
@@ -825,7 +832,7 @@ struct ReviewView: View {
             case .manageStorage: showFixStorage = true
             case .openAudioSetup: showFixAudioSetup = true
             case .reanalyzeTake, .regenerateDisclaimers, .regenerateCredits, .applyMastering,
-                 .setRetailSample, .clearPickup, .hydrateAssets, .backupNow:
+                 .setRetailSample, .clearPickup, .hydrateAssets, .backupNow, .normalizeLoudness:
                 return // Executed directly by ValidationReportSheet before dismissal.
             }
         }
@@ -1135,7 +1142,6 @@ struct AssembleView: View {
     var isPushed = false
     @State private var sceneGap: TimeInterval = 1.0
     @State private var tailSilence: TimeInterval = 1.5
-    @State private var showValidationReport = false
 
     var body: some View {
         ScrollView {
@@ -1163,13 +1169,8 @@ struct AssembleView: View {
                 Text("Assembly is a plan. Your original takes are never modified or trimmed on disk.")
                     .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
 
-                NarrationSecondaryButton(title: "Check my recording", systemImage: "checkmark.circle", isBusy: model.isValidating, identifier: "assemble.checkRecording") {
-                    Task {
-                        model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
-                        await model.runValidation()
-                        showValidationReport = true
-                    }
-                }
+                // "Check my recording" lives only on the Review view
+                // (field report 2026-08-19, item 10).
                 NarrationPrimaryButton(title: "Continue ▸", identifier: "assemble.continue") { goMetadata = true }
             }
             .padding(18)
@@ -1178,7 +1179,6 @@ struct AssembleView: View {
         .navigationDestination(isPresented: $goMetadata) {
             MetadataView(model: model, isPushed: true)
         }
-        .sheet(isPresented: $showValidationReport) { ValidationReportSheet(model: model) }
         .narrationFlowBackOnlyToolbar(if: isPushed)
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -2052,6 +2052,8 @@ struct ValidateExportView: View {
         case .applyMastering:
             model.applyMasteringForExport = true
             Task { await model.runValidation() }
+        case .normalizeLoudness:
+            Task { await model.normalizeLoudness() }
         }
     }
 
@@ -2064,6 +2066,7 @@ struct ValidateExportView: View {
         case .recordParagraph: return "Record"
         case .clearPickup: return "Clear"
         case .regenerateDisclaimers, .regenerateCredits: return "Regenerate"
+        case .normalizeLoudness: return "Normalize"
         case .reanalyzeTake: return "Re-analyze"
         case .setRetailSample: return "Sample"
         case .splitChapter: return "Split"

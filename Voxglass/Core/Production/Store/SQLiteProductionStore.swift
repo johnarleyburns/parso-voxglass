@@ -63,6 +63,13 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
     public func save(_ project: AudiobookProject) async throws {
         try await db.prepare()
         try await db.transaction { db in
+            // `setTakeMetrics` writes analysis straight to the take row, so an
+            // in-memory graph loaded before that write carries `metrics == nil`.
+            // Saving is a delete-and-reinsert, which used to erase the analysis
+            // and leave "Check my recording" reporting missing metrics forever
+            // (field report 2026-08-19, item 12). Metrics describe immutable
+            // audio, so a save that has none carries the stored ones forward.
+            let storedMetrics = try await Self.storedTakeMetrics(db, projectID: project.id)
             try await db.execute("DELETE FROM paragraph_pronunciation WHERE paragraph_id IN (SELECT id FROM paragraph WHERE project_id = ?)", [.string(project.id.uuidString)])
             try await db.execute("DELETE FROM take WHERE project_id = ?", [.string(project.id.uuidString)])
             try await db.execute("DELETE FROM paragraph WHERE project_id = ?", [.string(project.id.uuidString)])
@@ -74,12 +81,24 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
                 for para in ch.paragraphs {
                     try await saveParagraph(db, para, chapterID: ch.id, projectID: project.id)
                     for take in para.takes {
-                        try await saveTake(db, take, paragraphID: para.id, projectID: project.id)
+                        try await saveTake(db, take, paragraphID: para.id, projectID: project.id, preservedMetricsJSON: storedMetrics[take.id])
                     }
                 }
             }
         }
         try await db.checkpoint()
+    }
+
+    /// `metrics_json` per take id, read before the rows are deleted.
+    private static func storedTakeMetrics(_ db: ProjectDatabase, projectID: UUID) async throws -> [UUID: String] {
+        let rows = try await db.query("SELECT id, metrics_json FROM take WHERE project_id = ? AND metrics_json IS NOT NULL", [.string(projectID.uuidString)])
+        var result: [UUID: String] = [:]
+        for row in rows {
+            guard let idString = row.string("id"), let id = UUID(uuidString: idString),
+                  let json = row.string("metrics_json") else { continue }
+            result[id] = json
+        }
+        return result
     }
 
     public func withExclusiveWrite<T: Sendable>(_ body: @Sendable () async throws -> T) async throws -> T {
@@ -581,9 +600,9 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         ])
     }
 
-    private func saveTake(_ db: ProjectDatabase, _ t: Take, paragraphID: UUID, projectID: UUID) async throws {
+    private func saveTake(_ db: ProjectDatabase, _ t: Take, paragraphID: UUID, projectID: UUID, preservedMetricsJSON: String? = nil) async throws {
         let procJ = try String(data: encoder.encode(t.processing), encoding: .utf8)!
-        let metJ = t.metrics.map { _ in try? String(data: encoder.encode(t.metrics!), encoding: .utf8)! } ?? nil
+        let metJ = (t.metrics.map { _ in try? String(data: encoder.encode(t.metrics!), encoding: .utf8)! } ?? nil) ?? preservedMetricsJSON
         try await db.execute("INSERT INTO take (id,paragraph_id,project_id,asset_sha256,asset_path,asset_bytes,asset_content_type,origin_kind,origin_payload,recorded_at,duration,sample_rate,channels,bit_depth,codec,processing_json,metrics_json,label,text_hash_at_recording,is_archived,capture_warning,route_class) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
             .string(t.id.uuidString), .string(paragraphID.uuidString), .string(projectID.uuidString),
             .string(t.assetRef.sha256), .string(t.assetRef.relativePath), .int(Int64(t.assetRef.byteCount)),

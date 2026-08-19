@@ -17,7 +17,9 @@ public final class NarrationProjectRepository {
     public let ids: any IDGenerator
 
     private static let revisionKey = "narration.projectionRevision"
-    private static let detailsBackfillKey = "narration.backfill.details.v1"
+    // v2 revisits projects the v1 pass already marked done, so the
+    // description repair below reaches them (field report 2026-08-19, item 6).
+    private static let detailsBackfillKey = "narration.backfill.details.v2"
 
     /// Sync-state key for a project's monotonic projection revision (spec §13.3
     /// staleness check). Shared with `PhoneProductionEnvironment.localPublish`.
@@ -159,10 +161,23 @@ public final class NarrationProjectRepository {
                 repaired.metadata.narrator = saved.trimmingCharacters(in: .whitespacesAndNewlines)
                 changed = true
             }
-            if repaired.rights.sourceURL == nil, let id = await needID(for: project.id),
-               let need = knownNeeds.first(where: { $0.id == id }), let source = need.work.sourcePageURL {
+            let need = await needID(for: project.id).flatMap { id in knownNeeds.first { $0.id == id } }
+            if repaired.rights.sourceURL == nil, let source = need?.work.sourcePageURL {
                 repaired.rights.sourceURL = source
                 changed = true
+            }
+            if repaired.metadata.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let summary = need?.work.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let description = (summary?.isEmpty == false ? summary : nil)
+                    ?? BookMetadata.defaultDescription(
+                        title: repaired.metadata.title,
+                        author: repaired.metadata.author,
+                        narrator: repaired.metadata.narrator
+                    )
+                if !description.isEmpty {
+                    repaired.metadata.description = description
+                    changed = true
+                }
             }
             if changed { try? await save(repaired) }
             try? await projectStore.setSyncValue(Self.detailsBackfillKey, "1")

@@ -138,6 +138,10 @@ private struct Evaluator {
     let assembly: AssemblySettings
     let context: ValidationContext
     var issues: [ValidationIssue] = []
+    /// Ids already emitted. A set, not a scan of `issues`: the engine evaluates
+    /// thousands of paragraphs and a linear membership check per issue makes the
+    /// whole run quadratic (`PerformanceBudgetTests`).
+    var emittedIssueIDs: Set<UUID> = []
 
     private var isLibrivox: Bool { profile.id == .librivox }
     private var isArchive: Bool { profile.id == .internetArchive }
@@ -328,16 +332,20 @@ private struct Evaluator {
                 let outro = chapter.paragraphs.last { $0.role == .libriVoxOutro }
 
                 for (kind, paragraph) in [(ParagraphRole.libriVoxIntro, intro), (.libriVoxOutro, outro)] {
+                    // Name the part everywhere: the intro and the outro used to
+                    // emit the same title and the same message, which read as
+                    // one duplicated error (field report 2026-08-19, item 5).
+                    let part = kind == .libriVoxIntro ? "intro" : "outro"
                     if let paragraph {
                         if paragraph.selectedTakeID == nil {
-                            add(.unrecordedDisclaimer, "Unrecorded \(kind == .libriVoxIntro ? "intro" : "outro")", "The LibriVox \(kind == .libriVoxIntro ? "intro" : "outro") for \(chapter.title) has no recording.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .recordParagraph(paragraph.id))
+                            add(.unrecordedDisclaimer, "Unrecorded \(part)", "The LibriVox \(part) for \(chapter.title) has no recording.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .recordParagraph(paragraph.id), variant: kind.rawValue)
                         }
                         let expected = kind == .libriVoxIntro ? plan.chapterIntros[chapter.id] : plan.chapterOutros[chapter.id]
                         if let expected, paragraph.text != expected {
-                            add(.staleDisclaimerText, "Stale disclaimer text", "The LibriVox disclaimer for \(chapter.title) does not match the current metadata.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .regenerateDisclaimers)
+                            add(.staleDisclaimerText, "Stale \(part) disclaimer", "The LibriVox \(part) for \(chapter.title) no longer matches the current metadata.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
                         }
                     } else {
-                        add(.missingDisclaimerParagraph, "Missing \(kind == .libriVoxIntro ? "intro" : "outro") disclaimer", "\(chapter.title) has no LibriVox \(kind == .libriVoxIntro ? "intro" : "outro") paragraph.", chapterID: chapter.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
+                        add(.missingDisclaimerParagraph, "Missing \(part) disclaimer", "\(chapter.title) has no LibriVox \(part) paragraph.", chapterID: chapter.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
                     }
                 }
             }
@@ -522,12 +530,27 @@ private struct Evaluator {
 
     private mutating func evaluateLoudness() {
         guard isLibrivox, case .replayGainBand(let low, let high, let target) = profile.loudness else { return }
+        let isNormalizing = assembly.isNormalizingLoudness
         for (paragraph, take) in orderedTakes {
             guard let m = metrics[take.id], m.analyzerVersion == analyzerVersion else { continue }
-            let perceived = target - m.replayGainDB
-            if perceived < low || perceived > high {
-                add(.perceivedVolumeOutOfBand, "Estimated perceived volume out of band", "Estimated perceived volume is \(Int(perceived.rounded())) dB (LibriVox prefers \(Int(low))–\(Int(high)) dB). This is an estimate; the LibriVox checker is authoritative.", paragraphID: paragraph.id, takeID: take.id, measured: perceived, expected: "\(Int(low))–\(Int(high)) dB")
-            }
+            // Judge the audio the narrator will actually export: with
+            // normalization on, the render applies a gain, so a take that is
+            // quiet on disk can still land inside the band.
+            let perceived = AssemblyLoudness.perceivedVolumeDB(for: m, target: target, isNormalizing: isNormalizing)
+            guard perceived < low || perceived > high else { continue }
+            let remedy = isNormalizing
+                ? "Normalization is already on and cannot reach the band — re-record this paragraph closer to the others."
+                : "Turn on take-to-take normalization to bring it into the band without re-recording."
+            add(
+                .perceivedVolumeOutOfBand,
+                "Estimated perceived volume out of band",
+                "Estimated perceived volume is \(Int(perceived.rounded())) dB (LibriVox prefers \(Int(low))–\(Int(high)) dB). \(remedy) This is an estimate; the LibriVox checker is authoritative.",
+                paragraphID: paragraph.id,
+                takeID: take.id,
+                measured: perceived,
+                expected: "\(Int(low))–\(Int(high)) dB",
+                fix: isNormalizing ? .recordParagraph(paragraph.id) : .normalizeLoudness
+            )
         }
     }
 
@@ -608,8 +631,13 @@ private struct Evaluator {
         variant: String = ""
     ) {
         guard let severity = Self.severity(for: profile.id, code: code) else { return }
+        let id = ValidationIssue.deterministicID(code: code, chapterID: chapterID, paragraphID: paragraphID, variant: variant)
+        // One issue per instance. `ValidationIssue` is `Identifiable`, and two
+        // rows sharing an id inside a `ForEach` render as an undefined
+        // duplicate (field report 2026-08-19, item 5).
+        guard emittedIssueIDs.insert(id).inserted else { return }
         issues.append(ValidationIssue(
-            id: ValidationIssue.deterministicID(code: code, chapterID: chapterID, paragraphID: paragraphID, variant: variant),
+            id: id,
             severity: severity,
             code: code,
             title: title,

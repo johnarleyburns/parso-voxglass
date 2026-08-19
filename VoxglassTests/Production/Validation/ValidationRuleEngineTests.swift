@@ -626,11 +626,25 @@ import VoxglassCoreTestSupport
         let takeID = UUID()
         let paragraph = recordedParagraph("Loudness", takeID: takeID)
         let project = baseProject(chapters: [chapter([paragraph])])
-        let result = run(project: project, target: .librivox, metrics: [takeID: metrics(replayGain: -5)])
+        var raw = AssemblySettings()
+        raw.normalizeLoudness = false
+
+        let result = run(project: project, target: .librivox, metrics: [takeID: metrics(replayGain: -5)], assembly: raw)
         #expect(issues(.perceivedVolumeOutOfBand, result).count == 1)
-        let inBand = run(project: project, target: .librivox, metrics: [takeID: metrics(replayGain: 0)])
+        // The narrator is handed a control, not just a warning.
+        #expect(issues(.perceivedVolumeOutOfBand, result).first?.fix == .normalizeLoudness)
+
+        let inBand = run(project: project, target: .librivox, metrics: [takeID: metrics(replayGain: 0)], assembly: raw)
         #expect(issues(.perceivedVolumeOutOfBand, inBand).isEmpty)
-        #expect(issues(.perceivedVolumeOutOfBand, run(project: project, target: .acx, metrics: [takeID: metrics(replayGain: -5)])).isEmpty)
+        #expect(issues(.perceivedVolumeOutOfBand, run(project: project, target: .acx, metrics: [takeID: metrics(replayGain: -5)], assembly: raw)).isEmpty)
+
+        // With render-time normalization on — the default — the exported audio
+        // is brought into the band, so there is nothing to warn about
+        // (field report 2026-08-19, item 13).
+        var normalizing = AssemblySettings()
+        normalizing.normalizeLoudness = true
+        let normalized = run(project: project, target: .librivox, metrics: [takeID: metrics(replayGain: -5)], assembly: normalizing)
+        #expect(issues(.perceivedVolumeOutOfBand, normalized).isEmpty)
     }
 
     @Test func fixActionsAreAttached() {

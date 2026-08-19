@@ -73,7 +73,14 @@ import VoxglassCoreTestSupport
         let segment = trimmed[0]
         #expect(abs(segment.trim.lowerBound - 0.4) < 0.001)
         #expect(abs(segment.trim.upperBound - 4.7) < 0.001)
-        #expect(abs(segment.gainDB + 2.0) < 0.001)
+        // ReplayGain is the gain *to apply* to reach the reference level
+        // (`ReplayGainCalculator`: gainDB = -25.4885 - L95), so normalization
+        // adds it. Subtracting it — which this assertion used to require —
+        // doubled the deviation instead of removing it, and is why
+        // `perceivedVolumeOutOfBand` never cleared (field report 2026-08-19).
+        // The +2.0 dB request fits inside the peak head room (-4.5 dBFS), so
+        // the clamp does not bite here.
+        #expect(abs(segment.gainDB - 2.0) < 0.001)
 
         // Toggling both off leaves the take untouched in the plan.
         let raw = SegmentQueueBuilder().build(.chapter(chapter.id), from: project, settings: AssemblySettings(trimSilenceAtEdges: false, normalizeLoudness: false))

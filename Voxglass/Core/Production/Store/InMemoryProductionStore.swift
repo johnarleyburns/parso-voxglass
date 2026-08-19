@@ -17,7 +17,24 @@ public actor InMemoryProductionStore: ProductionStore {
     }
 
     public func save(_ project: AudiobookProject) async throws {
-        self.project = project
+        // Matches the SQLite store: metrics written by `setTakeMetrics` are
+        // carried forward when the incoming graph has none for that take.
+        var incoming = project
+        var stored: [UUID: AudioQualityMetrics] = [:]
+        for take in self.project?.allParagraphs.flatMap(\.takes) ?? [] {
+            if let metrics = take.metrics { stored[take.id] = metrics }
+        }
+        if !stored.isEmpty {
+            for i in incoming.chapters.indices {
+                for j in incoming.chapters[i].paragraphs.indices {
+                    for k in incoming.chapters[i].paragraphs[j].takes.indices
+                    where incoming.chapters[i].paragraphs[j].takes[k].metrics == nil {
+                        incoming.chapters[i].paragraphs[j].takes[k].metrics = stored[incoming.chapters[i].paragraphs[j].takes[k].id]
+                    }
+                }
+            }
+        }
+        self.project = incoming
     }
 
     public func withExclusiveWrite<T: Sendable>(_ body: @Sendable () async throws -> T) async throws -> T {

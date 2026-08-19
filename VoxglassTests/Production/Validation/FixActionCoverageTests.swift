@@ -11,9 +11,9 @@ import VoxglassCore
             .regenerateDisclaimers, .regenerateCredits, .applyMastering,
             .splitChapter(id, atParagraph: id), .chooseArtwork, .setRetailSample,
             .reanalyzeTake(id), .clearPickup(id), .hydrateAssets, .manageStorage,
-            .backupNow, .openAudioSetup
+            .backupNow, .openAudioSetup, .normalizeLoudness
         ]
-        #expect(actions.count == 18)
+        #expect(actions.count == 19)
         #expect(actions.allSatisfy { !handlerDescription(for: $0).isEmpty })
     }
 
@@ -37,6 +37,7 @@ import VoxglassCore
         case .manageStorage: "manage storage"
         case .backupNow: "back up"
         case .openAudioSetup: "open audio setup"
+        case .normalizeLoudness: "normalize loudness"
         }
     }
 }

@@ -87,8 +87,8 @@ public struct SegmentQueueBuilder: Sendable {
                         trimRange = leading..<max(leading, take.duration - trailing)
                     }
                 }
-                if settings.isNormalizingLoudness, let m = take.metrics, m.replayGainDB != 0 {
-                    gain = -m.replayGainDB
+                if settings.isNormalizingLoudness, let m = take.metrics {
+                    gain = AssemblyLoudness.normalizationGainDB(for: m)
                 }
                 var fadeIn: TimeInterval = 0
                 var fadeOut: TimeInterval = 0

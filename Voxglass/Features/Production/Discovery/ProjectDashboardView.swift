@@ -8,17 +8,23 @@ import VoxglassCore
 struct ProjectDashboardView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @State private var dashboard: ProjectDashboard
-    @State private var flowProject: AudiobookProject?
+    /// The id of the project to open in the flow. Presenting by id — not by
+    /// value — is what stops the flow resuming a snapshot this screen froze
+    /// when it was pushed (field report 2026-08-19).
+    @State private var flowProjectID: FlowTarget?
     @State private var showScriptEditor = false
     @State private var showStorage = false
     @State private var model: NarrationFlowModel
-    @State private var showValidationReport = false
     @State private var narratorBackfill = ""
     @State private var sourceURLBackfill = ""
-    let project: AudiobookProject
+    @State private var isEditingDetails = false
+    @State private var detailDrafts: [MetadataField: String] = [:]
+    /// The live project. Seeded from the pushing list, then kept in step with
+    /// the model and re-read from the store whenever the flow closes.
+    @State private var project: AudiobookProject
 
     init(project: AudiobookProject) {
-        self.project = project
+        _project = State(initialValue: project)
         _dashboard = State(initialValue: ProjectDashboard(project: project))
         _model = State(initialValue: NarrationFlowModel(existing: project))
     }
@@ -34,13 +40,8 @@ struct ProjectDashboardView: View {
 
                 detailsCard
 
-                NarrationSecondaryButton(title: "Check my recording", systemImage: "checkmark.circle", isBusy: model.isValidating, identifier: "dashboard.checkRecording") {
-                    Task {
-                        model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
-                        await model.runValidation()
-                        showValidationReport = true
-                    }
-                }
+                // "Check my recording" lives only on the Review view
+                // (field report 2026-08-19, item 10).
 
                 needsAttentionCard
 
@@ -58,8 +59,8 @@ struct ProjectDashboardView: View {
         .toolbar(.visible, for: .navigationBar)
         .navigationTitle(project.metadata.title)
         .navigationBarTitleDisplayMode(.inline)
-        .fullScreenCover(item: $flowProject) { project in
-            NarrationFlowRoot(existing: project, startAt: dashboard.recordNext == nil ? .reviewList : nil)
+        .fullScreenCover(item: $flowProjectID) { target in
+            NarrationFlowRoot(existingID: target.id, startAt: dashboard.recordNext == nil ? .reviewList : nil)
         }
         .navigationDestination(isPresented: $showScriptEditor) {
             ScriptEditorView(project: project)
@@ -68,12 +69,28 @@ struct ProjectDashboardView: View {
             StorageSettingsView()
         }
         .task {
-            await model.load(project)
+            if let fresh = await model.storedProject(project.id) { adopt(fresh) }
+            await model.load(model.project ?? project)
             narratorBackfill = model.narrator
             sourceURLBackfill = model.sourceURLText
             await discovery.reloadNarrations()
         }
-        .sheet(isPresented: $showValidationReport) { ValidationReportSheet(model: model) }
+        .onChange(of: model.project) { _, fresh in
+            guard let fresh, !isEditingDetails else { return }
+            adopt(fresh)
+        }
+        .onChange(of: flowProjectID) { _, target in
+            // The flow owns the project while it is open; when it closes, the
+            // store — not this screen's older copy — is the authority.
+            guard target == nil else { return }
+            Task {
+                if let fresh = await model.storedProject(project.id) {
+                    adopt(fresh)
+                    await model.load(fresh)
+                }
+                await discovery.reloadNarrations()
+            }
+        }
         .alert("Add narrator name", isPresented: $model.needsNarratorPrompt) {
             TextField("Narrator name", text: $narratorBackfill)
             Button("Save") { model.saveNarratorName(narratorBackfill) }
@@ -124,7 +141,7 @@ struct ProjectDashboardView: View {
 
     private var recordNextButton: some View {
         NarrationPrimaryButton(title: recordNextCaption, identifier: "dashboard.recordNext") {
-            flowProject = project
+            flowProjectID = FlowTarget(id: project.id)
         }
     }
 
@@ -156,36 +173,103 @@ struct ProjectDashboardView: View {
 
     private var detailsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Details").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
-            detailField("Title", field: .title, value: model.project?.metadata.title ?? "")
-            detailField("Author", field: .author, value: model.project?.metadata.author ?? "")
-            detailField("Narrator", field: .narrator, value: model.project?.metadata.narrator ?? "")
-            detailField("Language", field: .language, value: model.project?.metadata.language ?? "")
-            detailField("Source URL", field: .sourceURL, value: model.project?.rights.sourceURL?.absoluteString ?? "")
+            HStack {
+                Text("Details").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
+                Spacer()
+                Button(isEditingDetails ? "Done" : "Edit") {
+                    if isEditingDetails { commitDetailDrafts() } else { beginEditingDetails() }
+                }
+                .scaledFont(size: 13, weight: .bold)
+                .foregroundStyle(Palette.brass)
+                .buttonStyle(NarrationPressStyle())
+                .accessibilityIdentifier("dashboard.details.edit")
+            }
+            detailField("Title", field: .title)
+            detailField("Author", field: .author)
+            detailField("Narrator", field: .narrator)
+            detailField("Language", field: .language)
+            detailField("Description", field: .description, isMultiline: true)
+            detailField("Source URL", field: .sourceURL)
         }
         .padding(14)
         .glassSurface(cornerRadius: 16)
     }
 
-    private func detailField(_ label: String, field: MetadataField, value: String) -> some View {
+    /// Reading is the default; editing is a deliberate mode. Tapping a value no
+    /// longer starts an edit, and edits are committed once on Done instead of
+    /// on every keystroke (field report 2026-08-19, items 3 and 7).
+    @ViewBuilder
+    private func detailField(_ label: String, field: MetadataField, isMultiline: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label.uppercased()).scaledFont(size: 10.5, weight: .bold).foregroundStyle(Palette.ink3)
-            TextField(label, text: Binding(
-                get: {
-                    switch field {
-                    case .title: model.project?.metadata.title ?? ""
-                    case .author: model.project?.metadata.author ?? ""
-                    case .narrator: model.project?.metadata.narrator ?? ""
-                    case .language: model.project?.metadata.language ?? ""
-                    case .sourceURL: model.project?.rights.sourceURL?.absoluteString ?? ""
-                    default: value
+            if isEditingDetails {
+                let binding = Binding(
+                    get: { detailDrafts[field] ?? storedDetail(field) },
+                    set: { detailDrafts[field] = $0 }
+                )
+                Group {
+                    if isMultiline {
+                        TextEditor(text: binding)
+                            .frame(minHeight: 60)
+                            .padding(6)
+                            .background(NarrationPalette.panelInk, in: RoundedRectangle(cornerRadius: 11))
+                    } else {
+                        TextField(label, text: binding)
+                            .padding(9)
+                            .background(NarrationPalette.panelInk, in: RoundedRectangle(cornerRadius: 11))
                     }
-                },
-                set: { model.saveMetadataField(field, value: $0) }
-            ))
-            .textInputAutocapitalization(field == .sourceURL ? .never : .sentences)
-            .accessibilityIdentifier("dashboard.details.\(field.rawValue)")
+                }
+                .scaledFont(size: 14)
+                .foregroundStyle(Palette.ink)
+                .textInputAutocapitalization(field == .sourceURL ? .never : .sentences)
+                .accessibilityIdentifier("dashboard.details.\(field.rawValue)")
+            } else {
+                let value = storedDetail(field)
+                Text(value.isEmpty ? "—" : value)
+                    .scaledFont(size: 14)
+                    .foregroundStyle(value.isEmpty ? Palette.ink3 : Palette.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("dashboard.details.\(field.rawValue).value")
+            }
         }
+    }
+
+    private func storedDetail(_ field: MetadataField) -> String {
+        guard let project = model.project else { return "" }
+        switch field {
+        case .title: return project.metadata.title
+        case .author: return project.metadata.author
+        case .narrator: return project.metadata.narrator
+        case .language: return project.metadata.language
+        case .description: return project.metadata.description
+        case .sourceURL: return project.rights.sourceURL?.absoluteString ?? ""
+        default: return ""
+        }
+    }
+
+    private func beginEditingDetails() {
+        detailDrafts = Dictionary(uniqueKeysWithValues: Self.editableDetailFields.map { ($0, storedDetail($0)) })
+        isEditingDetails = true
+    }
+
+    private func commitDetailDrafts() {
+        for field in Self.editableDetailFields {
+            guard let draft = detailDrafts[field], draft != storedDetail(field) else { continue }
+            model.saveMetadataField(field, value: draft)
+        }
+        detailDrafts = [:]
+        isEditingDetails = false
+        if let fresh = model.project { adopt(fresh) }
+    }
+
+    private static let editableDetailFields: [MetadataField] = [
+        .title, .author, .narrator, .language, .description, .sourceURL
+    ]
+
+    /// Takes a newer revision of the project as this screen's truth.
+    private func adopt(_ fresh: AudiobookProject) {
+        project = fresh
+        dashboard = ProjectDashboard(project: fresh)
     }
 
     private func progressBar(value: Double) -> some View {
@@ -218,7 +302,7 @@ struct ProjectDashboardView: View {
             attentionRow("Text changed after recording", "\(dashboard.driftCount) ¶", systemImage: "pencil", tint: NarrationPalette.brassSoft, id: "dashboard.drift")
 
             NarrationSecondaryButton(title: "Start review queue", identifier: "dashboard.startReviewQueue") {
-                flowProject = project
+                flowProjectID = FlowTarget(id: project.id)
             }
             .padding(.top, 11)
         }
@@ -238,7 +322,7 @@ struct ProjectDashboardView: View {
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .onTapGesture { flowProject = project }
+        .onTapGesture { flowProjectID = FlowTarget(id: project.id) }
         .accessibilityIdentifier(id)
     }
 
@@ -274,8 +358,7 @@ struct ProjectDashboardView: View {
                     .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.brass.opacity(0.5), lineWidth: 1))
                     .foregroundStyle(Palette.brass)
             }
-            .buttonStyle(.plain)
-            .tactileTap()
+            .buttonStyle(NarrationPressStyle())
             .padding(.top, 4)
             .accessibilityIdentifier("dashboard.manageStorage")
         }
@@ -302,15 +385,15 @@ struct ProjectDashboardView: View {
             }
             VoxglassListDivider()
             workOnRow("Assembly", "Gaps, room tone, chapter renders", systemImage: "waveform.path", id: "dashboard.assemble") {
-                flowProject = project
+                flowProjectID = FlowTarget(id: project.id)
             }
             VoxglassListDivider()
             workOnRow("Metadata & rights", project.rights.isAttested ? "Attested" : "Artwork missing", systemImage: "info.circle", id: "dashboard.metadata") {
-                flowProject = project
+                flowProjectID = FlowTarget(id: project.id)
             }
             VoxglassListDivider()
             workOnRow("Validate & export", "Check issues before export", systemImage: "checkmark.circle", id: "dashboard.validate") {
-                flowProject = project
+                flowProjectID = FlowTarget(id: project.id)
             }
         }
         .padding(6)
@@ -331,7 +414,7 @@ struct ProjectDashboardView: View {
             .padding(.vertical, 10)
             .padding(.horizontal, 8)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NarrationPressStyle())
         .accessibilityIdentifier(id)
     }
 
@@ -415,4 +498,13 @@ private extension DestinationID {
         case .acx, .appleBooksAggregator: return "Retail"
         }
     }
+}
+
+// MARK: - Flow presentation target
+
+/// Identifies the project the narration flow should open. Presenting by id
+/// keeps the flow's copy of the project sourced from the store, never from a
+/// value a parent view froze earlier.
+struct FlowTarget: Identifiable, Hashable {
+    let id: UUID
 }

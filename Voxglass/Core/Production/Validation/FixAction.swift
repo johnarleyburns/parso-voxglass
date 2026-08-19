@@ -22,4 +22,7 @@ public enum FixAction: Sendable, Equatable, Codable {
     case manageStorage
     case backupNow
     case openAudioSetup
+    /// Turns on render-time loudness normalization for the whole project.
+    /// Non-destructive: the recorded audio is never rewritten (§11.1).
+    case normalizeLoudness
 }

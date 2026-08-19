@@ -39,7 +39,7 @@ struct ParagraphReviewView: View {
                     if paragraph.isDrifted { driftBanner }
                     transport(paragraph)
                     takesCard
-                    actions
+                    actions(paragraph)
                     adjacentNavigation
                 } else {
                     ContentUnavailableView("Paragraph unavailable", systemImage: "text.badge.xmark")
@@ -180,7 +180,7 @@ struct ParagraphReviewView: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NarrationPressStyle())
                 .accessibilityIdentifier("paragraphReview.take.\(index)")
             }
         }
@@ -188,25 +188,51 @@ struct ParagraphReviewView: View {
         .glassSurface(cornerRadius: 16)
     }
 
-    private var actions: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                Button("Approve") {
-                    model.acceptParagraph(currentID)
-                    Task { await model.persist() }
-                }
-                .accessibilityIdentifier("paragraphReview.approve")
-                Button("Flag") { showFlagSheet = true }
-                    .accessibilityIdentifier("paragraphReview.flag")
-                Button("Re-record") { openRecorder() }
-                    .accessibilityIdentifier("paragraphReview.rerecord")
+    /// One action per row: three targets crammed into a single `HStack` were
+    /// too small to hit reliably, and Approve gave no sign it had landed
+    /// (field report 2026-08-19, items 1 and 2).
+    private func actions(_ paragraph: FlowParagraph) -> some View {
+        let isApproved = paragraph.state == .approved
+        return VStack(spacing: 10) {
+            Button {
+                model.acceptParagraph(currentID)
+                Task { await model.persist() }
+            } label: {
+                Label(isApproved ? "Approved" : "Approve",
+                      systemImage: isApproved ? "checkmark.circle.fill" : "checkmark.circle")
+                    .scaledFont(size: 14, weight: .bold)
+                    .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
+            .tint(isApproved ? Palette.ok : Palette.brass)
+            .accessibilityIdentifier("paragraphReview.approve")
+
+            Button {
+                showFlagSheet = true
+            } label: {
+                Label("Flag", systemImage: "flag")
+                    .scaledFont(size: 14, weight: .bold)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("paragraphReview.flag")
+
+            Button {
+                openRecorder()
+            } label: {
+                Label("Re-record", systemImage: "mic")
+                    .scaledFont(size: 14, weight: .bold)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("paragraphReview.rerecord")
+
             Button {
                 showImport = true
             } label: {
                 Label("Import audio", systemImage: "square.and.arrow.down")
-                    .frame(maxWidth: .infinity)
+                    .scaledFont(size: 14, weight: .bold)
+                    .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier("paragraphReview.import")
@@ -309,6 +335,22 @@ struct ParagraphReviewView: View {
         }
         let date = RelativeDateTimeFormatter().localizedString(for: take.recordedAt, relativeTo: model.repository.clock.now)
         let peak = take.metrics.map { String(format: "%.1f dBFS", $0.peakDBFS) }
-        return [origin, date, peak].compactMap { $0 }.joined(separator: " · ")
+        return [origin, date, peak, perceivedVolumeLabel(take)].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// The estimated perceived volume this take will export at, against the
+    /// destination's band, so the outlier paragraph is findable without opening
+    /// the validation report (field report 2026-08-19, item 13).
+    private func perceivedVolumeLabel(_ take: Take) -> String? {
+        guard let metrics = take.metrics,
+              let destination = model.project?.profile.intendedDestination,
+              case .replayGainBand(let low, let high, let target) = DestinationProfile.profile(for: destination).loudness
+        else { return nil }
+        let perceived = target - metrics.replayGainDB
+        guard perceived.isFinite else { return nil }
+        let value = "\(Int(perceived.rounded())) dB"
+        if perceived < low { return "\(value) · quiet" }
+        if perceived > high { return "\(value) · loud" }
+        return value
     }
 }

@@ -55,7 +55,8 @@ public struct NarrationProjectBuilder: Sendable {
                 title: finalTitle,
                 author: finalAuthor,
                 narrator: narrator,
-                language: document.language ?? "en-US"
+                language: document.language ?? "en-US",
+                description: BookMetadata.defaultDescription(title: finalTitle, author: finalAuthor, narrator: narrator)
             ),
             rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL),
             profile: ProductionProfile(

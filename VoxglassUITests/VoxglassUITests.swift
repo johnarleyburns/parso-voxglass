@@ -301,6 +301,8 @@ final class VoxglassUITests: XCTestCase {
 
         assertCompletedDashboardRoutesToReview(app: app)
 
+        assertNarrationDetailsAndReviewPersist(app: app)
+
         // The EQ step needs the Listen tab anyway; switch there first (also
         // forces a clean tab re-render after the cover dismissal), then Search.
         app.buttons["Listen"].tap()
@@ -368,6 +370,121 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 10))
         app.buttons["Close"].tap()
         XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
+    }
+
+    /// 2026-08-19 field report legs, in one helper: the Details box is read-only
+    /// until Edit, it carries a Description, the check lives only on Review and
+    /// passes on its *first* press, and an approval survives leaving and
+    /// re-entering the flow.
+    private func assertNarrationDetailsAndReviewPersist(app: XCUIApplication) {
+        // Item 3/7: Details reads, then edits, and has a Description field.
+        let edit = app.buttons["dashboard.details.edit"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 10), "Details has no Edit button.\n\(app.debugDescription)")
+        XCTAssertTrue(
+            app.staticTexts["dashboard.details.description.value"].exists,
+            "Details must show a Description.\n\(app.debugDescription)"
+        )
+        XCTAssertFalse(
+            app.textViews["dashboard.details.description"].exists,
+            "Details fields must not be editable before Edit is pressed."
+        )
+
+        // Item 10: the check is not on the dashboard.
+        XCTAssertFalse(
+            app.buttons["dashboard.checkRecording"].exists,
+            "\"Check my recording\" must live only on the Review view."
+        )
+
+        edit.tap()
+        let sourceURL = app.textFields["dashboard.details.sourceURL"]
+        XCTAssertTrue(sourceURL.waitForExistence(timeout: 10), "Edit mode did not expose the Source URL field.")
+        let done = app.buttons["dashboard.details.edit"]
+        XCTAssertTrue(done.exists)
+        done.tap()
+        XCTAssertTrue(
+            app.staticTexts["dashboard.details.sourceURL.value"].waitForExistence(timeout: 10),
+            "Done did not return Details to reading."
+        )
+
+        // Item 4/5/6: one press of the check, and it is clean.
+        let recordNext = app.buttons["dashboard.recordNext"]
+        XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
+        recordNext.tap()
+        XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 15))
+
+        let check = app.buttons["review.checkRecording"]
+        XCTAssertTrue(check.waitForExistence(timeout: 10))
+        check.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["validation.reportSheet"].waitForExistence(timeout: 20),
+            "The recording check did not open its report.\n\(app.debugDescription)"
+        )
+        // Wait for the run to settle before reading the issue list.
+        let settled = expectation(
+            for: NSPredicate(format: "exists == false"),
+            evaluatedWith: app.descendants(matching: .any)["validation.analyzing"]
+        )
+        wait(for: [settled], timeout: 120)
+        XCTAssertFalse(
+            app.descendants(matching: .any)["validation.issue.missingSourceURL"].exists,
+            "The first check reported a source URL the narrator can already see."
+        )
+        XCTAssertFalse(
+            app.descendants(matching: .any)["validation.issue.missingDescription"].exists,
+            "An imported narration must reach the check with a description."
+        )
+        XCTAssertFalse(
+            app.descendants(matching: .any)["validation.issue.staleDisclaimerText.2"].exists,
+            "Two identical disclaimer issues rendered as one duplicated error."
+        )
+        app.buttons["Done"].tap()
+
+        // Item 1/2/9: approve in the paragraph view, and have it stick.
+        let rowCheckbox = app.buttons["review.row.approve.0"]
+        XCTAssertTrue(rowCheckbox.waitForExistence(timeout: 10))
+        if rowCheckbox.label.contains("Approved") { rowCheckbox.tap() }
+        XCTAssertTrue(
+            app.buttons["review.row.approve.0"].label.contains("Approve paragraph"),
+            "Could not return paragraph 1 to an unapproved state to test approving it."
+        )
+
+        app.buttons["review.row.0"].tap()
+        let approve = app.buttons["paragraphReview.approve"]
+        XCTAssertTrue(approve.waitForExistence(timeout: 10), "Paragraph review did not open.\n\(app.debugDescription)")
+        XCTAssertEqual(approve.label, "Approve")
+        approve.tap()
+        XCTAssertTrue(
+            app.buttons["paragraphReview.approve"].label == "Approved",
+            "Approve gave no sign that the tap landed.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(app.staticTexts["paragraphReview.state"].label == "Approved")
+
+        // Scope to the Review bar: the dashboard's own navigation bar is still
+        // in the tree behind the flow's full-screen cover, so a bare
+        // `buttons["BackButton"]` matches two elements.
+        app.navigationBars["Review"].buttons["BackButton"].tap()
+        XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 10))
+        XCTAssertTrue(
+            app.buttons["review.row.approve.0"].label.contains("Approved"),
+            "The approval did not reach the review queue."
+        )
+
+        // Leave the flow and come back: the approval must still be there, and
+        // no answered prompt may return.
+        app.buttons["Close"].tap()
+        XCTAssertTrue(recordNext.waitForExistence(timeout: 15))
+        recordNext.tap()
+        XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 20))
+        XCTAssertFalse(
+            app.alerts["Add source URL"].exists,
+            "The source URL prompt returned after it was answered."
+        )
+        XCTAssertTrue(
+            app.buttons["review.row.approve.0"].label.contains("Approved"),
+            "Re-entering the flow reverted an approval.\n\(app.debugDescription)"
+        )
+        app.buttons["Close"].tap()
+        XCTAssertTrue(recordNext.waitForExistence(timeout: 15))
     }
 
     /// The now-playing bar is absent whenever `play(url:…)` bailed out, and the

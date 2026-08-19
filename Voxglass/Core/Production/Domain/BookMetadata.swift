@@ -62,4 +62,18 @@ public struct BookMetadata: Codable, Sendable, Equatable {
         self.coverRef = coverRef
         self.archiveIdentifier = archiveIdentifier
     }
+
+    /// The description a narration falls back to when neither the catalogue nor
+    /// the narrator supplied one. LibriVox and the Internet Archive both warn on
+    /// an empty description, and an empty one is never what the narrator meant
+    /// (field report 2026-08-19, item 6).
+    public static func defaultDescription(title: String, author: String, narrator: String) -> String {
+        let work = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let writer = author.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reader = narrator.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !work.isEmpty else { return "" }
+        var sentence = writer.isEmpty ? "\(work)." : "\(work), by \(writer)."
+        if !reader.isEmpty { sentence += " Read for Voxglass by \(reader)." }
+        return sentence
+    }
 }

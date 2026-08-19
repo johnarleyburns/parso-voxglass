@@ -21,14 +21,33 @@ struct ValidationReportView: View {
             }
             .accessibilityIdentifier("validate.report")
 
-            if let progress = model.metricsProgress {
-                ProgressView(value: Double(progress.done), total: Double(max(1, progress.total))) {
-                    Text("Analyzing \(progress.done) of \(progress.total)")
+            // The sheet is presented before the check finishes, so the wait is
+            // visible rather than a frozen tap (field report 2026-08-19, item
+            // 12). Last run's issues stay hidden until this run replaces them.
+            if model.isValidating {
+                VStack(alignment: .leading, spacing: 8) {
+                    if let progress = model.metricsProgress {
+                        ProgressView(value: Double(progress.done), total: Double(max(1, progress.total))) {
+                            Text("Analyzing your recording — \(progress.done) of \(progress.total)")
+                                .scaledFont(size: 12.5)
+                        }
+                    } else {
+                        HStack(spacing: 9) {
+                            ProgressView().controlSize(.small)
+                            Text("Checking your recording…").scaledFont(size: 12.5)
+                        }
+                    }
                 }
+                .tint(Palette.brass)
+                .foregroundStyle(Palette.ink2)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 14)
+                .accessibilityIdentifier("validation.analyzing")
             }
-            if !blocking.isEmpty { issueSection("BLOCKS EXPORT", issues: blocking) }
-            if !warnings.isEmpty { issueSection("WARNINGS", issues: warnings) }
-            if blocking.isEmpty && warnings.isEmpty {
+            if !model.isValidating, !blocking.isEmpty { issueSection("BLOCKS EXPORT", issues: blocking) }
+            if !model.isValidating, !warnings.isEmpty { issueSection("WARNINGS", issues: warnings) }
+            if !model.isValidating, blocking.isEmpty && warnings.isEmpty {
                 Label("Ready to export — every check passed for \(model.destinationName).", systemImage: "checkmark.seal.fill")
                     .scaledFont(size: 12.5)
                     .foregroundStyle(Palette.ok)
@@ -42,7 +61,7 @@ struct ValidationReportView: View {
     private func issueSection(_ title: String, issues: [ValidationIssue]) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title).scaledFont(size: 12, weight: .bold).foregroundStyle(Palette.ink3)
-            ForEach(issues) { issue in
+            ForEach(Array(issues.enumerated()), id: \.element.id) { index, issue in
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: issue.severity == .blocking ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill")
                         .foregroundStyle(issue.severity == .blocking ? Palette.danger : Palette.brass)
@@ -55,11 +74,12 @@ struct ValidationReportView: View {
                         Button(fixTitle(fix)) { onFix(fix) }
                             .scaledFont(size: 11, weight: .bold)
                             .buttonStyle(.bordered)
+                            .accessibilityIdentifier("validation.fix.\(issue.code.rawValue)")
                     }
                 }
                 .padding(11)
                 .glassSurface(cornerRadius: 12)
-                .accessibilityIdentifier("validation.issue.\(issue.code.rawValue)")
+                .accessibilityIdentifier(index == 0 ? "validation.issue.\(issue.code.rawValue)" : "validation.issue.\(issue.code.rawValue).\(index + 1)")
             }
         }
     }
@@ -73,6 +93,7 @@ struct ValidationReportView: View {
         case .recordParagraph: "Record"
         case .clearPickup: "Clear"
         case .regenerateDisclaimers, .regenerateCredits: "Regenerate"
+        case .normalizeLoudness: "Normalize"
         case .reanalyzeTake: "Re-analyze"
         case .setRetailSample: "Sample"
         case .splitChapter: "Split"
@@ -132,6 +153,8 @@ struct ValidationReportSheet: View {
         case .applyMastering:
             model.applyMasteringForExport = true
             Task { await model.runValidation() }
+        case .normalizeLoudness:
+            Task { await model.normalizeLoudness() }
         case .setRetailSample:
             Task { await model.setDefaultRetailSampleForExport() }
         case .goToParagraph, .recordParagraph, .selectTake, .goToChapter, .splitChapter,
