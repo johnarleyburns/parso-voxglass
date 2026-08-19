@@ -45,7 +45,11 @@ final class UITestAudioCapture: AudioCapturing, @unchecked Sendable {
         state = .recording
         lastDestinationURL = destinationURL
         let sampleRate = Int(format.sampleRate)
-        let frames = sampleRate * 2
+        // Keep the playback fixture longer than the smoke test's UI assertions.
+        // The test pauses and resumes the take after several accessibility and
+        // review checks; a two-second file could already be at EOF by then,
+        // making AVAudioPlayer.play() return false on resume.
+        let frames = sampleRate * 30
         let dataSize = Int32(frames * 2)
         var wav = Data("RIFF".utf8)
         wav.append(contentsOf: withUnsafeBytes(of: (dataSize + 36).littleEndian) { Data($0) })
