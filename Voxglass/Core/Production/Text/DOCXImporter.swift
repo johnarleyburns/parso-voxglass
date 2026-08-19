@@ -75,7 +75,7 @@ public struct DOCXImporter: SourceImporting {
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\" />"))
                 }
 
-                if let tableMatch = pContent.range(of: "<w:tbl", options: .caseInsensitive) {
+                if pContent.range(of: "<w:tbl", options: .caseInsensitive) != nil {
                     warnings.append(ImportWarning(kind: .skippedNonProse, message: "Table skipped"))
                     return
                 }

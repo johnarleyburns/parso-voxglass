@@ -31,7 +31,7 @@ struct ProPurchaseView: View {
 
                     freeStaysFreeBanner
 
-                    if let model {
+                    if model != nil {
                         readinessPreview
                     }
 

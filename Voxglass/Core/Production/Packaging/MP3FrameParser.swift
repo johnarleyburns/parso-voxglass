@@ -38,7 +38,7 @@ public enum MP3FrameParser {
 
     /// Parse every frame in `data`, skipping any ID3 tag at the head.
     public static func parse(_ data: Data) -> Summary {
-        var bytes = [UInt8](data)
+        let bytes = [UInt8](data)
         var offset = 0
         if let tagSize = id3TagSize(bytes) {
             offset = tagSize

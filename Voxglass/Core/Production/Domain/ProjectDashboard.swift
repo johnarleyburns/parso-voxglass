@@ -81,7 +81,7 @@ public struct ProjectDashboard: Sendable, Equatable {
 
     public var recordNext: RecordNext? {
         guard let id = recordNextParagraphID,
-              let paragraph = orderedParagraphs.first(where: { $0.id == id }),
+              orderedParagraphs.contains(where: { $0.id == id }),
               let chapter = orderedChapters.first(where: { $0.paragraphs.contains { $0.id == id } }) else {
             return nil
         }

@@ -7,8 +7,6 @@ public struct SourceImporterRegistry: Sendable {
     ]
 
     public static func importer(for url: URL) -> (any SourceImporting)? {
-        let ext = url.pathExtension.lowercased()
-
         if let utType = try? url.resourceValues(forKeys: [.typeIdentifierKey]).typeIdentifier,
            let ut = UTType(utType) {
             if ut.conforms(to: .epub) { return EPUBImporter() }

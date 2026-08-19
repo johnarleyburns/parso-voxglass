@@ -229,6 +229,32 @@ check_xcodeproj_drift() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# Rule 8 — Public API visibility guard
+# A public declaration cannot expose an internal protocol existential. This
+# is a compile-time rule that the Ubuntu source guards can still catch without
+# having a Swift toolchain. Keep the check deliberately narrow to avoid
+# pretending that grep is a Swift parser.
+# ──────────────────────────────────────────────────────────────
+check_public_api_visibility() {
+  local had_failure=0
+  local protocol_name declaration
+
+  while IFS= read -r protocol_name; do
+    [ -z "$protocol_name" ] && continue
+    declaration=$(grep -REn "^[[:space:]]*public[[:space:]].*\\b${protocol_name}\\b" Voxglass --include='*.swift' 2>/dev/null || true)
+    if [ -n "$declaration" ]; then
+      echo "::error title=Public API visibility guard::Internal protocol '$protocol_name' is exposed by a public declaration. Make the protocol public or keep the declaration internal."
+      printf '%s\n' "$declaration"
+      had_failure=1
+    fi
+  done < <(grep -REh '^[[:space:]]*protocol[[:space:]]+[A-Za-z_][A-Za-z0-9_]*' Voxglass --include='*.swift' 2>/dev/null \
+    | sed -n 's/^[[:space:]]*protocol[[:space:]]*\([A-Za-z_][A-Za-z0-9_]*\).*/\1/p' \
+    | sort -u)
+
+  return $had_failure
+}
+
+# ──────────────────────────────────────────────────────────────
 # Rule 8 — Narration & tactile feedback guards
 # Ensures the narration markers, loading feedback, and tactile
 # tap wiring surface stays consistent.
@@ -497,6 +523,7 @@ run_check "dead placeholder rows"      check_dead_placeholders
 run_check "Dynamic Type"               check_dynamic_type
 run_check "target membership"          check_xcodeproj_membership
 run_check "xcodeproj drift"            check_xcodeproj_drift
+run_check "public API visibility"      check_public_api_visibility
 run_check "narration feedback guards"  check_narration_tactile_guards
 
 run_check "watch data-plane wiring"    check_watch_data_plane

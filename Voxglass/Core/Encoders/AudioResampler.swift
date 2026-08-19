@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 
 /// High-quality mono float resampling via `AVAudioConverter` (the system SRC),
@@ -6,6 +6,13 @@ import Foundation
 /// *not* decode: FLAC files are still decoded to PCM by libFLAC before this
 /// runs, so the "FLAC decode goes through libFLAC" rule is unaffected.
 enum AudioResampler {
+
+    private final class InputState: @unchecked Sendable {
+        let buffer: AVAudioPCMBuffer
+        var delivered = false
+
+        init(buffer: AVAudioPCMBuffer) { self.buffer = buffer }
+    }
 
     /// Resample `input` from `inputRate` to `outputRate`.
     static func resample(_ input: [Float], from inputRate: Double, to outputRate: Double) throws -> [Float] {
@@ -37,17 +44,17 @@ enum AudioResampler {
         // every later pull. Returning the same buffer with .haveData each time
         // makes AVAudioConverter re-consume it forever, which never lets the
         // converter reach the end and grows `all` without bound.
-        var delivered = false
+        let inputState = InputState(buffer: inputBuffer)
 
         while true {
             let status = converter.convert(to: outputBuffer, error: &error) { _, packetStatus in
-                guard !delivered else {
+                guard !inputState.delivered else {
                     packetStatus.pointee = .endOfStream
                     return nil
                 }
-                delivered = true
+                inputState.delivered = true
                 packetStatus.pointee = .haveData
-                return inputBuffer
+                return inputState.buffer
             }
             switch status {
             case .haveData:

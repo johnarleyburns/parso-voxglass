@@ -86,7 +86,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             prefetchItems.append(item)
             // Referencing the item's asset keys triggers the resource loader to begin
             // filling the cache in the background.
-            asset.loadValuesAsynchronously(forKeys: ["playable"]) { }
+            Task { _ = try? await asset.load(.isPlayable) }
         }
     }
 

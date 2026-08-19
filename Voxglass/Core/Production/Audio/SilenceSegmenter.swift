@@ -71,7 +71,6 @@ public struct SilenceSegmenter: Sendable {
     public func proposeBoundaries(_ regions: [SilenceRegion], boundaryPadding: TimeInterval = 0.08, targetCount: Int? = nil, ids: any IDGenerator = UUIDGenerator()) -> [SegmentBoundary] {
         let minDuration: Double = 0.8
         let minSilenceForHigh: Double = 0.6
-        let minSegmentForHigh: Double = 2.0
 
         var boundaries = regions.map { region -> SegmentBoundary in
             let midpoint = (region.startTime + region.endTime) / 2.0 + boundaryPadding

@@ -136,7 +136,7 @@ extension View {
 }
 
 public enum TactileFeedback {
-    public static func tap() {
+    @MainActor public static func tap() {
         #if os(iOS)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         #endif

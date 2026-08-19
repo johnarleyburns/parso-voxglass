@@ -167,7 +167,7 @@ public struct MarkdownImporter: SourceImporting {
             return (.listItem, nil, text)
         }
 
-        if let match = lineOne.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+        if lineOne.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
             let text = lines.joined(separator: " ").trimmingCharacters(in: .whitespaces)
             return (.listItem, nil, text)
         }

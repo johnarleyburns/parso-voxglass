@@ -92,7 +92,7 @@ public struct ReplayGainCalculator: Sendable {
                 }
                 while i < end {
                     let x = p[i]
-                    var y = bY0 * x + v0
+                    let y = bY0 * x + v0
                     v0 = bY1 * x - aY1 * y + v1
                     v1 = bY2 * x - aY2 * y + v2
                     v2 = bY3 * x - aY3 * y + v3

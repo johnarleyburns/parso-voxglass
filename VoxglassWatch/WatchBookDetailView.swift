@@ -140,13 +140,12 @@ struct WatchBookDetailView: View {
                     }
                 }
 
-                NavigationLink(destination: WatchNowPlayingView(), isActive: $showNowPlaying) {
-                    EmptyView()
-                }
-                .hidden()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
+        }
+        .navigationDestination(isPresented: $showNowPlaying) {
+            WatchNowPlayingView()
         }
         .accessibilityIdentifier(WatchAccessibilityID.bookDetail)
     }

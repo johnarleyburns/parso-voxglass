@@ -85,13 +85,13 @@ public struct ResumableExportRunner {
                     recorder.note(event)
                 }
             )
-            let final = await recorder.finalize(bundle: bundle, status: .succeeded, finishedAt: clock.now)
-            return Outcome(run: final, bundle: bundle, reusedFileCount: reusedCount)
+            let result = await recorder.finalize(bundle: bundle, status: .succeeded, finishedAt: clock.now)
+            return Outcome(run: result, bundle: bundle, reusedFileCount: reusedCount)
         } catch is CancellationError {
             let final = await recorder.finalize(bundle: nil, status: .cancelled, finishedAt: clock.now)
             return Outcome(run: final, bundle: nil, reusedFileCount: reusedCount)
         } catch {
-            let final = await recorder.finalize(bundle: nil, status: .failed, errorCode: String(describing: error), finishedAt: clock.now)
+            _ = await recorder.finalize(bundle: nil, status: .failed, errorCode: String(describing: error), finishedAt: clock.now)
             throw error
         }
     }

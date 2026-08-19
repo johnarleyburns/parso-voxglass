@@ -24,8 +24,7 @@ final class CarPlayNowPlayingConfigurator: NSObject {
         apply()
 
         subscription = ObservationSubscription(
-            track: { [weak self] in
-                guard let self else { return }
+            track: { [coordinator] in
                 // Track only the properties the config actually depends on.
                 _ = coordinator.currentSession?.book.id
                 _ = coordinator.currentSession?.chapter.id

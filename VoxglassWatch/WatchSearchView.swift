@@ -199,12 +199,11 @@ struct WatchRemoteBookDetailView: View {
                     .accessibilityIdentifier(WatchAccessibilityID.bookAdd)
                 }
 
-                NavigationLink(destination: WatchNowPlayingView(), isActive: $showNowPlaying) {
-                    EmptyView()
-                }
-                .hidden()
             }
             .padding()
+        }
+        .navigationDestination(isPresented: $showNowPlaying) {
+            WatchNowPlayingView()
         }
         .task { await services.refreshLocalLibrary() }
     }

@@ -114,7 +114,7 @@ struct NarrationHomeShelf: View {
             if !shortNeeds.isEmpty {
                 shortRail
             }
-            if !discovery.needs.filter { $0.work.lengthClass == .long }.isEmpty {
+            if !discovery.needs.filter({ $0.work.lengthClass == .long }).isEmpty {
                 longRail
             }
         }

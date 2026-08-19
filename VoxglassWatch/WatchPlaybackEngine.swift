@@ -2,6 +2,19 @@ import AVFoundation
 import Foundation
 import VoxglassCore
 
+private final class LoadResolutionState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var resolved = false
+
+    func claim() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !resolved else { return false }
+        resolved = true
+        return true
+    }
+}
+
 /// Thin watchOS adapter around `AVPlayer`. Implements the `AudioEngine` protocol
 /// so `PlaybackCoordinator` can drive playback with zero platform-specific logic.
 @MainActor
@@ -62,22 +75,16 @@ public final class WatchPlaybackEngine: AudioEngine {
 
         // Observe status
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            var hasResolved = false
+            let resolution = LoadResolutionState()
             statusObserver = playerItem.observe(\.status, options: [.new]) { item, _ in
-                guard !hasResolved else { return }
-                if item.status == .readyToPlay {
-                    hasResolved = true
-                    continuation.resume()
-                } else if item.status == .failed {
-                    hasResolved = true
-                    continuation.resume()
-                }
+                guard item.status == .readyToPlay || item.status == .failed else { return }
+                guard resolution.claim() else { return }
+                continuation.resume()
             }
             // Timeout after 30s
             Task {
                 try? await Task.sleep(for: .seconds(30))
-                if !hasResolved {
-                    hasResolved = true
+                if resolution.claim() {
                     continuation.resume()
                 }
             }
@@ -101,7 +108,9 @@ public final class WatchPlaybackEngine: AudioEngine {
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserverToken = ObserverToken(value: player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
-            self.currentTime = time.seconds
+            Task { @MainActor [weak self] in
+                self?.currentTime = time.seconds
+            }
         })
 
         // End-of-item notification

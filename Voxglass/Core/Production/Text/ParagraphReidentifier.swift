@@ -110,7 +110,7 @@ public struct ParagraphReidentifier: Sendable {
         }
 
         var remainingEx = Array(exUnmatched).sorted()
-        var remainingIn = Array(inUnmatched).sorted()
+        let remainingIn = Array(inUnmatched).sorted()
 
         for window in windows.flatMap(splitIfNeeded) {
             let exRange = (window.exLo + 1)..<window.exHi

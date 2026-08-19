@@ -58,9 +58,6 @@ public enum NarrationClassifier {
     public static func classify(chapterNarrators: [String], bookNarrators: [String]) -> NarrationKind {
         let allNarrators = Set(chapterNarrators.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty })
-        let bookSet = Set(bookNarrators.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty })
-
         if allNarrators.isEmpty { return classify(narrators: bookNarrators) }
 
         if allNarrators.count > 1 { return .mixedOrUnknown }

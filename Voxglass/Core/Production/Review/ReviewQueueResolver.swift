@@ -26,13 +26,13 @@ public struct ReviewQueueResolver: Sendable {
                 return ids.contains(p.id)
             case .chapter(let chapterFilter):
                 return chapterFilter == chID
-            case .tag(let tag):
+            case .tag:
                 return p.selectedTakeID != nil
             }
         }
 
         // Secondary tag filter (applied after primary predicate)
-        if case .tag(let tag) = def.predicate {
+        if case .tag = def.predicate {
             filtered = filtered.filter { _ in false } // tag-based filtering via notes done at store level
         }
 

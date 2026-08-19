@@ -93,7 +93,7 @@ public final class ProductionPlayerModel: NSObject, AVAudioPlayerDelegate {
     }
 
     public func play() async {
-        guard !isPlaying, let current else { return }
+        guard !isPlaying, current != nil else { return }
         await loadCurrent()
         guard hasLocalAudio else { return }
         player?.play()

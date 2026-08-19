@@ -57,7 +57,7 @@ public struct AtomFeedParser: Sendable {
             let text = textBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
             switch name {
             case "entry":
-                if var entry = currentEntry, !entry.title.isEmpty {
+                if let entry = currentEntry, !entry.title.isEmpty {
                     entries.append(entry)
                 }
                 currentEntry = nil

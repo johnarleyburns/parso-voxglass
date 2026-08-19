@@ -119,7 +119,7 @@ public struct Segmenter: Sendable {
                     continue
                 }
 
-                var blockText = block.text
+                let blockText = block.text
                 if options.dropEmpty && blockText.trimmingCharacters(in: .whitespaces).isEmpty {
                     continue
                 }

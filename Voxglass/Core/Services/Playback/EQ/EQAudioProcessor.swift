@@ -48,6 +48,11 @@ public final class EQAudioProcessor: @unchecked Sendable {
         }
     }
 
+    private final class TapHandle: @unchecked Sendable {
+        let value: MTAudioProcessingTap
+        init(_ value: MTAudioProcessingTap) { self.value = value }
+    }
+
     public func applyPreset(_ preset: EQPreset) {
         gains = preset.gains
         for context in contexts.values {
@@ -207,20 +212,16 @@ public final class EQAudioProcessor: @unchecked Sendable {
     /// tracks are often not loaded synchronously (the tap would attach to nothing),
     /// so fall back to async track loading and set the mix once tracks are ready.
     private func applyMix(tap: MTAudioProcessingTap, to playerItem: AVPlayerItem) {
-        let asset = playerItem.asset
-        if let track = asset.tracks.first(where: { $0.mediaType == .audio }) {
-            setMix(tap: tap, track: track, on: playerItem)
-            return
-        }
-        asset.loadValuesAsynchronously(forKeys: ["tracks"]) { [weak self, weak playerItem] in
-            DispatchQueue.main.async {
-                guard let self, let playerItem, self.contexts[ObjectIdentifier(playerItem)] != nil else { return }
-                let track = asset.tracks.first { $0.mediaType == .audio }
-                self.setMix(tap: tap, track: track, on: playerItem)
-            }
+        let tapHandle = TapHandle(tap)
+        Task { @MainActor [weak self, weak playerItem, tapHandle] in
+            guard let self, let playerItem, self.contexts[ObjectIdentifier(playerItem)] != nil else { return }
+            let asset = playerItem.asset
+            let tracks = try? await asset.load(.tracks)
+            self.setMix(tap: tapHandle.value, track: tracks?.first(where: { $0.mediaType == .audio }), on: playerItem)
         }
     }
 
+    @MainActor
     private func setMix(tap: MTAudioProcessingTap, track: AVAssetTrack?, on playerItem: AVPlayerItem) {
         let inputParams = AVMutableAudioMixInputParameters(track: track)
         inputParams.audioTapProcessor = tap

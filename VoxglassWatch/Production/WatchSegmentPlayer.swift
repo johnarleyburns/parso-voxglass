@@ -6,6 +6,7 @@ import VoxglassCore
 /// Plays one paragraph's audio file on the watch. Crown stays volume-only; paragraph
 /// movement is by buttons/swipe, so this player is deliberately minimal. Used only
 /// from the main actor, so it stays a plain `@Observable` class.
+@MainActor
 @Observable
 public final class WatchSegmentPlayer {
 
@@ -31,7 +32,9 @@ public final class WatchSegmentPlayer {
             forInterval: CMTime(seconds: 0.5, preferredTimescale: 10),
             queue: .main
         ) { [weak self] time in
-            self?.currentTime = time.seconds
+            Task { @MainActor [weak self] in
+                self?.currentTime = time.seconds
+            }
         }
     }
 

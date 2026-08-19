@@ -178,7 +178,7 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
                   let server = serverRecordCache.record(named: name) else {
                 throw SyncError.serverRecordChanged(recordName: name, serverChangeTag: "", serverRevision: serverRevision)
             }
-            var adopted = server
+            let adopted = server
             adopted["revision"] = ckRecords[index]["revision"]
             if ckRecords[index].recordType == ProductionRecordType.project.rawValue, let serverRevision {
                 let local = (ckRecords[index]["revision"] as? NSNumber)?.int64Value ?? 0
@@ -269,7 +269,7 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
         return SyncRecord(
             recordType: ckRecord.recordType,
             recordName: ckRecord.recordID.recordName,
-            parentName: (ckRecord.parent as? CKRecord.Reference)?.recordID.recordName,
+            parentName: ckRecord.parent?.recordID.recordName,
             fields: fields,
             recordChangeTag: ckRecord.recordChangeTag,
             assetFields: assets

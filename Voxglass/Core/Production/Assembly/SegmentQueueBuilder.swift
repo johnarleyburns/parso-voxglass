@@ -20,7 +20,7 @@ public struct SegmentQueueBuilder: Sendable {
             isReviewMode = true
             let paragraphIDs = resolveParagraphIDs(mode, project: project)
             return buildFromParagraphIDs(paragraphIDs, project: project, settings: settings, isReviewMode: true)
-        case .paragraphRange(let chapterID, let from, let to):
+        case .paragraphRange(let chapterID, _, _):
             chapterIDs = [chapterID]
             isReviewMode = false
         case .retailSample(let startParagraph, let maxDuration):

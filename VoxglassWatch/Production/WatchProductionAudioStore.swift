@@ -44,7 +44,7 @@ public final class WatchProductionAudioStore {
     /// Removes audio for the given paragraphs, then continues evicting
     /// least-recently-queued items until the store fits the policy cap.
     public func evict(toCap cap: Int = WatchProductionStoragePolicy.maxProductionBytes, keeping keep: Set<UUID> = []) {
-        var items = audio.map { id, url in
+        let items = audio.map { id, url in
             WatchProductionStoragePolicy.Item(
                 paragraphID: id,
                 byteCount: (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0,

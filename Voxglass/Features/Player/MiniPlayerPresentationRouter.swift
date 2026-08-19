@@ -26,6 +26,7 @@ final class MiniPlayerPresentationRouter: ObservableObject {
         guard let currentBookID,
               !isNowPlayingPresented,
               pushedPlayerCount == 0 else { return false }
+        _ = currentBookID
         return true
     }
 

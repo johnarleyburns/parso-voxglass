@@ -75,7 +75,7 @@ public struct ReviewEventFolder: Sendable {
             let hasPickup = eventList.contains { $0.event.type == .needsPickup }
             guard hasPickup else { continue }
 
-            for (event, i) in eventList where event.type == .approve {
+            for (event, _) in eventList where event.type == .approve {
                 let approvalTime = event.createdAt.timeIntervalSince1970
                 let nearbyPickup = eventList.contains { other in
                     other.event.type == .needsPickup

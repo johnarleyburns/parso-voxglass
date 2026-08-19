@@ -9,8 +9,6 @@ public struct NarratorMatcher {
     ) -> [UUID: [String]] {
         guard !chapters.isEmpty, !sections.isEmpty else { return [:] }
 
-        var chapterNarrators: [UUID: [String]] = [:]
-
         if let result = tryStemJoin(chapters: chapters, sections: sections, archiveIdentifier: archiveIdentifier) {
             return result
         }

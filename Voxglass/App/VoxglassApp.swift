@@ -67,7 +67,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         Task {
-            try? await AppServices.shared.cloudKitSyncEngine.fetchChanges()
+            await AppServices.shared.cloudKitSyncEngine.fetchChanges()
             completionHandler(.newData)
         }
     }

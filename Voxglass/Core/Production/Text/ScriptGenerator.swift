@@ -127,7 +127,7 @@ public struct RetailScriptGenerator: ScriptGenerating {
         let productionYear = project.metadata.productionYear
         let publisher = project.metadata.publisher
 
-        var openingText = "\(title).\(subtitle.map { " \($0)." } ?? "") Written by \(author). Narrated by \(narrator)."
+        let openingText = "\(title).\(subtitle.map { " \($0)." } ?? "") Written by \(author). Narrated by \(narrator)."
 
         let closingLines: [String] = [
             "This has been \(title), written by \(author), narrated by \(narrator).",
