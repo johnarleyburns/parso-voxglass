@@ -63,6 +63,7 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 
 .DS_Store
+docs/
 *.voxglassbackup
 
 # Curated lists generator cache
