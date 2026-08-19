@@ -54,17 +54,26 @@ import VoxglassCore
 
     /// The load-bearing property: a concurrent producer and consumer preserve
     /// the exact sample sequence with no gaps or duplicates. The producer
-    /// yields between pushes so the consumer can always keep up, which is what
-    /// the real writer task does (it drains as fast as the tap produces).
+    /// waits for room before each push, which is what makes "no drops" a
+    /// precondition rather than a scheduling accident.
+    ///
+    /// Every wait here is bounded. An earlier version let the consumer spin on
+    /// `while box.received < total` and then blocked on `await consumer.value`,
+    /// so a single dropped chunk parked the whole suite forever — invisible on
+    /// CI, where swift-testing block-buffers stdout and a hung run logs nothing
+    /// at all.
     @Test func concurrentProducerConsumerPreservesOrderAndCount() async throws {
-        let ring = CaptureRingBuffer(capacity: 8192)
+        let capacity = 8192
+        let ring = CaptureRingBuffer(capacity: capacity)
         let total = 65_536
         let chunkSize = 64
+        let deadline = ContinuousClock.now + .seconds(30)
 
         final class Box: @unchecked Sendable {
             var received = 0
             var mismatches = 0
             var lastValue = -1
+            var produced = false
         }
         let box = Box()
 
@@ -73,6 +82,9 @@ import VoxglassCore
             while box.received < total {
                 let n = buffer.withUnsafeMutableBufferPointer { ring.pop(into: $0) }
                 if n == 0 {
+                    // Nothing left and nothing more coming, or we are out of
+                    // time: stop instead of spinning forever.
+                    if box.produced || ContinuousClock.now > deadline { break }
                     try? await Task.sleep(for: .microseconds(50))
                     continue
                 }
@@ -91,21 +103,24 @@ import VoxglassCore
             var samples = [Float](repeating: 0, count: chunkSize)
             for start in stride(from: 0, to: total, by: chunkSize) {
                 for i in 0..<chunkSize { samples[i] = Float(start + i) }
+                // Usable capacity is one less than allocated. Yield until the
+                // chunk fits so the ring never drops; on a starved runner the
+                // deadline lets the push through and the expectations below
+                // report the overrun instead of hanging.
+                while ring.availableSampleCount + chunkSize > capacity - 1 {
+                    if ContinuousClock.now > deadline { break }
+                    await Task.yield()
+                }
                 samples.withUnsafeBufferPointer { ring.push($0) }
                 await Task.yield()
             }
+            box.produced = true
         }
 
         await producer.value
-        let deadline = ContinuousClock.now + .seconds(10)
-        while box.received < total {
-            if ContinuousClock.now > deadline {
-                break
-            }
-            try? await Task.sleep(for: .milliseconds(1))
-        }
         await consumer.value
 
+        #expect(ring.droppedSampleCount == 0, "the producer must not overrun a consumer that is keeping up")
         #expect(box.received == total)
         #expect(box.mismatches == 0)
         #expect(box.lastValue == total - 1)

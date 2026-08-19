@@ -1,6 +1,156 @@
 # Voxglass — current status
 
-**Updated:** 2026-08-18. **Tree:** `main`; narration review/export fix implementation verified.
+**Updated:** 2026-08-19. **Tree:** `main` + the CI-hang fix and the playback-diagnostics fix (see below).
+
+---
+
+## 2026-08-19 — CI hang diagnosed and fixed; smoke-test blocker cleared
+
+### Where we are
+
+Every CI run since `539e495` (2026-08-17 23:23) failed the same way: the **Logic Tests (swift test)**
+job hit its 30-minute `timeout-minutes` and was killed, so `testflight` (which `needs` it) never ran
+and no build was delivered. `Compile (iOS)` and `Guarded Tests` were green throughout.
+
+**Why the logs said nothing.** The job log stopped dead at `Build complete!` with zero test output.
+swift-testing block-buffers stdout when it is not a TTY and flushes only at process exit, so a hung
+run logs *nothing* — the last green run's output all arrived in a single burst at the end. The runner
+image, macOS version, and Xcode (26.6 / 17F113) were byte-identical between the last green run and
+the first hang, and `539e495` touched only `Voxglass/Features/**` (not in the SwiftPM package), so
+this is a **latent deadlock in the logic tests**, not a code regression.
+
+**The deadlocks found.** Both are unbounded waits that can never be satisfied once a scheduling race
+goes the wrong way — harmless on a 10+ core dev Mac, fatal on a 3-core hosted runner:
+
+1. `CaptureRingBufferTests.concurrentProducerConsumerPreservesOrderAndCount` — the producer pushed
+   65,536 samples into an 8,192-sample ring relying only on `Task.yield()` to keep the consumer fed.
+   `CaptureRingBuffer.push` **drops** when full, so one starved moment makes the consumer's
+   `while box.received < total` unsatisfiable, and `await consumer.value` parks the whole serial
+   suite forever.
+2. `FakeAudioEngine.resumeSuspendedLoad()` / `resumeAllSuspendedLoads()` / `failSuspendedLoad(_:)` —
+   each dropped the call on the floor when no continuation was queued yet. Tests reach the suspension
+   point by *sleeping* (`drainMainQueue()` = a 200 ms `Task.sleep`), so on a loaded runner the resume
+   can land first; `PlaybackCoordinatorSelectionTests.playPublishesPreparingBeforeEngineLoad` then
+   blocks forever on `await playTask.value`.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `VoxglassTests/Production/Audio/CaptureRingBufferTests.swift` | Producer waits for room before each push (so "no drops" is a precondition, not luck); consumer stops once production is done and the ring is drained; every wait is deadline-bounded; an overrun now fails `#expect(ring.droppedSampleCount == 0)` instead of hanging. |
+| `VoxglassTests/Fixtures/FakeAudioEngine.swift` | Adds `armedResumes`: a resume that arrives before the matching `load` reaches its suspension point is queued and consumed FIFO by the next suspending load. Behaviour is unchanged whenever a continuation *is* queued. |
+| `scripts/ci-logic-tests.sh` (new) | Runs the suite under `script -q /dev/null` so output streams (a hang now names the last started test) and `sample`s the test process past a 20-minute watchdog, then kills it — so a future hang explains itself instead of costing a 30-minute round trip. Verified locally: exit-code passthrough (0 and non-zero) and watchdog kill both work. |
+| `.github/workflows/ios.yml` | Logic-tests step calls `bash scripts/ci-logic-tests.sh`. |
+| `Voxglass/Features/Production/Discovery/NarrationFlow.swift` | `play(url:…)` reports which step failed instead of collapsing four causes into one message (see "What is left", item 1). |
+| `VoxglassUITests/VoxglassUITests.swift` | The review-playback assertion quotes the "Playback unavailable" alert on failure. |
+
+**Verified locally:** `swift test --no-parallel --skip VoxglassPerformanceTests` → 1319 tests /
+192 suites pass (73–166 s depending on machine load); `check-swift6.sh` and `guard_wiring.sh` pass.
+
+### What is left
+
+1. **Resolved — the phone smoke test passes again; the failure was device state, not `HEAD`.**
+   `VoxglassUITests.testAppBootsVisitsAllTabsEQAndProductions()` had been failing at
+   `VoxglassUITests.swift:378` (`Paragraph playback did not expose now-playing state`) with no
+   diagnostic, because `NarrationFlow.play(url:…)` swallowed all four possible failures into one
+   message. Two changes were made and the test now passes 3/3 on a clean simulator:
+
+   - `NarrationFlow.play(url:…)` no longer wraps the whole attempt in one `do`/`catch`. Each step —
+     audio-session activation, the missing-file check, `AVAudioPlayer(contentsOf:)`, `prepareToPlay()`,
+     `play()` — reports its own message, and the two that carry an `Error` quote it. The nil-`paragraphID`
+     case is now an explicit precondition instead of a `CocoaError` thrown *after* the player was already
+     installed. Behaviour on the success path is unchanged.
+   - `assertReviewPlaybackShowsState` appends the "Playback unavailable" alert text to its failure
+     message (`playbackFailureDetail`), so this assertion can never again fail anonymously.
+
+   Verified: `xcodebuild test -scheme Voxglass` on a throwaway `Voxglass-Agent-iPhone-16` → **Passed,
+   3/3**, review-playback leg included. The simulator was deleted afterwards.
+
+2. **Found while verifying — first-run LibriVox export is blocked by a stale disclaimer.**
+   Not fixed; recorded here as the next narration defect.
+
+   On a simulator with **no saved narrator name**, the same test fails earlier, at
+   `VoxglassUITests.swift:251`, with the validation report reading `1 blocking · 6 warnings` and the
+   blocking issue `staleDisclaimerText` ("The LibriVox disclaimer for Nothing Gold Can Stay does not
+   match the current metadata").
+
+   Cause: `buildParagraphs()` bakes the LibriVox intro text from `LibriVoxScriptGenerator`, which
+   interpolates `project.metadata.narrator`. Tapping a featured need goes **straight to the record
+   screen**, skipping the paragraph-list screen that owns the "Choose your narration name" prompt, so a
+   first-time narrator records an intro that says *"Recording by ."*. Entering the name later on the
+   metadata screen sets `project.metadata.narrator` (`attest()`, `NarrationFlow.swift:1592`) but never
+   re-applies the script plan, so the recorded text and the engine's expectation diverge and LibriVox
+   export is blocked behind the `Regenerate` fix action.
+
+   Suggested fix: re-apply the LibriVox plan to disclaimer paragraphs that have **no takes yet**
+   whenever `saveNarratorName` or `attest()` changes narrator/title/author, and prompt for the narrator
+   on the record entry point as well as the paragraph list. A disclaimer that is already recorded must
+   keep raising `staleDisclaimerText` — its audio really does say the wrong name.
+
+   This is invisible on the shared `iPhone 16` simulator and on any real device where the narrator name
+   has ever been saved, which is why the gate has been green.
+
+3. **Confirm on CI.** After pushing, watch the logic-tests job: with streaming output restored, a
+   remaining hang will name the test that caused it.
+
+### Build/test efficiency — findings
+
+**"Compile the shared code once instead of three times" is not achievable.** The three builds target
+three different platform triples and cannot share object code:
+
+| Phase | Triple | Build system |
+|---|---|---|
+| `swift test` | macOS arm64 | SwiftPM → `.build/` |
+| `xcodebuild -scheme Voxglass` | iOS Simulator arm64 | Xcode → DerivedData |
+| `xcodebuild -scheme VoxglassWatch` | watchOS Simulator arm64 | Xcode → DerivedData |
+
+`VoxglassCore` is consumed by the Xcode project as a local SwiftPM package (`project.yml` →
+`packages: VoxglassCore: path: .`), and the `VoxglassWatch` scheme builds only `VoxglassWatch.app`,
+so there is no *redundant* build to remove — just three genuinely different platforms.
+
+Real wins, largest first:
+
+1. **Move the two simulator legs from `pre-commit` to `pre-push`.** This is the dominant cost and the
+   only change that alters the order of magnitude: commits drop to roughly guards + `swift test`
+   (~3 min) and the simulator gate runs once per push instead of once per commit. `pre-push`
+   currently runs nothing at all. *Not done — it changes the project's stated gate, so it needs a
+   decision.*
+2. **Pin an explicit `-derivedDataPath` (e.g. `.build/dd`)** in `scripts/test.sh`. Today both
+   `xcodebuild` calls use the shared global DerivedData, which other projects on this machine evict
+   and churn; a repo-local path makes incremental reuse predictable.
+3. **Merge the two `swift test` phases in `scripts/test_logic.sh`.** Phase 1 (`--skip
+   VoxglassPerformanceTests`) built in 0.66 s, then phase 2 (`--filter VoxglassPerformanceTests`)
+   spent **23.7 s rebuilding**. The performance tests already self-skip on `VOXGLASS_TIMING_TESTS`
+   (all six reported `skipped`), so the second phase exists only to set that variable — a single run
+   with the variable set should remove the rebuild. Worth ~24 s/commit; cause of the rebuild not yet
+   confirmed.
+4. **`build-for-testing` + `test-without-building`** for the simulator legs. No help for the hook
+   (sources always change), but it removes a full app rebuild per iteration when debugging a UI test.
+
+Measured, for reference (this machine, warm caches): guards ~5 s; `swift test` 73–166 s;
+phone smoke leg 104 s to failure; watch smoke leg not reached.
+
+### Simulator hygiene (agent convention)
+
+Agent runs must use **dedicated, tagged** simulators and delete them afterwards, never the shared
+`iPhone 16` device (`scripts/test.sh` boots that one by default and permanently grants it microphone
+access). Verified working:
+
+```sh
+# up
+xcrun simctl create "Voxglass-Agent-iPhone-16" \
+  com.apple.CoreSimulator.SimDeviceType.iPhone-16 com.apple.CoreSimulator.SimRuntime.iOS-26-5
+xcrun simctl create "Voxglass-Agent-Watch" \
+  com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Series-10-46mm com.apple.CoreSimulator.SimRuntime.watchOS-26-5
+
+bash scripts/test.sh --device "Voxglass-Agent-iPhone-16" --watch-device "Voxglass-Agent-Watch"
+
+# down (always)
+xcrun simctl shutdown "Voxglass-Agent-iPhone-16" "Voxglass-Agent-Watch" || true
+xcrun simctl delete   "Voxglass-Agent-iPhone-16" "Voxglass-Agent-Watch"
+```
+
+As of this update no agent simulators exist and none are booted.
 
 ---
 

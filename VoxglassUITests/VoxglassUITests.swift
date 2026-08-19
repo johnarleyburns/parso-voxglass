@@ -370,12 +370,25 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
     }
 
+    /// The now-playing bar is absent whenever `play(url:…)` bailed out, and the
+    /// model reports why through the "Playback unavailable" alert. Quote it, so
+    /// a failure names the cause instead of leaving four candidates.
+    private func playbackFailureDetail(app: XCUIApplication) -> String {
+        let alert = app.alerts["Playback unavailable"]
+        guard alert.waitForExistence(timeout: 2) else { return " No playback alert was presented." }
+        let message = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " / ")
+        return " Playback alert said: \(message)"
+    }
+
     private func assertReviewPlaybackShowsState(app: XCUIApplication) {
         let play = app.buttons["review.row.play.0"]
         XCTAssertTrue(play.waitForExistence(timeout: 10))
         play.tap()
         let bar = app.descendants(matching: .any)["review.nowPlaying"]
-        XCTAssertTrue(bar.waitForExistence(timeout: 5), "Paragraph playback did not expose now-playing state.")
+        XCTAssertTrue(
+            bar.waitForExistence(timeout: 5),
+            "Paragraph playback did not expose now-playing state.\(playbackFailureDetail(app: app))"
+        )
         XCTAssertEqual(play.label, "Pause paragraph")
 
         let pause = app.buttons["review.nowPlaying.pause"]

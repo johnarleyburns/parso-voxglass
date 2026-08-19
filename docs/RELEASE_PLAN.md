@@ -26,6 +26,19 @@ device. That is a 1-star-review bug and it outranks everything else remaining.
 force-quit, crash, app upgrade, delete-and-reinstall, and a second device — and the remaining App Store
 polish items are closed.
 
+### Related tracks (separate documents, separate scope)
+
+This plan governs the **consumer listening app**. Two narration tracks run alongside it and must not
+regress anything below — losing a playback position stays a hard product failure on every platform.
+
+- **iPhone + Watch Narration MVP** — `docs/iphone-watch-only-revised-mvp/SPEC.md`. Implemented and
+  shipping across stages P0–P9; gaps closed 2026-08-10.
+- **Mac + iPad Universal MVP** — `docs/mac-ipad-universal-mvp/SPEC.md`. Specified 2026-08-11, **not
+  yet implemented**. Adds a native macOS app under Universal Purchase, iPad as a full narration
+  surface, and a two-writer merge model. See its `GAP_ANALYSIS.md` (41 gaps) and `AGENT_BRIEF.md`.
+  Note that it makes the Mac app the *whole* of Voxglass — the listening surfaces in this plan get
+  ported to macOS (decision D-U3), so changes here eventually land there too.
+
 ---
 
 ## The problem, precisely

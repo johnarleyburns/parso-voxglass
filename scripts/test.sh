@@ -11,8 +11,12 @@
 
 set -euo pipefail
 
-DEVICE_NAME="iPhone 16"
-WATCH_DEVICE_NAME=""
+# Defaults may be overridden by --device/--watch-device below, or by the
+# environment so an automated run can target its own throwaway simulators
+# instead of the shared devices (this script boots the phone device and
+# permanently grants it microphone access).
+DEVICE_NAME="${VOXGLASS_SIM_DEVICE:-iPhone 16}"
+WATCH_DEVICE_NAME="${VOXGLASS_WATCH_SIM_DEVICE:-}"
 RUN_ALL=0
 
 # Parse args before using defaults.

@@ -69,11 +69,11 @@ jobs:
           sudo xcode-select -s /Applications/$XCODE
           xcodebuild -version
 
-      # Performance/timing tests are intentionally local-only. Hosted macOS
-      # runners have insufficiently stable CPU performance for those budgets;
-      # the pre-commit hook runs them on the developer's machine.
+      # The driver streams swift-testing output through a pty (it otherwise
+      # block-buffers and a hung suite logs nothing) and samples the test
+      # process if it outlives the watchdog, so a hang names itself.
       - name: Run logic tests (serial; performance tests local-only)
-        run: swift test --no-parallel --skip VoxglassPerformanceTests
+        run: bash scripts/ci-logic-tests.sh
 
   guarded-tests:
     name: Guarded Tests

@@ -60,15 +60,31 @@ final class FakeAudioEngine: AudioEngine {
     var suspendLoads = false
     private var pendingLoadContinuations: [CheckedContinuation<Void, Error>] = []
 
+    /// Resumes that arrived before the matching `load` reached its suspension
+    /// point, consumed FIFO by the next suspending `load`.
+    ///
+    /// The resume helpers used to drop such a call on the floor. Tests reach
+    /// the suspension point by sleeping (`drainMainQueue`), so on a loaded
+    /// hosted runner the resume can land first — and a test that then does
+    /// `await playTask.value` waits on a continuation nobody will ever resume,
+    /// hanging the whole serial suite instead of failing.
+    private var armedResumes: [Result<Void, Error>] = []
+
     /// Resume the oldest suspended load as a success.
     func resumeSuspendedLoad() {
-        guard !pendingLoadContinuations.isEmpty else { return }
+        guard !pendingLoadContinuations.isEmpty else {
+            armedResumes.append(.success(()))
+            return
+        }
         pendingLoadContinuations.removeFirst().resume()
     }
 
     /// Fail the oldest suspended load with the given error.
     func failSuspendedLoad(with error: Error) {
-        guard !pendingLoadContinuations.isEmpty else { return }
+        guard !pendingLoadContinuations.isEmpty else {
+            armedResumes.append(.failure(error))
+            return
+        }
         pendingLoadContinuations.removeFirst().resume(throwing: error)
     }
 
@@ -77,6 +93,7 @@ final class FakeAudioEngine: AudioEngine {
         let all = pendingLoadContinuations
         pendingLoadContinuations.removeAll()
         for cont in all { cont.resume() }
+        if all.isEmpty { armedResumes.append(.success(())) }
     }
 
     func configureAudioSession() { calls.append(.configureAudioSession) }
@@ -84,8 +101,12 @@ final class FakeAudioEngine: AudioEngine {
     func load(url: URL, startTime: TimeInterval) async throws {
         calls.append(.load(url: url, startTime: startTime))
         if suspendLoads {
-            try await withCheckedThrowingContinuation { cont in
-                pendingLoadContinuations.append(cont)
+            if armedResumes.isEmpty {
+                try await withCheckedThrowingContinuation { cont in
+                    pendingLoadContinuations.append(cont)
+                }
+            } else {
+                try armedResumes.removeFirst().get()
             }
         }
         if let loadError { throw loadError }

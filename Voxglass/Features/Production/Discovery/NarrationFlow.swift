@@ -1656,30 +1656,46 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         // The capture session is `.record`; take playback needs `.playback`
         // or the audio is silent. Recording re-enters `.record` on the next
         // startRecordingParagraph call.
+        guard let paragraphID else {
+            playbackError = "Couldn't start audio playback — no paragraph was selected."
+            return false
+        }
         let session = AVAudioSession.sharedInstance()
         do {
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try session.setActive(true)
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                throw CocoaError(.fileNoSuchFile)
-            }
-            let player = try AVAudioPlayer(contentsOf: url)
-            guard player.prepareToPlay() else { throw CocoaError(.fileReadCorruptFile) }
-            player.currentTime = at
-            player.delegate = self
-            guard player.play() else { throw CocoaError(.fileReadCorruptFile) }
-            playbackTask?.cancel()
-            playbackPlayer?.stop()
-            playbackPlayer = player
-            playbackDuration = player.duration
-            playbackPosition = at
-            playbackError = nil
-            guard let paragraphID else { throw CocoaError(.fileReadUnknown) }
-            takePlayback = .playing(paragraph: paragraphID, chapter: chapterID)
         } catch {
-            playbackError = "Couldn't start audio playback."
+            playbackError = "Couldn't start audio playback — the audio session is unavailable (\(error.localizedDescription))."
             return false
         }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            playbackError = "Couldn't play this recording — the audio file is missing."
+            return false
+        }
+        let player: AVAudioPlayer
+        do {
+            player = try AVAudioPlayer(contentsOf: url)
+        } catch {
+            playbackError = "Couldn't start audio playback — this recording couldn't be opened (\(error.localizedDescription))."
+            return false
+        }
+        guard player.prepareToPlay() else {
+            playbackError = "Couldn't start audio playback — this recording couldn't be decoded."
+            return false
+        }
+        player.currentTime = at
+        player.delegate = self
+        guard player.play() else {
+            playbackError = "Couldn't start audio playback — the audio output refused to start."
+            return false
+        }
+        playbackTask?.cancel()
+        playbackPlayer?.stop()
+        playbackPlayer = player
+        playbackDuration = player.duration
+        playbackPosition = at
+        playbackError = nil
+        takePlayback = .playing(paragraph: paragraphID, chapter: chapterID)
         playbackTask = Task { @MainActor [weak self] in
             while let self, !Task.isCancelled, self.playbackPlayer?.isPlaying == true {
                 self.playbackPosition = self.playbackPlayer?.currentTime ?? 0
