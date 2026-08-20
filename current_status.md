@@ -1,97 +1,61 @@
 # Voxglass — current status
 
-**Updated:** 2026-08-19 (evening). **Tree:** `main` + the 2026-08-19 narration field-test fixes,
-**uncommitted and paused mid-verification** — start at "Resume here" below.
+**Updated:** 2026-08-19 (evening). **Tree:** `main` at `833f9a2` — the 2026-08-19 narration
+field-test fixes are **committed, pushed and green on CI**.
 
 ---
 
-## 2026-08-19 (evening) — narration field-test fixes: written, partly verified, PAUSED
+## 2026-08-19 (evening) — narration field-test fixes: shipped
 
+**Commit:** `833f9a2` (baseline `cf2d0a1`). **CI:** run `32315762467`, all four jobs green —
+Guarded Tests, Compile (iOS), Logic Tests (swift test), TestFlight Build.
 **Plan of record:** `docs/NARRATION_FIELD_FIXES_2026_08_19_PLAN.md` (local only — `docs/` is
-gitignored as of `6f841e5`). **Baseline:** `cf2d0a1`. **Nothing is committed, staged, or pushed.**
+gitignored as of `6f841e5`).
 
-The work was paused by request while machine load was high. Everything below is on disk in the
-working tree.
-
-### Resume here
-
-Remaining steps, in order:
-
-1. `xcodebuild build-for-testing -project Voxglass.xcodeproj -scheme VoxglassNarrationE2E \
-   -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/dd CODE_SIGNING_ALLOWED=NO`
-   — this compile was killed mid-run when the pause came in; it has **never completed**, so
-   `VoxglassNarrationE2E/NarrationStateFreshnessTests.swift` is the one new file whose
-   compilation is still unproven.
-2. `swift test --no-parallel --skip VoxglassPerformanceTests` — full suite. Only the new/updated
-   tests have been run so far (22 passing); the rest of the 1300+ have not been re-run since these
-   changes.
-3. `scripts/test.sh --device "<a throwaway simulator>"` — the phone smoke test, which now carries a
-   new leg (`assertNarrationDetailsAndReviewPersist`). Create the simulator, run, delete it.
-4. `git add -A` then one commit, then push, then check CI.
-   **`git add` matters before running the guards**: `guard_wiring.sh`'s xcodeproj-drift check
-   regenerates and `git diff`s `Voxglass.xcodeproj`, so it reports FAIL purely because the already
-   regenerated `project.pbxproj` is unstaged. Everything else in that script passes.
-5. Optionally run the E2E harness itself (`-scheme VoxglassNarrationE2E`) — it is deliberately
-   outside `scripts/test.sh`, the pre-commit hook and CI, so it is on-demand only.
-
-### Verified so far
+### Verification that ran
 
 | Check | Result |
 |---|---|
-| `swift build` | clean |
-| `xcodebuild build -scheme Voxglass -destination generic/platform=iOS` | **BUILD SUCCEEDED** |
-| `xcodebuild build-for-testing -scheme Voxglass` (app + `VoxglassUITests`) | **TEST BUILD SUCCEEDED** |
-| New/updated logic tests (22, six suites) | all pass |
-| `scripts/check-swift6.sh` | OK |
-| `scripts/guard_wiring.sh` | all pass except xcodeproj-drift (unstaged pbxproj, see above) |
-| `xcodebuild build-for-testing -scheme VoxglassNarrationE2E` | **TEST BUILD SUCCEEDED** |
-| Full `swift test --no-parallel --skip VoxglassPerformanceTests` | **1340 tests / 197 suites pass** (79.7 s) |
-| Phone smoke test | **still unproven — see below** |
+| `swift build`, `xcodebuild build -scheme Voxglass` | clean |
+| `build-for-testing`, schemes `Voxglass` and `VoxglassNarrationE2E` | both succeed |
+| `swift test --no-parallel --skip VoxglassPerformanceTests` | 1340 tests / 197 suites pass |
+| Pre-commit gate (guards + logic + performance budgets + phone smoke + CarPlay smoke) | pass |
+| CI run `32315762467` | success |
 
-Four failures surfaced on the first full run and were fixed:
+### Three defects the gates caught in my own work
 
-- `NarrationStateFreshnessTests` did not compile — `XCTUnwrap`'s autoclosure cannot `await`; the
-  four `try XCTUnwrap(await …)` calls were hoisted into `let`s.
-- `AssemblySettingsTests.trimAndNormaliseShapeSegments` asserted `gainDB == -replayGainDB`. That
-  assertion encoded the sign bug, so it was inverted (with the reasoning in a comment). ReplayGain is
-  the gain *to apply*, which the validator's own `perceived = target - replayGainDB` confirms, and
-  `PackageBuilder.renderPlan` proves the exported audio really is built from `project.profile.assembly`.
-- `DisclaimerIssueIdentityTests` changed the *narrator* to make both disclaimers stale; only the
-  intro interpolates the narrator, so the test now changes the *title*, which both scripts carry.
-- `ValidationRuleEngineTests.perceivedVolumeOutOfBand` expected the warning with normalization on.
-  With the sign fixed, normalization genuinely brings that take into band, so the test now asserts
-  the raw-audio case, the attached `.normalizeLoudness` fix, **and** that turning normalization on
-  clears it.
+1. **Quadratic validation.** The duplicate-issue guard added for item 5 was
+   `issues.contains(where:)` — O(n) per issue, so `PerformanceBudgetTests` measured 433 ms on 3,000
+   paragraphs against a ~130 ms linear expectation. Now a `Set<UUID>` membership insert
+   (`Evaluator.emittedIssueIDs`). The budget test exists for exactly this class and earned its keep.
+2. **`attest()` blanked the description.** It assigned `project.metadata.description = descriptionText`,
+   so attesting wiped the description item 6 had just filled in. `buildParagraphs` now seeds the
+   draft, and `resolvedDescription(title:author:narrator:existing:)` prefers the narrator's draft,
+   then the stored value, then the generated one. **Other `attest()` fields still have this shape** —
+   language and subjects will blank the same way if their drafts are ever empty.
+3. **Ambiguous `BackButton` in the smoke test.** The dashboard's navigation bar stays in the
+   accessibility tree behind the flow's full-screen cover, so a bare `app.buttons["BackButton"]`
+   matched two elements. Scope to `app.navigationBars["Review"]`.
 
-### Phone smoke test — two runs, neither a pass, neither a regression
+### Two simulator facts, learned the hard way
 
-1. **Throwaway `Voxglass-Agent-iPhone-16`, `CODE_SIGNING_ALLOWED=NO`** — the app crashed at launch in
-   `CKContainer.init(identifier:)` inside `AppServices.init()`. Unsigned builds have no CloudKit
-   entitlement. **Do not pass `CODE_SIGNING_ALLOWED=NO` to `xcodebuild test`**; `scripts/test.sh`
-   deliberately does not.
-2. **Same simulator, signing left alone** — reached `VoxglassUITests.swift:251` with
-   `1 blocking · 21 warnings`, the single blocker being `staleDisclaimerText`. This is **exactly the
-   pre-existing N1 defect** recorded under "What is left" and specified below, not a regression: a
-   simulator with no saved narrator name records *"Recording by ."*. It is the only configuration
-   that reproduces it.
-3. **Shared `iPhone 16` (the device the pre-commit hook actually uses)** — failed after 916 s at
-   `VoxglassUITests.swift:117` with `Failed to tap "Narration" Button: Timed out while synthesizing
-   event`. That is simulator contention on a loaded machine, not a logic failure; the run never
-   reached any narration assertion. **This needs one clean re-run before committing.**
+- **Never pass `CODE_SIGNING_ALLOWED=NO` to `xcodebuild test`.** The unsigned app has no CloudKit
+  entitlement and traps in `CKContainer.init(identifier:)` inside `AppServices.init()` at launch,
+  15 s in, with an `EXC_BREAKPOINT` that looks nothing like a signing problem.
+  `scripts/test.sh` deliberately omits the flag.
+- On a **throwaway simulator with no saved narrator name**, the phone smoke test still fails at
+  `VoxglassUITests.swift:251` with `1 blocking · 21 warnings`, the blocker being
+  `staleDisclaimerText`. That is N1 below, unchanged and pre-existing — see "Still open,
+  deliberately". The shared `iPhone 16` has a name saved, which is why the gate is green there.
 
-That third run also fixed a real regression it exposed on run 2: `attest()` assigned
-`project.metadata.description = descriptionText`, so attesting **blanked** the description W6 had just
-filled in (`missingDescription` was still in the report). `buildParagraphs` now seeds
-`descriptionText`, and a new `resolvedDescription(title:author:narrator:existing:)` prefers the
-narrator's draft, then the stored description, then the generated one — so nothing can blank it.
+### Not yet run
 
-### Next actions
-
-1. Re-run the phone smoke test on an idle machine:
-   `xcodebuild test -scheme Voxglass -project Voxglass.xcodeproj -destination "platform=iOS Simulator,name=iPhone 16" -derivedDataPath .build/dd`
-   (no `CODE_SIGNING_ALLOWED=NO`). It must reach the new `assertNarrationDetailsAndReviewPersist` leg.
-2. `git add -A`, one commit, push, watch CI.
-3. N1 stays out of this change set — see "Still open, deliberately".
+`VoxglassNarrationE2E/NarrationStateFreshnessTests.swift` — seven tests covering approval
+persistence, the source-URL prompt, validation freshness, on-check analysis, `normalizeLoudness`,
+the description backfill, and the stale-save refusal. The file **compiles** but the harness is
+on-demand by design (its own scheme, outside `scripts/test.sh`, the pre-commit hook and CI), so
+nothing has executed them. Run with
+`xcodebuild test -scheme VoxglassNarrationE2E -destination 'platform=iOS Simulator,name=iPhone 16'`.
 
 ### What changed, by work item
 
