@@ -178,6 +178,9 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         await cancelTasks(forBookID: book.book.id)
         let keys = cacheableChapters(of: book).map { StreamCacheUtils.key(for: $0.url) }
         await cacheStore.unpin(keys)
+        if let coverURL = book.book.coverURL {
+            await cacheStore.unpin([ArtworkCacheKey.key(for: coverURL)])
+        }
         await cacheStore.remove(keys: keys)
         try? await repository.deleteDownloadRecords(forBookID: book.book.id)
         chapterFractions[book.book.id] = nil
@@ -197,6 +200,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private func startDownload(book: BookWithChapters) async {
         let bookID = book.book.id
         failedBooks.remove(bookID)
+        if let coverURL = book.book.coverURL {
+            let artworkKey = ArtworkCacheKey.key(for: coverURL)
+            if await cacheStore.contains(artworkKey) {
+                await cacheStore.pin([artworkKey])
+            }
+        }
         let cacheable = cacheableChapters(of: book)
         guard !cacheable.isEmpty else { return }
 

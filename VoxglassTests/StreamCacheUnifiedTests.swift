@@ -23,6 +23,28 @@ import Foundation
         #expect(count == 0)  // Artwork must not be counted as cached tracks
     }
 
+    @Test func equivalentInternetArchiveArtworkURLsShareStableKey() {
+        let catalog = URL(string: "https://archive.org/services/img/book-id?scale=2")!
+        let downloaded = URL(string: "https://ia800000.us.archive.org/download/book-id/cover.jpg")!
+
+        #expect(ArtworkCacheKey.key(for: catalog) == ArtworkCacheKey.key(for: downloaded))
+    }
+
+    @Test func pinnedArtworkMovesToDurableArtworkDirectory() async throws {
+        let key = ArtworkCacheKey.key(for: URL(string: "https://archive.org/services/img/pinned-art")!)
+        await store.registerArtwork(key: key, bytes: 12)
+        let streamingURL = await store.artworkFileURL(for: key)
+        try Data(repeating: 1, count: 12).write(to: streamingURL)
+
+        await store.pin([key])
+
+        let durableURL = await store.fileURL(for: key)
+        #expect(await store.isPinned(key))
+        #expect(durableURL.path.contains("OfflineArtwork"))
+        #expect(FileManager.default.fileExists(atPath: durableURL.path))
+        #expect(!(FileManager.default.fileExists(atPath: streamingURL.path)))
+    }
+
     @Test func completedAudioCountsAsTrackAlongsideArtworkBytes() async {
         await store.setContentLength(100, for: "audio1")
         await store.recordWrite(range: 0..<100, for: "audio1")

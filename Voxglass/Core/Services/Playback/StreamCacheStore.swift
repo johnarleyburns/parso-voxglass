@@ -31,6 +31,7 @@ public actor StreamCacheStore {
     private let artDir: URL
     private let metaDir: URL
     private let offlineDir: URL
+    private let offlineArtDir: URL
     private let offlineMetaDir: URL
     private let pinsURL: URL
     private var metas: [String: Meta] = [:]   // key = cacheKey
@@ -73,6 +74,7 @@ public actor StreamCacheStore {
 
         let durable = Self.offlineBaseDirectory()
         offlineDir = durable.appendingPathComponent("Voxglass/OfflineAudio", isDirectory: true)
+        offlineArtDir = durable.appendingPathComponent("Voxglass/OfflineArtwork", isDirectory: true)
         offlineMetaDir = durable.appendingPathComponent("Voxglass/OfflineMeta", isDirectory: true)
         pinsURL = durable.appendingPathComponent("Voxglass/OfflinePins.json")
 
@@ -81,6 +83,7 @@ public actor StreamCacheStore {
         try? fm.createDirectory(at: artDir, withIntermediateDirectories: true)
         try? fm.createDirectory(at: metaDir, withIntermediateDirectories: true)
         try? fm.createDirectory(at: offlineDir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: offlineArtDir, withIntermediateDirectories: true)
         try? fm.createDirectory(at: offlineMetaDir, withIntermediateDirectories: true)
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
@@ -105,12 +108,14 @@ public actor StreamCacheStore {
         artDir = directory.appendingPathComponent("StreamCacheArt", isDirectory: true)
         metaDir = directory.appendingPathComponent("StreamCacheMeta", isDirectory: true)
         offlineDir = directory.appendingPathComponent("OfflineAudio", isDirectory: true)
+        offlineArtDir = directory.appendingPathComponent("OfflineArtwork", isDirectory: true)
         offlineMetaDir = directory.appendingPathComponent("OfflineMeta", isDirectory: true)
         pinsURL = directory.appendingPathComponent("OfflinePins.json")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: artDir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: offlineDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: offlineArtDir, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: offlineMetaDir, withIntermediateDirectories: true)
         limitBytes = Self.defaultLimit
         metas = Self.loadMetas(from: metaDir, and: offlineMetaDir)
@@ -157,8 +162,9 @@ public actor StreamCacheStore {
     public func pin(_ keys: [String]) {
         let fm = FileManager.default
         for key in keys {
-            let streamingBlob = dir.appendingPathComponent(key)
-            let offlineBlob = offlineDir.appendingPathComponent(key)
+            let isArtwork = metas[key]?.effectiveKind == .artwork
+            let streamingBlob = (isArtwork ? artDir : dir).appendingPathComponent(key)
+            let offlineBlob = (isArtwork ? offlineArtDir : offlineDir).appendingPathComponent(key)
             if fm.fileExists(atPath: streamingBlob.path) {
                 if fm.fileExists(atPath: offlineBlob.path) {
                     try? fm.removeItem(at: streamingBlob)
@@ -185,8 +191,9 @@ public actor StreamCacheStore {
     public func unpin(_ keys: [String]) {
         let fm = FileManager.default
         for key in keys where pinnedKeys.contains(key) {
-            let offlineBlob = offlineDir.appendingPathComponent(key)
-            let streamingBlob = dir.appendingPathComponent(key)
+            let isArtwork = metas[key]?.effectiveKind == .artwork
+            let offlineBlob = (isArtwork ? offlineArtDir : offlineDir).appendingPathComponent(key)
+            let streamingBlob = (isArtwork ? artDir : dir).appendingPathComponent(key)
             if fm.fileExists(atPath: offlineBlob.path) {
                 try? fm.removeItem(at: streamingBlob)
                 try? fm.moveItem(at: offlineBlob, to: streamingBlob)
@@ -256,7 +263,7 @@ public actor StreamCacheStore {
 
     public func fileURL(for key: String) -> URL {
         if metas[key]?.effectiveKind == .artwork {
-            return artDir.appendingPathComponent(key)
+            return (pinnedKeys.contains(key) ? offlineArtDir : artDir).appendingPathComponent(key)
         }
         if pinnedKeys.contains(key) {
             return offlineDir.appendingPathComponent(key)
@@ -401,7 +408,7 @@ public actor StreamCacheStore {
         metas.removeAll()
         pinnedKeys.removeAll()
         persistPinnedKeys()
-        for blobDir in [dir, artDir, offlineDir, offlineMetaDir] {
+        for blobDir in [dir, artDir, offlineDir, offlineArtDir, offlineMetaDir] {
             if let files = try? FileManager.default.contentsOfDirectory(at: blobDir, includingPropertiesForKeys: nil) {
                 for file in files { try? FileManager.default.removeItem(at: file) }
             }

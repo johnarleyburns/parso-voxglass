@@ -14,6 +14,7 @@ final class ArtworkService: @unchecked Sendable {
     typealias Fetcher = @Sendable (URL) async throws -> (Data, URLResponse?)
     typealias RegisterHook = @Sendable (String, Int64) -> Void
     typealias TouchHook = @Sendable (String) -> Void
+    typealias PinnedHook = @Sendable (String) async -> Bool
 
     static let shared = ArtworkService()
 
@@ -24,6 +25,7 @@ final class ArtworkService: @unchecked Sendable {
     private let fileManager: FileManager
     private let registerBytes: RegisterHook
     private let touchKey: TouchHook
+    private let isPinned: PinnedHook
     private let ioQueue = DispatchQueue(label: "guru.parso.voxglass.artwork-cache")
 
     init(
@@ -32,7 +34,8 @@ final class ArtworkService: @unchecked Sendable {
         fileManager: FileManager = .default,
         fetcher: Fetcher? = nil,
         registerBytes: RegisterHook? = nil,
-        touchKey: TouchHook? = nil
+        touchKey: TouchHook? = nil,
+        isPinned: PinnedHook? = nil
     ) {
         self.fileManager = fileManager
         self.timeToLive = timeToLive
@@ -45,6 +48,9 @@ final class ArtworkService: @unchecked Sendable {
         }
         self.touchKey = touchKey ?? { key in
             Task { await StreamCacheStore.shared.touch(key) }
+        }
+        self.isPinned = isPinned ?? { key in
+            await StreamCacheStore.shared.isPinned(key)
         }
 
         if let cacheDirectory {
@@ -71,7 +77,6 @@ final class ArtworkService: @unchecked Sendable {
     }
 
     func loadImage(for url: URL) async throws -> UIImage {
-        let cacheURL = cacheFileURL(for: url)
         let nsURL = url as NSURL
 
         if let image = memoryCache.object(forKey: nsURL) {
@@ -79,10 +84,12 @@ final class ArtworkService: @unchecked Sendable {
             return image
         }
 
-        if let image = diskImage(at: cacheURL) {
-            memoryCache.setObject(image, forKey: nsURL)
-            touchKey(cacheKey(url))
-            return image
+        for localURL in await localArtworkURLs(for: url) {
+            if let image = await diskImage(for: url, at: localURL) {
+                memoryCache.setObject(image, forKey: nsURL)
+                touchKey(cacheKey(url))
+                return image
+            }
         }
 
         if let bundled = BundledArtworkProvider.image(forCoverURL: url) {
@@ -93,7 +100,7 @@ final class ArtworkService: @unchecked Sendable {
         let (data, response) = try await fetcher(url)
         let image = try Self.validatedImage(from: data, response: response)
         memoryCache.setObject(image, forKey: nsURL)
-        write(data, to: cacheURL)
+        write(data, to: cacheFileURL(for: url))
         registerBytes(cacheKey(url), Int64(data.count))
         return image
     }
@@ -252,12 +259,20 @@ final class ArtworkService: @unchecked Sendable {
         cacheDirectory.appendingPathComponent(Self.cacheFileName(for: url), isDirectory: false)
     }
 
-    private func diskImage(at url: URL) -> UIImage? {
-        ioQueue.sync {
+    private func localArtworkURLs(for url: URL) async -> [URL] {
+        let key = Self.cacheKey(for: url)
+        let streamingURL = cacheFileURL(for: url)
+        let durableURL = await StreamCacheStore.shared.fileURL(for: key)
+        return streamingURL == durableURL ? [streamingURL] : [streamingURL, durableURL]
+    }
+
+    private func diskImage(for sourceURL: URL, at url: URL) async -> UIImage? {
+        let pinned = await isPinned(Self.cacheKey(for: sourceURL))
+        return ioQueue.sync(execute: { () -> UIImage? in
             guard
                 let attributes = try? fileManager.attributesOfItem(atPath: url.path),
                 let modificationDate = attributes[.modificationDate] as? Date,
-                Date().timeIntervalSince(modificationDate) <= timeToLive,
+                (pinned || Date().timeIntervalSince(modificationDate) <= timeToLive),
                 let data = try? Data(contentsOf: url),
                 let image = UIImage(data: data)
             else {
@@ -265,7 +280,22 @@ final class ArtworkService: @unchecked Sendable {
                 return nil
             }
             return image
-        }
+        })
+    }
+
+    /// Synchronous, purgeable-tier lookup used by SwiftUI before starting its
+    /// async task. Pinned entries are rechecked by `loadImage(for:)`.
+    private func diskImage(at url: URL) -> UIImage? {
+        return ioQueue.sync(execute: {
+            guard
+                let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                let modificationDate = attributes[.modificationDate] as? Date,
+                Date().timeIntervalSince(modificationDate) <= timeToLive,
+                let data = try? Data(contentsOf: url),
+                let image = UIImage(data: data)
+            else { return nil }
+            return image
+        })
     }
 
     private func write(_ data: Data, to url: URL) {
