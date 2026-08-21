@@ -45,6 +45,25 @@ public final class DiscoveryEnvironment {
     public private(set) var freshness: Freshness = .seedOnly
     public private(set) var myNarrations: [AudiobookProject] = []
     public private(set) var isRefreshing = false
+    private var persistedNeedIDs: Set<String> = []
+    private var hasLoadedNarrations = false
+
+    /// The one filtered collection consumed by every narration-needs surface.
+    /// An empty value during the initial repository load is deliberate: it
+    /// prevents a persisted narration from flashing as an available need.
+    public var availableNeeds: [NarrationNeed] {
+        guard hasLoadedNarrations else { return [] }
+        return NarrationNeed.excludingPersistedProjects(
+            needs,
+            projects: myNarrations,
+            persistedNeedIDs: persistedNeedIDs
+        )
+    }
+
+    public var availableFeatured: NarrationNeed? {
+        guard let featured, availableNeeds.contains(where: { $0.id == featured.id }) else { return nil }
+        return featured
+    }
 
     /// The phone's production relay, set once at bootstrap so a narration saved
     /// by the flow is projected into `ProductionPreviewStore` and pushed to the
@@ -124,6 +143,14 @@ public final class DiscoveryEnvironment {
         myNarrations = await repository.allProjects()
         await repository.backfillProjectDetailsIfNeeded(knownNeeds: needs)
         myNarrations = await repository.allProjects()
+        var linkedIDs = Set<String>()
+        for project in myNarrations {
+            if let needID = await repository.needID(for: project.id) {
+                linkedIDs.insert(needID)
+            }
+        }
+        persistedNeedIDs = linkedIDs
+        hasLoadedNarrations = true
     }
 
     /// Persists a narration project (the flow already wrote the bytes), projects

@@ -87,7 +87,7 @@ struct NarrationHomeShelf: View {
     let startProject: (NarrationNeed) -> Void
 
     private var shelfPlan: NarrationHomeShelfPlan {
-        NarrationHomeShelfPlan(needs: discovery.needs, featured: discovery.featured)
+        NarrationHomeShelfPlan(needs: discovery.availableNeeds, featured: discovery.availableFeatured)
     }
 
     var body: some View {
@@ -321,7 +321,7 @@ struct NarrationNeedsView: View {
                 }
                 .accessibilityIdentifier("needs.filter")
 
-                let rows = discovery.needs
+                let rows = discovery.availableNeeds
                     .filter(filter.matches)
                     .filter(\.recordableOniOS)
                 if rows.isEmpty {

@@ -76,6 +76,13 @@ public struct NarratableWork: Sendable, Codable, Equatable {
     public var pinnedWeekOf: Date?
     public var pinnedMonthOf: Date?
 
+    /// Stable identity shared by source rows and persisted narration projects.
+    /// This intentionally ignores source URLs, which may differ between catalog
+    /// providers for the same work.
+    public var workIdentity: String {
+        NeedID.compute(author: author, title: title, sourceHost: nil)
+    }
+
     public init(
         title: String,
         author: String,
@@ -171,7 +178,7 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
     /// `id`, this intentionally omits the source host so equivalent catalog
     /// entries can only occupy one home-shelf slot.
     public var workIdentity: String {
-        NeedID.compute(author: work.author, title: work.title, sourceHost: nil)
+        work.workIdentity
     }
 
     /// A need can open the iOS recording flow only when its text is available
@@ -195,6 +202,26 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
         self.strength = strength
         self.provenance = provenance
         self.expiresAt = expiresAt
+    }
+}
+
+extension NarrationNeed {
+    /// Removes works already represented by a local narration project. The
+    /// persisted need ID is authoritative when available; title/author is the
+    /// compatibility path for projects whose source row changed or predates
+    /// need-ID persistence.
+    public static func excludingPersistedProjects(
+        _ needs: [NarrationNeed],
+        projects: [AudiobookProject],
+        persistedNeedIDs: Set<String>
+    ) -> [NarrationNeed] {
+        let projectIdentities = Set(projects.map {
+            NeedID.compute(author: $0.metadata.author, title: $0.metadata.title, sourceHost: nil)
+        })
+        return needs.filter { need in
+            !persistedNeedIDs.contains(need.id)
+                && !projectIdentities.contains(need.workIdentity)
+        }
     }
 }
 
