@@ -76,15 +76,6 @@ extension TimeInterval {
 
 // MARK: - n01 Home shelf
 
-/// Short works are offerable on iPhone only when their text is available
-/// on-device; a textless need would open an empty recording flow (field fix:
-/// "narration asks to record NO CONTENT").
-extension NarrationNeed {
-    var recordableOniOS: Bool {
-        narratableOn.contains(.iOS) && work.text?.isEmpty == false
-    }
-}
-
 private let narrationRailTopSpacing: CGFloat = 20
 
 /// "Start a Narration" shelf on the Narration tab (n01): This Week's Poem +
@@ -94,6 +85,10 @@ struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let presentBrowse: () -> Void
     let startProject: (NarrationNeed) -> Void
+
+    private var shelfPlan: NarrationHomeShelfPlan {
+        NarrationHomeShelfPlan(needs: discovery.needs, featured: discovery.featured)
+    }
 
     var body: some View {
         // NOTE: no accessibilityIdentifier on this container — a plain VStack
@@ -108,32 +103,19 @@ struct NarrationHomeShelf: View {
                 .foregroundStyle(Palette.ink2)
                 .italic()
 
-            if let featured = featuredNeed {
+            if let featured = shelfPlan.featured {
                 featuredCard(featured)
                     .padding(.top, 12)
             }
 
-            if !shortNeeds.isEmpty {
+            if !shelfPlan.short.isEmpty {
                 shortRail
             }
-            if !discovery.needs.filter({ $0.work.lengthClass == .long }).isEmpty {
+            if !shelfPlan.long.isEmpty {
                 longRail
             }
         }
         .task { await discovery.refreshOnce() }
-    }
-
-    /// The pinned weekly slot when it is recordable, else the first short
-    /// need with on-device text — never a card that opens an empty flow.
-    private var featuredNeed: NarrationNeed? {
-        if let featured = discovery.featured, featured.recordableOniOS {
-            return featured
-        }
-        return discovery.needs.first { $0.recordableOniOS }
-    }
-
-    private var shortNeeds: [NarrationNeed] {
-        discovery.needs.filter { $0.recordableOniOS }.prefix(12).map { $0 }
     }
 
     @ViewBuilder
@@ -159,6 +141,7 @@ struct NarrationHomeShelf: View {
                         .scaledFont(size: 16, weight: .heavy)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
+                        .accessibilityIdentifier("needs.featured.title")
                     Text("\(need.work.author) · \(shortDuration(need.work.estSeconds)) · one tap to record")
                         .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink2)
@@ -181,7 +164,7 @@ struct NarrationHomeShelf: View {
             SectionTitle(title: "Short Works to Narrate", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(shortNeeds) { need in
+                    ForEach(shelfPlan.short) { need in
                         ShortNeedCard(need: need, start: { startProject(need) })
                     }
                 }
@@ -197,7 +180,7 @@ struct NarrationHomeShelf: View {
             SectionTitle(title: "Long Works to Narrate", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(discovery.needs.filter { $0.recordableOniOS && $0.work.lengthClass == .long }.prefix(10)) { need in
+                    ForEach(shelfPlan.long) { need in
                         LongNeedCard(need: need, start: { startProject(need) })
                     }
                 }

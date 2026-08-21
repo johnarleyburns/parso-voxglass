@@ -167,6 +167,20 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
 
     public var isSubmittable: Bool { work.grade == .submittable }
 
+    /// Stable identity for the underlying work across source rows. Unlike
+    /// `id`, this intentionally omits the source host so equivalent catalog
+    /// entries can only occupy one home-shelf slot.
+    public var workIdentity: String {
+        NeedID.compute(author: work.author, title: work.title, sourceHost: nil)
+    }
+
+    /// A need can open the iOS recording flow only when its text is available
+    /// on-device. Keep this beside the domain model so every shelf planner
+    /// applies the same recordability rule.
+    public var recordableOniOS: Bool {
+        narratableOn.contains(.iOS) && work.text?.isEmpty == false
+    }
+
     public init(
         id: String? = nil,
         work: NarratableWork,
@@ -181,6 +195,36 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
         self.strength = strength
         self.provenance = provenance
         self.expiresAt = expiresAt
+    }
+}
+
+/// The three home-shelf areas share one ordered, deduplicated collection.
+/// Featured selection happens before rail derivation so the featured work is
+/// never repeated in either rail.
+public struct NarrationHomeShelfPlan: Sendable, Equatable {
+    public let featured: NarrationNeed?
+    public let short: [NarrationNeed]
+    public let long: [NarrationNeed]
+
+    public init(needs: [NarrationNeed], featured: NarrationNeed?, shortLimit: Int = 12, longLimit: Int = 10) {
+        let recordableNeeds = needs.filter(\.recordableOniOS)
+        let selectedFeatured = (featured?.recordableOniOS == true ? featured : nil)
+            ?? recordableNeeds.first
+        self.featured = selectedFeatured
+
+        var seen = Set<String>()
+        if let selectedFeatured {
+            seen.insert(selectedFeatured.workIdentity)
+        }
+
+        var remaining: [NarrationNeed] = []
+        for need in recordableNeeds {
+            guard seen.insert(need.workIdentity).inserted else { continue }
+            remaining.append(need)
+        }
+
+        self.short = Array(remaining.filter { $0.work.lengthClass == .short }.prefix(shortLimit))
+        self.long = Array(remaining.filter { $0.work.lengthClass == .long }.prefix(longLimit))
     }
 }
 

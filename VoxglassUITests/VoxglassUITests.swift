@@ -136,6 +136,13 @@ final class VoxglassUITests: XCTestCase {
             "Featured narration need not found after ladder load.\n\(app.debugDescription)"
         )
         assertNarrationRailSpacing(app: app)
+        let featuredTitle = app.staticTexts["needs.featured.title"]
+        XCTAssertTrue(featuredTitle.exists, "Featured narration title not found.\n\(app.debugDescription)")
+        XCTAssertEqual(
+            app.staticTexts.matching(NSPredicate(format: "label == %@", featuredTitle.label)).count,
+            1,
+            "Featured narration title was repeated in a home rail.\n\(app.debugDescription)"
+        )
         for _ in 0..<4 where featuredNeed.exists && !featuredNeed.isHittable {
             app.swipeUp()
             _ = featuredNeed.waitForExistence(timeout: 2)
