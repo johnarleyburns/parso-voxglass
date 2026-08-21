@@ -135,6 +135,7 @@ final class VoxglassUITests: XCTestCase {
             featuredNeed.waitForExistence(timeout: 30),
             "Featured narration need not found after ladder load.\n\(app.debugDescription)"
         )
+        assertNarrationRailSpacing(app: app)
         for _ in 0..<4 where featuredNeed.exists && !featuredNeed.isHittable {
             app.swipeUp()
             _ = featuredNeed.waitForExistence(timeout: 2)
@@ -352,6 +353,25 @@ final class VoxglassUITests: XCTestCase {
         let start = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
         start.press(forDuration: 0.1, thenDragTo: end)
+    }
+
+    private func assertNarrationRailSpacing(app: XCUIApplication) {
+        let shelf = app.descendants(matching: .any)["home.startNarrationShelf"]
+        let shortRail = app.descendants(matching: .any)["needs.rail.short"]
+        let longRail = app.descendants(matching: .any)["needs.rail.long"]
+        let featured = app.buttons["needs.featured"]
+        let tagline = app.staticTexts["Lend your voice to the public domain."]
+
+        func assertRail(_ rail: XCUIElement, preceding: XCUIElement, name: String) {
+            guard rail.exists else { return }
+            XCTAssertTrue(rail.frame.minY > preceding.frame.maxY,
+                          "\(name) rail has no visible top margin.\n\(app.debugDescription)")
+        }
+
+        XCTAssertTrue(shelf.exists, "Narration shelf disappeared before spacing assertion.")
+        let firstPreceding = featured.exists ? featured : tagline
+        assertRail(shortRail, preceding: firstPreceding, name: "Short Works")
+        assertRail(longRail, preceding: shortRail.exists ? shortRail : firstPreceding, name: "Long Works")
     }
 
     // MARK: - Narration review regression legs

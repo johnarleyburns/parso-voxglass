@@ -85,6 +85,8 @@ extension NarrationNeed {
     }
 }
 
+private let narrationRailTopSpacing: CGFloat = 20
+
 /// "Start a Narration" shelf on the Narration tab (n01): This Week's Poem +
 /// short rail + long rail. Every need is narratable (N-1); length only frames
 /// the card, it never gates the record action.
@@ -186,6 +188,7 @@ struct NarrationHomeShelf: View {
                 .padding(.horizontal, 2)
             }
         }
+        .padding(.top, narrationRailTopSpacing)
         .accessibilityIdentifier("needs.rail.short")
     }
 
@@ -201,6 +204,7 @@ struct NarrationHomeShelf: View {
                 .padding(.horizontal, 2)
             }
         }
+        .padding(.top, narrationRailTopSpacing)
         .accessibilityIdentifier("needs.rail.long")
     }
 }
