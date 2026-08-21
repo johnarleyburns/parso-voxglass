@@ -326,6 +326,8 @@ final class VoxglassUITests: XCTestCase {
 
         assertCompletedDashboardRoutesToReview(app: app)
 
+        assertDashboardArtworkPicker(app: app)
+
         assertNarrationDetailsAndReviewPersist(app: app)
 
         // The EQ step needs the Listen tab anyway; switch there first (also
@@ -414,6 +416,23 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 10))
         app.buttons["Close"].tap()
         XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
+    }
+
+    private func assertDashboardArtworkPicker(app: XCUIApplication) {
+        let editArtwork = app.buttons["dashboard.artwork.edit"]
+        XCTAssertTrue(
+            editArtwork.waitForExistence(timeout: 10),
+            "The individual narration view has no Edit Artwork action.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(app.descendants(matching: .any)["dashboard.artwork.fallback"].exists)
+        editArtwork.tap()
+        XCTAssertTrue(
+            app.buttons["Choose from Photos"].waitForExistence(timeout: 5),
+            "Edit Artwork did not offer Photos.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(app.buttons["Choose from Files"].exists, "Edit Artwork did not offer Files.")
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(editArtwork.waitForExistence(timeout: 5))
     }
 
     /// 2026-08-19 field report legs, in one helper: the Details box is read-only

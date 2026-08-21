@@ -536,7 +536,7 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         let asmJ = try String(data: encoder.encode(p.profile.assembly), encoding: .utf8)!
         let subjJ = try String(data: encoder.encode(p.metadata.subjects), encoding: .utf8)!
         let srcJ = p.source.map { _ in try? String(data: encoder.encode(p.source!), encoding: .utf8)! } ?? nil
-        let coverHex = p.metadata.coverRef.map { $0.sha256 } ?? nil
+        let cover = p.metadata.coverRef
         let srcURL = p.rights.sourceURL?.absoluteString
         let licURL = p.rights.licenseURL?.absoluteString
 
@@ -554,7 +554,10 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
             p.metadata.isbn.map{.string($0)} ?? .null,
             p.metadata.asin.map{.string($0)} ?? .null,
             .bool(p.metadata.isAbridged),
-            coverHex.map{.string($0)} ?? .null,
+            cover.map { .string($0.sha256) } ?? .null,
+            cover.map { .string($0.relativePath) } ?? .null,
+            cover.map { .int(Int64($0.byteCount)) } ?? .null,
+            cover.map { .string($0.contentType) } ?? .null,
             p.metadata.archiveIdentifier.map{.string($0)} ?? .null,
             .string(p.profile.purpose.rawValue), .string(p.profile.intendedDestination.rawValue),
             .string(p.rights.basis.rawValue),
@@ -573,8 +576,8 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         ]
 
         try await db.execute("""
-            INSERT INTO project (id,title,subtitle,author,translator,narrator,language,description,subjects_json,series_name,series_index,publisher,copyright_year,production_year,rights_holder,isbn,asin,is_abridged,cover_sha256,archive_identifier,purpose,intended_destination,rights_basis,rights_source_url,rights_edition_year,rights_notes,rights_attested_at,rights_attested_by,rights_license_url,recording_json,assembly_json,hidden_from_devices,auto_sync_takes,include_source_text,proxy_bitrate_kbps,source_json,created_at,modified_at,schema_version,projection_revision)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO project (id,title,subtitle,author,translator,narrator,language,description,subjects_json,series_name,series_index,publisher,copyright_year,production_year,rights_holder,isbn,asin,is_abridged,cover_sha256,cover_path,cover_bytes,cover_content_type,archive_identifier,purpose,intended_destination,rights_basis,rights_source_url,rights_edition_year,rights_notes,rights_attested_at,rights_attested_by,rights_license_url,recording_json,assembly_json,hidden_from_devices,auto_sync_takes,include_source_text,proxy_bitrate_kbps,source_json,created_at,modified_at,schema_version,projection_revision)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """, bindings)
     }
 
@@ -626,7 +629,15 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
         let asmDef: AssemblySettings? = decodeJSON(from: row, column: "assembly_json")
         let srcDoc: SourceDocument? = decodeJSON(from: row, column: "source_json")
         let subjs: [String] = decodeJSON(from: row, column: "subjects_json") ?? []
-        let coverRef: AudioAssetReference? = row.string("cover_sha256").map { AudioAssetReference(sha256: $0, relativePath: "", byteCount: 0, contentType: "image/jpeg") }
+        let coverRef: AudioAssetReference? = row.string("cover_sha256").map { sha in
+            let legacyPath = "Artwork/\(sha.prefix(2))/\(sha.dropFirst(2).prefix(2))/\(sha).jpg"
+            return AudioAssetReference(
+                sha256: sha,
+                relativePath: row.string("cover_path") ?? legacyPath,
+                byteCount: Int(row.int("cover_bytes") ?? 0),
+                contentType: row.string("cover_content_type") ?? "image/jpeg"
+            )
+        }
 
         let meta = BookMetadata(
             title: row.string("title") ?? "", subtitle: row.string("subtitle"),

@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import AVFoundation
+import UIKit
 import VoxglassCore
 import VoxglassEncoders
 
@@ -328,6 +329,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     var sourceURLText = ""
     var exportBundle: NarrationExportBundle?
     var artworkData: Data?
+    var artworkError: String?
     var library: (any NarrationLibraryImporting)?
     var importedBook: BookWithChapters?
 
@@ -623,19 +625,40 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
     func setArtwork(_ data: Data) async {
         guard var project else { return }
+        guard let image = UIImage(data: data),
+              let jpeg = image.jpegData(compressionQuality: 0.9) else {
+            artworkError = "The selected file is not a readable image."
+            return
+        }
         do {
-            let ref = try await repository.fileStore(for: project.id).put(data, ext: "jpg", contentType: "image/jpeg", subdirectory: .artwork)
+            let ref = try await repository.fileStore(for: project.id).put(
+                jpeg,
+                ext: "jpg",
+                contentType: "image/jpeg",
+                subdirectory: .artwork
+            )
             project.metadata.coverRef = ref
             project.modifiedAt = repository.clock.now
             self.project = project
-            artworkData = data
+            artworkData = jpeg
+            artworkError = nil
             await persist()
-        } catch { }
+        } catch {
+            artworkError = "Voxglass couldn't save that artwork. Try another image."
+        }
     }
 
     func loadArtwork() async {
-        guard let project, let ref = project.metadata.coverRef else { return }
-        artworkData = try? await repository.fileStore(for: project.id).data(for: ref)
+        guard let project, let ref = project.metadata.coverRef else {
+            artworkData = nil
+            return
+        }
+        do {
+            artworkData = try await repository.fileStore(for: project.id).data(for: ref)
+            artworkError = nil
+        } catch {
+            artworkData = nil
+        }
     }
 
     private static func flowParagraph(_ paragraph: Paragraph, notes: [UUID: String], remoteBytesBySHA: [String: Int64]) -> FlowParagraph {

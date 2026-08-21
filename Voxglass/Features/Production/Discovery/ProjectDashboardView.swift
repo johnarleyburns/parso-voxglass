@@ -1,4 +1,6 @@
 import SwiftUI
+import PhotosUI
+import UniformTypeIdentifiers
 import VoxglassCore
 
 /// The project dashboard (mockup 04), pushed when a project in My Narrations is
@@ -19,6 +21,9 @@ struct ProjectDashboardView: View {
     @State private var sourceURLBackfill = ""
     @State private var isEditingDetails = false
     @State private var detailDrafts: [MetadataField: String] = [:]
+    @State private var artworkItem: PhotosPickerItem?
+    @State private var showArtworkSources = false
+    @State private var showArtworkFileImporter = false
     /// The live project. Seeded from the pushing list, then kept in step with
     /// the model and re-read from the store whenever the flow closes.
     @State private var project: AudiobookProject
@@ -69,10 +74,17 @@ struct ProjectDashboardView: View {
             StorageSettingsView()
         }
         .task {
-            if let fresh = await model.storedProject(project.id) { adopt(fresh) }
-            await model.load(model.project ?? project)
+            let openedProject: AudiobookProject
+            if let fresh = await model.storedProject(project.id) {
+                adopt(fresh)
+                openedProject = fresh
+            } else {
+                openedProject = project
+            }
+            await model.load(openedProject)
             narratorBackfill = model.narrator
             sourceURLBackfill = model.sourceURLText
+            await model.loadArtwork()
             await discovery.reloadNarrations()
         }
         .onChange(of: model.project) { _, fresh in
@@ -87,9 +99,43 @@ struct ProjectDashboardView: View {
                 if let fresh = await model.storedProject(project.id) {
                     adopt(fresh)
                     await model.load(fresh)
+                    await model.loadArtwork()
                 }
                 await discovery.reloadNarrations()
             }
+        }
+        .confirmationDialog("Edit Artwork", isPresented: $showArtworkSources, titleVisibility: .visible) {
+            Button("Choose from Photos") { showPhotosPicker = true }
+                .accessibilityIdentifier("dashboard.artwork.photos")
+            Button("Choose from Files") { showArtworkFileImporter = true }
+                .accessibilityIdentifier("dashboard.artwork.files")
+            Button("Cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showPhotosPicker, selection: $artworkItem, matching: .images)
+        .fileImporter(isPresented: $showArtworkFileImporter, allowedContentTypes: [.image]) { result in
+            if case .success(let url) = result {
+                importArtwork(from: url)
+            }
+        }
+        .onChange(of: artworkItem) { _, item in
+            guard let item else { return }
+            Task {
+                do {
+                    guard let data = try await item.loadTransferable(type: Data.self) else {
+                        model.artworkError = "The selected photo could not be read."
+                        return
+                    }
+                    await model.setArtwork(data)
+                    artworkItem = nil
+                } catch {
+                    model.artworkError = "The selected photo could not be read."
+                }
+            }
+        }
+        .alert("Artwork unavailable", isPresented: artworkErrorBinding) {
+            Button("OK") { model.artworkError = nil }
+        } message: {
+            Text(model.artworkError ?? "Please choose another image.")
         }
         .alert("Add narrator name", isPresented: $model.needsNarratorPrompt) {
             TextField("Narrator name", text: $narratorBackfill)
@@ -107,14 +153,33 @@ struct ProjectDashboardView: View {
 
     private var header: some View {
         VStack(spacing: 0) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .topLeading, endPoint: .bottomTrailing))
-                Text(initials)
-                    .scaledFont(size: 30, weight: .heavy)
-                    .foregroundStyle(NarrationPalette.creamWarm)
+            Group {
+                if let data = model.artworkData, let image = UIImage(data: data) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .accessibilityLabel("Narration artwork")
+                        .accessibilityIdentifier("dashboard.artwork.image")
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        Text(initials)
+                            .scaledFont(size: 30, weight: .heavy)
+                            .foregroundStyle(NarrationPalette.creamWarm)
+                    }
+                    .accessibilityIdentifier("dashboard.artwork.fallback")
+                }
             }
             .frame(width: 120, height: 160)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+
+            Button("Edit Artwork") { showArtworkSources = true }
+                .scaledFont(size: 12, weight: .semibold)
+                .foregroundStyle(Palette.brass)
+                .buttonStyle(NarrationPressStyle())
+                .padding(.top, 6)
+                .accessibilityIdentifier("dashboard.artwork.edit")
 
             Text(project.metadata.title)
                 .scaledFont(size: 21, weight: .heavy)
@@ -135,6 +200,29 @@ struct ProjectDashboardView: View {
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    @State private var showPhotosPicker = false
+
+    private var artworkErrorBinding: Binding<Bool> {
+        Binding(
+            get: { model.artworkError != nil },
+            set: { if !$0 { model.artworkError = nil } }
+        )
+    }
+
+    private func importArtwork(from url: URL) {
+        Task {
+            let hasScopedAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if hasScopedAccess { url.stopAccessingSecurityScopedResource() }
+            }
+            do {
+                await model.setArtwork(try Data(contentsOf: url))
+            } catch {
+                model.artworkError = "The selected file could not be read."
+            }
+        }
     }
 
     // MARK: - Record next

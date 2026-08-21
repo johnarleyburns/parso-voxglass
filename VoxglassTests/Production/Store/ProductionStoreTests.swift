@@ -17,6 +17,50 @@ import VoxglassCoreTestSupport
         #expect(loaded.chapters[0].paragraphs.count == project.chapters[0].paragraphs.count)
     }
 
+    @Test func sqliteRoundTripsTheCompleteCoverReference() async throws {
+        let store = try await makeSQLiteStore()
+        var project = ProjectFixtures.typical()
+        let cover = AudioAssetReference(
+            sha256: String(repeating: "a", count: 64),
+            relativePath: "Artwork/aa/aa/cover.jpg",
+            byteCount: 12_345,
+            contentType: "image/jpeg"
+        )
+        project.metadata.coverRef = cover
+
+        try await store.save(project)
+
+        let loaded = try await store.load()
+        #expect(loaded.metadata.coverRef == cover)
+    }
+
+    @Test func sqliteReconstructsLegacyHashOnlyCoverPath() async throws {
+        let db = ProjectDatabase.makeTemporary(named: "legacy-cover-\(UUID().uuidString)")
+        try await db.prepare()
+        let store = SQLiteProductionStore(databaseURL: db.url)
+        var project = ProjectFixtures.typical()
+        let sha = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        project.metadata.coverRef = AudioAssetReference(
+            sha256: sha,
+            relativePath: "Artwork/12/34/\(sha).jpg",
+            byteCount: 987,
+            contentType: "image/jpeg"
+        )
+        try await store.save(project)
+
+        // This is the exact row shape written by builds before migration 4.
+        try await db.execute(
+            "UPDATE project SET cover_path=NULL, cover_bytes=NULL, cover_content_type=NULL WHERE id=?",
+            [.string(project.id.uuidString)]
+        )
+
+        let loaded = try await store.load()
+        let cover = try #require(loaded.metadata.coverRef)
+        #expect(cover.sha256 == sha)
+        #expect(cover.relativePath == "Artwork/12/34/\(sha).jpg")
+        #expect(cover.contentType == "image/jpeg")
+    }
+
     @Test func countsMatchBruteForce() async throws {
         let store = InMemoryProductionStore()
         let project = ProjectFixtures.typical()

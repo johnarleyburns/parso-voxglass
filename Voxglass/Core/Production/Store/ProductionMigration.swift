@@ -14,7 +14,8 @@ public struct ProductionMigration: Sendable {
     public static let all: [ProductionMigration] = [
         ProductionMigration(id: 1, name: "initial_production_schema", statements: schemaV1),
         ProductionMigration(id: 2, name: "production_asset_table", statements: schemaV2),
-        ProductionMigration(id: 3, name: "take_capture_fields", statements: schemaV3)
+        ProductionMigration(id: 3, name: "take_capture_fields", statements: schemaV3),
+        ProductionMigration(id: 4, name: "cover_asset_reference", statements: schemaV4)
     ]
 
     static let schemaV1: [String] = [
@@ -247,5 +248,16 @@ public struct ProductionMigration: Sendable {
     static let schemaV3: [String] = [
         "ALTER TABLE take ADD COLUMN capture_warning TEXT NOT NULL DEFAULT 'none'",
         "ALTER TABLE take ADD COLUMN route_class TEXT"
+    ]
+
+    /// The project table originally kept only a cover hash, which made the
+    /// content-addressed artwork unreadable after reopening because its path
+    /// and byte count were lost. Preserve the complete reference just as take
+    /// assets do. Nil defaults keep existing databases readable; the loader
+    /// reconstructs the legacy JPEG path when only a hash is present.
+    static let schemaV4: [String] = [
+        "ALTER TABLE project ADD COLUMN cover_path TEXT",
+        "ALTER TABLE project ADD COLUMN cover_bytes INTEGER",
+        "ALTER TABLE project ADD COLUMN cover_content_type TEXT"
     ]
 }

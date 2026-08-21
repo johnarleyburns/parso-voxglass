@@ -1,4 +1,5 @@
 import AVFoundation
+import UIKit
 import XCTest
 import VoxglassCore
 @testable import Voxglass
@@ -28,6 +29,48 @@ final class NarrationStateFreshnessTests: XCTestCase {
             clock: NarrationE2EClock(),
             ids: NarrationE2EIDGenerator()
         )
+    }
+
+    // MARK: - Phase 6: artwork is a durable project asset, not model bytes
+
+    func testArtworkNormalizesReplacesAndReloadsFromProjectAssets() async throws {
+        let repository = makeRepository()
+        let seeded = try await NarrationE2EFixture.seed(into: repository)
+        let model = NarrationFlowModel(repository: repository, capture: TTSAudioCapture())
+        await model.load(seeded)
+
+        await model.setArtwork(pngArtwork(color: .systemBlue))
+        let firstRef = try XCTUnwrap(model.project?.metadata.coverRef)
+        XCTAssertTrue(firstRef.relativePath.hasPrefix("Artwork/"))
+        XCTAssertTrue(firstRef.relativePath.hasSuffix(".jpg"))
+        XCTAssertEqual(firstRef.contentType, "image/jpeg")
+
+        let firstBytes = try await repository.fileStore(for: seeded.id).data(for: firstRef)
+        XCTAssertEqual(Array(firstBytes.prefix(2)), [0xFF, 0xD8], "selected images must be normalized to JPEG")
+        XCTAssertEqual(SHA256Hex.hex(firstBytes), firstRef.sha256)
+
+        await model.setArtwork(pngArtwork(color: .systemOrange))
+        let replacementRef = try XCTUnwrap(model.project?.metadata.coverRef)
+        XCTAssertNotEqual(replacementRef, firstRef, "a new selection must replace metadata.coverRef")
+
+        let persisted = try await repository.load(seeded.id)
+        XCTAssertEqual(persisted.metadata.coverRef, replacementRef)
+
+        let reopened = NarrationFlowModel(repository: repository, capture: TTSAudioCapture())
+        await reopened.load(persisted)
+        await reopened.loadArtwork()
+        let reloadedBytes = try XCTUnwrap(reopened.artworkData)
+        let persistedBytes = try await repository.fileStore(for: seeded.id).data(for: replacementRef)
+        XCTAssertEqual(reloadedBytes, persistedBytes)
+        XCTAssertNotNil(UIImage(data: reloadedBytes))
+    }
+
+    private func pngArtwork(color: UIColor) -> Data {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 24, height: 32))
+        return renderer.pngData { context in
+            color.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 24, height: 32))
+        }
     }
 
     // MARK: - Item 9: approvals must stick across a re-entry of the flow
