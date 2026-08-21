@@ -85,6 +85,7 @@ struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     let presentBrowse: () -> Void
     let startProject: (NarrationNeed) -> Void
+    let showRails: Bool
 
     private var shelfPlan: NarrationHomeShelfPlan {
         NarrationHomeShelfPlan(needs: discovery.availableNeeds, featured: discovery.availableFeatured)
@@ -108,10 +109,10 @@ struct NarrationHomeShelf: View {
                     .padding(.top, 12)
             }
 
-            if !shelfPlan.short.isEmpty {
+            if showRails && !shelfPlan.short.isEmpty {
                 shortRail
             }
-            if !shelfPlan.long.isEmpty {
+            if showRails && !shelfPlan.long.isEmpty {
                 longRail
             }
         }

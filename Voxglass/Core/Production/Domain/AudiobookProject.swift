@@ -137,6 +137,7 @@ public struct AudiobookProject: Codable, Sendable, Identifiable, Equatable {
 
     public var allParagraphs: [Paragraph] { chapters.flatMap(\.paragraphs) }
     public var recordedCount: Int { allParagraphs.count { $0.selectedTakeID != nil } }
+    public var hasRecordedContent: Bool { recordedCount > 0 }
     public var totalCount: Int { allParagraphs.count }
     public var percentRecorded: Double {
         totalCount == 0 ? 0 : Double(recordedCount) / Double(totalCount)

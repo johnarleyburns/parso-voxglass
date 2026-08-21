@@ -8,16 +8,16 @@ struct NarrationTabView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @State private var flowNeed: NarrationNeed?
     @State private var showingNeeds = false
-    @State private var findSomething = false
 
     var body: some View {
         VoxglassScreen(title: "Narration") {
             VStack(alignment: .leading, spacing: 26) {
                 NarrationHomeShelf(
                     presentBrowse: { showingNeeds = true },
-                    startProject: { flowNeed = $0 }
+                    startProject: { flowNeed = $0 },
+                    showRails: !discovery.myNarrations.contains { $0.recordedCount > 0 }
                 )
-                MyNarrationsSection(findSomething: { findSomething = true })
+                MyNarrationsSection(findSomething: { showingNeeds = true })
             }
             .padding(.top, 12)
         }
@@ -28,9 +28,6 @@ struct NarrationTabView: View {
         }
         .fullScreenCover(item: $flowNeed) { need in
             NarrationFlowRoot(startNeed: need)
-        }
-        .fullScreenCover(isPresented: $findSomething) {
-            NarrationFlowRoot(startNeed: nil)
         }
         .accessibilityIdentifier("narration.tab")
     }

@@ -126,6 +126,23 @@ final class VoxglassUITests: XCTestCase {
             "Start a Narration shelf not found on Narration tab.\n\(app.debugDescription)"
         )
 
+        // Both entry points must land in the filtered Narration Needs view;
+        // neither should open an unconfigured narration flow.
+        app.buttons["home.startNarrationShelf"].buttons["See All"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
+            "Start a Narration → See All did not open Narration Needs.\n\(app.debugDescription)"
+        )
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let newFromNeed = app.buttons["myNarrations.newFromNeed"]
+        XCTAssertTrue(newFromNeed.waitForExistence(timeout: 10), "New narration action was not reachable.")
+        newFromNeed.tap()
+        XCTAssertTrue(
+            app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
+            "New Narration → From a Narration Need did not open Narration Needs.\n\(app.debugDescription)"
+        )
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
         let featuredNeed = app.buttons["needs.featured"]
         for _ in 0..<8 where !featuredNeed.exists {
             app.swipeUp()
