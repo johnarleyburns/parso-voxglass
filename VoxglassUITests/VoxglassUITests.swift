@@ -193,6 +193,7 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertFalse(assembleButton.isEnabled, "A flagged paragraph must disable assemble (review gate).")
         assertFinalContentClearsBottomControls(app.buttons["review.toExport"], app: app, screen: "Review")
 
+        assertReviewChapterTextIsCardedAndLeading(app: app)
         assertReviewPlaybackShowsState(app: app)
         assertChapterCollapseRoundTrips(app: app)
         assertFilterEmptyState(app: app)
@@ -520,6 +521,20 @@ final class VoxglassUITests: XCTestCase {
     }
 
     // MARK: - Narration review regression legs
+
+    private func assertReviewChapterTextIsCardedAndLeading(app: XCUIApplication) {
+        let card = app.descendants(matching: .any)["review.chapter.textContainer.0"]
+        let text = app.staticTexts["review.chapter.text.0"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5), "Review chapter text has no visible card.")
+        XCTAssertTrue(text.waitForExistence(timeout: 5), "Review chapter text is not exposed inside its card.")
+        XCTAssertGreaterThan(card.frame.width, app.frame.width * 0.6, "The chapter text card must fill the Review row.")
+        XCTAssertEqual(
+            text.frame.minX,
+            card.frame.minX + 12,
+            accuracy: 3,
+            "Review chapter text must align to the leading edge of its card."
+        )
+    }
 
     private func assertCompletedDashboardRoutesToReview(app: XCUIApplication) {
         app.buttons["Narration"].tap()

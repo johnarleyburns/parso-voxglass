@@ -988,27 +988,7 @@ struct ReviewView: View {
 
     private func row(_ paragraph: FlowParagraph) -> some View {
         let index = model.paragraphs.firstIndex(where: { $0.id == paragraph.id }) ?? 0
-        return HStack(spacing: 12) {
-            Button {
-                switch paragraph.state {
-                case .recorded:
-                    model.acceptParagraph(paragraph.id)
-                    Task { await model.persist() }
-                case .approved:
-                    model.unacceptParagraph(paragraph.id)
-                case .flagged, .notRecorded:
-                    paragraphReviewID = paragraph.id
-                }
-            } label: {
-                Image(systemName: checkboxSymbol(paragraph.state))
-                    .scaledFont(size: 24)
-                    .foregroundStyle(tint(paragraph.state))
-                    .frame(width: 30, height: 30)
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel(checkboxLabel(paragraph.state))
-            .accessibilityIdentifier("review.row.approve.\(index)")
-
+        return VStack(alignment: .leading, spacing: 8) {
             Button {
                 model.currentParagraphID = paragraph.id
                 paragraphReviewID = paragraph.id
@@ -1017,67 +997,102 @@ struct ReviewView: View {
                     Text(paragraph.text)
                         .scaledFont(size: 13.5, weight: .semibold)
                         .foregroundStyle(Palette.ink)
-                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("review.chapter.text.\(index)")
                     Text(caption(paragraph)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
                     if let note = paragraph.note {
                         Text(note).scaledFont(size: 11).foregroundStyle(NarrationPalette.tan)
                     }
                 }
+                .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 12)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Palette.hairline, lineWidth: 1)
+                        .accessibilityElement()
+                        .accessibilityLabel("Chapter text card")
+                        .accessibilityIdentifier("review.chapter.textContainer.\(index)")
+                        .allowsHitTesting(false)
+                }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.borderless)
             .accessibilityIdentifier("review.row.\(index)")
-            Spacer()
-            if let bytes = paragraph.remoteTakeByteCount {
-                Button {
-                    Task { await model.hydrateForPlayback(paragraph.id) }
-                } label: {
-                    HStack(spacing: 5) {
-                        if model.hydratingParagraphID == paragraph.id {
-                            ProgressView().controlSize(.small).tint(Palette.brass)
-                        } else {
-                            Image(systemName: "icloud.and.arrow.down").scaledFont(size: 12, weight: .semibold)
-                        }
-                        Text(model.hydratingParagraphID == paragraph.id ? "Downloading" : byteEstimate(bytes))
-                            .scaledFont(size: 11, weight: .bold)
-                    }
-                    .foregroundStyle(Palette.brass)
-                    .padding(.horizontal, 9).padding(.vertical, 6)
-                    .background(Palette.brass.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(Palette.brass.opacity(0.45), lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                .disabled(model.hydratingParagraphID != nil && model.hydratingParagraphID != paragraph.id)
-                .accessibilityIdentifier("review.row.play.\(index)")
-            } else {
-                Button {
-                    model.togglePlayback(paragraph.id)
-                } label: {
-                    Image(systemName: model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle")
-                        .scaledFont(size: 26)
-                        .foregroundStyle(Palette.ink2)
-                }
-                .buttonStyle(.plain)
-                .disabled(paragraph.take == nil)
-                .accessibilityLabel(model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
-                .accessibilityIdentifier("review.row.play.\(index)")
-            }
 
-            if paragraph.state == .flagged {
-                Button("Re-record ▸") {
-                    // Target the tapped paragraph: `currentParagraphID` may be
-                    // stale after the flow routed to review, and RecordView
-                    // prefers it over its `paragraphID` argument.
-                    model.currentParagraphID = paragraph.id
-                    reRecordID = paragraph.id
+            HStack(spacing: 12) {
+                Button {
+                    switch paragraph.state {
+                    case .recorded:
+                        model.acceptParagraph(paragraph.id)
+                        Task { await model.persist() }
+                    case .approved:
+                        model.unacceptParagraph(paragraph.id)
+                    case .flagged, .notRecorded:
+                        paragraphReviewID = paragraph.id
+                    }
+                } label: {
+                    Image(systemName: checkboxSymbol(paragraph.state))
+                        .scaledFont(size: 24)
+                        .foregroundStyle(tint(paragraph.state))
+                        .frame(width: 30, height: 30)
                 }
-                .scaledFont(size: 12, weight: .bold)
-                .foregroundStyle(Palette.brass)
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("review.row.rerecord.\(index)")
+                .buttonStyle(.borderless)
+                .accessibilityLabel(checkboxLabel(paragraph.state))
+                .accessibilityIdentifier("review.row.approve.\(index)")
+
+                Spacer()
+                if let bytes = paragraph.remoteTakeByteCount {
+                    Button {
+                        Task { await model.hydrateForPlayback(paragraph.id) }
+                    } label: {
+                        HStack(spacing: 5) {
+                            if model.hydratingParagraphID == paragraph.id {
+                                ProgressView().controlSize(.small).tint(Palette.brass)
+                            } else {
+                                Image(systemName: "icloud.and.arrow.down").scaledFont(size: 12, weight: .semibold)
+                            }
+                            Text(model.hydratingParagraphID == paragraph.id ? "Downloading" : byteEstimate(bytes))
+                                .scaledFont(size: 11, weight: .bold)
+                        }
+                        .foregroundStyle(Palette.brass)
+                        .padding(.horizontal, 9).padding(.vertical, 6)
+                        .background(Palette.brass.opacity(0.12), in: Capsule())
+                        .overlay(Capsule().stroke(Palette.brass.opacity(0.45), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(model.hydratingParagraphID != nil && model.hydratingParagraphID != paragraph.id)
+                    .accessibilityIdentifier("review.row.play.\(index)")
+                } else {
+                    Button {
+                        model.togglePlayback(paragraph.id)
+                    } label: {
+                        Image(systemName: model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle")
+                            .scaledFont(size: 26)
+                            .foregroundStyle(Palette.ink2)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(paragraph.take == nil)
+                    .accessibilityLabel(model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
+                    .accessibilityIdentifier("review.row.play.\(index)")
+                }
+
+                if paragraph.state == .flagged {
+                    Button("Re-record ▸") {
+                        // Target the tapped paragraph: `currentParagraphID` may be
+                        // stale after the flow routed to review, and RecordView
+                        // prefers it over its `paragraphID` argument.
+                        model.currentParagraphID = paragraph.id
+                        reRecordID = paragraph.id
+                    }
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("review.row.rerecord.\(index)")
+                }
+                Image(systemName: "chevron.right").scaledFont(size: 11).foregroundStyle(Palette.ink3)
             }
-            Image(systemName: "chevron.right").scaledFont(size: 11).foregroundStyle(Palette.ink3)
         }
         .padding(.vertical, 6)
     }
