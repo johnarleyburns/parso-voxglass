@@ -17,6 +17,7 @@ struct StorageSettingsView: View {
                 iCloudBackupCard
                 evictionOrderCard
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)
             .padding(.top, 12)
         }
@@ -32,14 +33,11 @@ struct StorageSettingsView: View {
 
     private var workingCacheCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Narration working cache")
-                    .scaledFont(size: 16, weight: .bold)
-                    .foregroundStyle(Palette.ink)
-                Spacer()
+            adaptiveHeader("Narration working cache") {
                 Text("\(ByteCountFormatter.string(fromByteCount: model.usedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: model.limitBytes, countStyle: .file))")
                     .scaledFont(size: 12, weight: .semibold)
                     .foregroundStyle(Palette.ink2)
+                    .accessibilityIdentifier("storage.workingCache.total")
             }
 
             GeometryReader { geo in
@@ -64,10 +62,13 @@ struct StorageSettingsView: View {
                     Text("Limit")
                         .scaledFont(size: 12, weight: .semibold)
                         .foregroundStyle(Palette.ink2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer()
                     Text(ByteCountFormatter.string(fromByteCount: model.limitBytes, countStyle: .file))
                         .scaledFont(size: 12, weight: .bold)
                         .foregroundStyle(Palette.ink)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Slider(value: Binding(
                     get: { Double(model.limitGB) },
@@ -82,19 +83,27 @@ struct StorageSettingsView: View {
                 }
             }
         }
-        .glassSurface(cornerRadius: 18)
         .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 18)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.workingCache")
     }
 
     private func usageRow(_ label: String, _ bytes: Int64) -> some View {
-        HStack {
-            Text(label).scaledFont(size: 12.5).foregroundStyle(Palette.ink2)
-            Spacer()
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(label)
+                .scaledFont(size: 12.5)
+                .foregroundStyle(Palette.ink2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
             Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
                 .scaledFont(size: 12.5, weight: .medium)
                 .foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Audiobook downloads
@@ -108,9 +117,13 @@ struct StorageSettingsView: View {
             Text("A separate budget. Narration never evicts your downloaded audiobooks, and downloads never evict your takes.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("storage.audiobookCache.description")
         }
-        .glassSurface(cornerRadius: 18)
         .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 18)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.audiobookCache")
     }
 
@@ -118,11 +131,7 @@ struct StorageSettingsView: View {
 
     private var iCloudBackupCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("iCloud backup")
-                    .scaledFont(size: 16, weight: .bold)
-                    .foregroundStyle(Palette.ink)
-                Spacer()
+            adaptiveHeader("iCloud backup") {
                 statusChip(model.backupRunning ? "Uploading" : "On")
             }
 
@@ -136,9 +145,13 @@ struct StorageSettingsView: View {
             Text("Nothing is removed until it is safe. A recording can only be offloaded after its iCloud copy is verified byte-for-byte by checksum and the reference is written to this project.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("storage.iCloudBackup.description")
         }
-        .glassSurface(cornerRadius: 18)
         .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 18)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.iCloudBackup")
     }
 
@@ -157,9 +170,13 @@ struct StorageSettingsView: View {
                 .scaledFont(size: 11.5)
                 .foregroundStyle(NarrationPalette.brassSoft)
                 .padding(.top, 4)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("storage.evictionOrder.never")
         }
-        .glassSurface(cornerRadius: 18)
         .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(cornerRadius: 18)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.evictionOrder")
     }
 
@@ -173,7 +190,38 @@ struct StorageSettingsView: View {
             Text(text)
                 .scaledFont(size: 12.5)
                 .foregroundStyle(Palette.ink2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func adaptiveHeader<Trailing: View>(
+        _ title: String,
+        @ViewBuilder trailing: () -> Trailing
+    ) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                cardTitle(title)
+                    .fixedSize(horizontal: true, vertical: true)
+                Spacer(minLength: 0)
+                trailing()
+                    .fixedSize(horizontal: true, vertical: true)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                cardTitle(title)
+                trailing()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func cardTitle(_ title: String) -> some View {
+        Text(title)
+            .scaledFont(size: 16, weight: .bold)
+            .foregroundStyle(Palette.ink)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func statusChip(_ label: String) -> some View {

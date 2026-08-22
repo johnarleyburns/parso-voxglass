@@ -84,6 +84,8 @@ final class VoxglassUITests: XCTestCase {
             )
         }
 
+        assertStorageCardsFitCompactWidth(app: app)
+
         // My Productions reachability (spec §18.2, WP-G): Library → My
         // Productions → seeded project card → detail review actions.
         app.buttons["My Books"].tap()
@@ -398,6 +400,64 @@ final class VoxglassUITests: XCTestCase {
         let firstPreceding = featured.exists ? featured : tagline
         assertRail(shortRail, preceding: firstPreceding, name: "Short Works")
         assertRail(longRail, preceding: shortRail.exists ? shortRail : firstPreceding, name: "Long Works")
+    }
+
+    private func assertStorageCardsFitCompactWidth(app: XCUIApplication) {
+        app.buttons["Listen"].tap()
+        app.buttons["home.moreMenu"].tap()
+        app.buttons["Settings"].tap()
+
+        let storageLink = app.buttons["settings.storage"]
+        for _ in 0..<6 where !storageLink.isHittable {
+            app.swipeUp()
+            _ = storageLink.waitForExistence(timeout: 1)
+        }
+        XCTAssertTrue(storageLink.isHittable, "Storage & iCloud is not reachable from Settings.\n\(app.debugDescription)")
+        storageLink.tap()
+
+        let screen = app.descendants(matching: .any)["storage.icloud"]
+        XCTAssertTrue(screen.waitForExistence(timeout: 10), "Storage & iCloud did not open.\n\(app.debugDescription)")
+
+        let checks = [
+            (card: "storage.workingCache", text: "storage.workingCache.total"),
+            (card: "storage.audiobookCache", text: "storage.audiobookCache.description"),
+            (card: "storage.iCloudBackup", text: "storage.iCloudBackup.description"),
+            (card: "storage.evictionOrder", text: "storage.evictionOrder.never")
+        ]
+
+        for (index, check) in checks.enumerated() {
+            let card = app.otherElements[check.card]
+            XCTAssertTrue(card.waitForExistence(timeout: 5), "Missing storage card \(check.card).\n\(app.debugDescription)")
+            if index > 0 {
+                let previousCard = app.otherElements[checks[index - 1].card]
+                XCTAssertGreaterThan(card.frame.minY, previousCard.frame.maxY, "Storage card order changed at \(check.card).")
+            }
+
+            for _ in 0..<6 where !card.frame.intersects(app.frame) {
+                app.swipeUp()
+            }
+
+            let longText = app.staticTexts[check.text]
+            XCTAssertTrue(longText.exists, "Missing compact-width text probe \(check.text).\n\(app.debugDescription)")
+            XCTAssertLessThanOrEqual(card.frame.width, screen.frame.width, "\(check.card) is wider than the compact screen.")
+            XCTAssertTrue(
+                card.frame.insetBy(dx: -1, dy: -1).contains(longText.frame),
+                "\(check.text) clips outside \(check.card). Card: \(card.frame), text: \(longText.frame)."
+            )
+        }
+
+        app.navigationBars["Storage & iCloud"].buttons.element(boundBy: 0).tap()
+        let close = app.buttons["Close"]
+        if close.waitForExistence(timeout: 2) {
+            close.tap()
+        } else {
+            app.buttons["Sheet Grabber"].swipeDown()
+        }
+        let settingsGone = expectation(
+            for: NSPredicate(format: "exists == false"),
+            evaluatedWith: storageLink
+        )
+        wait(for: [settingsGone], timeout: 10)
     }
 
     // MARK: - Narration review regression legs
