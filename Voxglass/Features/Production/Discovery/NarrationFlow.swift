@@ -278,6 +278,24 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     var currentParagraphID: UUID?
     let capture: any AudioCapturing
     var isRecording = false
+    /// Serializes the async capture boundary. `isRecording` is presentation
+    /// state; this lifecycle also covers the periods while prepare/start and
+    /// stop/ingest are suspended, when another tap could otherwise enter the
+    /// capture a second time.
+    private enum RecordingLifecycle: Equatable {
+        case idle
+        case starting(UUID)
+        case recording(UUID)
+        case stopping(UUID)
+    }
+    private var recordingLifecycle: RecordingLifecycle = .idle
+    private var stopRequestedDuringStart = false
+    var isRecordingTransitioning: Bool {
+        switch recordingLifecycle {
+        case .starting, .stopping: true
+        case .idle, .recording: false
+        }
+    }
     var micPermissionDenied = false
     var level: Float = 0
     var currentTake: FlowTake?
@@ -1301,6 +1319,9 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
     func startRecordingParagraph(_ id: UUID) async {
         guard let project, paragraph(at: id) != nil else { return }
+        guard recordingLifecycle == .idle else { return }
+        recordingLifecycle = .starting(id)
+        stopRequestedDuringStart = false
 #if DEBUG
         if let scripted = capture as? any TestCaptureScripting,
            let text = project.allParagraphs.first(where: { $0.id == id })?.text {
@@ -1325,30 +1346,63 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             try await capture.startRecording(to: url)
             routeClass = CaptureRouteClassifier.classify(capture.currentRouteInfo)
             isRecording = true
+            recordingLifecycle = .recording(id)
             monitorLevels()
+            if stopRequestedDuringStart {
+                stopRequestedDuringStart = false
+                await stopRecordingParagraph(id)
+            }
         } catch let error as CaptureError where error == .permissionDenied {
+            recordingLifecycle = .idle
+            isRecording = false
+            recordingDestinationURL = nil
             micPermissionDenied = true
             importError = "Microphone access is blocked. Allow the microphone in Settings → Privacy → Microphone, then try again."
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
         } catch {
+            recordingLifecycle = .idle
+            isRecording = false
+            recordingDestinationURL = nil
             importError = "Couldn't start recording. \(error.localizedDescription)"
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
         }
     }
 
     func stopRecordingParagraph(_ id: UUID) async {
-        guard isRecording else { return }
+        switch recordingLifecycle {
+        case .starting:
+            // `onDisappear` can arrive while microphone permission or setup is
+            // suspended. Finish that one start, then immediately perform the
+            // safety stop rather than leaving capture running off-screen.
+            stopRequestedDuringStart = true
+            return
+        case .recording(let activeID):
+            recordingLifecycle = .stopping(activeID)
+        case .idle, .stopping:
+            return
+        }
+        let activeID: UUID
+        if case .stopping(let paragraphID) = recordingLifecycle {
+            activeID = paragraphID
+        } else {
+            return
+        }
+        _ = id // A stale UI action must always finalize the paragraph started.
         do {
             let captured = try await capture.stopRecording()
             isRecording = false
             levelTask?.cancel()
             levelTask = nil
-            guard let project else { return }
-            let textHash = project.allParagraphs.first { $0.id == id }?.textHash ?? ""
-            let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == id } }
+            guard let project else {
+                recordingLifecycle = .idle
+                importError = "Couldn't save this recording because the project is no longer open."
+                return
+            }
+            let textHash = project.allParagraphs.first { $0.id == activeID }?.textHash ?? ""
+            let chapter = project.chapters.first { $0.paragraphs.contains { $0.id == activeID } }
             let take = try await repository.ingestCapturedTake(
                 fileURL: captured.fileURL,
-                paragraphID: id,
+                paragraphID: activeID,
                 projectID: project.id,
                 captured: captured,
                 textHash: textHash,
@@ -1357,7 +1411,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 warning: .none,
                 routeClass: routeClass
             )
-            updateParagraph(id) { paragraph in
+            updateParagraph(activeID) { paragraph in
                 paragraph.takes.append(take)
                 paragraph.selectedTakeID = take.id
                 paragraph.reviewState = .unreviewed
@@ -1369,6 +1423,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             }
             currentTake = FlowTake(duration: captured.duration, peakDBFS: captured.peakDBFS, clipped: captured.clippedDuringCapture)
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
+            recordingDestinationURL = nil
             await persist()
             if let takeURL = repository.takeURL(for: project.id, take: take) {
                 analyzeMetricsLater(takeID: take.id, projectID: project.id, url: takeURL)
@@ -1380,10 +1435,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 projectID: project.id,
                 activeChapterOrdinal: chapter?.ordinal
             )
+            recordingLifecycle = .idle
         } catch {
             isRecording = false
             levelTask?.cancel()
             levelTask = nil
+            recordingLifecycle = .idle
+            importError = "Couldn't save this recording. \(error.localizedDescription)"
         }
     }
 
@@ -1391,12 +1449,14 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// this stops and finalizes the take through `CaptureRecovery`, ingests it
     /// marked `Interrupted`, and shows the recovery banner.
     func handleInterruption(_ reason: CaptureInterruptionReason) async {
-        guard isRecording, let project, let id = currentParagraphID else { return }
+        guard case .recording(let id) = recordingLifecycle, let project else { return }
+        recordingLifecycle = .stopping(id)
         isRecording = false
         levelTask?.cancel()
         levelTask = nil
         guard let url = recordingDestinationURL else {
             interruptionBanner = reason
+            recordingLifecycle = .idle
             return
         }
         do {
@@ -1429,15 +1489,18 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 paragraph.updatedAt = repository.clock.now
             }
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
+            recordingDestinationURL = nil
             await persist()
             await storageCoordinator.evictIfOverLimit(
                 projectID: project.id,
                 activeChapterOrdinal: chapter?.ordinal
             )
+            recordingLifecycle = .idle
         } catch {
             // The take stays on disk and the session stays; it will be offered
             // again at the next launch.
             interruptionBanner = reason
+            recordingLifecycle = .idle
         }
     }
 

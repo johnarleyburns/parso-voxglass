@@ -199,9 +199,9 @@ struct RecordView: View {
             model.stopPlayback()
             model.endRecordingRemoteSession()
             releaseMediaButton()
-            if model.isRecording {
-                Task { await model.stopRecordingParagraph(currentParagraphID) }
-            }
+            // Also queues the safety stop when capture setup is still awaiting
+            // permission/session configuration.
+            Task { await model.stopRecordingParagraph(currentParagraphID) }
         }
         .navigationDestination(isPresented: $navigateToReview) {
             ReviewView(model: model, isPushed: true)
@@ -413,6 +413,7 @@ struct RecordView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Palette.danger.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Palette.danger.opacity(0.35), lineWidth: 1))
+            .accessibilityIdentifier("record.captureError")
         }
     }
 
@@ -472,6 +473,7 @@ struct RecordView: View {
             }
             .accessibilityIdentifier("record.transport.record")
             .accessibilityLabel(model.isRecording ? "Stop recording this take" : "Record a take for this paragraph")
+            .disabled(model.isRecordingTransitioning)
             // §9.3 external controls: a connected hardware keyboard records and
             // stops with Command-R while the record screen is armed.
             .keyboardShortcut("r", modifiers: [.command])

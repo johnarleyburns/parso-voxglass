@@ -237,6 +237,103 @@ final class NarrationStateFreshnessTests: XCTestCase {
         XCTAssertTrue(stored.profile.assembly.isNormalizingLoudness)
     }
 
+    // MARK: - Phase 11: recording remains live until an explicit stop
+
+    func testParagraphRecordingSerializesStartStopAndPersistsTake() async throws {
+        let repository = makeRepository()
+        let seeded = try await NarrationE2EFixture.seed(into: repository)
+        let paragraph = try XCTUnwrap(seeded.allParagraphs.first)
+        let capture = RecordingLifecycleCapture(startDelay: .milliseconds(150))
+        let model = NarrationFlowModel(repository: repository, capture: capture)
+        await model.load(seeded)
+
+        let firstStart = Task { await model.startRecordingParagraph(paragraph.id) }
+        await Task.yield()
+        let duplicateStart = Task { await model.startRecordingParagraph(paragraph.id) }
+        await firstStart.value
+        await duplicateStart.value
+
+        XCTAssertEqual(capture.startCallCount, 1, "duplicate taps must not start capture twice")
+        XCTAssertTrue(model.isRecording)
+        XCTAssertEqual(capture.state, .recording)
+        XCTAssertNil(model.paragraph(at: paragraph.id)?.take, "a take is not created until Stop")
+
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertTrue(model.isRecording, "returning from the start task must not stop capture")
+
+        let firstStop = Task { await model.stopRecordingParagraph(paragraph.id) }
+        await Task.yield()
+        let duplicateStop = Task { await model.stopRecordingParagraph(paragraph.id) }
+        await firstStop.value
+        await duplicateStop.value
+
+        XCTAssertEqual(capture.stopCallCount, 1, "duplicate taps must not finalize capture twice")
+        XCTAssertFalse(model.isRecording)
+        XCTAssertNotNil(model.paragraph(at: paragraph.id)?.take)
+        let stored = try await repository.load(seeded.id)
+        let persisted = try XCTUnwrap(stored.allParagraphs.first { $0.id == paragraph.id }?.selectedTake)
+        XCTAssertGreaterThan(persisted.assetRef.byteCount, 0)
+        XCTAssertFalse(persisted.assetRef.sha256.isEmpty)
+    }
+
+    func testParagraphRecordingSetupFailureStaysVisibleAndLeavesNoSession() async throws {
+        let repository = makeRepository()
+        let seeded = try await NarrationE2EFixture.seed(into: repository)
+        let paragraph = try XCTUnwrap(seeded.allParagraphs.first)
+        let capture = RecordingLifecycleCapture(failPrepare: true)
+        let model = NarrationFlowModel(repository: repository, capture: capture)
+        await model.load(seeded)
+
+        await model.startRecordingParagraph(paragraph.id)
+
+        XCTAssertFalse(model.isRecording)
+        XCTAssertTrue(model.micPermissionDenied)
+        XCTAssertTrue(model.importError?.contains("Microphone access is blocked") == true)
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: repository.layout(for: seeded.id).autosaveSessionURL.path),
+            "failed setup must not masquerade as a recoverable take"
+        )
+    }
+
+    func testParagraphRecordingStopFailureStaysVisibleForRecovery() async throws {
+        let repository = makeRepository()
+        let seeded = try await NarrationE2EFixture.seed(into: repository)
+        let paragraph = try XCTUnwrap(seeded.allParagraphs.first)
+        let capture = RecordingLifecycleCapture(failStop: true)
+        let model = NarrationFlowModel(repository: repository, capture: capture)
+        await model.load(seeded)
+
+        await model.startRecordingParagraph(paragraph.id)
+        await model.stopRecordingParagraph(paragraph.id)
+
+        XCTAssertFalse(model.isRecording)
+        XCTAssertTrue(model.importError?.contains("Couldn't save this recording") == true)
+        XCTAssertNil(model.paragraph(at: paragraph.id)?.take)
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: repository.layout(for: seeded.id).autosaveSessionURL.path),
+            "a failed finalization must retain the recovery session"
+        )
+    }
+
+    func testSafetyStopRequestedDuringStartFinalizesExactlyOnce() async throws {
+        let repository = makeRepository()
+        let seeded = try await NarrationE2EFixture.seed(into: repository)
+        let paragraph = try XCTUnwrap(seeded.allParagraphs.first)
+        let capture = RecordingLifecycleCapture(startDelay: .milliseconds(150))
+        let model = NarrationFlowModel(repository: repository, capture: capture)
+        await model.load(seeded)
+
+        let start = Task { await model.startRecordingParagraph(paragraph.id) }
+        await Task.yield()
+        await model.stopRecordingParagraph(paragraph.id)
+        await start.value
+
+        XCTAssertEqual(capture.startCallCount, 1)
+        XCTAssertEqual(capture.stopCallCount, 1)
+        XCTAssertFalse(model.isRecording)
+        XCTAssertNotNil(model.paragraph(at: paragraph.id)?.take)
+    }
+
     // MARK: - Item 6: an imported need reaches export with a description
 
     func testDescriptionBackfillRepairsAProjectSavedWithoutOne() async throws {
@@ -286,4 +383,57 @@ final class NarrationStateFreshnessTests: XCTestCase {
         let stored = try await repository.load(seeded.id)
         XCTAssertEqual(stored.metadata.language, "en-GB", "a stale snapshot must never overwrite newer work")
     }
+}
+
+/// A deterministic hosted-capture seam for the paragraph lifecycle tests. It
+/// delegates WAV creation to the app's UI-test capture while adding a suspended
+/// start and injectable setup failure so MainActor reentrancy is exercised.
+private final class RecordingLifecycleCapture: AudioCapturing, @unchecked Sendable {
+    private let base = UITestAudioCapture()
+    private let startDelay: Duration
+    private let failPrepare: Bool
+    private let failStop: Bool
+    private(set) var startCallCount = 0
+    private(set) var stopCallCount = 0
+
+    init(startDelay: Duration = .zero, failPrepare: Bool = false, failStop: Bool = false) {
+        self.startDelay = startDelay
+        self.failPrepare = failPrepare
+        self.failStop = failStop
+    }
+
+    var state: CaptureState { base.state }
+    var levels: AsyncStream<CaptureLevels> { base.levels }
+    var currentRouteInfo: CaptureRouteInfo { base.currentRouteInfo }
+    var onInterruption: ((CaptureInterruptionReason) -> Void)? {
+        get { base.onInterruption }
+        set { base.onInterruption = newValue }
+    }
+
+    func availableInputDevices() async -> [AudioDeviceInfo] {
+        await base.availableInputDevices()
+    }
+
+    func prepare(device: String?, format: RecordingDefaults) async throws {
+        if failPrepare { throw CaptureError.permissionDenied }
+        try await base.prepare(device: device, format: format)
+    }
+
+    func startMonitoring() async throws { try await base.startMonitoring() }
+    func stopMonitoring() async { await base.stopMonitoring() }
+
+    func startRecording(to destinationURL: URL) async throws {
+        startCallCount += 1
+        if startDelay != .zero { try await Task.sleep(for: startDelay) }
+        try await base.startRecording(to: destinationURL)
+    }
+
+    func stopRecording() async throws -> CapturedTake {
+        stopCallCount += 1
+        if failStop { throw CaptureError.diskFull }
+        return try await base.stopRecording()
+    }
+
+    func cancelRecording() async { await base.cancelRecording() }
+    func punchIn(from offset: TimeInterval) async throws { try await base.punchIn(from: offset) }
 }

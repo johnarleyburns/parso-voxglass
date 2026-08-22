@@ -818,6 +818,15 @@ final class VoxglassUITests: XCTestCase {
                 app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'failed'")).firstMatch.exists,
                 "Recording error card shown.\n\(app.debugDescription)"
             )
+            XCTAssertTrue(
+                app.staticTexts["Autosaving"].waitForExistence(timeout: 2),
+                "The active take did not expose its autosave state.\n\(app.debugDescription)"
+            )
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+            XCTAssertTrue(
+                app.staticTexts["● REC"].exists,
+                "Recording stopped without an explicit Stop action.\n\(app.debugDescription)"
+            )
             recordButton.tap() // stop
 
             var gone = false

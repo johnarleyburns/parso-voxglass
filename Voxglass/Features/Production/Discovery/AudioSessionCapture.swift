@@ -487,6 +487,13 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         snapshotRoute()
         let reasonValue = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
         let reason = reasonValue.flatMap(AVAudioSession.RouteChangeReason.init(rawValue:))
+        // `prepare` changes the app's category to `.record`. iOS publishes that
+        // category change asynchronously, and it can arrive just after the
+        // engine enters `.recording`; treating it as lost hardware immediately
+        // stops a brand-new take. Waking likewise does not itself mean the live
+        // input disappeared. Device and route-configuration changes below still
+        // finalize through the normal interruption/recovery path.
+        if reason == .categoryChange || reason == .wakeFromSleep { return }
         if let oldRoute = note.userInfo?[AVAudioSessionRouteChangePreviousRouteKey] as? AVAudioSessionRouteDescription {
             let hadUSB = oldRoute.inputs.contains { $0.portType == .usbAudio }
             let hadHeadphones = oldRoute.inputs.contains { port in

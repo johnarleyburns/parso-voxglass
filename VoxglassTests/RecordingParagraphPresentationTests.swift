@@ -25,6 +25,22 @@ import Testing
         #expect(review.contains("RecordView(model: model, paragraphID: id, fromReview: true)"))
     }
 
+    @Test func captureSetupCategoryChangeCannotInterruptANewTake() throws {
+        let capture = try source("Voxglass/Features/Production/Discovery/AudioSessionCapture.swift")
+        let handlerStart = try #require(capture.range(of: "private func handleRouteChange"))
+        let handlerEnd = try #require(
+            capture.range(of: "private func forward", range: handlerStart.upperBound..<capture.endIndex)
+        )
+        let handler = String(capture[handlerStart.lowerBound..<handlerEnd.lowerBound])
+
+        #expect(handler.contains("reason == .categoryChange"))
+        #expect(handler.contains("reason == .wakeFromSleep"))
+        #expect(handler.contains("forward(.routeChanged)"), "real device/route changes must still interrupt")
+        let ignoredRange = try #require(handler.range(of: "reason == .categoryChange"))
+        let forwardRange = try #require(handler.range(of: "forward(.routeChanged)"))
+        #expect(ignoredRange.lowerBound < forwardRange.lowerBound)
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
