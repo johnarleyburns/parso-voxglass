@@ -172,6 +172,7 @@ final class VoxglassUITests: XCTestCase {
             app.descendants(matching: .any)["record.teleprompter"].waitForExistence(timeout: 10),
             "Record screen did not open.\n\(app.debugDescription)"
         )
+        assertRecordingParagraphTextIsNormalized(app: app, route: "initial recording")
         assertImportAudioBottomContentIsReachable(app: app)
 
         // Record every paragraph with the fake capture. The first paragraph is
@@ -208,6 +209,7 @@ final class VoxglassUITests: XCTestCase {
         let rerecord = app.buttons["review.row.rerecord.0"]
         XCTAssertTrue(rerecord.waitForExistence(timeout: 10), "Flagged row has no Re-record action.\n\(app.debugDescription)")
         rerecord.tap()
+        assertRecordingParagraphTextIsNormalized(app: app, route: "re-recording")
         recorded = recordParagraphs(in: app, flagFirst: false)
 
         // Re-recording clears the flag, so the flow is ready: either the Review
@@ -521,6 +523,19 @@ final class VoxglassUITests: XCTestCase {
     }
 
     // MARK: - Narration review regression legs
+
+    private func assertRecordingParagraphTextIsNormalized(app: XCUIApplication, route: String) {
+        let teleprompter = app.descendants(matching: .any)["record.teleprompter"]
+        let text = app.staticTexts["record.teleprompter.text"]
+        XCTAssertTrue(teleprompter.waitForExistence(timeout: 5), "The \(route) teleprompter did not appear.")
+        XCTAssertTrue(text.waitForExistence(timeout: 5), "The \(route) paragraph text was not exposed.")
+        XCTAssertEqual(
+            text.frame.minX,
+            teleprompter.frame.minX + 20,
+            accuracy: 3,
+            "The \(route) paragraph text must align to the leading edge of its container."
+        )
+    }
 
     private func assertReviewChapterTextIsCardedAndLeading(app: XCUIApplication) {
         let card = app.descendants(matching: .any)["review.chapter.textContainer.0"]

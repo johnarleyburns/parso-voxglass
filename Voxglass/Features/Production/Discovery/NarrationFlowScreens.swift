@@ -372,16 +372,17 @@ struct RecordView: View {
     }
 
     private func teleprompter(_ paragraph: FlowParagraph) -> some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(roleLabel(paragraph.role).uppercased())
                 .scaledFont(size: 11, weight: .bold)
                 .foregroundStyle(Palette.brass)
             Text(paragraph.text)
-                .scaledFont(size: 22, weight: .semibold)
+                .scaledFont(size: 16)
                 .foregroundStyle(Palette.ink)
-                .multilineTextAlignment(.center)
-                .lineSpacing(6)
-                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.leading)
+                .lineSpacing(4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("record.teleprompter.text")
         }
         .padding(20)
         .frame(maxWidth: .infinity)
