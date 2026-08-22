@@ -172,6 +172,7 @@ final class VoxglassUITests: XCTestCase {
             app.descendants(matching: .any)["record.teleprompter"].waitForExistence(timeout: 10),
             "Record screen did not open.\n\(app.debugDescription)"
         )
+        assertImportAudioBottomContentIsReachable(app: app)
 
         // Record every paragraph with the fake capture. The first paragraph is
         // flagged (not accepted) so the flow lands on the Review screen — a
@@ -190,6 +191,7 @@ final class VoxglassUITests: XCTestCase {
             "Review screen did not appear after recording.\n\(app.debugDescription)"
         )
         XCTAssertFalse(assembleButton.isEnabled, "A flagged paragraph must disable assemble (review gate).")
+        assertFinalContentClearsBottomControls(app.buttons["review.toExport"], app: app, screen: "Review")
 
         assertReviewPlaybackShowsState(app: app)
         assertChapterCollapseRoundTrips(app: app)
@@ -220,6 +222,7 @@ final class VoxglassUITests: XCTestCase {
             app.buttons["assemble.continue"].waitForExistence(timeout: 10),
             "Assemble screen did not open.\n\(app.debugDescription)"
         )
+        assertFinalContentClearsBottomControls(app.buttons["assemble.continue"], app: app, screen: "Assemble")
         app.buttons["assemble.continue"].tap()
 
         // Metadata: narrator is required by `hasMetadata`. The app now restores
@@ -446,6 +449,12 @@ final class VoxglassUITests: XCTestCase {
             )
         }
 
+        assertFinalContentClearsBottomControls(
+            app.staticTexts["storage.evictionOrder.never"],
+            app: app,
+            screen: "Storage & iCloud"
+        )
+
         app.navigationBars["Storage & iCloud"].buttons.element(boundBy: 0).tap()
         let close = app.buttons["Close"]
         if close.waitForExistence(timeout: 2) {
@@ -458,6 +467,56 @@ final class VoxglassUITests: XCTestCase {
             evaluatedWith: storageLink
         )
         wait(for: [settingsGone], timeout: 10)
+    }
+
+    /// Scrolls a screen's final accessibility probe fully above the visible
+    /// bottom controls. When the root dock is present its complete frame
+    /// includes both the mini-player and tab bar; modal screens use their own
+    /// safe-area bottom instead.
+    private func assertFinalContentClearsBottomControls(
+        _ finalElement: XCUIElement,
+        app: XCUIApplication,
+        screen: String
+    ) {
+        XCTAssertTrue(
+            finalElement.waitForExistence(timeout: 10),
+            "\(screen) final content is missing.\n\(app.debugDescription)"
+        )
+
+        let dock = app.otherElements["chrome.dock"]
+        func obstructionTop() -> CGFloat {
+            if dock.exists, app.buttons["Narration"].isHittable {
+                return dock.frame.minY
+            }
+            return app.frame.maxY - 8
+        }
+
+        for _ in 0..<8 where finalElement.frame.maxY > obstructionTop() {
+            app.swipeUp()
+        }
+
+        XCTAssertLessThanOrEqual(
+            finalElement.frame.maxY,
+            obstructionTop() + 1,
+            "\(screen) final content intersects the dock or bottom safe area. Final: \(finalElement.frame), dock: \(dock.frame)."
+        )
+    }
+
+    private func assertImportAudioBottomContentIsReachable(app: XCUIApplication) {
+        let importButton = app.buttons["record.take.import"]
+        assertFinalContentClearsBottomControls(importButton, app: app, screen: "Record")
+        importButton.tap()
+
+        let picker = app.buttons["importAudio.pick"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10), "Import Audio did not open.\n\(app.debugDescription)")
+        assertFinalContentClearsBottomControls(picker, app: app, screen: "Import Audio")
+        app.buttons["importAudio.done"].tap()
+
+        let recordButton = app.buttons["record.transport.record"]
+        for _ in 0..<8 where !recordButton.isHittable {
+            app.swipeDown()
+        }
+        XCTAssertTrue(recordButton.isHittable, "Record controls were not restored after closing Import Audio.")
     }
 
     // MARK: - Narration review regression legs

@@ -43,7 +43,7 @@ struct RootView: View {
     }
 
     private var tabs: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             VoxglassBackground()
 
             TabView(selection: $selectedTab) {
@@ -70,7 +70,8 @@ struct RootView: View {
                     .tag(VoxglassTab.narration)
                     .toolbar(.hidden, for: .tabBar)
             }
-
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             GlassDock(
                 selectedTab: $selectedTab,
                 showingNowPlaying: miniPlayerRouter.bindNowPlaying()

@@ -20,6 +20,8 @@ struct GlassDock: View {
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chrome.dock")
     }
 }
 
@@ -105,5 +107,7 @@ struct GlassTabBar: View {
         .padding(.vertical, 9)
         .padding(.horizontal, 4)
         .adaptiveGlass(cornerRadius: 26)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chrome.tabBar")
     }
 }

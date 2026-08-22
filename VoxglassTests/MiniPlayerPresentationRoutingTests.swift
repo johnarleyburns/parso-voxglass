@@ -75,6 +75,22 @@ import Testing
         #expect(root.contains(".environmentObject(miniPlayerRouter)"))
     }
 
+    @Test func rootDockReservesItsLiveSafeArea() throws {
+        let root = try source("Voxglass/App/RootView.swift")
+        let tabs = sourceSlice(root, from: "private var tabs", to: "enum VoxglassTab")
+        #expect(tabs.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
+        #expect(tabs.contains("GlassDock("))
+        #expect(!tabs.contains("ZStack(alignment: .bottom)"))
+    }
+
+    @Test func sharedScreenDoesNotDuplicateDockHeight() throws {
+        let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
+        let screen = sourceSlice(theme, from: "struct VoxglassScreen", to: "struct VoxglassBackground")
+        #expect(theme.contains("static let scrollContentBottomPadding: CGFloat = 24"))
+        #expect(screen.contains(".padding(.bottom, VoxglassLayout.scrollContentBottomPadding)"))
+        #expect(!screen.contains(".padding(.bottom, 160)"))
+    }
+
     @Test func bookPageViewHasPresentationContext() throws {
         let detail = try source("Voxglass/Features/Player/BookPageView.swift")
         #expect(detail.contains("presentationContext: BookPagePresentationContext"))

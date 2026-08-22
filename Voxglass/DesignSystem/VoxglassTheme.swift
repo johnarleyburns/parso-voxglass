@@ -31,6 +31,13 @@ enum VoxglassTheme {
     }
 }
 
+enum VoxglassLayout {
+    /// Breathing room after the final scroll item. The root dock contributes
+    /// its own live safe-area inset, including the optional mini-player, so
+    /// scroll content must not duplicate that variable height here.
+    static let scrollContentBottomPadding: CGFloat = 24
+}
+
 enum Palette {
     static let bg = Color(hex: 0x0A0B0D)
     static let ink = Color(hex: 0xF2F4F6)
@@ -74,7 +81,7 @@ struct VoxglassScreen<Content: View>: View {
                         content
                     }
                     .padding(.horizontal, 18)
-                    .padding(.bottom, 160)
+                    .padding(.bottom, VoxglassLayout.scrollContentBottomPadding)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
