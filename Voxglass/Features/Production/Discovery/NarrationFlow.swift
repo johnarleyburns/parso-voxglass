@@ -2356,24 +2356,52 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     func inspectAudioFile(_ url: URL) async {
         importError = nil
         importFileURL = url
-        let decoder = RoutingAudioDecoder()
         do {
-            let format = try await decoder.describe(url)
-            let decoded = try await decoder.decodeToMonoFloat(url, targetSampleRate: nil)
-            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            importSelection = FlowImportedAudio(
-                sourceURL: url,
-                originalSize: Int64(size),
-                fileName: url.lastPathComponent,
-                format: format,
-                duration: decoded.duration,
-                decodedSampleRate: decoded.sampleRate,
-                decodedSampleCount: decoded.samples.count
-            )
-            rebuildImportPlan(samples: decoded.samples, sampleRate: decoded.sampleRate)
+            try await withSecurityScopedAccess(to: url) {
+                let decoder = RoutingAudioDecoder()
+                let format = try await decoder.describe(url)
+                let decoded = try await decoder.decodeToMonoFloat(url, targetSampleRate: nil)
+                let size = (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+                importSelection = FlowImportedAudio(
+                    sourceURL: url,
+                    originalSize: size,
+                    fileName: url.lastPathComponent,
+                    format: format,
+                    duration: decoded.duration,
+                    decodedSampleRate: decoded.sampleRate,
+                    decodedSampleCount: decoded.samples.count
+                )
+                rebuildImportPlan(samples: decoded.samples, sampleRate: decoded.sampleRate)
+            }
         } catch {
-            importError = "Couldn't read that audio file. Try WAV, AIFF, CAF, M4A, MP3, or FLAC."
+            importSelection = nil
+            importPlan = nil
+            importError = audioImportError(for: url, error: error)
         }
+    }
+
+    /// Files picked from iCloud Drive and other document providers require a
+    /// security-scoped lease. The lease is intentionally reacquired for every
+    /// operation: the URL is retained in `FlowImportedAudio`, but a provider's
+    /// access scope cannot safely be held across the sheet's lifetime.
+    private func withSecurityScopedAccess<T>(to url: URL, operation: () async throws -> T) async throws -> T {
+        let hasScope = url.startAccessingSecurityScopedResource()
+        defer {
+            if hasScope { url.stopAccessingSecurityScopedResource() }
+        }
+        return try await operation()
+    }
+
+    private func audioImportError(for url: URL, error: Error) -> String {
+        let exists = FileManager.default.fileExists(atPath: url.path)
+        guard exists else {
+            return "Couldn't access that audio file. Make sure it is downloaded and try again."
+        }
+        let supported = ["wav", "aiff", "aif", "caf", "m4a", "aac", "mp3", "flac"]
+        guard supported.contains(url.pathExtension.lowercased()) else {
+            return "That file format isn't supported. Choose a WAV, AIFF, CAF, M4A, MP3, or FLAC file."
+        }
+        return "Couldn't decode that audio file. It may be corrupt or incomplete; try downloading it again."
     }
 
     /// Recomputes the assignment plan for the current mode against the decoded
@@ -2402,6 +2430,22 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
         let decoder = RoutingAudioDecoder()
         do {
+            try await withSecurityScopedAccess(to: selection.sourceURL) {
+                try await self.performAudioImport(selection: selection, plan: plan, project: project, decoder: decoder)
+            }
+        } catch is CancellationError {
+            // Partial import stays persisted by the per-slice writes above.
+        } catch {
+            importError = audioImportError(for: selection.sourceURL, error: error)
+        }
+    }
+
+    private func performAudioImport(
+        selection: FlowImportedAudio,
+        plan: AudioImportPlan,
+        project: AudiobookProject,
+        decoder: RoutingAudioDecoder
+    ) async throws {
             let decoded = try await decoder.decodeToMonoFloat(selection.sourceURL, targetSampleRate: nil)
             let rate = decoded.sampleRate
 
@@ -2447,11 +2491,6 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 try? FileManager.default.removeItem(at: selection.sourceURL)
             }
             await persist()
-        } catch is CancellationError {
-            // Partial import stays persisted by the per-slice writes above.
-        } catch {
-            importError = "Import failed: \(error.localizedDescription)"
-        }
     }
 
     /// Writes a mono Float32 CAF slice so the content store can hash it.

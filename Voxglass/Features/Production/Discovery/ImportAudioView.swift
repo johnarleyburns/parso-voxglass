@@ -48,7 +48,7 @@ struct ImportAudioView: View {
                 .padding(18)
             }
             .background(VoxglassBackground())
-            .navigationTitle("Import audio")
+            .navigationTitle("Import Audio")
             .navigationBarTitleDisplayMode(.inline)
         }
         .toolbar {
@@ -61,8 +61,11 @@ struct ImportAudioView: View {
             isPresented: $showPicker,
             allowedContentTypes: ImportAudioView.audioContentTypes
         ) { result in
-            if case .success(let url) = result {
+            switch result {
+            case .success(let url):
                 Task { await model.inspectAudioFile(url) }
+            case .failure(let error):
+                model.importError = "Couldn't access that audio file: \(error.localizedDescription)"
             }
         }
         .presentationDetents([.large])
