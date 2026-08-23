@@ -748,6 +748,9 @@ struct ReviewView: View {
     @State private var showFixStorage = false
     @State private var showFixAudioSetup = false
     @State private var showFixScript = false
+    @State private var showBlockedAction = false
+    @State private var blockedActionTitle = ""
+    @State private var blockedActionMessage = ""
 
     enum ReviewFilter: String, CaseIterable {
         case all, flagged, pickup
@@ -807,16 +810,14 @@ struct ReviewView: View {
                 }
                 NarrationPrimaryButton(
                     title: "Assemble the recording ▸",
-                    disabledReason: model.readyToAssemble ? nil : "Record every paragraph and clear flags first.",
                     identifier: "review.toAssemble"
-                ) { goAssemble = true }
+                ) { attempt(.assemble) }
 
                 NarrationPrimaryButton(
                     title: "Export this narration",
                     systemImage: "square.and.arrow.up",
-                    disabledReason: model.readyToAssemble ? nil : "Record every paragraph and clear flags first.",
                     identifier: "review.toExport"
-                ) { goExport = true }
+                ) { attempt(.export) }
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 12)
@@ -850,6 +851,11 @@ struct ReviewView: View {
             Button("Not now", role: .cancel) {}
         } message: {
             Text("Add the narrator name used in this recording so published files carry the correct credit.")
+        }
+        .alert(blockedActionTitle, isPresented: $showBlockedAction) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(blockedActionMessage)
         }
         .onAppear {
             sourceURLBackfill = model.sourceURLText
@@ -911,6 +917,17 @@ struct ReviewView: View {
 
     @State private var goAssemble = false
     @State private var goExport = false
+
+    private func attempt(_ action: NarrationAction) {
+        let blockers = model.blockers(for: action)
+        guard blockers.isEmpty else {
+            blockedActionTitle = action == .assemble ? "Can't assemble yet" : "Can't export yet"
+            blockedActionMessage = blockers.map { "• \($0.title): \($0.message)" }.joined(separator: "\n")
+            showBlockedAction = true
+            return
+        }
+        if action == .assemble { goAssemble = true } else { goExport = true }
+    }
 
     private var hydrationErrorPresented: Binding<Bool> {
         Binding(
@@ -1705,6 +1722,8 @@ struct ValidateExportView: View {
     @State private var showFixMetadata = false
     @State private var showFixStorage = false
     @State private var showFixReview = false
+    @State private var showBlockedAction = false
+    @State private var blockedActionMessage = ""
 
     var body: some View {
         ScrollView {
@@ -1750,11 +1769,16 @@ struct ValidateExportView: View {
                 NarrationPrimaryButton(
                     title: model.isExporting ? "Producing files…" : "Produce files ▸",
                     isBusy: model.isExporting,
-                    disabledReason: exportDisabledReason,
                     identifier: "validation.continueToExport"
                 ) {
-                    showExportRun = true
-                    model.startExport()
+                    let blockers = model.blockers(for: .export)
+                    if blockers.isEmpty {
+                        showExportRun = true
+                        model.startExport()
+                    } else {
+                        blockedActionMessage = blockers.map { "• \($0.title): \($0.message)" }.joined(separator: "\n")
+                        showBlockedAction = true
+                    }
                 }
 
                 Text("FLAC/MP3 encoding happens on this iPhone. Validation and export are free for LibriVox and Internet Archive.")
@@ -1783,6 +1807,19 @@ struct ValidateExportView: View {
                 showExportRun = false
                 goSubmit = true
             }
+        }
+        .alert("Can't export yet", isPresented: $showBlockedAction) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(blockedActionMessage)
+        }
+        .alert("Export couldn't start", isPresented: Binding(
+            get: { model.exportError != nil && !showBlockedAction },
+            set: { if !$0 { model.exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) { model.exportError = nil }
+        } message: {
+            Text(model.exportError ?? "")
         }
         .navigationDestination(isPresented: $goSubmit) {
             SubmitView(model: model, isPushed: true)

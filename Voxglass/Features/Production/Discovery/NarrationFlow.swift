@@ -200,6 +200,19 @@ enum FreeSpaceProvider {
     }
 }
 
+// MARK: - Blocked narration actions
+
+enum NarrationAction: Equatable {
+    case assemble
+    case export
+}
+
+struct NarrationBlocker: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let message: String
+}
+
 // MARK: - Flow model
 
 enum NarrationStep: Hashable {
@@ -590,6 +603,78 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
         let approved = project.allParagraphs.count { $0.reviewState == .approved }
         return flagged == 0 && approved == project.totalCount && project.recordedCount == project.totalCount
+    }
+
+    /// The single source of truth for why a flow action cannot proceed. The
+    /// buttons may still be pressed so these explanations are never hidden by
+    /// a disabled control; the final model guards use the same computation.
+    func blockers(for action: NarrationAction) -> [NarrationBlocker] {
+        var blockers: [NarrationBlocker] = []
+        guard let project else {
+            return [NarrationBlocker(id: "project", title: "No narration", message: "Create or reopen a narration before continuing.")]
+        }
+
+        if project.totalCount == 0 {
+            blockers.append(NarrationBlocker(id: "empty", title: "No paragraphs", message: "Add source text before assembling or exporting."))
+        }
+        let missing = project.allParagraphs.count { $0.selectedTakeID == nil }
+        if missing > 0 {
+            blockers.append(NarrationBlocker(id: "missing-recordings", title: "Missing recordings", message: "Record \(missing) more paragraph\(missing == 1 ? "" : "s") before continuing."))
+        }
+        let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
+        if flagged > 0 {
+            blockers.append(NarrationBlocker(id: "flagged", title: "Flagged paragraphs", message: "Review and clear \(flagged) flagged paragraph\(flagged == 1 ? "" : "s") before continuing."))
+        }
+        let unapproved = project.allParagraphs.count { $0.reviewState != .approved }
+        if unapproved > 0 && missing == 0 {
+            blockers.append(NarrationBlocker(id: "unapproved", title: "Paragraphs need approval", message: "Approve every recorded paragraph before continuing."))
+        }
+
+        if let preflight = renderPreflight, preflight.freeBytes > 0, preflight.neededBytes > preflight.freeBytes {
+            blockers.append(NarrationBlocker(id: "storage", title: "Not enough storage", message: "Free up space before rendering this narration."))
+        }
+        let remoteBytes = remoteAssetBytesBySHA.values.reduce(0, +)
+        if remoteBytes > 0 {
+            blockers.append(NarrationBlocker(id: "icloud", title: "Audio is in iCloud", message: "Download the selected recordings before continuing."))
+        }
+
+        guard action == .export else { return blockers }
+
+        for field in missingRequiredMetadata(for: validationDestination) {
+            let label: String
+            switch field {
+            case .title: label = "title"
+            case .author: label = "author"
+            case .narrator: label = "narrator"
+            case .language: label = "language"
+            case .sourceURL: label = "source URL"
+            case .rightsAttestation: label = "rights attestation"
+            default: label = field.rawValue
+            }
+            blockers.append(NarrationBlocker(id: "metadata-\(field.rawValue)", title: "Missing \(label)", message: "Add the required \(label) in Metadata before exporting."))
+        }
+        if !validationIssues.isEmpty {
+            blockers.append(contentsOf: blockingValidationIssues.map {
+                NarrationBlocker(id: "validation-\($0.id.uuidString)", title: $0.title, message: $0.message)
+            })
+        }
+        if DestinationProfile.requiresRightsAttestation(validationDestination), !project.rights.isAttested,
+           !blockers.contains(where: { $0.id == "metadata-rightsAttestation" }) {
+            blockers.append(NarrationBlocker(id: "rights", title: "Rights not attested", message: "Confirm the rights attestation before exporting."))
+        }
+        if (validationDestination == .acx || validationDestination == .appleBooksAggregator), !isProUnlocked {
+            blockers.append(NarrationBlocker(id: "license", title: "Narration Pro required", message: "Commercial retail export requires Voxglass Narration Pro."))
+        }
+        if !exportScopeIsValid {
+            blockers.append(NarrationBlocker(id: "scope", title: "No chapters selected", message: "Choose at least one chapter to export."))
+        }
+        return blockers
+    }
+
+    var blockerSummary: String {
+        let items = blockers(for: .export)
+        guard !items.isEmpty else { return "" }
+        return items.map { "• \($0.title): \($0.message)" }.joined(separator: "\n")
     }
 
     var totalDuration: TimeInterval {
@@ -2613,6 +2698,11 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// never touch a license gate; retail consults it in the runner (§2.2).
     func runExport() async {
         guard let project, !isExporting else { return }
+        let blockers = blockers(for: .export)
+        if !blockers.isEmpty {
+            exportError = blockers.map { "\($0.title): \($0.message)" }.joined(separator: "\n")
+            return
+        }
         if DestinationProfile.requiresRightsAttestation(validationDestination), !project.rights.isAttested {
             exportError = "Attest the rights for this recording before exporting to \(DestinationProfile.profile(for: validationDestination).displayName)."
             return
