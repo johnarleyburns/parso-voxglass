@@ -130,7 +130,7 @@ final class VoxglassUITests: XCTestCase {
 
         // Both entry points must land in the filtered Narration Needs view;
         // neither should open an unconfigured narration flow.
-        app.buttons["home.startNarrationShelf"].buttons["See All"].tap()
+        app.buttons["home.startNarrationShelf.seeAll"].tap()
         XCTAssertTrue(
             app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
             "Start a Narration → See All did not open Narration Needs.\n\(app.debugDescription)"
@@ -191,7 +191,10 @@ final class VoxglassUITests: XCTestCase {
             assembleButton.waitForExistence(timeout: 10),
             "Review screen did not appear after recording.\n\(app.debugDescription)"
         )
-        XCTAssertFalse(assembleButton.isEnabled, "A flagged paragraph must disable assemble (review gate).")
+        XCTAssertTrue(assembleButton.isEnabled, "Blocked Assemble must remain actionable so it can explain blockers.")
+        assembleButton.tap()
+        XCTAssertTrue(app.staticTexts["Flagged paragraphs"].waitForExistence(timeout: 5), "Assemble blocker checklist did not appear.")
+        app.buttons["OK"].tap()
         assertFinalContentClearsBottomControls(app.buttons["review.toExport"], app: app, screen: "Review")
 
         assertReviewChapterTextIsCardedAndLeading(app: app)

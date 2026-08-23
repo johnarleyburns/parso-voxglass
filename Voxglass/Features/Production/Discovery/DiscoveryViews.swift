@@ -96,8 +96,21 @@ struct NarrationHomeShelf: View {
         // with one overrides every child's identifier (SwiftUI quirk), which
         // would make `needs.featured` / rail CTAs unreachable from UI tests.
         VStack(alignment: .leading, spacing: 0) {
-            SectionTitle(title: "Start a Narration", actionTitle: "See All", action: presentBrowse)
-                .accessibilityIdentifier("home.startNarrationShelf")
+            HStack(alignment: .firstTextBaseline) {
+                Text("Start a Narration")
+                    .scaledFont(size: 18, weight: .bold)
+                    .foregroundStyle(Palette.ink)
+                    .accessibilityIdentifier("home.startNarrationShelf")
+                Spacer()
+                NavigationLink {
+                    NarrationNeedsView(startProject: startProject)
+                } label: {
+                    Text("See All")
+                        .scaledFont(size: 13)
+                        .foregroundStyle(Palette.brass)
+                }
+                .accessibilityIdentifier("home.startNarrationShelf.seeAll")
+            }
 
             Text("Lend your voice to the public domain.")
                 .scaledFont(size: 12.5)
@@ -117,6 +130,8 @@ struct NarrationHomeShelf: View {
             }
         }
         .task { await discovery.refreshOnce() }
+        .toolbar(.visible, for: .navigationBar)
+        .navigationTitle("Narration Needs")
     }
 
     @ViewBuilder
@@ -299,7 +314,7 @@ struct NarrationNeedsView: View {
     let startProject: (NarrationNeed) -> Void
 
     var body: some View {
-        VoxglassScreen(title: "Narration Needs") {
+        VoxglassScreen(title: "Narration Needs", embedsNavigationStack: false) {
             VStack(alignment: .leading, spacing: 14) {
                 freshnessCaption
 

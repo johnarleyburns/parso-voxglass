@@ -61,10 +61,21 @@ extension Color {
 
 struct VoxglassScreen<Content: View>: View {
     let title: String
+    var embedsNavigationStack = true
     @ViewBuilder var content: Content
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if embedsNavigationStack {
+                NavigationStack { screenContent }
+                    .toolbar(.hidden, for: .navigationBar)
+            } else {
+                screenContent
+            }
+        }
+    }
+
+    private var screenContent: some View {
             ZStack {
                 VoxglassBackground()
                 ScrollView {
@@ -84,8 +95,6 @@ struct VoxglassScreen<Content: View>: View {
                     .padding(.bottom, VoxglassLayout.scrollContentBottomPadding)
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
-        }
     }
 }
 

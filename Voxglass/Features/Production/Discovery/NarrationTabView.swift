@@ -10,24 +10,26 @@ struct NarrationTabView: View {
     @State private var showingNeeds = false
 
     var body: some View {
-        VoxglassScreen(title: "Narration") {
-            VStack(alignment: .leading, spacing: 26) {
-                NarrationHomeShelf(
-                    presentBrowse: { showingNeeds = true },
-                    startProject: { flowNeed = $0 },
-                    showRails: !discovery.myNarrations.contains { $0.recordedCount > 0 }
-                )
-                MyNarrationsSection(findSomething: { showingNeeds = true })
+        NavigationStack {
+            VoxglassScreen(title: "Narration") {
+                VStack(alignment: .leading, spacing: 26) {
+                    NarrationHomeShelf(
+                        presentBrowse: { showingNeeds = true },
+                        startProject: { flowNeed = $0 },
+                        showRails: !discovery.myNarrations.contains { $0.recordedCount > 0 }
+                    )
+                    MyNarrationsSection(findSomething: { showingNeeds = true })
+                }
+                .padding(.top, 12)
             }
-            .padding(.top, 12)
-        }
-        .navigationDestination(isPresented: $showingNeeds) {
-            NarrationNeedsView(
-                startProject: { flowNeed = $0 }
-            )
-        }
-        .fullScreenCover(item: $flowNeed) { need in
-            NarrationFlowRoot(startNeed: need)
+            .navigationDestination(isPresented: $showingNeeds) {
+                NarrationNeedsView(
+                    startProject: { flowNeed = $0 }
+                )
+            }
+            .fullScreenCover(item: $flowNeed) { need in
+                NarrationFlowRoot(startNeed: need)
+            }
         }
         .accessibilityIdentifier("narration.tab")
     }

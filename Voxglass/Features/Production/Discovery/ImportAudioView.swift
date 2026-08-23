@@ -65,7 +65,11 @@ struct ImportAudioView: View {
             case .success(let url):
                 Task { await model.inspectAudioFile(url) }
             case .failure(let error):
-                model.importError = "Couldn't access that audio file: \(error.localizedDescription)"
+                model.importSelection = nil
+                model.importPlan = nil
+                model.importError = (error as NSError).code == NSUserCancelledError
+                    ? nil
+                    : "Couldn't access that audio file: \(error.localizedDescription)"
             }
         }
         .presentationDetents([.large])
@@ -370,7 +374,7 @@ struct ImportAudioView: View {
 
     /// Supported inputs: WAV, AIFF, CAF, M4A/AAC, MP3, FLAC (§10).
     static let audioContentTypes: [UTType] = {
-        let extensions = ["wav", "aiff", "caf", "m4a", "mp3", "flac"]
+        let extensions = ["wav", "aiff", "aif", "caf", "m4a", "aac", "mp3", "flac"]
         return extensions.compactMap { UTType(filenameExtension: $0) }
     }()
 }

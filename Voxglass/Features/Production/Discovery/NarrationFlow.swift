@@ -625,16 +625,20 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         if flagged > 0 {
             blockers.append(NarrationBlocker(id: "flagged", title: "Flagged paragraphs", message: "Review and clear \(flagged) flagged paragraph\(flagged == 1 ? "" : "s") before continuing."))
         }
-        let unapproved = project.allParagraphs.count { $0.reviewState != .approved }
-        if unapproved > 0 && missing == 0 {
-            blockers.append(NarrationBlocker(id: "unapproved", title: "Paragraphs need approval", message: "Approve every recorded paragraph before continuing."))
+        let recordedUnapproved = project.allParagraphs.count { $0.selectedTakeID != nil && $0.reviewState != .approved }
+        if recordedUnapproved > 0 {
+            blockers.append(NarrationBlocker(id: "unapproved", title: "Paragraphs need approval", message: "Approve \(recordedUnapproved) recorded paragraph\(recordedUnapproved == 1 ? "" : "s") before continuing."))
         }
 
-        if let preflight = renderPreflight, preflight.freeBytes > 0, preflight.neededBytes > preflight.freeBytes {
+        if let preflight = renderPreflight, preflight.neededBytes > preflight.freeBytes {
             blockers.append(NarrationBlocker(id: "storage", title: "Not enough storage", message: "Free up space before rendering this narration."))
         }
-        let remoteBytes = remoteAssetBytesBySHA.values.reduce(0, +)
-        if remoteBytes > 0 {
+        let selectedRemoteBytes = project.allParagraphs.compactMap { paragraph -> Int64? in
+            guard let take = paragraph.selectedTake,
+                  let bytes = remoteAssetBytesBySHA[take.assetRef.sha256] else { return nil }
+            return bytes
+        }.reduce(0, +)
+        if selectedRemoteBytes > 0 {
             blockers.append(NarrationBlocker(id: "icloud", title: "Audio is in iCloud", message: "Download the selected recordings before continuing."))
         }
 
@@ -829,12 +833,14 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     }
 
     func analysisState(for paragraphID: UUID) -> TakeAnalysisState? {
-        guard let take = paragraph(at: paragraphID)?.selectedTake else { return nil }
+        guard let takeID = selectedTakeID(for: paragraphID),
+              let take = project?.allParagraphs.first(where: { $0.id == paragraphID })?.takes.first(where: { $0.id == takeID }) else { return nil }
         return takeAnalysisStates[take.id] ?? (take.metrics.map { .complete($0) } ?? .pending)
     }
 
     func analysisMetrics(for paragraphID: UUID) -> AudioQualityMetrics? {
-        paragraph(at: paragraphID)?.selectedTake?.metrics
+        guard let takeID = selectedTakeID(for: paragraphID) else { return nil }
+        return project?.allParagraphs.first(where: { $0.id == paragraphID })?.takes.first(where: { $0.id == takeID })?.metrics
     }
 
     func analysisIssues(for paragraphID: UUID) -> [ValidationIssue] {

@@ -6,6 +6,8 @@ struct SectionTitle: View {
     var subtitle: String?
     var actionTitle: String?
     var action: (() -> Void)?
+    var actionIdentifier: String?
+    var titleIdentifier: String?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -13,6 +15,7 @@ struct SectionTitle: View {
                 Text(title)
                     .scaledFont(size: 18, weight: .bold)
                     .foregroundStyle(Palette.ink)
+                    .accessibilityIdentifier(titleIdentifier ?? "")
                 if let subtitle {
                     Text(subtitle)
                         .scaledFont(size: 13)
@@ -24,6 +27,7 @@ struct SectionTitle: View {
                 Button(actionTitle, action: action)
                     .scaledFont(size: 13)
                     .foregroundStyle(Palette.brass)
+                    .accessibilityIdentifier(actionIdentifier ?? "")
             }
         }
     }
