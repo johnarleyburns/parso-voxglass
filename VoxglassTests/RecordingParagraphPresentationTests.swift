@@ -41,6 +41,19 @@ import Testing
         #expect(ignoredRange.lowerBound < forwardRange.lowerBound)
     }
 
+    @Test func recordBackArrowRewindsInsteadOfNavigatingParagraphs() throws {
+        let screen = try source("Voxglass/Features/Production/Discovery/NarrationFlowScreens.swift")
+        let transportStart = try #require(screen.range(of: "private var transport: some View"))
+        let transportEnd = try #require(
+            screen.range(of: "private func takesRow", range: transportStart.upperBound..<screen.endIndex)
+        )
+        let transport = String(screen[transportStart.lowerBound..<transportEnd.lowerBound])
+
+        #expect(transport.contains("model.rewindCurrentTake()"))
+        #expect(!(transport.contains("model.previousParagraph(before:")))
+        #expect(transport.contains(".accessibilityValue(model.playbackPosition.formattedShort)"))
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

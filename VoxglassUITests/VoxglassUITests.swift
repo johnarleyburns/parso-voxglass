@@ -841,6 +841,10 @@ final class VoxglassUITests: XCTestCase {
             if gone { break } // the last take routed the flow onward
             XCTAssertTrue(chip, "Take was not saved after stopping.\n\(app.debugDescription)")
 
+            if recorded == 1 {
+                assertTakeRewindsToBeginning(app: app)
+            }
+
             if flagFirst && recorded == 1 {
                 let flag = app.buttons["record.flagAndNext"]
                 XCTAssertTrue(flag.exists, "Flag & Next not available.\n\(app.debugDescription)")
@@ -855,6 +859,27 @@ final class VoxglassUITests: XCTestCase {
             }
         }
         return recorded
+    }
+
+    private func assertTakeRewindsToBeginning(app: XCUIApplication) {
+        let teleprompterText = app.staticTexts["record.teleprompter.text"]
+        let paragraph = teleprompterText.label
+        let take = app.staticTexts["record.take.1"]
+        let play = app.buttons["record.transport.playTake"]
+        let rewind = app.buttons["record.transport.previous"]
+        XCTAssertTrue(play.exists && rewind.exists, "Take playback controls are unavailable.\n\(app.debugDescription)")
+
+        play.tap()
+        let progress = app.descendants(matching: .any)["record.playbackProgress"]
+        XCTAssertTrue(progress.waitForExistence(timeout: 5), "Take playback did not expose progress.\n\(app.debugDescription)")
+        expectation(for: NSPredicate(format: "value != %@", "0:00"), evaluatedWith: progress)
+        waitForExpectations(timeout: 5)
+
+        rewind.tap()
+        expectation(for: NSPredicate(format: "value == %@", "0:00"), evaluatedWith: progress)
+        waitForExpectations(timeout: 2)
+        XCTAssertEqual(teleprompterText.label, paragraph, "Rewind must not navigate to another paragraph.")
+        XCTAssertTrue(take.exists, "Rewind must not change the selected take.")
     }
 
     // MARK: - Export verification

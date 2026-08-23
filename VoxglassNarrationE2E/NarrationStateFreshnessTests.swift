@@ -31,6 +31,99 @@ final class NarrationStateFreshnessTests: XCTestCase {
         )
     }
 
+    // MARK: - Phase 12: rewind stays on the current paragraph and take
+
+    func testRewindFromIdleResetsLoadedPlayerWithoutChangingSelection() throws {
+        let model = NarrationFlowModel(repository: makeRepository(), capture: TTSAudioCapture())
+        let paragraph = UUID()
+        let take = FlowTake(duration: 3, peakDBFS: -12, clipped: false)
+        let player = try makePlaybackPlayer()
+        player.currentTime = 1.25
+        model.currentParagraphID = paragraph
+        model.currentTake = take
+        model.playbackPlayer = player
+        model.playbackPosition = 1.25
+        model.takePlayback = .idle
+
+        model.rewindCurrentTake()
+
+        XCTAssertEqual(player.currentTime, 0, accuracy: 0.001)
+        XCTAssertEqual(model.playbackPosition, 0)
+        XCTAssertEqual(model.takePlayback, .idle)
+        XCTAssertEqual(model.currentParagraphID, paragraph)
+        XCTAssertEqual(model.currentTake, take)
+    }
+
+    func testRewindFromPlayingPausesAtBeginningAndPreservesPlaybackIdentity() throws {
+        let model = NarrationFlowModel(repository: makeRepository(), capture: TTSAudioCapture())
+        let paragraph = UUID()
+        let chapter = UUID()
+        let player = try makePlaybackPlayer()
+        player.currentTime = 1.5
+        model.playbackPlayer = player
+        model.playbackPosition = 1.5
+        model.takePlayback = .playing(paragraph: paragraph, chapter: chapter)
+
+        model.rewindCurrentTake()
+
+        XCTAssertEqual(player.currentTime, 0, accuracy: 0.001)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(model.playbackPosition, 0)
+        XCTAssertEqual(model.takePlayback, .paused(paragraph: paragraph, chapter: chapter, at: 0))
+    }
+
+    func testRewindFromPausedUpdatesStoredResumePositionToBeginning() throws {
+        let model = NarrationFlowModel(repository: makeRepository(), capture: TTSAudioCapture())
+        let paragraph = UUID()
+        let player = try makePlaybackPlayer()
+        player.currentTime = 2
+        model.playbackPlayer = player
+        model.playbackPosition = 2
+        model.takePlayback = .paused(paragraph: paragraph, chapter: nil, at: 2)
+
+        model.rewindCurrentTake()
+
+        XCTAssertEqual(player.currentTime, 0, accuracy: 0.001)
+        XCTAssertEqual(model.playbackPosition, 0)
+        XCTAssertEqual(model.takePlayback, .paused(paragraph: paragraph, chapter: nil, at: 0))
+    }
+
+    func testRewindWithNoTakeIsSafeAndKeepsCurrentParagraph() {
+        let model = NarrationFlowModel(repository: makeRepository(), capture: TTSAudioCapture())
+        let paragraph = UUID()
+        model.currentParagraphID = paragraph
+        model.currentTake = nil
+        model.playbackPosition = 4
+        model.takePlayback = .idle
+
+        model.rewindCurrentTake()
+
+        XCTAssertEqual(model.playbackPosition, 0)
+        XCTAssertEqual(model.takePlayback, .idle)
+        XCTAssertEqual(model.currentParagraphID, paragraph)
+        XCTAssertNil(model.currentTake)
+    }
+
+    private func makePlaybackPlayer() throws -> AVAudioPlayer {
+        let sampleRate: Int32 = 8_000
+        let frames = Int(sampleRate) * 3
+        let dataSize = Int32(frames * 2)
+        var wav = Data("RIFF".utf8)
+        wav.append(contentsOf: withUnsafeBytes(of: (dataSize + 36).littleEndian) { Data($0) })
+        wav.append(Data("WAVEfmt ".utf8))
+        wav.append(contentsOf: withUnsafeBytes(of: Int32(16).littleEndian) { Data($0) })
+        wav.append(contentsOf: withUnsafeBytes(of: Int16(1).littleEndian) { Data($0) })
+        wav.append(contentsOf: withUnsafeBytes(of: Int16(1).littleEndian) { Data($0) })
+        wav.append(contentsOf: withUnsafeBytes(of: sampleRate.littleEndian) { Data($0) })
+        wav.append(contentsOf: withUnsafeBytes(of: (sampleRate * 2).littleEndian) { Data($0) })
+        wav.append(contentsOf: withUnsafeBytes(of: Int16(2).littleEndian) { Data($0) })
+        wav.append(contentsOf: withUnsafeBytes(of: Int16(16).littleEndian) { Data($0) })
+        wav.append(Data("data".utf8))
+        wav.append(contentsOf: withUnsafeBytes(of: dataSize.littleEndian) { Data($0) })
+        wav.append(Data(repeating: 0, count: Int(dataSize)))
+        return try AVAudioPlayer(data: wav)
+    }
+
     // MARK: - Phase 6: artwork is a durable project asset, not model bytes
 
     func testArtworkNormalizesReplacesAndReloadsFromProjectAssets() async throws {

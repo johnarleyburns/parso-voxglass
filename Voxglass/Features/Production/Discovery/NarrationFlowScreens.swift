@@ -448,15 +448,13 @@ struct RecordView: View {
     private var transport: some View {
         HStack(spacing: 20) {
             Button {
-                if let previous = model.previousParagraph(before: currentParagraphID) {
-                    model.currentParagraphID = previous.id
-                }
+                model.rewindCurrentTake()
             } label: {
                 Image(systemName: "arrow.uturn.backward.circle.fill").scaledFont(size: 40)
             }
             .foregroundStyle(Palette.ink2)
             .accessibilityIdentifier("record.transport.previous")
-            .accessibilityLabel("Previous paragraph")
+            .accessibilityLabel("Rewind take to beginning")
 
             Button {
                 Task {
@@ -504,6 +502,7 @@ struct RecordView: View {
                 .foregroundStyle(Palette.ink3)
             }
             .accessibilityIdentifier("record.playbackProgress")
+            .accessibilityValue(model.playbackPosition.formattedShort)
         }
     }
 

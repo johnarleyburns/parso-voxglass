@@ -1995,6 +1995,23 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         }
     }
 
+    /// Returns the active take to its beginning without changing the selected
+    /// paragraph or take. Rewinding an active player leaves it paused at zero;
+    /// when no take is loaded this is a harmless published-state reset.
+    func rewindCurrentTake() {
+        playbackTask?.cancel()
+        playbackPlayer?.pause()
+        playbackPlayer?.currentTime = 0
+        playbackPosition = 0
+
+        switch takePlayback {
+        case .playing(let paragraph, let chapter), .paused(let paragraph, let chapter, _):
+            takePlayback = .paused(paragraph: paragraph, chapter: chapter, at: 0)
+        case .idle:
+            break
+        }
+    }
+
     func stopPlayback() {
         playbackTask?.cancel()
         playbackPlayer?.stop()
