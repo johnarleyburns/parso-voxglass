@@ -179,6 +179,7 @@ struct RecordView: View {
                     teleprompter(paragraph)
                     errorCard
                     recordingBar
+                    analysisCard
                     transport
                     takesRow(paragraph)
                     actions(paragraph)
@@ -437,6 +438,65 @@ struct RecordView: View {
             .accessibilityIdentifier("record.inputLevel")
         }
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var analysisCard: some View {
+        if let state = model.analysisState(for: currentParagraphID) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Take analysis", systemImage: "waveform.path.ecg")
+                    .scaledFont(size: 13, weight: .bold)
+                    .foregroundStyle(Palette.ink)
+
+                switch state {
+                case .pending:
+                    Text("Analysis will appear after the take is saved.")
+                        .scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                case .analyzing:
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Analyzing take…").scaledFont(size: 12)
+                    }
+                    .foregroundStyle(Palette.ink2)
+                    .accessibilityIdentifier("record.analysis.analyzing")
+                case .failed(let message):
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.brass)
+                case .complete(let metrics):
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack {
+                            metric("Loudness", String(format: "%.1f dBFS", metrics.rmsDBFS))
+                            metric("Peak", String(format: "%.1f dBFS", metrics.peakDBFS))
+                            metric("Length", metrics.duration.formattedShort)
+                        }
+                        if metrics.clipCount > 0 {
+                            Label("Clipping detected (\(metrics.clipCount) run\(metrics.clipCount == 1 ? "" : "s"))", systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Palette.danger)
+                        }
+                        ForEach(model.analysisIssues(for: currentParagraphID).filter { $0.severity == .warning }) { issue in
+                            Label(issue.title, systemImage: "exclamationmark.circle")
+                                .foregroundStyle(Palette.brass)
+                                .accessibilityIdentifier("record.analysis.warning.\(issue.code.rawValue)")
+                        }
+                    }
+                    .scaledFont(size: 11)
+                    .accessibilityIdentifier("record.analysis.results")
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassSurface(cornerRadius: 14)
+            .accessibilityIdentifier("record.analysis")
+        }
+    }
+
+    private func metric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).foregroundStyle(Palette.ink3)
+            Text(value).fontWeight(.semibold).foregroundStyle(Palette.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var levelFraction: CGFloat {

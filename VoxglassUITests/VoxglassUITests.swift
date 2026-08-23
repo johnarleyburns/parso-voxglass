@@ -841,6 +841,21 @@ final class VoxglassUITests: XCTestCase {
             if gone { break } // the last take routed the flow onward
             XCTAssertTrue(chip, "Take was not saved after stopping.\n\(app.debugDescription)")
 
+            // Analysis starts only after the take is durable and then replaces
+            // the progress state with measured results on the same record
+            // surface; no separate manual validation action is required.
+            let analysis = app.descendants(matching: .any)["record.analysis"]
+            XCTAssertTrue(analysis.waitForExistence(timeout: 5), "Automatic take analysis did not appear.\n\(app.debugDescription)")
+            let analyzing = app.descendants(matching: .any)["record.analysis.analyzing"]
+            if analyzing.exists {
+                expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: analyzing)
+                waitForExpectations(timeout: 30)
+            }
+            XCTAssertTrue(
+                app.descendants(matching: .any)["record.analysis.results"].waitForExistence(timeout: 5),
+                "Automatic take analysis did not expose measured results.\n\(app.debugDescription)"
+            )
+
             if recorded == 1 {
                 assertTakeRewindsToBeginning(app: app)
             }

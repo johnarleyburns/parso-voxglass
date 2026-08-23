@@ -48,6 +48,17 @@ struct FlowTake: Equatable {
     var duration: TimeInterval
     var peakDBFS: Double?
     var clipped: Bool
+    var metrics: AudioQualityMetrics? = nil
+}
+
+/// Analysis state for the take currently visible in the recording flow. The
+/// state is keyed by take id so a background result cannot be displayed for a
+/// newer retake of the same paragraph.
+enum TakeAnalysisState: Equatable {
+    case pending
+    case analyzing
+    case complete(AudioQualityMetrics)
+    case failed(String)
 }
 
 /// A take recovered from an interruption, awaiting the user's keep/discard
@@ -368,6 +379,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     var isValidating = false
     var validationError: String?
     var metricsProgress: (done: Int, total: Int)?
+    var takeAnalysisStates: [UUID: TakeAnalysisState] = [:]
     var pendingFixAction: FixAction?
     var applyMasteringForExport = true
     var retailSampleOverride: RetailSampleSelection?
@@ -686,7 +698,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             role: flowRole(paragraph.role),
             state: flowState(paragraph),
             note: notes[paragraph.id],
-            take: paragraph.selectedTake.map { FlowTake(duration: $0.duration, peakDBFS: $0.metrics?.peakDBFS, clipped: ($0.metrics?.clipCount ?? 0) > 0) },
+            take: paragraph.selectedTake.map { FlowTake(duration: $0.duration, peakDBFS: $0.metrics?.peakDBFS, clipped: ($0.metrics?.clipCount ?? 0) > 0, metrics: $0.metrics) },
             isDrifted: hasDrift(paragraph),
             remoteTakeByteCount: paragraph.selectedTake.flatMap { remoteBytesBySHA[$0.assetRef.sha256] }
         )
@@ -707,11 +719,15 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     }
 
     private func analyzeMetricsLater(takeID: UUID, projectID: UUID, url: URL) {
+        takeAnalysisStates[takeID] = .analyzing
+        metricsProgress = (0, 1)
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
                 let metrics = try await AudioMetricsCalculator(decoder: AVFoundationDecoder()).metrics(for: url)
                 try await self.repository.store(for: projectID).setTakeMetrics(metrics, forTake: takeID)
+                self.takeAnalysisStates[takeID] = .complete(metrics)
+                self.metricsProgress = (1, 1)
                 if self.project?.id == projectID {
                     // Patch the one take rather than swapping in a whole
                     // reloaded project: analysis runs in the background, and a
@@ -720,9 +736,31 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                     self.applyMetricsInPlace(metrics, takeID: takeID)
                 }
             } catch {
-                // Validation reports missing metrics when analysis is unavailable.
+                self.takeAnalysisStates[takeID] = .failed("Audio analysis was unavailable. Try Analyze again from the recording check.")
             }
+            if self.metricsProgress?.total == 1 { self.metricsProgress = nil }
         }
+    }
+
+    func analysisState(for paragraphID: UUID) -> TakeAnalysisState? {
+        guard let take = paragraph(at: paragraphID)?.selectedTake else { return nil }
+        return takeAnalysisStates[take.id] ?? (take.metrics.map { .complete($0) } ?? .pending)
+    }
+
+    func analysisMetrics(for paragraphID: UUID) -> AudioQualityMetrics? {
+        paragraph(at: paragraphID)?.selectedTake?.metrics
+    }
+
+    func analysisIssues(for paragraphID: UUID) -> [ValidationIssue] {
+        guard let project, let take = project.allParagraphs.first(where: { $0.id == paragraphID })?.selectedTake else { return [] }
+        let metrics = PackagingSupport.selectedTakeMetrics(project)
+        return ValidationRuleEngine().evaluate(
+            project: project,
+            metrics: metrics,
+            profile: DestinationProfile.profile(for: project.profile.intendedDestination),
+            eligibility: EligibilityProfile.evaluate(project),
+            assembly: project.profile.assembly
+        ).filter { $0.takeID == take.id }
     }
 
     /// Writes measured metrics onto the in-memory take, leaving every other
