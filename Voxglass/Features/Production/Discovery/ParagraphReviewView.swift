@@ -195,7 +195,7 @@ struct ParagraphReviewView: View {
         let isApproved = paragraph.state == .approved
         return VStack(spacing: 10) {
             Button {
-                model.acceptParagraph(currentID)
+                model.toggleApproval(for: currentID)
                 Task { await model.persist() }
             } label: {
                 Label(isApproved ? "Approved" : "Approve",

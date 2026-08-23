@@ -1087,10 +1087,11 @@ struct ReviewView: View {
                 Button {
                     switch paragraph.state {
                     case .recorded:
-                        model.acceptParagraph(paragraph.id)
+                        model.toggleApproval(for: paragraph.id)
                         Task { await model.persist() }
                     case .approved:
-                        model.unacceptParagraph(paragraph.id)
+                        model.toggleApproval(for: paragraph.id)
+                        Task { await model.persist() }
                     case .flagged, .notRecorded:
                         paragraphReviewID = paragraph.id
                     }

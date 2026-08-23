@@ -20,6 +20,17 @@ import Testing
         #expect(card.lowerBound < approval.lowerBound)
     }
 
+    @Test func approvalControlsUseTheSameTogglePath() throws {
+        let flow = try source("Voxglass/Features/Production/Discovery/NarrationFlow.swift")
+        let detail = try source("Voxglass/Features/Production/Discovery/ParagraphReviewView.swift")
+        let review = try source("Voxglass/Features/Production/Discovery/NarrationFlowScreens.swift")
+
+        #expect(flow.contains("func toggleApproval(for id: UUID)"))
+        #expect(detail.contains("model.toggleApproval(for: currentID)"))
+        #expect(review.contains("case .approved:\n                        model.toggleApproval(for: paragraph.id)"))
+        #expect(flow.contains("approved == project.totalCount"))
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

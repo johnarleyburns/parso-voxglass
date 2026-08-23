@@ -588,7 +588,8 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     var readyToAssemble: Bool {
         guard let project, project.totalCount > 0 else { return false }
         let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
-        return flagged == 0 && project.recordedCount == project.totalCount
+        let approved = project.allParagraphs.count { $0.reviewState == .approved }
+        return flagged == 0 && approved == project.totalCount && project.recordedCount == project.totalCount
     }
 
     var totalDuration: TimeInterval {
@@ -1240,11 +1241,31 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     }
 
     func unacceptParagraph(_ id: UUID) {
+        setApprovalState(.unreviewed, for: id)
+        Task { await persist() }
+    }
+
+    /// Toggles the selected take's review state without changing the take.
+    /// This is shared by the detail and list review controls so an approved
+    /// paragraph can be returned to the ordinary unreviewed state.
+    func toggleApproval(for id: UUID) {
+        guard let paragraph = project?.allParagraphs.first(where: { $0.id == id }) else { return }
+        switch paragraph.reviewState {
+        case .approved:
+            setApprovalState(.unreviewed, for: id)
+        case .unreviewed:
+            guard paragraph.selectedTakeID != nil else { return }
+            setApprovalState(.approved, for: id)
+        case .flagged, .needsPickup:
+            return
+        }
+    }
+
+    private func setApprovalState(_ state: ReviewState, for id: UUID) {
         updateParagraph(id) { paragraph in
-            paragraph.reviewState = .unreviewed
+            paragraph.reviewState = state
             paragraph.updatedAt = repository.clock.now
         }
-        Task { await persist() }
     }
 
     /// Confirms that the selected audio still matches an edited paragraph.
