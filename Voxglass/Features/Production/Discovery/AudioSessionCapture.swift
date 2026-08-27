@@ -146,6 +146,14 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         }
 
         recordFormat = format
+        // The input route can change while the app is showing the record
+        // screen (for example when AirPods or a USB microphone reconnects).
+        // A tap retains the format it was installed with, so reusing it after
+        // that change makes AVAudioEngine reject the next start. Rebuild it
+        // after the session is active, when outputFormat reflects the route we
+        // will actually record from.
+        if engine.isRunning { engine.stop() }
+        resetInputTap()
         guard installTapIfNeeded() else {
             state = .failed("No usable audio input")
             throw CaptureError.deviceUnavailable
@@ -170,6 +178,18 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     public func startRecording(to destinationURL: URL) async throws {
         guard state == .prepared || state == .monitoring else { throw CaptureError.invalidState }
+
+        // A route may have changed between prepare() and the user's tap on
+        // Record. Refresh once more at the capture boundary so the file and
+        // the engine tap always use the current hardware format.
+        if tapFormat?.sampleRate != engine.inputNode.outputFormat(forBus: 0).sampleRate {
+            if engine.isRunning { engine.stop() }
+            resetInputTap()
+            guard installTapIfNeeded() else {
+                state = .failed("No usable audio input")
+                throw CaptureError.deviceUnavailable
+            }
+        }
 
         // Write in the tap's installed format (float32 PCM mono at the
         // hardware sample rate — see installTapIfNeeded). The engine converts
@@ -309,6 +329,14 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     }
 
     // MARK: - Engine
+
+    private func resetInputTap() {
+        if tapInstalled {
+            engine.inputNode.removeTap(onBus: 0)
+            tapInstalled = false
+            tapFormat = nil
+        }
+    }
 
     /// The 24-bit PCM capture format requested by §7.3, at the given rate.
     /// Falls back through the tap format's own settings when a converter

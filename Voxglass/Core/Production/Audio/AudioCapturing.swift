@@ -78,7 +78,7 @@ public struct AudioDeviceInfo: Sendable, Equatable, Identifiable {
     }
 }
 
-public enum CaptureError: Error, Equatable {
+public enum CaptureError: Error, Equatable, LocalizedError {
     case permissionDenied
     case invalidState
     case formatNotSupported
@@ -86,4 +86,23 @@ public enum CaptureError: Error, Equatable {
     case punchInNotSupported
     case deviceChanged(name: String)
     case diskFull
+
+    public var errorDescription: String? {
+        switch self {
+        case .permissionDenied:
+            return "Microphone access is denied."
+        case .invalidState:
+            return "The audio recorder is not ready."
+        case .formatNotSupported:
+            return "The current microphone format is not supported."
+        case .deviceUnavailable:
+            return "No usable microphone is available."
+        case .punchInNotSupported:
+            return "Punch-in recording is not supported."
+        case .deviceChanged(let name):
+            return "The recording device changed to \(name)."
+        case .diskFull:
+            return "There is not enough storage space to save the recording."
+        }
+    }
 }
