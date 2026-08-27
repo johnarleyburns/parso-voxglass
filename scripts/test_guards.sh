@@ -27,7 +27,11 @@ cleanup() {
     mv "${item}.probe-hidden" "$item" 2>/dev/null || true
   done
 }
+# CI can terminate a long self-test while a probe is planted. Clean up on the
+# common termination signals as well as normal exit so a cancelled run cannot
+# poison the next guard invocation or the working tree.
 trap cleanup EXIT
+trap 'exit 143' INT TERM HUP
 
 pass() { echo "ok: $1"; }
 fail() { echo "FAIL: $1" >&2; FAILURES=$((FAILURES + 1)); }

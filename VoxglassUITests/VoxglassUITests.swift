@@ -33,6 +33,9 @@ final class VoxglassUITests: XCTestCase {
             "-voxglass.narration.onboardingSeen.v1", "YES",
             "-VoxglassInitialTab", "home",
             "-VoxglassDisableAnimatedSplash",
+            // Required by the source guard and used by AppServices to seed a
+            // deterministic preview project for the production smoke path.
+            "-uiTestSeed", "onePreviewProject",
             // Starts the narration flow from a clean store so the record step
             // is deterministic (resume could land on Review/Assemble instead).
             "-uiTestResetNarrations",
