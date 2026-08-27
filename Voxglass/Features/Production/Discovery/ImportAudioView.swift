@@ -50,11 +50,11 @@ struct ImportAudioView: View {
             .background(VoxglassBackground())
             .navigationTitle("Import Audio")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
-                    .accessibilityIdentifier("importAudio.done")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .accessibilityIdentifier("importAudio.done")
+                }
             }
         }
         .fileImporter(

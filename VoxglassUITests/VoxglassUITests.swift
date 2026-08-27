@@ -39,6 +39,9 @@ final class VoxglassUITests: XCTestCase {
             // Starts the narration flow from a clean store so the record step
             // is deterministic (resume could land on Review/Assemble instead).
             "-uiTestResetNarrations",
+            // build-for-testing runs this simulator bundle unsigned, so the
+            // local smoke path must not initialize entitlement-backed CloudKit.
+            "-uiTestDisableCloudKit",
             // Scripted capture: the record step must never depend on the
             // simulator's audio input (unreliable since iOS 17) — the fake
             // writes silent takes so the flow runs end-to-end with no mic.
@@ -167,7 +170,11 @@ final class VoxglassUITests: XCTestCase {
         )
         XCTAssertTrue(assembleButton.isEnabled, "Blocked Assemble must remain actionable so it can explain blockers.")
         assembleButton.tap()
-        XCTAssertTrue(app.staticTexts["Flagged paragraphs"].waitForExistence(timeout: 5), "Assemble blocker checklist did not appear.")
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Flagged paragraphs"))
+                .firstMatch.waitForExistence(timeout: 5),
+            "Assemble blocker checklist did not appear."
+        )
         app.buttons["OK"].tap()
         assertFinalContentClearsBottomControls(app.buttons["review.toExport"], app: app, screen: "Review")
 
@@ -503,9 +510,15 @@ final class VoxglassUITests: XCTestCase {
 
     private func assertRecordingParagraphTextIsNormalized(app: XCUIApplication, route: String) {
         let teleprompter = app.descendants(matching: .any)["record.teleprompter"]
-        let text = app.staticTexts["record.teleprompter.text"]
+        // SwiftUI's accessibility element type for this Text changes with
+        // the surrounding layout modifiers on newer simulator runtimes. The
+        // identifier is the stable contract; do not narrow the lookup to
+        // .staticTexts.
+        let text = app.descendants(matching: .any)["record.teleprompter.text"]
         XCTAssertTrue(teleprompter.waitForExistence(timeout: 5), "The \(route) teleprompter did not appear.")
         XCTAssertTrue(text.waitForExistence(timeout: 5), "The \(route) paragraph text was not exposed.")
+        XCTAssertFalse(text.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       "The \(route) paragraph text element must expose its paragraph label.")
         XCTAssertEqual(
             text.frame.minX,
             teleprompter.frame.minX + 20,
@@ -557,7 +570,9 @@ final class VoxglassUITests: XCTestCase {
             "Edit Artwork did not offer Photos.\n\(app.debugDescription)"
         )
         XCTAssertTrue(app.buttons["Choose from Files"].exists, "Edit Artwork did not offer Files.")
-        app.buttons["Cancel"].tap()
+        // iOS 26 presents this confirmation dialog as a dismiss-on-outside-
+        // tap sheet and does not expose its role-based Cancel action.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
         XCTAssertTrue(editArtwork.waitForExistence(timeout: 5))
     }
 
@@ -864,11 +879,16 @@ final class VoxglassUITests: XCTestCase {
         play.tap()
         let progress = app.descendants(matching: .any)["record.playbackProgress"]
         XCTAssertTrue(progress.waitForExistence(timeout: 5), "Take playback did not expose progress.\n\(app.debugDescription)")
-        expectation(for: NSPredicate(format: "value != %@", "0:00"), evaluatedWith: progress)
+        expectation(
+            for: NSPredicate(format: "value != %@ AND value != %@", "0 sec", "0:00"),
+            evaluatedWith: progress
+        )
         waitForExpectations(timeout: 5)
 
         rewind.tap()
-        expectation(for: NSPredicate(format: "value == %@", "0:00"), evaluatedWith: progress)
+        // iOS 26 exposes Slider's native value as `0:00`, while older
+        // runtimes preserve the explicit formatted accessibility value.
+        expectation(for: NSPredicate(format: "value == %@ OR value == %@", "0 sec", "0:00"), evaluatedWith: progress)
         waitForExpectations(timeout: 2)
         XCTAssertEqual(teleprompterText.label, paragraph, "Rewind must not navigate to another paragraph.")
         XCTAssertTrue(take.exists, "Rewind must not change the selected take.")

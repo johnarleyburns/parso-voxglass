@@ -388,6 +388,10 @@ struct RecordView: View {
         .padding(20)
         .frame(maxWidth: .infinity)
         .glassSurface(cornerRadius: 18)
+        // Keep the paragraph text independently addressable in UI tests and
+        // assistive technology; newer SwiftUI runtimes otherwise collapse the
+        // nested Text into the teleprompter container's accessibility element.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("record.teleprompter")
     }
 
@@ -487,6 +491,7 @@ struct RecordView: View {
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .glassSurface(cornerRadius: 14)
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("record.analysis")
         }
     }
@@ -553,6 +558,8 @@ struct RecordView: View {
                     model.playbackPosition = value
                     model.playbackPlayer?.currentTime = value
                 }), in: 0...model.playbackDuration)
+                .accessibilityIdentifier("record.playbackProgress")
+                .accessibilityValue(model.playbackPosition.formattedShort)
                 HStack {
                     Text(model.playbackPosition.formattedShort)
                     Spacer()
@@ -561,8 +568,6 @@ struct RecordView: View {
                 .scaledFont(size: 11, design: .monospaced)
                 .foregroundStyle(Palette.ink3)
             }
-            .accessibilityIdentifier("record.playbackProgress")
-            .accessibilityValue(model.playbackPosition.formattedShort)
         }
     }
 

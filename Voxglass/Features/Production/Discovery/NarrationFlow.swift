@@ -816,7 +816,6 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             guard let self else { return }
             do {
                 let metrics = try await AudioMetricsCalculator(decoder: AVFoundationDecoder()).metrics(for: url)
-                try await self.repository.store(for: projectID).setTakeMetrics(metrics, forTake: takeID)
                 self.takeAnalysisStates[takeID] = .complete(metrics)
                 self.metricsProgress = (1, 1)
                 if self.project?.id == projectID {
@@ -826,7 +825,26 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                     // while it was running.
                     self.applyMetricsInPlace(metrics, takeID: takeID)
                 }
+
+                // Analysis is useful immediately even if a concurrent project
+                // save briefly holds the SQLite connection. Persist the
+                // in-memory result through the normal save path after the UI
+                // has received it, rather than reporting a successful decode
+                // as an analysis failure.
+                do {
+                    try await self.repository.store(for: projectID).setTakeMetrics(metrics, forTake: takeID)
+                } catch {
+#if DEBUG
+                    print("NarrationFlowModel: metric row save deferred for \(takeID): \(error)")
+#endif
+                    if self.project?.id == projectID {
+                        await self.persist()
+                    }
+                }
             } catch {
+#if DEBUG
+                print("NarrationFlowModel: take analysis failed for \(takeID): \(error)")
+#endif
                 self.takeAnalysisStates[takeID] = .failed("Audio analysis was unavailable. Try Analyze again from the recording check.")
             }
             if self.metricsProgress?.total == 1 { self.metricsProgress = nil }

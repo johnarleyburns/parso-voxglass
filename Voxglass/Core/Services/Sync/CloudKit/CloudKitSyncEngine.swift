@@ -23,7 +23,12 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     private let database: AppDatabase
     private let stateStore: CloudSyncStateStore
-    private let container: CKContainer
+    private let containerID: String
+    // CKContainer(identifier:) validates the app's CloudKit entitlement and
+    // traps when an unsigned simulator test bundle constructs it. Keep the
+    // container lazy so UI-test launches can exercise the app without touching
+    // CloudKit; normal sync still creates the same container on first use.
+    private lazy var container = CKContainer(identifier: containerID)
     private let zoneID: CKRecordZone.ID
 
     private var iCloudSyncEnabled: Bool {
@@ -37,7 +42,7 @@ public final class CloudKitSyncEngine: ObservableObject {
     public init(database: AppDatabase, containerID: String = "iCloud.guru.parso.voxglass") {
         self.database = database
         self.stateStore = CloudSyncStateStore(database: database)
-        self.container = CKContainer(identifier: containerID)
+        self.containerID = containerID
         self.zoneID = CloudKitRecordMapper.libraryZoneID
     }
 

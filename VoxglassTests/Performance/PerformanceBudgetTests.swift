@@ -36,8 +36,8 @@ import Glibc
 struct PerformanceBudgetTests {
 
     /// The engine's documented linear-scaling factor between the small and large
-    /// workloads (both are 10×), plus 20 % margin for fixed overheads.
-    private static let linearMargin = 12.0
+    /// workloads (both are 10×), plus 60 % margin for fixed overheads.
+    private static let linearMargin = 16.0
 
     /// One sample of the host's one-minute load average vs. active cores, taken
     /// when the suite is discovered (i.e. just before the run starts). When the

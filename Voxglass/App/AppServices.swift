@@ -160,8 +160,17 @@ final class AppServices: ObservableObject {
 
         let production = productionEnvironment
         phoneAudioRelay.registerProductionTransport(production.watchTransport)
+        #if DEBUG
+        let cloudBootstrapDisabled = ProcessInfo.processInfo.arguments.contains("-uiTestDisableCloudKit")
+        #else
+        let cloudBootstrapDisabled = false
+        #endif
         Task(priority: .background) { @MainActor [weak self] in
             guard let self else { return }
+            // Unsigned simulator UI-test bundles do not carry the CloudKit
+            // entitlement. The smoke path is entirely local and explicitly
+            // opts out before any CKContainer-backed service is touched.
+            guard !cloudBootstrapDisabled else { return }
             await self.cloudSync.sync()
             await self.cloudKitSyncEngine.start()
             if self.cloudKitSyncEngine.lastUploadedCount > 0 {
