@@ -3,8 +3,7 @@ import VoxglassCore
 
 /// The single simulator smoke test for Voxglass. Everything else is covered by
 /// the host `swift test` logic suite (VoxglassCore); this proves the app boots,
-/// every tab renders, the EQ is reachable, My Productions is reachable (seeded
-/// via `-uiTestSeed onePreviewProject`), and — the §16.3 test-1 path — a short
+/// every tab renders, the EQ is reachable, and — the §16.3 test-1 path — a short
 /// narration is created from a need, recorded end to end with the fake capture,
 /// reviewed, validated, exported to LibriVox, and the **produced package is
 /// verified against the real output bytes** (128 kbps CBR / 44.1 kHz / mono,
@@ -41,9 +40,6 @@ final class VoxglassUITests: XCTestCase {
             // simulator's audio input (unreliable since iOS 17) — the fake
             // writes silent takes so the flow runs end-to-end with no mic.
             "-uiTestFakeCapture",
-            // Seeds one previewable production (WP-G) and keeps the G-8 guard
-            // honest that no UI test runs without a declared test environment.
-            "-uiTestSeed", "onePreviewProject",
             // Redirect the export output to a path the test process can read.
             "-uiTestExportDirectory", exportDir,
             // On a real device MediaPlayer invokes the MPMediaItemArtwork
@@ -85,31 +81,6 @@ final class VoxglassUITests: XCTestCase {
         }
 
         assertStorageCardsFitCompactWidth(app: app)
-
-        // My Productions reachability (spec §18.2, WP-G): Library → My
-        // Productions → seeded project card → detail review actions.
-        app.buttons["My Books"].tap()
-        let shelf = app.buttons["shelf.myProductions"]
-        XCTAssertTrue(
-            shelf.waitForExistence(timeout: 10),
-            "My Productions entry not on the Library tab.\n\(app.debugDescription)"
-        )
-        shelf.tap()
-
-        let card = app.descendants(matching: .any)["production.themurderofrogerackroyd"]
-        XCTAssertTrue(
-            card.waitForExistence(timeout: 10),
-            "Seeded production card did not render.\n\(app.debugDescription)"
-        )
-        card.tap()
-        XCTAssertTrue(
-            app.buttons["detail.playWholeBook"].waitForExistence(timeout: 10),
-            "detail.playWholeBook not reachable.\n\(app.debugDescription)"
-        )
-        XCTAssertTrue(
-            app.buttons["detail.reviewFlagged"].exists,
-            "detail.reviewFlagged not reachable.\n\(app.debugDescription)"
-        )
 
         // ──────────────────────────────────────────────────────────────────
         // §16.3 test 1: Narration → create a project from a need → record

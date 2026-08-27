@@ -18,7 +18,7 @@ struct NarrationTabView: View {
                         startProject: { flowNeed = $0 },
                         showRails: !discovery.myNarrations.contains { $0.recordedCount > 0 }
                     )
-                    MyNarrationsSection(findSomething: { showingNeeds = true })
+                    MyNarrationsSection()
                 }
                 .padding(.top, 12)
             }

@@ -11,10 +11,15 @@ struct LibraryView: View {
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
+    @State private var isEditing = false
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
-        VoxglassScreen(title: "My Books") {
+        VoxglassScreen(
+            title: "My Books",
+            headerActionTitle: libraryStore.books.isEmpty ? nil : (isEditing ? "Done" : "Edit"),
+            headerAction: { withAnimation { isEditing.toggle() } }
+        ) {
             VStack(alignment: .leading, spacing: 18) {
                 bookList
             }
@@ -28,7 +33,7 @@ struct LibraryView: View {
             Text(libraryStore.importError ?? "")
         }
         .confirmationDialog(
-            pendingDeletion.map { "Remove \"\($0.book.title)\" from My Books?" } ?? "",
+            pendingDeletion.map { "Remove \"\($0.book.title)\" from your books?" } ?? "",
             isPresented: deletionBinding,
             titleVisibility: .visible
         ) {
@@ -78,43 +83,8 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private var myProductionsEntry: some View {
-        let production = AppServices.shared.productionEnvironment
-        NavigationLink {
-            MyProductionsShelf(store: production.previewStore, sync: production.sync)
-        } label: {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(LinearGradient(colors: [Color(hex: 0x23303F), Color(hex: 0x3A4A5F)], startPoint: .top, endPoint: .bottom))
-                    Image(systemName: "waveform.badge.mic")
-                        .scaledFont(size: 18)
-                }
-                .frame(width: 44, height: 44)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("My Productions")
-                        .scaledFont(size: 15, weight: .bold)
-                        .foregroundStyle(Palette.ink)
-                    Text("Previews you made in Voxglass Studio on your Mac")
-                        .scaledFont(size: 12)
-                        .foregroundStyle(Palette.ink2)
-                }
-                Spacer()
-                Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
-            }
-            .padding(13)
-            .glassSurface(cornerRadius: 16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.brass.opacity(0.4), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .tactileTap()
-        .accessibilityIdentifier("shelf.myProductions")
-    }
-
-    @ViewBuilder
     private var bookList: some View {
         VStack(alignment: .leading, spacing: 10) {
-            myProductionsEntry
             if libraryStore.books.isEmpty {
                 EmptyStatePanel(
                     title: "No Audiobooks Yet",
@@ -131,29 +101,31 @@ struct LibraryView: View {
                 VStack(spacing: 0) {
                     ForEach(books.indices, id: \.self) { index in
                         let book = books[index]
-                        NavigationLink {
-                            BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
-                        } label: {
-                            CompactBookRowView(
-                                book: book,
-                                sourceTitle: libraryStore.source(for: book.book)?.title,
-                                accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
-                                style: .grouped,
-                                watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            if phoneAudioRelay.isWatchAppInstalled {
-                                Button {
-                                    Task { await transferToWatch(book, allowCellular: false) }
-                                } label: {
-                                    Label(watchContextTitle(for: book), systemImage: "applewatch")
-                                }
-                                .disabled(phoneAudioRelay.isTransferringToWatch)
+                        SwipeToRemoveRow(isEditing: isEditing, remove: { pendingDeletion = book }) {
+                            NavigationLink {
+                                BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                            } label: {
+                                CompactBookRowView(
+                                    book: book,
+                                    sourceTitle: libraryStore.source(for: book.book)?.title,
+                                    accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
+                                    style: .grouped,
+                                    watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id)
+                                )
                             }
-                            Button("Remove from My Books", role: .destructive) {
-                                pendingDeletion = book
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                if phoneAudioRelay.isWatchAppInstalled {
+                                    Button {
+                                        Task { await transferToWatch(book, allowCellular: false) }
+                                    } label: {
+                                        Label(watchContextTitle(for: book), systemImage: "applewatch")
+                                    }
+                                    .disabled(phoneAudioRelay.isTransferringToWatch)
+                                }
+                                Button("Remove from My Books", role: .destructive) {
+                                    pendingDeletion = book
+                                }
                             }
                         }
                         if index < books.count - 1 {
@@ -184,6 +156,7 @@ struct LibraryView: View {
                 FilterChip(title: "Solo Narration", isSelected: soloOnly) {
                     soloOnly.toggle()
                 }
+                Spacer()
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         showSearch.toggle()

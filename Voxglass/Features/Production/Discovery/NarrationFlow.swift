@@ -390,6 +390,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     var validationIssues: [ValidationIssue] = []
     var preflight: ExportPreflightResult?
     var isValidating = false
+    var isBackingUp = false
     var validationError: String?
     var metricsProgress: (done: Int, total: Int)?
     var takeAnalysisStates: [UUID: TakeAnalysisState] = [:]
@@ -2662,6 +2663,23 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             assembly: project.profile.assembly,
             context: ValidationContext(exportPreflight: preflight.exportPreflightContext)
         )
+    }
+
+    /// Runs the actual iCloud mirror upload used by the backup validation rule,
+    /// then reloads asset verification state and updates the visible report.
+    func backUpNow() async {
+        guard !isBackingUp else { return }
+        guard let sync = phoneProduction?.sync else {
+            validationError = "iCloud backup is unavailable right now."
+            return
+        }
+        isBackingUp = true
+        defer { isBackingUp = false }
+        validationError = nil
+        await sync.checkForUpdates()
+        let syncError = sync.syncError
+        await runValidation()
+        validationError = syncError
     }
 
     func selectValidationDestination(_ destination: DestinationID) {

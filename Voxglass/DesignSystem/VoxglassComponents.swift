@@ -69,6 +69,48 @@ struct FilterChip: View {
     }
 }
 
+/// A lightweight swipe-to-remove row for the glass shelves, which are built
+/// inside a `ScrollView` rather than a system `List`.
+struct SwipeToRemoveRow<Content: View>: View {
+    let isEditing: Bool
+    let remove: () -> Void
+    @ViewBuilder let content: Content
+    @State private var offset: CGFloat = 0
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            Button(role: .destructive, action: remove) {
+                Label("Remove", systemImage: "trash")
+                    .labelStyle(.iconOnly)
+                    .frame(width: 72)
+                    .frame(maxHeight: .infinity)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.white)
+            .background(Palette.danger)
+
+            content
+                .offset(x: offset)
+                .gesture(
+                    DragGesture(minimumDistance: 12)
+                        .onChanged { value in
+                            guard isEditing else { return }
+                            offset = min(0, max(-72, value.translation.width))
+                        }
+                        .onEnded { value in
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                offset = isEditing && value.translation.width < -28 ? -72 : 0
+                            }
+                        }
+                )
+        }
+        .clipped()
+        .onChange(of: isEditing) { _, editing in
+            if !editing { withAnimation { offset = 0 } }
+        }
+    }
+}
+
 struct VoxglassGroupedSection<Content: View>: View {
     let title: String
     let subtitle: String?

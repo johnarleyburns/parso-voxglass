@@ -1758,6 +1758,13 @@ struct ValidateExportView: View {
                     ValidationReportView(model: model, onFix: apply)
                 }
 
+                if let validationError = model.validationError {
+                    Text(validationError)
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.danger)
+                        .padding(.top, 4)
+                }
+
                 if let preflight = model.preflight, preflight.hydrationPlan.byteCount > 0 {
                     hydrationBanner(preflight)
                 }
@@ -2137,7 +2144,7 @@ struct ValidateExportView: View {
         case .hydrateAssets:
             Task { await model.hydrateAllForExport(); await model.runValidation() }
         case .backupNow:
-            Task { _ = await model.saveCopyOfProject() }
+            Task { await model.backUpNow() }
         case .manageStorage:
             showFixStorage = true
         case .recordParagraph(let id):

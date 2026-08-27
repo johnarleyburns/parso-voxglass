@@ -9,6 +9,19 @@ struct ValidationReportView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if model.isBackingUp {
+                HStack(spacing: 9) {
+                    ProgressView().controlSize(.small)
+                    Text("Backing up recordings to iCloud…")
+                        .scaledFont(size: 12.5)
+                }
+                .tint(Palette.brass)
+                .foregroundStyle(Palette.ink2)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 14)
+                .accessibilityIdentifier("validation.backingUp")
+            }
             let blocking = model.blockingValidationIssues
             let warnings = model.validationIssues.filter { $0.severity == .warning }
             HStack {
@@ -133,6 +146,19 @@ struct ValidationReportSheet: View {
                         .accessibilityIdentifier("validation.reanalyzeAll")
                 }
             }
+            .alert("Backup Couldn't Finish", isPresented: validationErrorBinding) {
+                Button("OK", role: .cancel) { model.validationError = nil }
+            } message: {
+                Text(model.validationError ?? "")
+            }
+        }
+    }
+
+    private var validationErrorBinding: Binding<Bool> {
+        Binding {
+            model.validationError != nil
+        } set: { isPresented in
+            if !isPresented { model.validationError = nil }
         }
     }
 
@@ -143,7 +169,7 @@ struct ValidationReportSheet: View {
         case .hydrateAssets:
             Task { await model.hydrateAllForExport(); await model.runValidation() }
         case .backupNow:
-            Task { _ = await model.saveCopyOfProject() }
+            Task { await model.backUpNow() }
         case .clearPickup(let paragraphID):
             Task { await model.clearPickup(paragraphID) }
         case .regenerateDisclaimers:

@@ -117,6 +117,23 @@ struct NarrationHomeShelf: View {
                 .foregroundStyle(Palette.ink2)
                 .italic()
 
+            Button(action: presentBrowse) {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                    Text("Find Something to Narrate")
+                }
+                .scaledFont(size: 14, weight: .heavy)
+                .foregroundStyle(Palette.brass)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(Palette.brass.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [5])))
+            }
+            .buttonStyle(.plain)
+            .tactileTap()
+            .padding(.top, 12)
+            .accessibilityIdentifier("myNarrations.newFromNeed")
+
             if let featured = shelfPlan.featured {
                 featuredCard(featured)
                     .padding(.top, 12)
@@ -186,9 +203,9 @@ struct NarrationHomeShelf: View {
                 }
                 .padding(.horizontal, 2)
             }
+            .accessibilityIdentifier("needs.rail.short")
         }
         .padding(.top, narrationRailTopSpacing)
-        .accessibilityIdentifier("needs.rail.short")
     }
 
     private var longRail: some View {
@@ -202,9 +219,9 @@ struct NarrationHomeShelf: View {
                 }
                 .padding(.horizontal, 2)
             }
+            .accessibilityIdentifier("needs.rail.long")
         }
         .padding(.top, narrationRailTopSpacing)
-        .accessibilityIdentifier("needs.rail.long")
     }
 }
 
@@ -439,33 +456,22 @@ struct NeedRow: View {
 /// project dashboard (04), which leads with "Record next" (§15.5).
 struct MyNarrationsSection: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
-    let findSomething: () -> Void
     @State private var pendingDeletion: AudiobookProject?
     @State private var dashboardProject: AudiobookProject?
+    @State private var isEditing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(title: "My Narrations", actionTitle: nil)
+            SectionTitle(
+                title: "My Narrations",
+                actionTitle: discovery.myNarrations.isEmpty ? nil : (isEditing ? "Done" : "Edit"),
+                action: { withAnimation { isEditing.toggle() } },
+                actionIdentifier: "myNarrations.edit"
+            )
 
             Text("Record short works and whole books directly on iPhone.")
                 .scaledFont(size: 12.5)
                 .foregroundStyle(Palette.ink2)
-
-            Button(action: findSomething) {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus")
-                    Text("Find something to narrate")
-                }
-                .scaledFont(size: 14, weight: .heavy)
-                .foregroundStyle(Palette.brass)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-                .background(Palette.brass.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [5])))
-            }
-            .buttonStyle(.plain)
-            .tactileTap()
-            .accessibilityIdentifier("myNarrations.newFromNeed")
 
             let projects = discovery.myNarrations
             if projects.isEmpty {
@@ -480,17 +486,19 @@ struct MyNarrationsSection: View {
                         // Pushes the dashboard (04); the dashboard's "Record
                         // next" opens the flow at the first paragraph with no
                         // selected take.
-                        Button {
-                            dashboardProject = project
-                        } label: {
-                            projectRow(project)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                pendingDeletion = project
+                        SwipeToRemoveRow(isEditing: isEditing, remove: { pendingDeletion = project }) {
+                            Button {
+                                dashboardProject = project
                             } label: {
-                                Label("Delete Narration", systemImage: "trash")
+                                projectRow(project)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    pendingDeletion = project
+                                } label: {
+                                    Label("Delete Narration", systemImage: "trash")
+                                }
                             }
                         }
                         .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.metadata.title))")
@@ -508,11 +516,11 @@ struct MyNarrationsSection: View {
             }
         }
         .confirmationDialog(
-            pendingDeletion.map { "Delete \"\($0.metadata.title)\" and its recordings?" } ?? "",
+            pendingDeletion.map { "Remove \"\($0.metadata.title)\" from your narrations?" } ?? "",
             isPresented: deletionBinding,
             titleVisibility: .visible
         ) {
-            Button("Delete Narration", role: .destructive) {
+            Button("Remove Narration", role: .destructive) {
                 if let project = pendingDeletion {
                     Task { await discovery.delete(project) }
                 }

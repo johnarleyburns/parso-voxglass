@@ -62,6 +62,8 @@ extension Color {
 struct VoxglassScreen<Content: View>: View {
     let title: String
     var embedsNavigationStack = true
+    var headerActionTitle: String?
+    var headerAction: (() -> Void)?
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -85,6 +87,11 @@ struct VoxglassScreen<Content: View>: View {
                                 .scaledFont(size: 31, weight: .heavy, design: .default)
                                 .foregroundStyle(Palette.ink)
                             Spacer()
+                            if let headerActionTitle, let headerAction {
+                                Button(headerActionTitle, action: headerAction)
+                                    .scaledFont(size: 15, weight: .semibold)
+                                    .foregroundStyle(Palette.brass)
+                            }
                         }
                         .padding(.horizontal, 2)
                         .padding(.top, 8)
