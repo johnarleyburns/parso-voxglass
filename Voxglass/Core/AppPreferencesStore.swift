@@ -19,6 +19,7 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let cloudKitLibraryUploadConfirmed = "voxglass.cloudKit.libraryUploadConfirmed.v1"
         public static let soloOnlyEnabled = "voxglass.soloOnlyEnabled"
         public static let narrationOnboardingSeen = "voxglass.narration.onboardingSeen.v1"
+        public static let narrationCommercialIntroSeen = "voxglass.narration.commercialIntroSeen.v1"
         public static let narrationCollapsedChapters = "voxglass.narration.collapsedChapters.v1"
     }
 

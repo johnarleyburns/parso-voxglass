@@ -7,6 +7,7 @@ import VoxglassCore
 struct NarrationTabView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @State private var flowNeed: NarrationNeed?
+    @State private var showNewNarration = false
     @State private var showingNeeds = false
 
     var body: some View {
@@ -16,6 +17,7 @@ struct NarrationTabView: View {
                     NarrationHomeShelf(
                         presentBrowse: { showingNeeds = true },
                         startProject: { flowNeed = $0 },
+                        startNew: { showNewNarration = true },
                         showRails: !discovery.myNarrations.contains { $0.recordedCount > 0 }
                     )
                     MyNarrationsSection()
@@ -29,6 +31,9 @@ struct NarrationTabView: View {
             }
             .fullScreenCover(item: $flowNeed) { need in
                 NarrationFlowRoot(startNeed: need)
+            }
+            .fullScreenCover(isPresented: $showNewNarration) {
+                NarrationFlowRoot()
             }
         }
         .accessibilityIdentifier("narration.tab")

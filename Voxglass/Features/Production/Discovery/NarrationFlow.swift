@@ -3081,6 +3081,7 @@ struct NarrationFlowRoot: View {
 /// flow. Shown once automatically, and again any time from the help button.
 struct NarrationHelpSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showProDetails = false
 
     var body: some View {
         NavigationStack {
@@ -3090,9 +3091,10 @@ struct NarrationHelpSheet: View {
                         Text("Recording your narration")
                             .scaledFont(size: 22, weight: .heavy)
                             .foregroundStyle(Palette.ink)
-                        Text("Read each paragraph aloud, one at a time. Your takes stay on this device until you finish the checklist.")
+                        Text("Two ways to use Narration. Contribute a free recording to LibriVox or the Internet Archive — completely free, forever. Or bring your own book — import an EPUB, DOCX, or paste text — record it, and release it commercially on ACX / Audible, Apple Books, and aggregators with Voxglass Narration Pro, a one-time purchase. Recording, review, Apple Watch, and iCloud backup are always free.")
                             .scaledFont(size: 13)
                             .foregroundStyle(Palette.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     step(1, "Tap the record button and read the paragraph on screen.", icon: "record.circle")
@@ -3104,6 +3106,13 @@ struct NarrationHelpSheet: View {
                     Text("If a recording doesn't start, check that the microphone is allowed in Settings → Privacy → Microphone.")
                         .scaledFont(size: 11.5)
                         .foregroundStyle(Palette.ink3)
+
+                    Button("See what Pro includes") {
+                        showProDetails = true
+                    }
+                    .scaledFont(size: 13, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .accessibilityIdentifier("help.proDetails")
 
                     NarrationPrimaryButton(title: "Got it", identifier: "narration.helpSheet.dismiss") {
                         dismiss()
@@ -3121,6 +3130,9 @@ struct NarrationHelpSheet: View {
             .accessibilityIdentifier("narration.helpSheet")
         }
         .presentationDetents([.medium, .large])
+        .sheet(isPresented: $showProDetails) {
+            ProPurchaseView(provider: NarrationProStore.shared.provider, model: nil) { _ in }
+        }
     }
 
     private func step(_ number: Int, _ text: String, icon: String) -> some View {
@@ -3189,6 +3201,7 @@ struct WorkImportView: View {
     @State private var showNeedsPicker = false
     @State private var showPaste = false
     @State private var showGutenberg = false
+    @State private var showProDetails = false
     @State private var pickedFileURL: URL?
 
     var body: some View {
@@ -3207,7 +3220,7 @@ struct WorkImportView: View {
                 importOption(icon: "📝", title: "Paste text", caption: "Paste a poem or short piece", id: "import.paste") {
                     showPaste = true
                 }
-                importOption(icon: "📄", title: "Import a file", caption: "EPUB, TXT, Markdown, or DOCX from Files", id: "import.files") {
+                importOption(icon: "📄", title: "Import a file", caption: "EPUB, TXT, Markdown, or DOCX — free for LibriVox & Internet Archive, or master it for commercial release with Pro.", id: "import.files") {
                     presentFilesPicker()
                 }
                 importOption(icon: "🌐", title: "Fetch from Project Gutenberg", caption: "Paste a gutenberg.org link or ebook number", id: "import.gutenberg") {
@@ -3245,6 +3258,15 @@ struct WorkImportView: View {
 
                 purposePicker
 
+                Button("See what Commercial (Pro) includes") {
+                    showProDetails = true
+                }
+                .scaledFont(size: 13, weight: .bold)
+                .foregroundStyle(Palette.brass)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 2)
+                .accessibilityIdentifier("import.proDetails")
+
                 Text(LegalStrings.noCopyrightDetermination)
                     .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
@@ -3262,6 +3284,9 @@ struct WorkImportView: View {
         }
         .sheet(isPresented: $showGutenberg) {
             GutenbergSheet(model: model)
+        }
+        .sheet(isPresented: $showProDetails) {
+            ProPurchaseView(provider: model.licenseProvider, model: model) { _ in }
         }
         .fileImporter(isPresented: Binding(get: { pickedFileURL != nil }, set: { if !$0 { pickedFileURL = nil } }), allowedContentTypes: importContentTypes) { result in
             if case .success(let url) = result {
@@ -3338,6 +3363,15 @@ struct WorkImportView: View {
                 purposeRow(title: "Just for me", caption: "Free · lossless WAV chapters", id: "wizard.purpose.personal", purpose: .personal)
                 VoxglassListDivider()
                 purposeRow(title: "Commercial release", caption: "ACX, Apple Books, aggregators", id: "wizard.purpose.commercial", purpose: .commercial, proChip: true)
+                if model.draftPurpose == .commercial {
+                    Text("Delivered with Voxglass Narration Pro — a one-time purchase. Everything else here is free.")
+                        .scaledFont(size: 11)
+                        .foregroundStyle(Palette.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 12)
+                        .accessibilityIdentifier("wizard.purpose.commercial.hint")
+                }
             }
             .glassSurface(cornerRadius: 14)
         }

@@ -83,8 +83,10 @@ private let narrationRailTopSpacing: CGFloat = 20
 /// the card, it never gates the record action.
 struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
+    @AppStorage(AppPreferencesStore.Keys.narrationCommercialIntroSeen) private var commercialIntroSeen = false
     let presentBrowse: () -> Void
     let startProject: (NarrationNeed) -> Void
+    let startNew: () -> Void
     let showRails: Bool
 
     private var shelfPlan: NarrationHomeShelfPlan {
@@ -112,15 +114,50 @@ struct NarrationHomeShelf: View {
                 .accessibilityIdentifier("home.startNarrationShelf.seeAll")
             }
 
-            Text("Lend your voice to the public domain.")
+            Text("Record public-domain books. Contribute free to LibriVox and the Internet Archive — or bring your own book and produce a commercial audiobook.")
                 .scaledFont(size: 12.5)
                 .foregroundStyle(Palette.ink2)
-                .italic()
+                .fixedSize(horizontal: false, vertical: true)
 
-            Button(action: presentBrowse) {
+            if !commercialIntroSeen {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Bring your own book")
+                                .scaledFont(size: 13.5, weight: .bold)
+                                .foregroundStyle(Palette.ink)
+                            Text("Import or paste text for free. Record it in your voice and go commercial with Voxglass Narration Pro — a one-time purchase.")
+                                .scaledFont(size: 11.5)
+                                .foregroundStyle(Palette.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                        Button {
+                            commercialIntroSeen = true
+                        } label: {
+                            Image(systemName: "xmark")
+                                .scaledFont(size: 11, weight: .bold)
+                                .foregroundStyle(Palette.ink3)
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Dismiss commercial narration introduction")
+                        .accessibilityIdentifier("narration.commercialIntro.dismiss")
+                    }
+                    Button("Start a narration", action: startNew)
+                        .scaledFont(size: 12.5, weight: .bold)
+                        .foregroundStyle(Palette.brass)
+                }
+                .padding(13)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 14)
+                .accessibilityIdentifier("narration.commercialIntro")
+            }
+
+            Button(action: startNew) {
                 HStack(spacing: 8) {
                     Image(systemName: "plus")
-                    Text("Find Something to Narrate")
+                    Text("Start a Narration")
                 }
                 .scaledFont(size: 14, weight: .heavy)
                 .foregroundStyle(Palette.brass)
@@ -132,6 +169,35 @@ struct NarrationHomeShelf: View {
             .buttonStyle(.plain)
             .tactileTap()
             .padding(.top, 12)
+            .accessibilityIdentifier("narration.startNew")
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Make a commercial audiobook")
+                    .scaledFont(size: 15, weight: .bold)
+                    .foregroundStyle(Palette.ink)
+                Text("Import your own EPUB, DOCX, or pasted text, record it in your voice, and deliver a retail-ready master for ACX / Audible, Apple Books, and aggregators. Commercial delivery is Voxglass Narration Pro — a one-time purchase, not a subscription. Recording, LibriVox, and Internet Archive stay free.")
+                    .scaledFont(size: 12)
+                    .foregroundStyle(Palette.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Start a narration", action: startNew)
+                    .scaledFont(size: 12.5, weight: .bold)
+                    .foregroundStyle(Palette.brass)
+                    .accessibilityIdentifier("narration.commercialCallout")
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassSurface(cornerRadius: 16)
+            .padding(.top, 10)
+
+            Button(action: presentBrowse) {
+                Text("Browse community needs")
+                    .scaledFont(size: 13, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .tactileTap()
+            .padding(.top, 2)
             .accessibilityIdentifier("myNarrations.newFromNeed")
 
             if let featured = shelfPlan.featured {
@@ -148,7 +214,7 @@ struct NarrationHomeShelf: View {
         }
         .task { await discovery.refreshOnce() }
         .toolbar(.visible, for: .navigationBar)
-        .navigationTitle("Narration Needs")
+        .navigationTitle("Narration")
     }
 
     @ViewBuilder

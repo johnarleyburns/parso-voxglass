@@ -105,8 +105,16 @@ final class VoxglassUITests: XCTestCase {
             "Start a Narration shelf not found on Narration tab.\n\(app.debugDescription)"
         )
 
-        // Both entry points must land in the filtered Narration Needs view;
-        // neither should open an unconfigured narration flow.
+        app.buttons["narration.startNew"].tap()
+        for identifier in ["import.fromNeed", "import.paste", "import.files", "import.gutenberg"] {
+            XCTAssertTrue(app.buttons[identifier].waitForExistence(timeout: 10), "Missing import option \(identifier).")
+        }
+        app.buttons["import.proDetails"].tap()
+        XCTAssertTrue(app.buttons["pro.purchase"].waitForExistence(timeout: 10), "Pro details sheet was not reachable.")
+        app.buttons["Done"].tap()
+        app.buttons["Close"].tap()
+
+        // Community needs remain available as a clearly-labelled secondary path.
         app.buttons["home.startNarrationShelf.seeAll"].tap()
         XCTAssertTrue(
             app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
@@ -981,5 +989,40 @@ final class VoxglassUITests: XCTestCase {
                 )
             }
         }
+    }
+
+    func testNarrationBYOTextEntryIsReachableWithoutACommunityNeed() {
+        let app = launchNarrationEntry()
+        app.buttons["narration.startNew"].tap()
+
+        XCTAssertTrue(app.buttons["import.paste"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["import.files"].exists)
+        XCTAssertTrue(app.buttons["import.gutenberg"].exists)
+    }
+
+    func testNarrationProDetailsAreVisibleFromImport() {
+        let app = launchNarrationEntry()
+        app.buttons["narration.startNew"].tap()
+        app.buttons["import.proDetails"].tap()
+
+        XCTAssertTrue(app.buttons["pro.purchase"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["pro.restore"].exists)
+        XCTAssertTrue(app.staticTexts["Free stays free"].exists)
+    }
+
+    private func launchNarrationEntry() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-voxglass.hasCompletedSplash", "YES",
+            "-voxglass.hasCompletedOnboarding", "YES",
+            "-voxglass.narration.onboardingSeen.v1", "YES",
+            "-VoxglassInitialTab", "home",
+            "-VoxglassDisableAnimatedSplash",
+            "-uiTestDisableCloudKit"
+        ]
+        app.launch()
+        app.buttons["Narration"].tap()
+        XCTAssertTrue(app.buttons["narration.startNew"].waitForExistence(timeout: 15))
+        return app
     }
 }
