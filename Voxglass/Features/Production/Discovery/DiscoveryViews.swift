@@ -525,6 +525,7 @@ struct MyNarrationsSection: View {
     @State private var pendingDeletion: AudiobookProject?
     @State private var dashboardProject: AudiobookProject?
     @State private var isEditing = false
+    @State private var projectOrder: [UUID] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -539,7 +540,7 @@ struct MyNarrationsSection: View {
                 .scaledFont(size: 12.5)
                 .foregroundStyle(Palette.ink2)
 
-            let projects = discovery.myNarrations
+            let projects = orderedProjects
             if projects.isEmpty {
                 EmptyStatePanel(
                     title: "No Narrations Yet",
@@ -547,29 +548,43 @@ struct MyNarrationsSection: View {
                     systemImage: "mic"
                 )
             } else {
-                VStack(spacing: 10) {
+                List {
                     ForEach(projects) { project in
-                        // Pushes the dashboard (04); the dashboard's "Record
-                        // next" opens the flow at the first paragraph with no
-                        // selected take.
-                        SwipeToRemoveRow(isEditing: isEditing, remove: { pendingDeletion = project }) {
-                            Button {
-                                dashboardProject = project
+                        Button {
+                            dashboardProject = project
+                        } label: {
+                            projectRow(project)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
+                        .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.metadata.title))")
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                pendingDeletion = project
                             } label: {
-                                projectRow(project)
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    pendingDeletion = project
-                                } label: {
-                                    Label("Delete Narration", systemImage: "trash")
-                                }
+                                Label("Delete Narration", systemImage: "trash")
                             }
                         }
-                        .accessibilityIdentifier("myNarrations.project.\(needSlugFromTitle(project.metadata.title))")
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                pendingDeletion = project
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                    .onMove { source, destination in
+                        var ids = projects.map(\.id)
+                        ids.move(fromOffsets: source, toOffset: destination)
+                        projectOrder = ids + projectOrder.filter { !ids.contains($0) }
                     }
                 }
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .environment(\.editMode, .constant(isEditing ? .active : .inactive))
+                .frame(height: CGFloat(max(1, projects.count)) * 104)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
         // NOTE: no accessibilityIdentifier on this container — a plain VStack
@@ -599,7 +614,19 @@ struct MyNarrationsSection: View {
             Text("This removes the project and its recorded takes from this device.")
         }
         .onAppear {
+            projectOrder = discovery.myNarrations.map(\.id)
             Task { await discovery.reloadNarrations() }
+        }
+        .onChange(of: discovery.myNarrations) { _, projects in
+            let ids = projects.map(\.id)
+            projectOrder = projectOrder.filter(ids.contains) + ids.filter { !projectOrder.contains($0) }
+        }
+    }
+
+    private var orderedProjects: [AudiobookProject] {
+        let ranks = Dictionary(uniqueKeysWithValues: projectOrder.enumerated().map { ($1, $0) })
+        return discovery.myNarrations.sorted { lhs, rhs in
+            (ranks[lhs.id] ?? Int.max) < (ranks[rhs.id] ?? Int.max)
         }
     }
 

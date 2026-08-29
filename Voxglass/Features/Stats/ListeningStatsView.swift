@@ -47,6 +47,7 @@ struct ListeningStatsView: View {
             .padding(.top, 12)
             .padding(.bottom, 28)
         }
+        .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
     }
 
     private var headline: some View {

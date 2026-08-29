@@ -70,6 +70,10 @@ struct RootView: View {
                     .tag(VoxglassTab.narration)
                     .toolbar(.hidden, for: .tabBar)
             }
+            // Keep the last item in child navigation stacks above the custom
+            // dock. The dock's own safe-area inset handles the live height;
+            // this is a fixed fallback for nested/custom scroll containers.
+            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             GlassDock(

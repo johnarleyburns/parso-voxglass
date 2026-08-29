@@ -36,6 +36,10 @@ enum VoxglassLayout {
     /// its own live safe-area inset, including the optional mini-player, so
     /// scroll content must not duplicate that variable height here.
     static let scrollContentBottomPadding: CGFloat = 24
+
+    /// Fallback clearance for pushed navigation stacks and custom screens that
+    /// do not inherit the root tab dock's live safe-area inset.
+    static let chromeBottomClearance: CGFloat = 136
 }
 
 enum Palette {

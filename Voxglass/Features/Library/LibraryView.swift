@@ -12,6 +12,7 @@ struct LibraryView: View {
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
     @State private var isEditing = false
+    @State private var bookOrder: [UUID] = []
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
@@ -79,6 +80,11 @@ struct LibraryView: View {
             libraryStore.sort = .recent
             await libraryStore.refresh()
             await libraryStore.refreshRecentlyPlayed()
+            bookOrder = libraryStore.books.map { $0.book.id }
+        }
+        .onChange(of: libraryStore.books) { _, books in
+            let ids = books.map { $0.book.id }
+            bookOrder = bookOrder.filter(ids.contains) + ids.filter { !bookOrder.contains($0) }
         }
     }
 
@@ -97,43 +103,57 @@ struct LibraryView: View {
                     searchBar
                 }
 
-                let books = filteredBooks
-                VStack(spacing: 0) {
-                    ForEach(books.indices, id: \.self) { index in
-                        let book = books[index]
-                        SwipeToRemoveRow(isEditing: isEditing, remove: { pendingDeletion = book }) {
-                            NavigationLink {
-                                BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
-                            } label: {
-                                CompactBookRowView(
-                                    book: book,
-                                    sourceTitle: libraryStore.source(for: book.book)?.title,
-                                    accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
-                                    style: .grouped,
-                                    watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id)
-                                )
+                let books = orderedFilteredBooks
+                List {
+                    ForEach(books) { book in
+                        NavigationLink {
+                            BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                        } label: {
+                            CompactBookRowView(
+                                book: book,
+                                sourceTitle: libraryStore.source(for: book.book)?.title,
+                                accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
+                                style: .grouped,
+                                watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
+                                isMyNarration: libraryStore.source(for: book.book)?.kind == .localFiles
+                                    && book.book.authors != ["Local Files"]
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
+                        .contextMenu {
+                            if phoneAudioRelay.isWatchAppInstalled {
+                                Button {
+                                    Task { await transferToWatch(book, allowCellular: false) }
+                                } label: {
+                                    Label(watchContextTitle(for: book), systemImage: "applewatch")
+                                }
+                                .disabled(phoneAudioRelay.isTransferringToWatch)
                             }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                if phoneAudioRelay.isWatchAppInstalled {
-                                    Button {
-                                        Task { await transferToWatch(book, allowCellular: false) }
-                                    } label: {
-                                        Label(watchContextTitle(for: book), systemImage: "applewatch")
-                                    }
-                                    .disabled(phoneAudioRelay.isTransferringToWatch)
-                                }
-                                Button("Remove from My Books", role: .destructive) {
-                                    pendingDeletion = book
-                                }
+                            Button("Remove from My Books", role: .destructive) {
+                                pendingDeletion = book
                             }
                         }
-                        if index < books.count - 1 {
-                            VoxglassListDivider()
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                pendingDeletion = book
+                            } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
                         }
                     }
+                    .onMove { source, destination in
+                        var ids = books.map { $0.book.id }
+                        ids.move(fromOffsets: source, toOffset: destination)
+                        bookOrder = ids + bookOrder.filter { !ids.contains($0) }
+                    }
                 }
-                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .environment(\.editMode, .constant(isEditing ? .active : .inactive))
+                .frame(height: CGFloat(max(1, books.count)) * 104)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
     }
@@ -238,6 +258,14 @@ struct LibraryView: View {
             case .narrator:
                 return book.book.narrators.contains { $0.localizedCaseInsensitiveContains(query) }
             }
+        }
+    }
+
+    private var orderedFilteredBooks: [BookWithChapters] {
+        let books = filteredBooks
+        let ranks = Dictionary(uniqueKeysWithValues: bookOrder.enumerated().map { ($1, $0) })
+        return books.sorted { lhs, rhs in
+            (ranks[lhs.book.id] ?? Int.max) < (ranks[rhs.book.id] ?? Int.max)
         }
     }
 

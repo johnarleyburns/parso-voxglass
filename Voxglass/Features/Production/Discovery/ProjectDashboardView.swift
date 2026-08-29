@@ -60,6 +60,7 @@ struct ProjectDashboardView: View {
             }
             .padding(18)
         }
+        .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         .background(VoxglassBackground())
         .toolbar(.visible, for: .navigationBar)
         .navigationTitle(project.metadata.title)

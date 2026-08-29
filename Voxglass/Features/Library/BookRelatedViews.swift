@@ -41,6 +41,7 @@ struct ChaptersView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
+            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         }
         .navigationTitle("Chapters")
         .navigationBarTitleDisplayMode(.inline)
@@ -99,6 +100,7 @@ struct AuthorDetailView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
+            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         }
         .navigationTitle("Author")
         .navigationBarTitleDisplayMode(.inline)
@@ -157,6 +159,7 @@ struct NarratorDetailView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
+            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         }
         .navigationTitle("Narrator")
         .navigationBarTitleDisplayMode(.inline)

@@ -374,6 +374,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     var artworkError: String?
     var library: (any NarrationLibraryImporting)?
     var importedBook: BookWithChapters?
+    var dismissFlow: (() -> Void)?
 
     /// P7: the live validation report for the selected export destination
     /// (§12). Driven by the real rule engine with the export preflight context,
@@ -2830,7 +2831,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                         copiedDirectory: completed
                     )
                     do {
-                        importedBook = try await library.importNarration(directory: completed, title: project.metadata.title, files: imports)
+                        importedBook = try await library.importNarration(
+                            directory: completed,
+                            title: project.metadata.title,
+                            author: project.metadata.author,
+                            narrator: project.metadata.narrator,
+                            files: imports
+                        )
                     } catch {
                         exportError = "Your files are ready, but Voxglass couldn't add them to My Books: \(error.localizedDescription)"
                     }
@@ -3039,6 +3046,7 @@ struct NarrationFlowRoot: View {
             // recording session through the phone production relay.
             model.phoneProduction = discovery.phoneProduction
             model.library = discovery.library
+            model.dismissFlow = { dismiss() }
             model.requestedStep = startAt
             if let existingID, startNeed == nil {
                 // Always the stored revision, never a value the presenting view

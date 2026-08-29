@@ -4,7 +4,7 @@ import VoxglassCore
 
 @MainActor
 protocol NarrationLibraryImporting: AnyObject {
-    func importNarration(directory: URL, title: String, files: [LocalAudioImport]) async throws -> BookWithChapters
+    func importNarration(directory: URL, title: String, author: String, narrator: String, files: [LocalAudioImport]) async throws -> BookWithChapters
     func play(_ book: BookWithChapters) async
 }
 
@@ -14,8 +14,16 @@ final class NarrationLibraryImporter: NarrationLibraryImporting {
 
     init(services: AppServices) { self.services = services }
 
-    func importNarration(directory: URL, title: String, files: [LocalAudioImport]) async throws -> BookWithChapters {
-        let book = try await services.libraryRepository.importLocalFolder(folderURL: directory, folderName: title, files: files)
+    func importNarration(directory: URL, title: String, author: String, narrator: String, files: [LocalAudioImport]) async throws -> BookWithChapters {
+        let authors = author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? ["Unknown author"] : [author]
+        let narrators = narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? [] : [narrator]
+        let book = try await services.libraryRepository.importLocalFolder(
+            folderURL: directory,
+            folderName: title,
+            files: files,
+            authors: authors,
+            narrators: narrators
+        )
         await services.libraryStore.refresh()
         return book
     }

@@ -80,6 +80,7 @@ struct BookPageView: View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 20)
                         }
+                        .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
                     }
                     .toolbar(.hidden, for: .navigationBar)
                 }

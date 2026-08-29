@@ -104,9 +104,10 @@ struct CatalogDiscoveryView: View {
             }
             .padding(.horizontal, 18)
             .padding(.top, 12)
-            .padding(.bottom, 28)
+                .padding(.bottom, 28)
+            }
+            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         }
-    }
 
     private var errorBinding: Binding<Bool> {
         Binding {

@@ -44,6 +44,7 @@ struct BookmarksView: View {
                         .padding(.top, 16)
                         .padding(.bottom, 20)
                     }
+                    .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
                 }
             }
         }

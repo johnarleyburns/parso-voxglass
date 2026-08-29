@@ -2350,13 +2350,13 @@ struct ExportRunView: View {
                 Text("Resumed where it stopped")
                     .scaledFont(size: 14, weight: .heavy).foregroundStyle(Palette.ok)
                 Spacer()
-                Text("\(model.exportReusedFileCount) chapters kept")
+                Text("\(model.exportReusedFileCount) files kept")
                     .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ok)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Palette.ok.opacity(0.14), in: Capsule())
                     .overlay(Capsule().stroke(Palette.ok.opacity(0.4), lineWidth: 1))
             }
-            Text("Voxglass closed while another chapter was encoding. Chapters 1–\(model.exportReusedFileCount) were already finished and verified, so they were not re-rendered.")
+            Text("Voxglass closed while an export was encoding. The existing export files were already finished and verified, so they were not re-rendered.")
                 .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
         }
         .padding(12)
@@ -2557,10 +2557,14 @@ struct ExportRunView: View {
         return min(max(done + 1, 1), totalChapters)
     }
 
-    /// Chapters finished in this run (or the kept set on a resumed run).
+    /// Chapters finished in this run. Resume reuse counts files (which may
+    /// include more than one artifact per chapter), so it must not be used as
+    /// a chapter ordinal or range.
     private var doneChapterCount: Int {
-        if model.exportReusedFileCount > 0 { return model.exportReusedFileCount }
-        return model.exportProgress?.completedUnits ?? 0
+        if let completed = model.exportProgress?.completedUnits, completed > 0 {
+            return completed
+        }
+        return min(model.exportReusedFileCount, totalChapters)
     }
 
     private func chapterLabel(_ ordinal: Int) -> String {
@@ -2665,7 +2669,10 @@ struct SubmitView: View {
                         identifier: "submit.playInVoxglass"
                     ) {
                         guard let book = model.importedBook else { return }
-                        Task { await model.library?.play(book); dismiss() }
+                        Task {
+                            await model.library?.play(book)
+                            model.dismissFlow?()
+                        }
                     }
                     if let project = model.project {
                         Text("Added to My Books as \"\(project.metadata.title)\".")

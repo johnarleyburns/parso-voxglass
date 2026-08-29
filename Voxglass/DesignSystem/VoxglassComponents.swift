@@ -171,6 +171,25 @@ struct SoloNarrationBadge: View {
     }
 }
 
+struct MyNarrationBadge: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(NarrationPalette.mint)
+                .frame(width: 4, height: 4)
+            Text("My Narration")
+                .scaledFont(size: 9.5, weight: .bold)
+                .kerning(0.3)
+        }
+        .foregroundStyle(NarrationPalette.mint)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(NarrationPalette.mint.opacity(0.12)))
+        .overlay(Capsule().stroke(NarrationPalette.mint.opacity(0.35), lineWidth: 1))
+        .accessibilityLabel("My Narration")
+    }
+}
+
 enum RowAccessory {
     case navigation
     case play
@@ -195,6 +214,7 @@ struct BookListRow: View {
     var style: BookListRowStyle = .card
     var accessibilityLabel: String?
     var showSoloBadge: Bool = false
+    var showMyNarrationBadge: Bool = false
 
     var body: some View {
         styledRow
@@ -248,14 +268,18 @@ struct BookListRow: View {
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
-                if showSoloBadge {
-                    SoloNarrationBadge()
-                        .padding(.top, 2)
-                } else {
-                    SoloNarrationBadge()
-                        .opacity(0)
-                        .padding(.top, 2)
+                HStack(spacing: 5) {
+                    if showSoloBadge {
+                        SoloNarrationBadge()
+                    }
+                    if showMyNarrationBadge {
+                        MyNarrationBadge()
+                    }
+                    if !showSoloBadge && !showMyNarrationBadge {
+                        SoloNarrationBadge().opacity(0)
+                    }
                 }
+                .padding(.top, 2)
             }
             .layoutPriority(1)
 
@@ -450,6 +474,7 @@ struct CompactBookRowView: View {
     var accessory: RowAccessory = .navigation
     var style: BookListRowStyle = .card
     var watchStorage: WatchBookStorageInfo?
+    var isMyNarration: Bool = false
 
     var body: some View {
         BookListRow(
@@ -462,7 +487,8 @@ struct CompactBookRowView: View {
             accessory: accessory,
             style: style,
             accessibilityLabel: accessibilityText,
-            showSoloBadge: book.narrationKind == .solo
+            showSoloBadge: book.narrationKind == .solo,
+            showMyNarrationBadge: isMyNarration
         )
     }
 

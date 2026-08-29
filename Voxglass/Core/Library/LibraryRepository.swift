@@ -254,6 +254,18 @@ public final class LibraryRepository: @unchecked Sendable {
         ])
     }
 
+    public func updateBookMetadata(authors: [String], narrators: [String], for bookID: UUID) async throws {
+        try await database.prepare()
+        try await database.execute("""
+        UPDATE books SET authors_json = ?, narrators_json = ? WHERE id = ?
+        """, [
+            .string(ModelMapping.authorsJSON(authors)),
+            .string(ModelMapping.narratorsJSON(narrators)),
+            ModelMapping.databaseValue(bookID)
+        ])
+        try? await mutationLog?.enqueue(localID: bookID.uuidString, recordType: "Book", changeType: "update")
+    }
+
     /// One-time best-effort pass over already-imported books whose narrators are
     /// empty: extract names from the stored summary and persist them. Returns the
     /// number of books that were updated.
@@ -662,20 +674,28 @@ public final class LibraryRepository: @unchecked Sendable {
     public func importLocalFolder(
         folderURL: URL,
         folderName: String,
-        files: [LocalAudioImport]
+        files: [LocalAudioImport],
+        authors: [String]? = nil,
+        narrators: [String]? = nil
     ) async throws -> BookWithChapters {
         try await database.prepare()
         let source = try await ensureLocalSource(folderURL: folderURL, title: folderName)
 
         let existing = try await bookWithChapters(forSourceID: source.id)
-        let book: Book
+        var book: Book
         if let existing {
             book = existing.book
+            if let authors, let narrators {
+                try await updateBookMetadata(authors: authors, narrators: narrators, for: book.id)
+                book.authors = authors
+                book.narrators = narrators
+            }
         } else {
             let now = Date()
             book = Book(
                 title: folderName,
-                authors: ["Local Files"],
+                authors: authors ?? ["Local Files"],
+                narrators: narrators ?? [],
                 summary: nil,
                 sourceID: source.id,
                 coverURL: nil,
