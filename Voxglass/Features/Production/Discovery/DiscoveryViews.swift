@@ -566,13 +566,17 @@ struct MyNarrationsSection: View {
                                 Label("Delete Narration", systemImage: "trash")
                             }
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 pendingDeletion = project
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                    }
+                    .onDelete { offsets in
+                        guard let index = offsets.first, projects.indices.contains(index) else { return }
+                        pendingDeletion = projects[index]
                     }
                     .onMove { source, destination in
                         var ids = projects.map(\.id)

@@ -150,13 +150,17 @@ struct LibraryView: View {
                                 pendingDeletion = book
                             }
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 pendingDeletion = book
                             } label: {
                                 Label("Remove", systemImage: "trash")
                             }
                         }
+                    }
+                    .onDelete { offsets in
+                        guard let index = offsets.first, books.indices.contains(index) else { return }
+                        pendingDeletion = books[index]
                     }
                     .onMove { source, destination in
                         var ids = books.map { $0.book.id }

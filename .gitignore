@@ -64,6 +64,12 @@ fastlane/test_output
 
 .DS_Store
 docs/
+!docs/
+docs/*
+!docs/plans/
+docs/plans/*
+!docs/plans/watch-rearchitecture/
+!docs/plans/watch-rearchitecture/**
 *.voxglassbackup
 
 # Curated lists generator cache

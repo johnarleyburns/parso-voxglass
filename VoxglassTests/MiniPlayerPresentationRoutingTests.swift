@@ -83,12 +83,24 @@ import Testing
         #expect(!tabs.contains("ZStack(alignment: .bottom)"))
     }
 
-    @Test func sharedScreenDoesNotDuplicateDockHeight() throws {
+    @Test func sharedScreenReservesWorstCaseDockHeight() throws {
         let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
         let screen = sourceSlice(theme, from: "struct VoxglassScreen", to: "struct VoxglassBackground")
-        #expect(theme.contains("static let scrollContentBottomPadding: CGFloat = 24"))
+        #expect(theme.contains("static let chromeBottomClearance: CGFloat = 136"))
+        #expect(theme.contains("static let scrollContentBottomPadding: CGFloat = chromeBottomClearance"))
         #expect(screen.contains(".padding(.bottom, VoxglassLayout.scrollContentBottomPadding)"))
-        #expect(!screen.contains(".padding(.bottom, 160)"))
+    }
+
+    @Test func editableLibrariesExposeStandardDeleteActions() throws {
+        let library = try source("Voxglass/Features/Library/LibraryView.swift")
+        let discovery = try source("Voxglass/Features/Production/Discovery/DiscoveryViews.swift")
+
+        #expect(library.contains(".onDelete { offsets in"))
+        #expect(library.contains("pendingDeletion = books[index]"))
+        #expect(library.contains("allowsFullSwipe: true"))
+        #expect(discovery.contains(".onDelete { offsets in"))
+        #expect(discovery.contains("pendingDeletion = projects[index]"))
+        #expect(discovery.contains("allowsFullSwipe: true"))
     }
 
     @Test func bookPageViewHasPresentationContext() throws {

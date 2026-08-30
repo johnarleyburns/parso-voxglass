@@ -32,14 +32,12 @@ enum VoxglassTheme {
 }
 
 enum VoxglassLayout {
-    /// Breathing room after the final scroll item. The root dock contributes
-    /// its own live safe-area inset, including the optional mini-player, so
-    /// scroll content must not duplicate that variable height here.
-    static let scrollContentBottomPadding: CGFloat = 24
-
-    /// Fallback clearance for pushed navigation stacks and custom screens that
-    /// do not inherit the root tab dock's live safe-area inset.
+    /// Clearance for the custom tab dock plus its optional mini-player. The
+    /// root safe-area inset is not propagated reliably through every nested
+    /// NavigationStack/ScrollView combination, so shared screens reserve the
+    /// full worst-case dock height after their final item.
     static let chromeBottomClearance: CGFloat = 136
+    static let scrollContentBottomPadding: CGFloat = chromeBottomClearance
 }
 
 enum Palette {
