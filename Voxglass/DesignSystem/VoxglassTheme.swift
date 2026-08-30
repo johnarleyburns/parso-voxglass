@@ -68,6 +68,9 @@ struct VoxglassScreen<Content: View>: View {
     var embedsNavigationStack = true
     var headerActionTitle: String?
     var headerAction: (() -> Void)?
+    var headerSecondaryActionTitle: String?
+    var headerSecondaryAction: (() -> Void)?
+    var headerSecondaryActionAccessibilityLabel: String?
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -91,6 +94,14 @@ struct VoxglassScreen<Content: View>: View {
                                 .scaledFont(size: 31, weight: .heavy, design: .default)
                                 .foregroundStyle(Palette.ink)
                             Spacer()
+                            if let headerSecondaryActionTitle, let headerSecondaryAction {
+                                Button(headerSecondaryActionTitle, action: headerSecondaryAction)
+                                    .scaledFont(size: 22, weight: .semibold)
+                                    .foregroundStyle(Palette.brass)
+                                    .frame(width: 36, height: 36)
+                                    .contentShape(Rectangle())
+                                    .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
+                            }
                             if let headerActionTitle, let headerAction {
                                 Button(headerActionTitle, action: headerAction)
                                     .scaledFont(size: 15, weight: .semibold)

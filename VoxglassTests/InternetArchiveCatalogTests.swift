@@ -55,6 +55,25 @@ import Foundation
         #expect(InternetArchiveURLParser.parse("https://archive.org/advancedsearch.php?q=collection%3A%28librivoxaudio%29") == .advancedSearch(query: "collection:(librivoxaudio)"))
     }
 
+    @Test func localChapterParserReadsCatch22SidecarFormat() throws {
+        let text = """
+        Chapter 1: The Texan 00:02:50
+        Chapter 2: Clevinger 00:23:41
+        Chapter 10: Major Major Major Major 02:47:44
+        """
+
+        let chapters = try LocalChapterParser.parse(text)
+        #expect(chapters.map(\.number) == [1, 2, 10])
+        #expect(chapters.map(\.title) == ["The Texan", "Clevinger", "Major Major Major Major"])
+        #expect(chapters.map(\.startTime) == [170, 1421, 10064])
+    }
+
+    @Test func localChapterParserRejectsNonIncreasingOffsets() {
+        #expect(throws: LocalChapterParserError.nonIncreasingTimestamps) {
+            try LocalChapterParser.parse("Chapter 1: One 00:01:00\nChapter 2: Two 00:00:59")
+        }
+    }
+
     @Test func libriVoxBrowseCategoriesUseSemanticArchiveQueries() {
         let categories = LibriVoxBrowseGroup.categories
         let ids = Set(categories.map(\.id))

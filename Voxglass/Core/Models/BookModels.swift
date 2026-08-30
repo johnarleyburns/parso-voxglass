@@ -60,6 +60,10 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
     public var title: String
     public var sortKey: String
     public var index: Int
+    /// Absolute position in `localURL`/`remoteURL` where this chapter starts.
+    /// Most chapter files start at zero; single-file audiobooks use this to
+    /// describe chapters within one shared audio asset.
+    public var startTime: TimeInterval
     public var duration: TimeInterval?
     public var remoteURL: URL?
     public var opusURL: URL?
@@ -72,6 +76,7 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
         title: String,
         sortKey: String? = nil,
         index: Int,
+        startTime: TimeInterval = 0,
         duration: TimeInterval? = nil,
         remoteURL: URL? = nil,
         opusURL: URL? = nil,
@@ -83,6 +88,7 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
         self.title = title
         self.sortKey = sortKey ?? title
         self.index = index
+        self.startTime = startTime
         self.duration = duration
         self.remoteURL = remoteURL
         self.opusURL = opusURL

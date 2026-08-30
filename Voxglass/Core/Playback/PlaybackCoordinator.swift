@@ -272,8 +272,8 @@ public final class PlaybackCoordinator {
         let record = NavigationRecord(
             bookID: session.book.id,
             chapterID: session.chapter.id,
-            position: engine.currentTime,
-            duration: engine.duration ?? session.duration,
+            position: relativeEngineTime(for: session),
+            duration: session.duration,
             recordedAt: Date()
         )
         navigationHistory.push(record)
@@ -403,7 +403,7 @@ public final class PlaybackCoordinator {
         }
 
         do {
-            try await engine.load(url: playableURL, startTime: startTime)
+            try await engine.load(url: playableURL, startTime: targetChapter.startTime + startTime)
             guard !Task.isCancelled, activeSelectionID == requestID else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: book.book.id)
@@ -412,18 +412,20 @@ public final class PlaybackCoordinator {
             guard !Task.isCancelled, activeSelectionID == requestID else { return }
             mutateSession {
                 $0.isPlaying = true
-                if let engDuration = validTime(engine.duration) {
+                if !usesSharedAudioAsset(in: book, for: targetChapter),
+                   let engDuration = validTime(engine.duration) {
                     $0.duration = engDuration
                 }
             }
-            playhead = validTime(engine.currentTime) ?? startTime
-            playheadDuration = validTime(engine.duration) ?? duration
+            playhead = max(0, (validTime(engine.currentTime) ?? targetChapter.startTime + startTime) - targetChapter.startTime)
+            playheadDuration = duration
             playbackPhase = .playing
             startProgressLoop()
             updateNowPlayingInfo()
             prefetchNextChapter(from: book, currentChapter: targetChapter)
             let nextIndex = chapterIndex(in: book, for: targetChapter) + 1
-            if book.chapters.indices.contains(nextIndex),
+            if !usesSharedAudioAsset(in: book, for: targetChapter),
+               book.chapters.indices.contains(nextIndex),
                let nextURL = await playbackURL(for: book.chapters[nextIndex]) {
                 engine.preloadNext(url: nextURL)
             }
@@ -549,12 +551,17 @@ public final class PlaybackCoordinator {
 
             mutateSession {
                 $0.isPlaying = true
-                if let engDuration = validTime(engine.duration) {
+                if !usesSharedAudioAsset(in: book, for: chapter),
+                   let engDuration = validTime(engine.duration) {
                     $0.duration = engDuration
                 }
             }
-            playhead = validTime(engine.currentTime) ?? startTime
-            playheadDuration = validTime(engine.duration) ?? validTime(chapter.duration)
+            if let currentSession {
+                playhead = relativeEngineTime(for: currentSession)
+            } else {
+                playhead = startTime
+            }
+            playheadDuration = validTime(chapter.duration) ?? validTime(engine.duration)
             playbackPhase = .playing
 
             startProgressLoop()
@@ -565,7 +572,8 @@ public final class PlaybackCoordinator {
 
             // Preload the next chapter for near-gapless
             let nextIndex = chapterIndex(in: book, for: chapter) + 1
-            if book.chapters.indices.contains(nextIndex),
+            if !usesSharedAudioAsset(in: book, for: chapter),
+               book.chapters.indices.contains(nextIndex),
                let nextURL = await playbackURL(for: book.chapters[nextIndex]) {
                 engine.preloadNext(url: nextURL)
             }
@@ -646,6 +654,17 @@ public final class PlaybackCoordinator {
         book.chapters.firstIndex { $0.id == chapter.id } ?? 0
     }
 
+    private func relativeEngineTime(for session: PlaybackSession) -> TimeInterval {
+        max(0, (validTime(engine.currentTime) ?? session.position) - session.chapter.startTime)
+    }
+
+    private func usesSharedAudioAsset(in book: BookWithChapters, for chapter: Chapter) -> Bool {
+        guard let currentURL = chapter.resolvedPlayableURL() else { return false }
+        return book.chapters.contains { candidate in
+            candidate.id != chapter.id && candidate.resolvedPlayableURL() == currentURL
+        }
+    }
+
     // MARK: - Resume resolution (Phase 1, FREE)
 
     /// The chapter + offset a book should resume at. Pure result type so the
@@ -721,9 +740,8 @@ public final class PlaybackCoordinator {
         engine.pause()
         mutateSession {
             if isEngineLoaded, engine.isReady {
-                $0.position = engine.currentTime
+                $0.position = relativeEngineTime(for: $0)
             }
-            $0.duration = engine.duration ?? $0.duration
             $0.isPlaying = false
         }
         playbackPhase = .paused
@@ -750,13 +768,13 @@ public final class PlaybackCoordinator {
         playheadDuration = duration
 
         if isEngineLoaded {
-            await engine.seek(to: clamped)
+            await engine.seek(to: session.chapter.startTime + clamped)
         }
         // While unloaded, mutating the session is enough: the lazy engine load
         // starts from `session.position`, so the new offset is picked up there.
         mutateSession {
             $0.position = clamped
-            $0.duration = engine.duration ?? $0.duration
+            $0.duration = $0.duration
         }
         await persistCurrentPosition(reason: .seek)
         updateNowPlayingInfoIfNeeded(force: true)
@@ -765,7 +783,7 @@ public final class PlaybackCoordinator {
     public func skip(by delta: TimeInterval) async {
         guard let session = currentSession else { return }
         let base: TimeInterval = isEngineLoaded
-            ? (validTime(engine.currentTime) ?? session.position)
+            ? relativeEngineTime(for: session)
             : session.position
         await seek(to: base + delta)
     }
@@ -1037,7 +1055,7 @@ public final class PlaybackCoordinator {
     /// Adds a bookmark at the current position and published the count.
     public func addBookmark(note: String? = nil) {
         guard let store = bookmarkStore, let session = currentSession else { return }
-        let pos = isEngineLoaded ? engine.currentTime : session.position
+        let pos = isEngineLoaded ? relativeEngineTime(for: session) : session.position
         let bookmark = Bookmark(
             bookID: session.book.id, chapterID: session.chapter.id,
             position: pos, note: note, createdAt: Date(), updatedAt: Date()
@@ -1159,7 +1177,7 @@ public final class PlaybackCoordinator {
         guard let url = await playbackURL(for: chapter) else { return }
         do {
             resetSilenceBoost()
-            try await engine.load(url: url, startTime: startTime)
+            try await engine.load(url: url, startTime: chapter.startTime + startTime)
             isEngineLoaded = true
             applyStoredRate(forBookID: session.book.id)
             if shouldPlay {
@@ -1183,7 +1201,8 @@ public final class PlaybackCoordinator {
             updateNowPlayingInfo()
 
             let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
-            if session.chapters.indices.contains(nextIndex),
+            if !usesSharedAudioAsset(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter),
+               session.chapters.indices.contains(nextIndex),
                let nextURL = await playbackURL(for: session.chapters[nextIndex]) {
                 engine.preloadNext(url: nextURL)
             }
@@ -1229,7 +1248,7 @@ public final class PlaybackCoordinator {
             await loadChapter(
                 session.chapter,
                 in: session,
-                startTime: max(0, engine.lastEndPosition),
+                startTime: max(0, engine.lastEndPosition - session.chapter.startTime),
                 shouldPlay: engine.isPlaying
             )
             return
@@ -1319,7 +1338,8 @@ public final class PlaybackCoordinator {
         }
 
         // Check if engine has already moved to the next item
-        if engine.duration == nil || engine.duration == session.duration {
+        if usesSharedAudioAsset(in: BookWithChapters(book: session.book, chapters: session.chapters), for: session.chapter)
+            || engine.duration == nil || engine.duration == session.duration {
             // Engine hasn't advanced - manually load
             await loadChapter(nextChapter, in: session, startTime: 0, shouldPlay: true)
         }
@@ -1344,15 +1364,10 @@ public final class PlaybackCoordinator {
 
         accumulateListening()
 
-        let livePosition =
-            validTime(engine.currentTime) ??
-            validTime(session.position) ??
-            0
+        let livePosition = relativeEngineTime(for: session)
 
         let engineDuration = validTime(engine.duration)
-        let liveDuration =
-            engineDuration ??
-            validTime(session.duration)
+        let liveDuration = validTime(session.duration) ?? engineDuration
 
         if playhead != livePosition {
             playhead = livePosition
@@ -1363,10 +1378,14 @@ public final class PlaybackCoordinator {
         }
 
         let liveIsPlaying = engine.isPlaying
-        let durationChanged = materiallyDifferent(
-            validTime(session.duration),
-            engineDuration
-        )
+        let durationChanged = false
+
+        if engine.isPlaying,
+           let chapterDuration = session.duration,
+           livePosition >= chapterDuration - 0.25 {
+            await advanceAfterChapterEnd()
+            return
+        }
 
         if session.isPlaying != liveIsPlaying || durationChanged {
             if suppressNextIsPlayingSync && !liveIsPlaying {
@@ -1375,7 +1394,7 @@ public final class PlaybackCoordinator {
                 mutateSession {
                     $0.isPlaying = liveIsPlaying
 
-                    if let engineDuration {
+                    if let engineDuration, session.duration == nil {
                         $0.duration = engineDuration
                     }
                 }
@@ -1449,7 +1468,7 @@ public final class PlaybackCoordinator {
         // While the engine is unloaded (presented-only session), the session is
         // the source of truth. Only an explicit seek writes in that state — the
         // other reasons cannot produce a meaningful position while unloaded.
-        let position = isEngineLoaded ? engine.currentTime : session.position
+        let position = isEngineLoaded ? relativeEngineTime(for: session) : session.position
 
         // Anti-zero guard (Phase 1, problem 3): never write a bogus position over a
         // good row in the window after load() and before the item is ready. A
@@ -1463,7 +1482,7 @@ public final class PlaybackCoordinator {
             bookID: session.book.id,
             chapterID: session.chapter.id,
             position: position,
-            duration: engine.duration ?? session.duration,
+            duration: session.duration,
             updatedAt: Date(),
             isFinished: finished
         )
@@ -1491,12 +1510,12 @@ public final class PlaybackCoordinator {
         guard let session = currentSession else { return }
         // Same anti-zero guard: the 1 Hz snapshot must not clobber a good slot with
         // a not-ready 0 — and an unloaded engine has nothing meaningful to say.
-        guard isEngineLoaded, engine.isReady, engine.currentTime > 0 else { return }
+        guard isEngineLoaded, engine.isReady, engine.currentTime > session.chapter.startTime else { return }
         snapshotStore.save(PlaybackPosition(
             bookID: session.book.id,
             chapterID: session.chapter.id,
-            position: engine.currentTime,
-            duration: engine.duration ?? session.duration,
+            position: relativeEngineTime(for: session),
+            duration: session.duration,
             updatedAt: Date(),
             isFinished: false
         ))
@@ -1581,7 +1600,7 @@ public final class PlaybackCoordinator {
         engine.pause()
         mutateSession {
             if isEngineLoaded, engine.isReady {
-                $0.position = engine.currentTime
+                $0.position = relativeEngineTime(for: $0)
             }
             $0.isPlaying = false
         }
@@ -1619,8 +1638,8 @@ public final class PlaybackCoordinator {
         // so the lock screen matches the miniplayer.
         bridge.updateNowPlaying(Self.nowPlayingInfo(
             session: session,
-            currentTime: isEngineLoaded ? engine.currentTime : session.position,
-            duration: engine.duration ?? session.duration,
+            currentTime: isEngineLoaded ? relativeEngineTime(for: session) : session.position,
+            duration: session.duration,
             rate: engine.rate,
             isPlaying: isEngineLoaded ? engine.isPlaying : false
         ))
@@ -1665,8 +1684,8 @@ public final class PlaybackCoordinator {
 
         bridge.updateNowPlaying(Self.nowPlayingInfo(
             session: session,
-            currentTime: isEngineLoaded ? engine.currentTime : session.position,
-            duration: engine.duration ?? session.duration,
+            currentTime: isEngineLoaded ? relativeEngineTime(for: session) : session.position,
+            duration: session.duration,
             rate: engine.rate,
             isPlaying: isPlaying
         ))

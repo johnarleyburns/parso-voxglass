@@ -452,14 +452,15 @@ public final class LibraryBackupService: ObservableObject {
 
             try await database.execute("""
             INSERT OR IGNORE INTO chapters
-                (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 .string(ch.id.uuidString),
                 .string(bookID.uuidString),
                 .string(ch.title),
                 .string(ch.sortKey),
                 .int(Int64(ch.index)),
+                .double(ch.startTime),
                 ch.duration.map { .double($0) } ?? .null,
                 ch.remoteURL.map { .string($0.absoluteString) } ?? .null,
                 ch.opusURL.map { .string($0.absoluteString) } ?? .null,
@@ -509,6 +510,7 @@ public final class LibraryBackupService: ObservableObject {
             title: try row.requiredString("title"),
             sortKey: row.string("sort_key") ?? "",
             index: Int(row.int("chapter_index") ?? 0),
+            startTime: row.double("start_time_seconds") ?? 0,
             duration: row.double("duration_seconds"),
             remoteURL: row.string("remote_url").flatMap(URL.init(string:)),
             opusURL: row.string("opus_url").flatMap(URL.init(string:)),

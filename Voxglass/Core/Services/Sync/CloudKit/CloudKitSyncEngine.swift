@@ -659,14 +659,15 @@ public final class CloudKitSyncEngine: ObservableObject {
                 title: c.title
             )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(c.id),
                 ModelMapping.databaseValue(c.bookID),
                 .string(c.title),
                 .string(c.sortKey),
                 .int(Int64(c.index)),
+                .double(c.startTime),
                 ModelMapping.databaseValue(c.duration),
                 ModelMapping.databaseValue(c.remoteURL),
                 ModelMapping.databaseValue(c.opusURL),
@@ -762,7 +763,7 @@ public final class CloudKitSyncEngine: ObservableObject {
             isFavorite: bookRow.bool("is_favorite") ?? false
         )
         let chapterRows = try await database.query(
-            "SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json FROM chapters WHERE book_id = ? ORDER BY chapter_index ASC",
+            "SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json FROM chapters WHERE book_id = ? ORDER BY chapter_index ASC",
             [ModelMapping.databaseValue(book.id)]
         )
         let chapters = try chapterRows.map { row -> Chapter in
@@ -772,6 +773,7 @@ public final class CloudKitSyncEngine: ObservableObject {
                 title: try row.requiredString("title"),
                 sortKey: try row.requiredString("sort_key"),
                 index: Int(row.int("chapter_index") ?? 0),
+                startTime: row.double("start_time_seconds") ?? 0,
                 duration: row.double("duration_seconds"),
                 remoteURL: ModelMapping.url(row, "remote_url"),
                 opusURL: ModelMapping.url(row, "opus_url"),

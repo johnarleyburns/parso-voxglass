@@ -57,12 +57,14 @@ public struct LocalAudioImport: Equatable, Sendable {
     public let title: String
     public let sortKey: String
     public let duration: TimeInterval?
+    public let startTime: TimeInterval
 
-    public init(url: URL, title: String, sortKey: String, duration: TimeInterval?) {
+    public init(url: URL, title: String, sortKey: String, duration: TimeInterval?, startTime: TimeInterval = 0) {
         self.url = url
         self.title = title
         self.sortKey = sortKey
         self.duration = duration
+        self.startTime = startTime
     }
 }
 
@@ -85,7 +87,7 @@ public final class LibraryRepository: @unchecked Sendable {
         ORDER BY updated_at DESC, title COLLATE NOCASE ASC
         """)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json
+        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json
         FROM chapters
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
         """)
@@ -720,6 +722,7 @@ public final class LibraryRepository: @unchecked Sendable {
                 title: file.title,
                 sortKey: file.sortKey,
                 index: startIndex + offset,
+                startTime: file.startTime,
                 duration: file.duration,
                 remoteURL: nil,
                 opusURL: nil,
@@ -732,14 +735,15 @@ public final class LibraryRepository: @unchecked Sendable {
                 title: file.title
             )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
                 .string(chapter.title),
                 .string(chapter.sortKey),
                 .int(Int64(chapter.index)),
+                .double(chapter.startTime),
                 ModelMapping.databaseValue(chapter.duration),
                 .null,
                 .null,
@@ -823,7 +827,7 @@ public final class LibraryRepository: @unchecked Sendable {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json
+        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -842,7 +846,7 @@ public final class LibraryRepository: @unchecked Sendable {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json
+        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -1063,14 +1067,15 @@ public final class LibraryRepository: @unchecked Sendable {
                 title: chapter.title
             )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
                 .string(chapter.title),
                 .string(chapter.sortKey),
                 .int(Int64(chapter.index)),
+                .double(chapter.startTime),
                 ModelMapping.databaseValue(chapter.duration),
                 ModelMapping.databaseValue(chapter.remoteURL),
                 ModelMapping.databaseValue(chapter.opusURL),
@@ -1127,6 +1132,7 @@ public final class LibraryRepository: @unchecked Sendable {
             title: try row.requiredString("title"),
             sortKey: try row.requiredString("sort_key"),
             index: Int(row.int("chapter_index") ?? 0),
+            startTime: row.double("start_time_seconds") ?? 0,
             duration: row.double("duration_seconds"),
             remoteURL: ModelMapping.url(row, "remote_url"),
             opusURL: ModelMapping.url(row, "opus_url"),

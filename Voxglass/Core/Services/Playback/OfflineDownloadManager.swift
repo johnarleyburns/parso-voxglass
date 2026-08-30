@@ -107,6 +107,14 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         for book in books {
             let records = recordsByBook[book.book.id] ?? []
             let cacheable = cacheableChapters(of: book)
+            if !book.chapters.isEmpty,
+               book.chapters.allSatisfy({ chapter in
+                   guard let url = chapter.resolvedPlayableURL() else { return false }
+                   return url.isFileURL && FileManager.default.fileExists(atPath: url.path)
+               }) {
+                state[book.book.id] = .cached
+                continue
+            }
             guard !cacheable.isEmpty else {
                 state[book.book.id] = .notCached
                 continue
@@ -176,7 +184,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     /// book in the library.
     public func removeOffline(book: BookWithChapters) async {
         await cancelTasks(forBookID: book.book.id)
-        let keys = cacheableChapters(of: book).map { StreamCacheUtils.key(for: $0.url) }
+        let cacheable = cacheableChapters(of: book)
+        guard !cacheable.isEmpty else {
+            state[book.book.id] = .cached
+            return
+        }
+        let keys = cacheable.map { StreamCacheUtils.key(for: $0.url) }
         await cacheStore.unpin(keys)
         if let coverURL = book.book.coverURL {
             await cacheStore.unpin([ArtworkCacheKey.key(for: coverURL)])

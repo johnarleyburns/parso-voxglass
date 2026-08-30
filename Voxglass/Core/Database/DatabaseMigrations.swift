@@ -269,6 +269,13 @@ private struct DatabaseMigration {
                 )
                 """
             ]
+        ),
+        DatabaseMigration(
+            id: 10,
+            name: "chapter_start_offsets",
+            statements: [
+                "ALTER TABLE chapters ADD COLUMN start_time_seconds REAL NOT NULL DEFAULT 0"
+            ]
         )
     ]
 }

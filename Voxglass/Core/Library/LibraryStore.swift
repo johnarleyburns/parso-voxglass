@@ -146,6 +146,46 @@ public final class LibraryStore: ObservableObject {
         }
     }
 
+    @discardableResult
+    public func importLocalSingleFile(
+        folderURL: URL,
+        folderName: String,
+        audioURL: URL,
+        markers: [LocalChapterMarker],
+        audioDuration: TimeInterval?
+    ) async -> BookWithChapters? {
+        isImporting = true
+        defer { isImporting = false }
+
+        let imports = markers.enumerated().map { index, marker in
+            let end = markers.indices.contains(index + 1)
+                ? markers[index + 1].startTime
+                : audioDuration
+            let duration = end.map { max(0, $0 - marker.startTime) }
+            return LocalAudioImport(
+                url: audioURL,
+                title: marker.title,
+                sortKey: String(format: "%04d", marker.number),
+                duration: duration,
+                startTime: marker.startTime
+            )
+        }
+
+        do {
+            let imported = try await repository.importLocalFolder(
+                folderURL: folderURL,
+                folderName: folderName,
+                files: imports
+            )
+            await refresh()
+            await onBookImported?(imported.book.id)
+            return imported
+        } catch {
+            importError = error.localizedDescription
+            return nil
+        }
+    }
+
     /// Removes a book from the library and purges everything associated with it:
     /// in-flight offline downloads, pinned/passive cached audio + cover art,
     /// database rows (cascade), recently-viewed entry, and — if it is the current

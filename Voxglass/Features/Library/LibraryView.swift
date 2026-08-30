@@ -1,8 +1,13 @@
 import SwiftUI
+import AVFoundation
+import Compression
+import UniformTypeIdentifiers
 import VoxglassCore
 
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
@@ -12,6 +17,7 @@ struct LibraryView: View {
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
     @State private var isEditing = false
+    @State private var showingAddArchiveURL = false
     @State private var bookOrder: [UUID] = []
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
@@ -19,7 +25,10 @@ struct LibraryView: View {
         VoxglassScreen(
             title: "My Books",
             headerActionTitle: libraryStore.books.isEmpty ? nil : (isEditing ? "Done" : "Edit"),
-            headerAction: { withAnimation { isEditing.toggle() } }
+            headerAction: { withAnimation { isEditing.toggle() } },
+            headerSecondaryActionTitle: "+",
+            headerSecondaryAction: { showingAddArchiveURL = true },
+            headerSecondaryActionAccessibilityLabel: "Add audiobook from archive.org URL"
         ) {
             VStack(alignment: .leading, spacing: 18) {
                 bookList
@@ -32,6 +41,12 @@ struct LibraryView: View {
             }
         } message: {
             Text(libraryStore.importError ?? "")
+        }
+        .sheet(isPresented: $showingAddArchiveURL) {
+            AddArchiveURLSheet(showingNowPlaying: $showingNowPlaying)
+                .environmentObject(libraryStore)
+                .environmentObject(catalogStore)
+                .environment(playback)
         }
         .confirmationDialog(
             pendingDeletion.map { "Remove \"\($0.book.title)\" from your books?" } ?? "",
@@ -338,6 +353,343 @@ struct LibraryView: View {
                 libraryStore.importError = nil
             }
         }
+    }
+}
+
+private struct AddArchiveURLSheet: View {
+    @EnvironmentObject private var libraryStore: LibraryStore
+    @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(\.dismiss) private var dismiss
+    @Binding var showingNowPlaying: Bool
+    @State private var archiveURL = ""
+    @State private var showingLocalFolderImporter = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                VoxglassBackground()
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Paste an Internet Archive item URL to add its audiobook to My Books.")
+                        .scaledFont(size: 15)
+                        .foregroundStyle(Palette.ink2)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        TextField("archive.org/details/...", text: $archiveURL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.URL)
+                            .textFieldStyle(.roundedBorder)
+                            .submitLabel(.done)
+                            .onSubmit { Task { await addBook() } }
+
+                        Button {
+                            Task { await addBook() }
+                        } label: {
+                            HStack {
+                                if catalogStore.isResolvingURL {
+                                    ProgressView()
+                                }
+                                Text(catalogStore.isResolvingURL ? "Adding…" : "Add Audiobook")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Palette.brass)
+                        .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
+
+                        Button {
+                            showingLocalFolderImporter = true
+                        } label: {
+                            Label("Import Local Audiobook Folder or ZIP", systemImage: "folder.badge.plus")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(14)
+                    .glassSurface(cornerRadius: 18)
+
+                    Spacer()
+                }
+                .padding(20)
+            }
+            .navigationTitle("Add Audiobook")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .fileImporter(
+                isPresented: $showingLocalFolderImporter,
+                allowedContentTypes: [.folder, .zip],
+                onCompletion: handleFolderSelection
+            )
+            .alert("Couldn't Add Audiobook", isPresented: errorBinding) {
+                Button("OK", role: .cancel) {
+                    catalogStore.catalogError = nil
+                    libraryStore.importError = nil
+                }
+            } message: {
+                Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
+            }
+        }
+    }
+
+    private func addBook() async {
+        guard !catalogStore.isResolvingURL else { return }
+        if let imported = await catalogStore.addArchiveURL(archiveURL, into: libraryStore) {
+            dismiss()
+            await playback.present(imported)
+            showingNowPlaying = true
+        }
+        await libraryStore.refresh()
+    }
+
+    private func handleFolderSelection(_ result: Result<URL, Error>) {
+        guard case .success(let selectedURL) = result else { return }
+        Task { await importSelectedLocalSource(selectedURL) }
+    }
+
+    private func importSelectedLocalSource(_ selectedURL: URL) async {
+        if selectedURL.pathExtension.lowercased() == "zip" {
+            do {
+                let extracted = try LocalZipExtractor.extract(selectedURL)
+                defer { try? FileManager.default.removeItem(at: extracted) }
+                await importLocalFolder(extracted)
+            } catch {
+                libraryStore.importError = error.localizedDescription
+            }
+        } else {
+            await importLocalFolder(selectedURL)
+        }
+    }
+
+    private func importLocalFolder(_ folderURL: URL) async {
+        let accessing = folderURL.startAccessingSecurityScopedResource()
+        defer { if accessing { folderURL.stopAccessingSecurityScopedResource() } }
+
+        do {
+            let files = try localFiles(in: folderURL)
+
+            guard let audioURL = files.first(where: {
+                AudioFormatSelection.allPlayableExtensions.contains($0.pathExtension.lowercased())
+            }) else {
+                throw LocalAudiobookImportError.missingAudio
+            }
+            guard let textURL = files.first(where: { $0.pathExtension.lowercased() == "txt" }) else {
+                throw LocalAudiobookImportError.missingChapterText
+            }
+
+            let text = try String(contentsOf: textURL, encoding: .utf8)
+            let markers = try LocalChapterParser.parse(text)
+            let asset = AVURLAsset(url: audioURL)
+            let cmDuration = try await asset.load(.duration)
+            let audioDuration = CMTimeGetSeconds(cmDuration).isFinite ? CMTimeGetSeconds(cmDuration) : nil
+            guard let audioDuration, audioDuration > markers.last!.startTime else {
+                throw LocalAudiobookImportError.invalidChapterTiming
+            }
+
+            let storedAudioURL = try copyIntoApplicationSupport(audioURL)
+            if let imported = await libraryStore.importLocalSingleFile(
+                folderURL: folderURL,
+                folderName: audioURL.deletingPathExtension().lastPathComponent,
+                audioURL: storedAudioURL,
+                markers: markers,
+                audioDuration: audioDuration
+            ) {
+                dismiss()
+                await playback.present(imported)
+                showingNowPlaying = true
+            }
+        } catch {
+            libraryStore.importError = error.localizedDescription
+        }
+    }
+
+    private func copyIntoApplicationSupport(_ sourceURL: URL) throws -> URL {
+        let root = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        ).appendingPathComponent("Voxglass/LocalAudio", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let destination = root.appendingPathComponent("\(UUID().uuidString).\(sourceURL.pathExtension)")
+        try FileManager.default.copyItem(at: sourceURL, to: destination)
+        return destination
+    }
+
+    private func localFiles(in folderURL: URL) throws -> [URL] {
+        guard let enumerator = FileManager.default.enumerator(
+            at: folderURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+        return enumerator.compactMap { item in
+            guard let url = item as? URL,
+                  (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else {
+                return nil
+            }
+            return url
+        }.sorted { lhs, rhs in
+            lhs.path.localizedStandardCompare(rhs.path) == .orderedAscending
+        }
+    }
+
+    private var errorBinding: Binding<Bool> {
+        Binding {
+            catalogStore.catalogError != nil || libraryStore.importError != nil
+        } set: { isPresented in
+            if !isPresented {
+                catalogStore.catalogError = nil
+                libraryStore.importError = nil
+            }
+        }
+    }
+}
+
+private enum LocalAudiobookImportError: LocalizedError {
+    case missingAudio
+    case missingChapterText
+    case invalidChapterTiming
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAudio:
+            return "No supported audio file was found in that folder."
+        case .missingChapterText:
+            return "No chapter text file was found in that folder."
+        case .invalidChapterTiming:
+            return "The chapter timestamps do not fit within the selected audio file."
+        }
+    }
+}
+
+private enum LocalZipExtractor {
+    private static let localFileHeader: UInt32 = 0x04034b50
+    private static let centralDirectoryHeader: UInt32 = 0x02014b50
+    private static let endOfCentralDirectory: UInt32 = 0x06054b50
+
+    static func extract(_ archiveURL: URL) throws -> URL {
+        let accessing = archiveURL.startAccessingSecurityScopedResource()
+        defer { if accessing { archiveURL.stopAccessingSecurityScopedResource() } }
+
+        let data = try Data(contentsOf: archiveURL)
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("voxglass-zip-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        do {
+            var offset = 0
+            while offset + 30 <= data.count {
+                let signature = data.uint32LE(at: offset)
+                if signature == centralDirectoryHeader || signature == endOfCentralDirectory {
+                    break
+                }
+                guard signature == localFileHeader else {
+                    throw LocalZipError.invalidArchive
+                }
+
+                let flags = data.uint16LE(at: offset + 6)
+                let method = data.uint16LE(at: offset + 8)
+                let compressedSize = Int(data.uint32LE(at: offset + 18))
+                let uncompressedSize = Int(data.uint32LE(at: offset + 22))
+                let nameLength = Int(data.uint16LE(at: offset + 26))
+                let extraLength = Int(data.uint16LE(at: offset + 28))
+                let nameStart = offset + 30
+                let contentStart = nameStart + nameLength + extraLength
+                guard contentStart <= data.count,
+                      nameStart + nameLength <= data.count else {
+                    throw LocalZipError.invalidArchive
+                }
+                let nameData = data.subdata(in: nameStart..<(nameStart + nameLength))
+                let name = String(data: nameData, encoding: .utf8) ?? String(decoding: nameData, as: UTF8.self)
+                let normalized = name.replacingOccurrences(of: "\\", with: "/")
+                let isDirectory = normalized.hasSuffix("/")
+                let safeParts = normalized.split(separator: "/").filter { $0 != "" && $0 != "." && $0 != ".." }
+                guard !safeParts.isEmpty else {
+                    offset = contentStart + compressedSize
+                    continue
+                }
+                let destination = safeParts.dropLast().reduce(root) {
+                    $0.appendingPathComponent(String($1), isDirectory: true)
+                }.appendingPathComponent(String(safeParts.last!), isDirectory: isDirectory)
+                if isDirectory {
+                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+                } else {
+                    guard flags & 0x08 == 0,
+                          compressedSize >= 0,
+                          contentStart + compressedSize <= data.count else {
+                        throw LocalZipError.unsupportedArchive
+                    }
+                    let compressed = data.subdata(in: contentStart..<(contentStart + compressedSize))
+                    let contents: Data
+                    switch method {
+                    case 0:
+                        contents = compressed
+                    case 8:
+                        contents = try inflate(compressed, expectedSize: uncompressedSize)
+                    default:
+                        throw LocalZipError.unsupportedArchive
+                    }
+                    try FileManager.default.createDirectory(
+                        at: destination.deletingLastPathComponent(),
+                        withIntermediateDirectories: true
+                    )
+                    try contents.write(to: destination, options: .atomic)
+                }
+                offset = contentStart + compressedSize
+            }
+            return root
+        } catch {
+            try? FileManager.default.removeItem(at: root)
+            throw error
+        }
+    }
+
+    private static func inflate(_ compressed: Data, expectedSize: Int) throws -> Data {
+        let capacity = max(expectedSize, compressed.count * 4, 4096)
+        var output = Data(count: capacity)
+        let decoded = output.withUnsafeMutableBytes { outputBuffer in
+            compressed.withUnsafeBytes { inputBuffer in
+                compression_decode_buffer(
+                    outputBuffer.bindMemory(to: UInt8.self).baseAddress!,
+                    outputBuffer.count,
+                    inputBuffer.bindMemory(to: UInt8.self).baseAddress!,
+                    inputBuffer.count,
+                    nil,
+                    COMPRESSION_ZLIB
+                )
+            }
+        }
+        guard decoded > 0 else { throw LocalZipError.unsupportedArchive }
+        output.removeSubrange(decoded..<output.count)
+        return output
+    }
+}
+
+private enum LocalZipError: LocalizedError {
+    case invalidArchive
+    case unsupportedArchive
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidArchive:
+            return "The selected ZIP file is not a valid audiobook archive."
+        case .unsupportedArchive:
+            return "This ZIP archive uses a compression format Voxglass cannot import."
+        }
+    }
+}
+
+private extension Data {
+    func uint16LE(at offset: Int) -> UInt16 {
+        UInt16(self[offset]) | (UInt16(self[offset + 1]) << 8)
+    }
+
+    func uint32LE(at offset: Int) -> UInt32 {
+        UInt32(uint16LE(at: offset)) | (UInt32(uint16LE(at: offset + 2)) << 16)
     }
 }
 
