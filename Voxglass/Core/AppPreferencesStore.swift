@@ -68,12 +68,13 @@ public struct AppPreferencesStore: DynamicProperty {
     }
 
     public static func decodeLanguages(_ rawValue: String) -> Set<String> {
-        Set(
+        let decoded = Set(
             rawValue
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
         )
+        return decoded.isEmpty ? LibriVoxLanguage.defaultSelection : decoded
     }
 }
 

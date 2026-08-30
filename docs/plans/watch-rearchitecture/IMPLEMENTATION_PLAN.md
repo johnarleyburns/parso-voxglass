@@ -428,3 +428,20 @@ pushing.
   passed; `bash scripts/test_logic.sh` passed (1,373 logic tests, 6 performance tests); and
   `bash scripts/test_guards.sh` passed. No physical-device evidence was claimed; the 40 mm
   screenshot/frame and paired-device rows remain pending.
+
+### Phase 4 + Phase 5 — Cutover, release guards, and product fixes (2026-08-30)
+
+- Replaced the Watch target assembly with a protocol/core-only Watch app and one
+  `WatchSessionAdapter`; removed the legacy Watch relay, direct downloader/storage, playback
+  engine, production/review/recording, search, settings, fetch-status, and related target
+  membership. The Watch target no longer links `VoxglassCore`.
+- Replaced the Watch smoke with the injected My Books/Now Playing flow and updated the source
+  accessibility audit for the replacement Watch contract. Strengthened wiring guards for the
+  typed adapter and absence of legacy Watch surfaces; removed a stale synthesis probe fixture.
+- Isolated Explore from Search with a dedicated catalog store, added collection-scoped search,
+  restricted curated Explore shelves to explicitly selected collections/languages with English
+  fallback, and applied the requested Narration copy/action simplification.
+- Verification: Watch simulator build on `Voxglass-Agent-Watch` passed; combined iPhone simulator
+  build on `iPhone 16` passed; Watch UI smoke on `Watch-Small` passed; focused accessibility,
+  production, wiring, and probe self-tests passed. Full host logic was rerun after the stale audit
+  fix; physical-device matrix and 40 mm screenshot/frame evidence remain pending.

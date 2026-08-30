@@ -3,7 +3,7 @@ import VoxglassCore
 
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @EnvironmentObject private var catalogStore: CatalogStore
+    @StateObject private var catalogStore = CatalogStore()
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
@@ -14,6 +14,7 @@ struct BrowseView: View {
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
+    @State private var collectionQuery = ""
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
 
     var body: some View {
@@ -86,6 +87,7 @@ struct BrowseView: View {
         VStack(alignment: .leading, spacing: 6) {
             SectionTitle(title: selectedCollection?.title ?? "Explore Results")
             if selectedCollection != nil {
+                collectionSearchField
                 sortPicker
                 HStack(spacing: 8) {
                     FilterChip(title: "Solo Narration", isSelected: soloOnly) {
@@ -171,6 +173,21 @@ struct BrowseView: View {
         .pickerStyle(.segmented)
         .tint(Palette.brass)
         .padding(.bottom, 4)
+    }
+
+    private var collectionSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(Palette.ink3)
+            TextField("Search this collection", text: $collectionQuery)
+                .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.search)
+                .onSubmit { searchSelectedCollection() }
+            if !collectionQuery.isEmpty {
+                Button { collectionQuery = ""; searchSelectedCollection() } label: { Image(systemName: "xmark.circle.fill") }
+                    .accessibilityLabel("Clear collection search")
+            }
+        }
+        .padding(.horizontal, 12).frame(height: 42).glassSurface(cornerRadius: 18)
+        .accessibilityIdentifier("explore.collectionSearch")
     }
 
     private var curatedStatusBanner: some View {
@@ -298,10 +315,18 @@ struct BrowseView: View {
 
     private func search(_ collection: IACollection) {
         selectedCollection = collection
+        collectionQuery = ""
         isDescriptionExpanded = false
         let defaultSort = CatalogSort.defaultSort(for: collection)
         collectionSort = defaultSort
         Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
+    }
+
+    private func searchSelectedCollection() {
+        guard let collection = selectedCollection else { return }
+        let term = collectionQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = term.isEmpty ? collection.archiveQuery : "(\(collection.archiveQuery)) AND (title:\"\(term)\" OR creator:\"\(term)\")"
+        Task { await catalogStore.searchAdvanced(query, sort: collectionSort, collectionID: collection.id) }
     }
 
     private func presentResult(_ result: InternetArchiveSearchResult) async {

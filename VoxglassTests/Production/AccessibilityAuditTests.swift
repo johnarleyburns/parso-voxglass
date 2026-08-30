@@ -79,7 +79,9 @@ import VoxglassCoreTestSupport
         ) else { return [] }
         var entries: [MockupEntry] = []
         while let url = enumerator.nextObject() as? URL {
-            guard url.pathExtension == "html", let content = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            guard url.pathExtension == "html",
+                  !url.lastPathComponent.hasPrefix("watch-"),
+                  let content = try? String(contentsOf: url, encoding: .utf8) else { continue }
             let file = url.lastPathComponent
             for match in content.matches(of: #/id="([^"]+)"/#) {
                 entries.append(MockupEntry(file: file, id: String(match.output.1)))
@@ -133,7 +135,8 @@ import VoxglassCoreTestSupport
         // view renames one of these, this test fails before the flaky UI run.
         let smokeKeys: [String: Area] = [
             "shelf.myProductions": .iphone, "detail.playWholeBook": .iphone, "detail.reviewFlagged": .iphone,
-            "watch.queue.": .watch,        ]
+            "watch.library": .watch, "watch.nowPlaying": .watch
+        ]
         let missing = smokeKeys.filter { !Self.areaContains($0.value, $0.key) }
         #expect(missing.isEmpty, "Smoke-path identifiers missing from source: \(missing.keys)")
     }

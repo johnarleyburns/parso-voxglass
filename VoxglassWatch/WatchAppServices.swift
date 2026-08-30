@@ -1,255 +1,40 @@
-import Combine
 import Foundation
-import VoxglassCore
+import SwiftUI
+import AVFoundation
+import VoxglassWatchProtocol
+import VoxglassWatchCore
+
+struct WatchPlayingSession: Equatable {
+    var book: WatchBookDTO
+    var chapterIndex: Int
+    var position: TimeInterval = 0
+    var isPlaying = false
+}
 
 @MainActor
 final class WatchAppServices: ObservableObject {
     static let shared = WatchAppServices()
+    let session = WatchSessionAdapter.shared
+    @Published private(set) var books: [WatchBookDTO] = []
+    @Published private(set) var downloaded = Set<WatchBookID>()
+    @Published var playing: WatchPlayingSession?
+    @Published var error: String?
+    private var player: AVPlayer?
 
-    private var cancellables = Set<AnyCancellable>()
+    var isConnected: Bool { session.isReachable }
+    var visibleBooks: [WatchBookDTO] { isConnected ? books : books.filter { downloaded.contains($0.id) } }
 
-    let database: AppDatabase
-    let libraryStore: LibraryStore
-    let catalogStore: CatalogStore
-    let libraryRepository: LibraryRepository
-    let positionStore: SQLitePositionStore
-    let snapshotStore: LastPlaybackSnapshotStore
-    let bookmarkStore: SQLiteBookmarkStore
-    let playbackCoordinator: WatchPlaybackCoordinator
-    let offlineManager: WatchStorageManager
-    let relay: WatchAudioRelay
-
-    @Published private(set) var phoneBooks: [BookWithChapters] = []
-    @Published private(set) var searchResults: [InternetArchiveSearchResult] = []
-    @Published private(set) var isSearching = false
-    @Published var watchError: String?
-
-    var isConnected: Bool { relay.isReachable || Self.isSmokeMode }
-    var visibleBooks: [BookWithChapters] {
-        isConnected ? books : books.filter { offlineManager.isAvailableOffline(bookID: $0.book.id) }
+    func bootstrap() { session.refresh(); books = session.snapshot?.books ?? []; downloaded = Set(UserDefaults.standard.stringArray(forKey: "watch.downloaded")?.map(WatchBookID.init) ?? []) }
+    func download(_ book: WatchBookDTO) { downloaded.insert(book.id); UserDefaults.standard.set(downloaded.map(\.rawValue), forKey: "watch.downloaded") }
+    func remove(_ book: WatchBookDTO) { downloaded.remove(book.id); UserDefaults.standard.set(downloaded.map(\.rawValue), forKey: "watch.downloaded") }
+    func play(_ book: WatchBookDTO, chapterIndex: Int = 0) {
+        guard !book.chapters.isEmpty else { error = "No playable chapters."; return }
+        let index = min(max(0, chapterIndex), book.chapters.count - 1)
+        playing = WatchPlayingSession(book: book, chapterIndex: index, isPlaying: true)
+        if let url = book.chapters[index].approvedStreamURL { player = AVPlayer(url: url); player?.play() }
     }
-
-    private static var isSmokeMode: Bool {
-        let key = "VOXGLASS_WATCH_SMOKE_ALICE"
-        return ProcessInfo.processInfo.environment[key] == "1"
-            || ProcessInfo.processInfo.arguments.contains("-\(key)")
-            || UserDefaults.standard.bool(forKey: key)
-    }
-
-    var books: [BookWithChapters] {
-        Self.mergedBooks(phoneBooks: phoneBooks, localBooks: libraryStore.books)
-    }
-
-    init(relay providedRelay: WatchAudioRelay? = nil) {
-        let relay = providedRelay ?? WatchAudioRelay.shared
-        let database = AppDatabase.makeApplicationDatabase()
-        let libraryRepository = LibraryRepository(database: database)
-        let positionStore = SQLitePositionStore(database: database)
-        let bookmarkStore = SQLiteBookmarkStore(database: database)
-
-        self.database = database
-        self.libraryRepository = libraryRepository
-        self.libraryStore = LibraryStore(repository: libraryRepository)
-        self.catalogStore = CatalogStore()
-        self.positionStore = positionStore
-        self.snapshotStore = LastPlaybackSnapshotStore()
-        self.bookmarkStore = bookmarkStore
-        self.playbackCoordinator = WatchPlaybackCoordinator(
-            positionStore: positionStore,
-            snapshotStore: snapshotStore
-        )
-        self.offlineManager = WatchStorageManager(
-            repository: libraryRepository,
-            positionStore: positionStore
-        )
-        self.relay = relay
-        if let snapshot = relay.librarySnapshot {
-            self.phoneBooks = snapshot.books
-        }
-
-        playbackCoordinator.localURLProvider = { [weak self] chapter in
-            self?.offlineManager.localURL(for: chapter)
-        }
-
-        offlineManager.onStorageChanged = { [weak relay] snapshot in
-            relay?.publishStorageSnapshot(snapshot)
-        }
-
-        libraryStore.onBookImported = { [weak self] _ in
-            guard let self else { return }
-            await self.libraryStore.refresh()
-            await self.offlineManager.updateLibrary(self.books)
-        }
-
-        libraryStore.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.objectWillChange.send() }
-            .store(in: &cancellables)
-
-        relay.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.objectWillChange.send() }
-            .store(in: &cancellables)
-
-        playbackCoordinator.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.objectWillChange.send() }
-            .store(in: &cancellables)
-
-        offlineManager.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.objectWillChange.send() }
-            .store(in: &cancellables)
-
-        relay.onReachabilityChanged = { [weak self] isReachable in
-            guard isReachable else { return }
-            Task { @MainActor in
-                self?.publishWatchStorageSnapshot()
-            }
-        }
-
-        relay.onLibrarySnapshot = { [weak self] snapshot in
-            guard let self else { return }
-            Task { @MainActor in
-                await self.applyPhoneSnapshot(snapshot)
-            }
-        }
-
-        relay.onFileReceived = { [weak self] fileURL, chapterKey in
-            guard let self else { return }
-            Task { @MainActor in
-                for book in self.books {
-                    for chapter in book.chapters where WatchChapterCache.key(for: chapter) == chapterKey {
-                        await self.offlineManager.ingestFile(at: fileURL, for: chapter, bookID: book.book.id)
-                        return
-                    }
-                }
-            }
-        }
-    }
-
-    func bootstrap() async {
-        guard !didBootstrap else { return }
-        didBootstrap = true
-
-        if Self.shouldResetSmokeCache {
-            await offlineManager.clearAllCache()
-        }
-        await libraryStore.refresh()
-        await refreshFromPhone()
-        await offlineManager.updateLibrary(books)
-        publishWatchStorageSnapshot()
-        await restoreBookmark()
-    }
-
-    func refreshFromPhone() async {
-        if let snapshot = await relay.requestLibrarySnapshot() {
-            await applyPhoneSnapshot(snapshot)
-        } else if let error = relay.lastError {
-            watchError = error
-        }
-    }
-
-    func refreshLocalLibrary() async {
-        await libraryStore.refresh()
-        await offlineManager.updateLibrary(books)
-    }
-
-    func searchLibriVox(_ query: String) async {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            searchResults = []
-            watchError = nil
-            return
-        }
-
-        isSearching = true
-        defer { isSearching = false }
-
-        if relay.isReachable {
-            let relayed = await relay.searchLibriVox(trimmed)
-            if !relayed.isEmpty || relay.lastError == nil {
-                searchResults = relayed
-                watchError = relay.lastError
-                return
-            }
-        }
-
-        await catalogStore.searchLibriVox(trimmed)
-        searchResults = catalogStore.results
-        watchError = catalogStore.catalogError
-    }
-
-    func downloadBook(_ book: BookWithChapters) async {
-        if relay.isReachable && relay.isCompanionAppInstalled {
-            for chapter in book.chapters where offlineManager.localURL(for: chapter) == nil {
-                if let key = WatchChapterCache.key(for: chapter) {
-                    relay.requestChapter(book.book.title, chapterKey: key)
-                }
-            }
-            try? await Task.sleep(for: .seconds(2))
-        }
-
-        for chapter in book.chapters where offlineManager.localURL(for: chapter) == nil {
-            do {
-                try await offlineManager.downloadChapter(chapter, bookID: book.book.id)
-            } catch {
-                watchError = error.localizedDescription
-            }
-        }
-        await offlineManager.updateLibrary(books)
-        publishWatchStorageSnapshot()
-    }
-
-    func restoreBookmark() async {
-        if let row = try? await positionStore.latestPosition(),
-           let book = books.first(where: { $0.book.id == row.bookID }) {
-            let chapters = book.chapters.naturallySorted()
-            if let target = PlaybackCoordinator.resolveResume(chapters: chapters, saved: row) {
-                playbackCoordinator.present(book, chapter: target.chapter)
-            } else {
-                playbackCoordinator.present(book)
-            }
-        }
-    }
-
-    private var didBootstrap = false
-
-    private func applyPhoneSnapshot(_ snapshot: WatchPhoneLibrarySnapshot) async {
-        phoneBooks = snapshot.books
-        watchError = nil
-        await offlineManager.updateLibrary(books)
-    }
-
-    private func publishWatchStorageSnapshot() {
-        relay.publishStorageSnapshot(offlineManager.storageSnapshot())
-    }
-
-    private static var shouldResetSmokeCache: Bool {
-        let key = "VOXGLASS_WATCH_SMOKE_RESET_CACHE"
-        let processInfo = ProcessInfo.processInfo
-        return processInfo.environment[key] == "1"
-            || processInfo.arguments.contains("-\(key)")
-            || UserDefaults.standard.bool(forKey: key)
-    }
-
-    private static func mergedBooks(
-        phoneBooks: [BookWithChapters],
-        localBooks: [BookWithChapters]
-    ) -> [BookWithChapters] {
-        var seen = Set<String>()
-        var merged: [BookWithChapters] = []
-        for book in phoneBooks + localBooks {
-            let key = [
-                book.book.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-                book.book.authorLine.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            ].joined(separator: "|")
-            if seen.insert(key).inserted {
-                merged.append(book)
-            }
-        }
-        return merged.sorted {
-            $0.book.title.localizedCaseInsensitiveCompare($1.book.title) == .orderedAscending
-        }
-    }
+    func togglePlayPause() { guard var playing else { return }; playing.isPlaying.toggle(); self.playing = playing; playing.isPlaying ? player?.play() : player?.pause() }
+    func nextChapter() { move(by: 1) }
+    func previousChapter() { move(by: -1) }
+    private func move(by amount: Int) { guard let current = playing else { return }; let index = current.chapterIndex + amount; guard current.book.chapters.indices.contains(index) else { return }; play(current.book, chapterIndex: index) }
 }

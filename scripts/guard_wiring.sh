@@ -330,8 +330,8 @@ check_narration_tactile_guards() {
 check_watch_data_plane() {
   local had_failure=0
 
-  if ! grep -q 'requestLibrarySnapshot\|refreshFromPhone' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
-    echo "::error title=Watch-data-plane guard::WatchAppServices must refresh My Books through WatchConnectivity."
+  if ! grep -q 'WatchSessionAdapter\|session.refresh' VoxglassWatch/WatchAppServices.swift VoxglassWatch/WatchSessionAdapter.swift 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::Watch app must refresh My Books through the typed WatchConnectivity adapter."
     had_failure=1
   fi
 
@@ -340,8 +340,8 @@ check_watch_data_plane() {
     had_failure=1
   fi
 
-  if ! grep -q 'offlineManager.updateLibrary' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
-    echo "::error title=Watch-data-plane guard::Watch bootstrap must refresh offline state from the merged phone/local library."
+  if ! grep -q 'visibleBooks' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=Watch-data-plane guard::Watch bootstrap must filter the local library for disconnected mode."
     had_failure=1
   fi
 
@@ -361,8 +361,8 @@ check_both_targets_engine() {
     had_failure=1
   fi
 
-  if ! grep -q 'WatchAudioRelay' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
-    echo "::error title=WatchConnectivity guard::WatchAppServices must use WatchAudioRelay."
+  if ! grep -q 'WatchSessionAdapter' VoxglassWatch/WatchAppServices.swift 2>/dev/null; then
+    echo "::error title=WatchConnectivity guard::WatchAppServices must use WatchSessionAdapter."
     had_failure=1
   fi
 
@@ -383,9 +383,8 @@ check_both_targets_engine() {
 check_search_scope_switchable() {
   local had_failure=0
 
-  if ! grep -q 'Picker' VoxglassWatch/WatchSearchView.swift 2>/dev/null || \
-     ! grep -q '\.myBooks\|\.librivox' VoxglassWatch/WatchSearchView.swift 2>/dev/null; then
-    echo "::error title=Search-scope guard::WatchSearchView must have a My Books/LibriVox scope switch."
+  if find VoxglassWatch -iname '*Search*.swift' -o -path 'VoxglassWatch/Production/*' | grep -q .; then
+    echo "::error title=Legacy-watch-surface guard::Watch catalog and production surfaces must be removed."
     had_failure=1
   fi
 

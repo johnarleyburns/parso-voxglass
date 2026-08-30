@@ -10,6 +10,7 @@ final class VoxglassWatchUITests: XCTestCase {
 
     func testWatchLibraryAndNowPlayingSmoke() {
         let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeed", "watch-library"]
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_ALICE"] = "1"
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_RESET_CACHE"] = "1"
         app.launchArguments += [

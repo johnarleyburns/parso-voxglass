@@ -3099,7 +3099,7 @@ struct NarrationHelpSheet: View {
                         Text("Recording your narration")
                             .scaledFont(size: 22, weight: .heavy)
                             .foregroundStyle(Palette.ink)
-                        Text("Two ways to use Narration. Contribute a free recording to LibriVox or the Internet Archive — completely free, forever. Or bring your own book — import an EPUB, DOCX, or paste text — record it, and release it commercially on ACX / Audible, Apple Books, and aggregators with Voxglass Narration Pro, a one-time purchase. Recording, review, Apple Watch, and iCloud backup are always free.")
+                        Text("Contribute a free recording to LibriVox or the Internet Archive — completely free, forever. Or bring your own book — import an EPUB, DOCX, or paste text — and record it. Recording, LibriVox, and Internet Archive stay free forever.")
                             .scaledFont(size: 13)
                             .foregroundStyle(Palette.ink2)
                             .fixedSize(horizontal: false, vertical: true)

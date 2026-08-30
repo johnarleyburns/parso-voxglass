@@ -115,7 +115,7 @@ final class VoxglassUITests: XCTestCase {
         app.buttons["Close"].tap()
 
         // Community needs remain available as a clearly-labelled secondary path.
-        app.buttons["home.startNarrationShelf.seeAll"].tap()
+        app.buttons["myNarrations.newFromNeed"].tap()
         XCTAssertTrue(
             app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
             "Start a Narration → See All did not open Narration Needs.\n\(app.debugDescription)"

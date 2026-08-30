@@ -208,7 +208,7 @@ public enum IACollectionStore {
         let sortedBrowse = browseCollections.sorted {
             $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
         }
-        return [popular] + curated + sortedBrowse
+        return [popular] + curated.filter { selectedIDs.contains($0.id) } + sortedBrowse.filter { selectedIDs.contains($0.id) }
     }
 
     private static func browseCollection(for category: LibriVoxBrowseCategory) -> IACollection {

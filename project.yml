@@ -117,8 +117,6 @@ targets:
           - Resources/VoxglassWatch.entitlements
     dependencies:
       - package: VoxglassCore
-        product: VoxglassCore
-      - package: VoxglassCore
         product: VoxglassWatchProtocol
       - package: VoxglassCore
         product: VoxglassWatchCore
