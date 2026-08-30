@@ -384,6 +384,20 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         }
         return .started
     }
+
+    func removeBookFromWatch(bookID: UUID) async {
+        guard let watchProjectionStore else { return }
+        let id = WatchBookID(bookID.uuidString)
+        try? await watchProjectionStore.remove(bookID: id)
+        guard WCSession.isSupported(), session.activationState == .activated else { return }
+        if let data = try? WatchProtocolEnvelope.encode(
+            kind: .removeBookDownload,
+            payload: WatchManifest(bookID: id, revision: 0, requiredChapterIDs: []),
+            libraryID: watchLibraryID
+        ) {
+            session.transferUserInfo(WatchProtocolEnvelope.dictionary(for: data))
+        }
+    }
 }
 
 extension PhoneAudioRelay: WCSessionDelegate {

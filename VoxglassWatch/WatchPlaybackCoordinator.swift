@@ -1,4 +1,5 @@
 import Foundation
+import MediaPlayer
 import VoxglassCore
 
 /// Watch-specific playback coordinator. Wraps Core's `PlaybackCoordinator` with a
@@ -20,8 +21,12 @@ public final class WatchPlaybackCoordinator: ObservableObject {
     /// rendition is deliberately not preferred: `WatchPlaybackEngine`'s plain
     /// `AVPlayer` cannot decode raw Ogg/Opus.
     private func resolvedURL(for chapter: Chapter) -> URL? {
-        localURLProvider?(chapter) ?? chapter.resolvedPlayableURL()
+        if let local = localURLProvider?(chapter) { return local }
+        guard let remote = chapter.remoteURL, remote.scheme?.lowercased() == "https" else { return nil }
+        return remote
     }
+
+    private func chapterOffset(_ chapter: Chapter) -> TimeInterval { max(0, chapter.startTime) }
 
     private let engine: WatchPlaybackEngine
     private let positionStore: SQLitePositionStore
@@ -59,7 +64,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         let record = NavigationRecord(
             bookID: session.book.id,
             chapterID: session.chapter.id,
-            position: engine.currentTime,
+            position: max(0, engine.currentTime - chapterOffset(session.chapter)),
             duration: engine.duration ?? session.duration,
             recordedAt: Date()
         )
@@ -107,9 +112,10 @@ public final class WatchPlaybackCoordinator: ObservableObject {
             return
         }
 
-        let startTime = currentSession?.book.id == book.book.id && currentSession?.chapter.id == target.id
+        let relativeStart = currentSession?.book.id == book.book.id && currentSession?.chapter.id == target.id
             ? currentSession?.position ?? 0
             : 0
+        let startTime = chapterOffset(target) + relativeStart
 
         do {
             playbackError = nil
@@ -121,7 +127,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
                 book: book.book,
                 chapters: book.chapters,
                 chapter: target,
-                position: startTime,
+                position: relativeStart,
                 duration: target.duration ?? engine.duration,
                 isPlaying: true
             )
@@ -185,7 +191,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         await persistCurrentPosition()
         do {
             playbackError = nil
-            try await engine.load(url: url, startTime: 0)
+            try await engine.load(url: url, startTime: chapterOffset(chapter))
             isEngineLoaded = true
             if currentSession?.isPlaying == true {
                 engine.play()
@@ -246,6 +252,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         )
         snapshotStore.save(playbackPosition)
         try? await positionStore.save(playbackPosition)
+        publishNowPlaying(position: pos, duration: playbackPosition.duration, playing: session.isPlaying)
     }
 
     public func handleWillResignActive() {
@@ -276,7 +283,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
               let url = resolvedURL(for: session.chapter) else { return false }
         do {
             playbackError = nil
-            try await engine.load(url: url, startTime: session.position)
+            try await engine.load(url: url, startTime: chapterOffset(session.chapter) + session.position)
             isEngineLoaded = true
             return true
         } catch {
@@ -298,9 +305,10 @@ public final class WatchPlaybackCoordinator: ObservableObject {
 
     private func tickProgress() async {
         guard currentSession != nil else { return }
-        currentSession?.position = engine.currentTime
+        currentSession?.position = max(0, engine.currentTime - chapterOffset(currentSession!.chapter))
         currentSession?.duration = engine.duration
         saveCurrentSnapshot()
+        publishNowPlaying(position: currentSession?.position ?? 0, duration: currentSession?.duration, playing: engine.isPlaying)
 
         if engine.isPlaying, Date().timeIntervalSince(lastPeriodicSave) >= 5 {
             await persistCurrentPosition()
@@ -312,7 +320,7 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         snapshotStore.save(PlaybackPosition(
             bookID: session.book.id,
             chapterID: session.chapter.id,
-            position: engine.currentTime,
+            position: max(0, engine.currentTime - chapterOffset(session.chapter)),
             duration: engine.duration ?? session.duration,
             updatedAt: Date(),
             isFinished: false
@@ -323,5 +331,18 @@ public final class WatchPlaybackCoordinator: ObservableObject {
         guard currentSession != nil else { return }
         await persistCurrentPosition()
         currentSession?.isPlaying = false
+    }
+
+    private func publishNowPlaying(position: TimeInterval, duration: TimeInterval?, playing: Bool) {
+        guard let session = currentSession else { return }
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: session.chapter.title,
+            MPMediaItemPropertyAlbumTitle: session.book.title,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: position,
+            MPNowPlayingInfoPropertyPlaybackRate: playing ? engine.rate : 0,
+            MPNowPlayingInfoPropertyDefaultPlaybackRate: engine.rate
+        ]
+        if let duration, duration.isFinite { info[MPMediaItemPropertyPlaybackDuration] = duration }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
 }

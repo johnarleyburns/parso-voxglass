@@ -409,3 +409,22 @@ pushing.
 - Verification: focused Watch foundation tests (9 passed), full logic suites (1,373 tests plus
   6 performance tests passed), guard self-tests passed, concrete `Voxglass-Agent-Watch` build
   passed, and concrete `iPhone 16` build passed. No physical-device evidence was claimed.
+
+### Phase 3 — Playback and complete iPhone/Watch UI replacement (2026-08-29)
+
+- Replaced the Watch tab shell with a single My Books navigation stack and an explicit Now Playing
+  entry point. Connected mode shows the phone projection; disconnected mode filters to complete
+  locally available books and exposes the actionable empty state.
+- Updated Watch detail and Now Playing presentation with artwork, connection/output labels,
+  stable Phase 3 accessibility identifiers, truthful connected-only download actions, and a single
+  always-visible 44-point previous/play-pause/next chapter row. Removed time-skip controls and
+  secondary player actions from the primary screen.
+- Hardened Watch playback resolution so durable local files win and remote playback is limited to
+  phone-approved HTTPS URLs. Chapter-relative positions now account for shared-file start offsets;
+  playback publishes title, chapter, duration, elapsed time, and rate to system Now Playing.
+- Added iPhone Watch row/status identifiers and idempotent Remove-from-Watch intent wiring while
+  retaining the existing deterministic transport path for the Phase 4 cutover.
+- Verification: concrete `Voxglass-Agent-Watch` build passed; concrete `iPhone 16` combined build
+  passed; `bash scripts/test_logic.sh` passed (1,373 logic tests, 6 performance tests); and
+  `bash scripts/test_guards.sh` passed. No physical-device evidence was claimed; the 40 mm
+  screenshot/frame and paired-device rows remain pending.

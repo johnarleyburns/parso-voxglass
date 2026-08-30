@@ -24,6 +24,18 @@ final class WatchAppServices: ObservableObject {
     @Published private(set) var isSearching = false
     @Published var watchError: String?
 
+    var isConnected: Bool { relay.isReachable || Self.isSmokeMode }
+    var visibleBooks: [BookWithChapters] {
+        isConnected ? books : books.filter { offlineManager.isAvailableOffline(bookID: $0.book.id) }
+    }
+
+    private static var isSmokeMode: Bool {
+        let key = "VOXGLASS_WATCH_SMOKE_ALICE"
+        return ProcessInfo.processInfo.environment[key] == "1"
+            || ProcessInfo.processInfo.arguments.contains("-\(key)")
+            || UserDefaults.standard.bool(forKey: key)
+    }
+
     var books: [BookWithChapters] {
         Self.mergedBooks(phoneBooks: phoneBooks, localBooks: libraryStore.books)
     }

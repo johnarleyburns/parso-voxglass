@@ -10,9 +10,13 @@ struct WatchBookDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.secondary.opacity(0.3))
-                    .frame(width: 40, height: 40)
+                AsyncImage(url: book.book.coverURL) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    RoundedRectangle(cornerRadius: 8).fill(.secondary.opacity(0.3))
+                }
+                .frame(width: 72, height: 92)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(book.book.title)
                     .font(.headline)
@@ -61,7 +65,7 @@ struct WatchBookDetailView: View {
                             Text("Play")
                         }
                     }
-                    .accessibilityIdentifier(WatchAccessibilityID.bookStream)
+                    .accessibilityIdentifier("watch.book.play")
 
                     if let playbackError {
                         Text(playbackError)
@@ -71,9 +75,13 @@ struct WatchBookDetailView: View {
                     }
 
                     let info = services.offlineManager.storageInfo(for: book.book.id)
+                    if !services.isConnected && info.state != .available {
+                        Text("Open Voxglass on iPhone to prepare this chapter")
+                            .font(.caption2).foregroundStyle(.orange)
+                    }
                     switch info.state {
                     case .notAvailable:
-                        Button {
+                        if services.isConnected { Button {
                             Task { await services.downloadBook(book) }
                         } label: {
                             HStack {
@@ -81,7 +89,8 @@ struct WatchBookDetailView: View {
                                 Text("Download")
                             }
                         }
-                        .accessibilityIdentifier(WatchAccessibilityID.bookFetch)
+                        .accessibilityIdentifier("watch.book.download")
+                        }
                     case .transferring(let progress):
                         VStack(spacing: 4) {
                             ProgressView(value: progress)
@@ -118,6 +127,7 @@ struct WatchBookDetailView: View {
                                 Text("Remove Download")
                             }
                         }
+                        .accessibilityIdentifier("watch.book.remove")
                     }
 
                     NavigationLink {
@@ -147,6 +157,6 @@ struct WatchBookDetailView: View {
         .navigationDestination(isPresented: $showNowPlaying) {
             WatchNowPlayingView()
         }
-        .accessibilityIdentifier(WatchAccessibilityID.bookDetail)
+        .accessibilityIdentifier("watch.book.\(book.book.id.uuidString)")
     }
 }

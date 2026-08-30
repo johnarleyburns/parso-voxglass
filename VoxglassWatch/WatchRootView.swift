@@ -5,45 +5,21 @@ struct WatchRootView: View {
     @EnvironmentObject var services: WatchAppServices
     @Environment(\.scenePhase) private var scenePhase
 
-    enum Tab: String, CaseIterable {
-        case listening
-        case onWatch
-        case productions
-        case search
-        case settings
-    }
-
-    @State private var selectedTab: Tab = .listening
     @State private var lastForegroundFetch: Date = .distantPast
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack {
-                WatchListeningView()
-            }
-                .tag(Tab.listening)
-                .accessibilityIdentifier(WatchAccessibilityID.rootListening)
-
-            NavigationStack {
-                WatchOnDeviceView()
-            }
-                .tag(Tab.onWatch)
-                .accessibilityIdentifier(WatchAccessibilityID.rootOnWatch)
-
-            ProductionsListView()
-                .tag(Tab.productions)
-                .accessibilityIdentifier("root.productions")
-
-            NavigationStack {
-                WatchSearchView()
-            }
-                .tag(Tab.search)
-                .accessibilityIdentifier(WatchAccessibilityID.rootSearch)
-
-            NavigationStack {
-                WatchSettingsView()
-            }
-            .tag(Tab.settings)
+        NavigationStack {
+            WatchListeningView()
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            WatchNowPlayingView()
+                        } label: {
+                            Image(systemName: "waveform")
+                        }
+                        .accessibilityIdentifier(WatchAccessibilityID.nowPlaying)
+                    }
+                }
         }
         .task {
             await services.bootstrap()
@@ -63,9 +39,11 @@ struct WatchRootView: View {
 }
 
 public enum WatchAccessibilityID {
-    public static let rootListening = "root.listening"
-    public static let rootSearch = "root.search"
-    public static let rootOnWatch = "root.onWatch"
+    public static let rootListening = "watch.library"
+    public static let rootSearch = "watch.library"
+    public static let rootOnWatch = "watch.library"
+    public static let connection = "watch.connection"
+    public static let nowPlaying = "watch.nowPlaying"
     public static let bookDetail = "book.detail"
     public static let bookStream = "book.stream"
     public static let bookFetch = "book.fetch"
@@ -78,8 +56,8 @@ public enum WatchAccessibilityID {
     public static let npDownload = "np.download"
     public static let npBack15 = "np.back15"
     public static let npForward30 = "np.forward30"
-    public static let npChapterPrev = "np.chapterPrev"
-    public static let npChapterNext = "np.chapterNext"
+    public static let npChapterPrev = "watch.player.previousChapter"
+    public static let npChapterNext = "watch.player.nextChapter"
     public static let bookMeta = "book.meta"
     public static let npRoute = "np.route"
     public static let fetchStatus = "fetch.status"

@@ -6,11 +6,13 @@ struct WatchListeningView: View {
 
     var body: some View {
         Group {
-            if services.books.isEmpty {
+            if services.visibleBooks.isEmpty {
                 VStack(spacing: 8) {
-                    Text("No Books")
+                    Image(systemName: "arrow.down.circle")
+                        .font(.title2)
+                    Text(services.isConnected ? "No Books" : "No downloaded books")
                         .font(.headline)
-                    Text("Open Voxglass on iPhone or search LibriVox")
+                    Text(services.isConnected ? "Add books in My Books on iPhone" : "In My Books on iPhone, choose Download to Apple Watch.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -26,7 +28,7 @@ struct WatchListeningView: View {
                     }
                 }
             } else {
-                List(services.books) { book in
+                List(services.visibleBooks) { book in
                     NavigationLink {
                         WatchBookDetailView(book: book)
                             .accessibilityIdentifier(WatchAccessibilityID.bookDetail)
@@ -36,6 +38,17 @@ struct WatchListeningView: View {
                 }
                 .accessibilityIdentifier(WatchAccessibilityID.rootListening)
             }
+        }
+        .navigationTitle("My Books")
+        .safeAreaInset(edge: .top) {
+            HStack(spacing: 5) {
+                Circle().fill(services.isConnected ? .green : .orange).frame(width: 7, height: 7)
+                Text(services.isConnected ? "iPhone connected" : "On This Watch")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier(WatchAccessibilityID.connection)
+            .accessibilityLabel(services.isConnected ? "iPhone connected" : "iPhone unavailable. On This Watch")
         }
     }
 }
@@ -53,10 +66,13 @@ struct WatchBookRow: View {
                 .lineLimit(2)
             Spacer(minLength: 0)
             if services.offlineManager.storageInfo(for: book.book.id).state == .available {
-                Circle()
-                    .fill(.green)
-                    .frame(width: 6, height: 6)
-                    .accessibilityLabel("Downloaded")
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .accessibilityLabel("Downloaded on Apple Watch")
+            } else if services.isConnected {
+                Image(systemName: "arrow.down.circle")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Download to Apple Watch")
             }
         }
         .padding(.vertical, 4)
