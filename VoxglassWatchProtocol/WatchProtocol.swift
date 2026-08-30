@@ -30,9 +30,19 @@ public enum WatchDownloadState: Codable, Equatable, Sendable {
 
 public struct WatchChapterDTO: Codable, Equatable, Sendable {
     public var id: WatchChapterID; public var index: Int; public var title: String; public var duration: Double
+    public var startTime: Double; public var expectedBytes: Int64?; public var expectedSHA256: String?; public var durableFilename: String
     public var approvedStreamURL: URL?
     public init(id: WatchChapterID, index: Int, title: String, duration: Double, approvedStreamURL: URL? = nil) {
-        self.id = id; self.index = index; self.title = title; self.duration = duration; self.approvedStreamURL = approvedStreamURL
+        self.id = id; self.index = index; self.title = title; self.duration = duration; self.startTime = 0
+        self.expectedBytes = nil; self.expectedSHA256 = nil; self.durableFilename = "\(id.rawValue).audio"; self.approvedStreamURL = approvedStreamURL
+    }
+
+    public init(id: WatchChapterID, index: Int, title: String, duration: Double, startTime: Double,
+                expectedBytes: Int64?, expectedSHA256: String?, durableFilename: String,
+                approvedStreamURL: URL? = nil) {
+        self.id = id; self.index = index; self.title = title; self.duration = duration; self.startTime = startTime
+        self.expectedBytes = expectedBytes; self.expectedSHA256 = expectedSHA256; self.durableFilename = durableFilename
+        self.approvedStreamURL = approvedStreamURL
     }
 }
 public struct WatchBookDTO: Codable, Equatable, Sendable {

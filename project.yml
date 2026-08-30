@@ -40,6 +40,10 @@ targets:
       # through the VoxglassEncoders product (§16.3, C-3).
       - package: VoxglassCore
         product: VoxglassEncoders
+      - package: VoxglassCore
+        product: VoxglassWatchProtocol
+      - package: VoxglassCore
+        product: VoxglassWatchCore
       - target: VoxglassWatch
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework

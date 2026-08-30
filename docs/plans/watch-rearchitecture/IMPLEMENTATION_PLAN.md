@@ -387,3 +387,25 @@ pushing.
   'platform=watchOS Simulator,name=Voxglass-Agent-Watch,OS=latest' ... build`, and
   `xcodebuild -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
   ... build` passed. No physical-device evidence was claimed.
+
+### Phase 2 — Phone projection and download pipeline (2026-08-29)
+
+- Extended `WatchChapterDTO` with chapter-relative start offsets, durable filenames, and
+  optional byte/hash expectations while preserving the approved HTTPS-only stream URL rule.
+- Added the phone-side `PhoneWatchProjection`, persistent `PhoneWatchProjectionStore`, and
+  `PhoneWatchDownloadPlanner`. The store persists projection revisions, desired manifest roots,
+  desired state, and Watch acknowledgements; stale acknowledgements and unrelated paired-library
+  identities cannot overwrite current state.
+- Added Watch-side `WatchDownloadPlan`, bounded two-file `WatchTransferCoordinator`, checksum
+  verification, storage reserve policy, staging/atomic installation, durable-vs-ephemeral asset
+  types, and manifest reconciliation. Failed or partial installs never produce a complete
+  acknowledgement.
+- Wired `PhoneAudioRelay` to publish the typed application-context projection, persist desired
+  roots before transfer, send manifests through `transferUserInfo`, send local assets through
+  `transferFile`, and ingest newer Watch manifest acknowledgements. The legacy relay remains
+  separately active until the Phase 3 UI/transport cutover.
+- Added host coverage for imported/shared-file ordering and offsets, HTTPS filtering, checksum
+  and size validation, storage pressure, staging/removal, persistence, and acknowledgement truth.
+- Verification: focused Watch foundation tests (9 passed), full logic suites (1,373 tests plus
+  6 performance tests passed), guard self-tests passed, concrete `Voxglass-Agent-Watch` build
+  passed, and concrete `iPhone 16` build passed. No physical-device evidence was claimed.

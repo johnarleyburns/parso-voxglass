@@ -29,7 +29,7 @@ let package = Package(
         ),
         .target(
             name: "VoxglassCore",
-            dependencies: ["VoxglassRing"],
+            dependencies: ["VoxglassRing", "VoxglassWatchProtocol", "VoxglassWatchCore"],
             path: "Voxglass/Core",
             exclude: ["Encoders"],
             resources: [

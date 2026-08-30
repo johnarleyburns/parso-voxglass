@@ -11,6 +11,16 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 - Set the command timeout to at least **25 minutes (1500 seconds)** for `git commit`; the pre-commit hook runs the wiring guards, logic tests, and simulator UI smoke tests.
 - Set the command timeout to about **2 minutes (120 seconds)** for `git push`; the pre-push hook runs no tests or guards (CI verifies pushed commits).
 
+## Long-running command handling
+
+- The command runner may return control while a long-running `git commit`, hook, `swift test`, or
+  `xcodebuild` child process is still active. Before starting another verification or commit,
+  inspect `ps` for the existing process and wait for it to finish.
+- Never launch a second hook or test run against the same checkout/derived-data path while the
+  first is active; concurrent hooks can contend for the build database and duplicate expensive UI
+  smoke tests. If an accidental duplicate was started, stop only the duplicate process and leave
+  the original required verification running.
+
 ## Xcode simulator build commands (iPhone + Watch)
 
 The `Voxglass` iPhone scheme embeds the `VoxglassWatch` app. Never pass a global

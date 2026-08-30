@@ -1,6 +1,7 @@
 import Foundation
 import WatchConnectivity
 import VoxglassCore
+import VoxglassWatchProtocol
 
 @MainActor
 final class PhoneAudioRelay: NSObject, ObservableObject {
@@ -17,6 +18,8 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     private weak var libraryStore: LibraryStore?
     private weak var playbackCoordinator: PlaybackCoordinator?
     private weak var offlineManager: OfflineDownloadManager?
+    private var watchProjectionStore: PhoneWatchProjectionStore?
+    private var watchLibraryID: WatchPairedLibraryID = .init(UserDefaults.standard.string(forKey: "voxglass.watch.libraryID") ?? UUID().uuidString)
 
     /// The production relay transport. `WCSession` permits a single delegate, which
     /// this relay owns; incoming production messages (review events, refresh
@@ -49,7 +52,51 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         self.libraryStore = libraryStore
         self.playbackCoordinator = playbackCoordinator
         self.offlineManager = offlineManager
-        Task { await publishLibrarySnapshot() }
+        let support = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)) ?? FileManager.default.temporaryDirectory
+        self.watchProjectionStore = PhoneWatchProjectionStore(
+            url: support.appendingPathComponent("Voxglass/WatchProjection.json"), libraryID: watchLibraryID
+        )
+        Task {
+            await publishLibrarySnapshot()
+            await publishTypedWatchProjection()
+        }
+    }
+
+    /// Publishes the Phase 2 typed projection. The legacy dictionary relay is
+    /// kept separately until the Watch UI cutover in Phase 3.
+    func publishTypedWatchProjection() async {
+        guard let libraryStore, let watchProjectionStore else { return }
+        do {
+            let revision = try await watchProjectionStore.nextRevision()
+            let snapshot = PhoneWatchProjection.library(from: libraryStore.books, libraryID: watchLibraryID, revision: revision)
+            let data = try WatchProtocolEnvelope.encode(kind: .librarySnapshot, payload: snapshot, libraryID: watchLibraryID, revision: revision)
+            try session.updateApplicationContext(WatchProtocolEnvelope.dictionary(for: data))
+            UserDefaults.standard.set(watchLibraryID.rawValue, forKey: "voxglass.watch.libraryID")
+        } catch {
+            // The next bootstrap or explicit watch request retries projection.
+        }
+    }
+
+    /// Persists the iPhone-owned desired root before any bytes are sent. Local
+    /// imports and already-cached files are transferred directly; remote sources
+    /// remain resumable until the existing phone cache has materialized them.
+    func requestTypedWatchDownload(bookID: UUID) async {
+        guard let libraryStore, let watchProjectionStore, let book = libraryStore.books.first(where: { $0.book.id == bookID }) else { return }
+        let revision = (try? await watchProjectionStore.nextRevision()) ?? 0
+        let plan = PhoneWatchDownloadPlanner.plan(for: book, revision: revision)
+        do {
+            try await watchProjectionStore.setDesiredRoot(plan.manifest)
+            let manifest = try WatchProtocolEnvelope.encode(kind: .bookManifest, payload: plan.manifest, libraryID: watchLibraryID, revision: revision)
+            session.transferUserInfo(WatchProtocolEnvelope.dictionary(for: manifest))
+            for asset in plan.assets {
+                guard let source = asset.sourceURL, source.isFileURL, FileManager.default.fileExists(atPath: source.path) else { continue }
+                let envelope = try WatchProtocolEnvelope.encode(kind: .assetFile, payload: asset, libraryID: watchLibraryID, revision: revision)
+                let metadata = WatchProtocolEnvelope.dictionary(for: envelope).merging(["watchAsset": true], uniquingKeysWith: { _, new in new })
+                session.transferFile(source, metadata: metadata)
+            }
+        } catch {
+            try? await watchProjectionStore.setDesired(.failed("preparation-failed"), for: plan.bookID)
+        }
     }
 
     func publishLibrarySnapshot() async {
@@ -394,7 +441,17 @@ extension PhoneAudioRelay: WCSessionDelegate {
         let box = UncheckedBox(userInfo)
         Task { @MainActor in
             forwardProduction(box.value)
+            await handleTypedWatchAcknowledgement(box.value)
         }
+    }
+
+    private func handleTypedWatchAcknowledgement(_ message: [String: Any]) async {
+        guard let data = WatchProtocolEnvelope.payloadData(in: message),
+              let envelope = try? WatchProtocolEnvelope.decode(data),
+              envelope.kind == .watchManifest,
+              let acknowledgement = try? envelope.decodePayload(WatchManifestAcknowledgement.self),
+              let store = watchProjectionStore else { return }
+        try? await store.acknowledge(acknowledgement)
     }
 
     nonisolated func session(
