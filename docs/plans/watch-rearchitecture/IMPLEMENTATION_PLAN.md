@@ -362,4 +362,28 @@ pushing.
 
 ## 10. Implementation audit
 
-Not started. Phase 0 awaits owner review.
+### Phase 1 — Foundation (2026-08-29)
+
+- Added the `VoxglassWatchProtocol` Foundation-only package product at
+  `VoxglassWatchProtocol/`. It owns stable IDs, library/chapter/manifest DTO placeholders,
+  download states, channel mapping, binary property-list envelopes, protocol faults, and the
+  transport contract.
+- Added the `VoxglassWatchCore` package product at `VoxglassWatchCore/`. It owns the local
+  Codable watch store, paired-library/revision-gated projection ingestion, durable download
+  records, complete-book filtering, and corruption recovery that preserves the audio directory.
+  The store configuration records the explicit CloudKit-disabled policy (`none`).
+- The generated Xcode layout links both named products into `VoxglassWatch`; the existing
+  `VoxglassCore` dependency remains temporarily for the shipped legacy Watch assembly and will
+  be removed during cutover. The new products contain no CloudKit, WatchConnectivity,
+  AVFoundation, catalog, credential, or UI imports.
+- Added `WatchFakeDuplexLink`, duplicate/delay/reorder/reachability/failure controls,
+  `WatchMessageLedger`, `WatchConnectionReducer`, and `WatchProtocolRouter` to the protocol
+  boundary. Added host tests covering envelope round trips, pair/revision behavior, debounce,
+  transport faults, and corrupt-store recovery.
+- The legacy Watch relay/transport remains compiling as a temporary compatibility path; no new
+  playback, download pipeline, or UI behavior was introduced in this phase.
+- Verification: `swift test --filter WatchFoundationTests`, `bash scripts/test_logic.sh`,
+  `bash scripts/test_guards.sh`, `xcodebuild -scheme VoxglassWatch -destination
+  'platform=watchOS Simulator,name=Voxglass-Agent-Watch,OS=latest' ... build`, and
+  `xcodebuild -scheme Voxglass -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
+  ... build` passed. No physical-device evidence was claimed.

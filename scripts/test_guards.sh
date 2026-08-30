@@ -245,6 +245,10 @@ unplant "$probe"
 expect_guard_passes "G-P5 watch Mac string probe"
 
 # ──────────────────────────────────────────────────────────────
+if ! bash "$SCRIPT_DIR/guard_watch_foundation.sh"; then
+  FAILURES=$((FAILURES + 1))
+fi
+
 echo
 if [ "$FAILURES" -gt 0 ]; then
   echo "test_guards: $FAILURES failure(s) found" >&2

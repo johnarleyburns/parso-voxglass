@@ -73,6 +73,7 @@
 		40C82A08A418FC46B5922DD6 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28210879609150716CCE1C62 /* BookmarksView.swift */; };
 		41BBB220E6190D73AFE7348C /* moby_dick_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 446298FA2910316179E29ECB /* moby_dick_librivox.jpg */; };
 		423DFA0E519EE3E7FB5969AF /* DiscoveryEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */; };
+		42AA85FC23975F9F754FC01B /* VoxglassWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = 752C9704E6F3EA532549938A /* VoxglassWatchCore */; };
 		4316D94382F1DD709A02C4F0 /* terror_mystery_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9434A47A806A4EA4509EC595 /* terror_mystery_0707_librivox.jpg */; };
 		4487DE27D4F87CDA5EA2ADE6 /* adventures_holmes.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B0F652B44CEB7E5C6E362184 /* adventures_holmes.jpg */; };
 		45AB33D1AE3848D610C4ABDC /* NarrationStateFreshnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2993CB8F5B2A3A7B506245 /* NarrationStateFreshnessTests.swift */; };
@@ -171,6 +172,7 @@
 		A8326B77796D17017BEAB22F /* invisible_man_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6E236DD8C74AFC36B59293A6 /* invisible_man_librivox.jpg */; };
 		AC1124DB69A7968A686B5B2B /* adventures_sherlockholmes_1007_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 08BCFD8ACA913E9EFA9AD767 /* adventures_sherlockholmes_1007_librivox.jpg */; };
 		AD8E4F3FF948E659510CD304 /* WatchSyncStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE853513A56ADE8BAB406940 /* WatchSyncStatusView.swift */; };
+		ADFC054A3E75CA98A7D6D15A /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 36D6130F23531ACE543367F2 /* VoxglassWatchProtocol */; };
 		AE5B001CD7F7BA60DD0906B6 /* art_of_war_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDC407D3BB2E95FD9AC3A899 /* art_of_war_librivox.jpg */; };
 		AE794233D23294F8810AEE06 /* jane_eyre_ver03_0809_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */; };
 		AF033865D233292251CE0190 /* CarPlayReviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85F389E6310626F4B2F88D2 /* CarPlayReviewController.swift */; };
@@ -579,6 +581,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				461421576EA62442A0CEBD15 /* VoxglassCore in Frameworks */,
+				ADFC054A3E75CA98A7D6D15A /* VoxglassWatchProtocol in Frameworks */,
+				42AA85FC23975F9F754FC01B /* VoxglassWatchCore in Frameworks */,
 				EC7F11B512271B1FFC07E5D9 /* AVFoundation.framework in Frameworks */,
 				354513B397ABB4AC56935EB6 /* WatchConnectivity.framework in Frameworks */,
 				4F9783F7FD52124391DB96D0 /* libsqlite3.tbd in Frameworks */,
@@ -1131,6 +1135,8 @@
 			name = VoxglassWatch;
 			packageProductDependencies = (
 				F3AC8EE75DFDED03283E4DC1 /* VoxglassCore */,
+				36D6130F23531ACE543367F2 /* VoxglassWatchProtocol */,
+				752C9704E6F3EA532549938A /* VoxglassWatchCore */,
 			);
 			productName = VoxglassWatch;
 			productReference = 1399460F5AB0EEA78A9F6B79 /* VoxglassWatch.app */;
@@ -2047,9 +2053,17 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassCore;
 		};
+		36D6130F23531ACE543367F2 /* VoxglassWatchProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoxglassWatchProtocol;
+		};
 		6709F24E350537E4003AB7B1 /* VoxglassEncoders */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassEncoders;
+		};
+		752C9704E6F3EA532549938A /* VoxglassWatchCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoxglassWatchCore;
 		};
 		939374D7CC51C05995A3F339 /* VoxglassEncoders */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -6,10 +6,23 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
+        .library(name: "VoxglassWatchProtocol", targets: ["VoxglassWatchProtocol"]),
+        .library(name: "VoxglassWatchCore", targets: ["VoxglassWatchCore"]),
         .library(name: "VoxglassCoreTestSupport", targets: ["VoxglassCoreTestSupport"]),
         .library(name: "VoxglassEncoders", targets: ["VoxglassEncoders"])
     ],
     targets: [
+        .target(
+            name: "VoxglassWatchProtocol",
+            path: "VoxglassWatchProtocol",
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
+        .target(
+            name: "VoxglassWatchCore",
+            dependencies: ["VoxglassWatchProtocol"],
+            path: "VoxglassWatchCore",
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
         .target(
             name: "VoxglassRing",
             path: "VoxglassRing"
@@ -75,7 +88,7 @@ let package = Package(
         ),
         .testTarget(
             name: "VoxglassCoreTests",
-            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders"],
+            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders", "VoxglassWatchProtocol", "VoxglassWatchCore"],
             path: "VoxglassTests",
             exclude: ["Info.plist", "Performance"],
             resources: [

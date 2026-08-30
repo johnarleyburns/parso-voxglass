@@ -113,6 +113,11 @@ targets:
           - Resources/VoxglassWatch.entitlements
     dependencies:
       - package: VoxglassCore
+        product: VoxglassCore
+      - package: VoxglassCore
+        product: VoxglassWatchProtocol
+      - package: VoxglassCore
+        product: VoxglassWatchCore
       - sdk: AVFoundation.framework
       - sdk: WatchConnectivity.framework
       - sdk: libsqlite3.tbd
