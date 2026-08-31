@@ -69,9 +69,7 @@ struct BookPageView: View {
                                 scrubber(resolved)
                                 transportControls(resolved)
                                 actionRow(resolved)
-                                if phoneAudioRelay.isWatchAppInstalled {
-                                    watchRow(resolved)
-                                }
+                                watchRow(resolved)
                                 aboutSection(resolved)
                                 chapterList(resolved)
                                 discoveryLinks(resolved)

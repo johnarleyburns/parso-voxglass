@@ -31,7 +31,6 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Sync")
                     SyncSettingsCard()
-                    WatchSyncCard()
                 }
 
                 settingsGroup("Narration") {
@@ -114,6 +113,11 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
 
                     LibraryBackupRow()
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionTitle(title: "Apple Watch")
+                    WatchSyncCard()
                 }
 
                 settingsGroup("About") {
@@ -732,7 +736,8 @@ private struct SyncSettingsCard: View {
 private struct WatchSyncCard: View {
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
     @EnvironmentObject private var syncEngine: CloudKitSyncEngine
-    @State private var isSyncingLibrary = false
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
+    @State private var isSyncingWatch = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -743,44 +748,59 @@ private struct WatchSyncCard: View {
                     .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
-                if isSyncingLibrary {
+                if isSyncingWatch {
                     ProgressView().scaleEffect(0.8)
                 }
             }
 
-            Text("Apple Watch gets My Books directly from the iPhone with WatchConnectivity. Use “Download to Apple Watch” on a book's page to send it over for offline listening; the watch can also search, stream, and download on its own.")
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(phoneAudioRelay.isReachable ? Color.green : Color.orange)
+                    .frame(width: 8, height: 8)
+                Text(phoneAudioRelay.connectionStatusText)
+                    .scaledFont(size: 11.5, weight: .semibold)
+                    .foregroundStyle(Palette.ink2)
+            }
+            .accessibilityIdentifier("watchsync.connectionStatus")
+
+            Text("Apple Watch gets My Books directly from this iPhone. Use “Download to Apple Watch” on a book page or in its My Books context menu.")
                 .scaledFont(size: 11.5)
                 .foregroundStyle(Palette.ink3)
 
-            if !syncEnabled {
-                Text("iCloud Sync is off. Apple Watch still uses direct iPhone connectivity when the phone is reachable.")
-                    .scaledFont(size: 11.5)
-                    .foregroundStyle(Palette.ink3)
-            } else {
-                Text("iCloud: \(syncEngine.accountStatusText) · Pending \(syncEngine.pendingCount) · Pushed \(syncEngine.lastUploadedCount)")
+            Text("\(phoneAudioRelay.watchStoredBookCount) downloaded books · \(ByteCountFormatter.string(fromByteCount: phoneAudioRelay.watchStoredBytes, countStyle: .file)) on Watch")
+                .scaledFont(size: 11)
+                .foregroundStyle(Palette.ink3)
+                .accessibilityIdentifier("watchsync.storageSummary")
+
+            if let date = phoneAudioRelay.lastWatchSyncDate {
+                Text("Last Watch update: \(date.formatted(date: .abbreviated, time: .shortened))")
                     .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
-                if let error = syncEngine.syncError {
-                    Text(error)
-                        .scaledFont(size: 11.5)
-                        .foregroundStyle(Palette.danger)
-                        .accessibilityIdentifier("watchsync.error")
-                }
-
-                Button {
-                    Task {
-                        isSyncingLibrary = true
-                        await syncEngine.start()
-                        isSyncingLibrary = false
-                    }
-                } label: {
-                    Text(isSyncingLibrary ? "Syncing Library…" : "Sync Library Now")
-                        .scaledFont(size: 12, weight: .semibold)
-                        .foregroundStyle(Palette.brass)
-                }
-                .disabled(isSyncingLibrary)
-                .accessibilityIdentifier("watchsync.now")
             }
+            if let status = phoneAudioRelay.watchSyncStatus {
+                Text(status)
+                    .scaledFont(size: 11.5)
+                    .foregroundStyle(status.localizedCaseInsensitiveContains("failed") ? Palette.danger : Palette.ink3)
+                    .accessibilityIdentifier("watchsync.result")
+            }
+
+            Button {
+                Task {
+                    isSyncingWatch = true
+                    await phoneAudioRelay.syncWatchNow()
+                    isSyncingWatch = false
+                }
+            } label: {
+                Text(isSyncingWatch ? "Syncing with Watch…" : "Sync with Apple Watch")
+                    .scaledFont(size: 12, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+            }
+            .disabled(isSyncingWatch)
+            .accessibilityIdentifier("watchsync.now")
+
+            Text("iCloud: \(syncEnabled ? syncEngine.accountStatusText : "Off")")
+                .scaledFont(size: 11)
+                .foregroundStyle(Palette.ink3)
         }
         .padding(15)
         .glassSurface(cornerRadius: 18)

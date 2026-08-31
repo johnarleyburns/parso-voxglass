@@ -160,6 +160,24 @@ import VoxglassCoreTestSupport
         }
         #expect(offenders.isEmpty, "Malformed accessibility identifiers: \(offenders)")
     }
+
+    @Test func watchFieldConnectionAndDownloadControlsStayWired() {
+        let phoneRelay = Self.sourceFiles(in: "Voxglass/App").joined(separator: "\n")
+        let phoneViews = Self.sourceFiles(in: "Voxglass/Features").joined(separator: "\n")
+        let watchSources = Self.sourceFiles(in: "VoxglassWatch").joined(separator: "\n")
+
+        #expect(phoneRelay.contains("sessionWatchStateDidChange"))
+        #expect(phoneRelay.contains("connectionToast = \"Apple Watch connected\""))
+        #expect(phoneRelay.contains("kind: .librarySnapshot"))
+        #expect(phoneViews.contains("\"bookpage.downloadToWatch\""))
+        #expect(phoneViews.contains("\"watchsync.connectionStatus\""))
+        #expect(phoneViews.contains("\"watchsync.storageSummary\""))
+        #expect(phoneViews.contains("\"watchsync.result\""))
+        #expect(watchSources.contains("activationDidCompleteWith activationState"))
+        #expect(watchSources.contains("kind: .hello"))
+        #expect(watchSources.contains("didReceiveUserInfo"))
+        #expect(watchSources.contains("requestedDownloadBookID"))
+    }
 }
 
 private extension String {

@@ -5,6 +5,7 @@ struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var offlineDownloadManager: OfflineDownloadManager
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @State private var selectedTab: VoxglassTab = .launchDefault
     @StateObject private var miniPlayerRouter = MiniPlayerPresentationRouter()
     @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-VoxglassDisableAnimatedSplash")
@@ -38,8 +39,32 @@ struct RootView: View {
                 AnimatedSplashView(isPresented: $showSplash)
                     .zIndex(10)
             }
+
+            if let toast = phoneAudioRelay.connectionToast {
+                VStack {
+                    Text(toast)
+                        .scaledFont(size: 13, weight: .semibold)
+                        .foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 11)
+                        .glassSurface(cornerRadius: 16)
+                        .accessibilityIdentifier("watch.connectionToast")
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    Spacer()
+                }
+                .safeAreaPadding(.top, 10)
+                .zIndex(20)
+            }
         }
         .tint(VoxglassTheme.accent)
+        .animation(.easeInOut(duration: 0.2), value: phoneAudioRelay.connectionToast)
+        .onChange(of: phoneAudioRelay.connectionToast) { _, value in
+            guard value != nil else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(3))
+                phoneAudioRelay.connectionToast = nil
+            }
+        }
     }
 
     private var tabs: some View {

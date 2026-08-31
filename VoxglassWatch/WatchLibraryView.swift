@@ -23,5 +23,19 @@ struct WatchLibraryView: View {
 private struct WatchBookRow: View {
     let book: WatchBookDTO
     @EnvironmentObject private var services: WatchAppServices
-    var body: some View { HStack { VStack(alignment: .leading) { Text(book.title).font(.headline).lineLimit(2); Text(book.author ?? "").font(.caption2).foregroundStyle(.secondary) }; Spacer(); Image(systemName: services.downloaded.contains(book.id) ? "checkmark.circle.fill" : "arrow.down.circle").foregroundStyle(services.downloaded.contains(book.id) ? .green : .secondary) } }
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(book.title).font(.headline).lineLimit(2)
+                Text(book.author ?? "").font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if services.downloading.contains(book.id) {
+                ProgressView().controlSize(.small)
+            } else {
+                Image(systemName: services.downloaded.contains(book.id) ? "checkmark.circle.fill" : "arrow.down.circle")
+                    .foregroundStyle(services.downloaded.contains(book.id) ? .green : .secondary)
+            }
+        }
+    }
 }

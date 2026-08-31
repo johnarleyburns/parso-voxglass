@@ -139,25 +139,23 @@ struct LibraryView: View {
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
                         .contextMenu {
-                            if phoneAudioRelay.isWatchAppInstalled {
-                                Button {
-                                    Task {
-                                        if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
-                                            await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id)
-                                        } else {
-                                            await transferToWatch(book, allowCellular: false)
-                                        }
+                            Button {
+                                Task {
+                                    if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
+                                        await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id)
+                                    } else {
+                                        await transferToWatch(book, allowCellular: false)
                                     }
-                                } label: {
-                                    Label(watchContextTitle(for: book), systemImage: "applewatch")
                                 }
-                                .disabled(phoneAudioRelay.isTransferringToWatch)
-                                .accessibilityIdentifier(
-                                    (phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available
-                                        ? "library.watchRemove."
-                                        : "library.watchDownload.") + book.book.id.uuidString
-                                )
+                            } label: {
+                                Label(watchContextTitle(for: book), systemImage: "applewatch")
                             }
+                            .disabled(phoneAudioRelay.isTransferringToWatch)
+                            .accessibilityIdentifier(
+                                (phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available
+                                    ? "library.watchRemove."
+                                    : "library.watchDownload.") + book.book.id.uuidString
+                            )
                             Button("Remove from My Books", role: .destructive) {
                                 pendingDeletion = book
                             }

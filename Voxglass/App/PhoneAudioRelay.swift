@@ -9,8 +9,13 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     @Published private(set) var isReachable: Bool = false
     @Published private(set) var isWatchAppInstalled: Bool = false
+    @Published private(set) var isPaired: Bool = false
+    @Published private(set) var isActivated: Bool = false
     @Published private(set) var watchStorageSnapshot: WatchStorageSnapshot?
     @Published private(set) var isTransferringToWatch = false
+    @Published private(set) var lastWatchSyncDate: Date?
+    @Published private(set) var watchSyncStatus: String?
+    @Published var connectionToast: String?
     @Published var watchTransferError: String?
 
     private let session: WCSession
@@ -44,6 +49,22 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         session.activate()
     }
 
+    var connectionStatusText: String {
+        if !WCSession.isSupported() { return "Apple Watch is not supported on this iPhone." }
+        if !isPaired { return "No Apple Watch is paired." }
+        if !isWatchAppInstalled { return "Voxglass is not installed on the paired Apple Watch." }
+        if !isActivated { return "Connecting to Apple Watch…" }
+        return isReachable ? "Apple Watch connected" : "Apple Watch not currently reachable"
+    }
+
+    var watchStoredBytes: Int64 {
+        watchStorageSnapshot?.books.values.reduce(0) { $0 + $1.byteCount } ?? 0
+    }
+
+    var watchStoredBookCount: Int {
+        watchStorageSnapshot?.books.values.filter { $0.state == .available }.count ?? 0
+    }
+
     func configure(
         libraryStore: LibraryStore,
         playbackCoordinator: PlaybackCoordinator,
@@ -62,8 +83,6 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         }
     }
 
-    /// Publishes the Phase 2 typed projection. The legacy dictionary relay is
-    /// kept separately until the Watch UI cutover in Phase 3.
     func publishTypedWatchProjection() async {
         guard let libraryStore, let watchProjectionStore else { return }
         do {
@@ -72,8 +91,23 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             let data = try WatchProtocolEnvelope.encode(kind: .librarySnapshot, payload: snapshot, libraryID: watchLibraryID, revision: revision)
             try session.updateApplicationContext(WatchProtocolEnvelope.dictionary(for: data))
             UserDefaults.standard.set(watchLibraryID.rawValue, forKey: "voxglass.watch.libraryID")
+            lastWatchSyncDate = Date()
+            watchSyncStatus = "My Books sent to Apple Watch."
         } catch {
-            // The next bootstrap or explicit watch request retries projection.
+            watchSyncStatus = "Watch sync failed: \(error.localizedDescription)"
+        }
+    }
+
+    func syncWatchNow() async {
+        refreshConnectionState()
+        guard isPaired else { watchSyncStatus = "No Apple Watch is paired."; return }
+        guard isWatchAppInstalled else {
+            watchSyncStatus = "Install Voxglass on the paired Apple Watch first."
+            return
+        }
+        await publishTypedWatchProjection()
+        if isReachable {
+            connectionToast = "Apple Watch connected"
         }
     }
 
@@ -102,17 +136,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     func publishLibrarySnapshot() async {
         guard WCSession.isSupported(), session.activationState == .activated else { return }
         guard session.isPaired, session.isWatchAppInstalled else { return }
-
-        do {
-            let snapshot = await makeLibrarySnapshot(refresh: false)
-            let context = try WatchPhoneMessageCodec.message(
-                action: WatchPhoneAction.requestLibrary,
-                payload: snapshot
-            )
-            try session.updateApplicationContext(context)
-        } catch {
-            // The next explicit watch request will fetch a fresh snapshot.
-        }
+        await publishTypedWatchProjection()
     }
 
     func transferChapterFile(at url: URL, chapterKey: String) {
@@ -299,6 +323,31 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     private func applyWatchStorageSnapshot(_ snapshot: WatchStorageSnapshot) {
         watchStorageSnapshot = snapshot
+        lastWatchSyncDate = Date()
+        watchSyncStatus = "Watch storage updated."
+    }
+
+    private func applyWatchAcknowledgement(_ acknowledgement: WatchManifestAcknowledgement) {
+        guard let id = UUID(uuidString: acknowledgement.bookID.rawValue) else { return }
+        let state: WatchTransferState = acknowledgement.complete ? .available : .failed
+        let info = WatchBookStorageInfo(
+            state: state,
+            byteCount: acknowledgement.installedBytes,
+            chapterCount: 0,
+            completeChapterCount: acknowledgement.complete ? 1 : 0,
+            totalChapterCount: 0
+        )
+        var books = watchStorageSnapshot?.books ?? [:]
+        books[id] = info
+        applyWatchStorageSnapshot(WatchStorageSnapshot(books: books))
+    }
+
+    private func refreshConnectionState() {
+        guard WCSession.isSupported() else { return }
+        isPaired = session.isPaired
+        isWatchAppInstalled = session.isWatchAppInstalled
+        isActivated = session.activationState == .activated
+        isReachable = session.isReachable
     }
 
     /// Resolves a requested chapter through the cache store and ships its blob to
@@ -335,6 +384,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         _ book: BookWithChapters,
         allowCellularOverride: Bool = false
     ) async -> WatchTransferStart {
+        refreshConnectionState()
         guard isWatchAppInstalled else {
             return .failed("The Voxglass app isn't installed on your Apple Watch.")
         }
@@ -353,6 +403,16 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
         isTransferringToWatch = true
         defer { isTransferringToWatch = false }
+
+        var storage = watchStorageSnapshot?.books ?? [:]
+        storage[book.book.id] = WatchBookStorageInfo(
+            state: .queued,
+            byteCount: 0,
+            chapterCount: 0,
+            completeChapterCount: 0,
+            totalChapterCount: book.chapters.count
+        )
+        applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
 
         // Wait for the phone-side download to complete before transferring.
         let deadline = Date().addingTimeInterval(180)
@@ -382,6 +442,8 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         if transferred == 0 {
             return .failed("No chapters were ready to transfer.")
         }
+        await requestTypedWatchDownload(bookID: book.book.id)
+        watchSyncStatus = "\(book.book.title) queued for Apple Watch."
         return .started
     }
 
@@ -389,6 +451,9 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         guard let watchProjectionStore else { return }
         let id = WatchBookID(bookID.uuidString)
         try? await watchProjectionStore.remove(bookID: id)
+        var storage = watchStorageSnapshot?.books ?? [:]
+        storage.removeValue(forKey: bookID)
+        applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
         guard WCSession.isSupported(), session.activationState == .activated else { return }
         if let data = try? WatchProtocolEnvelope.encode(
             kind: .removeBookDownload,
@@ -410,16 +475,40 @@ extension PhoneAudioRelay: WCSessionDelegate {
         // `WCSession` is non-Sendable, so capturing it would be a data race.
         let reachable = session.isReachable
         let installed = session.isWatchAppInstalled
+        let paired = session.isPaired
         let activated = session.activationState == .activated
         Task { @MainActor in
+            let becameConnected = !isReachable && reachable
             isReachable = reachable
             isWatchAppInstalled = installed
+            isPaired = paired
+            isActivated = activated
             productionTransport?.updateReachability(reachable: reachable, activated: activated)
+            if becameConnected {
+                connectionToast = "Apple Watch connected"
+            }
             await publishLibrarySnapshot()
         }
     }
 
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
+
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        let reachable = session.isReachable
+        let installed = session.isWatchAppInstalled
+        let paired = session.isPaired
+        let activated = session.activationState == .activated
+        Task { @MainActor in
+            isReachable = reachable
+            isWatchAppInstalled = installed
+            isPaired = paired
+            isActivated = activated
+            productionTransport?.updateReachability(reachable: reachable, activated: activated)
+            if installed {
+                await publishTypedWatchProjection()
+            }
+        }
+    }
 
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         session.activate()
@@ -427,10 +516,19 @@ extension PhoneAudioRelay: WCSessionDelegate {
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         let reachable = session.isReachable
+        let installed = session.isWatchAppInstalled
+        let paired = session.isPaired
         let activated = session.activationState == .activated
         Task { @MainActor in
+            let becameConnected = !isReachable && reachable
             isReachable = reachable
+            isWatchAppInstalled = installed
+            isPaired = paired
+            isActivated = activated
             productionTransport?.updateReachability(reachable: reachable, activated: activated)
+            if becameConnected {
+                connectionToast = "Apple Watch connected"
+            }
             if reachable {
                 await publishLibrarySnapshot()
             }
@@ -455,17 +553,28 @@ extension PhoneAudioRelay: WCSessionDelegate {
         let box = UncheckedBox(userInfo)
         Task { @MainActor in
             forwardProduction(box.value)
-            await handleTypedWatchAcknowledgement(box.value)
+            await handleTypedWatchMessage(box.value)
         }
     }
 
-    private func handleTypedWatchAcknowledgement(_ message: [String: Any]) async {
+    private func handleTypedWatchMessage(_ message: [String: Any]) async {
         guard let data = WatchProtocolEnvelope.payloadData(in: message),
-              let envelope = try? WatchProtocolEnvelope.decode(data),
-              envelope.kind == .watchManifest,
-              let acknowledgement = try? envelope.decodePayload(WatchManifestAcknowledgement.self),
-              let store = watchProjectionStore else { return }
-        try? await store.acknowledge(acknowledgement)
+              let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
+        switch envelope.kind {
+        case .watchManifest:
+            guard let acknowledgement = try? envelope.decodePayload(WatchManifestAcknowledgement.self),
+                  let store = watchProjectionStore else { return }
+            try? await store.acknowledge(acknowledgement)
+            applyWatchAcknowledgement(acknowledgement)
+        case .setBookDownload:
+            guard let manifest = try? envelope.decodePayload(WatchManifest.self),
+                  let id = UUID(uuidString: manifest.bookID.rawValue) else { return }
+            await requestTypedWatchDownload(bookID: id)
+        case .reconcileRequest, .hello:
+            await publishTypedWatchProjection()
+        default:
+            break
+        }
     }
 
     nonisolated func session(
@@ -490,6 +599,30 @@ extension PhoneAudioRelay: WCSessionDelegate {
         let messageBox = UncheckedBox(message)
         let replyBox = UncheckedBox(replyHandler)
         Task { @MainActor in
+            if let data = WatchProtocolEnvelope.payloadData(in: messageBox.value),
+               let envelope = try? WatchProtocolEnvelope.decode(data),
+               envelope.kind == .hello,
+               let libraryStore {
+                let revision = (try? await watchProjectionStore?.nextRevision()) ?? 0
+                let snapshot = PhoneWatchProjection.library(
+                    from: libraryStore.books,
+                    libraryID: watchLibraryID,
+                    revision: revision
+                )
+                if let replyData = try? WatchProtocolEnvelope.encode(
+                    kind: .librarySnapshot,
+                    payload: snapshot,
+                    libraryID: watchLibraryID,
+                    revision: revision,
+                    correlationID: envelope.messageID
+                ) {
+                    replyBox.value(WatchProtocolEnvelope.dictionary(for: replyData))
+                } else {
+                    replyBox.value([:])
+                }
+                await publishTypedWatchProjection()
+                return
+            }
             if WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.requestRefresh
                 || WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.recordingRemoteCommand {
                 // The watch asked the phone to re-push, or sent a recording-remote

@@ -445,3 +445,17 @@ pushing.
   build on `iPhone 16` passed; Watch UI smoke on `Watch-Small` passed; focused accessibility,
   production, wiring, and probe self-tests passed. Full host logic was rerun after the stale audit
   fix; physical-device matrix and 40 mm screenshot/frame evidence remain pending.
+
+### Field connectivity repair (2026-08-30)
+
+- Replaced the conflicting legacy application-context publication with the typed Watch library
+  projection and added an explicit Watch-to-phone hello/reply handshake at activation.
+- Added live paired, installed, activated, and reachable state on iPhone; connection toast,
+  explicit Watch sync result, last-update time, and Watch storage book/byte summary.
+- Made Download to Apple Watch discoverable on every book page and My Books context menu. Queued,
+  transferring, failed, and acknowledged downloaded states now remain visible on iPhone.
+- Phone-initiated public-book manifests now start the Watch's approved-HTTPS chapter download.
+  The Watch reports a complete manifest and byte count only after all chapter files finish.
+- Verification: concrete iPhone and Watch builds, focused connectivity/accessibility tests, all
+  source guards and guard probes, and the `Watch-Small` UI smoke passed. Paired-hardware
+  WatchConnectivity delivery remains field evidence and is not claimed by simulator checks.
