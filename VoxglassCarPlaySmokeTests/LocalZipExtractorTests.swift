@@ -3,6 +3,7 @@ import XCTest
 import ZIPFoundation
 @testable import Voxglass
 
+// pure unit test: no app launch
 final class LocalZipExtractorTests: XCTestCase {
     func testExtractsSmallDeflatedArchive() throws {
         let fixtureRoot = FileManager.default.temporaryDirectory

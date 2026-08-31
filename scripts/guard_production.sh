@@ -226,8 +226,17 @@ check_test_environment() {
       files=$(find "$d" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -lE 'XCTestCase' 2>/dev/null || true)
       for f in $files; do
         # Hosted scene tests (CarPlay) never launch the app; they seed
-        # in-process. Every other UI test must launch with -uiTestSeed.
-        if ! grep -q -- '-uiTestSeed' "$f" && ! grep -qE 'TestEnvironment\(seed:|seed: \.[a-zA-Z]+' "$f"; then
+        # in-process. Pure unit tests may opt out with an explicit marker.
+        # Files that launch XCUIApplication require the -uiTestSeed contract.
+        if ! grep -qE 'XCUIApplication|launchArguments|launchEnvironment|\.launch\(' "$f"; then
+          if grep -qE 'TestEnvironment\(seed:|seed: \.[a-zA-Z]+' "$f" || \
+             grep -q 'pure unit test: no app launch' "$f"; then
+            continue
+          fi
+          violate "G-8: hosted test file $f must seed in-process or declare a pure unit test"
+          continue
+        fi
+        if ! grep -q -- '-uiTestSeed' "$f"; then
           violate "G-8: UI test file $f must launch with -uiTestSeed (or seed in-process)"
         fi
       done
