@@ -1,6 +1,5 @@
 import SwiftUI
 import AVFoundation
-import Compression
 import UniformTypeIdentifiers
 import VoxglassCore
 
@@ -468,7 +467,9 @@ private struct AddArchiveURLSheet: View {
     private func importSelectedLocalSource(_ selectedURL: URL) async {
         if selectedURL.pathExtension.lowercased() == "zip" {
             do {
-                let extracted = try LocalZipExtractor.extract(selectedURL)
+                let extracted = try await Task.detached(priority: .userInitiated) {
+                    try LocalZipExtractor.extract(selectedURL)
+                }.value
                 defer { try? FileManager.default.removeItem(at: extracted) }
                 await importLocalFolder(extracted)
             } catch {
@@ -577,133 +578,6 @@ private enum LocalAudiobookImportError: LocalizedError {
         case .invalidChapterTiming:
             return "The chapter timestamps do not fit within the selected audio file."
         }
-    }
-}
-
-private enum LocalZipExtractor {
-    private static let localFileHeader: UInt32 = 0x04034b50
-    private static let centralDirectoryHeader: UInt32 = 0x02014b50
-    private static let endOfCentralDirectory: UInt32 = 0x06054b50
-
-    static func extract(_ archiveURL: URL) throws -> URL {
-        let accessing = archiveURL.startAccessingSecurityScopedResource()
-        defer { if accessing { archiveURL.stopAccessingSecurityScopedResource() } }
-
-        let data = try Data(contentsOf: archiveURL)
-        let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("voxglass-zip-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-
-        do {
-            var offset = 0
-            while offset + 30 <= data.count {
-                let signature = data.uint32LE(at: offset)
-                if signature == centralDirectoryHeader || signature == endOfCentralDirectory {
-                    break
-                }
-                guard signature == localFileHeader else {
-                    throw LocalZipError.invalidArchive
-                }
-
-                let flags = data.uint16LE(at: offset + 6)
-                let method = data.uint16LE(at: offset + 8)
-                let compressedSize = Int(data.uint32LE(at: offset + 18))
-                let uncompressedSize = Int(data.uint32LE(at: offset + 22))
-                let nameLength = Int(data.uint16LE(at: offset + 26))
-                let extraLength = Int(data.uint16LE(at: offset + 28))
-                let nameStart = offset + 30
-                let contentStart = nameStart + nameLength + extraLength
-                guard contentStart <= data.count,
-                      nameStart + nameLength <= data.count else {
-                    throw LocalZipError.invalidArchive
-                }
-                let nameData = data.subdata(in: nameStart..<(nameStart + nameLength))
-                let name = String(data: nameData, encoding: .utf8) ?? String(decoding: nameData, as: UTF8.self)
-                let normalized = name.replacingOccurrences(of: "\\", with: "/")
-                let isDirectory = normalized.hasSuffix("/")
-                let safeParts = normalized.split(separator: "/").filter { $0 != "" && $0 != "." && $0 != ".." }
-                guard !safeParts.isEmpty else {
-                    offset = contentStart + compressedSize
-                    continue
-                }
-                let destination = safeParts.dropLast().reduce(root) {
-                    $0.appendingPathComponent(String($1), isDirectory: true)
-                }.appendingPathComponent(String(safeParts.last!), isDirectory: isDirectory)
-                if isDirectory {
-                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-                } else {
-                    guard flags & 0x08 == 0,
-                          compressedSize >= 0,
-                          contentStart + compressedSize <= data.count else {
-                        throw LocalZipError.unsupportedArchive
-                    }
-                    let compressed = data.subdata(in: contentStart..<(contentStart + compressedSize))
-                    let contents: Data
-                    switch method {
-                    case 0:
-                        contents = compressed
-                    case 8:
-                        contents = try inflate(compressed, expectedSize: uncompressedSize)
-                    default:
-                        throw LocalZipError.unsupportedArchive
-                    }
-                    try FileManager.default.createDirectory(
-                        at: destination.deletingLastPathComponent(),
-                        withIntermediateDirectories: true
-                    )
-                    try contents.write(to: destination, options: .atomic)
-                }
-                offset = contentStart + compressedSize
-            }
-            return root
-        } catch {
-            try? FileManager.default.removeItem(at: root)
-            throw error
-        }
-    }
-
-    private static func inflate(_ compressed: Data, expectedSize: Int) throws -> Data {
-        let capacity = max(expectedSize, compressed.count * 4, 4096)
-        var output = Data(count: capacity)
-        let decoded = output.withUnsafeMutableBytes { outputBuffer in
-            compressed.withUnsafeBytes { inputBuffer in
-                compression_decode_buffer(
-                    outputBuffer.bindMemory(to: UInt8.self).baseAddress!,
-                    outputBuffer.count,
-                    inputBuffer.bindMemory(to: UInt8.self).baseAddress!,
-                    inputBuffer.count,
-                    nil,
-                    COMPRESSION_ZLIB
-                )
-            }
-        }
-        guard decoded > 0 else { throw LocalZipError.unsupportedArchive }
-        output.removeSubrange(decoded..<output.count)
-        return output
-    }
-}
-
-private enum LocalZipError: LocalizedError {
-    case invalidArchive
-    case unsupportedArchive
-
-    var errorDescription: String? {
-        switch self {
-        case .invalidArchive:
-            return "The selected ZIP file is not a valid audiobook archive."
-        case .unsupportedArchive:
-            return "This ZIP archive uses a compression format Voxglass cannot import."
-        }
-    }
-}
-
-private extension Data {
-    func uint16LE(at offset: Int) -> UInt16 {
-        UInt16(self[offset]) | (UInt16(self[offset + 1]) << 8)
-    }
-
-    func uint32LE(at offset: Int) -> UInt32 {
-        UInt32(uint16LE(at: offset)) | (UInt32(uint16LE(at: offset + 2)) << 16)
     }
 }
 

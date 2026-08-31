@@ -8,6 +8,9 @@ options:
 packages:
   VoxglassCore:
     path: .
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation.git
+    from: 0.9.20
 settings:
   base:
     MARKETING_VERSION: "1.1"
@@ -44,6 +47,8 @@ targets:
         product: VoxglassWatchProtocol
       - package: VoxglassCore
         product: VoxglassWatchCore
+      - package: ZIPFoundation
+        product: ZIPFoundation
       - target: VoxglassWatch
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
@@ -179,6 +184,8 @@ targets:
       - VoxglassCarPlaySmokeTests
     dependencies:
       - target: Voxglass
+      - package: ZIPFoundation
+        product: ZIPFoundation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.carplaysmoke
