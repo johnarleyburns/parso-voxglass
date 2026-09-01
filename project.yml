@@ -126,6 +126,7 @@ targets:
       - package: VoxglassCore
         product: VoxglassWatchCore
       - sdk: AVFoundation.framework
+      - sdk: MediaPlayer.framework
       - sdk: WatchConnectivity.framework
       - sdk: libsqlite3.tbd
     info:

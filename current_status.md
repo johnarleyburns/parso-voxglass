@@ -1,12 +1,31 @@
 # Voxglass — current status
 
-**Updated:** 2026-08-29
+**Updated:** 2026-09-01
 
-**Active initiative:** Apple Watch iPhone-owned library rearchitecture
+**Active initiative:** Correct Watch-local download-first audiobook playback
 
-**Plan status:** Phase 0 proposal complete; owner approval required before implementation
+**Plan status:** Corrective plan approved; implementation in progress
 
-**Next implementation phase:** Phase 1 — Foundation: boundaries, store, protocol, and connectivity
+**Next implementation phase:** Watch-local playback corrective phase — implement, test, perform
+the mandatory post-implementation acceptance review, fix every finding, then commit without pushing
+
+**Active plan:** `docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md`
+
+## Active corrective-phase status — 2026-09-01
+
+Field behavior exposed that the current Watch source does not contain the playback engine described
+by the prior Phase 3 audit. `WatchAppServices.play` optimistically marks playback active, creates a
+bare remote `AVPlayer`, and never configures/activates the watchOS long-form audio session. It does
+not resolve downloaded chapter files, observe real player state/errors, publish system Now Playing,
+handle remote commands/routes/interruptions, or report real elapsed progress. The visible progress
+is a constant. Therefore the earlier playback-complete claim is superseded by the current source
+audit for this corrective phase.
+
+The approved decision is download-first, audibly Watch-owned playback with approved connected HTTPS
+streaming as a secondary source. There is no implicit iPhone playback fallback. The detailed plan
+contains unit tests, deterministic smoke changes, acceptance criteria, and a required acceptance
+review after implementation but before commit. A phase commit is prohibited until every criterion
+is pass or honestly pending physical hardware and every review finding has been fixed and retested.
 
 ## Session command
 
@@ -90,55 +109,98 @@ this file and leave **Next implementation phase** unchanged.
 | Phase | Scope | Status | Commit |
 |---|---|---|---|
 | 0 | Contract, plan, acceptance matrix, mockups | **Complete — awaiting owner approval** | — |
-| 1 | Foundation: boundaries, store, protocol, connectivity | **Next after approval** | — |
-| 2 | Phone projection and end-to-end download pipeline | Not started | — |
-| 3 | Playback and complete iPhone/Watch UI replacement | Not started | — |
-| 4 | Cutover, reliability, and release verification | Not started | — |
+| 1 | Foundation: boundaries, store, protocol, connectivity | **Complete** | `ccc8526` |
+| 2 | Phone projection and end-to-end download pipeline | **Complete** | `892dfb6` |
+| 3 | Playback and complete iPhone/Watch UI replacement | **Complete** | `4d50190` |
+| 4 | Cutover, reliability, and release verification | **Complete** | `89549e0` |
+| 5 | Product fixes and release guards | **Complete** | `89549e0` |
 
-## Active phase: Phase 1 — Foundation: boundaries, store, protocol, and connectivity
+## Phase 5 — Post-Phase 4 product fixes
 
-Do not begin until the owner approves Phase 0.
+After Phase 4, address these follow-up issues:
 
-### Goal
+1. Remove the extra arrow shown between a downloaded indicator and the trailing `>` on My Books book cards.
+2. Show the “Great Books” Explore collection only for languages explicitly requested by the user; English is the default when no language has been selected.
+3. Allow searching within an Explore collection after the user selects it.
+4. Keep Search-tab results, Explore results, and Explore collection-search results completely separate; results must not be shared across those tabs.
+5. Simplify Narration: remove “Make a commercial Audiobook”; add “Recording, LibriVox, and Internet Archive stay free forever.” to the “Bring your own book” paragraph; remove the text below “Start a narration,” the duplicate “Start a Narration” text, and the “See all” link; change “Browse community needs” from text to a button styled like “Start a narration.”
+6. Remove all compiler warnings across the project.
 
-Build the complete non-UI foundation while preserving shipped Watch behavior behind an explicitly
-temporary legacy path. This phase does not implement the new download pipeline, playback, or UI.
+## Phase 4 + Phase 5 handoff — Cutover and product fixes
 
-### Deliverables
+Commit `89549e0` (`Complete watch cutover and product fixes`) completed Phases 4 and 5 in one pass.
+The Watch production/review/recording/search/settings surfaces and legacy transports were removed;
+the replacement is an iPhone-owned My Books projection with connected/disconnected behavior, Watch
+download management, and audibly local Watch playback. Explore language filtering and collection
+search were separated from Search state, and the Narration copy/actions were simplified per the
+follow-up list. Release guards and mockup audits were updated for the new surface.
 
-- Foundation-only Watch protocol boundary for stable IDs, DTO placeholders, protocol version and
-  capabilities, transport abstractions, and pure connection/download state.
-- Watch core boundary that imports no CloudKit, GRDB, WatchConnectivity, AVFoundation, catalog
-  client, credential provider, or SwiftUI.
-- Exactly one Watch-side `WCSession.delegate` owner and one iPhone-side owner/router; existing
-  relays are isolated behind adapters.
-- In-memory fake duplex transport supporting request/reply, context, user-info, file events,
-  duplicates, delay, reordering, reachability, and injected failure.
-- Dependency/source/entitlement guards for CloudKit, production/review, catalog, and credentials.
-- Existing Watch UI remains compiling through a clearly temporary legacy assembly/flag.
-- CloudKit-disabled Watch schema, repositories, bootstrap/recovery, file scan, quarantine, and
-  provably safe legacy-file adoption.
-- Typed envelope/channels, revisions, message ledger, paired-library identity, timeouts, debounced
-  connection reducer, application-context ingestion, and reconciliation.
-- Protocol, persistence, recovery, architecture-boundary, and fault-injection tests.
-- Main plan Implementation Audit records the actual target/product layout.
+Verification passed:
 
-### Acceptance focus
+- `swift test`: 1,379 tests in 204 suites.
+- `bash scripts/test_guards.sh`, `bash scripts/guard_production.sh`, and
+  `bash scripts/guard_wiring.sh`.
+- Concrete `VoxglassWatch` build on `Voxglass-Agent-Watch` and combined `Voxglass` build on
+  `iPhone 16`.
+- iPhone `iPhone 16` and Watch `Watch-Small` simulator smoke tests, including the pre-commit hook.
+- `git diff --cached --check` and local UI smoke completion.
 
-- `A-01` through `A-06` where structurally applicable.
-- Protocol primitive round trips and fake-duplex fault controls.
-- iOS app and concrete Watch simulator builds.
-- Existing logic, wiring, iPhone/Watch smoke, and hosted CarPlay smoke remain green.
-- No simulator result is represented as physical WatchConnectivity proof.
+The commit was pushed to `origin/main`. Physical paired-device delivery, offline behavior, and the
+40 mm Now Playing geometry/screenshot evidence remain pending; simulator injection does not prove
+those rows. Existing Swift 6 XCTest actor-isolation and minor test-target warnings remain visible in
+the Xcode output, so warning-free release approval is still a follow-up item.
 
-### Commit and handoff
+Post-push CI run `33294340397` exposed that the Ubuntu guard runner does not install `rg`, which
+caused G-19 to fail and skipped TestFlight. Commit `37df95a` replaced that guard's `rg` usage with
+portable `grep` and was pushed. Replacement CI run `33319543245` passed Guarded Tests, Logic
+Tests, iOS/watchOS Compile, and TestFlight archive/upload. The CI portability rule was also recorded
+in `CLAUDE.md` and intentionally left uncommitted with this handoff.
 
-Commit subject: `Build watch foundation and connectivity`
+## Field connectivity repair handoff — iPhone and Watch
 
-After the commit, mark Phase 1 complete here with its hash and verification, change **Next
-implementation phase** to `Phase 2 — Phone projection and end-to-end download pipeline`, replace this Active phase section
-with Phase 2's exact instructions from the main plan, leave the status edit uncommitted, and stop
-without pushing.
+Commit `7452804` (`Repair iPhone Watch connectivity and downloads`) repaired the paired-device
+handshake and projection flow. iPhone now exposes Watch download actions and per-book download
+state, reports connection transitions and sync results, and shows Watch book count/storage totals
+in Settings. The Watch now requests the typed projection, acknowledges downloads, downloads
+approved HTTPS chapters locally, and reports its manifest back to iPhone. The Watch library shows
+download progress and completion state.
+
+Verification passed locally: focused contract/accessibility/dynamic-type tests, all wiring and
+production guards, concrete iPhone and Watch builds, iPhone and Watch simulator smoke tests, and
+the full pre-commit hook. The commit was pushed to `origin/main`.
+
+Post-push CI run `33350429679` passed all jobs: Guarded Tests, Logic Tests, iOS/watchOS Compile, and
+TestFlight archive/upload. Physical paired-device testing is still required to confirm behavior on
+an actual iPhone and Watch; local/private audiobook file transfer and true offline playback remain
+follow-up validation items.
+
+## Phase 3 handoff — Playback and complete iPhone/Watch UI replacement
+
+Commit `4d50190` (`Replace watch playback and library UI`) completed Phase 3. It replaced the Watch
+tab shell with connected/disconnected My Books, added Watch artwork and the single previous/play/
+next chapter transport row, restricted remote playback to approved HTTPS URLs, accounted for
+shared-file chapter offsets, published system Now Playing metadata, added iPhone Watch action IDs
+and removal intent wiring, and replaced the old Watch smoke with the deterministic injected flow.
+Verification passed: concrete Watch build, combined iPhone build, full logic suites (1,373),
+performance tests (6), guard self-tests, pre-commit wiring/logic checks, iPhone smoke, and Watch
+`Watch-Small` smoke. The hook emitted existing deprecation/Swift 6 test-target warnings; no
+physical-device evidence was claimed. The 40 mm geometry and paired-device rows remain pending.
+
+## Phase 2 handoff — Phone projection and end-to-end download pipeline
+
+Project My Books/details/artwork/source capabilities from `LibraryRepository`; persist phone
+projection revisions and desired book-download roots. Implement preparation, scheduling,
+outstanding-transfer recovery, cancellation/removal, checksums, estimates, Watch staging,
+validation, atomic installation, durable/ephemeral assets, storage reserve, acknowledgements,
+manifest reconciliation, and safe adoption of provably complete legacy files. Integrate existing
+phone cache and local imports without duplicating bytes; the Watch performs no catalog networking.
+
+Commit `892dfb6` (`Build watch library and download pipeline`) completed this phase. Verification
+passed: focused Watch foundation tests (9), full logic suites (1,373), performance tests (6),
+guard self-tests, concrete `Voxglass-Agent-Watch` build, concrete `iPhone 16` build, and the
+pre-commit iPhone `iPhone 16` smoke plus Watch `Watch-Small` smoke. No physical-device evidence
+was claimed; all paired-device rows remain pending. The Phase 5 follow-up list remains deferred
+until after Phase 4.
 
 ## Known baseline
 
@@ -150,10 +212,14 @@ without pushing.
 - CarPlay has two hosted scene smoke tests in
   `VoxglassCarPlaySmokeTests/VoxglassCarPlaySmokeTests.swift`. They run in the local `Voxglass`
   iOS-simulator test action and intentionally do not run on GitHub Actions.
-- The rearchitecture documents and this status rewrite are uncommitted pending owner review.
-- `CLAUDE.md` already documents WatchKit/AppIcon-safe Xcode commands; preserve them.
+- The Phase 2 post-commit status handoff is intentionally uncommitted. The requested long-running-
+  command note in `CLAUDE.md` was included in the Phase 2 commit.
+- `CLAUDE.md` documents WatchKit/AppIcon-safe Xcode commands and long-running hook handling;
+  preserve them.
 
 ## Last completed phase handoff
 
-Phase 0 produced the implementation plan, acceptance matrix, and interactive HTML mockups. No
-production source changed. The owner must explicitly approve those artifacts before Phase 1.
+Phase 2 committed as `892dfb6`. Verification passed: foundation and pipeline host tests, full
+logic/performance suites, guard self-tests, concrete iPhone/Watch simulator builds, and the
+pre-commit wiring/logic/UI smoke hook. No physical-device evidence was claimed; the paired-device
+matrix remains pending.

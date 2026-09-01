@@ -1,16 +1,8 @@
 import Foundation
 import SwiftUI
-import AVFoundation
 import Combine
 import VoxglassWatchProtocol
 import VoxglassWatchCore
-
-struct WatchPlayingSession: Equatable {
-    var book: WatchBookDTO
-    var chapterIndex: Int
-    var position: TimeInterval = 0
-    var isPlaying = false
-}
 
 @MainActor
 final class WatchAppServices: ObservableObject {
@@ -19,12 +11,22 @@ final class WatchAppServices: ObservableObject {
     @Published private(set) var books: [WatchBookDTO] = []
     @Published private(set) var downloaded = Set<WatchBookID>()
     @Published private(set) var downloading = Set<WatchBookID>()
-    @Published var playing: WatchPlayingSession?
+    @Published private(set) var playbackBook: WatchBookDTO?
+    @Published private(set) var playback = WatchPlaybackSnapshot()
     @Published var error: String?
-    private var player: AVPlayer?
+    private let playbackEngine: WatchPlaybackEngine
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
+        let smoke = ProcessInfo.processInfo.arguments.contains("-uiTestSeed")
+            || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
+        playbackEngine = WatchPlaybackEngine(
+            smokeMode: smoke,
+            smokeFailure: ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_PLAYBACK_FAILURE"] == "1"
+        )
+        playbackEngine.onSnapshot = { [weak self] snapshot in self?.playback = snapshot }
+        playbackEngine.onBookChanged = { [weak self] book in self?.playbackBook = book }
+        playbackEngine.streamingAllowed = { [weak self] in self?.isConnected ?? false }
         session.$snapshot
             .compactMap { $0 }
             .receive(on: RunLoop.main)
@@ -77,13 +79,13 @@ final class WatchAppServices: ObservableObject {
     func play(_ book: WatchBookDTO, chapterIndex: Int = 0) {
         guard !book.chapters.isEmpty else { error = "No playable chapters."; return }
         let index = min(max(0, chapterIndex), book.chapters.count - 1)
-        playing = WatchPlayingSession(book: book, chapterIndex: index, isPlaying: true)
-        if let url = book.chapters[index].approvedStreamURL { player = AVPlayer(url: url); player?.play() }
+        playbackEngine.play(book, chapterIndex: index, allowsStreaming: isConnected)
     }
-    func togglePlayPause() { guard var playing else { return }; playing.isPlaying.toggle(); self.playing = playing; playing.isPlaying ? player?.play() : player?.pause() }
-    func nextChapter() { move(by: 1) }
-    func previousChapter() { move(by: -1) }
-    private func move(by amount: Int) { guard let current = playing else { return }; let index = current.chapterIndex + amount; guard current.book.chapters.indices.contains(index) else { return }; play(current.book, chapterIndex: index) }
+    func togglePlayPause() { playbackEngine.togglePlayPause() }
+    func nextChapter() { playbackEngine.nextChapter() }
+    func previousChapter() { playbackEngine.previousChapter() }
+    func retryPlayback() { playbackEngine.retry() }
+    func persistPlaybackPosition() { playbackEngine.persistPlaybackPosition() }
 
     private func downloadApprovedChapters(for book: WatchBookDTO) async {
         let urls = book.chapters.compactMap(\.approvedStreamURL)

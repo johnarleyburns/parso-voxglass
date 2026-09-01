@@ -105,6 +105,7 @@
 		75B0E1176DA5EF700CDAABAA /* robinson_crusoe_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B08031FB6970F7E4B5A64C0B /* robinson_crusoe_librivox.jpg */; };
 		78139811FE554CA0D246DFF2 /* fabulas_esopo_01_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7FFF648C1C68BCEA7325C2C9 /* fabulas_esopo_01_librivox.jpg */; };
 		783C0D14EC5B067148C6A7CB /* gulliver_ld_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */; };
+		7909D4CEE6BFCFA8F4BE5E86 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */; };
 		79935A2261A23D4B387A6083 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336F165C2E66C5C32ABDD2CA /* CarPlaySceneDelegate.swift */; };
 		7B13FCB97794AC8C13DD0BCF /* war_worlds_solo_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 0EA653ABDAA7D0F2AE6ACE7E /* war_worlds_solo_librivox.jpg */; };
 		7BC2A209081F5D7D383AB41F /* LocalZipExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5534B1CECDBA7665268BA54D /* LocalZipExtractor.swift */; };
@@ -157,6 +158,7 @@
 		AF1E37E9DB4FFC9EB410DAD8 /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */; };
 		B00B93E335F230E935CAF426 /* WatchNowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0934FA0F60D5D328F61320 /* WatchNowPlayingView.swift */; };
 		B08D8F8C18D6A1E2D3B83BEC /* LocalZipExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CE684E98EC2AC985B777A27 /* LocalZipExtractorTests.swift */; };
+		B1052AE5DF06037E4B0E0A6C /* WatchPlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */; };
 		B14B2AE1CA11BC46846AA0E9 /* NarrationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */; };
 		B329B42E0CA9E0B40B1BEAD1 /* return_holmes_0708_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A42A7E5AF0C1B49C5E7A01FB /* return_holmes_0708_librivox.jpg */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
@@ -477,6 +479,7 @@
 		CE9B0381803F242B696298F4 /* anne_greengables_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = anne_greengables_librivox.jpg; sourceTree = "<group>"; };
 		CEC318EB68E5165403477C6D /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassUITests.swift; sourceTree = "<group>"; };
+		D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPlaybackEngine.swift; sourceTree = "<group>"; };
 		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
 		D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionSmokeSeed.swift; sourceTree = "<group>"; };
 		D85F389E6310626F4B2F88D2 /* CarPlayReviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayReviewController.swift; sourceTree = "<group>"; };
@@ -524,6 +527,7 @@
 				461421576EA62442A0CEBD15 /* VoxglassWatchProtocol in Frameworks */,
 				ADFC054A3E75CA98A7D6D15A /* VoxglassWatchCore in Frameworks */,
 				EC7F11B512271B1FFC07E5D9 /* AVFoundation.framework in Frameworks */,
+				7909D4CEE6BFCFA8F4BE5E86 /* MediaPlayer.framework in Frameworks */,
 				354513B397ABB4AC56935EB6 /* WatchConnectivity.framework in Frameworks */,
 				4F9783F7FD52124391DB96D0 /* libsqlite3.tbd in Frameworks */,
 			);
@@ -622,6 +626,7 @@
 				6DEF7AEC3EC06D2401F4B097 /* WatchBookDetailView.swift */,
 				CB8C22B2266982EC4AB941AF /* WatchLibraryView.swift */,
 				EF0934FA0F60D5D328F61320 /* WatchNowPlayingView.swift */,
+				D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */,
 				BE058162DB1348D28317C06A /* WatchRootView.swift */,
 				BBC87A8E7DC98401D6EC9592 /* WatchSessionAdapter.swift */,
 				E713B2F4E79E3A3590A39454 /* Resources */,
@@ -1348,6 +1353,7 @@
 				F15464A41C029B457BC3D6D1 /* WatchBookDetailView.swift in Sources */,
 				1A0557A760508FD7D37136E5 /* WatchLibraryView.swift in Sources */,
 				B00B93E335F230E935CAF426 /* WatchNowPlayingView.swift in Sources */,
+				B1052AE5DF06037E4B0E0A6C /* WatchPlaybackEngine.swift in Sources */,
 				9005B6ABE5E61D5BEAA71186 /* WatchRootView.swift in Sources */,
 				D86160C08BAB46E86DD6F402 /* WatchSessionAdapter.swift in Sources */,
 			);

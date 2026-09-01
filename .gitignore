@@ -70,6 +70,8 @@ docs/*
 docs/plans/*
 !docs/plans/watch-rearchitecture/
 !docs/plans/watch-rearchitecture/**
+!docs/plans/watch-local-playback/
+!docs/plans/watch-local-playback/**
 *.voxglassbackup
 
 # Curated lists generator cache
