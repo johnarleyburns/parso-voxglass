@@ -30,6 +30,22 @@ public enum PhoneWatchProjection {
         )
     }
 
+    public static func applyingResumePosition(
+        bookID: WatchBookID,
+        chapterID: WatchChapterID,
+        position: TimeInterval,
+        to snapshot: WatchLibrarySnapshot
+    ) -> WatchLibrarySnapshot {
+        guard let bookIndex = snapshot.books.firstIndex(where: { $0.id == bookID }),
+              let chapterIndex = snapshot.books[bookIndex].chapters.firstIndex(where: { $0.id == chapterID }) else {
+            return snapshot
+        }
+
+        var result = snapshot
+        result.books[bookIndex].chapters[chapterIndex].resumePosition = max(0, position)
+        return result
+    }
+
     public static func library(from books: [BookWithChapters], libraryID: WatchPairedLibraryID, revision: Int64) -> WatchLibrarySnapshot {
         .init(pairedLibraryID: libraryID, revision: revision, books: books.map { book(from: $0, revision: revision) })
     }

@@ -149,6 +149,24 @@ extension WatchSessionAdapter: WCSessionDelegate {
         let payload = WatchUncheckedBox(userInfo)
         Task { @MainActor in self.apply(payload.value) }
     }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+        let payload = WatchUncheckedBox(message)
+        Task { @MainActor in self.apply(payload.value) }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveMessage message: [String : Any],
+        replyHandler: @escaping ([String : Any]) -> Void
+    ) {
+        let payload = WatchUncheckedBox(message)
+        let reply = WatchUncheckedBox(replyHandler)
+        Task { @MainActor in
+            self.apply(payload.value)
+            reply.value(["received": true])
+        }
+    }
 }
 
 extension Notification.Name {

@@ -18,6 +18,35 @@ import Foundation
         #expect(response.results[1].downloads == 678)
     }
 
+    @Test func searchResultSurfacesNarratorAndSoloClassificationFromLibriVoxDescription() {
+        let result = InternetArchiveSearchResult(
+            identifier: "alice_wonderland_0711_librivox",
+            title: "Alice's Adventures in Wonderland",
+            creators: ["Lewis Carroll"],
+            description: "Read by Peter Yearsley For further information, visit LibriVox.",
+            collections: ["librivoxaudio"],
+            downloads: 1,
+            date: nil
+        )
+        #expect(result.narrators == ["Peter Yearsley"])
+        #expect(result.narratorLine == "Read by Peter Yearsley")
+        #expect(result.narrationKind == .solo)
+    }
+
+    @Test func searchResultFallsBackToNarratorCreditInTitle() {
+        let result = InternetArchiveSearchResult(
+            identifier: "alice_yearsley_librivox",
+            title: "Alice in Wonderland Read by Peter Yearsley",
+            creators: ["Lewis Carroll"],
+            description: nil,
+            collections: ["librivoxaudio"],
+            downloads: nil,
+            date: nil
+        )
+        #expect(result.narratorLine == "Read by Peter Yearsley")
+        #expect(result.narrationKind == .solo)
+    }
+
     @Test func metadataFixtureDeduplicatesAudioDerivativesByQuality() throws {
         let metadata = try metadataFixture()
         let selected = metadata.selectedAudioFiles

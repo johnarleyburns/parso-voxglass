@@ -37,4 +37,13 @@ import Testing
     @Test func stopsAtSentenceBoundary() {
         #expect(NarratorExtractor.extract(from: "Read by Jane Doe. This book is great.") == ["Jane Doe"])
     }
+
+    @Test func supportsLibriVoxLanguageCreditAndSummaryBoundary() {
+        #expect(NarratorExtractor.extract(from: "Read in English by Expatriate Fascinated as she was by the Brontes.") == ["Expatriate"])
+        #expect(NarratorExtractor.extract(from: "Read in English by Peter Yearsley For further information, visit LibriVox.") == ["Peter Yearsley"])
+    }
+
+    @Test func supportsSemicolonSeparatedLibriVoxReaders() {
+        #expect(NarratorExtractor.extract(from: "Read in English by Mike T.; Shelby Rae Lyon; Chris Moland.") == ["Mike T", "Shelby Rae Lyon", "Chris Moland"])
+    }
 }

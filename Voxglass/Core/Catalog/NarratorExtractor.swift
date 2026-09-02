@@ -11,8 +11,8 @@ import Foundation
 public enum NarratorExtractor {
 
     private static let patterns: [String] = [
-        #"(?:read|narrated|voiced|performed)\s+by\s*[:\-]?\s*([^\.\n\r;|]+)"#,
-        #"(?:narrators?|readers?)\s*[:\-]\s*([^\.\n\r;|]+)"#
+        #"(?:read(?:\s+in\s+[^\.\n\r;|]+?)?|narrated|voiced|performed)\s+by\s*[:\-]?\s*([^\n\r|]+)"#,
+        #"(?:narrators?|readers?)\s*[:\-]\s*([^\.\n\r|]+)"#
     ]
 
     public static func extract(from text: String?) -> [String] {
@@ -27,7 +27,7 @@ public enum NarratorExtractor {
             for match in regex.matches(in: text, options: [], range: range) {
                 guard match.numberOfRanges > 1,
                       let captureRange = Range(match.range(at: 1), in: text) else { continue }
-                for name in splitNames(String(text[captureRange])) {
+                for name in splitNames(narratorSegment(String(text[captureRange]))) {
                     if seen.insert(name.lowercased()).inserted {
                         ordered.append(name)
                     }
@@ -40,12 +40,38 @@ public enum NarratorExtractor {
     }
 
     private static func splitNames(_ raw: String) -> [String] {
-        let separators = CharacterSet(charactersIn: ",&/")
+        let separators = CharacterSet(charactersIn: ",&/;")
         return raw
             .replacingOccurrences(of: #"\band\b"#, with: ",", options: [.regularExpression, .caseInsensitive])
             .components(separatedBy: separators)
             .map { $0.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ".-"))) }
             .filter { isPlausibleName($0) }
+    }
+
+    /// LibriVox descriptions often omit punctuation after the reader credit:
+    /// "Read in English by Expatriate Also known as …". Keep the credit from
+    /// swallowing the summary that follows it.
+    private static func narratorSegment(_ raw: String) -> String {
+        let sentenceSafeRaw: String
+        if raw.contains(";") {
+            // Semicolons are the LibriVox reader-list separator. A period in
+            // "Mike T.;" is part of the reader credit, not its boundary.
+            sentenceSafeRaw = raw
+        } else if let end = raw.firstIndex(of: ".") {
+            sentenceSafeRaw = String(raw[..<end])
+        } else {
+            sentenceSafeRaw = raw
+        }
+        let boundaries = [
+            " For further information", " - Summary by", " Summary by",
+            " Also known as", " Fascinated as", " This ", " The ",
+            " A ", " An ", " Although ", " When ", " It ", " From ", " As "
+        ]
+        let ranges = boundaries.compactMap { boundary in
+            sentenceSafeRaw.range(of: boundary, options: [.caseInsensitive])?.lowerBound
+        }
+        guard let end = ranges.min() else { return sentenceSafeRaw }
+        return String(sentenceSafeRaw[..<end])
     }
 
     private static func isPlausibleName(_ value: String) -> Bool {

@@ -47,6 +47,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         super.init()
         session.delegate = self
         session.activate()
+        refreshConnectionState()
     }
 
     var connectionStatusText: String {
@@ -77,6 +78,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         self.watchProjectionStore = PhoneWatchProjectionStore(
             url: support.appendingPathComponent("Voxglass/WatchProjection.json"), libraryID: watchLibraryID
         )
+        refreshConnectionState()
         Task {
             await publishLibrarySnapshot()
             await publishTypedWatchProjection()
@@ -86,10 +88,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     func publishTypedWatchProjection() async {
         guard let libraryStore, let watchProjectionStore else { return }
         do {
-            let revision = try await watchProjectionStore.nextRevision()
-            let snapshot = PhoneWatchProjection.library(from: libraryStore.books, libraryID: watchLibraryID, revision: revision)
-            let data = try WatchProtocolEnvelope.encode(kind: .librarySnapshot, payload: snapshot, libraryID: watchLibraryID, revision: revision)
-            try session.updateApplicationContext(WatchProtocolEnvelope.dictionary(for: data))
+            guard let message = try await makeTypedWatchMessage(
+                libraryStore: libraryStore,
+                projectionStore: watchProjectionStore
+            ) else { return }
+            try session.updateApplicationContext(message)
             UserDefaults.standard.set(watchLibraryID.rawValue, forKey: "voxglass.watch.libraryID")
             lastWatchSyncDate = Date()
             watchSyncStatus = "My Books sent to Apple Watch."
@@ -105,10 +108,62 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             watchSyncStatus = "Install Voxglass on the paired Apple Watch first."
             return
         }
-        await publishTypedWatchProjection()
-        if isReachable {
-            connectionToast = "Apple Watch connected"
+        guard let libraryStore, let watchProjectionStore else {
+            watchSyncStatus = "The iPhone app is still starting."
+            return
         }
+        do {
+            // Application context is the durable fallback; when the watch is
+            // reachable, send the same typed projection immediately as well.
+            guard let message = try await makeTypedWatchMessage(
+                libraryStore: libraryStore,
+                projectionStore: watchProjectionStore
+            ) else { return }
+            try session.updateApplicationContext(message)
+            lastWatchSyncDate = Date()
+            watchSyncStatus = isReachable
+                ? "Apple Watch sync sent."
+                : "Apple Watch is not reachable; sync queued."
+            if isReachable {
+                session.sendMessage(
+                    message,
+                    replyHandler: { [weak self] _ in
+                        Task { @MainActor in self?.watchSyncStatus = "Apple Watch updated." }
+                    },
+                    errorHandler: { [weak self] error in
+                        Task { @MainActor in self?.watchSyncStatus = "Watch sync failed: \(error.localizedDescription)" }
+                    }
+                )
+                connectionToast = "Apple Watch connected"
+            }
+        } catch {
+            watchSyncStatus = "Watch sync failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func makeTypedWatchMessage(
+        libraryStore: LibraryStore,
+        projectionStore: PhoneWatchProjectionStore,
+        correlationID: UUID? = nil
+    ) async throws -> [String: Any]? {
+        let revision = try await projectionStore.nextRevision()
+        var snapshot = PhoneWatchProjection.library(from: libraryStore.books, libraryID: watchLibraryID, revision: revision)
+        if let playback = playbackCoordinator, let session = playback.currentSession {
+            snapshot = PhoneWatchProjection.applyingResumePosition(
+                bookID: WatchBookID(session.book.id.uuidString),
+                chapterID: WatchChapterID(session.chapter.id.uuidString),
+                position: playback.playhead,
+                to: snapshot
+            )
+        }
+        let data = try WatchProtocolEnvelope.encode(
+            kind: .librarySnapshot,
+            payload: snapshot,
+            libraryID: watchLibraryID,
+            revision: revision,
+            correlationID: correlationID
+        )
+        return WatchProtocolEnvelope.dictionary(for: data)
     }
 
     /// Persists the iPhone-owned desired root before any bytes are sent. Local
@@ -602,25 +657,16 @@ extension PhoneAudioRelay: WCSessionDelegate {
             if let data = WatchProtocolEnvelope.payloadData(in: messageBox.value),
                let envelope = try? WatchProtocolEnvelope.decode(data),
                envelope.kind == .hello,
-               let libraryStore {
-                let revision = (try? await watchProjectionStore?.nextRevision()) ?? 0
-                let snapshot = PhoneWatchProjection.library(
-                    from: libraryStore.books,
-                    libraryID: watchLibraryID,
-                    revision: revision
-                )
-                if let replyData = try? WatchProtocolEnvelope.encode(
-                    kind: .librarySnapshot,
-                    payload: snapshot,
-                    libraryID: watchLibraryID,
-                    revision: revision,
-                    correlationID: envelope.messageID
-                ) {
-                    replyBox.value(WatchProtocolEnvelope.dictionary(for: replyData))
-                } else {
-                    replyBox.value([:])
-                }
-                await publishTypedWatchProjection()
+               let libraryStore, let watchProjectionStore,
+               let replyMessage = try? await makeTypedWatchMessage(
+                   libraryStore: libraryStore,
+                   projectionStore: watchProjectionStore,
+                   correlationID: envelope.messageID
+               ) {
+                replyBox.value(replyMessage)
+                try? self.session.updateApplicationContext(replyMessage)
+                lastWatchSyncDate = Date()
+                watchSyncStatus = "My Books sent to Apple Watch."
                 return
             }
             if WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.requestRefresh

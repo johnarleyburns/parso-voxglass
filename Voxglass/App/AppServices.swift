@@ -96,6 +96,9 @@ final class AppServices: ObservableObject {
             guard let self else { return }
             Task {
                 await self.captureTasteSignal(signal)
+                // Keep the typed watch projection close to the phone's durable
+                // savepoint while the listener is actively playing.
+                await self.phoneAudioRelay.publishTypedWatchProjection()
             }
         }
     }

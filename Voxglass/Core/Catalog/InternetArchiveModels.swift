@@ -39,10 +39,12 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
         creators.isEmpty ? "Unknown author" : creators.joined(separator: ", ")
     }
 
-    /// Best-effort narrator names parsed from the item description. The search
-    /// API does not expose a narrator field, so this may be empty.
+    /// Best-effort narrator names parsed from the item description and title.
+    /// LibriVox descriptions commonly use "Read in English by …", while some
+    /// records put the credit in the title instead.
     public var narrators: [String] {
-        NarratorExtractor.extract(from: description)
+        let fromDescription = NarratorExtractor.extract(from: description)
+        return fromDescription.isEmpty ? NarratorExtractor.extract(from: title) : fromDescription
     }
 
     public var narratorLine: String? {
@@ -51,7 +53,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
     }
 
     public var narrationKind: NarrationKind {
-        NarrationClassifier.classify(description: description)
+        NarrationClassifier.classify(narrators: narrators)
     }
 
     public var sourceKind: SourceKind {

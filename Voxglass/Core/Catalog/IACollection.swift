@@ -208,7 +208,10 @@ public enum IACollectionStore {
         let sortedBrowse = browseCollections.sorted {
             $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
         }
-        return [popular] + curated.filter { selectedIDs.contains($0.id) } + sortedBrowse.filter { selectedIDs.contains($0.id) }
+        // Collection preferences seed recommendations; Explore is the catalog
+        // browser and must always expose the complete collection set. An empty
+        // preference value is normal for users who skipped onboarding.
+        return [popular] + curated + sortedBrowse
     }
 
     private static func browseCollection(for category: LibriVoxBrowseCategory) -> IACollection {

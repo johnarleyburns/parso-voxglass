@@ -67,7 +67,11 @@ final class WatchPlaybackEngine {
 
         Task { [weak self] in
             guard let self else { return }
-            let savedPosition = await positionStore.position(bookID: book.id, chapterID: chapter.id)
+            let localPosition = await positionStore.position(bookID: book.id, chapterID: chapter.id)
+            // The first time a book is opened on the watch, its local store is
+            // empty. Use the phone's savepoint in that case; later watch-local
+            // progress remains authoritative for a reopened book.
+            let savedPosition = localPosition > 0 ? localPosition : max(0, chapter.resumePosition ?? 0)
             guard currentToken == token else { return }
             snapshot.position = savedPosition
             if smokeMode {

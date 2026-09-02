@@ -100,7 +100,9 @@ import Testing
     }
 
     @Test func everyFeaturedCollectionHasBundledCount() {
-        let allIDs = Set(IACollectionStore.collections(for: []).map(\.id))
+        let allCollections = IACollectionStore.collections(for: [])
+        #expect(allCollections.count > 1)
+        let allIDs = Set(allCollections.map(\.id))
         for id in allIDs {
             let count = CollectionBundledCounts.counts[id]
             #expect(count != nil)  // missing bundled count for \(id)

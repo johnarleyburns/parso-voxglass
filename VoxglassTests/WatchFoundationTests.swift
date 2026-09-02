@@ -65,6 +65,20 @@ import Testing
         #expect(dto.chapters.allSatisfy { $0.expectedBytes == 13 && $0.expectedSHA256 != nil })
     }
 
+    @Test func phoneProjectionCarriesTheCurrentPhoneSavepoint() throws {
+        let bookID = WatchBookID("book")
+        let chapterID = WatchChapterID("chapter")
+        let book = WatchBookDTO(id: bookID, title: "Book", chapters: [
+            WatchChapterDTO(id: chapterID, index: 0, title: "Chapter", duration: 100)
+        ])
+        let snapshot = PhoneWatchProjection.applyingResumePosition(
+            bookID: bookID, chapterID: chapterID, position: 42, to: WatchLibrarySnapshot(
+                pairedLibraryID: "library", revision: 1, books: [book]
+            )
+        )
+        #expect(snapshot.books[0].chapters[0].resumePosition == 42)
+    }
+
     @Test func installerCopiesStagesVerifiesAndAcknowledgesOnlyCompleteBooks() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let source = root.appendingPathComponent("source.m4a")
