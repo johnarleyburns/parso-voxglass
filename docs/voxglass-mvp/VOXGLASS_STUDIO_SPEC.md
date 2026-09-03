@@ -700,7 +700,7 @@ Voxglass/Core/                      → SwiftPM target "VoxglassCore" (existing,
 VoxglassStudio/                     → NEW macOS app target
   ├── App/                          StudioApp, StudioRootView, DI container, launch-arg seeding
   ├── Services/                     AVAudioEngineCapture, AVMetricsCalculator, AVSegmentPlayer,
-  │                                 Transcoder (libmp3lame/libFLAC/AVFoundation), CloudKitProductionSync,
+  │                                 Transcoder (Glint/libFLAC via parso-audio-engine, + AVFoundation), CloudKitProductionSync,
   │                                 StoreKitLicenseProvider, WatchConnectivity? (no — Mac has none)
   └── Features/                     Library, NewProject, SourceImport, Script, Record, Import,
                                     TakeCompare, Review, Assembly, Metadata, DevicePreview,
@@ -712,7 +712,7 @@ VoxglassStudio/                     → NEW macOS app target
 > names the literals file, so the platform numbers have one defined home.
 
 Voxglass/Features/Production/       → NEW iPhone feature folder, including the iPhone Transcoder
-                                    (libmp3lame/libFLAC/AVFoundation)
+                                    (Glint/libFLAC via parso-audio-engine, + AVFoundation)
 Voxglass/App/CarPlay/Production*    → CarPlay production templates (extends existing CarPlay layer)
 VoxglassWatch/Production/           → NEW watch feature folder
 
@@ -3477,6 +3477,20 @@ public struct ChapterMark: Sendable, Equatable { public var title: String; publi
 ```
 
 ### 16.3 The codec decision (correction C-3, in full)
+
+> **Superseded (audio-engine unification, Phase 4).** The *requirements* below
+> still hold, but the *mechanism* changed: MP3 encode (Glint) and FLAC
+> decode/encode (libFLAC 1.4.3) now come from **vendored source in
+> `parso-audio-engine`** (`ParsoAudioCore`), consumed through `VoxglassEncoders`.
+> The `Lame.xcframework` / `FLAC.xcframework` binary targets and
+> `build-encoders.sh` are retired. `FLACDecoder` / `FLACEncoder` /
+> `GlintMP3Encoder` are thin shims over `AudioFileReader` /
+> `AudioFileReader.decodeRange` / `AudioFileWriter.encodeMP3` /
+> `ExportCodec.flacDelivery`. The seekable range API (§11.5) is
+> `AudioFileReader.decodeRange`, which throws `RangeDecodeError.notSeekable`
+> rather than falling back to a whole-file decode. Read the paragraphs below as
+> historical context for anything that still says "xcframework" or "binary
+> target".
 
 **Requirement.** MP3 CBR encode at 128 and 192 kbps, FLAC decode, and FLAC encode MUST work on both macOS and iPhone. AVFoundation handles AAC/ALAC/PCM encode and WAV/AIFF/CAF/M4A/AAC/MP3 decode. FLAC reading and writing MUST go through libFLAC on both platforms so long audiobook seeking, metadata, and output determinism do not depend on platform FLAC behavior. MP3 decode MAY remain AVFoundation-backed; Voxglass does not need LAME's MP3 decoder. FLAC decode MUST include the seekable range API from §11.5 so large-file seek is bounded by the requested range, not by total file duration.
 

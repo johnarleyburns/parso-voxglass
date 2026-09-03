@@ -43,9 +43,9 @@ targets:
     dependencies:
       - package: VoxglassCore
         product: VoxglassCore
-      # Production preview on the phone shares the encoder pipeline; the phone
-      # build links the iOS slices of Lame.xcframework / FLAC.xcframework
-      # through the VoxglassEncoders product (§16.3, C-3).
+      # Production preview on the phone shares the encoder pipeline. MP3 (Glint)
+      # and FLAC (libFLAC) decode/encode now come from parso-audio-engine's
+      # vendored source via VoxglassEncoders — no binary xcframeworks (§16.3, C-3).
       - package: VoxglassCore
         product: VoxglassEncoders
       - package: ParsoAudioEngine

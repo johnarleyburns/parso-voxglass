@@ -51,17 +51,12 @@ let package = Package(
             ],
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
-        .binaryTarget(
-            name: "Lame",
-            path: "Tools/encoders/Vendored/Lame.xcframework"
-        ),
-        .binaryTarget(
-            name: "FLAC",
-            path: "Tools/encoders/Vendored/FLAC.xcframework"
-        ),
         .target(
             name: "VoxglassEncoders",
-            dependencies: ["VoxglassCore", "Lame", "FLAC"],
+            dependencies: [
+                "VoxglassCore",
+                .product(name: "ParsoAudioCore", package: "parso-audio-engine")
+            ],
             path: "Voxglass/Core/Encoders",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),

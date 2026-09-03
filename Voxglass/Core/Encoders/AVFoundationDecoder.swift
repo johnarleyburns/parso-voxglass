@@ -1,16 +1,14 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
+import ParsoAudioCore
 import VoxglassCore
 
-/// AVFoundation-backed `AudioDecoding` for the encoder pipeline (§16.2). Reads
-/// any AVFoundation-supported file (CAF, WAV, MP3, M4A) into mono float PCM,
-/// optionally resampling to a target rate via `AudioResampler`.
+/// `SeekableAudioDecoding` for the non-FLAC containers (CAF, WAV, MP3, M4A/AAC,
+/// AIFF), now backed by `ParsoAudioCore` (§16.2). Reads to mono float PCM,
+/// optionally resampling via `AudioResampler` (libsamplerate).
 ///
-/// MP3 decode MAY remain AVFoundation-backed (§16.3); FLAC files are routed to
-/// `FLACDecoder` (libFLAC) by `RoutingAudioDecoder`, never through this type.
-///
-/// Also conforms to `SeekableAudioDecoding` so MP3/WAV paragraph preview can
-/// use `AVAudioFile.framePosition` instead of reading a whole file.
+/// MP3 decode stays AudioToolbox-backed inside `ParsoAudioCore`; FLAC files are
+/// routed to `FLACDecoder` by `RoutingAudioDecoder`, never through this type.
 public struct AVFoundationDecoder: SeekableAudioDecoding {
 
     public init() {}
@@ -35,26 +33,13 @@ public struct AVFoundationDecoder: SeekableAudioDecoding {
     }
 
     public func decodeToMonoFloat(_ url: URL, targetSampleRate: Double?) async throws -> DecodedAudio {
-        let file = try AVAudioFile(forReading: url)
-        let format = file.processingFormat
-
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(file.length)
-        ) else {
-            throw AVAudioDecoderError.bufferAllocationFailed
+        let buffer: PCMBuffer
+        do {
+            buffer = try AudioFileReader(url: url).readAll()
+        } catch {
+            throw TranscodeError.decodeFailed(url)
         }
-        try file.read(into: buffer)
-
-        var samples = monoFloat(from: buffer)
-        var rate = format.sampleRate
-
-        if let targetSampleRate, abs(targetSampleRate - rate) > 0.5 {
-            samples = try AudioResampler.resample(samples, from: rate, to: targetSampleRate)
-            rate = targetSampleRate
-        }
-
-        return DecodedAudio(samples: samples, sampleRate: rate, duration: Double(buffer.frameLength) / format.sampleRate)
+        return try finish(buffer, targetSampleRate: targetSampleRate, url: url)
     }
 
     public func decodeToMonoFloat(
@@ -62,51 +47,61 @@ public struct AVFoundationDecoder: SeekableAudioDecoding {
         range: AudioDecodeRange,
         targetSampleRate: Double?
     ) async throws -> DecodedAudio {
-        let file = try AVAudioFile(forReading: url)
-        let format = file.processingFormat
-        let total = Int64(file.length)
-        let start = max(0, min(range.startFrame, total))
-        let count = max(0, min(Int64(range.frameCount), total - start))
-        file.framePosition = start
-
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(count)
-        ) else {
-            throw AVAudioDecoderError.bufferAllocationFailed
+        guard range.startFrame >= 0, range.frameCount >= 0 else {
+            throw TranscodeError.decodeFailed(url)
         }
-        try file.read(into: buffer)
+        let result: RangeDecodeResult
+        do {
+            result = try AudioFileReader.decodeRange(
+                url: url,
+                range: AudioFrameRange(startFrame: range.startFrame, frameCount: range.frameCount)
+            )
+        } catch RangeDecodeError.notSeekable {
+            throw TranscodeError.fileNotSeekable(url)
+        } catch {
+            throw TranscodeError.decodeFailed(url)
+        }
+        return try finish(result.buffer, targetSampleRate: targetSampleRate, url: url)
+    }
 
-        var samples = monoFloat(from: buffer)
-        var rate = format.sampleRate
+    // MARK: - Conversion
+
+    private func finish(_ buffer: PCMBuffer, targetSampleRate: Double?, url: URL) throws -> DecodedAudio {
+        var samples = monoFloat(buffer)
+        var rate = buffer.format.sampleRate
+        let sourceCount = samples.count
         if let targetSampleRate, abs(targetSampleRate - rate) > 0.5 {
-            samples = try AudioResampler.resample(samples, from: rate, to: targetSampleRate)
+            do {
+                samples = try AudioResampler.resample(samples, from: rate, to: targetSampleRate)
+            } catch {
+                throw TranscodeError.decodeFailed(url)
+            }
             rate = targetSampleRate
         }
         return DecodedAudio(
             samples: samples,
             sampleRate: rate,
-            duration: Double(count) / format.sampleRate
+            duration: buffer.format.sampleRate > 0 ? Double(sourceCount) / buffer.format.sampleRate : 0
         )
     }
 
-    // MARK: - Conversion
-
-    private func monoFloat(from buffer: AVAudioPCMBuffer) -> [Float] {
-        let channels = Int(buffer.format.channelCount)
-        let frameLength = Int(buffer.frameLength)
-        guard let data = buffer.floatChannelData else {
-            return []
-        }
+    private func monoFloat(_ buffer: PCMBuffer) -> [Float] {
+        let frames = buffer.frameCount
+        let channels = buffer.channelCount
+        guard frames > 0 else { return [] }
         if channels == 1 {
-            return Array(UnsafeBufferPointer(start: data[0], count: frameLength))
+            let ch = buffer.channel(0)
+            var out = [Float](repeating: 0, count: frames)
+            for i in 0..<frames { out[i] = ch[i] }
+            return out
         }
-        var mono = [Float](repeating: 0, count: frameLength)
+        var out = [Float](repeating: 0, count: frames)
+        let inv = Float(1) / Float(channels)
         for c in 0..<channels {
-            let channel = UnsafeBufferPointer(start: data[c], count: frameLength)
-            for i in 0..<frameLength { mono[i] += channel[i] / Float(channels) }
+            let ch = buffer.channel(c)
+            for i in 0..<frames { out[i] += ch[i] * inv }
         }
-        return mono
+        return out
     }
 
     public enum AVAudioDecoderError: Error {
