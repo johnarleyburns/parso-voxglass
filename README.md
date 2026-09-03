@@ -116,8 +116,7 @@ If every step passes, the playback bridge is behaving. Any failure in sections 3
 
 ## License
 
-GPLv3 — see `LICENSE`. App Store distribution is permitted under the Additional Permission
-in `LICENSE-APPSTORE-EXCEPTION.md`.
+Proprietary — all rights reserved. See `LICENSE`.
 
 ## iCloud Sync setup (for developers)
 

@@ -189,7 +189,7 @@ public enum IACollectionStore {
         curatedListName: "greater-books",
         summaryLine: "916 LibriVox recordings spanning 340 works from the 540-row Greater Books shortlist, in English.",
         description: """
-            This collection draws from the Greater Books shortlist at [greaterbooks.com](https://greaterbooks.com) \u{2014} an open-source literary canon that extends the Great Books tradition into a broader, more inclusive survey of world literature. Unlike the 60-volume Great Books set, which is weighted toward philosophy and natural science, the Greater Books list emphasizes novels, plays, poetry, scripture, history, and major works of modern literature.
+            This collection draws from the Greater Books shortlist at [greaterbooks.com](https://greaterbooks.com) \u{2014} a literary canon that extends the Great Books tradition into a broader, more inclusive survey of world literature. Unlike the 60-volume Great Books set, which is weighted toward philosophy and natural science, the Greater Books list emphasizes novels, plays, poetry, scripture, history, and major works of modern literature.
 
             The collection spans roughly 2,800 years: the epics of Homer and Virgil, the tragedies and comedies of classical Athens, the medieval visions of Dante and Chaucer, the plays of Shakespeare and his contemporaries Marlowe and Moli\u{00E8}re, the early novels of Cervantes, Defoe, and Fielding, the 19th-century triumphs of Austen, the Bront\u{00EB}s, Dickens, Eliot, Melville, Hawthorne, Flaubert, Dostoevsky, and Tolstoy, and the transitional moderns \u{2014} Conrad, Henry James, Chekhov, Ibsen, Kipling, Wilde, and Wells.
 

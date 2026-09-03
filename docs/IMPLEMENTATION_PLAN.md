@@ -1,11 +1,11 @@
 # Voxglass Implementation Plan
 
-Voxglass is a GPLv3, iOS-native, privacy-first public-domain audiobook app. It has no accounts, ads, analytics, tracking SDKs, or runtime Wikipedia fetches. Network access is reserved for Internet Archive and LibriVox search, metadata, streaming, and downloads.
+Voxglass is a proprietary, iOS-native, privacy-first public-domain audiobook app. It has no accounts, ads, analytics, tracking SDKs, or runtime Wikipedia fetches. Network access is reserved for Internet Archive and LibriVox search, metadata, streaming, and downloads.
 
 ## Phase 0: Foundation
 
 - Create an iOS 17+ SwiftUI app target and unit test target.
-- License the repository under GPLv3.
+- Keep the repository under its proprietary license.
 - Add tabs for Listen, Library, Discover, Search, and Settings.
 - Establish a warm paper, ink, and glass-inspired native design system.
 - Respect Reduce Transparency and Reduce Motion.
@@ -50,4 +50,3 @@ Voxglass is a GPLv3, iOS-native, privacy-first public-domain audiobook app. It h
 - Add explicit user-tapped external author links where available.
 - Add recommendations generated from on-device library and bundled metadata.
 - Add recommendations generated from on-device library and bundled metadata.
-

@@ -40,7 +40,7 @@ public struct ExportOptions: Sendable, Equatable {
     /// the FLAC masters.
     public var includeMP3Derivatives: Bool
     /// IA: target `test_collection` (auto-purged dry run) instead of
-    /// `opensource_audio` (§3.3.1).
+    /// the default community-audio collection (§3.3.1).
     public var useTestCollection: Bool
     /// Retail: apply the mastering chain before encoding (§16.7).
     public var applyMastering: Bool

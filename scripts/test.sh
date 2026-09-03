@@ -83,6 +83,8 @@ if [ -n "$WATCH_DEVICE_NAME" ]; then
   echo "Watch device name: $WATCH_DEVICE_NAME"
   echo ""
 
+  bash scripts/check_watch_app_icon.sh
+
   if xcrun simctl list devices available | sed -E 's/^[[:space:]]*//' | grep -q "^$WATCH_DEVICE_NAME ("; then
     xcodebuild test \
       -scheme VoxglassWatch \

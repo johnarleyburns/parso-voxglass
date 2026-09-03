@@ -115,6 +115,14 @@ targets:
   VoxglassWatch:
     type: application
     platform: watchOS
+    preBuildScripts:
+      - name: Validate Watch app icon
+        script: "bash \"${SRCROOT}/scripts/check_watch_app_icon.sh\""
+        inputFiles:
+          - "$(SRCROOT)/scripts/check_watch_app_icon.sh"
+          - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json"
+          - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+        basedOnDependencyAnalysis: false
     sources:
       - path: VoxglassWatch
         excludes:

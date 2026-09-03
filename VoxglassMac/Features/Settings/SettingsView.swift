@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 import VoxglassCore
 
@@ -223,6 +222,13 @@ struct SettingsView: View {
                 }
             }
 
+            HStack {
+                Text("License")
+                Spacer()
+                Text("Proprietary")
+                    .foregroundStyle(.secondary)
+            }
+
             HStack(spacing: 12) {
                 Button("Restore Purchases") {
                     Task { await model.restore() }
@@ -238,10 +244,6 @@ struct SettingsView: View {
                 .accessibilityIdentifier("settings.purchasePro")
             }
 
-            Button("Third-Party Notices") {
-                revealThirdPartyNotices()
-            }
-            .accessibilityIdentifier("settings.thirdPartyNotices")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -263,11 +265,4 @@ struct SettingsView: View {
         }
     }
 
-    private func revealThirdPartyNotices() {
-        if let url = Bundle.main.url(forResource: "ThirdPartyNotices", withExtension: "md") {
-            NSWorkspace.shared.open(url)
-        } else {
-            model.setMessage("Third-party notices ship inside the app bundle on release builds (LAME, libFLAC).")
-        }
-    }
 }

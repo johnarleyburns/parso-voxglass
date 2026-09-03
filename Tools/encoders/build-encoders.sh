@@ -1,16 +1,13 @@
 #!/bin/bash
-# build-encoders.sh — Voxglass encoder build recipe (spec §16.3, correction C-3).
+# build-encoders.sh — Voxglass encoder build recipe.
 #
-# Builds the two required third-party encoders as multi-platform xcframeworks:
-#   - libmp3lame 3.100  (LGPL-2.1)    — MP3, CBR capable
-#   - libFLAC   1.4.3   (BSD-3-Clause) — FLAC, lossless
+# Builds the two required encoder dependencies as multi-platform xcframeworks:
+#   - libmp3lame 3.100 — MP3, CBR capable
+#   - libFLAC   1.4.3  — FLAC, lossless
 #
 # Why these and only these: AVFoundation decodes MP3 but neither encodes MP3
-# nor offers a deterministic FLAC path (§16.3). AAC/ALAC/PCM come from
-# AVFoundation and need no third party. The GPL-configured ffmpeg is explicitly
-# forbidden here (§16.3, C-3): the App Store additional permission in
-# LICENSE-APPSTORE-EXCEPTION.md is granted by this repository's copyright
-# holder and cannot bind a GPL-configured ffmpeg's authors.
+# nor offers a deterministic FLAC path. AAC/ALAC/PCM come from AVFoundation.
+# ffmpeg is not bundled; the app uses the encoder artifacts produced here.
 #
 # Output (committed, so CI and SwiftPM link it without running this script):
 #   Tools/encoders/Vendored/Lame.xcframework
@@ -31,9 +28,6 @@
 # `xcodebuild -create-xcframework` rejects two thin libraries of the same
 # platform ("equivalent library definitions") and the `-library` form does not
 # emit an importable module map.
-#
-# LGPL obligations (§16.3, §21.4) are met by shipping this recipe plus the
-# written offer for the unmodified sources in Voxglass/Resources/ThirdPartyNotices.md.
 #
 # Requires: curl, tar, xcrun (Xcode toolchain), clang, ar, lipo, make, python3.
 # Does NOT require Homebrew or any system-installed codec. Idempotent.

@@ -1,7 +1,7 @@
 # Voxglass Audiobook Studio — MVP v1 Complete Specification & Implementation Guide
 
 **Status:** Build-ready specification. Supersedes nothing; *expands* `VOXGLASS_STUDIO_IMPLEMENTATION_PLAN.md` (2026-07-29) in the same directory into an implementation-complete document.
-**Repository:** `johnarleyburns/parso-voxglass` (GPLv3 + App Store additional permission).
+**Repository:** `johnarleyburns/parso-voxglass` (proprietary).
 **Date:** 2026-07-30.
 **Audience:** an agentic coding system implementing the MVP end to end, plus the human reviewing its commits.
 **Scope thesis:** *Voxglass Studio is a complete audiobook creation and distribution pipeline for a solo human narrator — free and unlimited for LibriVox and Internet Archive contribution, with a one-time $149 Pro unlock for commercial/retail deliverables. No subscription. No speech synthesis anywhere in the product.*
@@ -63,9 +63,9 @@ The source implementation plan is broadly correct and this document adopts its s
 
 | # | Source plan said | Reality | This spec says |
 |---|---|---|---|
-| C-1 | "GRDB over SQLite … *matches existing stack*" | The repo has **no GRDB dependency**. Persistence is a hand-rolled `public actor AppDatabase` over `SQLite3` (`Voxglass/Core/Database/AppDatabase.swift`) with an integer-keyed migration list in `DatabaseMigrations.swift`. | **Do not add GRDB.** Extend the existing `AppDatabase` actor pattern into a new `ProjectDatabase` actor scoped to one `.voxproject`. Rationale in §7.1. This keeps `VoxglassCore` dependency-free, keeps the GPL dependency surface at zero, and avoids a second ORM in one binary. |
+| C-1 | "GRDB over SQLite … *matches existing stack*" | The repo has **no GRDB dependency**. Persistence is a hand-rolled `public actor AppDatabase` over `SQLite3` (`Voxglass/Core/Database/AppDatabase.swift`) with an integer-keyed migration list in `DatabaseMigrations.swift`. | **Do not add GRDB.** Extend the existing `AppDatabase` actor pattern into a new `ProjectDatabase` actor scoped to one `.voxproject`. Rationale in §7.1. This keeps `VoxglassCore` dependency-free and avoids a second ORM in one binary. |
 | C-2 | "Swift 6, strict concurrency on" | `Package.swift` is `swift-tools-version: 5.9`; `project.yml` sets `SWIFT_VERSION: "5.0"`. Flipping the whole repo to Swift 6 is a multi-day migration of 146 existing Swift files and is not MVP work. | Bump `Package.swift` to `swift-tools-version: 6.0`. Set `swiftLanguageMode(.v6)` **per-target on the new Studio/production targets only**; leave the existing `VoxglassCore` target at `.v5` with `.enableUpcomingFeature("StrictConcurrency")` warnings-only. §4.4. |
-| C-3 | "bundle ffmpeg … Voxglass is GPL-3.0, so ffmpeg/LAME/libFLAC are license-compatible" | GPL-compatibility is only half the problem. A **GPL-configured** ffmpeg cannot be shipped through the Mac App Store, because the App Store additional permission in `LICENSE-APPSTORE-EXCEPTION.md` is granted by *this repository's* copyright holder and cannot bind ffmpeg's authors. The repository already has direct LAME/libFLAC wrappers and CBR/round-trip tests, so replacing them with young Swift wrapper packages would add risk without improving the product's required audio behavior. | Do **not** bundle ffmpeg. Use the repo's reproducible LAME/libFLAC xcframework build, expanded to macOS + iOS device + iOS simulator slices and linked through the shared `VoxglassEncoders` target. `libmp3lame` is used for MP3 creation, libFLAC is used for FLAC reading and creation, and AVFoundation handles AAC/ALAC/PCM plus Apple-supported MP3 decode paths. Build rules, platform rules, and notices are in §16.3. |
+| C-3 | "bundle ffmpeg" | The repository already has direct LAME/libFLAC wrappers and CBR/round-trip tests, so replacing them with young Swift wrapper packages would add risk without improving the product's required audio behavior. | Do **not** bundle ffmpeg. Use the repo's reproducible LAME/libFLAC xcframework build, expanded to macOS + iOS device + iOS simulator slices and linked through the shared `VoxglassEncoders` target. `libmp3lame` is used for MP3 creation, libFLAC is used for FLAC reading and creation, and AVFoundation handles AAC/ALAC/PCM plus Apple-supported MP3 decode paths. Build rules and platform rules are in §16.3. |
 | C-4 | Export presets list "ACX 192 kbps" as `retailACX` | ACX/Audible is *one* commercial destination among several, and its file rules (per-chapter files, ≤120 min, opening/closing credit files, retail sample) are as important as its bitrate. | Model commercial output as a **family** of destination profiles (ACX/Audible, Findaway-style aggregator, Apple Books, generic M4B, lossless archive master), driven by a data table (§3.4) rather than two hard-coded constants. |
 | C-5 | Watch smoke test "may need hosted-logic fallback" | Prior work in this repo already resolved this: watchOS UI smoke tests do run locally via `scripts/test.sh`, with known gotchas (row taps need `.contentShape`, sheets are not `NavigationPath` destinations, the simulator must be pre-booted, and seeders must be idempotent). | Keep the **XCUITest** watch smoke test. Follow the gotcha list in §19.6. CI does not run simulators (see `scripts/test.sh` header: "Does NOT run in CI"); the simulator suite is a **local pre-commit gate** (the pre-push hook runs `swift test` only). |
 
@@ -923,7 +923,7 @@ com.apple.security.cs.disable-library-validation      = false     # keep ON; do 
 
 `NSMicrophoneUsageDescription`: **"Voxglass records your narration for the audiobook you are producing. Audio stays on your Mac unless you choose to preview it on your devices."**
 
-The transcoder MUST work inside the sandbox. This is why §16.3 prefers **linked LGPL libraries** over spawning a `Process`: a spawned helper needs either an embedded signed helper tool with inherited sandbox or an XPC service, both of which add notarization complexity. If the `Process` path is used anyway, the helper binary must live in `Contents/Helpers/`, be signed with the app's team ID with the hardened runtime, and be invoked with absolute paths only.
+The transcoder MUST work inside the sandbox. This is why §16.3 prefers **linked encoder libraries** over spawning a `Process`: a spawned helper needs either an embedded signed helper tool with inherited sandbox or an XPC service, both of which add notarization complexity. If the `Process` path is used anyway, the helper binary must live in `Contents/Helpers/`, be signed with the app's team ID with the hardened runtime, and be invoked with absolute paths only.
 
 ### 4.10 CloudKit container design
 
@@ -1600,7 +1600,7 @@ Maintenance actions: **Rebuild caches** (delete Render+Proxy), **Vacuum unused a
 
 The source plan proposed GRDB "to match the existing stack." The existing stack is a hand-rolled `actor AppDatabase` over the system `SQLite3` C API, with `DatabaseValue` for binding and an integer-numbered append-only migration list. Adopting GRDB would mean:
 
-- adding the project's **first** third-party Swift dependency, into a GPLv3 app that is distributed through the App Store under a hand-written additional permission — every added dependency is a license question;
+- adding the project's **first** third-party Swift dependency to a proprietary app — every added dependency is a license question;
 - running two persistence idioms in one binary (the consumer library DB stays hand-rolled), doubling the mental model;
 - no material benefit for this workload, which is a few dozen simple tables with straightforward queries and one hot path (paragraph listing).
 
@@ -3496,11 +3496,11 @@ The committed project configuration MUST NOT contain a local `file://`, `~/githu
 
 The two xcframeworks MUST be importable from Swift on every supported slice with the same module names (`Lame`, `FLAC`) and no app target may depend on a local system copy of either library.
 
-**Licensing constraint.** Voxglass is GPLv3 with a hand-written App Store additional permission covering *this repository's* code. That permission cannot extend to third-party GPL code. Therefore:
+**Distribution constraint.** Voxglass is proprietary. Therefore:
 
-- **Do not** ship a GPL-configured ffmpeg binary (`--enable-gpl`) in any App Store build.
+- **Do not** ship a configured ffmpeg binary in any App Store build.
 - **Do not** invoke `/usr/local/bin/ffmpeg`, Homebrew `lame`, Homebrew `flac`, or any user-installed encoder.
-- **Do** satisfy the license and notice obligations of LAME and libFLAC exactly as shipped, including copyright notices, license text, public source links, the exact rebuild recipe, and any required written offer, source-availability, object-file, or relinking language. This must be reviewed before App Store submission.
+- Review the encoder components and their applicable notices before App Store submission.
 
 **Implementation path:**
 
@@ -3519,7 +3519,7 @@ The two xcframeworks MUST be importable from Swift on every supported slice with
 - `SeekableFLACDecoderTests` — create or load a multi-hour FLAC fixture, seek near the end, decode a short range, and assert that returned PCM matches the same slice from full decode while runtime and memory are bounded by the requested range rather than total file duration. Run on macOS and in the iOS simulator.
 - `TranscoderAvailabilityTests` — with encoders unavailable, `availableEncoders` excludes them and the LibriVox builder throws `TranscodeError.encoderUnavailable("mp3")` **before** writing any file.
 
-**Third-party notices.** Add `Voxglass/Resources/ThirdPartyNotices.md` listing LAME and libFLAC with their exact versions, copyright notices, license text, public source links, rebuild recipe, and any written-offer/source-availability/object-file/relinking language required by their licenses. Surface it in Settings → About. This is a licensing obligation, not a nicety.
+**Encoder components.** Keep exact versions, source links, rebuild instructions, and applicable notices in the release-readiness records. Do not surface these records in the app until the encoder replacement is complete.
 
 ### 16.4 `LibriVoxPackageBuilder`
 
@@ -4599,7 +4599,7 @@ Commit subject convention: `feat(studio): S<N> — <summary>` with a body listin
 
 ### S8 — Encoders and packaging
 
-**Add** macOS + iOS device + iOS simulator slices for the existing LAME/libFLAC xcframeworks, Mac and iPhone transcoder wiring through the shared `VoxglassEncoders` target, `VoxTranscoder`, `ID3Writer`, MPEG-4/Vorbis/RIFF tagging, `MasteringChain`, the three package builders, `ChecksumWriter`, checklist and manifest generators, `ThirdPartyNotices.md`.
+**Add** macOS + iOS device + iOS simulator slices for the existing LAME/libFLAC xcframeworks, Mac and iPhone transcoder wiring through the shared `VoxglassEncoders` target, `VoxTranscoder`, `ID3Writer`, MPEG-4/Vorbis/RIFF tagging, `MasteringChain`, the three package builders, `ChecksumWriter`, checklist and manifest generators, and encoder release records.
 
 **Test** `TranscoderCBRTests`, `TranscoderFLACTests`, `SeekableFLACDecoderTests`, `TranscoderAvailabilityTests`, `TaggingTests`, `MasteringChainTests`, `PackageBuilderTests`, `ChecksumWriterTests`, `ExportEndToEndTests`.
 
@@ -4659,7 +4659,7 @@ Commit subject convention: `feat(studio): S<N> — <summary>` with a body listin
 ### 21.2 App Store considerations
 
 - **Two apps or one?** VoxglassStudio is a separate macOS app with its own App Store listing and its own IAP. The iOS Voxglass app gains production preview for free. Cross-purchase between them is not attempted (StoreKit universal purchase would require a single app record across platforms; the Studio's $149 IAP is Mac-only and the phone app never needs Pro).
-- **GPLv3 + App Store.** Ship `LICENSE`, `LICENSE-APPSTORE-EXCEPTION.md`, and `ThirdPartyNotices.md` inside the app bundle and link them from Settings → About. Include the written offer for corresponding source with the repository URL.
+- **Proprietary distribution.** Ship `LICENSE` with the repository and keep release packaging aligned with the proprietary terms.
 - **Review notes for Apple:** explain that the app records the user's own narration, that no content is uploaded by the app, and that the $149 IAP unlocks professional export formats. Provide a demo project and a note that microphone access is required.
 - **Privacy nutrition label:** Data not collected. Audio and text stay in the user's iCloud private database; no analytics SDK; no third-party network calls.
 - **Export compliance:** `ITSAppUsesNonExemptEncryption: false` (matching the existing app).
@@ -4699,7 +4699,7 @@ Record the verification date and the outcome in `docs/voxglass-mvp/DESTINATION_V
 - [ ] §21.3 re-verification completed; log updated
 
 ## Legal & licensing
-- [ ] ThirdPartyNotices.md current (LAME/libmp3lame, libFLAC versions and rebuild recipe)
+- [ ] Encoder release records current (LAME/libmp3lame, libFLAC versions and rebuild recipe)
 - [ ] Codec xcframeworks rebuild from a clean checkout and link with no local package, Homebrew, or system codec paths
 - [ ] Legal strings unchanged or reviewed
 
@@ -4761,7 +4761,7 @@ export.scope.<case> · export.destination.librivox · export.destination.interne
 export.destination.retail · export.unlockPro · export.run · export.cancel · export.revealInFinder
 settings.tab.<case> · settings.inputDevice · settings.recordingFormat · settings.monitoring
 settings.preRoll · settings.warnClipping · settings.autoMetrics · settings.recordTest
-settings.purchasePro · settings.restorePurchases · settings.thirdPartyNotices · settings.copyDiagnostics
+settings.purchasePro · settings.restorePurchases · settings.copyDiagnostics
 ```
 
 **iPhone**
@@ -4871,7 +4871,7 @@ Recorded deliberately; update the mockups when convenient.
 | Paragraph re-identification mis-matches after a big source edit | Recorded audio attached to the wrong text | Conservative thresholds; retirement is non-destructive; the re-import summary sheet requires explicit confirmation |
 | Audio thread violations cause dropouts | Lost or glitched takes | Tap discipline (§11.2 rule 3); ring buffer; overrun counter surfaced |
 | App-wide SwiftUI invalidation returns | Unusable recording UI | `RecordingMeter` isolation + `RenderCountProbeTests` |
-| GPL/App Store licensing challenge | Distribution blocked | LGPL-only encoders, dynamic linking, notices, written offer (§16.3) |
+| Encoder distribution review | Distribution blocked | Verify encoder components, packaging, and applicable notices before release |
 | Scope creep into AI narration | Product identity and LibriVox eligibility | CI gate G-1; `aiImported` is provenance only, with no generation path |
 | A grep gate silently stops matching (broken regex, missing search root, self-defeating exclusion) | The product's defining rules go unenforced | G-19 self-test (`scripts/test_guards.sh`) plants a probe per gate and asserts the guard fails on it |
 

@@ -103,6 +103,5 @@ record, listen
 | 6 | LibriVox validation | seeded project, validate |
 
 Run the app in the simulator with the production smoke seed and capture the
-above surfaces against the design tokens (§15.2). Third-party notices ship in
-the app at `Voxglass/Resources/ThirdPartyNotices.md` (LAME LGPL-2.1, libFLAC
-BSD-3 — §16.6).
+above surfaces against the design tokens (§15.2). Encoder component notices
+are tracked separately from the app bundle.

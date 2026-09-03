@@ -332,7 +332,7 @@ public struct InternetArchivePackageBuilder: PackageBuilder, Sendable {
             lines.append("> Collection `test_collection` is a dry-run target: items are removed automatically after about 30 days. Recommended for your first upload (§3.3.1).")
             lines.append("")
         } else {
-            lines.append("> Collection `opensource_audio` is the default community-audio collection for audiobooks (§3.3.1).")
+            lines.append("> This is the default community-audio collection for audiobooks (§3.3.1).")
             lines.append("")
         }
         lines.append("## Identifier")

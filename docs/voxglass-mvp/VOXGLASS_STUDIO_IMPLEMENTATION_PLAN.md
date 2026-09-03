@@ -216,7 +216,7 @@ protocol PackageBuilder: Sendable {
   func build(project: AudiobookProject, into exportsDir: URL) async throws -> ExportBundle
 }
 struct LibriVoxPackageBuilder: PackageBuilder        // human-only; 128 CBR mono MP3; per-file naming; intro/outro fields; duration report; checklist; NO auto-upload
-struct InternetArchivePackageBuilder: PackageBuilder // lossless master + optional MP3; metadata manifest (JSON/XML); artwork; checksums; opensource_audio default; test-collection mode
+struct InternetArchivePackageBuilder: PackageBuilder // lossless master + optional MP3; metadata manifest (JSON/XML); artwork; checksums; community-audio default; test-collection mode
 struct RetailMasterPackageBuilder: PackageBuilder    // Pro: batch chapter files, M4B chapterized, MP3/WAV/FLAC masters, dither on bit-reduction, validation report (JSON/HTML)
 struct MetadataManifestBuilder { func iaManifest(_ p: AudiobookProject) -> Data }
 struct ChecksumWriter { func sha256Manifest(_ files: [ExportedFile]) -> Data }
@@ -520,7 +520,7 @@ Fail the build if any of these match:
 
 ## I. Constraints surfaced (decide before S3/S8)
 
-1. **MP3/FLAC encoding needs a bundled encoder.** AVFoundation can *decode* MP3/FLAC but *encodes* neither, and both are mandatory for exports (LibriVox 128 kbps CBR MP3; ACX 192 kbps CBR MP3; IA/retail FLAC masters). Plan: bundle **ffmpeg** (or LAME + libFLAC) invoked via `Process` behind `AudioTranscoding`. Voxglass is GPL-3.0, so ffmpeg/LAME/libFLAC are license-compatible. **Sandbox/notarization:** the helper must be signed, sandbox-permitted (or run as an XPC helper), and CBR/true-peak settings verified against the destination profile. This is the single biggest new engineering item beyond the domain work.
+1. **MP3/FLAC encoding needs a bundled encoder.** AVFoundation can *decode* MP3/FLAC but *encodes* neither, and both are mandatory for exports (LibriVox 128 kbps CBR MP3; ACX 192 kbps CBR MP3; IA/retail FLAC masters). Plan: use the existing LAME + libFLAC artifacts behind `AudioTranscoding`; do not bundle **ffmpeg**. **Sandbox/notarization:** any helper must be signed, sandbox-permitted (or run as an XPC helper), and CBR/true-peak settings verified against the destination profile. This is the single biggest new engineering item beyond the domain work.
 2. **watchOS UI automation is limited in CI** — smoke test may need the hosted-logic fallback in §G-3.
 3. **CarPlay is not XCUITest-automatable** — the CarPlay smoke test is a scene/template test (§G-3), which is also why the existing target is named `…SmokeTests`, not `…UITests`.
 4. **Recording vs export formats differ:** capture masters at 48 kHz/24-bit (handoff default); LibriVox/ACX deliver 44.1 kHz mono MP3. The transcoder, not the recorder, resamples/encodes per destination — keep recording lossless and defer all lossy conversion to export.

@@ -857,7 +857,7 @@ Every gate MUST have a matching entry in `scripts/test_guards.sh` proving it can
 
 ### 16.6 Release gates
 
-`docs/voxglass-mvp/DESTINATION_VERIFICATION_LOG.md` re-verified · `ThirdPartyNotices.md` current (LAME LGPL-2.1, libFLAC BSD-3) · encoder build reproducible from a clean checkout with **iOS device + iOS simulator + watchOS** slices · the three end-to-end walkthroughs (LibriVox free, Internet Archive free, Retail Pro) executed on real hardware with a real microphone.
+`docs/voxglass-mvp/DESTINATION_VERIFICATION_LOG.md` re-verified · encoder build reproducible from a clean checkout with **iOS device + iOS simulator + watchOS** slices · the three end-to-end walkthroughs (LibriVox free, Internet Archive free, Retail Pro) executed on real hardware with a real microphone.
 
 ---
 

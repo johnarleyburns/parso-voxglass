@@ -42,6 +42,7 @@ jobs:
 
       - name: Build watchOS
         run: |
+          bash scripts/check_watch_app_icon.sh
           xcodebuild build \
             -project Voxglass.xcodeproj \
             -scheme VoxglassWatch \

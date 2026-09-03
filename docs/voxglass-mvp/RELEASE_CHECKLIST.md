@@ -57,7 +57,7 @@ be executed on a real interface before shipping:
 
 ## Legal & licensing
 
-- [x] ThirdPartyNotices.md current (LAME, libFLAC versions, LGPL-2.1 / BSD-3)
+- [ ] Encoder components and applicable notices reviewed before release
 - [x] Encoder build recipe reproducible from a clean checkout
       (`Tools/encoders/build-encoders.sh`)
 - [x] Legal strings unchanged or reviewed (`Destinations/LegalStrings.swift`,

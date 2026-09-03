@@ -2,7 +2,8 @@
   "images" : [
     {
       "filename" : "icon_1024.png",
-      "idiom" : "universal",
+      "idiom" : "watch-marketing",
+      "scale" : "1x",
       "platform" : "watchos",
       "size" : "1024x1024"
     }

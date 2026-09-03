@@ -472,7 +472,7 @@ mistaken for either.
 | Walkthroughs W-1/W-2/W-3 on real hardware | §16.6 | Documents exist and are thorough; `RELEASE_CHECKLIST.md:22,26,29` boxes unchecked. Their identifier citations are stale — see **G1** collateral. |
 | Encoder build from clean checkout, iOS device + simulator + watchOS slices | §16.6 | Not attempted here. |
 | Destination re-verification | §16.6 | **Done** — `DESTINATION_VERIFICATION_LOG.md` carries a 2026-08-09 P9 row covering items 1–6. |
-| `ThirdPartyNotices.md` current | §16.6 | Present at `Voxglass/Resources/ThirdPartyNotices.md` with LGPL content; currency is a human judgment. |
+| Encoder component notices | §16.6 | Tracked separately from the app bundle until the encoder replacement is complete. |
 | $49 / $79 in App Store Connect | D-2 | Correctly absent from code by design; set at submission. |
 | Simulator UI smoke suite | §16.3 | Not run in this review (25-min local pre-commit gate). See **G4** for its stated scope gap. |
 

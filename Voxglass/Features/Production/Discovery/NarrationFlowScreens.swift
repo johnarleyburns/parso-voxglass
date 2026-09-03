@@ -2738,7 +2738,7 @@ struct SubmitView: View {
                 Button {
                     UIPasteboard.general.string = archiveCommand
                 } label: {
-                    Label("Prepare Archive upload (opensource_audio) →", systemImage: "doc.on.clipboard")
+                    Label("Prepare Archive community upload →", systemImage: "doc.on.clipboard")
                         .scaledFont(size: 14, weight: .bold)
                         .foregroundStyle(NarrationPalette.skySoft)
                         .frame(maxWidth: .infinity)

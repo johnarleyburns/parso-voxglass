@@ -623,7 +623,7 @@ struct AboutView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Palette.ink)
                 Spacer()
-                Text("GPLv3")
+                Text("Proprietary")
                     .font(.caption)
                     .foregroundStyle(Palette.ink3)
             }
@@ -648,7 +648,7 @@ struct AboutView: View {
         }
         .glassPanel()
 
-        Text("Voxglass Pro is a one-time purchase. You can also build Pro from source — visit the repository for instructions.")
+        Text("Voxglass Pro is a one-time purchase. Availability and feature details are shown in the app.")
             .scaledFont(size: 11.5)
             .foregroundStyle(Palette.ink3)
             .multilineTextAlignment(.center)
