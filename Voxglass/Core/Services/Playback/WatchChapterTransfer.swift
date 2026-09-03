@@ -1,4 +1,5 @@
 import Foundation
+import ParsoAudioStreaming
 
 /// Resolves the on-phone blob for a phone→watch chapter transfer. Extracted so
 /// the phone relay and host tests share one implementation: a chapter is
@@ -8,7 +9,7 @@ import Foundation
 public enum WatchChapterTransfer {
     /// Returns the complete blob's URL for `chapterKey`, or nil when the blob is
     /// absent or incomplete.
-    public static func resolvedFileURL(cacheStore: StreamCacheStore, chapterKey: String) async -> URL? {
+    public static func resolvedFileURL(cacheStore: SparseCacheStore, chapterKey: String) async -> URL? {
         guard await cacheStore.isComplete(chapterKey) else { return nil }
         let url = await cacheStore.fileURL(for: chapterKey)
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }

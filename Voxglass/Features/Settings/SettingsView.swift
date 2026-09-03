@@ -1,3 +1,4 @@
+import ParsoAudioStreaming
 import SwiftUI
 import VoxglassCore
 
@@ -299,7 +300,7 @@ private struct LanguagesCard: View {
 
 private struct CacheSettingsCard: View {
     @State private var cacheUsed: Int64 = 0
-    @State private var cacheLimit: Int64 = StreamCacheStore.defaultLimit
+    @State private var cacheLimit: Int64 = SparseCacheStore.defaultLimit
     @State private var cachedCount: Int = 0
     @State private var showClearConfirm = false
     @AppStorage(AppPreferencesStore.Keys.cacheFullBooksOnCellular) private var cacheFullBooksOnCellular = false
@@ -318,7 +319,7 @@ private struct CacheSettingsCard: View {
         ) {
             Button("Clear Cache", role: .destructive) {
                 Task {
-                    await CacheManager.shared.clearCache()
+                    await AudioCache.clearCache()
                     // Core's CacheManager no longer reaches into the UIKit artwork
                     // tier; clear its in-memory cache app-side.
                     ArtworkService.shared.clearMemory()
@@ -364,7 +365,7 @@ private struct CacheSettingsCard: View {
             .padding(.top, 8)
 
             HStack(spacing: 6) {
-                ForEach(CacheManager.CachePreset.allCases, id: \.rawValue) { preset in
+                ForEach(AudioCache.CachePreset.allCases, id: \.rawValue) { preset in
                     presetButton(preset)
                 }
             }
@@ -374,11 +375,11 @@ private struct CacheSettingsCard: View {
         .glassSurface(cornerRadius: 18)
     }
 
-    private func presetButton(_ preset: CacheManager.CachePreset) -> some View {
+    private func presetButton(_ preset: AudioCache.CachePreset) -> some View {
         let selected = preset.rawValue == cacheLimit
         return Button {
             Task {
-                await CacheManager.shared.setPreset(preset)
+                await AudioCache.CachePreset.select(preset)
                 await refresh()
             }
         } label: {
@@ -440,9 +441,9 @@ private struct CacheSettingsCard: View {
     }
 
     private func refresh() async {
-        cacheUsed = await CacheManager.shared.currentCacheBytes()
-        cacheLimit = await CacheManager.shared.currentBudget
-        cachedCount = await StreamCacheStore.shared.cachedTrackCount()
+        cacheUsed = await AudioCache.shared.totalCachedBytes()
+        cacheLimit = AudioCache.CachePreset.selected.rawValue
+        cachedCount = await AudioCache.shared.completeEntryCount(kind: "audio")
     }
 }
 

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import ParsoAudioStreaming
 @testable import VoxglassCore
 
 @Suite struct WatchPositionMergeTests {
@@ -317,15 +318,15 @@ import Testing
         let remote = URL(string: "https://archive.org/x/ch1.mp3")!
         let chapter = Chapter(bookID: bookID, title: "Ch", index: 1, remoteURL: remote, opusURL: opus)
         #expect(WatchChapterCache.canonicalURL(for: chapter) == remote)
-        #expect(WatchChapterCache.key(for: chapter) == StreamCacheUtils.key(for: remote))
-        #expect(WatchChapterCache.key(for: chapter) != StreamCacheUtils.key(for: opus))
+        #expect(WatchChapterCache.key(for: chapter) == AudioCache.key(for: remote))
+        #expect(WatchChapterCache.key(for: chapter) != AudioCache.key(for: opus))
     }
 
     @Test func fallsBackToRemoteWhenNoOpus() {
         let remote = URL(string: "https://archive.org/x/ch1.mp3")!
         let chapter = Chapter(bookID: bookID, title: "Ch", index: 1, remoteURL: remote)
         #expect(WatchChapterCache.canonicalURL(for: chapter) == remote)
-        #expect(WatchChapterCache.key(for: chapter) == StreamCacheUtils.key(for: remote))
+        #expect(WatchChapterCache.key(for: chapter) == AudioCache.key(for: remote))
     }
 
     @Test func keyIsStableForSameChapter() {

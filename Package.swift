@@ -11,6 +11,12 @@ let package = Package(
         .library(name: "VoxglassCoreTestSupport", targets: ["VoxglassCoreTestSupport"]),
         .library(name: "VoxglassEncoders", targets: ["VoxglassEncoders"])
     ],
+    dependencies: [
+        // Audio-engine unification (parso-audio-engine/docs/UNIFICATION_PLAN.md).
+        // Local path override on the migration branch; swaps to a version tag on
+        // merge. Requires parso-audio-engine checked out as a sibling directory.
+        .package(path: "../parso-audio-engine")
+    ],
     targets: [
         .target(
             name: "VoxglassWatchProtocol",
@@ -29,7 +35,10 @@ let package = Package(
         ),
         .target(
             name: "VoxglassCore",
-            dependencies: ["VoxglassRing", "VoxglassWatchProtocol", "VoxglassWatchCore"],
+            dependencies: [
+                "VoxglassRing", "VoxglassWatchProtocol", "VoxglassWatchCore",
+                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine")
+            ],
             path: "Voxglass/Core",
             exclude: ["Encoders"],
             resources: [
@@ -57,7 +66,10 @@ let package = Package(
         ),
         .target(
             name: "VoxglassCoreTestSupport",
-            dependencies: ["VoxglassCore"],
+            dependencies: [
+                "VoxglassCore",
+                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine")
+            ],
             path: "VoxglassCoreTestSupport",
             resources: [.copy("Fixtures/Schemas")],
             swiftSettings: [.swiftLanguageMode(.v6)]
@@ -88,7 +100,11 @@ let package = Package(
         ),
         .testTarget(
             name: "VoxglassCoreTests",
-            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders", "VoxglassWatchProtocol", "VoxglassWatchCore"],
+            dependencies: [
+                "VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders",
+                "VoxglassWatchProtocol", "VoxglassWatchCore",
+                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine")
+            ],
             path: "VoxglassTests",
             exclude: ["Info.plist", "Performance"],
             resources: [

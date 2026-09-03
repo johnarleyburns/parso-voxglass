@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import ParsoAudioStreaming
 import VoxglassCore
 
 @MainActor
@@ -20,6 +21,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private(set) var lastEndPosition: TimeInterval = 0
     private(set) var lastEndDuration: TimeInterval?
     private let eqProcessor = EQAudioProcessor()
+    private static let loaderConfig = CachingResourceLoaderConfig(
+        scheme: AudioCache.scheme, keyStrategy: AudioCache.keyStrategy)
     private let loaderQueue = DispatchQueue(label: "guru.parso.voxglass.loaders")
     private var loaders: [CachingResourceLoader] = []
     private var prefetchLoaders: [CachingResourceLoader] = []
@@ -43,13 +46,13 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// speed (0.5–3.5x) keeps pitch correct and the gapless preloaded item carries
     /// the same algorithm across the auto-advance.
     private func makePlayerItem(for url: URL) -> AVPlayerItem {
-        let options: [String: Any] = StreamCacheUtils.audioMIMEType(for: url).map {
+        let options: [String: Any] = RemoteAudioURL.contentTypeMIME(for: url).map {
             [AVURLAssetOverrideMIMETypeKey: $0]
         } ?? [:]
         let item: AVPlayerItem
-        if CachingResourceLoader.isRemoteCacheable(url) {
-            let cacheURL = CachingResourceLoader.cacheURL(for: url)
-            let loader = CachingResourceLoader(originalURL: url)
+        if RemoteAudioURL.isCacheable(url) {
+            let cacheURL = RemoteAudioURL.cacheURL(for: url, scheme: AudioCache.scheme)
+            let loader = CachingResourceLoader(originalURL: url, store: AudioCache.shared, config: Self.loaderConfig)
             loaders.append(loader)
             let asset = AVURLAsset(url: cacheURL, options: options)
             asset.resourceLoader.setDelegate(loader, queue: loaderQueue)
@@ -71,13 +74,13 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// depth is decided by `PlaybackCoordinator.resolvedPrefetchDepth` (free tier
     /// stays at 1, which powers near-gapless); here we just honor the list.
     func prefetchIntoCache(urls: [URL]) {
-        let cacheable = urls.filter { CachingResourceLoader.isRemoteCacheable($0) }
+        let cacheable = urls.filter { RemoteAudioURL.isCacheable($0) }
         guard !cacheable.isEmpty else { return }
         let cap = max(cacheable.count, 1)
         for url in cacheable {
             guard prefetchItems.count < cap else { break }
-            let cacheURL = CachingResourceLoader.cacheURL(for: url)
-            let loader = CachingResourceLoader(originalURL: url)
+            let cacheURL = RemoteAudioURL.cacheURL(for: url, scheme: AudioCache.scheme)
+            let loader = CachingResourceLoader(originalURL: url, store: AudioCache.shared, config: Self.loaderConfig)
             prefetchLoaders.append(loader)
             let asset = AVURLAsset(url: cacheURL)
             asset.resourceLoader.setDelegate(loader, queue: loaderQueue)

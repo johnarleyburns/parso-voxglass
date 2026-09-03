@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import ParsoAudioStreaming
 import UIKit
 import VoxglassCore
 
@@ -44,19 +45,19 @@ final class ArtworkService: @unchecked Sendable {
             return (data, response)
         }
         self.registerBytes = registerBytes ?? { key, bytes in
-            Task { await StreamCacheStore.shared.registerArtwork(key: key, bytes: bytes) }
+            Task { await AudioCache.shared.registerComplete(key: key, bytes: bytes, kind: "artwork") }
         }
         self.touchKey = touchKey ?? { key in
-            Task { await StreamCacheStore.shared.touch(key) }
+            Task { await AudioCache.shared.touch(key) }
         }
         self.isPinned = isPinned ?? { key in
-            await StreamCacheStore.shared.isPinned(key)
+            await AudioCache.shared.isDurable(key)
         }
 
         if let cacheDirectory {
             self.cacheDirectory = cacheDirectory
         } else {
-            self.cacheDirectory = StreamCacheStore.defaultArtworkDirectory
+            self.cacheDirectory = AudioCache.layout.evictableBlobsDirectory
         }
 
         ioQueue.sync {
@@ -256,14 +257,13 @@ final class ArtworkService: @unchecked Sendable {
     }
 
     private func cacheFileURL(for url: URL) -> URL {
-        cacheDirectory.appendingPathComponent(Self.cacheFileName(for: url), isDirectory: false)
+        AudioCache.layout.blobURL(for: Self.cacheKey(for: url))
     }
 
     private func localArtworkURLs(for url: URL) async -> [URL] {
-        let key = Self.cacheKey(for: url)
-        let streamingURL = cacheFileURL(for: url)
-        let durableURL = await StreamCacheStore.shared.fileURL(for: key)
-        return streamingURL == durableURL ? [streamingURL] : [streamingURL, durableURL]
+        // `layout.blobURL(for:)` already prefers the durable root when the entry
+        // is pinned, else the streaming root.
+        [AudioCache.layout.blobURL(for: Self.cacheKey(for: url))]
     }
 
     private func diskImage(for sourceURL: URL, at url: URL) async -> UIImage? {

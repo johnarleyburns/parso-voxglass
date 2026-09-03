@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import Observation
+import ParsoAudioStreaming
 import SwiftUI
 
 @MainActor
@@ -51,7 +52,7 @@ public final class PlaybackCoordinator {
 
     @ObservationIgnored private let engine: AudioEngine
     @ObservationIgnored private let positionStore: PositionStore
-    @ObservationIgnored private let cacheStore: StreamCacheStore
+    @ObservationIgnored private let cacheStore: SparseCacheStore
     @ObservationIgnored public var navigationHistory: NavigationHistoryStore
     @ObservationIgnored private let snapshotStore: LastPlaybackSnapshotStore
     @ObservationIgnored private let rateStore: PlaybackRateStore
@@ -107,7 +108,7 @@ public final class PlaybackCoordinator {
         snapshotStore: LastPlaybackSnapshotStore = LastPlaybackSnapshotStore(),
         rateStore: PlaybackRateStore = PlaybackRateStore(),
         sleepTimer: SleepTimer = SleepTimer(),
-        cacheStore: StreamCacheStore = .shared,
+        cacheStore: SparseCacheStore = AudioCache.shared,
         bridge: PlaybackPlatformBridge? = nil,
         navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore()
     ) {
@@ -255,10 +256,10 @@ public final class PlaybackCoordinator {
     /// streaming loader's network fallback.
     private func playbackURL(for chapter: Chapter) async -> URL? {
         guard let url = chapter.resolvedPlayableURL() else { return nil }
-        guard StreamCacheUtils.isRemoteCacheable(url) else { return url }
+        guard RemoteAudioURL.isCacheable(url) else { return url }
 
-        let key = StreamCacheUtils.key(for: url)
-        if let cached = await cacheStore.completeAudioFileURL(for: key) {
+        let key = AudioCache.key(for: url)
+        if let cached = await cacheStore.completeFileURL(for: key) {
             return cached
         }
         return url
@@ -1164,7 +1165,7 @@ public final class PlaybackCoordinator {
             let chapter = book.chapters[index]
             if let url = chapter.remoteURL,
                chapter.localURL == nil,
-               StreamCacheUtils.isRemoteCacheable(url) {
+               RemoteAudioURL.isCacheable(url) {
                 urls.append(url)
             }
             index += 1

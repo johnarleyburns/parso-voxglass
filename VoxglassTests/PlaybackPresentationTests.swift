@@ -1,5 +1,7 @@
 import Testing
 import Foundation
+import ParsoAudioStreaming
+import VoxglassCoreTestSupport
 @testable import VoxglassCore
 
 @MainActor
@@ -9,7 +11,7 @@ import Foundation
         let coordinator: PlaybackCoordinator
         let engine: FakeAudioEngine
         let store: MemoryPositionStore
-        let cacheStore: StreamCacheStore
+        let cacheStore: SparseCacheStore
         let snapshotStore: LastPlaybackSnapshotStore
         let bridge: NoopPlaybackBridge
     }
@@ -44,7 +46,7 @@ import Foundation
     private func makeHarness() -> Harness {
         let engine = FakeAudioEngine()
         let store = MemoryPositionStore()
-        let cacheStore = StreamCacheStore(
+        let cacheStore = SparseCacheStore(
             directory: FileManager.default.temporaryDirectory
                 .appendingPathComponent("playback-cache-\(UUID().uuidString)", isDirectory: true)
         )
@@ -239,12 +241,12 @@ import Foundation
     @Test func downloadedRemoteChapterLoadsCompleteCacheFileDirectly() async throws {
         let h = makeHarness()
         let remote = URL(string: "https://archive.org/download/item/ch1.mp3")!
-        let key = StreamCacheUtils.key(for: remote)
+        let key = AudioCache.key(for: remote)
         let source = FileManager.default.temporaryDirectory
             .appendingPathComponent("downloaded-\(UUID().uuidString).mp3")
         try Data(repeating: 9, count: 128).write(to: source)
         await h.cacheStore.ingestCompleteFile(at: source, key: key, totalBytes: 128)
-        let cachedURL = try #require(await h.cacheStore.completeAudioFileURL(for: key))
+        let cachedURL = try #require(await h.cacheStore.completeFileURL(for: key))
 
         await h.coordinator.play(makeRemoteBook(remoteURL: remote))
 
@@ -274,10 +276,10 @@ import Foundation
                 .appendingPathComponent("downloaded-next-\(index)-\(UUID().uuidString).mp3")
             try Data(repeating: UInt8(index + 1), count: 128).write(to: source)
             await h.cacheStore.ingestCompleteFile(
-                at: source, key: StreamCacheUtils.key(for: remote), totalBytes: 128
+                at: source, key: AudioCache.key(for: remote), totalBytes: 128
             )
             cachedURLs.append(try #require(
-                await h.cacheStore.completeAudioFileURL(for: StreamCacheUtils.key(for: remote))
+                await h.cacheStore.completeFileURL(for: AudioCache.key(for: remote))
             ))
         }
 

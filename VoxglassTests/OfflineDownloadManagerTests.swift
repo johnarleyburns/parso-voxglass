@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import AVFoundation
+import ParsoAudioStreaming
 @testable import VoxglassCore
 
 @MainActor
@@ -76,12 +77,12 @@ import AVFoundation
 
     @Test func audioCacheKeyIsStableAcrossCalls() {
         let url = URL(string: "https://archive.org/download/item/01%20Chapter.mp3")!
-        #expect(CachingResourceLoader.key(for: url) == CachingResourceLoader.key(for: url))
+        #expect(AudioCache.key(for: url) == AudioCache.key(for: url))
     }
 
     @Test func audioCacheKeyIsSHA256Hex() {
         let url = URL(string: "https://archive.org/download/item/01%20Chapter.mp3")!
-        let key = CachingResourceLoader.key(for: url)
+        let key = AudioCache.key(for: url)
         #expect(key.hasSuffix("-mp3"))
         let hex = key.replacingOccurrences(of: "-mp3", with: "")
         #expect(hex.count == 64)  // SHA256 hex digest is 64 characters
@@ -91,11 +92,11 @@ import AVFoundation
 
     @Test func cacheBlobNameRetainsEnoughTypeInformationForAVFoundation() {
         let remote = URL(string: "https://archive.org/download/item/chapter.mp3")!
-        let blob = URL(fileURLWithPath: "/tmp/\(StreamCacheUtils.key(for: remote))")
+        let blob = URL(fileURLWithPath: "/tmp/\(AudioCache.key(for: remote))")
 
         #expect(blob.pathExtension.isEmpty)
-        #expect(StreamCacheUtils.audioMIMEType(for: blob) == "audio/mpeg")
-        #expect(StreamCacheUtils.audioMIMEType(for: remote) == "audio/mpeg")
+        #expect(RemoteAudioURL.contentTypeMIME(for: blob) == "audio/mpeg")
+        #expect(RemoteAudioURL.contentTypeMIME(for: remote) == "audio/mpeg")
     }
 
     /// Regression guard for the original symptom: cache keys end in `-mp3`,
@@ -118,7 +119,7 @@ import AVFoundation
 
         let withType = AVURLAsset(
             url: blob,
-            options: [AVURLAssetOverrideMIMETypeKey: StreamCacheUtils.audioMIMEType(for: blob)!]
+            options: [AVURLAssetOverrideMIMETypeKey: RemoteAudioURL.contentTypeMIME(for: blob)!]
         )
         #expect(try await withType.load(.isPlayable))
     }

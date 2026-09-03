@@ -1,6 +1,7 @@
 import Foundation
 import CloudKit
 import Testing
+import ParsoAudioStreaming
 @testable import VoxglassCore
 
 // MARK: - T3: Conflict resolution tests
@@ -115,18 +116,18 @@ import Testing
     @Test func streamCacheKey_isDeterministic() async throws {
         let url1 = URL(string: "https://archive.org/download/test/chapter1.mp3")!
         let url2 = URL(string: "https://archive.org/download/test/chapter1.mp3")!
-        #expect(StreamCacheUtils.key(for: url1) == StreamCacheUtils.key(for: url2))
+        #expect(AudioCache.key(for: url1) == AudioCache.key(for: url2))
     }
 
     @Test func streamCacheKey_differsForDifferentURLs() async throws {
         let url1 = URL(string: "https://archive.org/download/test/ch1.mp3")!
         let url2 = URL(string: "https://archive.org/download/test/ch2.mp3")!
-        #expect(StreamCacheUtils.key(for: url1) != StreamCacheUtils.key(for: url2))
+        #expect(AudioCache.key(for: url1) != AudioCache.key(for: url2))
     }
 
     @Test func streamCacheKey_usesSHA256Format() async throws {
         let url = URL(string: "https://archive.org/test.mp3")!
-        let key = StreamCacheUtils.key(for: url)
+        let key = AudioCache.key(for: url)
         // SHA-256 hex should be 64 chars, separator, and extension
         #expect(key.contains("-mp3"))
         #expect(key.count > 64)
@@ -177,7 +178,7 @@ import Testing
 
     @Test func contentKeyAndStreamCacheKey_forSameURL_match() async throws {
         let url = URL(string: "https://archive.org/download/test/chapter.mp3")!
-        let chapterKey = StreamCacheUtils.key(for: url)
+        let chapterKey = AudioCache.key(for: url)
 
         // Simulate the relay check: file exists at cacheDir/chapterKey
         let cacheDir = FileManager.default.temporaryDirectory.appendingPathComponent("voxglass-cache-relay-test-\(UUID().uuidString)")
@@ -188,7 +189,7 @@ import Testing
         try? FileManager.default.removeItem(at: cacheDir)
 
         // The key should be computable from the original URL
-        #expect(chapterKey == StreamCacheUtils.key(for: url))
+        #expect(chapterKey == AudioCache.key(for: url))
     }
 
     @Test func chapterPlayableURL_resolvesRemoteForStreaming() async throws {

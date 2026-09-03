@@ -1,4 +1,5 @@
 import Foundation
+import ParsoAudioStreaming
 
 /// Per-book offline availability state (§7).
 public enum OfflineState: Equatable {
@@ -30,7 +31,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     @Published public private(set) var state: [UUID: OfflineState] = [:]
 
     private let repository: LibraryRepository
-    private let cacheStore: StreamCacheStore
+    private let cacheStore: SparseCacheStore
     private let defaults: UserDefaults
     private lazy var session: URLSession = makeSession()
 
@@ -41,7 +42,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
 
     public init(
         repository: LibraryRepository,
-        cacheStore: StreamCacheStore = .shared,
+        cacheStore: SparseCacheStore = AudioCache.shared,
         defaults: UserDefaults = .standard
     ) {
         self.repository = repository
@@ -130,7 +131,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
             var completeFlags: [Bool] = []
             var fractions: [UUID: Double] = [:]
             for chapter in cacheable {
-                let key = StreamCacheUtils.key(for: chapter.url)
+                let key = AudioCache.key(for: chapter.url)
                 let complete = await cacheStore.isComplete(key)
                 completeFlags.append(complete)
                 fractions[chapter.chapter.id] = complete ? 1.0 : 0.0
@@ -161,24 +162,6 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         return .start
     }
 
-    /// Deletes download records for every book whose chapters reference one of
-    /// the given cache keys. Used after the offline-store migration drops pins
-    /// whose blobs were already purged, so the UI shows those books as
-    /// not-downloaded rather than falsely "cached".
-    public func dropDownloadRecords(forCacheKeys keys: Set<String>, in books: [BookWithChapters]) async {
-        var bookIDs = Set<UUID>()
-        for book in books {
-            for chapter in book.chapters {
-                if let key = ChapterAudioIdentity.cacheKey(for: chapter), keys.contains(key) {
-                    bookIDs.insert(book.book.id)
-                }
-            }
-        }
-        for bookID in bookIDs {
-            try? await repository.deleteDownloadRecords(forBookID: bookID)
-        }
-    }
-
     /// Cancels in-flight tasks, unpins + removes the book's cached chapter files,
     /// deletes its download records, and resets state to `.notCached`. Keeps the
     /// book in the library.
@@ -189,7 +172,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
             state[book.book.id] = .cached
             return
         }
-        let keys = cacheable.map { StreamCacheUtils.key(for: $0.url) }
+        let keys = cacheable.map { AudioCache.key(for: $0.url) }
         await cacheStore.unpin(keys)
         if let coverURL = book.book.coverURL {
             await cacheStore.unpin([ArtworkCacheKey.key(for: coverURL)])
@@ -228,7 +211,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         var toEnqueue: [(chapter: Chapter, url: URL, key: String)] = []
 
         for entry in cacheable {
-            let key = StreamCacheUtils.key(for: entry.url)
+            let key = AudioCache.key(for: entry.url)
             if await cacheStore.isComplete(key) {
                 await cacheStore.pin([key])
                 fractions[entry.chapter.id] = 1.0
@@ -353,7 +336,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private func cacheableChapters(of book: BookWithChapters) -> [CacheableChapter] {
         book.chapters.compactMap { chapter in
             guard let url = ChapterAudioIdentity.canonicalURL(for: chapter),
-                  StreamCacheUtils.isRemoteCacheable(url) else { return nil }
+                  RemoteAudioURL.isCacheable(url) else { return nil }
             return CacheableChapter(chapter: chapter, url: url)
         }
     }

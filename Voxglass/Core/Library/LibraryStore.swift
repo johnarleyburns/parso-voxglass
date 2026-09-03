@@ -1,4 +1,5 @@
 import Foundation
+import ParsoAudioStreaming
 
 @MainActor
 public final class LibraryStore: ObservableObject {
@@ -200,17 +201,17 @@ public final class LibraryStore: ObservableObject {
         var keys: [String] = []
         for chapter in book.chapters {
             if let remoteURL = chapter.remoteURL {
-                keys.append(StreamCacheUtils.key(for: remoteURL))
+                keys.append(AudioCache.key(for: remoteURL))
             }
             if let opusURL = chapter.opusURL {
-                keys.append(StreamCacheUtils.key(for: opusURL))
+                keys.append(AudioCache.key(for: opusURL))
             }
         }
         if let coverURL = book.book.coverURL {
             keys.append(ArtworkCacheKey.key(for: coverURL))
         }
         if !keys.isEmpty {
-            await StreamCacheStore.shared.remove(keys: keys)
+            await AudioCache.shared.remove(keys: keys)
         }
 
         // 3. Delete the book (cascades chapters, positions, bookmarks, etc.) and

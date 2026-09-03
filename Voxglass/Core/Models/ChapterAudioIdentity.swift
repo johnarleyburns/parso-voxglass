@@ -20,6 +20,6 @@ public enum ChapterAudioIdentity {
 
     /// The cache key every store should use for this chapter's audio.
     public static func cacheKey(for chapter: Chapter) -> String? {
-        canonicalURL(for: chapter).map(StreamCacheUtils.key(for:))
+        canonicalURL(for: chapter).map(AudioCache.key(for:))
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import ParsoAudioStreaming
 import VoxglassCore
 
 /// Storage & iCloud (mockup 12, §6.5): the production narration cache and the
@@ -319,8 +320,7 @@ final class StorageSettingsModel {
         remoteBytes = remote
         backupRunning = backupActive
 
-        let cache = StreamCacheStore.shared
-        audiobookBytes = await cache.totalCachedBytes()
+        audiobookBytes = await AudioCache.shared.totalCachedBytes()
     }
 
     private static func directoryBytes(at url: URL) -> Int64 {

@@ -1,233 +1,164 @@
 import Testing
 import Foundation
+import ParsoAudioStreaming
 @testable import VoxglassCore
 
-@Suite struct StreamCacheUnifiedTests {
-    private var directory: URL!
-    private var store: StreamCacheStore!
+/// Integration coverage for Voxglass on the shared `ParsoAudioStreaming` cache
+/// (parso-audio-engine Phase 2). Runs under `swift test`, i.e. on every commit
+/// via the pre-commit hook — this is where the old manual streaming smoke steps
+/// ("stream, background, replay from cache"; "download, kill network, play";
+/// "clear cache") now live.
+///
+/// The library owns the store-mechanics tests (`SparseCacheStoreTests`); these
+/// assert Voxglass's *wiring*: its key identity, the durable/offline tier, the
+/// artwork kind, the preset budget, and a real loader round-trip.
+@Suite(.serialized)
+struct StreamCacheUnifiedTests {
 
-    init() throws {
-        directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("voxglass-cache-tests-\(UUID().uuidString)", isDirectory: true)
-        store = StreamCacheStore(directory: directory)
+    // MARK: - URLProtocol range stub
+
+    final class RangeStub: URLProtocol {
+        nonisolated(unsafe) static var blob = Data()
+        nonisolated(unsafe) static var offline = false
+        nonisolated(unsafe) static var requestCount = 0
+
+        static func reset(blob: Data) {
+            self.blob = blob; offline = false; requestCount = 0
+        }
+
+        override class func canInit(with request: URLRequest) -> Bool { true }
+        override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+        override func stopLoading() {}
+
+        override func startLoading() {
+            Self.requestCount += 1
+            if Self.offline {
+                client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+                return
+            }
+            let total = Self.blob.count
+            var status = 200
+            var body = Self.blob
+            var headers = ["Content-Type": "audio/mpeg"]
+            if let spec = request.value(forHTTPHeaderField: "Range")?.split(separator: "=").last {
+                let parts = spec.split(separator: "-", omittingEmptySubsequences: false)
+                let lower = Int(parts.first ?? "") ?? 0
+                let upper = min((parts.count > 1 ? Int(parts[1]) : nil) ?? (total - 1), total - 1)
+                if lower <= upper {
+                    body = Self.blob.subdata(in: lower..<(upper + 1))
+                    status = 206
+                    headers["Content-Range"] = "bytes \(lower)-\(upper)/\(total)"
+                }
+            }
+            headers["Content-Length"] = String(body.count)
+            let response = HTTPURLResponse(url: request.url!, statusCode: status,
+                                           httpVersion: "HTTP/1.1", headerFields: headers)!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: body)
+            client?.urlProtocolDidFinishLoading(self)
+        }
     }
 
-    @Test func registerArtworkCountsIntoBytesButNotTrackCount() async {
-        await store.registerArtwork(key: "art_a", bytes: 400)
-        await store.registerArtwork(key: "art_b", bytes: 600)
-
-        let bytes = await store.totalCachedBytes()
-        let count = await store.cachedTrackCount()
-
-        #expect(bytes == 1000)
-        #expect(count == 0)  // Artwork must not be counted as cached tracks
+    private func stubSession() -> URLSession {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.protocolClasses = [RangeStub.self]
+        return URLSession(configuration: cfg)
     }
 
-    @Test func equivalentInternetArchiveArtworkURLsShareStableKey() {
-        let catalog = URL(string: "https://archive.org/services/img/book-id?scale=2")!
-        let downloaded = URL(string: "https://ia800000.us.archive.org/download/book-id/cover.jpg")!
-
-        #expect(ArtworkCacheKey.key(for: catalog) == ArtworkCacheKey.key(for: downloaded))
+    private func makeStore(limit: Int64 = SparseCacheStore.defaultLimit) -> SparseCacheStore {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vox-cache-\(UUID().uuidString)", isDirectory: true)
+        return SparseCacheStore(evictableRoot: base.appendingPathComponent("stream"),
+                                durableRoot: base.appendingPathComponent("offline"),
+                                limitBytes: limit)
     }
 
-    @Test func pinnedArtworkMovesToDurableArtworkDirectory() async throws {
-        let key = ArtworkCacheKey.key(for: URL(string: "https://archive.org/services/img/pinned-art")!)
-        await store.registerArtwork(key: key, bytes: 12)
-        let streamingURL = await store.artworkFileURL(for: key)
-        try Data(repeating: 1, count: 12).write(to: streamingURL)
-
-        await store.pin([key])
-
-        let durableURL = await store.fileURL(for: key)
-        #expect(await store.isPinned(key))
-        #expect(durableURL.path.contains("OfflineArtwork"))
-        #expect(FileManager.default.fileExists(atPath: durableURL.path))
-        #expect(!(FileManager.default.fileExists(atPath: streamingURL.path)))
+    private func poll(_ c: @Sendable () async -> Bool) async {
+        let deadline = Date().addingTimeInterval(15)
+        while Date() < deadline {
+            if await c() { return }
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        Issue.record("condition not met in time")
     }
 
-    @Test func completedAudioCountsAsTrackAlongsideArtworkBytes() async {
-        await store.setContentLength(100, for: "audio1")
-        await store.recordWrite(range: 0..<100, for: "audio1")
-        await store.registerArtwork(key: "art_a", bytes: 250)
+    // MARK: - Wiring
 
-        let bytes = await store.totalCachedBytes()
-        let count = await store.cachedTrackCount()
-
-        #expect(bytes == 350)
-        #expect(count == 1)
+    @Test func voxglassKeyKeepsTheHistoricalShape() {
+        // No extension → bare hash; with extension → hash-ext. (The Tonearm
+        // strategy always keeps a trailing separator; Voxglass must not.)
+        let bare = AudioCache.key(for: URL(string: "https://archive.org/download/x/stream")!)
+        let ext = AudioCache.key(for: URL(string: "https://archive.org/download/x/ch1.mp3")!)
+        #expect(!bare.contains("-"))
+        #expect(ext.hasSuffix("-mp3"))
     }
 
-    @Test func lRUEvictsAcrossKindsByLastAccess() async throws {
-        await store.setLimit(250)
+    @Test func streamedChapterReplaysFromCacheWithNetworkGone() async throws {
+        RangeStub.reset(blob: Data((0..<8192).map { UInt8($0 & 0xff) }))
+        let store = makeStore()
+        let url = URL(string: "https://archive.org/download/book/ch1.mp3")!
+        let loader = CachingResourceLoader(
+            originalURL: url, store: store,
+            config: .init(scheme: AudioCache.scheme, keyStrategy: AudioCache.keyStrategy),
+            session: stubSession())
 
-        await store.registerArtwork(key: "art_old", bytes: 100)
-        try await Task.sleep(nanoseconds: 15_000_000)
-        await store.setContentLength(100, for: "audio_mid")
-        await store.recordWrite(range: 0..<100, for: "audio_mid")
-        try await Task.sleep(nanoseconds: 15_000_000)
+        loader.warm(upTo: 8192)
+        await poll { await store.rangeMap(for: loader.cacheKey).contiguousBytes(from: 0) >= 8192 }
+        loader.shutdown()
 
-        // Touch the artwork so the audio entry becomes the oldest.
-        await store.touch("art_old")
-        try await Task.sleep(nanoseconds: 15_000_000)
+        RangeStub.offline = true
+        let countAfterFill = RangeStub.requestCount
 
-        // Overflow the budget; oldest untouched entry (the audio) must be evicted.
-        await store.registerArtwork(key: "art_new", bytes: 100)
-
-        let hasArtOld = await store.contains("art_old")
-        let hasAudioMid = await store.contains("audio_mid")
-        let hasArtNew = await store.contains("art_new")
-
-        #expect(hasArtOld)
-        #expect(!(hasAudioMid))  // Oldest untouched entry should be evicted regardless of kind
-        #expect(hasArtNew)
+        #expect(await store.cachedContiguousBytes(for: loader.cacheKey, from: 0) == 8192)
+        let onDisk = try Data(contentsOf: await store.fileURL(for: loader.cacheKey))
+        #expect(onDisk == RangeStub.blob)
+        #expect(RangeStub.requestCount == countAfterFill)
     }
 
-    @Test func clearAllWipesBothDirectories() async throws {
-        await store.setContentLength(10, for: "audio1")
-        await store.recordWrite(range: 0..<10, for: "audio1")
-        await store.registerArtwork(key: "art_a", bytes: 20)
+    @Test func offlineDownloadSurvivesAnOverBudgetEviction() async {
+        let store = makeStore(limit: 10_000)
+        await store.setContentLength(100, for: "offline-mp3")
+        await store.recordWrite(range: 0..<100, for: "offline-mp3")
+        await store.pin(["offline-mp3"])                        // → durable tier
 
-        let audioURL = await store.fileURL(for: "audio1")
-        let artURL = await store.artworkFileURL(for: "art_a")
-        try Data(repeating: 1, count: 10).write(to: audioURL)
-        try Data(repeating: 2, count: 20).write(to: artURL)
+        await store.setContentLength(300, for: "stream-mp3")
+        await store.recordWrite(range: 0..<300, for: "stream-mp3")
 
-        let audioDir = audioURL.deletingLastPathComponent()
-        let artDir = artURL.deletingLastPathComponent()
+        await store.setLimit(120)   // streaming budget now exceeded by stream-mp3 alone
+
+        #expect(await store.contains("offline-mp3"))            // pinned content is safe
+        #expect(!(await store.contains("stream-mp3")))          // evictable content is dropped
+    }
+
+    @Test func artworkBytesCountButAreNotTracks() async {
+        let store = makeStore()
+        await store.registerComplete(key: "art_a", bytes: 400, kind: "artwork")
+        await store.setContentLength(100, for: "chapter-mp3")
+        await store.recordWrite(range: 0..<100, for: "chapter-mp3")
+
+        #expect(await store.totalCachedBytes() == 500)
+        #expect(await store.completeEntryCount(kind: "audio") == 1)
+        #expect(await store.completeEntryCount(kind: "artwork") == 1)
+    }
+
+    @Test func presetSelectionReappliesTheBudget() async {
+        // Uses the real (shared) store; restore the previous preset afterwards.
+        let previous = AudioCache.CachePreset.selected
+        defer { Task { await AudioCache.CachePreset.select(previous) } }
+
+        await AudioCache.CachePreset.select(.g2GB)
+        #expect(await AudioCache.shared.currentLimit() == AudioCache.CachePreset.g2GB.rawValue)
+        #expect(AudioCache.CachePreset.selected == .g2GB)
+    }
+
+    @Test func clearCacheEmptiesTheStore() async {
+        let store = makeStore()
+        await store.setContentLength(10, for: "a-mp3")
+        await store.recordWrite(range: 0..<10, for: "a-mp3")
+        await store.registerComplete(key: "art_x", bytes: 20, kind: "artwork")
 
         await store.clearAll()
-
-        let bytes = await store.totalCachedBytes()
-        #expect(bytes == 0)
-        #expect(!(FileManager.default.fileExists(atPath: audioURL.path)))
-        #expect(!(FileManager.default.fileExists(atPath: artURL.path)))
-        #expect(try FileManager.default.contentsOfDirectory(atPath: audioDir.path).count == 0)
-        #expect(try FileManager.default.contentsOfDirectory(atPath: artDir.path).count == 0)
-    }
-
-    // MARK: - §6/§7 remove, pin, ingest
-
-    @Test func removeKeysTargetsOnlyGivenKeys() async {
-        await store.setContentLength(100, for: "audio_keep")
-        await store.recordWrite(range: 0..<100, for: "audio_keep")
-        await store.setContentLength(100, for: "audio_drop")
-        await store.recordWrite(range: 0..<100, for: "audio_drop")
-
-        await store.remove(keys: ["audio_drop"])
-
-        let keep = await store.contains("audio_keep")
-        let drop = await store.contains("audio_drop")
-        #expect(keep)
-        #expect(!(drop))
-    }
-
-    @Test func ingestCompleteFileMarksCompleteAndPins() async throws {
-        let source = directory.appendingPathComponent("ingest-source-\(UUID().uuidString).bin")
-        try Data(repeating: 7, count: 100).write(to: source)
-
-        await store.ingestCompleteFile(at: source, key: "audio_offline", totalBytes: 100)
-
-        let complete = await store.isComplete("audio_offline")
-        let pinned = await store.isPinned("audio_offline")
-        let url = await store.fileURL(for: "audio_offline")
-        #expect(complete)
-        #expect(pinned)
-        #expect(FileManager.default.fileExists(atPath: url.path))
-        #expect(try Data(contentsOf: url).count == 100)
-    }
-
-    @Test func ingestUsesActualFileSizeInsteadOfReportedLength() async throws {
-        let source = directory.appendingPathComponent("length-source-\(UUID().uuidString).mp3")
-        try Data(repeating: 7, count: 100).write(to: source)
-
-        await store.ingestCompleteFile(at: source, key: "length-mp3", totalBytes: 140)
-
-        let url = try #require(await store.completeAudioFileURL(for: "length-mp3"))
-        #expect(try Data(contentsOf: url).count == 100)
-        #expect(await store.totalBytes(for: "length-mp3") == 100)
-        #expect(await store.cachedContiguousBytes(for: "length-mp3", from: 0) == 100)
-    }
-
-    @Test func staleCompleteMetaWithoutBlobIsNotCompleteAndUnpins() async throws {
-        let source = directory.appendingPathComponent("missing-source-\(UUID().uuidString).bin")
-        try Data(repeating: 8, count: 64).write(to: source)
-        await store.ingestCompleteFile(at: source, key: "missing_blob", totalBytes: 64)
-        let url = await store.fileURL(for: "missing_blob")
-        try FileManager.default.removeItem(at: url)
-
-        #expect(!(await store.isComplete("missing_blob")))
-        #expect(!(await store.isPinned("missing_blob")))
-    }
-
-    @Test func staleRangeMapWithoutBlobIsIgnoredAndCleared() async {
-        await store.setContentLength(100, for: "stale_ranges")
-        await store.recordWrite(range: 0..<100, for: "stale_ranges")
-
-        let cachedBytes = await store.cachedContiguousBytes(for: "stale_ranges", from: 0)
-        let rangeMap = await store.rangeMap(for: "stale_ranges")
-
-        #expect(cachedBytes == 0)
-        #expect(rangeMap.contiguousBytes(from: 0) == 0)
-        #expect(!(await store.isComplete("stale_ranges")))
-    }
-
-    @Test func pinnedKeysAreExcludedFromEviction() async throws {
-        let source = directory.appendingPathComponent("pin-source-\(UUID().uuidString).bin")
-        try Data(repeating: 1, count: 100).write(to: source)
-        await store.ingestCompleteFile(at: source, key: "pinned_audio", totalBytes: 100)
-
-        await store.setContentLength(100, for: "unpinned_audio")
-        await store.recordWrite(range: 0..<100, for: "unpinned_audio")
-
-        // Non-pinned bytes (100) now exceed the limit; the pinned entry's bytes
-        // are excluded from the budget and it must never be evicted.
-        await store.setLimit(50)
-
-        let pinned = await store.contains("pinned_audio")
-        let unpinned = await store.contains("unpinned_audio")
-        #expect(pinned)  // Pinned offline content must survive eviction
-        #expect(!(unpinned))  // Unpinned streaming content is evicted to fit budget
-    }
-
-    @Test func removeUnpinsKeys() async throws {
-        let source = directory.appendingPathComponent("unpin-source-\(UUID().uuidString).bin")
-        try Data(repeating: 2, count: 50).write(to: source)
-        await store.ingestCompleteFile(at: source, key: "to_unpin", totalBytes: 50)
-
-        await store.remove(keys: ["to_unpin"])
-
-        let pinned = await store.isPinned("to_unpin")
-        let contains = await store.contains("to_unpin")
-        #expect(!(pinned))
-        #expect(!(contains))
-    }
-
-    @Test func legacyMetaWithoutKindDecodesAsAudio() throws {
-        let json = """
-        {"cachedBytes":123,"complete":true,"lastAccessedAt":0,"createdAt":0,"rangeMap":{"ranges":[]}}
-        """
-        let meta = try JSONDecoder().decode(StreamCacheStore.Meta.self, from: Data(json.utf8))
-
-        #expect(meta.kind == nil)
-        #expect(meta.effectiveKind == .audio)
-    }
-
-    @Test func persistedDebugJsonUsesLineBreaks() async throws {
-        await store.setContentLength(100, for: "audio_debug")
-        await store.recordWrite(range: 0..<50, for: "audio_debug")
-        await store.pin(["audio_debug"])
-
-        let metaURL = directory
-            .appendingPathComponent("OfflineMeta", isDirectory: true)
-            .appendingPathComponent("audio_debug.json")
-        let pinnedURL = directory.appendingPathComponent("OfflinePins.json")
-
-        let meta = try String(contentsOf: metaURL, encoding: .utf8)
-        let pins = try String(contentsOf: pinnedURL, encoding: .utf8)
-
-        #expect(meta.hasPrefix("{\n"))
-        #expect(meta.contains("\n"))
-        #expect(pins.hasPrefix("[\n"))
-        #expect(pins.contains("\n"))
+        #expect(await store.totalCachedBytes() == 0)
+        #expect(!(await store.contains("a-mp3")))
     }
 }

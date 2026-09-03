@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import ParsoAudioStreaming
 import VoxglassCore
 import VoxglassWatchProtocol
 
@@ -410,7 +411,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     /// absent or incomplete, so the watch falls back to its own radio download.
     private func findAndSendChapter(contentKey: String, chapterKey: String) async -> Bool {
         guard let fileURL = await WatchChapterTransfer.resolvedFileURL(
-            cacheStore: .shared,
+            cacheStore: AudioCache.shared,
             chapterKey: chapterKey
         ) else {
             return false
@@ -488,7 +489,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         for chapter in book.chapters {
             guard let key = ChapterAudioIdentity.cacheKey(for: chapter) else { continue }
             guard let fileURL = await WatchChapterTransfer.resolvedFileURL(
-                cacheStore: .shared,
+                cacheStore: AudioCache.shared,
                 chapterKey: key
             ) else { continue }
             transferChapterFile(at: fileURL, chapterKey: key)
