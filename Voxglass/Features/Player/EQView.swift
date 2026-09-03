@@ -166,11 +166,11 @@ struct EQView: View {
         presets = playback.eqPresets.all
         gains = playback.eqGains
         isEngaged = playback.isEQEngaged
-        selectedPresetID = presets.first { $0.gains == gains }?.id
+        selectedPresetID = presets.first { $0.floatGains == gains }?.id
     }
 
     private func apply(_ preset: EQPreset) {
-        gains = preset.gains
+        gains = preset.floatGains
         selectedPresetID = preset.id
         playback.applyEQPreset(preset)
     }
@@ -179,7 +179,7 @@ struct EQView: View {
         let name = newPresetName.trimmingCharacters(in: .whitespacesAndNewlines)
         newPresetName = ""
         guard !name.isEmpty else { return }
-        let preset = EQPreset(name: name, gains: gains)
+        let preset = EQPreset(name: name, floatGains: gains)
         playback.eqPresets.save(preset)
         presets = playback.eqPresets.all
         selectedPresetID = preset.id

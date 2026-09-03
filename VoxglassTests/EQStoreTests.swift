@@ -15,7 +15,7 @@ import Foundation
         let names = store.all.map(\.name)
         #expect(names.contains("Flat"))
         #expect(names.contains("Concert Hall"))
-        #expect(names.contains("Spoken Word"))
+        #expect(names.contains("Spoken"))
         #expect(names.contains("78 rpm"))
         #expect(store.savedPresets().count == 0)
     }

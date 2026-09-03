@@ -142,7 +142,7 @@ final class FakeAudioEngine: AudioEngine {
         calls.append(.setEQEngaged(engaged))
     }
 
-    func applyEQPreset(_ preset: EQPreset) { calls.append(.applyEQPreset(gains: preset.gains)) }
+    func applyEQPreset(_ preset: EQPreset) { calls.append(.applyEQPreset(gains: preset.floatGains)) }
     func setEQGain(_ gain: Float, at band: Int) { calls.append(.setEQGain(gain: gain, band: band)) }
     func setEQGains(_ gains: [Float]) { calls.append(.setEQGains(gains)) }
 

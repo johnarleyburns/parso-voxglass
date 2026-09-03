@@ -54,9 +54,9 @@ public final class EQAudioProcessor: @unchecked Sendable {
     }
 
     public func applyPreset(_ preset: EQPreset) {
-        gains = preset.gains
+        gains = preset.floatGains
         for context in contexts.values {
-            context.engine.gains = preset.gains
+            context.engine.gains = preset.floatGains
             context.engine.reconfigure()
         }
     }

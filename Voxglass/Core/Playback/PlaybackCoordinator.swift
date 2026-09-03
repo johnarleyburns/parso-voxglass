@@ -1103,7 +1103,7 @@ public final class PlaybackCoordinator {
 
     public func applyEQPreset(_ preset: EQPreset) {
         engine.applyEQPreset(preset)
-        eqSettings.gains = preset.gains
+        eqSettings.gains = preset.floatGains
     }
 
     public func setEQGain(_ gain: Float, at band: Int) {

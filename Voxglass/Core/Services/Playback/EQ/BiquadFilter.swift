@@ -62,46 +62,21 @@ public final class EQEngine {
     }
 }
 
-public struct EQPreset: Identifiable, Codable, Equatable, Sendable {
-    public var id: UUID
-    public var name: String
-    public var gains: [Float]
-    public var isBuiltIn: Bool
+/// EQ presets are now shared: `parso-audio-engine`'s `EQPreset`
+/// (`ParsoAudioPlayback`) — UUID identity (Voxglass's model, kept), `[Double]`
+/// gains, four built-ins (`Flat` / `Concert Hall` / `Spoken` / `78 rpm`) with
+/// stable UUIDs (parso-audio-engine/docs/UNIFICATION_PLAN.md §3). Voxglass's
+/// persistence (`EQPresetStore`, `EQSettingsStore`) stays app-side; the old
+/// built-in curves (`Concert Hall` `[3,2,1,…]`, `Spoken Word`) are replaced by
+/// PAE's canonical set — no migration of stored settings (author decision).
+public typealias EQPreset = ParsoAudioPlayback.EQPreset
 
-    public init(id: UUID = UUID(), name: String, gains: [Float], isBuiltIn: Bool = false) {
-        self.id = id
-        self.name = name
-        self.gains = gains
-        self.isBuiltIn = isBuiltIn
+public extension EQPreset {
+    /// Voxglass's historical spelling of `builtIns`.
+    static var builtInPresets: [EQPreset] { builtIns }
+
+    /// Voxglass stores and UI carry `[Float]` gains.
+    init(name: String, floatGains: [Float], isBuiltIn: Bool = false) {
+        self.init(name: name, gains: floatGains.map(Double.init), isBuiltIn: isBuiltIn)
     }
-
-    public static let flat = EQPreset(
-        id: UUID(uuidString: "E0000000-0000-0000-0000-000000000001")!,
-        name: "Flat",
-        gains: Array(repeating: 0, count: 10),
-        isBuiltIn: true
-    )
-
-    public static let concertHall = EQPreset(
-        id: UUID(uuidString: "E0000000-0000-0000-0000-000000000002")!,
-        name: "Concert Hall",
-        gains: [3, 2, 1, 0, 0, 0, 1, 2, 3, 4],
-        isBuiltIn: true
-    )
-
-    public static let spokenWord = EQPreset(
-        id: UUID(uuidString: "E0000000-0000-0000-0000-000000000003")!,
-        name: "Spoken Word",
-        gains: [-3, -2, 0, 2, 3, 4, 3, 0, -1, -2],
-        isBuiltIn: true
-    )
-
-    public static let rpm78 = EQPreset(
-        id: UUID(uuidString: "E0000000-0000-0000-0000-000000000004")!,
-        name: "78 rpm",
-        gains: [0, 0, -2, -4, -2, 1, 3, 2, 0, -1],
-        isBuiltIn: true
-    )
-
-    public static let builtInPresets: [EQPreset] = [.flat, .concertHall, .spokenWord, .rpm78]
 }
