@@ -11,7 +11,7 @@
 		00FFA880CAA14A1624EC1369 /* 1891_collection_bt_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 088AA4A9A7602E0A0C49E97C /* 1891_collection_bt_librivox.jpg */; };
 		0193ADEF7F113C634D383390 /* adventures_pinocchio_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C4982A67A97291048FEDCB58 /* adventures_pinocchio_librivox.jpg */; };
 		089C22BB4A3D9F9B62E7ADC7 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */; };
-		0CBE46248F46F1B561E3D602 /* VoxglassWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5A9D81AAA34E5257F736E8A0 /* VoxglassWatchCore */; };
+		0CBE46248F46F1B561E3D602 /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */; };
 		0CCC875C4BD9872DC6981FBB /* URLSessionFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F19E61B32B9CD25DA7F0CE5 /* URLSessionFetcher.swift */; };
 		0D0D08BDA2C5959024DEF090 /* CarPlay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BDA53866164FE87F59B27A2D /* CarPlay.framework */; };
 		0D3F295710800448EA89B3C6 /* jane_eyre_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 33E22B53A145A61875D154EB /* jane_eyre_librivox.jpg */; };
@@ -33,6 +33,7 @@
 		1E9E22FDF4FA05CAF8C5F093 /* huckleberry_mfs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDCDF8AD0F6C456FE5DB27B1 /* huckleberry_mfs_librivox.jpg */; };
 		1F13275BAA7575015FAB1589 /* PhoneProductionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */; };
 		1F2214CAAE5156BF5F35B2EB /* alexander_great_ld_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 60F7BC9A74D4150042BA1CF8 /* alexander_great_ld_librivox.jpg */; };
+		20D35805E77C75980D492297 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 54CB0F9AA2E35266161E5197 /* ZIPFoundation */; };
 		20DC3D84B51ADBF4DE926BE8 /* approve.wav in Resources */ = {isa = PBXBuildFile; fileRef = 123A949CC1E07E96E9D109EA /* approve.wav */; };
 		24F190DC1DB3CC2AE20BD330 /* NarrationButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7768800DF20C5E1108C2165 /* NarrationButtons.swift */; };
 		256E7C55F8DC198BDA19F19A /* railway_children_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9C9E2D966DCE8E13DEC2C112 /* railway_children_librivox.jpg */; };
@@ -113,7 +114,7 @@
 		7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */; };
 		80A80266C5F84B32A0F214B2 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CD3C1E4D608137C5EB95024 /* VoxglassCore */; };
 		846BF99F1EBD8A2AB2914127 /* CarPlayCues in Resources */ = {isa = PBXBuildFile; fileRef = 17E06DEE185B6A8309E3F8BA /* CarPlayCues */; };
-		85B29F15855ACB432C7F1D2F /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 54CB0F9AA2E35266161E5197 /* ZIPFoundation */; };
+		85B29F15855ACB432C7F1D2F /* VoxglassWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5A9D81AAA34E5257F736E8A0 /* VoxglassWatchCore */; };
 		8645A692BC33932A36BAB264 /* your_invisible_power_2104_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6F0D99DCD6D4A6A80BC79732 /* your_invisible_power_2104_librivox.jpg */; };
 		871C37DC1E1ACD8F385D6420 /* ValidationReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE48CDB4729D9E74EB8523C9 /* ValidationReportView.swift */; };
 		87C6F8B5E53454E96DBE3BCA /* les_mis_vol01_0810_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */; };
@@ -154,7 +155,7 @@
 		AE794233D23294F8810AEE06 /* jane_eyre_ver03_0809_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */; };
 		AF033865D233292251CE0190 /* CarPlayReviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85F389E6310626F4B2F88D2 /* CarPlayReviewController.swift */; };
 		AF037E9CC64723CFEAB0E678 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5061FBEF9FB1D37EA33526A /* WatchConnectivity.framework */; };
-		AF1E37E9DB4FFC9EB410DAD8 /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */; };
+		AF1E37E9DB4FFC9EB410DAD8 /* ParsoAudioStreaming in Frameworks */ = {isa = PBXBuildFile; productRef = 7AB8B250D3942B60F221985F /* ParsoAudioStreaming */; };
 		B00B93E335F230E935CAF426 /* WatchNowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0934FA0F60D5D328F61320 /* WatchNowPlayingView.swift */; };
 		B08D8F8C18D6A1E2D3B83BEC /* LocalZipExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CE684E98EC2AC985B777A27 /* LocalZipExtractorTests.swift */; };
 		B1052AE5DF06037E4B0E0A6C /* WatchPlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */; };
@@ -482,6 +483,7 @@
 		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
 		D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionSmokeSeed.swift; sourceTree = "<group>"; };
 		D85F389E6310626F4B2F88D2 /* CarPlayReviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayReviewController.swift; sourceTree = "<group>"; };
+		D9248CA839F2E58A892CC521 /* parso-audio-engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-audio-engine"; path = "../parso-audio-engine"; sourceTree = SOURCE_ROOT; };
 		D95EEA019E1770E27663315D /* tom_sawyer_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tom_sawyer_librivox.jpg; sourceTree = "<group>"; };
 		D99745AB51C27E3F7194CA27 /* BundledArtworkProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledArtworkProvider.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
@@ -546,9 +548,10 @@
 			files = (
 				1BD9B7B8488C805FBD59A0B2 /* VoxglassCore in Frameworks */,
 				5C33FE25E8D64A9D57412112 /* VoxglassEncoders in Frameworks */,
-				AF1E37E9DB4FFC9EB410DAD8 /* VoxglassWatchProtocol in Frameworks */,
-				0CBE46248F46F1B561E3D602 /* VoxglassWatchCore in Frameworks */,
-				85B29F15855ACB432C7F1D2F /* ZIPFoundation in Frameworks */,
+				AF1E37E9DB4FFC9EB410DAD8 /* ParsoAudioStreaming in Frameworks */,
+				0CBE46248F46F1B561E3D602 /* VoxglassWatchProtocol in Frameworks */,
+				85B29F15855ACB432C7F1D2F /* VoxglassWatchCore in Frameworks */,
+				20D35805E77C75980D492297 /* ZIPFoundation in Frameworks */,
 				8C6B21C9D4DCE4D3AAFB642E /* AudioToolbox.framework in Frameworks */,
 				BB92423FB45EE5D963ED7BAA /* AVFoundation.framework in Frameworks */,
 				0D0D08BDA2C5959024DEF090 /* CarPlay.framework in Frameworks */,
@@ -971,6 +974,7 @@
 		EBC1B200DDF902108E6154DD /* Packages */ = {
 			isa = PBXGroup;
 			children = (
+				D9248CA839F2E58A892CC521 /* parso-audio-engine */,
 				D78C6344FCDC530F80FCD2DE /* parso-voxglass */,
 			);
 			name = Packages;
@@ -1133,6 +1137,7 @@
 			packageProductDependencies = (
 				2CAA5CA27C7FB6ED43B55A2A /* VoxglassCore */,
 				6709F24E350537E4003AB7B1 /* VoxglassEncoders */,
+				7AB8B250D3942B60F221985F /* ParsoAudioStreaming */,
 				FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */,
 				5A9D81AAA34E5257F736E8A0 /* VoxglassWatchCore */,
 				54CB0F9AA2E35266161E5197 /* ZIPFoundation */,
@@ -1189,6 +1194,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4ABBA9978D2D897986204F97 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				4CFA7860EC471D88502E344F /* XCLocalSwiftPackageReference "../parso-audio-engine" */,
 				620520AC8F752923B71E97DA /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1952,6 +1958,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		4CFA7860EC471D88502E344F /* XCLocalSwiftPackageReference "../parso-audio-engine" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../parso-audio-engine";
+		};
 		620520AC8F752923B71E97DA /* XCLocalSwiftPackageReference "." */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = .;
@@ -2003,6 +2013,10 @@
 		752C9704E6F3EA532549938A /* VoxglassWatchCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassWatchCore;
+		};
+		7AB8B250D3942B60F221985F /* ParsoAudioStreaming */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ParsoAudioStreaming;
 		};
 		939374D7CC51C05995A3F339 /* VoxglassEncoders */ = {
 			isa = XCSwiftPackageProductDependency;

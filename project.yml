@@ -8,6 +8,11 @@ options:
 packages:
   VoxglassCore:
     path: .
+  # Audio-engine unification (parso-audio-engine/docs/UNIFICATION_PLAN.md).
+  # Local path override during the migration; swaps to a tag pin on merge to
+  # main. Requires parso-audio-engine checked out as a sibling directory.
+  ParsoAudioEngine:
+    path: ../parso-audio-engine
   ZIPFoundation:
     url: https://github.com/weichsel/ZIPFoundation.git
     from: 0.9.20
@@ -43,6 +48,8 @@ targets:
       # through the VoxglassEncoders product (§16.3, C-3).
       - package: VoxglassCore
         product: VoxglassEncoders
+      - package: ParsoAudioEngine
+        product: ParsoAudioStreaming
       - package: VoxglassCore
         product: VoxglassWatchProtocol
       - package: VoxglassCore
