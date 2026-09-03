@@ -50,6 +50,8 @@ targets:
         product: VoxglassEncoders
       - package: ParsoAudioEngine
         product: ParsoAudioStreaming
+      - package: ParsoAudioEngine
+        product: ParsoAudioPlayback
       - package: VoxglassCore
         product: VoxglassWatchProtocol
       - package: VoxglassCore

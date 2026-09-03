@@ -1,168 +1,64 @@
 import Foundation
+import ParsoAudioPlayback
 
-public struct BiquadFilter: Sendable {
-    private var b0: Float = 1
-    private var b1: Float = 0
-    private var b2: Float = 0
-    private var a1: Float = 0
-    private var a2: Float = 0
-    private var x1: Float = 0
-    private var x2: Float = 0
-    private var y1: Float = 0
-    private var y2: Float = 0
-
-    public mutating func process(_ input: Float) -> Float {
-        let output = b0 * input + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
-        x2 = x1
-        x1 = input
-        y2 = y1
-        y1 = output
-        return output
-    }
-
-    public mutating func reset() {
-        x1 = 0; x2 = 0; y1 = 0; y2 = 0
-    }
-
-    public mutating func configurePeakingEQ(frequency: Float, sampleRate: Float, gainDB: Float, q: Float) {
-        let omega = 2 * Float.pi * frequency / sampleRate
-        let sn = sin(omega)
-        let cs = cos(omega)
-        let A = pow(10, gainDB / 40)
-        let alpha = sn / (2 * q)
-
-        let b0tmp =  1 + alpha * A
-        let b1tmp = -2 * cs
-        let b2tmp =  1 - alpha * A
-        let a0tmp =  1 + alpha / A
-        let a1tmp = -2 * cs
-        let a2tmp =  1 - alpha / A
-
-        let a0Inv = 1 / a0tmp
-        b0 = b0tmp * a0Inv
-        b1 = b1tmp * a0Inv
-        b2 = b2tmp * a0Inv
-        a1 = a1tmp * a0Inv
-        a2 = a2tmp * a0Inv
-    }
-
-    public mutating func configureLowShelf(frequency: Float, sampleRate: Float, gainDB: Float, q: Float = 0.707) {
-        let omega = 2 * Float.pi * frequency / sampleRate
-        let sn = sin(omega)
-        let cs = cos(omega)
-        let A = pow(10, gainDB / 40)
-        let beta = sqrt(A) / q
-
-        let b0tmp = A * ((A + 1) - (A - 1) * cs + beta * sn)
-        let b1tmp = 2 * A * ((A - 1) - (A + 1) * cs)
-        let b2tmp = A * ((A + 1) - (A - 1) * cs - beta * sn)
-        let a0tmp = (A + 1) + (A - 1) * cs + beta * sn
-        let a1tmp = -2 * ((A - 1) + (A + 1) * cs)
-        let a2tmp = (A + 1) + (A - 1) * cs - beta * sn
-
-        let a0Inv = 1 / a0tmp
-        b0 = b0tmp * a0Inv
-        b1 = b1tmp * a0Inv
-        b2 = b2tmp * a0Inv
-        a1 = a1tmp * a0Inv
-        a2 = a2tmp * a0Inv
-    }
-
-    public mutating func configureHighShelf(frequency: Float, sampleRate: Float, gainDB: Float, q: Float = 0.707) {
-        let omega = 2 * Float.pi * frequency / sampleRate
-        let sn = sin(omega)
-        let cs = cos(omega)
-        let A = pow(10, gainDB / 40)
-        let beta = sqrt(A) / q
-
-        let b0tmp = A * ((A + 1) + (A - 1) * cs + beta * sn)
-        let b1tmp = -2 * A * ((A - 1) + (A + 1) * cs)
-        let b2tmp = A * ((A + 1) + (A - 1) * cs - beta * sn)
-        let a0tmp = (A + 1) - (A - 1) * cs + beta * sn
-        let a1tmp = 2 * ((A - 1) - (A + 1) * cs)
-        let a2tmp = (A + 1) - (A - 1) * cs - beta * sn
-
-        let a0Inv = 1 / a0tmp
-        b0 = b0tmp * a0Inv
-        b1 = b1tmp * a0Inv
-        b2 = b2tmp * a0Inv
-        a1 = a1tmp * a0Inv
-        a2 = a2tmp * a0Inv
-    }
-
-    public var isBypassed: Bool {
-        b0 == 1 && b1 == 0 && b2 == 0 && a1 == 0 && a2 == 0
-    }
-}
-
+/// The 10-band graphic EQ is now shared: `parso-audio-engine`'s `GraphicEQ`
+/// (`ParsoAudioPlayback`) is the RBJ peaking cascade both apps grew independently
+/// (parso-audio-engine/docs/UNIFICATION_PLAN.md §3). This `EQEngine` keeps
+/// Voxglass's class shape — an EQ cascade followed by the realtime RMS
+/// `VolumeNormalizer` — so `EQAudioProcessor` and its tap plumbing are
+/// untouched. Voxglass drives the cascade at Q 1.0 (`GraphicEQ` defaults to
+/// Tonearm's 1.41), passed explicitly so the EQ sound does not change.
 public final class EQEngine {
-    public static let isoBands: [Float] = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+    /// ISO 10-band centers (Hz). `GraphicEQ` works in `Double`; Voxglass's UI and
+    /// stores are `Float`, so this stays `[Float]`.
+    public static let isoBands: [Float] = GraphicEQ.isoBandFrequencies.map(Float.init)
     public static let defaultQ: Float = 1.0
-    public static let sampleRate: Float = 44100
+    public static let sampleRate: Float = 44_100
 
-    private var filters: [BiquadFilter]
-    public var gains: [Float]
+    private var eq: GraphicEQ
+    public var gains: [Float] { didSet { rebuild() } }
     public let normalizer = VolumeNormalizer()
     public var eqStagesEnabled = true
 
     public init(gains: [Float] = Array(repeating: 0, count: 10), eqStagesEnabled: Bool = true) {
         self.gains = gains
-        self.filters = Array(repeating: BiquadFilter(), count: 10)
         self.eqStagesEnabled = eqStagesEnabled
-        reconfigure()
+        self.eq = GraphicEQ(sampleRate: Double(Self.sampleRate),
+                            q: Double(Self.defaultQ),
+                            gains: gains.map(Double.init))
     }
 
-    public var isFlat: Bool {
-        gains.allSatisfy { $0 == 0 }
-    }
-
-    public var isBypassed: Bool {
-        filters.allSatisfy { $0.isBypassed }
-    }
+    public var isFlat: Bool { gains.allSatisfy { $0 == 0 } }
+    public var isBypassed: Bool { eq.isTransparent }
 
     public func setGain(_ gain: Float, at band: Int) {
         guard band >= 0, band < gains.count else { return }
-        gains[band] = gain
-        filters[band].configurePeakingEQ(
-            frequency: Self.isoBands[band],
-            sampleRate: Self.sampleRate,
-            gainDB: gain,
-            q: Self.defaultQ
-        )
+        gains[band] = gain   // didSet rebuilds
     }
 
-    public func reconfigure() {
-        for (i, gain) in gains.enumerated() {
-            filters[i].configurePeakingEQ(
-                frequency: Self.isoBands[i],
-                sampleRate: Self.sampleRate,
-                gainDB: gain,
-                q: Self.defaultQ
-            )
-        }
+    /// Rebuilds the cascade from `gains` (kept for call-site compatibility;
+    /// `gains`/`setGain` already rebuild).
+    public func reconfigure() { rebuild() }
+
+    private func rebuild() {
+        eq.setGains(gains.map(Double.init))
     }
 
     public func process(_ input: Float) -> Float {
         var sample = input
         if eqStagesEnabled {
-            for i in 0..<filters.count {
-                sample = filters[i].process(sample)
-            }
+            sample = eq.process(sample, channel: 0)
         }
-
         return normalizer.process(sample)
     }
 
     public func reset() {
-        for i in 0..<filters.count {
-            filters[i].reset()
-        }
+        eq.reset()
         normalizer.reset()
     }
 
     public func copy() -> EQEngine {
-        let copy = EQEngine(gains: gains)
-        return copy
+        EQEngine(gains: gains, eqStagesEnabled: eqStagesEnabled)
     }
 }
 

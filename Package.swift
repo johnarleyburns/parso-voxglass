@@ -37,7 +37,8 @@ let package = Package(
             name: "VoxglassCore",
             dependencies: [
                 "VoxglassRing", "VoxglassWatchProtocol", "VoxglassWatchCore",
-                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine")
+                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
+                .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
             ],
             path: "Voxglass/Core",
             exclude: ["Encoders"],
@@ -68,7 +69,8 @@ let package = Package(
             name: "VoxglassCoreTestSupport",
             dependencies: [
                 "VoxglassCore",
-                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine")
+                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
+                .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
             ],
             path: "VoxglassCoreTestSupport",
             resources: [.copy("Fixtures/Schemas")],
@@ -103,7 +105,8 @@ let package = Package(
             dependencies: [
                 "VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders",
                 "VoxglassWatchProtocol", "VoxglassWatchCore",
-                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine")
+                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
+                .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
             ],
             path: "VoxglassTests",
             exclude: ["Info.plist", "Performance"],
