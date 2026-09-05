@@ -147,9 +147,12 @@ jobs:
             exit 0
           fi
 
-          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru|wikipedia\.org|greaterbooks\.com|gutendex\.com|poetrydb\.org|wikisource\.org|gutenberg\.org' || true)"
+          # github.com is allowed only for the GPLv3 source-availability link
+          # (LICENSE, the About screen, and the SPDX header comment) — it is
+          # never a runtime API endpoint the app calls.
+          disallowed="$(printf '%s\n' "$matches" | grep -Ev 'archive\.org|librivox\.org|parso\.guru|wikipedia\.org|greaterbooks\.com|gutendex\.com|poetrydb\.org|wikisource\.org|gutenberg\.org|github\.com/johnarleyburns/parso-voxglass' || true)"
           if [ -n "$disallowed" ]; then
-            echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, parso.guru, Gutendex, PoetryDB, Wikisource, and Gutenberg URLs are allowed."
+            echo "::error title=Network endpoint guard::Only Internet Archive, LibriVox, parso.guru, Gutendex, PoetryDB, Wikisource, Gutenberg, and the project's own GitHub source URL are allowed."
             printf '%s\n' "$disallowed"
             exit 1
           fi
