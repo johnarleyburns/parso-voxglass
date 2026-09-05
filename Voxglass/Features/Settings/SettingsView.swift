@@ -537,6 +537,7 @@ struct SourcesView: View {
 
 struct AboutView: View {
     private let privacyURL = URL(string: "https://parso.guru/voxglass-privacy.html")!
+    private let sourceURL = URL(string: "https://github.com/johnarleyburns/parso-voxglass")!
 
     var body: some View {
         ZStack {
@@ -546,7 +547,24 @@ struct AboutView: View {
                     header
                     aboutSection
                     privacySection
+                    licenseSection
                     detailsList
+                    Link(destination: sourceURL) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                .foregroundStyle(Palette.brass)
+                            Text("View Source (GPLv3)")
+                                .scaledFont(size: 14, weight: .semibold)
+                                .foregroundStyle(Palette.ink)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .scaledFont(size: 12, weight: .bold)
+                                .foregroundStyle(Palette.ink3)
+                        }
+                        .padding(14)
+                        .glassSurface(cornerRadius: 14)
+                    }
+                    .buttonStyle(.plain)
                     Link(destination: privacyURL) {
                         HStack(spacing: 10) {
                             Image(systemName: "hand.raised.fill")
@@ -613,6 +631,20 @@ struct AboutView: View {
         }
     }
 
+    private var licenseSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "License")
+            Text("""
+            Voxglass is free software, licensed under the GNU General Public License v3.0 or later (GPLv3+). The complete source code is public. Because the GPL's own terms conflict with the App Store's distribution terms, an additional permission under GPLv3 §7 specifically allows distributing Voxglass through the App Store, provided the source of the exact version distributed stays publicly available under this License — which it does, at the link below.
+            """)
+                .scaledFont(size: 13.5)
+                .foregroundStyle(Palette.ink2)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassSurface(cornerRadius: 14)
+        }
+    }
+
     @ViewBuilder private var detailsList: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -624,7 +656,7 @@ struct AboutView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Palette.ink)
                 Spacer()
-                Text("Proprietary")
+                Text("GPLv3+")
                     .font(.caption)
                     .foregroundStyle(Palette.ink3)
             }
