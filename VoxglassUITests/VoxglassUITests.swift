@@ -86,6 +86,8 @@ final class VoxglassUITests: XCTestCase {
             )
         }
 
+        assertSettingsOpensFromHomeWithoutCrashing(app: app)
+        assertEQTogglesFromSettingsWithoutCrashing(app: app)
         assertStorageCardsFitCompactWidth(app: app)
 
         // ──────────────────────────────────────────────────────────────────
@@ -398,6 +400,70 @@ final class VoxglassUITests: XCTestCase {
         let firstPreceding = featured.exists ? featured : tagline
         assertRail(shortRail, preceding: firstPreceding, name: "Short Works")
         assertRail(longRail, preceding: shortRail.exists ? shortRail : firstPreceding, name: "Long Works")
+    }
+
+    /// User-reported: tapping Settings from the Listen tab's "…" menu crashes
+    /// the app. Isolated from `assertStorageCardsFitCompactWidth` (which also
+    /// opens Settings, but only as a step on the way to Storage & iCloud) so
+    /// a Settings-only failure is unambiguous rather than buried under a
+    /// storage-specific assertion.
+    private func assertSettingsOpensFromHomeWithoutCrashing(app: XCUIApplication) {
+        app.buttons["Listen"].tap()
+        app.buttons["home.moreMenu"].tap()
+        app.buttons["Settings"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Languages"].waitForExistence(timeout: 10),
+            "Settings did not render after tapping it from the Listen tab's \"…\" menu.\n\(app.debugDescription)"
+        )
+        XCTAssertEqual(
+            app.state, .runningForeground,
+            "App terminated after tapping Settings from the Listen tab."
+        )
+
+        let close = app.buttons["Close"]
+        if close.waitForExistence(timeout: 2) {
+            close.tap()
+        } else {
+            app.buttons["Sheet Grabber"].swipeDown()
+        }
+    }
+
+    /// Opens the equalizer from Settings and toggles it, so a crash in the
+    /// EQ engage/playback wiring (as opposed to just rendering the sheet)
+    /// would surface here.
+    private func assertEQTogglesFromSettingsWithoutCrashing(app: XCUIApplication) {
+        app.buttons["Listen"].tap()
+        app.buttons["home.moreMenu"].tap()
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Languages"].waitForExistence(timeout: 10),
+            "Settings did not render before opening the equalizer.\n\(app.debugDescription)"
+        )
+
+        let eqRow = app.buttons["settings.eq"]
+        XCTAssertTrue(eqRow.waitForExistence(timeout: 10), "Equalizer row should be visible in Settings")
+        eqRow.tap()
+
+        let engage = app.switches["eq.engage"]
+        XCTAssertTrue(engage.waitForExistence(timeout: 10),
+                      "Equalizer sheet did not render after tapping it from Settings.\n\(app.debugDescription)")
+        let before = engage.value as? String
+        engage.tap()
+        XCTAssertTrue(
+            app.state == .runningForeground,
+            "App terminated after toggling the equalizer engage switch."
+        )
+        let after = engage.value as? String
+        XCTAssertNotEqual(before, after, "Toggling the equalizer switch should change its state")
+
+        app.buttons["Done"].tap()
+        let close = app.buttons["Close"]
+        if close.waitForExistence(timeout: 2) {
+            close.tap()
+        } else {
+            app.buttons["Sheet Grabber"].swipeDown()
+        }
     }
 
     private func assertStorageCardsFitCompactWidth(app: XCUIApplication) {
