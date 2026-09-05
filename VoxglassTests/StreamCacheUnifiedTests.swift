@@ -18,9 +18,41 @@ struct StreamCacheUnifiedTests {
     // MARK: - URLProtocol range stub
 
     final class RangeStub: URLProtocol {
-        nonisolated(unsafe) static var blob = Data()
-        nonisolated(unsafe) static var offline = false
-        nonisolated(unsafe) static var requestCount = 0
+        /// `URLProtocol` calls in from arbitrary threads, so the shared fixture
+        /// state is lock-protected rather than a bare mutable global.
+        private final class State: @unchecked Sendable {
+            private let lock = NSLock()
+            private var _blob = Data()
+            private var _offline = false
+            private var _requestCount = 0
+
+            var blob: Data {
+                get { lock.lock(); defer { lock.unlock() }; return _blob }
+                set { lock.lock(); defer { lock.unlock() }; _blob = newValue }
+            }
+            var offline: Bool {
+                get { lock.lock(); defer { lock.unlock() }; return _offline }
+                set { lock.lock(); defer { lock.unlock() }; _offline = newValue }
+            }
+            var requestCount: Int {
+                get { lock.lock(); defer { lock.unlock() }; return _requestCount }
+                set { lock.lock(); defer { lock.unlock() }; _requestCount = newValue }
+            }
+        }
+        private static let state = State()
+
+        static var blob: Data {
+            get { state.blob }
+            set { state.blob = newValue }
+        }
+        static var offline: Bool {
+            get { state.offline }
+            set { state.offline = newValue }
+        }
+        static var requestCount: Int {
+            get { state.requestCount }
+            set { state.requestCount = newValue }
+        }
 
         static func reset(blob: Data) {
             self.blob = blob; offline = false; requestCount = 0
