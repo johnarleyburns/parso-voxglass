@@ -70,7 +70,13 @@ let package = Package(
                 // libmp3lame gates a lot of stderr/stdout tracing on it
                 // (bitstream.c "count1: real: ..." etc.) that has nothing to
                 // do with this app's own debug builds — always off.
-                .unsafeFlags(["-UDEBUG"])
+                .unsafeFlags(["-UDEBUG"]),
+                // Xcode's explicit-modules build (used for the real device
+                // Archive, unlike `swift build`'s own clang invocation)
+                // can treat libmp3lame's classic textual header includes as
+                // module-invisible for stdint.h's types — force plain
+                // textual inclusion for this vendored C code.
+                .unsafeFlags(["-fno-modules", "-fno-implicit-modules"])
             ]
         ),
         .target(
