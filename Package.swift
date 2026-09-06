@@ -52,9 +52,32 @@ let package = Package(
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .target(
+            name: "CLAMEBridge",
+            path: "Sources/CLAMEBridge",
+            exclude: [
+                "vendor/lame-3.100/COPYING",
+                "vendor/lame-3.100/LICENSE",
+                "vendor/lame-3.100/README"
+            ],
+            sources: ["src", "vendor/lame-3.100/libmp3lame"],
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("vendor/lame-3.100/include"),
+                .headerSearchPath("vendor/lame-3.100/libmp3lame"),
+                .define("HAVE_CONFIG_H"),
+                .headerSearchPath("vendor/lame-3.100"),
+                // SwiftPM's debug configuration defines DEBUG for C targets;
+                // libmp3lame gates a lot of stderr/stdout tracing on it
+                // (bitstream.c "count1: real: ..." etc.) that has nothing to
+                // do with this app's own debug builds — always off.
+                .unsafeFlags(["-UDEBUG"])
+            ]
+        ),
+        .target(
             name: "VoxglassEncoders",
             dependencies: [
                 "VoxglassCore",
+                "CLAMEBridge",
                 .product(name: "ParsoAudioCore", package: "parso-audio-engine")
             ],
             path: "Voxglass/Core/Encoders",

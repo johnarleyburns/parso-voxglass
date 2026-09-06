@@ -119,6 +119,25 @@ If every step passes, the playback bridge is behaving. Any failure in sections 3
 GNU General Public License v3.0 or later, with an additional permission under
 GPLv3 §7 allowing distribution through Apple's App Store. See `LICENSE`.
 
+### MP3 export — LAME, reintegrated in a PAE-compliant way
+
+MP3 export (`VoxTranscoder`, `Voxglass/Core/Encoders/LAMEEncoder.swift`) uses
+LAME 3.100 (`libmp3lame`, LGPL-2.1-or-later), vendored as real source in this
+app's own package (`Sources/CLAMEBridge`) — `parso-audio-engine` (PAE, MIT,
+shared with other apps) never links or depends on LAME itself. Voxglass
+implements PAE's own `MP3Encoding` protocol (PAE's `docs/BYO-CODEC.md`) with
+`LAMEEncoder`, and PAE's `AudioFileWriter` is told to use it rather than
+having its audio handling overridden.
+
+This app previously used LAME via a binary `Lame.xcframework`, moved to
+PAE's own from-scratch Glint encoder in the audio-engine-unification's Phase
+4 for a dependency-free MP3 path, and has now moved back to LAME as its own
+licensing choice — Glint remains PAE's own default for any consumer that
+hasn't made that choice for itself. A perceptual A-B of LAME vs Glint on
+real spoken-word takes is still owed before either could be called the
+better choice on quality alone; this reintegration is a licensing/quality
+decision made independently of that open question.
+
 ## iCloud Sync setup (for developers)
 
 Cross-device sync uses `NSUbiquitousKeyValueStore`. Playback-position sync, bookmarks sync, and
