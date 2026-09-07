@@ -45,6 +45,13 @@ public struct NeedDeduplicator: Sendable {
         work.pinnedWeekOf = work.pinnedWeekOf ?? incoming.work.pinnedWeekOf
         work.pinnedMonthOf = work.pinnedMonthOf ?? incoming.work.pinnedMonthOf
         work.sourceEPUBURL = work.sourceEPUBURL ?? incoming.work.sourceEPUBURL
+        // A record chosen for its poem/book text (e.g. PoetryDB, which has no
+        // citable per-poem page of its own) shouldn't silently drop a citable
+        // source page a *different* rung already found for the same work —
+        // that left auto-imported "practice" poems with no source URL even
+        // when one was available, forcing the record flow to ask the user
+        // for a URL that had already been discovered.
+        work.sourcePageURL = work.sourcePageURL ?? incoming.work.sourcePageURL
 
         return NarrationNeed(
             id: existing.id,

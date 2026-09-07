@@ -1398,7 +1398,17 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         case .title: project.metadata.title = value
         case .subtitle: project.metadata.subtitle = value
         case .author: project.metadata.author = value
-        case .narrator: project.metadata.narrator = value
+        case .narrator:
+            project.metadata.narrator = value
+            // `saveNarratorName()` (the "Add narrator name" prompt) isn't the
+            // only way a narrator name gets set — editing it here must also
+            // remember it app-wide, or every later project's prompt/backfill
+            // (`resume`, `buildParagraphs`) sees no persisted name and asks
+            // again despite an earlier project already carrying one.
+            if !value.isEmpty {
+                narrator = value
+                UserDefaults.standard.set(value, forKey: "voxglass.narratorName")
+            }
         case .language: project.metadata.language = value
         case .description: project.metadata.description = value
         case .subjects: project.metadata.subjects = value.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }
