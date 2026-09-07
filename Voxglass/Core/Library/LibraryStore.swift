@@ -152,8 +152,10 @@ public final class LibraryStore: ObservableObject {
         folderURL: URL,
         folderName: String,
         audioURL: URL,
+        bookmark: Data,
         markers: [LocalChapterMarker],
-        audioDuration: TimeInterval?
+        audioDuration: TimeInterval?,
+        coverURL: URL? = nil
     ) async -> BookWithChapters? {
         isImporting = true
         defer { isImporting = false }
@@ -168,7 +170,8 @@ public final class LibraryStore: ObservableObject {
                 title: marker.title,
                 sortKey: String(format: "%04d", marker.number),
                 duration: duration,
-                startTime: marker.startTime
+                startTime: marker.startTime,
+                bookmark: bookmark
             )
         }
 
@@ -176,7 +179,8 @@ public final class LibraryStore: ObservableObject {
             let imported = try await repository.importLocalFolder(
                 folderURL: folderURL,
                 folderName: folderName,
-                files: imports
+                files: imports,
+                coverURL: coverURL
             )
             await refresh()
             await onBookImported?(imported.book.id)

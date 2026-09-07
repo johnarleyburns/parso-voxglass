@@ -218,7 +218,15 @@ public final class PlaybackCoordinator {
         }
         guard !Task.isCancelled else { return false }
         do {
-            try await engine.load(url: url, startTime: session.position)
+            // `session.position` is chapter-relative; for a single-file,
+            // multi-chapter local book every chapter shares one URL, so the
+            // real seek target within that file is the chapter's own
+            // absolute offset plus the relative position (see the identical
+            // `chapter.startTime +` in `loadChapter` and `selectAndPlay`'s
+            // Task body below — this was the one call site missing it,
+            // which always seeked to the start of the underlying file
+            // instead of the resumed chapter).
+            try await engine.load(url: url, startTime: session.chapter.startTime + session.position)
             guard !Task.isCancelled else { return false }
             applyStoredRate(forBookID: session.book.id)
             isEngineLoaded = true
@@ -376,7 +384,14 @@ public final class PlaybackCoordinator {
         guard !Task.isCancelled, activeSelectionID == requestID else { return }
 
         // 2. Publish preparing session *before* engine load.
-        let duration = validTime(savedDuration ?? targetChapter.duration)
+        // The chapter's own known duration always wins over a saved value —
+        // `savedDuration` exists for remote per-file chapters whose duration
+        // isn't known until the file is actually probed; a local chapter's
+        // duration is already authoritative (parsed from the chapter-marker
+        // file), so trusting a stale saved value over it risked showing the
+        // wrong chapter's remaining time after a race between overlapping
+        // navigation/save operations.
+        let duration = validTime(targetChapter.duration ?? savedDuration)
         await prepareForPausedPresentation()
         guard !Task.isCancelled, activeSelectionID == requestID else { return }
         applyStoredRate(forBookID: book.book.id)
@@ -504,7 +519,7 @@ public final class PlaybackCoordinator {
             chapters: book.chapters,
             chapter: target.chapter,
             position: target.startTime,
-            duration: target.savedDuration ?? target.chapter.duration,
+            duration: target.chapter.duration ?? target.savedDuration,
             isPlaying: false
         )
         isEngineLoaded = false
@@ -528,11 +543,11 @@ public final class PlaybackCoordinator {
             chapters: book.chapters,
             chapter: chapter,
             position: startTime,
-            duration: target.savedDuration ?? chapter.duration,
+            duration: chapter.duration ?? target.savedDuration,
             isPlaying: false
         )
         playhead = startTime
-        playheadDuration = validTime(target.savedDuration ?? chapter.duration)
+        playheadDuration = validTime(chapter.duration ?? target.savedDuration)
 
         guard let playableURL = await playbackURL(for: chapter) else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
@@ -544,7 +559,13 @@ public final class PlaybackCoordinator {
         }
 
         do {
-            try await engine.load(url: playableURL, startTime: startTime)
+            // `startTime` here is chapter-relative (see the identical
+            // comment in `loadEngineForPresentedSession`) — this call site
+            // (direct chapter-tap, `ChaptersView`) was missing the
+            // `chapter.startTime +` every other `engine.load` call already
+            // has, so tapping any chapter but the first in a single-file
+            // local book always seeked to the start of the underlying file.
+            try await engine.load(url: playableURL, startTime: chapter.startTime + startTime)
             guard !Task.isCancelled else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: book.book.id)

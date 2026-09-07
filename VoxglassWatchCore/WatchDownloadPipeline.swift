@@ -45,8 +45,20 @@ public struct WatchStorageReserve: Sendable, Equatable {
 public enum WatchChecksum {
     public static func sha256(of url: URL) throws -> String {
         let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
-        var hash = SHA256();
-        while true { let chunk = try handle.read(upToCount: 1024 * 1024) ?? Data(); if chunk.isEmpty { break }; hash.update(data: chunk) }
+        var hash = SHA256()
+        // Each `read(upToCount:)` bridges through Foundation's NSData; without
+        // draining the autorelease pool per chunk, those bridged buffers all
+        // stay alive for the whole loop — for a GB-scale file that alone can
+        // balloon peak memory by the size of the file being hashed.
+        while true {
+            var stop = false
+            try autoreleasepool {
+                let chunk = try handle.read(upToCount: 1024 * 1024) ?? Data()
+                if chunk.isEmpty { stop = true; return }
+                hash.update(data: chunk)
+            }
+            if stop { break }
+        }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 }

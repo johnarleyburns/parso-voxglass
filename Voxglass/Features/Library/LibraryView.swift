@@ -18,7 +18,9 @@ struct LibraryView: View {
     @State private var isEditing = false
     @State private var showingAddArchiveURL = false
     @State private var bookOrder: [UUID] = []
+    @State private var selectedBookID: UUID?
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @State private var myNarrationOnly = false
 
     var body: some View {
         VoxglassScreen(
@@ -33,6 +35,20 @@ struct LibraryView: View {
                 bookList
             }
             .padding(.top, 12)
+            // Must be inside VoxglassScreen's trailing closure, not chained
+            // after the VoxglassScreen(...) call: VoxglassScreen wraps this
+            // content in its own internal `NavigationStack`, and
+            // `.navigationDestination(item:)` only registers when attached
+            // to a view INSIDE that stack. Attached outside (as it was),
+            // setting `selectedBookID` did nothing visible — no crash, no
+            // navigation — which is exactly what broke "tap a book" after
+            // the NavigationLink → Button migration.
+            .navigationDestination(item: $selectedBookID) { bookID in
+                BookPageView(
+                    book: libraryStore.books.first { $0.book.id == bookID },
+                    showingNowPlaying: $showingNowPlaying
+                )
+            }
         }
         .alert("Something Went Wrong", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -62,7 +78,11 @@ struct LibraryView: View {
                 pendingDeletion = nil
             }
         } message: {
-            Text("This deletes the book and its cached audio from this device.")
+            if let pendingDeletion, libraryStore.source(for: pendingDeletion.book)?.kind == .localFiles {
+                Text("This removes the book from My Books. The audio file and its folder are not touched — they stay exactly where they are in Files.")
+            } else {
+                Text("This deletes the book and its cached audio from this device.")
+            }
         }
         .confirmationDialog(
             "Send to Apple Watch on cellular data?",
@@ -120,17 +140,46 @@ struct LibraryView: View {
                 let books = orderedFilteredBooks
                 List {
                     ForEach(books) { book in
-                        NavigationLink {
-                            BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
+                        // Plain `Button` + `.navigationDestination(item:)`
+                        // rather than `NavigationLink` — a List row that IS
+                        // (or contains, even hidden via `.background`) a
+                        // NavigationLink gets extra automatic chrome from
+                        // List itself (a disclosure chevron, and apparently
+                        // row insets too) that turned out to be applied
+                        // inconsistently depending on the row's own content:
+                        // "My Narration" rows (more populated optional lines
+                        // — a real narrator, watch status) got a doubled
+                        // chevron, then a missing one, then different left/
+                        // right insets than every other row, across three
+                        // rounds of trying to coax List's own NavigationLink
+                        // detection into behaving the same for every row. A
+                        // plain Button is never detected as a nav row by
+                        // List at all, so there is nothing left to behave
+                        // inconsistently — every row gets exactly the insets
+                        // and chevron this view draws itself, always.
+                        Button {
+                            selectedBookID = book.book.id
                         } label: {
                             CompactBookRowView(
                                 book: book,
                                 sourceTitle: libraryStore.source(for: book.book)?.title,
-                                accessory: .download(offlineManager.state(for: book.book.id), showsNavigation: true),
+                                accessory: .download(
+                                    // A local-files import (bookmark-referenced, never
+                                    // copied) has no entry in OfflineDownloadManager's
+                                    // state dictionary — it never went through a
+                                    // "download" job, so `.state(for:)` always falls
+                                    // through to `.notCached` for it, even though the
+                                    // audio genuinely is on-device. It always is, by
+                                    // definition, so it always reads as `.cached`.
+                                    libraryStore.source(for: book.book)?.kind == .localFiles
+                                        ? .cached
+                                        : offlineManager.state(for: book.book.id),
+                                    showsNavigation: true,
+                                    watchAvailable: phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available
+                                ),
                                 style: .grouped,
                                 watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
-                                isMyNarration: libraryStore.source(for: book.book)?.kind == .localFiles
-                                    && book.book.authors != ["Local Files"]
+                                isMyNarration: isMyNarration(book)
                             )
                             .accessibilityIdentifier("library.watchStatus.\(book.book.id.uuidString)")
                         }
@@ -204,6 +253,9 @@ struct LibraryView: View {
                 FilterChip(title: "Solo Narration", isSelected: soloOnly) {
                     soloOnly.toggle()
                 }
+                FilterChip(title: "My Narration", isSelected: myNarrationOnly) {
+                    myNarrationOnly.toggle()
+                }
                 Spacer()
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -263,11 +315,19 @@ struct LibraryView: View {
         }
     }
 
+    private func isMyNarration(_ book: BookWithChapters) -> Bool {
+        libraryStore.source(for: book.book)?.kind == .localFiles && book.book.authors != ["Local Files"]
+    }
+
     private var filteredBooks: [BookWithChapters] {
         var books = libraryStore.visibleBooks
 
         if soloOnly {
             books = books.filter { $0.narrationKind == .solo }
+        }
+
+        if myNarrationOnly {
+            books = books.filter { isMyNarration($0) }
         }
 
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -377,17 +437,23 @@ private struct AddArchiveURLSheet: View {
     @Binding var showingNowPlaying: Bool
     @State private var archiveURL = ""
     @State private var showingLocalFolderImporter = false
+    @State private var isImportingLocalFolder = false
+    @State private var showingChapterFileExample = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 VoxglassBackground()
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Paste an Internet Archive item URL to add its audiobook to My Books.")
-                        .scaledFont(size: 15)
-                        .foregroundStyle(Palette.ink2)
-
+                    // MARK: Internet Archive
                     VStack(alignment: .leading, spacing: 10) {
+                        Label("Add from Internet Archive", systemImage: "globe")
+                            .scaledFont(size: 15, weight: .semibold)
+                            .foregroundStyle(Palette.ink)
+                        Text("Paste an Internet Archive item URL to add its audiobook to My Books.")
+                            .scaledFont(size: 13)
+                            .foregroundStyle(Palette.ink2)
+
                         TextField("archive.org/details/...", text: $archiveURL)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -410,14 +476,60 @@ private struct AddArchiveURLSheet: View {
                         .buttonStyle(.borderedProminent)
                         .tint(Palette.brass)
                         .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
+                    }
+                    .padding(14)
+                    .glassSurface(cornerRadius: 18)
+
+                    // MARK: Local folder
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Add from a Local Folder", systemImage: "folder")
+                            .scaledFont(size: 15, weight: .semibold)
+                            .foregroundStyle(Palette.ink)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("The folder should contain:")
+                                .scaledFont(size: 13)
+                                .foregroundStyle(Palette.ink2)
+                            localFolderRequirement(
+                                icon: "waveform",
+                                text: "One audio file — the whole book as a single track."
+                            )
+                            localFolderRequirement(
+                                icon: "doc.text",
+                                text: "One .txt file listing chapter names and where each one starts."
+                            )
+                            localFolderRequirement(
+                                icon: "photo",
+                                text: "Optional: an image file (JPEG, PNG, HEIC, etc.) to use as the cover."
+                            )
+                        }
+
+                        Button {
+                            showingChapterFileExample = true
+                        } label: {
+                            Label("See an example chapter file", systemImage: "questionmark.circle")
+                                .scaledFont(size: 12.5, weight: .medium)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Palette.brass)
 
                         Button {
                             showingLocalFolderImporter = true
                         } label: {
-                            Label("Import Local Audiobook Folder or ZIP", systemImage: "folder.badge.plus")
-                                .frame(maxWidth: .infinity)
+                            HStack {
+                                if isImportingLocalFolder {
+                                    ProgressView()
+                                }
+                                Text(isImportingLocalFolder ? "Importing…" : "Choose Folder")
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
+                        .disabled(isImportingLocalFolder)
+
+                        Text("The audio file is never copied — it stays exactly where it is on disk.")
+                            .scaledFont(size: 11.5)
+                            .foregroundStyle(Palette.ink3)
                     }
                     .padding(14)
                     .glassSurface(cornerRadius: 18)
@@ -435,7 +547,7 @@ private struct AddArchiveURLSheet: View {
             }
             .fileImporter(
                 isPresented: $showingLocalFolderImporter,
-                allowedContentTypes: [.folder, .zip],
+                allowedContentTypes: [.folder],
                 onCompletion: handleFolderSelection
             )
             .alert("Couldn't Add Audiobook", isPresented: errorBinding) {
@@ -446,6 +558,21 @@ private struct AddArchiveURLSheet: View {
             } message: {
                 Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
             }
+            .sheet(isPresented: $showingChapterFileExample) {
+                ChapterFileExampleView()
+            }
+        }
+    }
+
+    private func localFolderRequirement(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .scaledFont(size: 12, weight: .semibold)
+                .foregroundStyle(Palette.brass)
+                .frame(width: 16)
+            Text(text)
+                .scaledFont(size: 12.5)
+                .foregroundStyle(Palette.ink2)
         }
     }
 
@@ -461,81 +588,145 @@ private struct AddArchiveURLSheet: View {
 
     private func handleFolderSelection(_ result: Result<URL, Error>) {
         guard case .success(let selectedURL) = result else { return }
-        Task { await importSelectedLocalSource(selectedURL) }
+        Task { await importLocalFolder(selectedURL) }
     }
 
-    private func importSelectedLocalSource(_ selectedURL: URL) async {
-        if selectedURL.pathExtension.lowercased() == "zip" {
-            do {
-                let extracted = try await Task.detached(priority: .userInitiated) {
-                    try LocalZipExtractor.extract(selectedURL)
-                }.value
-                defer { try? FileManager.default.removeItem(at: extracted) }
-                await importLocalFolder(extracted)
-            } catch {
-                libraryStore.importError = error.localizedDescription
-            }
-        } else {
-            await importLocalFolder(selectedURL)
-        }
-    }
-
+    /// The heavy per-file work — enumerating the folder, parsing the chapter
+    /// text, probing duration, and creating a security-scoped bookmark for
+    /// the audio file — runs in `LocalAudiobookPreparer.prepare`, off the
+    /// main actor. This never copies the audio: the file stays exactly
+    /// where it is on disk, and the bookmark is what lets the app read it
+    /// again after relaunch. A >1GB local import used to do all of this
+    /// inline in a plain (non-detached) `Task`, and additionally deep-copied
+    /// the file into Application Support — for a huge file the synchronous
+    /// `FileManager.copyItem` blocked MainActor long enough to trip the
+    /// watchdog (killed with no crash report, since that's not a
+    /// signal-based crash), and the copy was never cleaned up on failure,
+    /// silently consuming device storage. Only the result — small,
+    /// already-computed values — crosses back to MainActor here.
     private func importLocalFolder(_ folderURL: URL) async {
+        isImportingLocalFolder = true
+        defer { isImportingLocalFolder = false }
+
         let accessing = folderURL.startAccessingSecurityScopedResource()
         defer { if accessing { folderURL.stopAccessingSecurityScopedResource() } }
 
         do {
-            let files = try localFiles(in: folderURL)
+            let prepared = try await Task.detached(priority: .userInitiated) {
+                try await LocalAudiobookPreparer.prepare(folderURL: folderURL)
+            }.value
 
-            guard let audioURL = files.first(where: {
-                AudioFormatSelection.allPlayableExtensions.contains($0.pathExtension.lowercased())
-            }) else {
-                throw LocalAudiobookImportError.missingAudio
-            }
-            guard let textURL = files.first(where: { $0.pathExtension.lowercased() == "txt" }) else {
-                throw LocalAudiobookImportError.missingChapterText
-            }
-
-            let text = try String(contentsOf: textURL, encoding: .utf8)
-            let markers = try LocalChapterParser.parse(text)
-            let asset = AVURLAsset(url: audioURL)
-            let cmDuration = try await asset.load(.duration)
-            let audioDuration = CMTimeGetSeconds(cmDuration).isFinite ? CMTimeGetSeconds(cmDuration) : nil
-            guard let audioDuration, audioDuration > markers.last!.startTime else {
-                throw LocalAudiobookImportError.invalidChapterTiming
-            }
-
-            let storedAudioURL = try copyIntoApplicationSupport(audioURL)
             if let imported = await libraryStore.importLocalSingleFile(
                 folderURL: folderURL,
-                folderName: audioURL.deletingPathExtension().lastPathComponent,
-                audioURL: storedAudioURL,
-                markers: markers,
-                audioDuration: audioDuration
+                folderName: prepared.folderName,
+                audioURL: prepared.audioURL,
+                bookmark: prepared.bookmark,
+                markers: prepared.markers,
+                audioDuration: prepared.audioDuration,
+                coverURL: prepared.coverURL
             ) {
                 dismiss()
                 await playback.present(imported)
                 showingNowPlaying = true
+            } else {
+                libraryStore.importError = "Couldn't add this audiobook to your library."
             }
         } catch {
             libraryStore.importError = error.localizedDescription
         }
     }
 
-    private func copyIntoApplicationSupport(_ sourceURL: URL) throws -> URL {
+    private var errorBinding: Binding<Bool> {
+        Binding {
+            catalogStore.catalogError != nil || libraryStore.importError != nil
+        } set: { isPresented in
+            if !isPresented {
+                catalogStore.catalogError = nil
+                libraryStore.importError = nil
+            }
+        }
+    }
+}
+
+/// Off-MainActor work for importing a local audiobook folder. See the
+/// doc comment on `AddArchiveURLSheet.importLocalFolder` for why this is
+/// its own nonisolated type rather than plain instance methods.
+private enum LocalAudiobookPreparer {
+    struct Prepared: Sendable {
+        let folderName: String
+        /// The audio file's own on-disk location — never copied.
+        let audioURL: URL
+        /// A security-scoped bookmark for `audioURL`, so the app can read it
+        /// again after relaunch (`SecurityScopedBookmarkAccess`).
+        let bookmark: Data
+        let markers: [LocalChapterMarker]
+        let audioDuration: TimeInterval
+        /// The first supported image file found in the folder, copied into
+        /// Application Support and used as the book's cover — nil if the
+        /// folder has none. Unlike the audio file, a cover image is small
+        /// enough that copying it costs nothing meaningful, and doing so
+        /// means artwork display needs no security-scoped bookmark handling
+        /// of its own.
+        let coverURL: URL?
+    }
+
+    static func prepare(folderURL: URL) async throws -> Prepared {
+        let files = try localFiles(in: folderURL)
+
+        guard let audioURL = files.first(where: {
+            AudioFormatSelection.allPlayableExtensions.contains($0.pathExtension.lowercased())
+        }) else {
+            throw LocalAudiobookImportError.missingAudio
+        }
+        guard let textURL = files.first(where: { $0.pathExtension.lowercased() == "txt" }) else {
+            throw LocalAudiobookImportError.missingChapterText
+        }
+
+        let text = try String(contentsOf: textURL, encoding: .utf8)
+        let markers = try LocalChapterParser.parse(text)
+        let asset = AVURLAsset(url: audioURL)
+        let cmDuration = try await asset.load(.duration)
+        let audioDuration = CMTimeGetSeconds(cmDuration).isFinite ? CMTimeGetSeconds(cmDuration) : nil
+        guard let audioDuration, audioDuration > markers.last!.startTime else {
+            throw LocalAudiobookImportError.invalidChapterTiming
+        }
+
+        // Bookmark the file itself (not just the folder) — the folder's own
+        // security scope, active for the caller's duration, is what makes
+        // this bookmark-creation call succeed; the bookmark is what lets a
+        // later, separate app launch regain read access to this exact file.
+        let bookmark = try audioURL.bookmarkData()
+
+        let coverSource = files.first { url in
+            guard let type = UTType(filenameExtension: url.pathExtension) else { return false }
+            return type.conforms(to: .image)
+        }
+        let coverURL = coverSource.flatMap { try? copyCoverIntoApplicationSupport($0) }
+
+        return Prepared(
+            folderName: audioURL.deletingPathExtension().lastPathComponent,
+            audioURL: audioURL,
+            bookmark: bookmark,
+            markers: markers,
+            audioDuration: audioDuration,
+            coverURL: coverURL
+        )
+    }
+
+    private static func copyCoverIntoApplicationSupport(_ sourceURL: URL) throws -> URL {
         let root = try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
-        ).appendingPathComponent("Voxglass/LocalAudio", isDirectory: true)
+        ).appendingPathComponent("Voxglass/LocalArtwork", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let destination = root.appendingPathComponent("\(UUID().uuidString).\(sourceURL.pathExtension)")
         try FileManager.default.copyItem(at: sourceURL, to: destination)
         return destination
     }
 
-    private func localFiles(in folderURL: URL) throws -> [URL] {
+    private static func localFiles(in folderURL: URL) throws -> [URL] {
         guard let enumerator = FileManager.default.enumerator(
             at: folderURL,
             includingPropertiesForKeys: [.isRegularFileKey],
@@ -551,14 +742,56 @@ private struct AddArchiveURLSheet: View {
             lhs.path.localizedStandardCompare(rhs.path) == .orderedAscending
         }
     }
+}
 
-    private var errorBinding: Binding<Bool> {
-        Binding {
-            catalogStore.catalogError != nil || libraryStore.importError != nil
-        } set: { isPresented in
-            if !isPresented {
-                catalogStore.catalogError = nil
-                libraryStore.importError = nil
+/// Shows a worked example of the chapter `.txt` format `LocalChapterParser`
+/// expects, so a user assembling a local folder doesn't have to guess the
+/// syntax from an error message alone.
+private struct ChapterFileExampleView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private static let example = """
+    Chapter 1: The Texan 0:00
+    Chapter 2: Yossarian 20:50
+    Chapter 3: Hungry Joe 45:12
+    Chapter 4: Doc Daneeka 1:02:30
+    """
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                VoxglassBackground()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Each line names one chapter and the timestamp — from the start of the audio file — where it begins. One chapter per line, in order.")
+                            .scaledFont(size: 13.5)
+                            .foregroundStyle(Palette.ink2)
+
+                        Text(Self.example)
+                            .scaledFont(size: 13, design: .monospaced)
+                            .foregroundStyle(Palette.ink)
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .glassSurface(cornerRadius: 12)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Format: Chapter <number>: <title> <timestamp>")
+                                .scaledFont(size: 12.5, weight: .semibold)
+                                .foregroundStyle(Palette.ink)
+                            Text("Timestamps can be h:mm:ss (1:02:30) or mm:ss (20:50) — use whichever fits. Chapters must be listed in order, each starting later than the one before.")
+                                .scaledFont(size: 12)
+                                .foregroundStyle(Palette.ink3)
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle("Chapter File Example")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
             }
         }
     }

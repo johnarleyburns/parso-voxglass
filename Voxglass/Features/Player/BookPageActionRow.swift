@@ -3,23 +3,86 @@ import VoxglassCore
 
 struct BookPageActionRow: View {
     @Environment(PlaybackCoordinator.self) private var playback
-    @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     let book: BookWithChapters
     @Binding var showingEQ: Bool
     @Binding var showingBookmarks: Bool
     @Binding var showingOverflow: Bool
     @Binding var showCellularPrompt: Bool
     @Binding var showRemoveOfflineConfirm: Bool
+    @State private var showDownloadSizeWarning = false
+    @State private var showWatchSizeWarning = false
+    @State private var showWatchCellularPrompt = false
+    @State private var showRemoveWatchConfirm = false
 
     private var offlineState: OfflineState {
         offlineManager.state(for: book.book.id)
+    }
+
+    private var watchState: WatchTransferState {
+        phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state ?? .notAvailable
+    }
+
+    /// No real byte count exists before a download finishes, so the
+    /// space-usage warning shows an estimate from the book's total duration.
+    private var estimatedBytes: Int64 {
+        let totalDuration = book.chapters.reduce(0) { $0 + ($1.duration ?? 0) }
+        return ByteFormatting.estimatedAudiobookBytes(duration: totalDuration)
     }
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
             fullRow
             compactRow
+        }
+        .confirmationDialog(
+            "Download this book?",
+            isPresented: $showDownloadSizeWarning,
+            titleVisibility: .visible
+        ) {
+            Button("Download") {
+                Task { await startOffline(allowCellular: false) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will use approximately \(ByteFormatting.string(estimatedBytes)) of storage on your iPhone.")
+        }
+        .confirmationDialog(
+            "Send to Apple Watch?",
+            isPresented: $showWatchSizeWarning,
+            titleVisibility: .visible
+        ) {
+            Button("Send to Watch") {
+                Task { await startWatchTransfer(allowCellular: false) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will use approximately \(ByteFormatting.string(estimatedBytes)) of storage on your Apple Watch.")
+        }
+        .confirmationDialog(
+            "Send to Apple Watch on cellular data?",
+            isPresented: $showWatchCellularPrompt,
+            titleVisibility: .visible
+        ) {
+            Button("Send now on cellular") {
+                Task { await startWatchTransfer(allowCellular: true) }
+            }
+            Button("Wait for Wi-Fi", role: .cancel) {}
+        } message: {
+            Text("Sending a book to the watch can use significant cellular data.")
+        }
+        .confirmationDialog(
+            "Remove from Apple Watch?",
+            isPresented: $showRemoveWatchConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Remove from Watch", role: .destructive) {
+                Task { await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The book stays in My Books; only the copy on your Apple Watch is removed.")
         }
     }
 
@@ -31,9 +94,9 @@ struct BookPageActionRow: View {
             Spacer(minLength: 0)
             bookmarkButton
             Spacer(minLength: 0)
-            favoriteButton
-            Spacer(minLength: 0)
             offlineButton
+            Spacer(minLength: 0)
+            watchButton
             Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
@@ -45,7 +108,7 @@ struct BookPageActionRow: View {
         HStack(spacing: 0) {
             speedButton
             Spacer(minLength: 0)
-            favoriteButton
+            offlineButton
             Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
@@ -172,32 +235,13 @@ struct BookPageActionRow: View {
         .accessibilityIdentifier("nowplaying.bookmark")
     }
 
-    private var favoriteButton: some View {
-        let favorited = isFavorite
-        return Button {
-            TactileFeedback.tap()
-            Task { await libraryStore.setFavorite(!favorited, for: book.book.id) }
-        } label: {
-            Image(systemName: favorited ? "heart.fill" : "heart")
-                .scaledFont(size: 16)
-                .foregroundStyle(favorited ? Palette.brass : Color.white.opacity(0.6))
-                .frame(width: 44, height: 44)
-        }
-        .accessibilityLabel(favorited ? "Unfavorite" : "Favorite")
-        .accessibilityIdentifier("nowplaying.favorite")
-        .accessibilityAddTraits(favorited ? .isSelected : [])
-    }
-
-    private var isFavorite: Bool {
-        libraryStore.book(withID: book.book.id)?.book.isFavorite ?? book.book.isFavorite
-    }
-
     @ViewBuilder
     private var offlineButton: some View {
         switch offlineState {
         case .notCached:
             Button {
-                Task { await requestOffline() }
+                TactileFeedback.tap()
+                showDownloadSizeWarning = true
             } label: {
                 Image(systemName: "arrow.down.circle")
                     .scaledFont(size: 17)
@@ -224,21 +268,21 @@ struct BookPageActionRow: View {
             .accessibilityValue("\(Int((progress * 100).rounded())) percent")
             .accessibilityIdentifier("nowplaying.download")
         case .cached:
-            Menu {
-                Button("Remove offline copy", role: .destructive) {
-                    showRemoveOfflineConfirm = true
-                }
+            Button {
+                TactileFeedback.tap()
+                showRemoveOfflineConfirm = true
             } label: {
                 Image(systemName: "checkmark.circle.fill")
                     .scaledFont(size: 17, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
             }
-            .accessibilityLabel("Downloaded")
+            .accessibilityLabel("Downloaded — tap to remove")
             .accessibilityIdentifier("nowplaying.download")
         case .failed:
             Button {
-                Task { await requestOffline() }
+                TactileFeedback.tap()
+                showDownloadSizeWarning = true
             } label: {
                 Image(systemName: "exclamationmark.arrow.circlepath")
                     .scaledFont(size: 17)
@@ -250,8 +294,70 @@ struct BookPageActionRow: View {
         }
     }
 
-    private func requestOffline() async {
-        await startOffline(allowCellular: false)
+    @ViewBuilder
+    private var watchButton: some View {
+        switch watchState {
+        case .notAvailable, .failed:
+            Button {
+                TactileFeedback.tap()
+                showWatchSizeWarning = true
+            } label: {
+                Image(systemName: "applewatch")
+                    .scaledFont(size: 16)
+                    .foregroundStyle(watchState == .failed ? Palette.danger : Color.white.opacity(0.6))
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel(watchState == .failed ? "Retry send to Apple Watch" : "Send to Apple Watch")
+            .accessibilityIdentifier("nowplaying.watchDownload")
+        case .queued, .waitingForPhone:
+            ProgressView()
+                .frame(width: 44, height: 44)
+                .accessibilityLabel("Waiting to send to Apple Watch")
+                .accessibilityIdentifier("nowplaying.watchDownload")
+        case .transferring(let progress):
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
+                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "applewatch")
+                    .scaledFont(size: 9, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+            }
+            .frame(width: 22, height: 22)
+            .frame(width: 44, height: 44)
+            .accessibilityElement()
+            .accessibilityLabel("Sending to Apple Watch")
+            .accessibilityValue("\(Int((progress * 100).rounded())) percent")
+            .accessibilityIdentifier("nowplaying.watchDownload")
+        case .available:
+            Button {
+                TactileFeedback.tap()
+                showRemoveWatchConfirm = true
+            } label: {
+                Image(systemName: "applewatch")
+                    .symbolVariant(.fill)
+                    .scaledFont(size: 16)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Downloaded to Apple Watch — tap to remove")
+            .accessibilityIdentifier("nowplaying.watchDownload")
+        }
+    }
+
+    private func startWatchTransfer(allowCellular: Bool) async {
+        let start = await phoneAudioRelay.transferBookToWatch(book, allowCellularOverride: allowCellular)
+        switch start {
+        case .needsCellularConfirmation:
+            showWatchCellularPrompt = true
+        case .failed(let message):
+            phoneAudioRelay.watchTransferError = message
+        case .started:
+            break
+        }
     }
 
     private func startOffline(allowCellular: Bool) async {

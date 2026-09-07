@@ -58,13 +58,20 @@ public struct LocalAudioImport: Equatable, Sendable {
     public let sortKey: String
     public let duration: TimeInterval?
     public let startTime: TimeInterval
+    /// A security-scoped bookmark for `url`, when the audio is left in place
+    /// on disk rather than copied into the app's own storage.
+    public let bookmark: Data?
 
-    public init(url: URL, title: String, sortKey: String, duration: TimeInterval?, startTime: TimeInterval = 0) {
+    public init(
+        url: URL, title: String, sortKey: String, duration: TimeInterval?,
+        startTime: TimeInterval = 0, bookmark: Data? = nil
+    ) {
         self.url = url
         self.title = title
         self.sortKey = sortKey
         self.duration = duration
         self.startTime = startTime
+        self.bookmark = bookmark
     }
 }
 
@@ -87,7 +94,7 @@ public final class LibraryRepository: @unchecked Sendable {
         ORDER BY updated_at DESC, title COLLATE NOCASE ASC
         """)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json
+        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, local_bookmark, narrators_json
         FROM chapters
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
         """)
@@ -678,7 +685,8 @@ public final class LibraryRepository: @unchecked Sendable {
         folderName: String,
         files: [LocalAudioImport],
         authors: [String]? = nil,
-        narrators: [String]? = nil
+        narrators: [String]? = nil,
+        coverURL: URL? = nil
     ) async throws -> BookWithChapters {
         try await database.prepare()
         let source = try await ensureLocalSource(folderURL: folderURL, title: folderName)
@@ -700,7 +708,7 @@ public final class LibraryRepository: @unchecked Sendable {
                 narrators: narrators ?? [],
                 summary: nil,
                 sourceID: source.id,
-                coverURL: nil,
+                coverURL: coverURL,
                 createdAt: now,
                 updatedAt: now
             )
@@ -726,7 +734,8 @@ public final class LibraryRepository: @unchecked Sendable {
                 duration: file.duration,
                 remoteURL: nil,
                 opusURL: nil,
-                localURL: file.url
+                localURL: file.url,
+                localBookmark: file.bookmark
             )
             let chapterKey = ContentKey.chapter(
                 remoteURL: nil,
@@ -735,8 +744,8 @@ public final class LibraryRepository: @unchecked Sendable {
                 title: file.title
             )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, local_bookmark, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -748,6 +757,7 @@ public final class LibraryRepository: @unchecked Sendable {
                 .null,
                 .null,
                 ModelMapping.databaseValue(chapter.localURL),
+                ModelMapping.databaseValue(chapter.localBookmark),
                 .string(ModelMapping.narratorsJSON(chapter.narrators)),
                 .string(chapterKey)
             ])
@@ -827,7 +837,7 @@ public final class LibraryRepository: @unchecked Sendable {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json
+        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, local_bookmark, narrators_json
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -846,7 +856,7 @@ public final class LibraryRepository: @unchecked Sendable {
 
         let book = try Self.book(from: bookRow)
         let chapterRows = try await database.query("""
-        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json
+        SELECT id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, local_bookmark, narrators_json
         FROM chapters
         WHERE book_id = ?
         ORDER BY chapter_index ASC, sort_key COLLATE NOCASE ASC
@@ -1067,8 +1077,8 @@ public final class LibraryRepository: @unchecked Sendable {
                 title: chapter.title
             )
             try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, local_bookmark, narrators_json, content_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 ModelMapping.databaseValue(chapter.id),
                 ModelMapping.databaseValue(chapter.bookID),
@@ -1080,6 +1090,7 @@ public final class LibraryRepository: @unchecked Sendable {
                 ModelMapping.databaseValue(chapter.remoteURL),
                 ModelMapping.databaseValue(chapter.opusURL),
                 ModelMapping.databaseValue(chapter.localURL),
+                ModelMapping.databaseValue(chapter.localBookmark),
                 .string(ModelMapping.narratorsJSON(chapter.narrators)),
                 .string(chapterKey)
             ])
@@ -1137,6 +1148,7 @@ public final class LibraryRepository: @unchecked Sendable {
             remoteURL: ModelMapping.url(row, "remote_url"),
             opusURL: ModelMapping.url(row, "opus_url"),
             localURL: ModelMapping.url(row, "local_url"),
+            localBookmark: ModelMapping.data(row, "local_bookmark"),
             narrators: ModelMapping.narrators(from: row)
         )
     }

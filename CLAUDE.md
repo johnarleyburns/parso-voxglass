@@ -11,6 +11,14 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 - Set the command timeout to at least **25 minutes (1500 seconds)** for `git commit`; the pre-commit hook runs the wiring guards, logic tests, and simulator UI smoke tests.
 - Set the command timeout to about **2 minutes (120 seconds)** for `git push`; the pre-push hook runs no tests or guards (CI verifies pushed commits).
 
+## CI/CD shell portability
+
+- CI/CD scripts must use standard Unix tools available on the selected runner image.
+- Do not use `rg`, or any other non-standard command, in CI/CD scripts unless the workflow
+  explicitly installs that command before the script runs.
+- Prefer portable `grep`, `find`, `sed`, and `awk` constructs for guards that run on both
+  macOS and Linux.
+
 ## Long-running command handling
 
 - The command runner may return control while a long-running `git commit`, hook, `swift test`, or

@@ -276,6 +276,13 @@ private struct DatabaseMigration {
             statements: [
                 "ALTER TABLE chapters ADD COLUMN start_time_seconds REAL NOT NULL DEFAULT 0"
             ]
+        ),
+        DatabaseMigration(
+            id: 11,
+            name: "chapter_local_bookmarks",
+            statements: [
+                "ALTER TABLE chapters ADD COLUMN local_bookmark BLOB"
+            ]
         )
     ]
 }

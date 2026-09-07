@@ -4,10 +4,13 @@
 
 **Active initiative:** Correct Watch-local download-first audiobook playback
 
-**Plan status:** Corrective plan approved; implementation in progress
+**Plan status:** Corrective plan implemented, acceptance review passed, and committed as `56dcae5`.
+Simulator-verifiable WP rows are pass; audible route, system Now Playing, and wrist-down/background
+rows remain `pending hardware`.
 
-**Next implementation phase:** Watch-local playback corrective phase — implement, test, perform
-the mandatory post-implementation acceptance review, fix every finding, then commit without pushing
+**Next implementation phase:** Physical paired-device validation of Watch-local playback — execute
+the pending-hardware device scripts recorded in
+`docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md` §10, then commit any fixes without pushing.
 
 **Active plan:** `docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md`
 
@@ -114,6 +117,60 @@ this file and leave **Next implementation phase** unchanged.
 | 3 | Playback and complete iPhone/Watch UI replacement | **Complete** | `4d50190` |
 | 4 | Cutover, reliability, and release verification | **Complete** | `89549e0` |
 | 5 | Product fixes and release guards | **Complete** | `89549e0` |
+| — | Watch-local playback corrective phase | **Complete** | `56dcae5` |
+
+## Watch-local playback corrective phase handoff
+
+Commit `56dcae5` (`Correct watch-local download-first audiobook playback`) replaced the optimistic
+Watch playback façade with a testable Watch-owned playback engine. `WatchAppServices` no longer
+holds an `AVPlayer` or an optimistic `isPlaying` model; `WatchPlaybackEngine` now resolves a
+complete local chapter first (`DownloadedBooks/<book-id>/<filename>`), activates the watchOS
+long-form audio session before play, publishes system Now Playing metadata (and clears it on fatal
+failure), handles remote commands, interruptions, and route loss honestly, persists chapter-relative
+position (background hook via `scenePhase`), and exposes real phase/progress/time to the UI. Remote
+fallback is HTTPS-only, credential-free, and connected-only — including chapter advance and retry
+via a `streamingAllowed` connection provider. The Now Playing transport row (previous/play/next,
+each ≥ 44×44) fits the 40 mm Apple Watch SE without scrolling or clipping.
+
+Verification passed:
+
+- `swift test --filter WatchPlayback`: 11 focused tests; full logic suites: 1,384 tests in 204
+  suites plus 6 timing budgets (`scripts/test_logic.sh`).
+- `scripts/test_guards.sh`, `scripts/guard_production.sh`, `scripts/guard_watch_foundation.sh`,
+  and `scripts/guard_wiring.sh` (including the xcodeproj drift check after staging).
+- Concrete `VoxglassWatch` build on `Voxglass-Agent-Watch` and combined `Voxglass` build on
+  `iPhone 16`, both without compiler warnings in the changed Watch files.
+- Watch smoke (`VoxglassWatchUITests`, 2 tests) on `Voxglass-Agent-Watch` (46 mm) and on the
+  40 mm Apple Watch SE 3 simulator `Watch-SE-40` created for the geometry gate; the 40 mm run
+  asserted each transport control ≥ 44×44 and fully inside the 162×197-pt app frame and saved the
+  screenshot artifact in `docs/plans/watch-local-playback/evidence/`.
+- iPhone smoke: `Voxglass` scheme test on `iPhone 16` (library, CarPlay scene, ZIP extractor).
+- `git diff --check` clean; the pre-commit hook re-ran wiring, logic, iPhone smoke, and the normal
+  `Watch-Small` smoke before the commit.
+
+Mandatory post-implementation acceptance review: performed before the commit. All WP rows are
+`pass` or honestly `pending hardware`; no row is `fail`. The review table, manual scenario traces,
+pending-hardware device scripts, and the eight findings fixed during the review (including the
+40 mm transport clipping and the connected-only streaming gap) are recorded in the plan's
+Implementation Audit (`docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md` §10).
+
+Discoveries and follow-ups:
+
+- `UIApplication` lifecycle notifications are unavailable in watchOS Swift; background persistence
+  is wired through SwiftUI `scenePhase` instead.
+- The owner explicitly requested a push after this phase. `56dcae5` was pushed to `origin/main` and
+  CI run `33576962272` passed all jobs: Logic Tests (swift test), Compile (iOS), Guarded Tests, and
+  TestFlight Build (archive + upload). No CI fixes were needed.
+- The committed `current_status.md` was updated to this handoff after the commit and is intentionally
+  left uncommitted for the next session, per the session contract.
+- `CLAUDE.md` still carries the uncommitted CI/CD shell-portability note from the previous handoff;
+  it remains unrelated to this phase and was preserved unstaged.
+- The 40 mm `Watch-SE-40` simulator (Apple Watch SE 3, watchOS 26.5) is a local machine device
+  created for the geometry gate; `Watch-Small` remains the normal smoke destination.
+
+Next phase: **Physical paired-device validation of Watch-local playback** — execute the
+pending-hardware device scripts in `IMPLEMENTATION_PLAN.md` §10 on a paired iPhone + Apple Watch,
+then commit any fixes without pushing.
 
 ## Phase 5 — Post-Phase 4 product fixes
 

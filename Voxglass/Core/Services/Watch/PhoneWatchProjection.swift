@@ -5,12 +5,24 @@ import VoxglassWatchCore
 /// The phone-side projection boundary. It deliberately accepts the existing
 /// repository's value types and emits only the DTOs the Watch is allowed to see.
 public enum PhoneWatchProjection {
+    /// A single-file audiobook (this app's local-folder import) shares one
+    /// `localURL` across every chapter — hashing it per chapter, unmemoized,
+    /// meant a 1.2GB local book got SHA-256'd in full once per chapter (42+
+    /// times over) on every Watch snapshot rebuild, including on chapter
+    /// navigation. That blew past the device's memory limit and got the app
+    /// killed. Hash each distinct file only once per `book(from:)` call.
     public static func book(from source: BookWithChapters, revision: Int64 = 0) -> WatchBookDTO {
+        var hashCache: [URL: String] = [:]
         let chapters = source.chapters.naturallySorted().map { chapter in
             let local = chapter.resolvedPlayableURL()
             let file = local?.isFileURL == true && FileManager.default.fileExists(atPath: local!.path) ? local : nil
             let bytes = file.flatMap { (try? FileManager.default.attributesOfItem(atPath: $0.path)[.size] as? NSNumber)?.int64Value }
-            let hash = file.flatMap { try? WatchChecksum.sha256(of: $0) }
+            let hash = file.flatMap { url -> String? in
+                if let cached = hashCache[url] { return cached }
+                let computed = try? WatchChecksum.sha256(of: url)
+                hashCache[url] = computed
+                return computed
+            }
             let publicURL: URL? = chapter.remoteURL.flatMap { url in
                 guard url.scheme?.lowercased() == "https" else { return nil }
                 return url

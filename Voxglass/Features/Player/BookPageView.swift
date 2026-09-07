@@ -501,13 +501,28 @@ struct BookPageView: View {
                 Button {
                     playback.togglePlayPause()
                 } label: {
-                    Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
-                        .scaledFont(size: 26, weight: .bold)
-                        .foregroundStyle(.white)
-                        .frame(width: 66, height: 66)
-                        .background(Circle().fill(Color.white.opacity(0.16)))
+                    Group {
+                        // `currentSession` publishes before the engine actually
+                        // finishes loading (`playbackPhase == .preparing`), so
+                        // without this the button just sat on a static "play"
+                        // glyph for however long the load took — for a large
+                        // local-files book (bookmark resolution + AVAsset
+                        // duration probe) that could be several seconds with
+                        // no feedback at all, reading as a frozen/janky UI.
+                        if playback.playbackPhase == .preparing {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
+                                .scaledFont(size: 26, weight: .bold)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 66, height: 66)
+                    .background(Circle().fill(Color.white.opacity(0.16)))
                 }
-                .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
+                .disabled(playback.playbackPhase == .preparing)
+                .accessibilityLabel(playback.playbackPhase == .preparing ? "Loading" : (session.isPlaying ? "Pause" : "Play"))
             } else {
                 Button {
                     Task {
@@ -614,9 +629,36 @@ struct BookPageView: View {
         }
     }
 
+    /// How many chapters to preview inline before handing off to the
+    /// dedicated `ChaptersView` — previously this showed *every* chapter
+    /// unconditionally and then always appended an "All Chapters" link to
+    /// the exact same full list, which for a short book was barely
+    /// noticeable but for a many-chapter single-file local book (40+
+    /// chapters) meant the whole list rendered twice in a row.
+    private static let chapterPreviewLimit = 5
+
+    private func chapterPreview(_ resolved: BookWithChapters) -> [Chapter] {
+        let allChapters = resolved.chapters
+        guard allChapters.count > Self.chapterPreviewLimit else { return allChapters }
+
+        // Center the preview on whichever chapter is playing, so the page
+        // always shows "where you are" rather than always the first few
+        // chapters of the book.
+        let currentIndex = allChapters.firstIndex { chapter in
+            playback.currentSession?.chapter.id == chapter.id
+                && playback.currentSession?.book.id == resolved.book.id
+        }
+        let start = min(
+            max(0, (currentIndex ?? 0) - Self.chapterPreviewLimit / 2),
+            allChapters.count - Self.chapterPreviewLimit
+        )
+        return Array(allChapters[start..<(start + Self.chapterPreviewLimit)])
+    }
+
     private func chapterList(_ resolved: BookWithChapters) -> some View {
-        VoxglassGroupedSection(title: "Chapters") {
-            let chapters = resolved.chapters
+        let allChapters = resolved.chapters
+        let chapters = chapterPreview(resolved)
+        return VoxglassGroupedSection(title: "Chapters") {
             ForEach(chapters.indices, id: \.self) { index in
                 let chapter = chapters[index]
                 let isCurrent = playback.currentSession?.chapter.id == chapter.id
@@ -686,17 +728,19 @@ struct BookPageView: View {
                 VoxglassListDivider()
             }
 
-            NavigationLink {
-                ChaptersView(book: resolved, showingNowPlaying: $showingNowPlaying)
-            } label: {
-                DisclosureListRow(
-                    icon: "list.bullet",
-                    title: "All Chapters",
-                    detail: "\(resolved.chapters.count) total",
-                    count: nil
-                )
+            if allChapters.count > Self.chapterPreviewLimit {
+                NavigationLink {
+                    ChaptersView(book: resolved, showingNowPlaying: $showingNowPlaying)
+                } label: {
+                    DisclosureListRow(
+                        icon: "list.bullet",
+                        title: "All Chapters",
+                        detail: "\(allChapters.count) total",
+                        count: nil
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.top, 16)
     }

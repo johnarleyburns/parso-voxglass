@@ -37,6 +37,14 @@ public enum ModelMapping {
         return .int(value)
     }
 
+    /// `DatabaseValue` has no BLOB case, so binary data (a security-scoped
+    /// bookmark) is stored as base64 text — SQLite's dynamic typing stores
+    /// and returns it unchanged regardless of the column's declared type.
+    public static func databaseValue(_ value: Data?) -> DatabaseValue {
+        guard let value else { return .null }
+        return .string(value.base64EncodedString())
+    }
+
     public static func uuid(_ row: DatabaseRow, _ column: String) throws -> UUID {
         let value = try row.requiredString(column)
         guard let uuid = UUID(uuidString: value) else {
@@ -51,6 +59,10 @@ public enum ModelMapping {
 
     public static func url(_ row: DatabaseRow, _ column: String) -> URL? {
         row.string(column).flatMap(URL.init(string:))
+    }
+
+    public static func data(_ row: DatabaseRow, _ column: String) -> Data? {
+        row.string(column).flatMap { Data(base64Encoded: $0) }
     }
 
     public static func authors(from row: DatabaseRow) -> [String] {

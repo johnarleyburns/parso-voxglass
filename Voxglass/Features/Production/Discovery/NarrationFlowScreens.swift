@@ -2619,6 +2619,7 @@ struct SubmitView: View {
     @Bindable var model: NarrationFlowModel
     var isPushed = false
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
     @State private var projectCopyURL: URL?
 
     var body: some View {
@@ -2672,6 +2673,14 @@ struct SubmitView: View {
                         Task {
                             await model.library?.play(book)
                             model.dismissFlow?()
+                            // "Play in Voxglass" should land the user on Now
+                            // Playing, not just start playback behind the
+                            // flow's dismissal (which only surfaced the
+                            // mini-player) — this is the same router the
+                            // Library tab uses to present the Now Playing
+                            // sheet, so it works regardless of which tab
+                            // this flow was opened from.
+                            miniPlayerRouter.isNowPlayingPresented = true
                         }
                     }
                     if let project = model.project {

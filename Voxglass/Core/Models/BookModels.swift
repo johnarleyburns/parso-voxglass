@@ -68,6 +68,11 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
     public var remoteURL: URL?
     public var opusURL: URL?
     public var localURL: URL?
+    /// A security-scoped bookmark for `localURL`, present when this chapter
+    /// references a file left in place on disk (import doesn't copy it into
+    /// the app's own storage) rather than a copy the app owns. Needed to
+    /// regain read access to it after the app relaunches.
+    public var localBookmark: Data?
     public var narrators: [String]
 
     public init(
@@ -81,6 +86,7 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
         remoteURL: URL? = nil,
         opusURL: URL? = nil,
         localURL: URL? = nil,
+        localBookmark: Data? = nil,
         narrators: [String] = []
     ) {
         self.id = id
@@ -93,6 +99,7 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
         self.remoteURL = remoteURL
         self.opusURL = opusURL
         self.localURL = localURL
+        self.localBookmark = localBookmark
         self.narrators = narrators
     }
 
@@ -106,12 +113,50 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
     /// local-only books with no remote fallback — the original local URL so
     /// the caller surfaces a playback error instead of silently skipping.
     public func resolvedPlayableURL() -> URL? {
+        if let localBookmark, let resolved = SecurityScopedBookmarkAccess.resolve(localBookmark) {
+            return resolved
+        }
         guard let localURL else { return remoteURL }
         let local = ContainerPathRebase.rebase(localURL)
         if FileManager.default.fileExists(atPath: local.path) {
             return local
         }
         return remoteURL ?? local
+    }
+}
+
+/// Security-scoped access for local audiobook files an import leaves in
+/// place instead of copying (a folder/file picked via `fileImporter` needs
+/// this to stay readable after the app relaunches). Access is started once
+/// per URL and deliberately never stopped: Apple's own guidance tolerates an
+/// unbalanced start for a small, bounded set of long-lived references — this
+/// app never has more than a handful of locally-referenced books — and it
+/// avoids threading a start/stop pair through `AVQueuePlayer`'s overlapping
+/// preloaded items, where no single, clear teardown point exists.
+public enum SecurityScopedBookmarkAccess {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var started: Set<URL> = []
+
+    /// Resolves `bookmark` to a URL and ensures security-scoped access is
+    /// active for it, or nil if the bookmark can't be resolved (the file was
+    /// moved, deleted, or the bookmark is otherwise invalid).
+    public static func resolve(_ bookmark: Data) -> URL? {
+        var isStale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale
+        ) else {
+            return nil
+        }
+
+        lock.lock()
+        let alreadyStarted = started.contains(url)
+        if !alreadyStarted { started.insert(url) }
+        lock.unlock()
+
+        if !alreadyStarted {
+            _ = url.startAccessingSecurityScopedResource()
+        }
+        return url
     }
 }
 

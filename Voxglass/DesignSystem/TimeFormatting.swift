@@ -40,4 +40,12 @@ enum ByteFormatting {
     static func string(_ bytes: Int64) -> String {
         formatter().string(fromByteCount: max(0, bytes))
     }
+
+    /// A rough download-size estimate for a book we haven't downloaded yet —
+    /// there's no real byte count to show until the transfer finishes, but a
+    /// space-usage warning needs *some* number before the user commits. Most
+    /// LibriVox/local audiobook audio this app handles is ~128kbps.
+    static func estimatedAudiobookBytes(duration: TimeInterval) -> Int64 {
+        Int64(max(0, duration) * 16_000)
+    }
 }

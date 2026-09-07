@@ -49,8 +49,13 @@ struct GlassMiniPlayer: View {
                     Button {
                         playback.togglePlayPause()
                     } label: {
-                        Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
+                        if playback.playbackPhase == .preparing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
+                        }
                     }
+                    .disabled(playback.playbackPhase == .preparing)
                     Button {
                         Task { await playback.skipToNextChapter() }
                     } label: {

@@ -2,9 +2,11 @@ import AVFoundation
 import Foundation
 import ParsoAudioStreaming
 import VoxglassCore
+import os
 
 @MainActor
 final class AVPlayerAudioEngine: NSObject, AudioEngine {
+    private static let log = Logger(subsystem: "guru.parso.voxglass", category: "audio-session")
     private let player = AVQueuePlayer()
     /// End-of-playback observers keyed by item identity. Kept per item so a
     /// `preloadNext` (or a second `load`) never replaces — and thereby leaks —
@@ -166,19 +168,30 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            #if compiler(>=6.3)
-            let bluetoothHandsFreeOption: AVAudioSession.CategoryOptions = .allowBluetoothHFP
-            #else
-            let bluetoothHandsFreeOption: AVAudioSession.CategoryOptions = .allowBluetooth
-            #endif
+            // `.allowBluetoothHFP`/`.allowBluetooth` (the hands-free-profile
+            // option) is only valid alongside `.playAndRecord` — pairing it
+            // with `.playback` is a rejected combination (NSOSStatusErrorDomain
+            // -50, "invalid parameter"). The simulator never validates this,
+            // so this silently no-op'd there; on a real device it made
+            // `setCategory` throw on every single call, which meant no
+            // audio session was ever actually activated and playback never
+            // audibly started, even though asset loading itself succeeded.
+            // `.allowBluetoothA2DP` (stereo Bluetooth playback) is what a
+            // `.playback` session actually wants here.
             try session.setCategory(
                 .playback,
                 mode: .spokenAudio,
-                options: [.allowAirPlay, bluetoothHandsFreeOption, .allowBluetoothA2DP]
+                options: [.allowAirPlay, .allowBluetoothA2DP]
             )
             try session.setActive(true)
         } catch {
-            assertionFailure("Audio session configuration failed: \(error)")
+            // A real device can genuinely fail this transiently (a
+            // contested route, another app briefly holding the session at
+            // launch, etc.). `load(url:startTime:)` already calls this again
+            // on every load, and AVPlayer itself will still attempt to play
+            // with whatever session state exists, so this is recoverable and
+            // must not crash the whole app over it.
+            Self.log.error("Audio session configuration failed: \(error, privacy: .public)")
         }
     }
 

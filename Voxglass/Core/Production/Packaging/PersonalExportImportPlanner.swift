@@ -30,6 +30,17 @@ public struct PersonalExportImportPlanner: Sendable {
             }
     }
 
+    /// The bundle's cover image, remapped into `copiedDirectory` the same
+    /// way `plan(...)` remaps chapter files — nil if the export has none.
+    /// Not wired into `plan(...)` itself (which only ever returns chapter
+    /// audio, by design), since the cover isn't a `LocalAudioImport`; the
+    /// caller passes this straight through to `importLocalFolder`'s own
+    /// `coverURL` parameter instead.
+    public func coverURL(bundle: ExportBundle, copiedDirectory: URL) -> URL? {
+        bundle.files.first { $0.role == .cover }
+            .map { copiedDirectory.appendingPathComponent($0.url.lastPathComponent) }
+    }
+
     private func chapterOrdinal(for file: ExportedFile, in project: AudiobookProject) -> Int {
         guard let chapterID = file.chapterID,
               let chapter = project.chapters.first(where: { $0.id == chapterID }) else {

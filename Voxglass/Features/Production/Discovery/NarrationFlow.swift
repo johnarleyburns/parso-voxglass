@@ -2825,18 +2825,21 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 try? FileManager.default.removeItem(at: completed)
                 try FileManager.default.copyItem(at: bundle.rootURL, to: completed)
                 if let project = self.project, let library {
-                    let imports = PersonalExportImportPlanner().plan(
+                    let planner = PersonalExportImportPlanner()
+                    let imports = planner.plan(
                         project: project,
                         bundle: bundle,
                         copiedDirectory: completed
                     )
+                    let coverURL = planner.coverURL(bundle: bundle, copiedDirectory: completed)
                     do {
                         importedBook = try await library.importNarration(
                             directory: completed,
                             title: project.metadata.title,
                             author: project.metadata.author,
                             narrator: project.metadata.narrator,
-                            files: imports
+                            files: imports,
+                            coverURL: coverURL
                         )
                     } catch {
                         exportError = "Your files are ready, but Voxglass couldn't add them to My Books: \(error.localizedDescription)"

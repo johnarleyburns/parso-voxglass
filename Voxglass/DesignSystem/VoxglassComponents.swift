@@ -155,6 +155,8 @@ struct SoloNarrationBadge: View {
             Text("Solo Narration")
                 .scaledFont(size: 9.5, weight: .bold)
                 .kerning(0.3)
+                .lineLimit(1)
+                .fixedSize()
         }
         .foregroundStyle(Palette.brass)
         .padding(.horizontal, 7)
@@ -180,6 +182,8 @@ struct MyNarrationBadge: View {
             Text("My Narration")
                 .scaledFont(size: 9.5, weight: .bold)
                 .kerning(0.3)
+                .lineLimit(1)
+                .fixedSize()
         }
         .foregroundStyle(NarrationPalette.mint)
         .padding(.horizontal, 7)
@@ -194,7 +198,7 @@ enum RowAccessory {
     case navigation
     case play
     case loading
-    case download(OfflineState, showsNavigation: Bool)
+    case download(OfflineState, showsNavigation: Bool, watchAvailable: Bool = false)
     case none
 }
 
@@ -234,10 +238,24 @@ struct BookListRow: View {
     }
 
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 12) {
+        // Top-aligned, not centered: rows with more populated optional lines
+        // (a "My Narration" row's real narrator/watch-status text vs. a
+        // library row showing only title + subtitle) grow taller than their
+        // neighbors, and centering within that variable height visibly
+        // shifted the artwork and trailing accessory up or down row to row.
+        // Top alignment keeps both pinned to the same offset from the row's
+        // top edge regardless of how much text follows.
+        HStack(alignment: .top, spacing: 12) {
+            // No `.fixedSize()`: a book with a real downloaded cover has no
+            // intrinsic size of its own, so the explicit frame below was
+            // always respected — but the generated text+icon placeholder
+            // used when a book has no artwork DOES have real intrinsic
+            // content size, and `.fixedSize()` let it render at that larger
+            // natural size instead of the intended 56×56, pushing the whole
+            // row's artwork and trailing accessory outward for exactly the
+            // books missing real cover art.
             BookArtworkView(title: title, size: 56, coverURL: coverURL, cornerRadius: 12)
                 .frame(width: 56, height: 56)
-                .fixedSize()
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -268,6 +286,27 @@ struct BookListRow: View {
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
+                // An invisible badge purely to reserve this row's height —
+                // the real, visible badge(s) render as an `.overlay` below,
+                // which lets them draw at full natural size and, when there
+                // are two of them or the title is long, overflow rightward
+                // into the row's empty space instead of either shrinking
+                // (illegible) or forcing the whole HStack wider (which
+                // shoved the artwork left and the accessory right — see the
+                // overlay comment below for why an overlay avoids that).
+                SoloNarrationBadge().opacity(0)
+                    .padding(.top, 2)
+            }
+            .overlay(alignment: .bottomLeading) {
+                // Full-size, un-shrunk badges, but as an overlay rather
+                // than a normal stacked child: an overlay's content doesn't
+                // count toward its parent's layout size, so however wide
+                // these pills naturally want to be, they never change how
+                // much width this VStack asks the outer HStack for. That's
+                // what lets them spill past the text column's own width —
+                // there's ample empty space to the right before the
+                // trailing accessory — without that overflow pushing the
+                // artwork or the accessory out of their fixed columns.
                 HStack(spacing: 5) {
                     if showSoloBadge {
                         SoloNarrationBadge()
@@ -275,17 +314,14 @@ struct BookListRow: View {
                     if showMyNarrationBadge {
                         MyNarrationBadge()
                     }
-                    if !showSoloBadge && !showMyNarrationBadge {
-                        SoloNarrationBadge().opacity(0)
-                    }
                 }
                 .padding(.top, 2)
             }
-            .layoutPriority(1)
 
             Spacer(minLength: 8)
 
             rowAccessory
+                .frame(width: 44, alignment: .trailing)
                 .accessibilityHidden(true)
         }
         .frame(minHeight: 76)
@@ -310,15 +346,26 @@ struct BookListRow: View {
         case .loading:
             ProgressView()
                 .frame(width: 44, height: 44)
-        case .download(let state, let showsNavigation):
-            HStack(spacing: 4) {
-                downloadAccessory(for: state)
-                if showsNavigation {
-                    Image(systemName: "chevron.right")
-                        .scaledFont(size: 11, weight: .bold)
-                        .foregroundStyle(Palette.ink3.opacity(0.7))
-                        .frame(width: 16, height: 44)
+        case .download(let state, let showsNavigation, let watchAvailable):
+            VStack(spacing: 3) {
+                HStack(spacing: 4) {
+                    downloadAccessory(for: state)
+                    if showsNavigation {
+                        Image(systemName: "chevron.right")
+                            .scaledFont(size: 11, weight: .bold)
+                            .foregroundStyle(Palette.ink3.opacity(0.7))
+                            .frame(width: 16, height: 44)
+                    }
                 }
+                // Always shown, not just when there's a known watch-transfer
+                // record — a book with no record at all is exactly a book
+                // not on the watch, same as `.notAvailable`, so it should
+                // render identically (outline), not disappear entirely.
+                Image(systemName: "applewatch")
+                    .symbolVariant(watchAvailable ? .fill : .none)
+                    .scaledFont(size: 12, weight: .semibold)
+                    .foregroundStyle(watchAvailable ? Palette.brass : Palette.ink3.opacity(0.4))
+                    .accessibilityLabel(watchAvailable ? "Downloaded to Apple Watch" : "Not downloaded to Apple Watch")
             }
         case .none:
             EmptyView()

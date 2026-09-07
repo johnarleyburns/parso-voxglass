@@ -236,7 +236,8 @@ struct ProjectDashboardView: View {
 
     private var recordNextCaption: String {
         guard let next = dashboard.recordNext else {
-            return "Everything recorded — review"
+            let reviewComplete = dashboard.approvedCount == dashboard.paragraphCount && dashboard.flaggedCount == 0
+            return reviewComplete ? "Everything recorded — export" : "Everything recorded — review"
         }
         return "Record next — ¶ \(next.paragraphNumber), Chapter \(next.chapterOrdinal + 1)"
     }
