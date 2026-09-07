@@ -166,6 +166,12 @@ public final class NarrationProjectRepository {
                 repaired.rights.sourceURL = source
                 changed = true
             }
+            if repaired.rights.sourceURL == nil,
+               repaired.rights.sourceURLKnownUnavailable == nil,
+               let need {
+                repaired.rights.sourceURLKnownUnavailable = need.work.grade == .practice
+                changed = true
+            }
             if repaired.metadata.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 let summary = need?.work.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
                 let description = (summary?.isEmpty == false ? summary : nil)

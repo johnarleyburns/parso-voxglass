@@ -977,6 +977,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// state so a later start of the same need resumes this project.
     var pendingNeedID: String?
 
+    /// True when the pending need's catalog source graded it `.practice`
+    /// (no citable per-work URL exists at all — e.g. an individual poem
+    /// from PoetryDB) — carried into the new project's `RightsEvidence` so
+    /// the source-URL prompt doesn't ask for something that was never
+    /// available in the first place.
+    var pendingNeedSourceURLKnownUnavailable: Bool?
+
     /// Keeps the project's source URL and the Metadata "Source URL" field in
     /// sync so the export records where the text came from (Gutenberg, a need's
     /// source page, a forum, etc.) instead of an empty field.
@@ -1008,6 +1015,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
     func importNeed(_ need: NarrationNeed) {
         pendingNeedID = need.id
+        pendingNeedSourceURLKnownUnavailable = need.work.grade == .practice
         draftTitle = need.work.title
         draftAuthor = need.work.author
         draftText = need.work.text ?? ""
@@ -1017,6 +1025,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
     func importPastedText(title: String, author: String, text: String) {
         pendingNeedID = nil
+        pendingNeedSourceURLKnownUnavailable = nil
         draftTitle = title
         draftAuthor = author
         draftText = text
@@ -1098,7 +1107,11 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 language: "en-US",
                 description: resolvedDescription(title: title, author: author, narrator: reader)
             ),
-            rights: RightsEvidence(basis: .publicDomainUS, sourceURL: sourceURL.flatMap(URL.init(string:))),
+            rights: RightsEvidence(
+                basis: .publicDomainUS,
+                sourceURL: sourceURL.flatMap(URL.init(string:)),
+                sourceURLKnownUnavailable: pendingNeedSourceURLKnownUnavailable
+            ),
             profile: ProductionProfile(
                 purpose: .publicDomainCommunity,
                 recording: RecordingDefaults(),
@@ -1261,6 +1274,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             didBackfill = true
         }
         needsSourceURLPrompt = repairedProject.rights.sourceURL == nil
+            && repairedProject.rights.sourceURLKnownUnavailable != true
         needsNarratorPrompt = repairedProject.metadata.narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         self.project = repairedProject
         draftTitle = project.metadata.title

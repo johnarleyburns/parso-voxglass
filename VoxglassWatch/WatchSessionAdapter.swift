@@ -10,13 +10,32 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     @Published private(set) var connectionError: String?
     @Published private(set) var requestedDownloadBookID: WatchBookID?
     private let smoke = ProcessInfo.processInfo.arguments.contains("-uiTestSeed") || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
+    /// `snapshot` used to be in-memory only — populated exclusively by a live
+    /// WCSession message/context delivery. That meant a book already
+    /// downloaded to the watch (its bytes on disk, its id in
+    /// `WatchAppServices.downloaded`) still couldn't be *shown* while
+    /// disconnected, because there was no title/author/chapter metadata for
+    /// it until the next live connection. Persist the last snapshot so it
+    /// survives a relaunch or a stretch with no iPhone in range.
+    private static let snapshotDefaultsKey = "watch.librarySnapshot"
 
     override init() {
         super.init()
+        snapshot = Self.loadPersistedSnapshot()
         guard WCSession.isSupported() else { seedSmoke(); return }
         WCSession.default.delegate = self
         WCSession.default.activate()
         seedSmoke()
+    }
+
+    private static func loadPersistedSnapshot() -> WatchLibrarySnapshot? {
+        guard let data = UserDefaults.standard.data(forKey: snapshotDefaultsKey) else { return nil }
+        return try? JSONDecoder().decode(WatchLibrarySnapshot.self, from: data)
+    }
+
+    private func persistSnapshot() {
+        guard let snapshot, let data = try? JSONEncoder().encode(snapshot) else { return }
+        UserDefaults.standard.set(data, forKey: Self.snapshotDefaultsKey)
     }
 
     func refresh() {
@@ -92,10 +111,16 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
               let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
         switch envelope.kind {
         case .librarySnapshot:
-            guard let value = try? envelope.decodePayload(WatchLibrarySnapshot.self) else { return }
+            guard var value = try? envelope.decodePayload(WatchLibrarySnapshot.self) else { return }
             if snapshot == nil || value.revision >= (snapshot?.revision ?? 0) {
+                // Belt-and-braces: de-duplicate by book id so a duplicate
+                // record on the phone side (or a re-sent/merged snapshot)
+                // never renders the same book twice in the watch's list.
+                var seen = Set<WatchBookID>()
+                value.books = value.books.filter { seen.insert($0.id).inserted }
                 snapshot = value
                 connectionError = nil
+                persistSnapshot()
             }
         case .bookManifest:
             guard let manifest = try? envelope.decodePayload(WatchManifest.self) else { return }
