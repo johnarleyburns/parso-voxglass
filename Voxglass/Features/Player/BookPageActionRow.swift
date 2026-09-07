@@ -3,6 +3,7 @@ import VoxglassCore
 
 struct BookPageActionRow: View {
     @Environment(PlaybackCoordinator.self) private var playback
+    @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     let book: BookWithChapters
@@ -17,7 +18,20 @@ struct BookPageActionRow: View {
     @State private var showRemoveWatchConfirm = false
 
     private var offlineState: OfflineState {
-        offlineManager.state(for: book.book.id)
+        // A local-files book (a folder import, or a personal-listening
+        // export) is bookmark-referenced audio that's on-device by
+        // definition — it never goes through OfflineDownloadManager's
+        // download pipeline, so its dictionary lookup always falls through
+        // to `.notCached` unless we special-case it here (same fix as the
+        // My Books list row in LibraryView.swift).
+        if isLocalFilesBook {
+            return .cached
+        }
+        return offlineManager.state(for: book.book.id)
+    }
+
+    private var isLocalFilesBook: Bool {
+        libraryStore.source(for: book.book)?.kind == .localFiles
     }
 
     private var watchState: WatchTransferState {
@@ -268,17 +282,30 @@ struct BookPageActionRow: View {
             .accessibilityValue("\(Int((progress * 100).rounded())) percent")
             .accessibilityIdentifier("nowplaying.download")
         case .cached:
-            Button {
-                TactileFeedback.tap()
-                showRemoveOfflineConfirm = true
-            } label: {
+            // A local-files book's audio isn't a separate "offline copy" to
+            // remove — it's the original file the import pointed at, so
+            // there's nothing for this button to do beyond showing that
+            // it's present.
+            if isLocalFilesBook {
                 Image(systemName: "checkmark.circle.fill")
                     .scaledFont(size: 17, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
+                    .accessibilityLabel("On this iPhone")
+                    .accessibilityIdentifier("nowplaying.download")
+            } else {
+                Button {
+                    TactileFeedback.tap()
+                    showRemoveOfflineConfirm = true
+                } label: {
+                    Image(systemName: "checkmark.circle.fill")
+                        .scaledFont(size: 17, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Downloaded — tap to remove")
+                .accessibilityIdentifier("nowplaying.download")
             }
-            .accessibilityLabel("Downloaded — tap to remove")
-            .accessibilityIdentifier("nowplaying.download")
         case .failed:
             Button {
                 TactileFeedback.tap()

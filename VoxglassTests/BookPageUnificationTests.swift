@@ -24,8 +24,8 @@ import Testing
             "nowplaying.speed",
             "nowplaying.sleepTimer",
             "nowplaying.bookmark",
-            "nowplaying.favorite",
             "nowplaying.download",
+            "nowplaying.watchDownload",
             "nowplaying.eq"
         ]
 

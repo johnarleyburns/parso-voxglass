@@ -169,7 +169,7 @@ import VoxglassCoreTestSupport
         #expect(phoneRelay.contains("sessionWatchStateDidChange"))
         #expect(phoneRelay.contains("connectionToast = \"Apple Watch connected\""))
         #expect(phoneRelay.contains("kind: .librarySnapshot"))
-        #expect(phoneViews.contains("\"bookpage.downloadToWatch\""))
+        #expect(phoneViews.contains("\"nowplaying.watchDownload\""))
         #expect(phoneViews.contains("\"watchsync.connectionStatus\""))
         #expect(phoneViews.contains("\"watchsync.storageSummary\""))
         #expect(phoneViews.contains("\"watchsync.result\""))

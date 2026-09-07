@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum NarrationKind: String, Codable, Equatable, Sendable {
     case solo
@@ -134,8 +135,11 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
 /// avoids threading a start/stop pair through `AVQueuePlayer`'s overlapping
 /// preloaded items, where no single, clear teardown point exists.
 public enum SecurityScopedBookmarkAccess {
-    private static let lock = NSLock()
-    nonisolated(unsafe) private static var started: Set<URL> = []
+    // `OSAllocatedUnfairLock` carries its own lock-protected state, so the
+    // Swift 6 checker can verify this static's Sendability on its own —
+    // no unsafe-isolation escape hatch needed for what's otherwise the
+    // same NSLock-guarded set.
+    private static let started = OSAllocatedUnfairLock<Set<URL>>(initialState: [])
 
     /// Resolves `bookmark` to a URL and ensures security-scoped access is
     /// active for it, or nil if the bookmark can't be resolved (the file was
@@ -148,10 +152,11 @@ public enum SecurityScopedBookmarkAccess {
             return nil
         }
 
-        lock.lock()
-        let alreadyStarted = started.contains(url)
-        if !alreadyStarted { started.insert(url) }
-        lock.unlock()
+        let alreadyStarted = started.withLock { started in
+            let wasStarted = started.contains(url)
+            started.insert(url)
+            return wasStarted
+        }
 
         if !alreadyStarted {
             _ = url.startAccessingSecurityScopedResource()
