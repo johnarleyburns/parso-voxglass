@@ -74,6 +74,7 @@
 		461421576EA62442A0CEBD15 /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 36D6130F23531ACE543367F2 /* VoxglassWatchProtocol */; };
 		47FC57EF16AEBEFBB18870CB /* science_gettingrich_1005_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 39C00D54A32B0CDBB2B78CB5 /* science_gettingrich_1005_librivox.jpg */; };
 		4B86384DDFE08A955A9703DA /* AudioSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5151457A11B54D1C07091BFC /* AudioSetupView.swift */; };
+		883B2841253348FAA2EB4034 /* MicCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F53B97432CA49F482FADDFF /* MicCheckView.swift */; };
 		4DDE4563F7198BB014BFF4DD /* ProductionPreviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5691CFA693DFE224A476BCEC /* ProductionPreviewStore.swift */; };
 		4E85D43B3AC0834F16B06791 /* ListeningStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7281A4BB54139B5008C6D6 /* ListeningStatsView.swift */; };
 		4EAD6C535B3D4960C95229C4 /* love_freindship_cs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 179C62958C3F5174F0B0AF7D /* love_freindship_cs_librivox.jpg */; };
@@ -369,6 +370,7 @@
 		502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionSync.swift; sourceTree = "<group>"; };
 		5151457A11B54D1C07091BFC /* AudioSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSetupView.swift; sourceTree = "<group>"; };
+		3F53B97432CA49F482FADDFF /* MicCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicCheckView.swift; sourceTree = "<group>"; };
 		532142CAFAA3305FE98E66A2 /* anthem_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = anthem_librivox.jpg; sourceTree = "<group>"; };
 		5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryEnvironment.swift; sourceTree = "<group>"; };
 		53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = jane_eyre_ver03_0809_librivox.jpg; sourceTree = "<group>"; };
@@ -584,6 +586,7 @@
 			children = (
 				396BF796DE405288AE846317 /* AudioSessionCapture.swift */,
 				5151457A11B54D1C07091BFC /* AudioSetupView.swift */,
+				3F53B97432CA49F482FADDFF /* MicCheckView.swift */,
 				5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */,
 				5B5AF4E9D3A269D27ABC1CBB /* DiscoveryViews.swift */,
 				80E4F547147A2C3B9F1F8ABD /* ImportAudioView.swift */,
@@ -1413,6 +1416,7 @@
 				6D1F2947C9F08205C5A4C991 /* ArtworkService.swift in Sources */,
 				00BD9E1FDB911BA9BC24D3CD /* AudioSessionCapture.swift in Sources */,
 				4B86384DDFE08A955A9703DA /* AudioSetupView.swift in Sources */,
+				883B2841253348FAA2EB4034 /* MicCheckView.swift in Sources */,
 				293A63007EB15E38F0842E29 /* BookArtworkView.swift in Sources */,
 				B8D77B123CC0612D7FA46EF8 /* BookPageActionRow.swift in Sources */,
 				3033A4EB6B56EC2D70ABCDFB /* BookPageOverflowSheet.swift in Sources */,

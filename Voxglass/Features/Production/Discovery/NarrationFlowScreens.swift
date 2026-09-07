@@ -157,6 +157,7 @@ struct RecordView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToReview = false
     @State private var showAudioSetup = false
+    @State private var showMicCheck = false
     @State private var showCompare = false
     @State private var showImport = false
     /// The media-button claim for this armed session (spec §9.3), removed on
@@ -210,6 +211,9 @@ struct RecordView: View {
         .sheet(isPresented: $showAudioSetup) {
             AudioSetupView(capture: model.capture)
         }
+        .sheet(isPresented: $showMicCheck) {
+            MicCheckView(capture: model.capture)
+        }
         .sheet(isPresented: $showCompare) {
             TakeComparisonView(model: model, paragraphID: currentParagraphID)
         }
@@ -254,6 +258,23 @@ struct RecordView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("record.routeChip")
+
+            if !model.isRecording {
+                Button {
+                    showMicCheck = true
+                } label: {
+                    Label("Mic Check", systemImage: "waveform")
+                        .labelStyle(.titleAndIcon)
+                        .scaledFont(size: 11, weight: .semibold)
+                        .foregroundStyle(Palette.ink2)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Palette.ink2.opacity(0.08), in: Capsule())
+                        .overlay(Capsule().stroke(Palette.ink2.opacity(0.3), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("record.micCheck")
+            }
 
             Spacer()
 

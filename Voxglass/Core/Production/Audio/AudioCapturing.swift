@@ -35,12 +35,17 @@ public struct CaptureLevels: Sendable, Equatable {
     public var rmsDBFS: Float
     public var isClipping: Bool
     public var sampleTime: TimeInterval
+    /// A coarse, log-spaced magnitude spectrum (roughly 60 Hz–8 kHz, in dB)
+    /// for a live "mic check" frequency display. Empty when the producer
+    /// didn't compute one for this block (e.g. too few samples).
+    public var bandMagnitudesDB: [Float]
 
-    public init(peakDBFS: Float, rmsDBFS: Float, isClipping: Bool, sampleTime: TimeInterval) {
+    public init(peakDBFS: Float, rmsDBFS: Float, isClipping: Bool, sampleTime: TimeInterval, bandMagnitudesDB: [Float] = []) {
         self.peakDBFS = peakDBFS
         self.rmsDBFS = rmsDBFS
         self.isClipping = isClipping
         self.sampleTime = sampleTime
+        self.bandMagnitudesDB = bandMagnitudesDB
     }
 }
 

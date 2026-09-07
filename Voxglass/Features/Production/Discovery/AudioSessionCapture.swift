@@ -328,6 +328,55 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         throw CaptureError.punchInNotSupported
     }
 
+    // MARK: - Mic check frequency bands
+
+    /// Roughly log-spaced target frequencies (Hz) spanning typical narration
+    /// speech range, each doubling the last — not a lab-grade spectrum
+    /// analyzer, just enough resolution for a live "mic check" EQ-style
+    /// display.
+    private static let bandFrequencies: [Double] = [60, 120, 240, 480, 960, 1920, 3840, 7680]
+    private static let bandWindowSize = 1024
+
+    /// A per-band magnitude (dB) computed via the Goertzel algorithm — a
+    /// single-bin DFT that's cheap and simple to get right for a handful of
+    /// fixed target frequencies, avoiding a full FFT's split-complex buffer
+    /// bookkeeping for a feature that only needs 8 coarse bands. Returns `[]`
+    /// when the block is too short or the sample rate is unknown, rather than
+    /// risking an out-of-bounds window.
+    private static func bandMagnitudesDB(_ scratch: [Float], count: Int, sampleRate: Double) -> [Float] {
+        guard count >= 256, sampleRate > 0 else { return [] }
+        let windowSize = min(count, bandWindowSize)
+        return scratch.withUnsafeBufferPointer { buffer -> [Float] in
+            let window = UnsafeBufferPointer(rebasing: buffer[0..<windowSize])
+            return bandFrequencies.map { frequency in
+                let magnitude = goertzelMagnitude(window, targetFrequency: frequency, sampleRate: sampleRate)
+                return 20.0 * log10(max(magnitude, 1e-7))
+            }
+        }
+    }
+
+    private static func goertzelMagnitude(
+        _ samples: UnsafeBufferPointer<Float>,
+        targetFrequency: Double,
+        sampleRate: Double
+    ) -> Float {
+        let n = samples.count
+        guard n > 0 else { return 0 }
+        let k = Int(0.5 + Double(n) * targetFrequency / sampleRate)
+        let omega = 2.0 * Double.pi * Double(k) / Double(n)
+        let cosine = cos(omega)
+        let coeff = 2.0 * cosine
+        var q0 = 0.0, q1 = 0.0, q2 = 0.0
+        for i in 0..<n {
+            q0 = coeff * q1 - q2 + Double(samples[i])
+            q2 = q1
+            q1 = q0
+        }
+        let real = q1 - q2 * cosine
+        let imag = q2 * sin(omega)
+        return Float(sqrt(real * real + imag * imag) / (Double(n) / 2.0))
+    }
+
     // MARK: - Engine
 
     private func resetInputTap() {
@@ -419,6 +468,11 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
                         break
                     }
                     let rms = Float(sqrt(rmsSq / Double(max(drained, 1))))
+                    // Off the real-time tap thread (this is a detached writer
+                    // task), so allocation-free discipline doesn't apply here —
+                    // safe to do the modest extra work for a live "mic check"
+                    // frequency display.
+                    let bands = Self.bandMagnitudesDB(scratch, count: drained, sampleRate: format.sampleRate)
                     let sampleTime: TimeInterval = self.lock.withLock {
                         self.sampleCount += UInt64(drained)
                         if blockPeak > self.peak { self.peak = blockPeak }
@@ -431,7 +485,8 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
                                 peakDBFS: 20.0 * log10(max(blockPeak, 1e-7)),
                                 rmsDBFS: 20.0 * log10(max(rms, 1e-7)),
                                 isClipping: blockClipped,
-                                sampleTime: sampleTime
+                                sampleTime: sampleTime,
+                                bandMagnitudesDB: bands
                             ))
                         }
                     }
