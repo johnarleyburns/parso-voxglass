@@ -436,6 +436,18 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     /// the background-capable `WCSession.transferFile`. The watch ingests each
     /// file into `voxglass-watch-audio` and publishes its storage snapshot back
     /// for progress display.
+    /// A chapter whose audio is a bookmark-referenced local file (a folder
+    /// import, or a personal-listening export) is already a complete blob
+    /// sitting outside `AudioCache` entirely — it was never downloaded and
+    /// never will be. Transferring it to the watch just needs this URL
+    /// directly; routing it through the remote-download cache lookup below
+    /// would always resolve to nothing.
+    private func localOnDiskURL(for chapter: Chapter) -> URL? {
+        guard let url = chapter.resolvedPlayableURL(), url.isFileURL,
+              FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return url
+    }
+
     func transferBookToWatch(
         _ book: BookWithChapters,
         allowCellularOverride: Bool = false
@@ -448,7 +460,13 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             return .failed("The iPhone app is still starting.")
         }
 
-        if offlineManager.state(for: book.book.id) != .cached {
+        // A book whose chapters are all already-local files (never queued
+        // through the download pipeline, and with no remote source to
+        // download from) skips the "make it available offline first" step
+        // entirely — there's nothing to download.
+        let needsPhoneDownload = book.chapters.contains { localOnDiskURL(for: $0) == nil }
+
+        if needsPhoneDownload, offlineManager.state(for: book.book.id) != .cached {
             let decision = await offlineManager.makeAvailableOffline(
                 book: book,
                 isCellular: NetworkMonitor.shared.isCellular,
@@ -460,6 +478,19 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         isTransferringToWatch = true
         defer { isTransferringToWatch = false }
 
+        func fail(_ message: String) -> WatchTransferStart {
+            var storage = watchStorageSnapshot?.books ?? [:]
+            storage[book.book.id] = WatchBookStorageInfo(
+                state: .failed,
+                byteCount: 0,
+                chapterCount: 0,
+                completeChapterCount: 0,
+                totalChapterCount: book.chapters.count
+            )
+            applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
+            return .failed(message)
+        }
+
         var storage = watchStorageSnapshot?.books ?? [:]
         storage[book.book.id] = WatchBookStorageInfo(
             state: .queued,
@@ -470,24 +501,31 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         )
         applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
 
-        // Wait for the phone-side download to complete before transferring.
-        let deadline = Date().addingTimeInterval(180)
-        var state = offlineManager.state(for: book.book.id)
-        while Date() < deadline {
-            if case .downloading = state {
-                try? await Task.sleep(for: .milliseconds(500))
-                state = offlineManager.state(for: book.book.id)
-                continue
+        if needsPhoneDownload {
+            // Wait for the phone-side download to complete before transferring.
+            let deadline = Date().addingTimeInterval(180)
+            var state = offlineManager.state(for: book.book.id)
+            while Date() < deadline {
+                if case .downloading = state {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    state = offlineManager.state(for: book.book.id)
+                    continue
+                }
+                break
             }
-            break
-        }
-        if state == .failed {
-            return .failed("The book couldn't be downloaded on the iPhone.")
+            if state == .failed {
+                return fail("The book couldn't be downloaded on the iPhone.")
+            }
         }
 
         var transferred = 0
         for chapter in book.chapters {
             guard let key = ChapterAudioIdentity.cacheKey(for: chapter) else { continue }
+            if let localURL = localOnDiskURL(for: chapter) {
+                transferChapterFile(at: localURL, chapterKey: key)
+                transferred += 1
+                continue
+            }
             guard let fileURL = await WatchChapterTransfer.resolvedFileURL(
                 cacheStore: AudioCache.shared,
                 chapterKey: key
@@ -496,7 +534,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             transferred += 1
         }
         if transferred == 0 {
-            return .failed("No chapters were ready to transfer.")
+            return fail("No chapters were ready to transfer.")
         }
         await requestTypedWatchDownload(bookID: book.book.id)
         watchSyncStatus = "\(book.book.title) queued for Apple Watch."
