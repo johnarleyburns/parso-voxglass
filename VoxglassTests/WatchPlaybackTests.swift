@@ -153,7 +153,10 @@ struct WatchPlaybackTests {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let engine = try String(contentsOf: root.appendingPathComponent("VoxglassWatch/WatchPlaybackEngine.swift"), encoding: .utf8)
         let service = try String(contentsOf: root.appendingPathComponent("VoxglassWatch/WatchAppServices.swift"), encoding: .utf8)
-        let view = try String(contentsOf: root.appendingPathComponent("VoxglassWatch/WatchNowPlayingView.swift"), encoding: .utf8)
+        // The dedicated Now Playing screen was merged into the book detail
+        // view (one combined book + now-playing screen, not two) — the
+        // progress-display guard below now applies to that file instead.
+        let view = try String(contentsOf: root.appendingPathComponent("VoxglassWatch/WatchBookDetailView.swift"), encoding: .utf8)
         let app = try String(contentsOf: root.appendingPathComponent("VoxglassWatch/VoxglassWatchApp.swift"), encoding: .utf8)
         let project = try String(contentsOf: root.appendingPathComponent("project.yml"), encoding: .utf8)
         let info = try String(contentsOf: root.appendingPathComponent("VoxglassWatch/Resources/Info.plist"), encoding: .utf8)

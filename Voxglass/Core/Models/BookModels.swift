@@ -17,6 +17,12 @@ public struct Book: Identifiable, Codable, Equatable, Sendable {
     public var createdAt: Date
     public var updatedAt: Date
     public var isFavorite: Bool
+    /// True for a book that only exists to make a just-browsed catalog
+    /// result playable (chapters/URLs need somewhere to live) — not an
+    /// explicit "add to My Books" action. Hidden from `LibraryStore.books`
+    /// until the user confirms via the book page's "+" button, at which
+    /// point this flips to `false` and it behaves like any other book.
+    public var isPending: Bool
 
     public init(
         id: UUID = UUID(),
@@ -28,7 +34,8 @@ public struct Book: Identifiable, Codable, Equatable, Sendable {
         coverURL: URL? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        isFavorite: Bool = false
+        isFavorite: Bool = false,
+        isPending: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -40,6 +47,7 @@ public struct Book: Identifiable, Codable, Equatable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isFavorite = isFavorite
+        self.isPending = isPending
     }
 
     public var authorLine: String {
@@ -205,9 +213,19 @@ public struct BookWithChapters: Identifiable, Codable, Equatable, Sendable {
 
     public var id: UUID { book.id }
 
+    /// Total book duration, or `nil` when any chapter lacks a known
+    /// duration. Internet Archive items commonly omit `length` metadata for
+    /// some files, so `chapter.duration` can legitimately be `nil` for a
+    /// subset of chapters — summing only the chapters that DO have a known
+    /// duration (the previous behavior here) silently produced a wildly
+    /// wrong total book length whenever most chapters lacked one (live-
+    /// reproduced: an 11-hour LibriVox book showing "1m left in book" at the
+    /// very start, because only one short chapter had `length` metadata).
+    /// `PlaybackSession.totalBookDuration` already gets this right — this
+    /// mirrors that same all-or-nothing rule instead of duplicating the bug.
     public var totalDuration: TimeInterval? {
         let durations = chapters.compactMap(\.duration)
-        guard !durations.isEmpty else { return nil }
+        guard !durations.isEmpty, durations.count == chapters.count else { return nil }
         return durations.reduce(0, +)
     }
 

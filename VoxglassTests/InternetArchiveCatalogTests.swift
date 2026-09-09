@@ -277,6 +277,43 @@ import Foundation
         }
     }
 
+    // Regression guard: the Great Books collection ships five
+    // language-specific variants (English/Spanish/German/Italian/Ancient
+    // Greek) that all share the same title family — this bug has recurred
+    // more than once as "Great Books" showing up for every language
+    // regardless of the user's selected language(s), because
+    // `IACollectionStore.collections(for:languages:)` didn't filter
+    // language-tagged collections at all until this fix.
+    @Test func featuredCollectionsOnlyShowGreatBooksForSelectedLanguage() {
+        let englishOnly = IACollectionStore.collections(for: [], languages: ["eng"])
+        #expect(englishOnly.contains { $0.id == "great-books" })
+        #expect(!englishOnly.contains { $0.id == "great-books-spa" })
+        #expect(!englishOnly.contains { $0.id == "great-books-deu" })
+        #expect(!englishOnly.contains { $0.id == "great-books-ita" })
+        #expect(!englishOnly.contains { $0.id == "great-books-grc" })
+
+        let spanishOnly = IACollectionStore.collections(for: [], languages: ["spa"])
+        #expect(spanishOnly.contains { $0.id == "great-books-spa" })
+        #expect(!spanishOnly.contains { $0.id == "great-books" })
+
+        let englishAndGerman = IACollectionStore.collections(for: [], languages: ["eng", "deu"])
+        #expect(englishAndGerman.contains { $0.id == "great-books" })
+        #expect(englishAndGerman.contains { $0.id == "great-books-deu" })
+        #expect(!englishAndGerman.contains { $0.id == "great-books-spa" })
+
+        // An empty language selection means "no language filter applied" —
+        // matches every other language-gated query in this codebase
+        // (e.g. `LibriVoxLanguage.clause(for:)`).
+        let noFilter = IACollectionStore.collections(for: [], languages: [])
+        #expect(noFilter.contains { $0.id == "great-books" })
+        #expect(noFilter.contains { $0.id == "great-books-spa" })
+        #expect(noFilter.contains { $0.id == "great-books-grc" })
+
+        // Collections with no language tag at all (Popular LibriVox, the 21
+        // browse categories) are never filtered by language.
+        #expect(englishOnly.contains { $0.id == "popular-librivox" })
+    }
+
     private func metadataFixture() throws -> InternetArchiveMetadata {
         let data = try fixtureData("metadata_librivox_item")
         return try decoder.decode(InternetArchiveMetadata.self, from: data)

@@ -201,6 +201,10 @@ struct SearchView: View {
         defer { importingIdentifier = nil }
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
+            // Same rule as Explore: previewing a search result must not
+            // silently land it in My Books — only the "+" on the book page
+            // does that.
+            await libraryStore.markBookPending(imported.book.id)
             await playback.present(imported)
             showingNowPlaying = true
         }

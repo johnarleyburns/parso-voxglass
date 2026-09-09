@@ -16,14 +16,24 @@ struct BrowseView: View {
     @State private var importingIdentifier: String?
     @State private var collectionQuery = ""
     @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @State private var showingHistory = false
 
     var body: some View {
-        VoxglassScreen(title: "Explore") {
+        VoxglassScreen(
+            title: "Explore",
+            headerSecondaryActionSystemImage: "clock.arrow.circlepath",
+            headerSecondaryAction: { showingHistory = true },
+            headerSecondaryActionAccessibilityLabel: "Listening History"
+        ) {
             VStack(alignment: .leading, spacing: 18) {
                 collectionShelves
                 catalogResults
             }
             .padding(.top, 12)
+        }
+        .sheet(isPresented: $showingHistory) {
+            HistoryView(showingNowPlaying: $showingNowPlaying)
+                .environmentObject(libraryStore)
         }
         .alert("Explore Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -35,14 +45,14 @@ struct BrowseView: View {
         }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
-            let collections = IACollectionStore.collections(for: selectedCollectionIDs)
+            let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
             await coverStore.resolveCovers(for: collections, languages: selectedLanguages)
             await coverStore.resolveCounts(for: collections, languages: selectedLanguages)
         }
         .onChange(of: selectedLanguagesRaw) { _, _ in
             catalogStore.selectedLanguages = selectedLanguages
             Task {
-                let collections = IACollectionStore.collections(for: selectedCollectionIDs)
+                let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
                 await coverStore.resolveCovers(for: collections, languages: selectedLanguages, force: true)
                 await coverStore.resolveCounts(for: collections, languages: selectedLanguages, force: true)
             }
@@ -61,7 +71,7 @@ struct BrowseView: View {
             SectionTitle(title: "Featured Collections")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(IACollectionStore.collections(for: selectedCollectionIDs)) { collection in
+                    ForEach(IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)) { collection in
                         Button {
                             search(collection)
                         } label: {
@@ -334,6 +344,9 @@ struct BrowseView: View {
         defer { importingIdentifier = nil }
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
+            // Browsing/previewing a catalog result must never silently land
+            // it in My Books — only the book page's explicit "+" does that.
+            await libraryStore.markBookPending(imported.book.id)
             await playback.present(imported)
             showingNowPlaying = true
         }

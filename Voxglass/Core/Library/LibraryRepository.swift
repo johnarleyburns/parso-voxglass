@@ -89,7 +89,7 @@ public final class LibraryRepository: @unchecked Sendable {
         try await database.prepare()
 
         let bookRows = try await database.query("""
-        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, is_pending
         FROM books
         ORDER BY updated_at DESC, title COLLATE NOCASE ASC
         """)
@@ -156,7 +156,63 @@ public final class LibraryRepository: @unchecked Sendable {
         ])
         let orderedIDs = try rows.map { try ModelMapping.uuid($0, "book_id") }
         let libraryByID = Dictionary(uniqueKeysWithValues: try await fetchLibrary().map { ($0.book.id, $0) })
-        return orderedIDs.compactMap { libraryByID[$0] }
+        // "Jump Back In" is a My Books surface — a book only previewed from
+        // a catalog result (not yet explicitly added) stays out of it, same
+        // as it stays out of the My Books list itself, until confirmed.
+        return orderedIDs.compactMap { libraryByID[$0] }.filter { !$0.book.isPending }
+    }
+
+    /// Every book that has ever been played, most-recently-listened first —
+    /// unlike `fetchRecentlyPlayed`, this deliberately INCLUDES pending
+    /// (not-yet-added) books, since "what have I listened to" should answer
+    /// that regardless of whether the book was ever explicitly added to My
+    /// Books.
+    public func fetchListeningHistory() async throws -> [(book: BookWithChapters, lastPlayedAt: Date)] {
+        try await database.prepare()
+
+        let rows = try await database.query("""
+        SELECT book_id, MAX(updated_at) AS latest_position_at
+        FROM playback_positions
+        GROUP BY book_id
+        ORDER BY latest_position_at DESC
+        """)
+        let library = try await fetchLibrary()
+        let libraryByID = Dictionary(uniqueKeysWithValues: library.map { ($0.book.id, $0) })
+        return try rows.compactMap { row -> (book: BookWithChapters, lastPlayedAt: Date)? in
+            let bookID = try ModelMapping.uuid(row, "book_id")
+            guard let book = libraryByID[bookID] else { return nil }
+            let lastPlayedAt = ModelMapping.date(row, "latest_position_at")
+            return (book, lastPlayedAt)
+        }
+    }
+
+    /// Removes one book's listening history — this also clears its saved
+    /// resume position (`playback_positions` backs both), so it starts over
+    /// if played again. That coupling is deliberate: "remove from history"
+    /// reads as "forget this," not "keep my place but hide it from a list."
+    public func removeListeningHistory(bookID: UUID) async throws {
+        try await database.prepare()
+        try await database.execute(
+            "DELETE FROM playback_positions WHERE book_id = ?",
+            [ModelMapping.databaseValue(bookID)]
+        )
+    }
+
+    public func clearAllListeningHistory() async throws {
+        try await database.prepare()
+        try await database.execute("DELETE FROM playback_positions", [])
+    }
+
+    /// Flips a book's pending flag. `pending: true` is set right after a
+    /// catalog-result preview import (see `importInternetArchiveItem`'s
+    /// caller in `CatalogResultImporter`); `pending: false` is set when the
+    /// user confirms "Add to My Books?" on the book page.
+    public func setBookPending(_ pending: Bool, for bookID: UUID) async throws {
+        try await database.prepare()
+        try await database.execute(
+            "UPDATE books SET is_pending = ? WHERE id = ?",
+            [.bool(pending), ModelMapping.databaseValue(bookID)]
+        )
     }
 
     /// Stable identities for every work that has any saved playback position.
@@ -772,6 +828,15 @@ public final class LibraryRepository: @unchecked Sendable {
     }
 
     private func ensureLocalSource(folderURL: URL, title: String) async throws -> Source {
+        // `FileManager`'s Application Support URL (what a narration export's
+        // folder path is built from) can resolve through `/var/...` on one
+        // app launch and `/private/var/...` on another — the same directory,
+        // but a different `absoluteString` — so an exact-string dedup lookup
+        // here silently missed and created a second `sources` row (and a
+        // second book) every time a narration was re-exported in a later
+        // session. Canonicalizing before both the lookup and the insert
+        // keeps re-exports of the same narration matching the same source.
+        let folderURL = folderURL.resolvingSymlinksInPath()
         let existing = try await database.query(
             "SELECT id, kind, title, url, created_at FROM sources WHERE url = ? AND kind = ? LIMIT 1",
             [ModelMapping.databaseValue(folderURL), .string(SourceKind.localFiles.rawValue)]
@@ -828,7 +893,7 @@ public final class LibraryRepository: @unchecked Sendable {
 
     private func bookWithChapters(forSourceID sourceID: UUID) async throws -> BookWithChapters? {
         let bookRows = try await database.query("""
-        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, is_pending
         FROM books
         WHERE source_id = ?
         LIMIT 1
@@ -847,7 +912,7 @@ public final class LibraryRepository: @unchecked Sendable {
 
     private func bookWithChapters(forBookID bookID: UUID) async throws -> BookWithChapters? {
         let bookRows = try await database.query("""
-        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite
+        SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, is_pending
         FROM books
         WHERE id = ?
         LIMIT 1
@@ -1053,8 +1118,8 @@ public final class LibraryRepository: @unchecked Sendable {
 
     private func insert(book: Book, chapters: [Chapter], bookContentKey: String? = nil) async throws {
         try await database.execute("""
-        INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, content_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, is_pending, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, [
             ModelMapping.databaseValue(book.id),
             .string(book.title),
@@ -1066,6 +1131,7 @@ public final class LibraryRepository: @unchecked Sendable {
             ModelMapping.databaseValue(book.createdAt),
             ModelMapping.databaseValue(book.updatedAt),
             .bool(book.isFavorite),
+            .bool(book.isPending),
             bookContentKey.map { .string($0) } ?? .null
         ])
 
@@ -1118,7 +1184,8 @@ public final class LibraryRepository: @unchecked Sendable {
             coverURL: ModelMapping.url(row, "cover_url"),
             createdAt: ModelMapping.date(row, "created_at"),
             updatedAt: ModelMapping.date(row, "updated_at"),
-            isFavorite: row.bool("is_favorite") ?? false
+            isFavorite: row.bool("is_favorite") ?? false,
+            isPending: row.bool("is_pending") ?? false
         )
     }
 

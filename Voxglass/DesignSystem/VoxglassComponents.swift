@@ -347,7 +347,15 @@ struct BookListRow: View {
             ProgressView()
                 .frame(width: 44, height: 44)
         case .download(let state, let showsNavigation, let watchAvailable):
-            VStack(spacing: 3) {
+            // Leading-aligned, not the VStack default of `.center`: the
+            // download icon's own HStack is 44pt wide (28 + 16 for the
+            // trailing chevron), and the watch icon below it has no
+            // intrinsic width of its own — centering it under that full
+            // 44pt row instead of under the download icon's own 28pt
+            // column visibly shifted it right by roughly half the download
+            // icon's width. Giving the watch icon the same 28pt column
+            // width keeps both glyphs sharing one vertical line.
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 4) {
                     downloadAccessory(for: state)
                     if showsNavigation {
@@ -365,6 +373,7 @@ struct BookListRow: View {
                     .symbolVariant(watchAvailable ? .fill : .none)
                     .scaledFont(size: 12, weight: .semibold)
                     .foregroundStyle(watchAvailable ? Palette.brass : Palette.ink3.opacity(0.4))
+                    .frame(width: 28)
                     .accessibilityLabel(watchAvailable ? "Downloaded to Apple Watch" : "Not downloaded to Apple Watch")
             }
         case .none:

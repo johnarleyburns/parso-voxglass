@@ -13,6 +13,14 @@ public struct IACollection: Identifiable, Equatable, Sendable {
     public var curatedListName: String?
     public var summaryLine: String
     public var description: String
+    /// A `LibriVoxLanguage.id` this collection is written in, when it's
+    /// language-specific (e.g. the Spanish/German/Italian/Ancient Greek
+    /// Great Books variants) — `nil` for collections that aren't tied to
+    /// one language. Used to hide a language-specific collection from a
+    /// user who hasn't selected that language (see `collections(for:languages:)`);
+    /// without this, every language variant of "Great Books" showed up for
+    /// every user regardless of their selected language(s).
+    public var language: String?
 
     public var isCurated: Bool { curatedListName != nil }
     public var hasDescription: Bool { !description.isEmpty }
@@ -29,7 +37,8 @@ public struct IACollection: Identifiable, Equatable, Sendable {
         remoteImageURL: URL? = nil,
         curatedListName: String? = nil,
         summaryLine: String = "",
-        description: String = ""
+        description: String = "",
+        language: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -43,6 +52,7 @@ public struct IACollection: Identifiable, Equatable, Sendable {
         self.curatedListName = curatedListName
         self.summaryLine = summaryLine
         self.description = description
+        self.language = language
     }
 }
 
@@ -99,7 +109,8 @@ public enum IACollectionStore {
             Each entry in this collection links to a specific LibriVox recording of the work. Where no LibriVox recording yet exists for a required Great Books work (e.g. the mathematical treatises of Euclid, Archimedes, and Apollonius, or certain scientific works of Ptolemy, Copernicus, and Kepler), that work is noted but omitted from the listening list.
 
             The LibriVox volunteer community has recorded many of these works multiple times, in different translations and by different readers. This English-language collection is the most comprehensive, but companion collections for Spanish, German, Italian, and Ancient Greek are also available.
-            """
+            """,
+        language: "eng"
     )
 
     public static let greatBooksSpanish = IACollection(
@@ -118,7 +129,8 @@ public enum IACollectionStore {
             Incluye grabaciones en español de Homero, Sófocles, Eurípides, Heródoto, Platón, Marco Aurelio, Dante, Maquiavelo, Shakespeare, Cervantes, Voltaire, Goethe, Dickens, Mark Twain, Tolstói, Conrad, Proust y Kafka.
 
             La comunidad de voluntarios de LibriVox ha grabado muchas de estas obras en múltiples versiones y traducciones. Esta colección en español complementa la colección principal en inglés.
-            """
+            """,
+        language: "spa"
     )
 
     public static let greatBooksGerman = IACollection(
@@ -137,7 +149,8 @@ public enum IACollectionStore {
             Enthält deutschsprachige Aufnahmen von Homer, Euripides, Thukydides, Platon, Erasmus, Cervantes, Swift, Voltaire, Goethe, Kant, Marx, Nietzsche, Mark Twain, Tolstoi, Freud und Kafka.
 
             Die LibriVox-Gemeinschaft hat viele dieser Werke in verschiedenen Übersetzungen eingelesen. Diese deutschsprachige Sammlung ergänzt die englische Hauptsammlung.
-            """
+            """,
+        language: "deu"
     )
 
     public static let greatBooksItalian = IACollection(
@@ -156,7 +169,8 @@ public enum IACollectionStore {
             Include registrazioni in italiano di Dante Alighieri, Niccolò Machiavelli, Galileo Galilei e Luigi Pirandello.
 
             La comunità di volontari di LibriVox ha registrato molte di queste opere in versioni multiple. Questa collezione in italiano integra la collezione principale in inglese.
-            """
+            """,
+        language: "ita"
     )
 
     public static let greatBooksGreek = IACollection(
@@ -175,7 +189,8 @@ public enum IACollectionStore {
             Includes recordings of Homer's Odyssey (all 24 books), Thucydides' Histories (books 1–7), and Plato's Apology and Definitions.
 
             LibriVox volunteers have contributed these recordings in the original language, making them a valuable resource for students and scholars of classical Greek. This collection complements the English-language Great Books collection.
-            """
+            """,
+        language: "grc"
     )
 
     public static let greaterBooks = IACollection(
@@ -194,7 +209,8 @@ public enum IACollectionStore {
             The collection spans roughly 2,800 years: the epics of Homer and Virgil, the tragedies and comedies of classical Athens, the medieval visions of Dante and Chaucer, the plays of Shakespeare and his contemporaries Marlowe and Moli\u{00E8}re, the early novels of Cervantes, Defoe, and Fielding, the 19th-century triumphs of Austen, the Bront\u{00EB}s, Dickens, Eliot, Melville, Hawthorne, Flaubert, Dostoevsky, and Tolstoy, and the transitional moderns \u{2014} Conrad, Henry James, Chekhov, Ibsen, Kipling, Wilde, and Wells.
 
             Each entry links to a specific English LibriVox recording matched from the Internet Archive catalog. Multiple complete recordings, translations, and public-domain readings are preserved as separate rows, while works without a completed English LibriVox recording are omitted from the listening list and tracked in the generator report. Browsing by Curation Order follows the greaterbooks.com shortlist sequence, grouped by period and then by recording version.
-            """
+            """,
+        language: "eng"
     )
 
     public static let curated: [IACollection] = [
@@ -202,7 +218,7 @@ public enum IACollectionStore {
         greaterBooks
     ]
 
-    public static func collections(for selectedIDs: Set<String>) -> [IACollection] {
+    public static func collections(for selectedIDs: Set<String>, languages: Set<String> = LibriVoxLanguage.defaultSelection) -> [IACollection] {
         // Popular LibriVox always first, then the two curated collections,
         // then the remaining 21 browse categories sorted alphabetically.
         let sortedBrowse = browseCollections.sorted {
@@ -211,7 +227,17 @@ public enum IACollectionStore {
         // Collection preferences seed recommendations; Explore is the catalog
         // browser and must always expose the complete collection set. An empty
         // preference value is normal for users who skipped onboarding.
-        return [popular] + curated + sortedBrowse
+        //
+        // Language IS still a real filter, though — the Great Books set ships
+        // five language-specific variants (English/Spanish/German/Italian/
+        // Ancient Greek), and without this every one of them showed up for
+        // every user regardless of their selected language(s), live-reported
+        // as "Great Books" appearing for all languages.
+        let visibleCurated = curated.filter { collection in
+            guard let language = collection.language else { return true }
+            return languages.isEmpty || languages.contains(language)
+        }
+        return [popular] + visibleCurated + sortedBrowse
     }
 
     private static func browseCollection(for category: LibriVoxBrowseCategory) -> IACollection {

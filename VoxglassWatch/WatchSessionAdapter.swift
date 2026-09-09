@@ -9,6 +9,24 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     @Published private(set) var snapshot: WatchLibrarySnapshot?
     @Published private(set) var connectionError: String?
     @Published private(set) var requestedDownloadBookID: WatchBookID?
+    /// Set once a book pushed from the phone (`PhoneAudioRelay.transferBookToWatch`)
+    /// has had every one of its chapter files received over `WCSession`
+    /// file-transfer. `WatchAppServices` observes this the same way it already
+    /// observes `requestedDownloadBookID`.
+    @Published private(set) var completedFileTransfer: (bookID: WatchBookID, bytes: Int64)?
+    /// Per-book count of chapter files received so far via `didReceive file:`,
+    /// keyed against the `totalChapterCount` each file's metadata carries.
+    /// In-memory only: if the app is killed mid-transfer, re-tapping "Send to
+    /// Watch" on the phone resends everything, which is an acceptable retry
+    /// story for this feature.
+    private var receivedChapterFiles: [WatchBookID: (count: Int, bytes: Int64)] = [:]
+    /// `WCSession.isReachable` can toggle rapidly and spuriously — observed
+    /// live flapping the connection indicator and the visible book list
+    /// (`WatchAppServices.visibleBooks` depends on it) back and forth, jarring
+    /// during an active file transfer in particular. Only commit a change
+    /// once it's held for a short settle window instead of reacting to every
+    /// raw toggle.
+    private var reachabilityDebounce: Task<Void, Never>?
     private let smoke = ProcessInfo.processInfo.arguments.contains("-uiTestSeed") || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
     /// `snapshot` used to be in-memory only — populated exclusively by a live
     /// WCSession message/context delivery. That meant a book already
@@ -137,6 +155,33 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         }
     }
 
+    /// Called after a chapter file has already been copied into its final
+    /// `DownloadedBooks/<bookID>/<filename>` location. Tracks arrival count
+    /// per book and publishes completion once every expected chapter is in.
+    private func recordReceivedChapterFile(bookID: WatchBookID, totalChapterCount: Int, bytes: Int64) {
+        var entry = receivedChapterFiles[bookID] ?? (count: 0, bytes: 0)
+        entry.count += 1
+        entry.bytes += bytes
+        guard entry.count < totalChapterCount else {
+            receivedChapterFiles.removeValue(forKey: bookID)
+            completedFileTransfer = (bookID, entry.bytes)
+            return
+        }
+        receivedChapterFiles[bookID] = entry
+    }
+
+    private func debounceReachabilityChange() {
+        reachabilityDebounce?.cancel()
+        reachabilityDebounce = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(1500))
+            guard !Task.isCancelled, let self else { return }
+            // Re-read the live value rather than trusting what triggered this
+            // call — if it flipped again during the settle window, this task
+            // was already cancelled and superseded by a fresh one.
+            self.isReachable = WCSession.default.isReachable
+        }
+    }
+
     private func seedSmoke() {
         guard smoke else { return }
         let aliceID = WatchBookID("alice")
@@ -163,8 +208,7 @@ extension WatchSessionAdapter: WCSessionDelegate {
         }
     }
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
-        let reachable = session.isReachable
-        Task { @MainActor in self.isReachable = reachable }
+        Task { @MainActor in self.debounceReachabilityChange() }
     }
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
         let context = WatchUncheckedBox(applicationContext)
@@ -190,6 +234,37 @@ extension WatchSessionAdapter: WCSessionDelegate {
         Task { @MainActor in
             self.apply(payload.value)
             reply.value(["received": true])
+        }
+    }
+
+    /// `file.fileURL` and `file.metadata` are only valid synchronously during
+    /// this call — WCSession deletes the underlying temp file once this
+    /// method returns — so the copy into durable storage happens right here,
+    /// not after hopping to the main actor. Files lacking the phone-push
+    /// metadata this expects (e.g. the just-in-time single-chapter reply
+    /// path, or the separate manifest-driven asset-file transfer) are
+    /// silently ignored; they're handled elsewhere or not yet wired up.
+    nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
+        guard let metadata = file.metadata,
+              let bookIDRaw = metadata["bookID"] as? String,
+              let chapterFilename = metadata["chapterFilename"] as? String,
+              let totalChapterCount = metadata["totalChapterCount"] as? Int else { return }
+        let bookID = WatchBookID(bookIDRaw)
+        do {
+            let root = try FileManager.default.url(
+                for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
+            ).appendingPathComponent("DownloadedBooks/\(bookID.rawValue)", isDirectory: true)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let destination = root.appendingPathComponent(chapterFilename)
+            try? FileManager.default.removeItem(at: destination)
+            try FileManager.default.copyItem(at: file.fileURL, to: destination)
+            let attributes = try? FileManager.default.attributesOfItem(atPath: destination.path)
+            let bytes = (attributes?[.size] as? NSNumber)?.int64Value ?? 0
+            Task { @MainActor in
+                self.recordReceivedChapterFile(bookID: bookID, totalChapterCount: totalChapterCount, bytes: bytes)
+            }
+        } catch {
+            return
         }
     }
 }

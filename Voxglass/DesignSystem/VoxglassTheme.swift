@@ -67,6 +67,7 @@ struct VoxglassScreen<Content: View>: View {
     var headerActionTitle: String?
     var headerAction: (() -> Void)?
     var headerSecondaryActionTitle: String?
+    var headerSecondaryActionSystemImage: String?
     var headerSecondaryAction: (() -> Void)?
     var headerSecondaryActionAccessibilityLabel: String?
     @ViewBuilder var content: Content
@@ -92,18 +93,33 @@ struct VoxglassScreen<Content: View>: View {
                                 .scaledFont(size: 31, weight: .heavy, design: .default)
                                 .foregroundStyle(Palette.ink)
                             Spacer()
-                            if let headerSecondaryActionTitle, let headerSecondaryAction {
+                            // "Edit" (headerActionTitle) reads left-to-right
+                            // before "+" (headerSecondaryAction) — My Books
+                            // is the one screen combining both, and this is
+                            // the requested order for it; no other screen
+                            // uses both at once, so this ordering is safe
+                            // to apply globally.
+                            if let headerActionTitle, let headerAction {
+                                Button(headerActionTitle, action: headerAction)
+                                    .scaledFont(size: 15, weight: .semibold)
+                                    .foregroundStyle(Palette.brass)
+                            }
+                            if let headerSecondaryActionSystemImage, let headerSecondaryAction {
+                                Button(action: headerSecondaryAction) {
+                                    Image(systemName: headerSecondaryActionSystemImage)
+                                        .scaledFont(size: 18, weight: .semibold)
+                                }
+                                .foregroundStyle(Palette.brass)
+                                .frame(width: 36, height: 36)
+                                .contentShape(Rectangle())
+                                .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? "Action")
+                            } else if let headerSecondaryActionTitle, let headerSecondaryAction {
                                 Button(headerSecondaryActionTitle, action: headerSecondaryAction)
                                     .scaledFont(size: 22, weight: .semibold)
                                     .foregroundStyle(Palette.brass)
                                     .frame(width: 36, height: 36)
                                     .contentShape(Rectangle())
                                     .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
-                            }
-                            if let headerActionTitle, let headerAction {
-                                Button(headerActionTitle, action: headerAction)
-                                    .scaledFont(size: 15, weight: .semibold)
-                                    .foregroundStyle(Palette.brass)
                             }
                         }
                         .padding(.horizontal, 2)

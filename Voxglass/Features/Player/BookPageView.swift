@@ -17,6 +17,7 @@ struct BookPageView: View {
     @State private var showCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
+    @State private var showAddToLibraryConfirm = false
     @State private var showingPlaylistPicker = false
     @State private var genre: LibriVoxBrowseCategory?
     @State private var bookmarkCount: Int?
@@ -217,8 +218,37 @@ struct BookPageView: View {
                     .padding(.top, 6)
             }
             Spacer()
+            // Only a book that's just being previewed (played from a catalog
+            // result, not yet explicitly added) shows this — it's the one
+            // and only way such a book ever becomes a real My Books entry.
+            if resolved?.book.isPending == true {
+                Button {
+                    showAddToLibraryConfirm = true
+                } label: {
+                    Image(systemName: "plus")
+                        .scaledFont(size: 17, weight: .semibold)
+                        .foregroundStyle(Palette.ink2)
+                        .frame(width: 32, height: 32)
+                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.12))
+                }
+                .accessibilityLabel("Add to My Books")
+                .accessibilityIdentifier("bookpage.addToLibrary")
+            }
         }
         .padding(.horizontal, 20)
+        .confirmationDialog(
+            "Add to My Books?",
+            isPresented: $showAddToLibraryConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Add") {
+                guard let bookID = resolved?.book.id else { return }
+                Task { await libraryStore.confirmAddToLibrary(bookID) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Keep this book in My Books so it's easy to find again.")
+        }
     }
 
     private func coverSection(_ resolved: BookWithChapters) -> some View {

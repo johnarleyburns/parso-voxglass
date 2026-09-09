@@ -24,6 +24,7 @@ final class WatchPlaybackEngine {
     private var playerNotificationObservers: [NSObjectProtocol] = []
     private var commandTargets: [(MPRemoteCommand, Any)] = []
     private var token = 0
+    private var didBecomeReadyToken: Int?
     private var assetOffset: TimeInterval = 0
     private var lastPersistedSecond = -1
 
@@ -171,22 +172,99 @@ final class WatchPlaybackEngine {
         let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
         self.player = player
+        didBecomeReadyToken = nil
 
         playerItemObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             Task { @MainActor in
                 guard let self, currentToken == self.token else { return }
                 switch item.status {
                 case .readyToPlay:
+                    self.didBecomeReadyToken = currentToken
                     let target = self.assetOffset + resumePosition
                     if target > 0 { await player.seek(to: CMTime(seconds: target, preferredTimescale: 600)) }
+                    // A watchOS third-party app can only route long-form
+                    // audio through a connected accessory (Bluetooth
+                    // headphones, etc.) — never the Watch's own speaker —
+                    // which is exactly why the system shows its own
+                    // "Connect a device" prompt beforehand. If that hasn't
+                    // actually resolved to a real output by the time this
+                    // chapter is ready, `player.play()` looks like it
+                    // succeeds (AVPlayer has no reason to error) but nothing
+                    // audible ever comes out — a second, distinct silent
+                    // failure from the item simply never loading.
+                    if AVAudioSession.sharedInstance().currentRoute.outputs.isEmpty {
+                        self.publish(.failed("No audio output is connected — connect Bluetooth headphones, then try again."), token: currentToken)
+                        return
+                    }
                     player.play()
                 case .failed:
-                    self.publish(.failed(item.error?.localizedDescription ?? "This chapter could not be played."), token: currentToken)
+                    // `.localizedDescription` alone (e.g. a bare "Cannot
+                    // Open") isn't enough to tell a missing/empty file apart
+                    // from a format AVFoundation genuinely can't decode —
+                    // both look identical from the outside. Fold in the
+                    // underlying NSError's domain/code and the file's actual
+                    // size on disk so the next report says which it is.
+                    let nsError = (item.error ?? player.error) as NSError?
+                    let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+                    let size = (attrs?[.size] as? NSNumber)?.int64Value
+                    let detail = "\(nsError?.localizedDescription ?? "unknown error")"
+                        + " [\(nsError?.domain ?? "?"):\(nsError?.code ?? 0)]"
+                        + ", file size: \(size.map(String.init) ?? "missing")"
+                    self.publish(.failed("This chapter could not be played (\(detail))."), token: currentToken)
                 case .unknown:
                     self.publish(.buffering, token: currentToken)
                 @unknown default:
                     self.publish(.failed("This chapter could not be played."), token: currentToken)
                 }
+            }
+        }
+        // Two distinct ways this can silently hang forever with nothing but
+        // an indeterminate "buffering" spinner and no visible error —
+        // reproduced live, a full minute with no change:
+        // 1. `.status` sits at `.unknown` and never fires another KVO
+        //    callback at all (never becomes playable in the first place).
+        // 2. `.status` DOES reach `.readyToPlay` and `play()` IS called, but
+        //    `timeControlStatus` gets stuck at `.waitingToPlayAtSpecifiedRate`
+        //    indefinitely and reported playback position never advances —
+        //    the item loaded but decoding/rendering never actually starts.
+        // Poll for both, using whatever diagnostic AVFoundation is willing
+        // to give (including the specific `reasonForWaitingToPlay`) instead
+        // of leaving the screen looking permanently inert.
+        Task { [weak self] in
+            var lastPosition: TimeInterval = -1
+            var lastProgressAt = Date()
+            let stallTimeout: TimeInterval = 20
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(2))
+                guard let self, currentToken == self.token else { return }
+                guard self.didBecomeReadyToken == currentToken else {
+                    if Date().timeIntervalSince(lastProgressAt) > stallTimeout {
+                        let detail = item.error?.localizedDescription
+                            ?? player.error?.localizedDescription
+                            ?? "status: \(item.status.rawValue), reachable via file: \(FileManager.default.fileExists(atPath: url.path))"
+                        self.publish(.failed("This chapter never became playable (\(detail))."), token: currentToken)
+                        return
+                    }
+                    continue
+                }
+                // Ready and (nominally) playing — but is it actually
+                // producing audio? A genuinely advancing position is the
+                // only trustworthy signal; `timeControlStatus == .playing`
+                // on its own isn't (this reproduced with the item stuck at
+                // `.waitingToPlayAtSpecifiedRate` — the position check below
+                // is what would still catch it).
+                let position = player.currentTime().seconds
+                if position.isFinite, position > lastPosition + 0.05 {
+                    lastPosition = position
+                    lastProgressAt = Date()
+                    continue
+                }
+                guard Date().timeIntervalSince(lastProgressAt) > stallTimeout else { continue }
+                let reason = player.reasonForWaitingToPlay?.rawValue ?? "none"
+                self.publish(.failed(
+                    "Playback stalled (timeControlStatus: \(player.timeControlStatus.rawValue), waiting: \(reason))."
+                ), token: currentToken)
+                return
             }
         }
         playerStatusObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in

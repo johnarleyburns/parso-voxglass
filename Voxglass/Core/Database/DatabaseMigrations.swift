@@ -283,6 +283,18 @@ private struct DatabaseMigration {
             statements: [
                 "ALTER TABLE chapters ADD COLUMN local_bookmark BLOB"
             ]
+        ),
+        DatabaseMigration(
+            id: 12,
+            name: "book_pending_flag",
+            statements: [
+                // A book imported just to preview/play a catalog result (not
+                // an explicit "add to My Books" action) is written here so
+                // its chapters/URLs stay resolvable for playback and history,
+                // but stays hidden from the My Books list until the user
+                // explicitly confirms via the book page's "+" button.
+                "ALTER TABLE books ADD COLUMN is_pending INTEGER NOT NULL DEFAULT 0"
+            ]
         )
     ]
 }

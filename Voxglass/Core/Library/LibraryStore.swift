@@ -18,7 +18,11 @@ public final class LibraryStore: ObservableObject {
 
     /// The library with the active filter/sort applied. Pure, in-memory.
     public var visibleBooks: [BookWithChapters] {
-        var result = books
+        // A book only previewed from a catalog result (not yet explicitly
+        // added via the book page's "+" button) never shows in My Books —
+        // it stays resolvable (for playback and history) via `books`/
+        // `book(withID:)`, just not surfaced in this list.
+        var result = books.filter { !$0.book.isPending }
 
         switch filter {
         case .all: break
@@ -81,6 +85,32 @@ public final class LibraryStore: ObservableObject {
         } catch {
             importError = error.localizedDescription
         }
+    }
+
+    public func fetchListeningHistory() async -> [(book: BookWithChapters, lastPlayedAt: Date)] {
+        (try? await repository.fetchListeningHistory()) ?? []
+    }
+
+    public func removeListeningHistory(bookID: UUID) async {
+        try? await repository.removeListeningHistory(bookID: bookID)
+    }
+
+    public func clearAllListeningHistory() async {
+        try? await repository.clearAllListeningHistory()
+    }
+
+    /// Marks a just-previewed catalog result pending — it plays normally but
+    /// stays out of My Books until confirmed.
+    public func markBookPending(_ bookID: UUID) async {
+        try? await repository.setBookPending(true, for: bookID)
+        await refresh()
+    }
+
+    /// "Add to My Books?" confirmed — the book behaves like any other from
+    /// here on.
+    public func confirmAddToLibrary(_ bookID: UUID) async {
+        try? await repository.setBookPending(false, for: bookID)
+        await refresh()
     }
 
     @discardableResult

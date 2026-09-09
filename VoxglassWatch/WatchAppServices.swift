@@ -44,6 +44,17 @@ final class WatchAppServices: ObservableObject {
                 self.startDownload(book, notifyPhone: false)
             }
             .store(in: &cancellables)
+        session.$completedFileTransfer
+            .compactMap { $0 }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] completion in
+                guard let self, let book = self.books.first(where: { $0.id == completion.bookID }) else { return }
+                self.downloaded.insert(completion.bookID)
+                UserDefaults.standard.set(self.downloaded.map(\.rawValue), forKey: "watch.downloaded")
+                self.downloading.remove(completion.bookID)
+                self.session.reportDownload(book: book, bytes: completion.bytes, complete: true)
+            }
+            .store(in: &cancellables)
         NotificationCenter.default.publisher(for: .watchRemoveDownloadedBook)
             .compactMap { $0.object as? String }
             .receive(on: RunLoop.main)

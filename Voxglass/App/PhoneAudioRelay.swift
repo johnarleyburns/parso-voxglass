@@ -195,8 +195,28 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         await publishTypedWatchProjection()
     }
 
-    func transferChapterFile(at url: URL, chapterKey: String) {
-        session.transferFile(url, metadata: ["chapterKey": chapterKey])
+    /// `bookID`/`chapterFilename`/`totalChapterCount` make a phone→watch push
+    /// transfer (from `transferBookToWatch`) self-describing, so the watch's
+    /// `WCSessionDelegate.session(_:didReceive:)` can file the received bytes
+    /// under the same `DownloadedBooks/<bookID>/<filename>` layout its own
+    /// HTTP download path already uses, and know when a book is complete —
+    /// without depending on a separately-delivered manifest arriving first
+    /// (file transfers and messages aren't ordered relative to each other).
+    /// Left `nil` for the single just-in-time chapter reply in
+    /// `findAndSendChapter`, which has no book-level context to offer.
+    @discardableResult
+    func transferChapterFile(
+        at url: URL,
+        chapterKey: String,
+        bookID: UUID? = nil,
+        chapterFilename: String? = nil,
+        totalChapterCount: Int? = nil
+    ) -> WCSessionFileTransfer {
+        var metadata: [String: Any] = ["chapterKey": chapterKey]
+        if let bookID { metadata["bookID"] = bookID.uuidString }
+        if let chapterFilename { metadata["chapterFilename"] = chapterFilename }
+        if let totalChapterCount { metadata["totalChapterCount"] = totalChapterCount }
+        return session.transferFile(url, metadata: metadata)
     }
 
     func watchStorageInfo(for bookID: UUID) -> WatchBookStorageInfo? {
@@ -502,43 +522,180 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
 
         if needsPhoneDownload {
-            // Wait for the phone-side download to complete before transferring.
-            let deadline = Date().addingTimeInterval(180)
+            // Wait for the phone-side download to complete before
+            // transferring. A flat time cap here (the original version of
+            // this) doesn't work for a real audiobook — a full novel can
+            // take longer than any reasonable fixed wait to download, and
+            // when the old 180s cap elapsed mid-download, this fell through
+            // and proceeded to transfer anyway with whichever chapters
+            // happened to be cached so far. Since the watch is separately
+            // told the book's FULL chapter count and can only ever
+            // acknowledge once every one of them has arrived, that silently
+            // guaranteed a transfer that could never complete — reproduced
+            // live with "Murder on the Orient Express". Watch the download's
+            // own reported progress instead, and only give up once it
+            // genuinely stalls.
+            var lastProgress = -1.0
+            var lastProgressAt = Date()
+            let stallTimeout: TimeInterval = 120
+            let absoluteTimeout: TimeInterval = 90 * 60
+            let startedAt = Date()
             var state = offlineManager.state(for: book.book.id)
-            while Date() < deadline {
-                if case .downloading = state {
-                    try? await Task.sleep(for: .milliseconds(500))
-                    state = offlineManager.state(for: book.book.id)
-                    continue
+            while case .downloading(let progress) = state {
+                if progress > lastProgress {
+                    lastProgress = progress
+                    lastProgressAt = Date()
                 }
-                break
+                let stalled = Date().timeIntervalSince(lastProgressAt) > stallTimeout
+                let tooLong = Date().timeIntervalSince(startedAt) > absoluteTimeout
+                if stalled || tooLong {
+                    return fail("The book stopped downloading to the iPhone before it finished.")
+                }
+                try? await Task.sleep(for: .milliseconds(500))
+                state = offlineManager.state(for: book.book.id)
             }
             if state == .failed {
                 return fail("The book couldn't be downloaded on the iPhone.")
             }
         }
 
-        var transferred = 0
+        // Resolve every chapter's local file BEFORE sending anything. The
+        // watch is told the book's full chapter count up front and can only
+        // ever acknowledge once every one of them has arrived — silently
+        // sending fewer (the original version of this skipped whichever
+        // chapters weren't resolvable yet) guarantees a transfer that can
+        // never complete, no matter how patient anything downstream is.
+        let chapterFilename = { (chapter: Chapter) in "\(chapter.id.uuidString).audio" }
+        var resolvedChapterFiles: [(chapter: Chapter, key: String, url: URL)] = []
         for chapter in book.chapters {
-            guard let key = ChapterAudioIdentity.cacheKey(for: chapter) else { continue }
+            guard let key = ChapterAudioIdentity.cacheKey(for: chapter) else {
+                return fail("A chapter's audio file couldn't be identified.")
+            }
             if let localURL = localOnDiskURL(for: chapter) {
-                transferChapterFile(at: localURL, chapterKey: key)
-                transferred += 1
+                resolvedChapterFiles.append((chapter, key, localURL))
                 continue
             }
             guard let fileURL = await WatchChapterTransfer.resolvedFileURL(
                 cacheStore: AudioCache.shared,
                 chapterKey: key
-            ) else { continue }
-            transferChapterFile(at: fileURL, chapterKey: key)
-            transferred += 1
+            ) else {
+                return fail("Not every chapter has finished downloading to the iPhone yet.")
+            }
+            resolvedChapterFiles.append((chapter, key, fileURL))
         }
-        if transferred == 0 {
+        guard !resolvedChapterFiles.isEmpty else {
             return fail("No chapters were ready to transfer.")
+        }
+
+        let fileTransfers = resolvedChapterFiles.map { chapter, key, url in
+            transferChapterFile(
+                at: url,
+                chapterKey: key,
+                bookID: book.book.id,
+                chapterFilename: chapterFilename(chapter),
+                totalChapterCount: book.chapters.count
+            )
         }
         await requestTypedWatchDownload(bookID: book.book.id)
         watchSyncStatus = "\(book.book.title) queued for Apple Watch."
+        watchTransferSupervisor(for: book.book.id, fileTransfers: fileTransfers)
         return .started
+    }
+
+    /// `WCSessionFileTransfer.progress` is a real, live-updating `Progress`
+    /// per file — `Progress.addChild(_:withPendingUnitCount:)` composes them
+    /// into one aggregate the same way Foundation composes any multi-part
+    /// operation, so the book's overall completion fraction is exact, not
+    /// estimated from elapsed time or chapter count alone.
+    ///
+    /// This single task both drives that progress display AND decides when
+    /// to give up. A large audiobook over a slow Bluetooth link can
+    /// legitimately take many minutes — a flat "fail after N seconds"
+    /// watchdog (the first version of this) marked a book that was still
+    /// genuinely, if slowly, transferring as failed, live-reproduced with
+    /// "Murder on the Orient Express". What actually indicates a stuck
+    /// transfer is the complete ABSENCE of progress for a while, not elapsed
+    /// time on its own — so this only gives up once the fraction complete
+    /// hasn't budged for `stallTimeout`, with a very generous absolute cap
+    /// as a last-resort safety net against a runaway task.
+    private func watchTransferSupervisor(
+        for bookID: UUID,
+        fileTransfers: [WCSessionFileTransfer],
+        // Audiobooks can be 1+ GB, and WCSession file transfer over
+        // Bluetooth is slow — a real, large book can legitimately take a
+        // long time with no single stretch of true silence. 120s of zero
+        // measured progress is a genuine stall; 90 minutes is a last-resort
+        // cap for a runaway task, not an expected real-world duration.
+        stallTimeout: TimeInterval = 120,
+        absoluteTimeout: TimeInterval = 90 * 60
+    ) {
+        guard !fileTransfers.isEmpty else { return }
+        let aggregate = Progress(totalUnitCount: Int64(fileTransfers.count))
+        for transfer in fileTransfers {
+            aggregate.addChild(transfer.progress, withPendingUnitCount: 1)
+        }
+        Task { [weak self] in
+            let startedAt = Date()
+            var lastFraction = -1.0
+            var lastProgressAt = Date()
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self else { return }
+                // Once a later event (the watch's ack, or a genuine failure
+                // reported some other way) has already moved this book to a
+                // terminal state, stop — never clobber that outcome with a
+                // stale "still transferring".
+                switch self.watchStorageSnapshot?.books[bookID]?.state {
+                case .queued, .transferring: break
+                default: return
+                }
+
+                let fraction = aggregate.fractionCompleted
+                if fraction > lastFraction {
+                    lastFraction = fraction
+                    lastProgressAt = Date()
+                }
+
+                // All bytes have been handed off to WCSession — the watch's
+                // receive-and-acknowledge path now owns finishing this book
+                // off to `.available`. Keep watching for a stall even here:
+                // if the watch never acks (a crash mid-install, an outdated
+                // build with no receiver), that's exactly the silent-forever
+                // case this supervisor exists to catch.
+                if fraction < 1 {
+                    self.applyWatchTransferProgress(bookID: bookID, fraction: fraction)
+                }
+
+                let stalled = Date().timeIntervalSince(lastProgressAt) > stallTimeout
+                let tooLong = Date().timeIntervalSince(startedAt) > absoluteTimeout
+                guard stalled || tooLong else { continue }
+
+                var storage = self.watchStorageSnapshot?.books ?? [:]
+                let previous = storage[bookID]
+                storage[bookID] = WatchBookStorageInfo(
+                    state: .failed,
+                    byteCount: previous?.byteCount ?? 0,
+                    chapterCount: previous?.chapterCount ?? 0,
+                    completeChapterCount: previous?.completeChapterCount ?? 0,
+                    totalChapterCount: previous?.totalChapterCount ?? 0
+                )
+                self.applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
+                return
+            }
+        }
+    }
+
+    private func applyWatchTransferProgress(bookID: UUID, fraction: Double) {
+        var storage = watchStorageSnapshot?.books ?? [:]
+        let previous = storage[bookID]
+        storage[bookID] = WatchBookStorageInfo(
+            state: .transferring(progress: fraction),
+            byteCount: previous?.byteCount ?? 0,
+            chapterCount: previous?.chapterCount ?? 0,
+            completeChapterCount: previous?.completeChapterCount ?? 0,
+            totalChapterCount: previous?.totalChapterCount ?? 0
+        )
+        applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
     }
 
     func removeBookFromWatch(bookID: UUID) async {

@@ -89,6 +89,8 @@ final class VoxglassUITests: XCTestCase {
         assertSettingsOpensFromHomeWithoutCrashing(app: app)
         assertEQTogglesFromSettingsWithoutCrashing(app: app)
         assertStorageCardsFitCompactWidth(app: app)
+        assertHistoryOpensFromExploreWithoutCrashing(app: app)
+        assertFeaturedCollectionsRespectSelectedLanguage(app: app)
 
         // ──────────────────────────────────────────────────────────────────
         // §16.3 test 1: Narration → create a project from a need → record
@@ -427,6 +429,68 @@ final class VoxglassUITests: XCTestCase {
         } else {
             app.buttons["Sheet Grabber"].swipeDown()
         }
+    }
+
+    /// Browsing/previewing a catalog result must not silently add it to My
+    /// Books any more — only the book page's own "+" does that. This checks
+    /// the other half of that change: the "Listening History" entry point
+    /// (Explore's history icon) renders and opens without crashing.
+    private func assertHistoryOpensFromExploreWithoutCrashing(app: XCUIApplication) {
+        app.buttons["Explore"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
+            "Explore did not render before opening History.\n\(app.debugDescription)"
+        )
+
+        let historyButton = app.buttons["Listening History"]
+        XCTAssertTrue(
+            historyButton.waitForExistence(timeout: 10),
+            "Explore is missing its Listening History button.\n\(app.debugDescription)"
+        )
+        historyButton.tap()
+
+        XCTAssertTrue(
+            app.navigationBars["History"].waitForExistence(timeout: 10),
+            "History did not open from Explore.\n\(app.debugDescription)"
+        )
+        XCTAssertEqual(
+            app.state, .runningForeground,
+            "App terminated after opening History from Explore."
+        )
+
+        let done = app.buttons["Done"]
+        if done.waitForExistence(timeout: 2) {
+            done.tap()
+        }
+    }
+
+    /// Regression guard (this bug has recurred more than once): Great Books
+    /// ships five language-specific variants (English/Spanish/German/
+    /// Italian/Ancient Greek) that must only show up for a language the
+    /// user has actually selected — the default onboarding selection is
+    /// English only, so the German/Spanish titles must not appear.
+    private func assertFeaturedCollectionsRespectSelectedLanguage(app: XCUIApplication) {
+        app.buttons["Explore"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
+            "Explore did not render.\n\(app.debugDescription)"
+        )
+        XCTAssertTrue(
+            app.buttons["Great Books"].waitForExistence(timeout: 10),
+            "The English Great Books collection should be visible by default.\n\(app.debugDescription)"
+        )
+        XCTAssertFalse(
+            app.buttons["Grandes Libros"].exists,
+            "The Spanish Great Books collection must not show for an English-only selection.\n\(app.debugDescription)"
+        )
+        XCTAssertFalse(
+            app.buttons["Große Bücher"].exists,
+            "The German Great Books collection must not show for an English-only selection.\n\(app.debugDescription)"
+        )
+        XCTAssertFalse(
+            app.buttons["Grandi Libri"].exists,
+            "The Italian Great Books collection must not show for an English-only selection.\n\(app.debugDescription)"
+        )
     }
 
     /// Opens the equalizer from Settings and toggles it, so a crash in the
