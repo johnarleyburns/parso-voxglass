@@ -1,0 +1,381 @@
+/* =========================================================================
+   Voxglass — Mac + iPad Universal MVP mockups
+   Tokens are NOT redefined here. They are imported from the revised MVP set,
+   which transcribes them from the app itself:
+     Voxglass/DesignSystem/VoxglassTheme.swift  (Palette, VoxglassTheme)
+     Voxglass/DesignSystem/AdaptiveGlass.swift  (glass + fallback branch)
+   This file adds only the two device frames the revised set did not need —
+   the Mac window and the iPad — plus the components those surfaces introduce
+   (source list, menu bar, shortcut table, conflict diff, batch rows).
+   Every panel still renders in both AdaptiveGlass modes:
+     [data-render="glass"] -> ultraThinMaterial + #1E2026@35% + white@16% border
+     [data-render="solid"] -> #1E2026 solid, white@16% border, no blur/shadow
+   ========================================================================= */
+
+@import url("../../iphone-watch-only-revised-mvp/mockups/style.css");
+
+body { padding: 30px 20px 60px; }
+
+/* ---------- Mac window frame ---------- */
+
+.mac {
+  position: relative;
+  width: 1180px;
+  max-width: 100%;
+  height: 760px;
+  flex: none;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background:
+    radial-gradient(120% 60% at 50% -10%, #17202a 0%, rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, #101216 0%, #0B0C0F 100%);
+  box-shadow: 0 40px 110px rgba(0, 0, 0, 0.72);
+  display: flex;
+  flex-direction: column;
+}
+.mac.warm {
+  background: linear-gradient(180deg, #241A10 0%, #12100C 34%, #0B0C0F 70%);
+}
+
+/* system title bar — the app does not draw its own (§15.1) */
+.titlebar {
+  height: 38px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.045);
+  border-bottom: 1px solid var(--hairline);
+}
+.traffic { display: flex; gap: 8px; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.traffic i:nth-child(1) { background: #FF5F57; }
+.traffic i:nth-child(2) { background: #FEBC2E; }
+.traffic i:nth-child(3) { background: #28C840; }
+.titlebar .doc {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink2);
+}
+.titlebar .tbtns { display: flex; gap: 7px; }
+.titlebar .tbtns span {
+  font-size: 12px;
+  color: var(--ink3);
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--hairline);
+}
+
+/* native window tabs — one audiobook per tab (§8.4) */
+.wintabs {
+  display: flex;
+  flex: none;
+  gap: 1px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--hairline);
+}
+.wintabs .wtab {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink3);
+  padding: 8px 15px;
+  border-radius: 8px 8px 0 0;
+  white-space: nowrap;
+}
+.wintabs .wtab.active {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 -2px 0 var(--brass);
+}
+.wintabs .wtab .dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+
+/* menu bar strip (drawn above the window so shortcuts are discoverable) */
+.menubar {
+  width: 1180px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 6px 14px;
+  border-radius: 9px;
+  background: rgba(30, 32, 38, 0.75);
+  border: 1px solid var(--glass-border);
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-bottom: -6px;
+}
+.menubar b { color: var(--ink); font-weight: 700; }
+.menubar .apple { color: var(--brass); font-weight: 800; }
+.menubar .open { color: var(--brass); }
+
+/* ---------- Mac body: source list + content + inspector ---------- */
+
+.macbody { flex: 1; min-height: 0; display: flex; }
+
+.sidebar {
+  width: 232px;
+  flex: none;
+  padding: 12px 10px;
+  overflow: auto;
+  border-right: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.022);
+  scrollbar-width: none;
+}
+.sidebar::-webkit-scrollbar { display: none; }
+.sidebar .sl-head {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: 12px 9px 5px;
+}
+.sidebar .sl-head:first-child { padding-top: 2px; }
+.sl-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+.sl-row .glyph { width: 17px; text-align: center; color: var(--ink3); font-size: 13px; }
+.sl-row .count { margin-left: auto; font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+.sl-row.active { background: rgba(227, 164, 75, 0.16); color: var(--brass); }
+.sl-row.active .glyph { color: var(--brass); }
+.sl-row.sub { padding-left: 26px; font-size: 12.5px; }
+.sl-sep { height: 1px; background: var(--hairline); margin: 10px 9px; }
+
+.maincol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.toolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+.toolbar h2 { font-size: 15px; }
+.toolbar .spacer { flex: 1; }
+.tb-btn {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink2);
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+}
+.tb-btn.primary { background: linear-gradient(180deg, #F0C98A, var(--brass)); color: #21170B; border-color: transparent; }
+.tb-btn .key { color: var(--ink3); font-weight: 600; margin-left: 6px; font-size: 11px; }
+.tb-btn.primary .key { color: rgba(33, 23, 11, 0.6); }
+
+.maincol .content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px 18px;
+}
+
+.inspector {
+  width: 302px;
+  flex: none;
+  overflow: auto;
+  padding: 14px 14px 18px;
+  border-left: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.022);
+  scrollbar-width: none;
+}
+.inspector::-webkit-scrollbar { display: none; }
+
+/* ---------- iPad frame ---------- */
+
+.ipad {
+  position: relative;
+  width: 1133px;
+  max-width: 100%;
+  height: 745px;
+  flex: none;
+  border-radius: 30px;
+  border: 12px solid #06070a;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 60% at 50% -10%, #17202a 0%, rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, #101216 0%, #0B0C0F 100%);
+  box-shadow: 0 34px 96px rgba(0, 0, 0, 0.68);
+  display: flex;
+  flex-direction: column;
+}
+.ipad.warm { background: linear-gradient(180deg, #241A10 0%, #12100C 34%, #0B0C0F 70%); }
+.ipad .status {
+  height: 30px;
+  padding: 8px 22px 0;
+  font-size: 12px;
+}
+.ipad .macbody { flex: 1; min-height: 0; display: flex; }
+.ipad .sidebar { width: 262px; }
+.ipad .inspector { width: 336px; }
+
+/* the ⌘-held shortcut HUD (iPadOS) */
+.cmdhud {
+  position: absolute;
+  left: 50%; bottom: 26px;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: 640px;
+  max-width: 88%;
+  border-radius: 18px;
+  padding: 14px 18px;
+  background: rgba(20, 21, 25, 0.93);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+.cmdhud .hud-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 9px;
+}
+.cmdhud .hud-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 26px; }
+
+/* ---------- shortcut / key components ---------- */
+
+kbd, .kbd {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  font: 600 12px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--glass-border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.kbd.brass { background: rgba(227, 164, 75, 0.18); border-color: rgba(227, 164, 75, 0.4); color: var(--brass); }
+
+.shortcut-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 13px;
+}
+.shortcut-row:last-child { border-bottom: 0; }
+.shortcut-row .keys { flex: none; width: 108px; display: flex; gap: 4px; }
+.shortcut-row .what { flex: 1; color: var(--ink2); }
+.shortcut-row .what b { color: var(--ink); font-weight: 650; }
+.shortcut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 30px; }
+
+/* ---------- conflict diff ---------- */
+
+.diff {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  padding: 11px 13px;
+  margin: 7px 0;
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+.diff.chosen { border-color: rgba(227, 164, 75, 0.45); background: rgba(227, 164, 75, 0.08); }
+.diff .who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 7px;
+}
+.diff .who .when { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; }
+ins { background: rgba(76, 212, 113, 0.20); color: var(--ink); text-decoration: none; border-radius: 3px; padding: 0 2px; }
+del { background: rgba(255, 107, 94, 0.18); color: var(--ink2); border-radius: 3px; padding: 0 2px; }
+
+/* ---------- table-ish rows (library, batch, queue) ---------- */
+
+.trow {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+.trow + .trow { margin-top: 2px; }
+.trow:nth-child(odd) { background: rgba(255, 255, 255, 0.025); }
+.trow.selected { background: rgba(227, 164, 75, 0.11); border-color: rgba(227, 164, 75, 0.3); }
+.trow .title { font-size: 13.5px; font-weight: 650; }
+.trow .meta { font-size: 11.5px; color: var(--ink3); margin-top: 2px; }
+.trow .num { font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--ink2); }
+.thead {
+  display: flex;
+  gap: 13px;
+  padding: 0 12px 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 4px;
+}
+
+/* presence pill (§4.4) — advisory, never blocking */
+.presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--ink3);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+.presence i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); display: block; }
+
+/* wide teleprompter for desk distance */
+.tele.wide { padding: 30px 34px; }
+.tele.wide .line { font-size: 27px; line-height: 1.55; }
+.tele.wide .prev, .tele.wide .next { font-size: 16px; color: var(--ink3); }
+
+.caption { max-width: 1180px; }
+
+@media (max-width: 1240px) {
+  .mac, .ipad, .menubar { width: 100%; }
+  .inspector { display: none; }
+}
+@media (max-width: 860px) {
+  .sidebar { display: none; }
+}

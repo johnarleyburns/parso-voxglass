@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voxglass — Mac + iPad Universal MVP mockups</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="index">
+  <h1>Mac + iPad Universal MVP</h1>
+  <p class="muted">Mockup set for <a href="../SPEC.md">SPEC.md</a>, a delta over <a href="../../iphone-watch-only-revised-mvp/SPEC.md">the revised iPhone + Watch MVP</a>. Three platforms, one app record, one bundle id, one Universal Purchase. The <b>iPhone and Watch mockups are not superseded</b> &mdash; they remain the contract for those surfaces and for iPad in compact width. This set adds only what is new: the Mac window, the iPad in regular width, and the two-writer conflict surface.</p>
+
+  <h2>Design compliance</h2>
+  <p class="muted">This set defines <b>no tokens of its own</b>. <code>style.css</code> imports the revised set's stylesheet, which transcribes the app's own <code>VoxglassTheme.swift</code> and <code>AdaptiveGlass.swift</code>, and adds only the two device frames and the components those surfaces introduce. Use the <b>GLASS / SOLID</b> toggle at the top-right of any screen to see the Reduce Transparency fallback <code>AdaptiveGlass</code> actually renders on every platform &mdash; a design that only works with blur is not compliant.</p>
+  <div class="swatches">
+    <div class="swatch" style="width:120px"><i style="background:#0A0B0D;border:1px solid rgba(255,255,255,.14)"></i>bg #0A0B0D</div>
+    <div class="swatch" style="width:120px"><i style="background:#F2F4F6"></i>ink #F2F4F6</div>
+    <div class="swatch" style="width:120px"><i style="background:#E3A44B"></i>brass #E3A44B</div>
+    <div class="swatch" style="width:120px"><i style="background:#B97F2E"></i>deep #B97F2E</div>
+    <div class="swatch" style="width:120px"><i style="background:#4CD471"></i>ok #4CD471</div>
+    <div class="swatch" style="width:120px"><i style="background:#FF6B5E"></i>danger #FF6B5E</div>
+    <div class="swatch" style="width:120px"><i style="background:#1E2026;border:1px solid rgba(255,255,255,.16)"></i>panel #1E2026</div>
+  </div>
+
+  <h2>macOS</h2>
+  <div class="index-grid">
+    <a href="mac-01-library.html"><b>mac-01 · Project library</b><small>NEW · the multi-audiobook front door; presence, backup state, Finder location</small></a>
+    <a href="mac-02-script.html"><b>mac-02 · Script editor</b><small>The dense multi-pane editor the phone deliberately refused</small></a>
+    <a href="mac-03-import.html"><b>mac-03 · Source import</b><small>Drag-and-drop; progressive parse still applies</small></a>
+    <a href="mac-04-recording.html"><b>mac-04 · Recording workspace</b><small>The record loop, every action on a key; four books in window tabs</small></a>
+    <a href="mac-05-shortcuts.html"><b>mac-05 · Keyboard shortcuts</b><small>NEW · the whole map, generated from KeyboardShortcutMap</small></a>
+    <a href="mac-06-review-queue.html"><b>mac-06 · Cross-project review queue</b><small>NEW · everything flagged, anywhere. Free.</small></a>
+    <a href="mac-07-batch-export.html"><b>mac-07 · Batch export</b><small>NEW · Pro. Sequential, union preflight, failure isolated per project</small></a>
+    <a href="mac-08-conflicts.html"><b>mac-08 · Conflict resolution</b><small>NEW · the one case that can genuinely conflict</small></a>
+    <a href="mac-09-storage.html"><b>mac-09 · Storage &amp; iCloud</b><small>Two budgets, per-device limit, the offload rule stated in the UI</small></a>
+    <a href="mac-10-export.html"><b>mac-10 · Export wizard</b><small>Scopes, hydration preflight, resume; a real folder, not a zip</small></a>
+  </div>
+
+  <h2>iPad — regular width</h2>
+  <div class="index-grid">
+    <a href="ipad-01-split-narration.html"><b>ipad-01 · Split-view narration</b><small>NEW · sidebar / paragraphs / inspector</small></a>
+    <a href="ipad-02-recording.html"><b>ipad-02 · Recording workspace</b><small>NEW · with the ⌘-held hardware-keyboard HUD</small></a>
+    <a href="ipad-03-review.html"><b>ipad-03 · Review</b><small>NEW · queue and player in one view</small></a>
+  </div>
+  <p class="muted" style="margin-top:10px"><b>There are deliberately no compact-width iPad pages.</b> In compact width the iPad presents the shipping iPhone flow unchanged, so the iPhone mockups <i>are</i> the compact iPad contract. That is what makes iPad support unable to regress iPhone support (spec §9.2, decision D-U6).</p>
+
+  <h2>Still the contract, in the revised set</h2>
+  <div class="index-grid">
+    <a href="../../iphone-watch-only-revised-mvp/mockups/index.html"><b>iPhone · 01–15</b><small>Unchanged. Also the compact-width iPad contract.</small></a>
+    <a href="../../iphone-watch-only-revised-mvp/mockups/index.html"><b>Apple Watch · 01–05</b><small>Unchanged. The Mac does not talk to the watch (D-U4).</small></a>
+  </div>
+
+  <h2>Reading the identifiers</h2>
+  <p class="muted">HTML <code>id</code> attributes on interactive elements are the <code>.accessibilityIdentifier</code> values the implementation must use. Identifiers already shipping on iOS &mdash; <code>record.*</code>, <code>player.*</code>, <code>paragraphList.*</code>, <code>queueBuilder.*</code>, <code>note.*</code>, <code>import.*</code>, <code>export.*</code>, <code>review.*</code>, <code>script.*</code>, <code>newProject.*</code>, <code>settings.*</code>, <code>validation.*</code> &mdash; are <b>reused</b> on Mac and iPad wherever the control means the same thing. New prefixes this set introduces: <code>library.*</code>, <code>batch.*</code>, <code>conflict.*</code>, <code>shortcut.*</code>, <code>sidebar.*</code>, <code>queue.*</code>, <code>presence.*</code>, <code>window.*</code>.</p>
+  <p class="muted"><b>No identifier names a device.</b> The same control has the same id on Mac and iPad &mdash; <code>record.recordNext</code> is <code>record.recordNext</code> everywhere &mdash; because an identifier that encodes the platform makes a shared control look like two controls to the audit test and to VoiceOver review.</p>
+  <p class="muted"><code>AccessibilityAuditTests</code> currently parses <b>only</b> <code>docs/iphone-watch-only-revised-mvp/mockups</code>. Stage <b>U0</b> extends it to this directory. Until that lands, these pages are a design contract but not yet a test-enforced one &mdash; which is exactly why extending the test is a U0 task and not an afterthought.</p>
+
+  <h2>What this set does not contain</h2>
+  <p class="muted">
+    Any screen labelled &ldquo;Voxglass Studio&rdquo; &mdash; the Mac app <b>is</b> Voxglass, same bundle id, same app record.
+    Any &ldquo;Record on Mac&rdquo; / &ldquo;Continue on Mac&rdquo; handoff &mdash; retired by N-1 and now banned by gate G-U1; the Mac is an option, never a prerequisite.
+    Any Mac↔Watch surface (D-U4).
+    Any production CarPlay entry point (M-5).
+  </p>
+</div>
+
+<script src="mockup.js"></script>
+</body>
+</html>

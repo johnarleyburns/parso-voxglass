@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-04 · Recording workspace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span class="open">Record</span><span>Review</span><span>Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac warm">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Middlemarch &mdash; Chapter 12</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="wintabs">
+    <div class="wtab active" id="window.tab.middlemarch">Middlemarch</div>
+    <div class="wtab" id="window.tab.dubliners">Dubliners<span class="dot"></span></div>
+    <div class="wtab" id="window.tab.wasteland">The Waste Land</div>
+    <div class="wtab" id="window.tab.frankenstein">Frankenstein</div>
+  </div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Middlemarch</div>
+      <div class="sl-row" id="sidebar.project.dashboard"><span class="glyph">&#9633;</span>Dashboard</div>
+      <div class="sl-row" id="sidebar.project.script"><span class="glyph">&#9776;</span>Script</div>
+      <div class="sl-row active" id="sidebar.project.record"><span class="glyph">&#9679;</span>Record</div>
+      <div class="sl-row" id="sidebar.project.review"><span class="glyph">&#9873;</span>Review<span class="count">19</span></div>
+      <div class="sl-row" id="sidebar.project.assemble"><span class="glyph">&#9707;</span>Assemble</div>
+      <div class="sl-row" id="sidebar.project.validate"><span class="glyph">&#10003;</span>Validate</div>
+      <div class="sl-row" id="sidebar.project.export"><span class="glyph">&#8686;</span>Export</div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Chapters</div>
+      <div class="sl-row sub" id="sidebar.chapter.10">10 &middot; Ch. X<span class="count">100%</span></div>
+      <div class="sl-row sub" id="sidebar.chapter.11">11 &middot; Ch. XI<span class="count">100%</span></div>
+      <div class="sl-row sub active" id="sidebar.chapter.12">12 &middot; Ch. XII<span class="count">62%</span></div>
+      <div class="sl-row sub" id="sidebar.chapter.13">13 &middot; Ch. XIII<span class="count">0%</span></div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Chapter 12 &middot; paragraph 218 of 340</h2>
+        <div class="spacer"></div>
+        <span class="chip ok" id="record.routeChip">Retail ready &middot; Scarlett 2i2</span>
+        <span class="tb-btn" id="record.audioSetup">Audio Setup</span>
+        <span class="tb-btn" id="record.importAudio">Import Audio&#8230;<span class="key">&#8984;&#8997;I</span></span>
+      </div>
+
+      <div class="content">
+        <div class="dots" style="padding-left:0">
+          <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="flag"></i>
+          <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
+          <i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+
+        <div class="tele wide" id="record.teleprompter">
+          <div class="prev">&hellip; and the years of her marriage had not been so long that she could forget.</div>
+          <div class="line">Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves not less bare of style than those in which the Blessed Virgin appeared to Italian painters.</div>
+          <div class="next">Her profile as well as her stature and bearing seemed to gain the more dignity from her plain garments.</div>
+        </div>
+
+        <div class="row between">
+          <div class="row">
+            <span class="chip bad" id="record.stateChip">&#9679; Recording</span>
+            <span class="mono" id="record.elapsed">00:14.8</span>
+          </div>
+          <div class="meter" id="record.meter">
+            <i style="height:8px"></i><i style="height:12px"></i><i style="height:17px"></i><i style="height:21px"></i>
+            <i style="height:19px"></i><i style="height:24px"></i><i style="height:22px"></i><i style="height:16px"></i>
+            <i style="height:20px"></i><i style="height:25px"></i><i style="height:23px"></i><i style="height:18px"></i>
+            <i style="height:14px"></i><i style="height:11px"></i><i style="height:8px"></i><i style="height:6px"></i>
+            <i style="height:4px"></i><i style="height:3px"></i><i style="height:2px"></i><i style="height:2px"></i>
+          </div>
+          <div class="row">
+            <span class="mono faint">Peak &minus;7.2 dBFS</span>
+            <span class="mono faint">Noise &minus;64 dBFS</span>
+          </div>
+        </div>
+
+        <div class="wave rec" id="record.waveform" style="margin-top:10px"></div>
+
+        <div class="transport">
+          <div class="tbtn" id="record.previous" title="Previous paragraph — ⌘←">&#8592;</div>
+          <div class="tbtn" id="record.play" title="Play selected take — ⌘P">&#9654;</div>
+          <div class="recbtn" id="record.recordStop" title="Record / Stop — Space or ⌘R">STOP</div>
+          <div class="tbtn" id="record.acceptNext" title="Accept &amp; next — ⌘⏎">&#10003;</div>
+          <div class="tbtn" id="record.next" title="Next paragraph — ⌘→">&#8594;</div>
+        </div>
+
+        <div class="row" style="justify-content:center;gap:8px;margin-top:2px">
+          <span class="kbd brass">Space</span><span class="faint" style="font-size:12px">record / stop</span>
+          <span class="kbd">&#8984;&#8629;</span><span class="faint" style="font-size:12px">accept &amp; next</span>
+          <span class="kbd">&#8984;\</span><span class="faint" style="font-size:12px">retake</span>
+          <span class="kbd">&#8984;'</span><span class="faint" style="font-size:12px">flag</span>
+          <span class="kbd">&#8984;;</span><span class="faint" style="font-size:12px">note</span>
+        </div>
+
+        <p class="faint" style="text-align:center;margin-top:12px;font-size:12px">A USB footswitch presents to macOS as a keyboard, so this map is also the pedal map. Holding a key never starts a second take.</p>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Paragraph 218</div>
+      <div class="field-label">Takes</div>
+      <div class="takes" id="record.takes">
+        <span class="take" id="record.take.1">1 &middot; 0:21</span>
+        <span class="take active" id="record.take.2">2 &middot; 0:19</span>
+        <span class="take" id="record.take.3">3 &middot; 0:23</span>
+      </div>
+      <div class="card tight">
+        <div class="kv"><span>Peak</span><span>&minus;6.8 dBFS</span></div>
+        <div class="kv"><span>RMS</span><span>&minus;20.4 dBFS</span></div>
+        <div class="kv"><span>Noise floor</span><span>&minus;64.1 dBFS</span></div>
+        <div class="kv"><span>Route</span><span>Retail ready</span></div>
+      </div>
+      <span class="btn small" id="record.compare">Compare takes<span class="key"> &#8997;&#8984;]</span></span>
+
+      <div class="field-label">Direction note</div>
+      <textarea class="field placeholder" id="record.note">Slower on &ldquo;Blessed Virgin&rdquo; &#8984;;</textarea>
+
+      <div class="field-label">This chapter</div>
+      <div class="card tight">
+        <div class="kv"><span>Recorded</span><span>211 / 340</span></div>
+        <div class="kv"><span>Needs pickup</span><span>2</span></div>
+        <div class="kv"><span>Flagged</span><span>4</span></div>
+      </div>
+      <span class="btn small" id="record.recordNext">Record next<span class="key"> &#8984;&#8997;&#8594;</span></span>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-04 &middot; Recording workspace (§7, §8.2)</b>
+The record loop is the product's centre, and on a Mac every action in it has a key. The teleprompter is sized for desk distance; the eyes never have to leave it to acquire a control. Window tabs across the top are four different audiobooks &mdash; <span class="kbd">&#8984;R</span> records in the front one only (§8.4). Route classification is Core's, shared with iOS, and is stored per take so validation reads history rather than hardware.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

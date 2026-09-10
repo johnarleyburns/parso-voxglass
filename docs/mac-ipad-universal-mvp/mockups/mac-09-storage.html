@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-09 · Storage &amp; iCloud</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b class="open">Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span>Review</span><span>Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Settings &mdash; Storage &amp; iCloud</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Settings</div>
+      <div class="sl-row" id="settings.general"><span class="glyph">&#9881;</span>General</div>
+      <div class="sl-row" id="settings.playback"><span class="glyph">&#9834;</span>Playback</div>
+      <div class="sl-row" id="settings.audio"><span class="glyph">&#9679;</span>Audio &amp; Recording</div>
+      <div class="sl-row active" id="settings.storage"><span class="glyph">&#9707;</span>Storage &amp; iCloud</div>
+      <div class="sl-row" id="settings.sync"><span class="glyph">&#8646;</span>Devices &amp; Sync</div>
+      <div class="sl-row" id="settings.shortcuts"><span class="glyph">&#8984;</span>Shortcuts</div>
+      <div class="sl-row" id="settings.pro"><span class="glyph">&#9733;</span>Voxglass Narration Pro</div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Storage &amp; iCloud</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="settings.storage.backUpNow">Back up now</span>
+      </div>
+
+      <div class="content">
+        <div class="banner ok" id="settings.storage.offloadRule">
+          <b>Nothing local is ever removed before the iCloud copy is verified.</b>
+          <p style="margin-top:3px">A recording is only eligible to be offloaded once its iCloud upload has been checked byte-for-byte by SHA-256 <i>and</i> the remote asset id is written into the project database. A matching file size is not sufficient and is not accepted.</p>
+        </div>
+
+        <div class="section-title">Two separate budgets</div>
+        <p class="faint" style="font-size:12.5px;margin-top:-2px;margin-bottom:8px">The audiobooks you listen to and the audiobooks you are making never share a cache. Conflating them would let a narration project evict your offline listening library, or the reverse.</p>
+
+        <div class="card">
+          <div class="row between">
+            <div><h3>Audiobook downloads</h3><small>What you listen to</small></div>
+            <span class="num">18.4 GB</span>
+          </div>
+          <div class="storagebar"><i style="width:18%;background:var(--brass-deep)"></i><i style="width:82%;background:rgba(255,255,255,.06)"></i></div>
+        </div>
+
+        <div class="card">
+          <div class="row between">
+            <div><h3>Narration working cache</h3><small>Projects, takes, renders, export staging</small></div>
+            <span class="num">31.2 GB of 50 GB</span>
+          </div>
+          <div class="storagebar" id="settings.storage.bar">
+            <i style="width:38%;background:var(--brass)"></i>
+            <i style="width:14%;background:var(--brass-deep)"></i>
+            <i style="width:8%;background:#8fa4c4"></i>
+            <i style="width:2%;background:var(--ok)"></i>
+            <i style="width:38%;background:rgba(255,255,255,.06)"></i>
+          </div>
+          <div class="legend">
+            <span class="warn-text">Original takes</span>
+            <span style="color:var(--brass-deep)">Render cache</span>
+            <span style="color:#8fa4c4">Review proxies</span>
+            <span class="ok-text">Export staging</span>
+          </div>
+
+          <div class="field-label">Working cache limit on this Mac</div>
+          <div class="row">
+            <input class="field grow" id="settings.storage.limit" value="50 GB">
+            <span class="faint" style="font-size:12px">2 GB &ndash; 2 TB</span>
+          </div>
+          <p class="faint" style="font-size:11.5px;margin-top:5px">Per device, never synced &mdash; a Mac with a 4 TB drive and a 128 GB iPhone must not share a number. First run clamps this to about 15% of free space; you can raise it deliberately.</p>
+        </div>
+
+        <div class="section-title">Eviction order</div>
+        <div class="card tight">
+          <div class="kv"><span>1 &middot; Render cache</span><span class="faint">rebuildable</span></div>
+          <div class="kv"><span>2 &middot; Completed or cancelled export staging</span><span class="faint">rebuildable</span></div>
+          <div class="kv"><span>3 &middot; Review proxies</span><span class="faint">rebuildable</span></div>
+          <div class="kv"><span>4 &middot; Verified original takes, oldest chapter first</span><span class="faint">re-downloadable</span></div>
+          <div class="hairline"></div>
+          <div class="kv"><span class="bad-text">Never evicted</span><span class="faint">local-only &middot; uploading &middot; current chapter &middot; pinned &middot; export inputs</span></div>
+        </div>
+
+        <div class="section-title">iCloud</div>
+        <div class="card">
+          <div class="kv"><span>Account</span><span>Signed in</span></div>
+          <div class="kv"><span>Narration data in iCloud</span><span>112 GB</span></div>
+          <div class="kv"><span>Originals verified</span><span class="ok-text">3,940 of 3,952</span></div>
+          <div class="kv"><span>Waiting to upload</span><span class="warn-text">12 &mdash; local only</span></div>
+          <div class="kv"><span>Stored only in iCloud</span><span>1,204 &mdash; download on demand</span></div>
+          <p class="faint" style="font-size:12px;margin-top:8px">Only your own private iCloud database is used. There is no Voxglass server.</p>
+        </div>
+
+        <div class="section-title">Devices</div>
+        <div class="list">
+          <div class="list-row" id="settings.sync.device.mac"><span class="lead">&#9635;</span><div class="grow"><b>This Mac</b><div class="meta">Last synced just now &middot; 4 projects local</div></div><span class="chip ok">Writer</span></div>
+          <div class="list-row" id="settings.sync.device.iphone"><span class="lead">&#9990;</span><div class="grow"><b>iPhone</b><div class="meta">Last synced 2 min ago &middot; recording Dubliners ch. 3</div></div><span class="chip ok">Writer</span></div>
+          <div class="list-row" id="settings.sync.device.ipad"><span class="lead">&#9634;</span><div class="grow"><b>iPad</b><div class="meta">Last synced yesterday</div></div><span class="chip ok">Writer</span></div>
+          <div class="list-row" id="settings.sync.device.watch"><span class="lead">&#9711;</span><div class="grow"><b>Apple Watch</b><div class="meta">Companion to iPhone &middot; 3 queued events</div></div><span class="chip">Review only</span></div>
+        </div>
+        <p class="faint" style="font-size:12px;margin-top:8px">Every full-capability device is a peer writer &mdash; no device is authoritative, and there is no ownership or lock to be caught out by. The watch is a companion to the iPhone and never touches iCloud.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-09 &middot; Storage &amp; iCloud (§6)</b>
+Everything here is Core and shared with iOS &mdash; asset states, the offload rule, the eviction planner and executor &mdash; so the Mac gets iCloud offload without reimplementing it. What is genuinely Mac-specific is one number: a per-device cache limit that defaults to 50 GB rather than 10 GB, because it is never synced.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-07 · Batch export</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span>Review</span><span class="open">Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Batch Export &mdash; 3 projects</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Batch Export</h2>
+        <span class="chip brass" id="batch.proChip">Voxglass Narration Pro</span>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="batch.cancel">Cancel<span class="key">&#8984;.</span></span>
+        <span class="tb-btn primary" id="batch.start">Export 3 projects</span>
+      </div>
+
+      <div class="content">
+        <div class="field-label">Destination &mdash; applied to every selected project</div>
+        <div class="segmented" id="batch.destination">
+          <span id="batch.destination.librivox">LibriVox</span>
+          <span id="batch.destination.archive">Internet Archive</span>
+          <span id="batch.destination.personal">Personal master</span>
+          <span class="active" id="batch.destination.retail">Commercial retail</span>
+        </div>
+        <p class="faint" style="font-size:12px;margin-top:6px">LibriVox, Internet Archive, and personal masters are free on every platform and never touch the licence gate &mdash; including in this batch runner. Only the <b>commercial retail</b> lane is Pro, and only because of what it produces, never because of which device produced it.</p>
+
+        <div class="section-title">Preflight &mdash; the union of all three</div>
+        <div class="card">
+          <div class="kv"><span>Chapters to render</span><span>147</span></div>
+          <div class="kv"><span>Audio to download from iCloud first</span><span class="warn-text">3.4 GB across 2 projects</span></div>
+          <div class="kv"><span>Free space required</span><span>11.2 GB</span></div>
+          <div class="kv"><span>Free space available</span><span class="ok-text">418 GB</span></div>
+          <div class="kv"><span>Blocking validation issues</span><span class="bad-text">3 in Frankenstein</span></div>
+          <div class="hairline"></div>
+          <div class="banner bad" style="margin-top:10px" id="batch.blockingIssues">
+            <b>Frankenstein has 3 blocking issues.</b>
+            <p style="margin-top:3px">Missing commercial credits &middot; 2 paragraphs with no selected take &middot; cover art 1400&times;1400 (needs 2400&times;2400). It will be skipped unless you fix these first.</p>
+            <span class="btn small inline" id="batch.fixFrankenstein" style="margin-top:8px">Open Frankenstein &amp; fix</span>
+          </div>
+        </div>
+
+        <div class="section-title">Projects</div>
+        <div class="thead">
+          <span style="width:22px"></span>
+          <span class="grow">Project</span>
+          <span style="width:110px">Chapters</span>
+          <span style="width:120px">Hydration</span>
+          <span style="width:150px">State</span>
+        </div>
+
+        <div class="trow" id="batch.row.middlemarch">
+          <span class="checkbox on">&#10003;</span>
+          <div class="grow">
+            <div class="title">Middlemarch</div>
+            <div class="meta">George Eliot &middot; 86 chapters &middot; ACX baseline preset</div>
+          </div>
+          <span style="width:110px" class="num">86</span>
+          <span style="width:120px" class="num">2.9 GB</span>
+          <div style="width:150px">
+            <span class="chip">Queued</span>
+          </div>
+        </div>
+
+        <div class="trow" id="batch.row.dubliners">
+          <span class="checkbox on">&#10003;</span>
+          <div class="grow">
+            <div class="title">Dubliners</div>
+            <div class="meta">James Joyce &middot; 15 chapters &middot; ACX baseline preset</div>
+          </div>
+          <span style="width:110px" class="num">15</span>
+          <span style="width:120px" class="num">0.5 GB</span>
+          <div style="width:150px">
+            <span class="chip">Queued</span>
+          </div>
+        </div>
+
+        <div class="trow" id="batch.row.wasteland">
+          <span class="checkbox on">&#10003;</span>
+          <div class="grow">
+            <div class="title">The Waste Land</div>
+            <div class="meta">T. S. Eliot &middot; 5 chapters &middot; ACX baseline preset</div>
+          </div>
+          <span style="width:110px" class="num">5</span>
+          <span style="width:120px" class="num">&mdash;</span>
+          <div style="width:150px">
+            <span class="chip ok">Ready</span>
+          </div>
+        </div>
+
+        <div class="trow" id="batch.row.frankenstein">
+          <span class="checkbox">&nbsp;</span>
+          <div class="grow">
+            <div class="title faint">Frankenstein</div>
+            <div class="meta">Mary Shelley &middot; 41 chapters &middot; blocked by validation</div>
+          </div>
+          <span style="width:110px" class="num faint">41</span>
+          <span style="width:120px" class="num faint">2.1 GB</span>
+          <div style="width:150px">
+            <span class="chip bad">3 blocking</span>
+          </div>
+        </div>
+
+        <div class="field-label">Output</div>
+        <div class="row">
+          <span class="field grow" id="batch.outputPath">~/Audiobooks/Exports/2026-08-11</span>
+          <span class="btn small inline" id="batch.chooseOutput">Choose&#8230;</span>
+        </div>
+        <p class="faint" style="font-size:12px;margin-top:7px">On a Mac the output is a real folder, not a zip &mdash; the phone's zip-by-default was a document-picker workaround and is not inflicted here. A zip is still offered for upload convenience, and Reveal in Finder runs at the end.</p>
+
+        <div class="banner" style="margin-top:14px">
+          <b>Sequential, not parallel.</b>
+          <p style="margin-top:3px">Encoding is CPU-bound; running three books at once would make the progress bar lie. A failure in one project does not abort the batch &mdash; the rest continue and the failure is reported on its own row.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-07 &middot; Batch export (§8.6)</b>
+<code>ProFeature.batchExport</code> already existed; the Mac is the first surface where it is genuinely useful, and it is not re-scoped or re-priced by this MVP. This is one of exactly three files on macOS permitted to consult <code>LicenseGate</code> (§2.3) &mdash; the destination picker, the runner, and Settings. Preflight is the union of each project's own preflight and runs <i>before</i> the Pro gate, so the value is visible before the purchase.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

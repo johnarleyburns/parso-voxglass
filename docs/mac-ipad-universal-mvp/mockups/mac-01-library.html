@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-01 · Project library</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span>Review</span><span class="open">Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Project Library</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Voxglass</div>
+      <div class="sl-row" id="sidebar.listen"><span class="glyph">&#9834;</span>Listen</div>
+      <div class="sl-row" id="sidebar.library"><span class="glyph">&#9635;</span>My Books</div>
+      <div class="sl-row" id="sidebar.browse"><span class="glyph">&#9783;</span>Explore</div>
+      <div class="sl-row" id="sidebar.search"><span class="glyph">&#9906;</span>Search</div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Narration</div>
+      <div class="sl-row active" id="sidebar.narration.library"><span class="glyph">&#9707;</span>All Projects<span class="count">4</span></div>
+      <div class="sl-row" id="sidebar.narration.queue"><span class="glyph">&#9873;</span>Review Queue<span class="count">23</span></div>
+      <div class="sl-row" id="sidebar.narration.conflicts"><span class="glyph">&#8646;</span>Conflicts<span class="count">2</span></div>
+      <div class="sl-row" id="sidebar.narration.needs"><span class="glyph">&#9678;</span>Narration Needs</div>
+      <div class="sl-row" id="sidebar.narration.storage"><span class="glyph">&#9707;</span>Storage &amp; iCloud</div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>All Projects</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="library.new">New Project<span class="key">&#8984;N</span></span>
+        <span class="tb-btn" id="library.open">Open&#8230;<span class="key">&#8984;O</span></span>
+        <span class="tb-btn" id="library.batchExport">Batch Export&#8230;<span class="key">&#8984;&#8679;E</span></span>
+      </div>
+
+      <div class="content">
+        <div class="banner" id="library.conflictBanner">
+          <div class="row">
+            <div class="grow"><b>2 changed paragraphs need your choice.</b>
+              <p style="margin-top:3px">Edited on this Mac and on iPhone since they last agreed. Nothing was lost &mdash; both takes and both texts are kept until you choose.</p>
+            </div>
+            <span class="tb-btn" id="library.reviewConflicts">Review<span class="key">&#8984;&#8679;C</span></span>
+          </div>
+        </div>
+
+        <div class="thead">
+          <span style="width:54px"></span>
+          <span class="grow">Project</span>
+          <span style="width:150px">Recorded</span>
+          <span style="width:112px">Status</span>
+          <span style="width:120px">Backup</span>
+        </div>
+
+        <div class="trow selected" id="library.row.middlemarch">
+          <div class="cover small">M</div>
+          <div class="grow">
+            <div class="title">Middlemarch</div>
+            <div class="meta">George Eliot &middot; LibriVox &middot; ~/Audiobooks/Middlemarch.voxproject</div>
+          </div>
+          <div style="width:150px">
+            <div class="num">418 / 1,204</div>
+            <div class="progress"><i style="width:35%"></i></div>
+          </div>
+          <div style="width:112px"><span class="chip bad">2 conflicts</span></div>
+          <div style="width:120px"><span class="chip ok">All verified</span></div>
+        </div>
+
+        <div class="trow" id="library.row.dubliners">
+          <div class="cover small cool">D</div>
+          <div class="grow">
+            <div class="title">Dubliners</div>
+            <div class="meta">James Joyce &middot; Internet Archive &middot; ~/Audiobooks/Dubliners.voxproject</div>
+            <span class="presence" id="presence.indicator.dubliners"><i></i>Recording chapter 3 on iPhone &middot; 2 min ago</span>
+          </div>
+          <div style="width:150px">
+            <div class="num">96 / 312</div>
+            <div class="progress"><i style="width:31%"></i></div>
+          </div>
+          <div style="width:112px"><span class="chip">Recording</span></div>
+          <div style="width:120px"><span class="chip">12 local only</span></div>
+        </div>
+
+        <div class="trow" id="library.row.thewasteland">
+          <div class="cover small deep">W</div>
+          <div class="grow">
+            <div class="title">The Waste Land</div>
+            <div class="meta">T. S. Eliot &middot; Personal master &middot; ~/Desktop/WasteLand.voxproject</div>
+          </div>
+          <div style="width:150px">
+            <div class="num">44 / 44</div>
+            <div class="progress ok"><i style="width:100%"></i></div>
+          </div>
+          <div style="width:112px"><span class="chip ok">Ready</span></div>
+          <div style="width:120px"><span class="chip ok">All verified</span></div>
+        </div>
+
+        <div class="trow" id="library.row.frankenstein">
+          <div class="cover small cool">F</div>
+          <div class="grow">
+            <div class="title">Frankenstein</div>
+            <div class="meta">Mary Shelley &middot; Commercial retail &middot; <span class="faint">In iCloud &mdash; not on this Mac</span></div>
+          </div>
+          <div style="width:150px">
+            <div class="num">602 / 690</div>
+            <div class="progress"><i style="width:87%"></i></div>
+          </div>
+          <div style="width:112px"><span class="chip brass">3 blocking</span></div>
+          <div style="width:120px"><span class="tb-btn" id="library.download.frankenstein">Download 2.1 GB</span></div>
+        </div>
+
+        <p class="faint" style="margin-top:16px;font-size:12px">Projects open from anywhere in the Finder. Double-click a <code>.voxproject</code>, drag one onto the window, or press <span class="kbd">&#8984;O</span>. The library merges bookmarked local packages with projects registered in your iCloud &mdash; it is never the only way in.</p>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Selected</div>
+      <h3 style="margin:5px 0 2px">Middlemarch</h3>
+      <p style="font-size:12.5px">George Eliot &middot; 86 chapters</p>
+
+      <div class="card tight">
+        <div class="kv"><span>Recorded</span><span>418 / 1,204</span></div>
+        <div class="kv"><span>Needs pickup</span><span>7</span></div>
+        <div class="kv"><span>Flagged</span><span>19</span></div>
+        <div class="kv"><span>Unresolved conflicts</span><span class="bad-text">2</span></div>
+      </div>
+
+      <div class="field-label">Backup</div>
+      <div class="card tight">
+        <div class="storagebar">
+          <i style="width:74%;background:var(--ok)"></i>
+          <i style="width:26%;background:var(--brass)"></i>
+        </div>
+        <div class="legend"><span class="ok-text">Verified in iCloud</span><span class="warn-text">Local only</span></div>
+      </div>
+
+      <div class="field-label">Actions</div>
+      <div class="stack">
+        <span class="btn small" id="library.inspector.open">Open<span class="key"> &#8984;&#8629;</span></span>
+        <span class="btn small" id="library.inspector.reveal">Reveal in Finder</span>
+        <span class="btn small" id="library.inspector.validate">Validate<span class="key"> &#8984;&#8679;V</span></span>
+        <span class="btn small" id="library.inspector.export">Export&#8230;<span class="key"> &#8984;E</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-01 &middot; Project library (§8.4)</b>
+The Mac's front door, deliberately different from the phone's need-first shelf: the phone answers &ldquo;what should I read?&rdquo;, the Mac answers &ldquo;where was I on each of these four?&rdquo;. Local bookmarked packages and iCloud-registered projects merge into one list; a project not on this Mac offers Download rather than Open. The presence pill is advisory only and never blocks &mdash; concurrency is made safe by the merge model (§4.3), not by locking.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-05 · Keyboard shortcuts</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span>Review</span><span>Project</span><span>Window</span><span class="open">Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Keyboard Shortcuts</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Keyboard Shortcuts</h2>
+        <div class="spacer"></div>
+        <span class="chip">One declarative table &middot; <code>KeyboardShortcutMap.swift</code></span>
+      </div>
+
+      <div class="content">
+        <div class="banner ok">
+          <b>Every action in the record loop has a key (§8.1).</b>
+          <p style="margin-top:3px">An action reachable only by mouse is a bug in this section. Shortcuts never require a control to acquire focus first and never move focus as a side effect. Entries marked <span class="kbd">iPad</span> also fire on iPad with a hardware keyboard (§8.3).</p>
+        </div>
+
+        <div class="shortcut-grid">
+          <div>
+            <div class="section-title">Transport &mdash; the record loop</div>
+            <div id="shortcut.group.transport">
+              <div class="shortcut-row"><span class="keys"><span class="kbd brass">Space</span></span><span class="what"><b>Record / Stop</b> &mdash; teleprompter focused</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;R</span></span><span class="what"><b>Record / Stop</b> &mdash; anywhere in the window <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;A</span></span><span class="what">Arm / disarm <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd brass">&#8984;&#8629;</span></span><span class="what"><b>Accept take &amp; advance</b> <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;&#8629;</span></span><span class="what">Accept take &amp; stay <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;\</span></span><span class="what">Retake &mdash; archive current, start new <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8997;Space</span></span><span class="what">Punch in &mdash; retake without leaving record state</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;'</span></span><span class="what">Flag paragraph for review <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;K</span></span><span class="what">Mark needs pickup <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;;</span></span><span class="what">Add a direction note <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;.</span></span><span class="what">Cancel the running operation <span class="kbd">iPad</span></span></div>
+            </div>
+
+            <div class="section-title">Movement</div>
+            <div id="shortcut.group.movement">
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8594;</span><span class="kbd">&#8984;&#8592;</span></span><span class="what">Next / previous paragraph <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8595;</span><span class="kbd">&#8984;&#8593;</span></span><span class="what">Next / previous chapter <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8997;&#8594;</span></span><span class="what"><b>Record next</b> &mdash; first paragraph with no take, else first needs-pickup <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;F</span><span class="kbd">&#8984;G</span></span><span class="what">Find in script / find next <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;J</span></span><span class="what">Jump to paragraph number <span class="kbd">iPad</span></span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-title">Listening and takes</div>
+            <div id="shortcut.group.listening">
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;P</span></span><span class="what">Play / pause the selected take <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8997;&#8984;P</span></span><span class="what">Play <b>in context</b> &mdash; previous tail, this, next head <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;L</span></span><span class="what">Loop the current paragraph <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;1</span>&hellip;<span class="kbd">&#8984;9</span></span><span class="what">Select take 1&hellip;9 <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8997;&#8984;[</span><span class="kbd">&#8997;&#8984;]</span></span><span class="what">A/B previous / next take at matched loudness <span class="kbd">iPad</span></span></div>
+            </div>
+
+            <div class="section-title">Project and windows</div>
+            <div id="shortcut.group.project">
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;N</span></span><span class="what">New audiobook project</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;O</span></span><span class="what">Open project&#8230;</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;O</span></span><span class="what">Show the project library</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;I</span></span><span class="what">Import source&#8230;</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8997;I</span></span><span class="what">Import existing audio&#8230;</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;S</span><span class="kbd">&#8984;&#8679;S</span></span><span class="what">Flush pending edits / Save a copy&#8230;</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;W</span><span class="kbd">&#8984;&#8997;W</span></span><span class="what">Close window / close all</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;Z</span><span class="kbd">&#8984;&#8679;Z</span></span><span class="what">Undo / redo <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;R</span></span><span class="what">Start review queue <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;V</span></span><span class="what">Validate <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;E</span></span><span class="what">Export&#8230; <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;E</span></span><span class="what">Batch export across selected projects <span class="chip brass">Pro</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8679;C</span></span><span class="what">Review conflicts <span class="kbd">iPad</span></span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;,</span></span><span class="what">Settings</span></div>
+              <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;`</span></span><span class="what">Cycle open project windows</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="banner bad" style="margin-top:20px">
+          <b>Reserved to the system &mdash; MUST NOT be rebound.</b>
+          <p style="margin-top:4px"><span class="kbd">&#8984;Q</span> <span class="kbd">&#8984;H</span> <span class="kbd">&#8984;M</span> <span class="kbd">&#8984;Tab</span> <span class="kbd">&#8984;Space</span> <span class="kbd">&#8963;&#8984;F</span></p>
+          <p style="margin-top:6px"><code>MacKeyboardMapTests</code> asserts no duplicate key/modifier pair, no collision with this reserved set, and a binding for every action named in the revised spec §9.2. That is only testable because the map is one table rather than modifiers scattered across views &mdash; which is also what lets iPad read it (§8.3).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-05 &middot; Keyboard shortcuts (§8.2)</b>
+This screen is the Help-menu reference sheet, and it is generated from the same <code>KeyboardShortcutMap</code> table the app binds from &mdash; so it cannot drift from the real bindings. The <span class="kbd">iPad</span> marks are the non-<code>menuOnly</code> entries, which fire on an iPad with a hardware keyboard and appear in the iPadOS &#8984;-held HUD.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

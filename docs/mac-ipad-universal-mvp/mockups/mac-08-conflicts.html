@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-08 · Conflict resolution</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span>Review</span><span class="open">Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Middlemarch &mdash; Changed paragraphs</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>2 changed paragraphs</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="conflict.keepAllThisMac">Keep all from this Mac</span>
+        <span class="tb-btn" id="conflict.keepAllIPhone">Keep all from iPhone</span>
+        <span class="tb-btn primary" id="conflict.done">Done</span>
+      </div>
+
+      <div class="content">
+        <div class="banner">
+          <b>Nothing was lost.</b>
+          <p style="margin-top:3px">Takes, recordings, review notes, and backups all merged on their own &mdash; they cannot conflict by construction (§4.3.2). What is left is the one thing no rule can decide for you: two different <i>texts</i> for the same paragraph. You can keep working with these outstanding; you cannot export until they are resolved.</p>
+        </div>
+
+        <div class="card" id="conflict.item.218">
+          <div class="row between">
+            <div>
+              <span class="eyebrow">Chapter 12 &middot; paragraph 218</span>
+              <h3 style="margin-top:3px">Both devices edited this text</h3>
+            </div>
+            <span class="chip brass" id="conflict.driftWarning.218">Has a selected take &mdash; changing the text raises drift</span>
+          </div>
+
+          <div class="diff chosen" id="conflict.side.mac.218">
+            <div class="who"><span>This Mac</span><span class="when">Today, 14:02</span></div>
+            Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves <ins>not less bare of style than those</ins> in which the Blessed Virgin appeared to Italian painters.
+          </div>
+
+          <div class="diff" id="conflict.side.iphone.218">
+            <div class="who"><span>iPhone</span><span class="when">Today, 13:58</span></div>
+            Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves <del>as bare of style as those</del> in which the Blessed Virgin appeared to Italian painters.
+          </div>
+
+          <div class="row" style="margin-top:11px;gap:8px">
+            <span class="btn small inline" id="conflict.keepMac.218">Keep this Mac's</span>
+            <span class="btn small inline" id="conflict.keepIPhone.218">Keep iPhone's</span>
+            <span class="btn small inline" id="conflict.keepBoth.218">Keep both</span>
+            <span class="faint" style="font-size:11.5px;margin-left:4px">&ldquo;Keep both&rdquo; keeps one as the text and files the other as a direction note &mdash; nothing is thrown away.</span>
+          </div>
+        </div>
+
+        <div class="card" id="conflict.item.641">
+          <div class="row between">
+            <div>
+              <span class="eyebrow">Chapter 31 &middot; paragraph 641</span>
+              <h3 style="margin-top:3px">Both devices edited this text</h3>
+            </div>
+            <span class="chip">Not yet recorded &mdash; no drift risk</span>
+          </div>
+
+          <div class="diff" id="conflict.side.mac.641">
+            <div class="who"><span>This Mac</span><span class="when">Yesterday, 21:40</span></div>
+            <ins>&ldquo;I</ins> should like to know your reasons,&rdquo; said Dorothea, <ins>looking up at him.</ins>
+          </div>
+
+          <div class="diff" id="conflict.side.iphone.641">
+            <div class="who"><span>iPhone</span><span class="when">Yesterday, 22:15</span></div>
+            <del>&ldquo;I&nbsp;</del>should like to know your reasons,&rdquo; said Dorothea, <del>and looked up at him.</del>
+          </div>
+
+          <div class="row" style="margin-top:11px;gap:8px">
+            <span class="btn small inline" id="conflict.keepMac.641">Keep this Mac's</span>
+            <span class="btn small inline" id="conflict.keepIPhone.641">Keep iPhone's</span>
+            <span class="btn small inline" id="conflict.keepBoth.641">Keep both</span>
+          </div>
+        </div>
+
+        <div class="section-title">What merged without asking</div>
+        <div class="card tight">
+          <div class="kv"><span>Takes recorded on both devices</span><span class="ok-text">6 kept &mdash; union by content hash</span></div>
+          <div class="kv"><span>Review events (approve / flag / pickup)</span><span class="ok-text">31 folded &mdash; idempotent by event id</span></div>
+          <div class="kv"><span>Project metadata edits</span><span class="ok-text">4 fields &mdash; per-field, newest wins</span></div>
+          <div class="kv"><span>Chapter added on iPhone, edited on Mac</span><span class="ok-text">Kept &mdash; edit wins over delete</span></div>
+          <div class="kv"><span>iCloud assets</span><span class="ok-text">Converged &mdash; content-addressed</span></div>
+        </div>
+        <p class="faint" style="font-size:12px;margin-top:8px">This list is not reassurance copy; it is the merge table of §4.3.2 rendered honestly. Everything auto-resolvable already resolved, which is exactly why what reaches this screen needs a human.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-08 &middot; Conflict resolution (§4.3.3)</b>
+The only user-visible conflict in Voxglass: a paragraph whose text was edited on two devices since they last agreed. Three-way against the last synced hash, so a one-sided edit fast-forwards silently. Merge never blocks work &mdash; the project opens normally and a dismissible banner offers this screen. An unresolved conflict is <code>paragraphTextConflict</code>, blocking for export only. The same content appears as a sheet on iPhone and iPad.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

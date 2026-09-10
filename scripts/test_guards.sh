@@ -275,7 +275,8 @@ if [ -f project.yml ] && grep -q 'PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
   RESTORE_ITEMS+=("project.yml")
   # Comment out every exact-match line so none of the (possibly several)
   # occurrences survives to satisfy the gate.
-  sed -i '' 's/^\([[:space:]]*PRODUCT_BUNDLE_IDENTIFIER: guru\.parso\.voxglass\)$/#\1/' project.yml
+  sed 's/^\([[:space:]]*PRODUCT_BUNDLE_IDENTIFIER: guru\.parso\.voxglass\)$/#\1/' project.yml > project.yml.tmp
+  mv project.yml.tmp project.yml
   expect_guard_fails "U3" "no PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass line in project.yml"
   mv project.yml.probe-hidden project.yml
   RESTORE_ITEMS=()

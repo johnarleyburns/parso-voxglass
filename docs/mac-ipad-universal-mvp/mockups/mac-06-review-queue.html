@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-06 · Cross-project review queue</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span class="open">Review</span><span>Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Review Queue &mdash; All Projects</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Narration</div>
+      <div class="sl-row" id="sidebar.narration.library"><span class="glyph">&#9707;</span>All Projects<span class="count">4</span></div>
+      <div class="sl-row active" id="sidebar.narration.queue"><span class="glyph">&#9873;</span>Review Queue<span class="count">23</span></div>
+      <div class="sl-row" id="sidebar.narration.conflicts"><span class="glyph">&#8646;</span>Conflicts<span class="count">2</span></div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Filter</div>
+      <div class="sl-row active" id="queue.filter.all">All projects<span class="count">23</span></div>
+      <div class="sl-row sub" id="queue.filter.middlemarch">Middlemarch<span class="count">19</span></div>
+      <div class="sl-row sub" id="queue.filter.dubliners">Dubliners<span class="count">3</span></div>
+      <div class="sl-row sub" id="queue.filter.frankenstein">Frankenstein<span class="count">1</span></div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Show</div>
+      <div class="sl-row active" id="queue.predicate.flagged"><span class="glyph">&#9873;</span>Flagged</div>
+      <div class="sl-row" id="queue.predicate.pickup"><span class="glyph">&#8635;</span>Needs pickup</div>
+      <div class="sl-row" id="queue.predicate.drift"><span class="glyph">&#9888;</span>Text changed after recording</div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Flagged &mdash; all projects</h2>
+        <div class="spacer"></div>
+        <span class="chip">Free</span>
+        <span class="tb-btn" id="queue.sendToWatch">Send to Apple Watch</span>
+        <span class="tb-btn primary" id="queue.start">Start<span class="key">&#8984;&#8679;R</span></span>
+      </div>
+
+      <div class="content">
+        <p class="faint" style="font-size:12.5px;margin-bottom:12px">The one review surface a phone cannot offer: everything flagged, anywhere. Approving here writes a <code>ReviewEvent</code> into that project's own store &mdash; the same append-only fold the watch uses, addressed across four stores instead of one.</p>
+
+        <div class="thead">
+          <span style="width:20px"></span>
+          <span style="width:150px">Project</span>
+          <span class="grow">Paragraph</span>
+          <span style="width:78px">Length</span>
+          <span style="width:130px">Action</span>
+        </div>
+
+        <div class="trow selected" id="queue.row.1">
+          <span class="lead">&#9654;</span>
+          <span style="width:150px" class="num">Middlemarch</span>
+          <div class="grow">
+            <div class="title">Ch. 12 &middot; &para;218</div>
+            <div class="meta">&ldquo;Miss Brooke had that kind of beauty which seems to be thrown into relief&hellip;&rdquo;</div>
+          </div>
+          <span style="width:78px" class="num">0:19</span>
+          <div class="row" style="width:130px;gap:5px">
+            <span class="btn small inline" id="queue.approve.1">Approve</span>
+            <span class="btn small inline" id="queue.pickup.1">Pickup</span>
+          </div>
+        </div>
+
+        <div class="trow" id="queue.row.2">
+          <span class="lead">&#9654;</span>
+          <span style="width:150px" class="num">Middlemarch</span>
+          <div class="grow">
+            <div class="title">Ch. 12 &middot; &para;223</div>
+            <div class="meta">&ldquo;Her profile as well as her stature and bearing seemed to gain the more&hellip;&rdquo;</div>
+          </div>
+          <span style="width:78px" class="num">0:24</span>
+          <div style="width:130px" class="row">
+            <span class="btn small inline" id="queue.approve.2">Approve</span>
+            <span class="btn small inline" id="queue.pickup.2">Pickup</span>
+          </div>
+        </div>
+
+        <div class="trow" id="queue.row.3">
+          <span class="lead">&#9654;</span>
+          <span style="width:150px" class="num">Dubliners</span>
+          <div class="grow">
+            <div class="title">The Sisters &middot; &para;14</div>
+            <div class="meta">&ldquo;There was no hope for him this time: it was the third stroke.&rdquo;</div>
+            <span class="chip bad" style="margin-top:4px">Flagged on Apple Watch</span>
+          </div>
+          <span style="width:78px" class="num">0:11</span>
+          <div style="width:130px" class="row">
+            <span class="btn small inline" id="queue.approve.3">Approve</span>
+            <span class="btn small inline" id="queue.pickup.3">Pickup</span>
+          </div>
+        </div>
+
+        <div class="trow" id="queue.row.4">
+          <span class="lead">&#9654;</span>
+          <span style="width:150px" class="num">Frankenstein</span>
+          <div class="grow">
+            <div class="title">Letter 1 &middot; &para;6</div>
+            <div class="meta">&ldquo;I am already far north of London, and as I walk in the streets of Petersburgh&hellip;&rdquo;</div>
+            <span class="chip brass" style="margin-top:4px">Audio in iCloud &mdash; 8 MB to download</span>
+          </div>
+          <span style="width:78px" class="num">0:31</span>
+          <div style="width:130px" class="row">
+            <span class="btn small inline" id="queue.hydrate.4">Download</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Now reviewing</div>
+      <h3 style="margin:5px 0 2px">Middlemarch &middot; &para;218</h3>
+      <p style="font-size:12.5px">Chapter 12 &middot; take 2 of 3</p>
+
+      <div class="wave" style="margin:10px 0"></div>
+      <div class="transport" style="gap:16px">
+        <div class="tbtn" id="queue.player.back">&#8630;</div>
+        <div class="tbtn" id="queue.player.play">&#9654;</div>
+        <div class="tbtn" id="queue.player.forward">&#8631;</div>
+      </div>
+      <div class="row between mono" style="font-size:11.5px">
+        <span class="faint">0:07</span><span class="faint">0:19</span>
+      </div>
+
+      <div class="field-label">Paragraph text</div>
+      <div class="card tight">
+        <p style="font-size:13px">Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress.</p>
+      </div>
+
+      <div class="field-label">Metrics</div>
+      <div class="card tight">
+        <div class="kv"><span>Peak</span><span>&minus;6.8 dBFS</span></div>
+        <div class="kv"><span>RMS</span><span>&minus;20.4 dBFS</span></div>
+        <div class="kv"><span>Noise floor</span><span>&minus;64.1 dBFS</span></div>
+      </div>
+
+      <div class="field-label">Note</div>
+      <textarea class="field placeholder" id="queue.note">Breath before &ldquo;poor dress&rdquo;</textarea>
+
+      <div class="btn-row" style="margin-top:10px">
+        <span class="btn small primary" id="queue.inspector.approve">Approve</span>
+        <span class="btn small" id="queue.inspector.flag">Flag</span>
+      </div>
+      <span class="btn small" id="queue.inspector.openProject" style="margin-top:8px">Open in Middlemarch window</span>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-06 &middot; Cross-project review queue (§8.5)</b>
+Free, per §2.2 &mdash; navigation is not a feature you can sell. Rows carry their project name because the queue spans stores; a row whose audio is <code>remoteOnly</code> offers Download rather than playing a file that is not there, and playback stays disabled until the take is local and hash-verified (§6). Watch-originated flags arrive through the same fold and are marked as such.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

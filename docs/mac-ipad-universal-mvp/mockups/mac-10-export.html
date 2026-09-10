@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-10 · Export wizard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span>Edit</span><span>Record</span><span>Review</span><span class="open">Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Middlemarch &mdash; Export</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Export</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="export.cancel">Cancel<span class="key">&#8984;.</span></span>
+        <span class="tb-btn primary" id="export.start">Export 86 chapters</span>
+      </div>
+
+      <div class="content">
+        <div class="field-label">Scope</div>
+        <div class="segmented" id="export.scope">
+          <span id="export.scope.currentChapter">Current chapter</span>
+          <span id="export.scope.selectedChapters">Selected chapters</span>
+          <span class="active" id="export.scope.wholeBook">Whole book</span>
+          <span id="export.scope.reviewRange">Review range</span>
+        </div>
+
+        <div class="field-label">Destination</div>
+        <div class="stack" id="export.destination">
+          <div class="card tight">
+            <div class="row">
+              <span class="radio on"></span>
+              <div class="grow"><b>LibriVox</b><div class="meta">128 kbps CBR mono MP3 per section, ID3 tags, durations, checklist</div></div>
+              <span class="chip ok">Free</span>
+            </div>
+          </div>
+          <div class="card tight">
+            <div class="row">
+              <span class="radio"></span>
+              <div class="grow"><b>Internet Archive</b><div class="meta">FLAC lossless masters + MP3 derivatives, sidecars, checksums, <code>ia upload</code> command</div></div>
+              <span class="chip ok">Free &mdash; FLAC included</span>
+            </div>
+          </div>
+          <div class="card tight">
+            <div class="row">
+              <span class="radio"></span>
+              <div class="grow"><b>Personal master</b><div class="meta">Lossless WAV chapters &mdash; your own recording, always yours</div></div>
+              <span class="chip ok">Free</span>
+            </div>
+          </div>
+          <div class="card tight">
+            <div class="row">
+              <span class="radio"></span>
+              <div class="grow"><b>Commercial retail</b><div class="meta">ACX/aggregator MP3, mastering, M4B, commercial FLAC masters, retail sample, validation report</div></div>
+              <span class="chip brass" id="export.proBadge">Pro</span>
+            </div>
+          </div>
+        </div>
+        <p class="faint" style="font-size:12px;margin-top:7px">This picker is one of exactly three files on macOS allowed to consult the licence gate (§2.3). The Internet Archive builder never consults it at all &mdash; a CI gate enforces that.</p>
+
+        <div class="section-title">Preflight</div>
+        <div class="card">
+          <div class="kv"><span>Chapters in scope</span><span>86</span></div>
+          <div class="kv"><span>Audio in iCloud &mdash; must download first</span><span class="warn-text">12 chapters &middot; 3.4 GB</span></div>
+          <div class="kv"><span>Free space required</span><span>7.8 GB</span></div>
+          <div class="kv"><span>Free space available</span><span class="ok-text">418 GB</span></div>
+          <div class="kv"><span>Blocking validation issues</span><span class="ok-text">None</span></div>
+          <div class="kv"><span>Unresolved paragraph conflicts</span><span class="ok-text">None</span></div>
+          <div class="btn-row" style="margin-top:10px">
+            <span class="btn small" id="export.hydrateAll">Download all 3.4 GB</span>
+            <span class="btn small" id="export.localOnly">Export the 74 local chapters only</span>
+          </div>
+        </div>
+
+        <div class="section-title">Output</div>
+        <div class="row">
+          <span class="field grow" id="export.outputPath">~/Audiobooks/Exports/Middlemarch &mdash; LibriVox</span>
+          <span class="btn small inline" id="export.chooseOutput">Choose&#8230;</span>
+        </div>
+        <div class="row" style="margin-top:9px">
+          <span class="checkbox">&nbsp;</span><small class="grow">Also write a <code>.zip</code> beside the folder</small>
+        </div>
+        <div class="row" style="margin-top:7px">
+          <span class="checkbox on">&#10003;</span><small class="grow">Reveal in Finder when finished</small>
+        </div>
+        <div class="row" style="margin-top:7px">
+          <span class="checkbox on">&#10003;</span><small class="grow">Free the local export staging afterwards</small>
+        </div>
+
+        <div class="section-title">Resuming</div>
+        <div class="card tight" id="export.resume">
+          <div class="row">
+            <div class="grow">
+              <b style="font-size:13px">A run from yesterday stopped at chapter 41.</b>
+              <div class="meta">Resume restarts at the first incomplete chapter, not from zero. A Mac export also survives sleep.</div>
+            </div>
+            <span class="btn small inline" id="export.resumeRun">Resume</span>
+          </div>
+        </div>
+
+        <p class="faint" style="font-size:12px;margin-top:14px">Voxglass prepares files; it does not guarantee acceptance or determine copyright. You submit these files yourself &mdash; Voxglass never uploads on your behalf.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-10 &middot; Export wizard (§12)</b>
+The pipeline, scopes, hydration and storage preflight, and resumable runs are all Core and all shipping &mdash; <code>ResumableExportRunner</code>, <code>ExportPreflight</code>, <code>ExportPackageZipper</code>. The Mac's only real differences are that the output is a real folder rather than a zip (the phone's zip default was a document-picker workaround), Reveal in Finder, and surviving sleep. Validation stays free for every destination, retail included, so the value is visible before any purchase.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

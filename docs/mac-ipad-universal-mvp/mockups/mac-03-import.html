@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-03 · Source import</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span class="open">File</span><span>Edit</span><span>Record</span><span>Review</span><span>Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">New Project &mdash; Source</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Import source</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="import.chooseFile">Choose file&#8230;<span class="key">&#8984;&#8679;I</span></span>
+        <span class="tb-btn primary" id="import.continue">Continue</span>
+      </div>
+
+      <div class="content">
+        <div class="card" id="import.dropZone" style="border-style:dashed;text-align:center;padding:26px">
+          <div style="font-size:30px;color:var(--brass)">&#8681;</div>
+          <h3 style="margin-top:8px">Drop an EPUB, TXT, Markdown, or DOCX here</h3>
+          <p style="margin-top:4px">&hellip; or paste text, or fetch from Project Gutenberg. Drag-and-drop is the Mac's natural entry point; <span class="kbd">&#8984;&#8679;I</span> opens the file panel.</p>
+        </div>
+
+        <div class="row between" style="margin-top:14px">
+          <div class="row">
+            <div class="cover small">M</div>
+            <div>
+              <h3>middlemarch.epub</h3>
+              <small>4.2 MB &middot; EPUB 3 &middot; imported from ~/Downloads</small>
+            </div>
+          </div>
+          <span class="chip brass" id="import.progressChip">Parsing &mdash; 62 of 86 chapters</span>
+        </div>
+        <div class="progress tall" id="import.progress"><i style="width:72%"></i></div>
+        <p class="faint" style="font-size:12px">Large documents parse <b>progressively</b> and a preview is available before the parse completes. A Mac is faster than a phone, not infinitely fast &mdash; a 400-page EPUB must still not block this screen.</p>
+
+        <div class="section-title">What was found so far</div>
+        <div class="card">
+          <div class="kv"><span>Chapters</span><span>62 (of ~86)</span></div>
+          <div class="kv"><span>Paragraphs</span><span>7,914</span></div>
+          <div class="kv"><span>Estimated running time</span><span>34 h 20 m</span></div>
+          <div class="kv"><span>Front matter detected</span><span>Title page, dedication, contents</span></div>
+        </div>
+
+        <div class="banner" id="import.warnings">
+          <b>3 things worth a look.</b>
+          <p style="margin-top:4px">2 chapters contain footnote markers that will be read aloud unless removed &middot; 1 chapter is 4 h 12 m and exceeds the 120-minute-per-file commercial limit, so it will need splitting before a retail export.</p>
+          <span class="btn small inline" id="import.reviewWarnings" style="margin-top:8px">Review warnings</span>
+        </div>
+
+        <div class="section-title">Chapters</div>
+        <p class="faint" style="font-size:12px;margin-top:-2px;margin-bottom:8px">Counts and warnings first; drilling into individual chapters is a second step (revised §8.2).</p>
+
+        <div class="list">
+          <div class="list-row" id="import.chapter.1"><span class="lead">1</span><div class="grow"><b>Prelude</b><div class="meta">14 paragraphs &middot; 4 m</div></div><span class="chev">&#8250;</span></div>
+          <div class="list-row" id="import.chapter.2"><span class="lead">2</span><div class="grow"><b>Chapter I</b><div class="meta">212 paragraphs &middot; 48 m</div></div><span class="chev">&#8250;</span></div>
+          <div class="list-row" id="import.chapter.3"><span class="lead">3</span><div class="grow"><b>Chapter II</b><div class="meta">188 paragraphs &middot; 41 m</div></div><span class="chev">&#8250;</span></div>
+          <div class="list-row" id="import.chapter.4"><span class="lead">4</span><div class="grow"><b>Chapter III</b><div class="meta">431 paragraphs &middot; <span class="warn-text">4 h 12 m &mdash; over the retail per-file limit</span></div></div><span class="chev">&#8250;</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Project</div>
+
+      <div class="field-label">Title</div>
+      <input class="field" id="newProject.title" value="Middlemarch">
+
+      <div class="field-label">Author</div>
+      <input class="field" id="newProject.author" value="George Eliot">
+
+      <div class="field-label">Destination lane</div>
+      <div class="stack">
+        <div class="row"><span class="radio on"></span><div class="grow"><b style="font-size:13px">LibriVox</b><div class="meta">Free &middot; human narration only</div></div></div>
+        <div class="row"><span class="radio"></span><div class="grow"><b style="font-size:13px">Internet Archive</b><div class="meta">Free &middot; FLAC masters + MP3</div></div></div>
+        <div class="row"><span class="radio"></span><div class="grow"><b style="font-size:13px">Personal master</b><div class="meta">Free &middot; lossless WAV</div></div></div>
+        <div class="row"><span class="radio"></span><div class="grow"><b style="font-size:13px">Commercial retail</b><div class="meta">Voxglass Narration Pro</div></div></div>
+      </div>
+      <p class="faint" style="font-size:11.5px;margin-top:6px">The lane decides the tier, never the device. Validation for every lane &mdash; including retail &mdash; is free on every platform.</p>
+
+      <div class="field-label">Where to save</div>
+      <div class="row">
+        <span class="field grow" id="newProject.path">~/Audiobooks</span>
+        <span class="btn small inline" id="newProject.choosePath">Choose&#8230;</span>
+      </div>
+      <p class="faint" style="font-size:11.5px;margin-top:4px">A <code>.voxproject</code> package &mdash; the same format the phone writes. It lives where you put it and syncs by project id, not by path.</p>
+
+      <div class="field-label">Rights</div>
+      <div class="row top">
+        <span class="checkbox on">&#10003;</span>
+        <small class="grow">I have the right to record and distribute this text.</small>
+      </div>
+      <p class="faint" style="font-size:11px;margin-top:6px">Voxglass does not determine copyright status.</p>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-03 &middot; Source import (§10)</b>
+Same Core pipeline as iOS &mdash; the EPUB/DOCX/MD/TXT importers, <code>Segmenter</code>, <code>ParagraphReidentifier</code> &mdash; with the Mac's natural entry points layered on: drag-and-drop, a file panel, and a real save location. Progressive parse is inherited from revised §8.2 and is not relaxed because the hardware is faster.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

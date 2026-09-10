@@ -72,6 +72,8 @@ docs/plans/*
 !docs/plans/watch-rearchitecture/**
 !docs/plans/watch-local-playback/
 !docs/plans/watch-local-playback/**
+!docs/mac-ipad-universal-mvp/
+!docs/mac-ipad-universal-mvp/**
 *.voxglassbackup
 
 # Curated lists generator cache

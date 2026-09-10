@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mac-02 · Script editor</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="menubar">
+  <span class="apple">&#63743;</span><b>Voxglass</b><span>File</span><span class="open">Edit</span><span>Record</span><span>Review</span><span>Project</span><span>Window</span><span>Help</span>
+</div>
+
+<div class="mac">
+  <div class="titlebar">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <div class="doc">Middlemarch &mdash; Script</div>
+    <div class="tbtns"><span>&#9636;</span></div>
+  </div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Middlemarch</div>
+      <div class="sl-row" id="sidebar.project.dashboard"><span class="glyph">&#9633;</span>Dashboard</div>
+      <div class="sl-row active" id="sidebar.project.script"><span class="glyph">&#9776;</span>Script</div>
+      <div class="sl-row" id="sidebar.project.record"><span class="glyph">&#9679;</span>Record</div>
+      <div class="sl-row" id="sidebar.project.review"><span class="glyph">&#9873;</span>Review<span class="count">19</span></div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Chapters</div>
+      <div class="sl-row sub" id="script.chapter.10">10 &middot; Ch. X<span class="count">100%</span></div>
+      <div class="sl-row sub" id="script.chapter.11">11 &middot; Ch. XI<span class="count">100%</span></div>
+      <div class="sl-row sub active" id="script.chapter.12">12 &middot; Ch. XII<span class="count">62%</span></div>
+      <div class="sl-row sub" id="script.chapter.13">13 &middot; Ch. XIII<span class="count">0%</span></div>
+      <div class="sl-row sub" id="script.chapter.14">14 &middot; Ch. XIV<span class="count">0%</span></div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Chapter 12 &middot; 340 paragraphs</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="script.find">Find<span class="key">&#8984;F</span></span>
+        <span class="tb-btn" id="script.jump">Jump to &para;<span class="key">&#8984;J</span></span>
+        <span class="tb-btn" id="script.undo">Undo<span class="key">&#8984;Z</span></span>
+      </div>
+
+      <div class="content">
+        <div class="para" id="script.para.216">
+          <div class="head"><span class="num">&para;216</span><span class="chip ok">Recorded</span></div>
+          <div class="text">She was usually spoken of as being remarkably clever, but with the addition that her sister Celia had more common-sense.</div>
+        </div>
+
+        <div class="para" id="script.para.217">
+          <div class="head"><span class="num">&para;217</span><span class="chip ok">Recorded</span></div>
+          <div class="text">Nevertheless, Celia wore scarcely more trimmings; and it was only to close observers that her dress differed from her sister's.</div>
+        </div>
+
+        <div class="para selected" id="script.para.218">
+          <div class="head">
+            <span class="num">&para;218</span>
+            <div class="row" style="gap:5px">
+              <span class="chip brass">Text changed</span>
+              <span class="chip ok">Recorded</span>
+            </div>
+          </div>
+          <div class="text">Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves not less bare of style than those in which the Blessed Virgin appeared to Italian painters.</div>
+        </div>
+
+        <div class="para" id="script.para.219">
+          <div class="head"><span class="num">&para;219</span><span class="chip">Unrecorded</span></div>
+          <div class="text">Her profile as well as her stature and bearing seemed to gain the more dignity from her plain garments.</div>
+        </div>
+
+        <div class="para" id="script.para.220">
+          <div class="head"><span class="num">&para;220</span><span class="chip bad">Needs pickup</span></div>
+          <div class="text">Dorothea knelt down together with Celia on the old faded carpet, and prayed as she had prayed the evening before.</div>
+        </div>
+
+        <div class="para" id="script.para.221">
+          <div class="head"><span class="num">&para;221</span><span class="chip">Unrecorded</span></div>
+          <div class="text">&ldquo;I should like to know your reasons,&rdquo; said Dorothea, looking up at him.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Inspector &middot; &para;218</div>
+
+      <div class="banner" id="script.driftBanner">
+        <b>Text changed after recording.</b>
+        <p style="margin-top:3px">Take 2 was recorded against an earlier version of this paragraph. Re-record, or accept the drift and validate anyway.</p>
+      </div>
+
+      <div class="field-label">Text</div>
+      <textarea class="field" id="script.text" style="min-height:132px">Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves not less bare of style than those in which the Blessed Virgin appeared to Italian painters.</textarea>
+      <p class="faint" style="font-size:11.5px;margin-top:4px">Edits debounce at 400 ms; <span class="kbd">&#8984;S</span> flushes immediately.</p>
+
+      <div class="field-label">Direction note</div>
+      <textarea class="field placeholder" id="script.note">Slower on &ldquo;Blessed Virgin&rdquo;</textarea>
+
+      <div class="field-label">Pronunciation</div>
+      <input class="field placeholder" id="script.pronunciation" value="Brooke = /br&#650;k/">
+
+      <div class="field-label">Structure</div>
+      <div class="btn-row">
+        <span class="btn small" id="script.splitHere">Split here</span>
+        <span class="btn small" id="script.mergeNext">Merge next</span>
+      </div>
+
+      <div class="field-label">Review state</div>
+      <div class="segmented" id="script.reviewState">
+        <span class="active" id="script.reviewState.none">None</span>
+        <span id="script.reviewState.flagged">Flagged</span>
+        <span id="script.reviewState.pickup">Pickup</span>
+        <span id="script.reviewState.approved">Approved</span>
+      </div>
+
+      <div class="field-label">Takes</div>
+      <div class="takes">
+        <span class="take" id="script.take.1">1 &middot; 0:21</span>
+        <span class="take active" id="script.take.2">2 &middot; 0:19</span>
+        <span class="take" id="script.take.3">3 &middot; 0:23</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>mac-02 &middot; Script editor (§10)</b>
+The revised spec deliberately refused a dense multi-pane editor on the phone &mdash; &ldquo;a phone-shaped editor, not a dense multi-pane one&rdquo;. A Mac affords exactly what the phone could not: chapter outline, paragraph list, and inspector all visible at once. The Core operations underneath are identical &mdash; <code>ParagraphSplitter</code>, <code>TextDriftDetector</code>, the same debounce &mdash; so the two editors cannot diverge in behaviour, only in density.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

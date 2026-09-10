@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ipad-02 · Recording workspace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="ipad warm">
+  <div class="status"><span>9:41</span><span>Middlemarch</span><span>&#9679;&#9679;&#9679; &#9207; 84%</span></div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Chapter 12</div>
+      <div class="sl-row sub" id="paragraphList.compact.216">&para;216<span class="count">&#10003;</span></div>
+      <div class="sl-row sub" id="paragraphList.compact.217">&para;217<span class="count">&#10003;</span></div>
+      <div class="sl-row sub active" id="paragraphList.compact.218">&para;218<span class="count">&#9679;</span></div>
+      <div class="sl-row sub" id="paragraphList.compact.219">&para;219</div>
+      <div class="sl-row sub" id="paragraphList.compact.220">&para;220<span class="count">&#9873;</span></div>
+      <div class="sl-row sub" id="paragraphList.compact.221">&para;221</div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Progress</div>
+      <div class="sl-row"><span class="glyph">&#9679;</span>211 / 340</div>
+      <div class="sl-row"><span class="glyph">&#9873;</span>4 flagged</div>
+      <div class="sl-row"><span class="glyph">&#8635;</span>2 pickups</div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>&para;218 of 340</h2>
+        <div class="spacer"></div>
+        <span class="chip ok" id="record.routeChip">Retail ready &middot; USB-C interface</span>
+        <span class="tb-btn" id="record.audioSetup">Audio Setup</span>
+      </div>
+
+      <div class="content">
+        <div class="dots" style="padding-left:0">
+          <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="flag"></i>
+          <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
+          <i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+
+        <div class="tele wide" id="record.teleprompter">
+          <div class="prev">&hellip; and the years of her marriage had not been so long that she could forget.</div>
+          <div class="line">Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves not less bare of style than those in which the Blessed Virgin appeared to Italian painters.</div>
+          <div class="next">Her profile as well as her stature and bearing seemed to gain the more dignity from her plain garments.</div>
+        </div>
+
+        <div class="row between">
+          <div class="row">
+            <span class="chip bad" id="record.stateChip">&#9679; Recording</span>
+            <span class="mono" id="record.elapsed">00:14.8</span>
+          </div>
+          <div class="meter" id="record.meter">
+            <i style="height:8px"></i><i style="height:13px"></i><i style="height:18px"></i><i style="height:22px"></i>
+            <i style="height:19px"></i><i style="height:24px"></i><i style="height:21px"></i><i style="height:15px"></i>
+            <i style="height:20px"></i><i style="height:24px"></i><i style="height:22px"></i><i style="height:17px"></i>
+            <i style="height:13px"></i><i style="height:10px"></i><i style="height:7px"></i><i style="height:5px"></i>
+            <i style="height:4px"></i><i style="height:3px"></i><i style="height:2px"></i><i style="height:2px"></i>
+          </div>
+          <span class="mono faint">Peak &minus;7.2 dBFS</span>
+        </div>
+
+        <div class="wave rec" id="record.waveform" style="margin-top:10px"></div>
+
+        <div class="transport">
+          <div class="tbtn" id="record.previous">&#8592;</div>
+          <div class="tbtn" id="record.play">&#9654;</div>
+          <div class="recbtn" id="record.recordStop">STOP</div>
+          <div class="tbtn" id="record.acceptNext">&#10003;</div>
+          <div class="tbtn" id="record.next">&#8594;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Takes</div>
+      <div class="takes">
+        <span class="take" id="record.take.1">1 &middot; 0:21</span>
+        <span class="take active" id="record.take.2">2 &middot; 0:19</span>
+        <span class="take" id="record.take.3">3 &middot; 0:23</span>
+      </div>
+
+      <div class="card tight">
+        <div class="kv"><span>Peak</span><span>&minus;6.8 dBFS</span></div>
+        <div class="kv"><span>RMS</span><span>&minus;20.4 dBFS</span></div>
+        <div class="kv"><span>Noise floor</span><span>&minus;64.1 dBFS</span></div>
+        <div class="kv"><span>Route</span><span>Retail ready</span></div>
+      </div>
+
+      <div class="field-label">Direction note</div>
+      <textarea class="field placeholder" id="record.note">Slower on &ldquo;Blessed Virgin&rdquo;</textarea>
+
+      <div class="banner ok" style="margin-top:12px">
+        <b>Rotating won't stop the take.</b>
+        <p style="margin-top:3px">A size-class change &mdash; rotation, Stage Manager resize, Slide Over &mdash; preserves the current paragraph, the take selection, and any recording in flight.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmdhud" id="shortcut.hud">
+    <div class="hud-title">Hold &#8984; &mdash; hardware keyboard</div>
+    <div class="hud-grid">
+      <div class="shortcut-row"><span class="keys"><span class="kbd brass">&#8984;R</span></span><span class="what">Record / Stop</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd brass">&#8984;&#8629;</span></span><span class="what">Accept &amp; next</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;\</span></span><span class="what">Retake</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;'</span></span><span class="what">Flag</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8594;</span></span><span class="what">Next paragraph</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;P</span></span><span class="what">Play take</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;;</span></span><span class="what">Direction note</span></div>
+      <div class="shortcut-row"><span class="keys"><span class="kbd">&#8984;&#8997;&#8594;</span></span><span class="what">Record next</span></div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>ipad-02 &middot; Recording workspace with a hardware keyboard (§9.3)</b>
+The HUD is iPadOS's own &#8984;-held overlay, and its contents come from the same <code>KeyboardShortcutMap</code> table the Mac binds from &mdash; the non-<code>menuOnly</code> entries. That shared table is what keeps a narrator's muscle memory intact moving between an iPad in a case and a Mac at a desk, and it is why the map is one value type in Core rather than modifiers scattered across views.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>

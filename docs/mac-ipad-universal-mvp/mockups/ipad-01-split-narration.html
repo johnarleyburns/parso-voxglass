@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ipad-01 · Split-view narration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="ipad">
+  <div class="status"><span>9:41</span><span>Wed 11 Aug</span><span>&#9679;&#9679;&#9679; &#9207; 84%</span></div>
+
+  <div class="macbody">
+    <div class="sidebar">
+      <div class="sl-head">Voxglass</div>
+      <div class="sl-row" id="sidebar.listen"><span class="glyph">&#9834;</span>Listen</div>
+      <div class="sl-row" id="sidebar.library"><span class="glyph">&#9635;</span>My Books</div>
+      <div class="sl-row" id="sidebar.browse"><span class="glyph">&#9783;</span>Explore</div>
+      <div class="sl-row" id="sidebar.search"><span class="glyph">&#9906;</span>Search</div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Narration</div>
+      <div class="sl-row" id="sidebar.narration.needs"><span class="glyph">&#9678;</span>Narration Needs</div>
+      <div class="sl-row active" id="sidebar.narration.myNarrations"><span class="glyph">&#9707;</span>My Narrations<span class="count">3</span></div>
+      <div class="sl-row sub active" id="sidebar.project.middlemarch">Middlemarch<span class="count">35%</span></div>
+      <div class="sl-row sub" id="sidebar.project.dubliners">Dubliners<span class="count">31%</span></div>
+      <div class="sl-row sub" id="sidebar.project.wasteland">The Waste Land<span class="count">100%</span></div>
+      <div class="sl-sep"></div>
+      <div class="sl-head">Middlemarch</div>
+      <div class="sl-row sub" id="sidebar.chapter.11">11 &middot; Ch. XI<span class="count">100%</span></div>
+      <div class="sl-row sub active" id="sidebar.chapter.12">12 &middot; Ch. XII<span class="count">62%</span></div>
+      <div class="sl-row sub" id="sidebar.chapter.13">13 &middot; Ch. XIII<span class="count">0%</span></div>
+    </div>
+
+    <div class="maincol">
+      <div class="toolbar">
+        <h2>Chapter 12 &middot; 340 paragraphs</h2>
+        <div class="spacer"></div>
+        <span class="tb-btn" id="record.recordNext">Record next<span class="key">&#8984;&#8997;&#8594;</span></span>
+      </div>
+
+      <div class="content">
+        <div class="para" id="paragraphList.para.216">
+          <div class="head"><span class="num">&para;216</span><span class="chip ok">Recorded</span></div>
+          <div class="text">She was usually spoken of as being remarkably clever, but with the addition that her sister Celia had more common-sense.</div>
+        </div>
+        <div class="para" id="paragraphList.para.217">
+          <div class="head"><span class="num">&para;217</span><span class="chip ok">Recorded</span></div>
+          <div class="text">Nevertheless, Celia wore scarcely more trimmings; and it was only to close observers that her dress differed from her sister's.</div>
+        </div>
+        <div class="para selected" id="paragraphList.para.218">
+          <div class="head"><span class="num">&para;218</span><span class="chip ok">Recorded &middot; take 2</span></div>
+          <div class="text">Miss Brooke had that kind of beauty which seems to be thrown into relief by poor dress. Her hand and wrist were so finely formed that she could wear sleeves not less bare of style than those in which the Blessed Virgin appeared to Italian painters.</div>
+        </div>
+        <div class="para" id="paragraphList.para.219">
+          <div class="head"><span class="num">&para;219</span><span class="chip">Unrecorded</span></div>
+          <div class="text">Her profile as well as her stature and bearing seemed to gain the more dignity from her plain garments.</div>
+        </div>
+        <div class="para" id="paragraphList.para.220">
+          <div class="head"><span class="num">&para;220</span><span class="chip bad">Needs pickup</span></div>
+          <div class="text">Dorothea knelt down together with Celia on the old faded carpet, and prayed as she had prayed the evening before.</div>
+        </div>
+        <div class="para" id="paragraphList.para.221">
+          <div class="head"><span class="num">&para;221</span><span class="chip">Unrecorded</span></div>
+          <div class="text">&ldquo;I should like to know your reasons,&rdquo; said Dorothea, looking up at him.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div class="eyebrow">Paragraph 218</div>
+
+      <div class="card tight">
+        <div class="kv"><span>Recorded</span><span>418 / 1,204</span></div>
+        <div class="kv"><span>This chapter</span><span>211 / 340</span></div>
+        <div class="kv"><span>Flagged</span><span>4</span></div>
+      </div>
+
+      <div class="field-label">Takes</div>
+      <div class="takes">
+        <span class="take" id="record.take.1">1 &middot; 0:21</span>
+        <span class="take active" id="record.take.2">2 &middot; 0:19</span>
+        <span class="take" id="record.take.3">3 &middot; 0:23</span>
+      </div>
+      <span class="btn small" id="record.compare" style="margin-top:8px">Compare takes</span>
+
+      <div class="field-label">Direction note</div>
+      <textarea class="field placeholder" id="record.note">Slower on &ldquo;Blessed Virgin&rdquo;</textarea>
+
+      <div class="field-label">Storage</div>
+      <div class="card tight">
+        <div class="storagebar"><i style="width:71%;background:var(--ok)"></i><i style="width:29%;background:var(--brass)"></i></div>
+        <div class="legend"><span class="ok-text">Verified in iCloud</span><span class="warn-text">Local only</span></div>
+      </div>
+
+      <span class="presence" id="presence.indicator"><i></i>Recording chapter 3 on iPhone &middot; 2 min ago</span>
+
+      <div class="btn-row" style="margin-top:12px">
+        <span class="btn small primary" id="record.open">Record<span class="key"> &#8984;R</span></span>
+        <span class="btn small" id="review.open">Review</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption"><b>ipad-01 &middot; Split-view narration, regular width (§9.2)</b>
+Sidebar &middot; paragraph list &middot; inspector. One routing decision in <code>NarrationLayoutRouter</code> chooses this over the iPhone flow &mdash; not a per-screen fork. In <b>compact</b> width (portrait on smaller iPads, Slide Over, narrow Stage Manager) the iPad falls back to the shipping iPhone flow byte-for-byte, which is what makes iPad support unable to regress iPhone support. Identifiers are shared with iOS wherever a control means the same thing.</p>
+
+<script src="mockup.js"></script>
+</body>
+</html>
