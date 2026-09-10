@@ -1,15 +1,15 @@
 import Foundation
 import Testing
 import VoxglassCore
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 @MainActor
-@Suite struct StudioEnvironmentTests {
+@Suite struct MacEnvironmentTests {
 
     // MARK: - .test(seed:) wiring (§4.3, §19.6)
 
     @Test func testEnvironmentIsFlaggedAndWiresFakes() {
-        let env = StudioEnvironment.test(seed: .empty)
+        let env = MacEnvironment.test(seed: .empty)
         #expect(env.isTestEnvironment)
         #expect(env.capture is UITestAudioCapture)
         #expect(env.license.provider is UITestLicenseProvider)
@@ -18,7 +18,7 @@ import VoxglassCore
 
     @Test func testEnvironmentVariantsAllWireFakes() {
         for seed in UITestSeed.allCases {
-            let env = StudioEnvironment.test(seed: seed)
+            let env = MacEnvironment.test(seed: seed)
             #expect(env.isTestEnvironment, "seed \(seed.rawValue) must flag the test environment")
             #expect(env.capture is UITestAudioCapture, "seed \(seed.rawValue) must wire the fake capture")
         }
@@ -41,7 +41,7 @@ import VoxglassCore
 
     @Test func everySeedArgumentHasACompanionLaunchArgumentsSet() {
         // `.live` is never reachable when a seed is present: the seed branch
-        // wins in `StudioApp.init` before the `-useTemporaryStore` branch.
+        // wins in `MacApp.init` before the `-useTemporaryStore` branch.
         for seed in UITestSeed.allCases {
             let args = ["-uiTestSeed", seed.rawValue, "-useTemporaryStore"]
             #expect(UITestSeed(arguments: args) == seed)
@@ -51,7 +51,7 @@ import VoxglassCore
     // MARK: - Navigation model (§18.1.1)
 
     @Test func navigateToTabAndSheet() {
-        let env = StudioEnvironment.test(seed: .empty)
+        let env = MacEnvironment.test(seed: .empty)
         env.navigate(to: .record)
         #expect(env.selectedTab == .record)
         #expect(env.presentedSheet == nil)
@@ -65,7 +65,7 @@ import VoxglassCore
     }
 
     @Test func closeProjectReturnsToLibrary() {
-        let env = StudioEnvironment.test(seed: .empty)
+        let env = MacEnvironment.test(seed: .empty)
         var dismissed = false
         env.onDismissProjectWindow = { dismissed = true }
         env.setProject(AudiobookProject(

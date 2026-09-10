@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// WP-H coverage for the remaining specified surfaces: Validation "Fix Next
 /// Issue" (F-23), take-comparison A/B (F-25), and Import Audio markers (F-26).

@@ -1,5 +1,26 @@
 # Voxglass — current status
 
+**Updated:** 2026-09-09
+
+## Monetization decision — 2026-09-09
+
+Voxglass has **no gated Pro features**. Every feature previously behind the
+one-time "Voxglass Narration Pro" purchase (retail destination profiles,
+mastering chain, chapterized M4B, FLAC masters, batch export, exportable
+validation reports) is free. `NarrationProStore` now hands `NarrationFlow`'s
+existing `LicenseGate`/`isProUnlocked` a `StaticLicenseProvider` pinned to
+`.pro`, so those call sites never gate anything, without needing to touch
+every UI site that reads them.
+
+The only purchase left is **"Contribute to Development"** — a purely
+optional, one-time StoreKit consumable (`guru.parso.voxglass.support.dev`,
+$9.99). A successful purchase sets `AppPreferencesStore.Keys.isSupporter`
+and the Listen/home view shows a small "Supporter" badge next to the
+Settings button. Nothing checks this flag to unlock anything — it is a
+thank-you, not an entitlement. Implemented in `SupportDevelopmentStore.swift`
+(new) and `SettingsView.swift`'s new "Support" section (replacing the old
+"Commercial release"/"Restore purchase" rows).
+
 **Updated:** 2026-09-01
 
 **Active initiative:** Correct Watch-local download-first audiobook playback

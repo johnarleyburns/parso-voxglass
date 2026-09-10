@@ -88,8 +88,8 @@ public final class RecordingModel {
     private let player: (any SegmentPlayer)?
     private let metrics: (any AudioMetricsCalculating)?
     /// UI preferences that shape recording behavior (auto-select, skip-on-advance).
-    public var settings = StudioSettings()
-    public let undo: StudioUndo
+    public var settings = MacSettings()
+    public let undo: MacUndo
 
     public init(
         capture: any AudioCapturing,
@@ -99,7 +99,7 @@ public final class RecordingModel {
         packageRoot: URL? = nil,
         player: (any SegmentPlayer)? = nil,
         metrics: (any AudioMetricsCalculating)? = nil,
-        undo: StudioUndo = StudioUndo()
+        undo: MacUndo = MacUndo()
     ) {
         self.capture = capture
         self.store = store
@@ -181,7 +181,9 @@ public final class RecordingModel {
                     recordedAt: Date(),
                     duration: captured.duration,
                     format: captured.format,
-                    textHashAtRecording: project?.allParagraphs.first(where: { $0.id == paragraphID })?.textHash ?? TextNormalizer.hash(recordedText)
+                    textHashAtRecording: project?.allParagraphs.first(where: { $0.id == paragraphID })?.textHash ?? TextNormalizer.hash(recordedText),
+                    warning: .interrupted,
+                    routeClass: CaptureRouteClassifier.classify(capture.currentRouteInfo)
                 )
                 try await store.insertTake(take)
                 takes.append(take)
@@ -620,7 +622,9 @@ public final class RecordingModel {
             recordedAt: Date(),
             duration: captured.duration,
             format: captured.format,
-            textHashAtRecording: project?.allParagraphs.first(where: { $0.id == paragraphID })?.textHash ?? TextNormalizer.hash(recordedText)
+            textHashAtRecording: project?.allParagraphs.first(where: { $0.id == paragraphID })?.textHash ?? TextNormalizer.hash(recordedText),
+            warning: .none,
+            routeClass: CaptureRouteClassifier.classify(capture.currentRouteInfo)
         )
         try await store.insertTake(take)
         // Feed the drift classifier (spec §9.5) while the session is alive.

@@ -3,7 +3,7 @@ import VoxglassCore
 import UniformTypeIdentifiers
 
 struct SourceImportView: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @State private var model = SourceImportModel()
     @State private var showFilePicker = true
 

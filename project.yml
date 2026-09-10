@@ -4,6 +4,7 @@ options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
+    macOS: "14.0"
   createIntermediateGroups: true
 packages:
   VoxglassCore:
@@ -239,6 +240,106 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass"
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGNING_ALLOWED: NO
+  # macOS Universal Purchase app (U0, SPEC.md §2.1, §17). Resurrected from
+  # `c0c6712^` into `VoxglassMac/` and adapted; see docs/mac-ipad-universal-mvp/.
+  VoxglassMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: VoxglassMac
+        excludes:
+          - Resources/Info.plist
+          - Resources/VoxglassMac.entitlements
+          - Resources/VoxglassMac-release.entitlements
+    dependencies:
+      - package: VoxglassCore
+        product: VoxglassCore
+      # Same encoder product the iOS app consumes (§16.3) — no duplicated
+      # encoder sources per app target.
+      - package: VoxglassCore
+        product: VoxglassEncoders
+      - sdk: AVFoundation.framework
+      - sdk: StoreKit.framework
+      - sdk: libsqlite3.tbd
+    info:
+      path: VoxglassMac/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Voxglass
+        CFBundleName: Voxglass
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSMinimumSystemVersion: "14.0"
+        NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Audio stays on your Mac unless you choose to preview it on your devices."
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: guru.parso.voxglass.project
+            UTTypeDescription: Voxglass Audiobook Project
+            UTTypeConformsTo:
+              - com.apple.package
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - voxproject
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Voxglass Audiobook Project
+            LSItemContentTypes:
+              - guru.parso.voxglass.project
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+    settings:
+      base:
+        # Universal Purchase requires this to be identical to the iOS bundle
+        # id (§2.1); it is irreversible after the first Mac sale. Gate G-U3
+        # greps this exact literal in this file.
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
+        PRODUCT_NAME: Voxglass
+        # Distinct from the iOS app's own "Voxglass" module in the same
+        # project — VoxglassMacTests does `@testable import VoxglassMac`.
+        PRODUCT_MODULE_NAME: VoxglassMac
+        INFOPLIST_FILE: VoxglassMac/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: VoxglassMac/Resources/VoxglassMac.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "$(MARKETING_VERSION)"
+        CURRENT_PROJECT_VERSION: "$(CURRENT_PROJECT_VERSION)"
+      configs:
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass Mac App Store"
+          CODE_SIGN_ENTITLEMENTS: VoxglassMac/Resources/VoxglassMac-release.entitlements
+  VoxglassMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - VoxglassMacTests
+    dependencies:
+      # VoxglassCore itself comes in transitively via the VoxglassMac.app
+      # host process (TEST_HOST) — linking it again here duplicates every
+      # Objective-C-bridged class between the app binary and this bundle
+      # (`objc[...]: Class ... is implemented in both ...`). Only
+      # VoxglassCoreTestSupport (test-only fixtures, not linked by the app)
+      # needs its own explicit dependency.
+      - target: VoxglassMac
+      - package: VoxglassCore
+        product: VoxglassCoreTestSupport
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.mac.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Contents/MacOS/Voxglass"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGNING_ALLOWED: NO
+  VoxglassMacUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - VoxglassMacUITests
+    dependencies:
+      - target: VoxglassMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.mac.uitests
+        TEST_TARGET_NAME: VoxglassMac
+        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
@@ -267,3 +368,15 @@ schemes:
       gatherCoverageData: false
       targets:
         - VoxglassNarrationE2E
+  VoxglassMac:
+    build:
+      targets:
+        VoxglassMac: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - VoxglassMacTests
+        - VoxglassMacUITests
+    # Same shared StoreKit config as iOS (§2.1) — Universal Purchase needs no
+    # platform-specific product configuration.
+    storeKitConfiguration: Voxglass/Resources/VoxglassNarration.storekit

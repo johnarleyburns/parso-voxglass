@@ -15,29 +15,37 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Group {
-                if !hasCompletedSplash {
-                    SplashView {
-                        hasCompletedSplash = true
-                    }
-                } else if !hasCompletedOnboarding {
-                    OnboardingPreferencesView(
-                        initialSelection: AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
-                    ) { selectedCollectionIDs in
-                        selectedCollectionIDsRaw = AppPreferencesStore.encodeCollectionIDs(selectedCollectionIDs)
-                        hasCompletedOnboarding = true
-                    } skipAction: {
-                        selectedCollectionIDsRaw = ""
-                        hasCompletedOnboarding = true
-                    }
-                } else {
-                    tabs
-                }
-            }
-
+            // The animated splash's own opacity fades in from 0, and it used
+            // to sit as an overlay directly above the real content (tabs /
+            // onboarding), both already built and rendering underneath —
+            // during that fade-in, the real content was genuinely visible
+            // through it (reported as "briefly seeing my last usage of the
+            // app, very wide, then the splash"). Building the real content
+            // only once the splash is done removes anything for it to fade
+            // in over.
             if showSplash {
                 AnimatedSplashView(isPresented: $showSplash)
                     .zIndex(10)
+            } else {
+                Group {
+                    if !hasCompletedSplash {
+                        SplashView {
+                            hasCompletedSplash = true
+                        }
+                    } else if !hasCompletedOnboarding {
+                        OnboardingPreferencesView(
+                            initialSelection: AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
+                        ) { selectedCollectionIDs in
+                            selectedCollectionIDsRaw = AppPreferencesStore.encodeCollectionIDs(selectedCollectionIDs)
+                            hasCompletedOnboarding = true
+                        } skipAction: {
+                            selectedCollectionIDsRaw = ""
+                            hasCompletedOnboarding = true
+                        }
+                    } else {
+                        tabs
+                    }
+                }
             }
 
             if let toast = phoneAudioRelay.connectionToast {

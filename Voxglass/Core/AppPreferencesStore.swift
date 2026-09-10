@@ -21,6 +21,10 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let narrationOnboardingSeen = "voxglass.narration.onboardingSeen.v1"
         public static let narrationCommercialIntroSeen = "voxglass.narration.commercialIntroSeen.v1"
         public static let narrationCollapsedChapters = "voxglass.narration.collapsedChapters.v1"
+        /// Set once a "Contribute to Development" purchase succeeds. Never
+        /// reset by a later purchase failing or being skipped — this is a
+        /// one-way supporter badge, not a re-checked entitlement.
+        public static let isSupporter = "voxglass.isSupporter"
     }
 
     @AppStorage(Keys.hasCompletedSplash) public var hasCompletedSplash = false

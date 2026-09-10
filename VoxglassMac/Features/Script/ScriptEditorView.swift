@@ -5,7 +5,7 @@ import VoxglassCore
 /// paragraph list with state chips, inline text editing, drift banner, split
 /// and merge, and ⌘F find.
 struct ScriptEditorView: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @Bindable var model: ScriptEditorModel
 
     @State private var showFind = false

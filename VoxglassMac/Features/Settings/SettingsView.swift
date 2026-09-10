@@ -4,7 +4,7 @@ import VoxglassCore
 /// The Settings window (§18.1.16, mockup `15-settings-audio`), five tabs:
 /// Audio / Recording / Preview Sync / Storage / License.
 struct SettingsView: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @Bindable var model: SettingsModel
 
     var body: some View {
@@ -199,7 +199,7 @@ struct SettingsView: View {
 
     private var licenseTab: some View {
         VStack(alignment: .leading, spacing: 16) {
-            GroupBox("Voxglass Studio Pro") {
+            GroupBox("Voxglass Pro") {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Status")

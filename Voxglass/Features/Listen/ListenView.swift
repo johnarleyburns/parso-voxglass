@@ -9,27 +9,36 @@ struct ListenView: View {
     var selectLibrary: () -> Void
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
+    @EnvironmentObject private var listeningStats: ListeningStatsStore
     @State private var importingIdentifier: String?
     @State private var showSettings = false
-    @State private var showEQ = false
     @State private var showStats = false
+    @State private var statsTotalTime: TimeInterval = 0
+    @State private var statsLast7DaysTotal: TimeInterval = 0
+    @State private var statsDailyBars: [ListeningStatsView.DayBar] = []
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
+    @AppStorage(AppPreferencesStore.Keys.isSupporter) private var isSupporter = false
 
     var body: some View {
         VoxglassScreen(title: "Voxglass") {
             VStack(alignment: .leading, spacing: 22) {
                 hero
                 jumpBackIn
-                recentlyAdded
+                listeningStatsSummary
                 recommended
             }
             .padding(.top, 12)
         }
         .overlay(alignment: .topTrailing) {
-            moreMenu
-                .padding(.trailing, 16)
-                .padding(.top, 6)
+            HStack(spacing: 8) {
+                if isSupporter {
+                    supporterBadge
+                }
+                settingsButton
+            }
+            .padding(.trailing, 16)
+            .padding(.top, 6)
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -37,18 +46,6 @@ struct ListenView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button("Close") { showSettings = false }
-                        }
-                    }
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showEQ) {
-            NavigationStack {
-                EQView()
-                    .environment(playback)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showEQ = false }
                         }
                     }
             }
@@ -76,6 +73,7 @@ struct ListenView: View {
         .task {
             await libraryStore.refreshRecentlyPlayed()
             await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+            await loadListeningStatsSummary()
         }
         .onChange(of: selectedCollectionIDsRaw) { _, _ in
             Task {
@@ -95,55 +93,61 @@ struct ListenView: View {
             Task {
                 await libraryStore.refreshRecentlyPlayed()
                 await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+                await loadListeningStatsSummary()
             }
         }
     }
 
+    /// Shown only until the user's first listen — a welcome, not a permanent
+    /// masthead. Once there's any listening history it gives way to the
+    /// content shelves below instead of pushing them down every time.
+    @ViewBuilder
     private var hero: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Good listening")
-                .scaledFont(size: 31, weight: .heavy)
-                .foregroundStyle(Palette.ink)
-            Text("Public-domain audiobooks, private by default.")
-                .scaledFont(size: 14)
-                .foregroundStyle(Palette.ink2)
+        if statsTotalTime <= 0 {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Good listening")
+                    .scaledFont(size: 31, weight: .heavy)
+                    .foregroundStyle(Palette.ink)
+                Text("Public-domain audiobooks, private by default.")
+                    .scaledFont(size: 14)
+                    .foregroundStyle(Palette.ink2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The former "More" tab, reachable from a "…" menu in the top-right
-    /// corner of the home view.
-    private var moreMenu: some View {
-        Menu {
-            Button {
-                showSettings = true
-            } label: {
-                Label("Settings", systemImage: "gearshape.fill")
-            }
-            Button {
-                showEQ = true
-            } label: {
-                Label("Equalizer", systemImage: "waveform.path.ecg")
-            }
-            Button {
-                showStats = true
-            } label: {
-                Label("Listening Stats", systemImage: "chart.bar.fill")
-            }
-            NavigationLink {
-                AboutView()
-            } label: {
-                Label("About Voxglass", systemImage: "info.circle.fill")
-            }
+    /// Replaces the old "…" more-menu: Equalizer already lives in Settings
+    /// (Audio section), About lives in Settings, and Listening Stats has its
+    /// own "Show more…" from the home summary — so a direct link is enough.
+    /// Shown after a "Contribute to Development" purchase (Settings ›
+    /// Support). Purely a thank-you — nothing in the app checks this to
+    /// unlock anything.
+    private var supporterBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "heart.fill")
+                .scaledFont(size: 10, weight: .bold)
+            Text("Supporter")
+                .scaledFont(size: 11, weight: .semibold)
+        }
+        .foregroundStyle(Palette.brass)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.07))
+        .accessibilityIdentifier("home.supporterBadge")
+    }
+
+    private var settingsButton: some View {
+        Button {
+            showSettings = true
         } label: {
-            Image(systemName: "ellipsis.circle")
-                .scaledFont(size: 21, weight: .semibold)
+            Image(systemName: "gearshape.fill")
+                .scaledFont(size: 19, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
                 .frame(width: 40, height: 40)
                 .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.07))
         }
-        .accessibilityIdentifier("home.moreMenu")
-        .accessibilityLabel("More")
+        .accessibilityIdentifier("home.settingsButton")
+        .accessibilityLabel("Settings")
     }
 
     @ViewBuilder
@@ -171,33 +175,73 @@ struct ListenView: View {
         }
     }
 
-    private var recentlyAddedBooks: [BookWithChapters] {
-        let jumpedBackIDs = Set(libraryStore.recentlyPlayed.map(\.book.id))
-        return libraryStore.books.prefix(10).filter { !jumpedBackIDs.contains($0.book.id) }
+    /// Replaces the old "Recently Added" shelf: a compact roll-up of the same
+    /// stats the full Listening Stats screen shows, with a link to it.
+    @ViewBuilder
+    private var listeningStatsSummary: some View {
+        if statsTotalTime > 0 {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionTitle(title: "Listening Stats", actionTitle: "Show more…", action: { showStats = true })
+                HStack(spacing: 12) {
+                    statTile(value: durationString(statsTotalTime), label: "Total time")
+                    statTile(value: durationString(statsLast7DaysTotal), label: "Last 7 days")
+                }
+                weeklyChart
+            }
+        }
     }
 
-    @ViewBuilder
-    private var recentlyAdded: some View {
-        if !recentlyAddedBooks.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(title: "Recently Added", actionTitle: "See All", action: selectLibrary)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(recentlyAddedBooks) { book in
-                            NavigationLink {
-                                BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
-                            } label: {
-                                ListenBookCard(
-                                    book: book,
-                                    sourceTitle: libraryStore.source(for: book.book)?.title
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 2)
+    private func statTile(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value)
+                .scaledFont(size: 22, weight: .heavy)
+                .foregroundStyle(Palette.ink)
+            Text(label)
+                .scaledFont(size: 12)
+                .foregroundStyle(Palette.ink3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .glassSurface(cornerRadius: 16)
+    }
+
+    private var weeklyChart: some View {
+        let maxSeconds = max(statsDailyBars.map(\.seconds).max() ?? 1, 1)
+        return HStack(alignment: .bottom, spacing: 8) {
+            ForEach(statsDailyBars) { bar in
+                VStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(LinearGradient(
+                            colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                            startPoint: .top, endPoint: .bottom))
+                        .frame(height: max(3, CGFloat(bar.seconds / maxSeconds) * 44))
+                    Text(bar.label)
+                        .scaledFont(size: 8.5, weight: .semibold)
+                        .foregroundStyle(Palette.ink3)
                 }
+                .frame(maxWidth: .infinity)
             }
+        }
+        .frame(height: 58, alignment: .bottom)
+        .padding(14)
+        .glassSurface(cornerRadius: 16)
+    }
+
+    private func durationString(_ seconds: TimeInterval) -> String {
+        seconds < 60 ? "0m" : TimeFormatting.compactDuration(seconds)
+    }
+
+    private func loadListeningStatsSummary() async {
+        statsTotalTime = await listeningStats.totalTime()
+        let calendar = Calendar.current
+        let now = Date()
+        let totals = await listeningStats.dailyTotals(days: 7, calendar: calendar, now: now)
+        statsLast7DaysTotal = totals.values.reduce(0, +)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEEE"
+        statsDailyBars = (0..<7).reversed().map { offset in
+            let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -offset, to: now) ?? now)
+            return ListeningStatsView.DayBar(label: formatter.string(from: day), seconds: totals[day] ?? 0)
         }
     }
 

@@ -1,16 +1,6 @@
 import SwiftUI
 import VoxglassCore
 
-private extension Color {
-    init(hex: UInt) {
-        self.init(
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255
-        )
-    }
-}
-
 private func slug(_ title: String) -> String {
     title.lowercased()
         .folding(options: .diacriticInsensitive, locale: Locale(identifier: "en_US_POSIX"))
@@ -51,10 +41,10 @@ private struct MacSignalBadge: View {
 
     private var tint: Color {
         switch signal {
-        case .openProjectNeedsReader: return Color(hex: 0x72D59F)
-        case .proofListenerNeeded: return Color(hex: 0xE6B877)
-        case .weeklyFeatured: return Color(hex: 0xE0BE7F)
-        case .catalogGap: return Color(hex: 0xC9B6FF)
+        case .openProjectNeedsReader: return MacPalette.mint
+        case .proofListenerNeeded: return MacPalette.brassSoft
+        case .weeklyFeatured: return MacPalette.brassMid
+        case .catalogGap: return MacPalette.lavender
         case .evergreen: return .secondary
         }
     }
@@ -66,18 +56,18 @@ private struct MacGradeBadge: View {
         Text(grade == .submittable ? "Submittable" : "Practice")
             .font(.caption2.weight(.bold))
             .padding(.horizontal, 7).padding(.vertical, 3)
-            .foregroundStyle(grade == .submittable ? Color(hex: 0xE0BE7F) : Color.secondary)
-            .background(grade == .submittable ? Color(hex: 0xE0BE7F).opacity(0.12) : Color.white.opacity(0.06), in: Capsule())
-            .overlay(Capsule().stroke(grade == .submittable ? Color(hex: 0xE0BE7F).opacity(0.5) : Color.secondary.opacity(0.25), lineWidth: 1))
+            .foregroundStyle(grade == .submittable ? MacPalette.brassMid : Color.secondary)
+            .background(grade == .submittable ? MacPalette.brassMid.opacity(0.12) : Color.white.opacity(0.06), in: Capsule())
+            .overlay(Capsule().stroke(grade == .submittable ? MacPalette.brassMid.opacity(0.5) : Color.secondary.opacity(0.25), lineWidth: 1))
     }
 }
 
 // MARK: - n05 Library section
 
-/// "Start a Narration" discovery section on the Studio Library (n05):
+/// "Start a Narration" discovery section on the Mac Library (n05):
 /// Book of the Month (featured, monthly, long), Short Works, Needs a Narrator.
 struct NarrationSectionView: View {
-    @Environment(StudioDiscoveryModel.self) private var discovery
+    @Environment(MacDiscoveryModel.self) private var discovery
     let browse: () -> Void
     let start: (NarrationNeed) -> Void
 
@@ -97,7 +87,7 @@ struct NarrationSectionView: View {
 
             Text("Bring a public-domain work to life. Short works or whole books — your Mac does both.")
                 .font(.callout)
-                .foregroundStyle(Color(hex: 0xE0BE7F))
+                .foregroundStyle(MacPalette.brassMid)
                 .italic()
                 .padding(.top, 2)
 
@@ -116,9 +106,9 @@ struct NarrationSectionView: View {
     private func bookOfMonth(_ need: NarrationNeed) -> some View {
         HStack(alignment: .top, spacing: 16) {
             RoundedRectangle(cornerRadius: 12)
-                .fill(LinearGradient(colors: [Color(hex: 0x101A14), Color(hex: 0x2F5A3E), Color(hex: 0xC7B06A)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(LinearGradient(colors: [MacPalette.forestDeep, MacPalette.forest, MacPalette.forestGold], startPoint: .topLeading, endPoint: .bottomTrailing))
                 .frame(width: 110, height: 150)
-                .overlay(Text(initials(need.work.title)).font(.title2.weight(.heavy)).foregroundStyle(Color(hex: 0xF4E6CF)))
+                .overlay(Text(initials(need.work.title)).font(.title2.weight(.heavy)).foregroundStyle(MacPalette.cream))
             VStack(alignment: .leading, spacing: 6) {
                 MacSignalBadge(signal: need.signal)
                 Text(need.work.title).font(.title3.weight(.semibold))
@@ -131,7 +121,7 @@ struct NarrationSectionView: View {
                     .lineLimit(2)
                 Button("Start narrating ▸") { start(need) }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color(hex: 0xE0BE7F))
+                    .tint(MacPalette.brassMid)
                     .controlSize(.large)
                     .padding(.top, 4)
                     .accessibilityIdentifier("need.startNarrating.\(slug(need.work.title))")
@@ -139,8 +129,8 @@ struct NarrationSectionView: View {
             Spacer()
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x2E2717).opacity(0.6)))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xE0BE7F).opacity(0.4), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 14).fill(MacPalette.cardFill.opacity(0.6)))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MacPalette.brassMid.opacity(0.4), lineWidth: 1))
         .accessibilityIdentifier("library.bookOfMonth")
     }
 
@@ -183,7 +173,7 @@ struct NarrationSectionView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: 12)
-                .stroke(long ? Color(hex: 0x5A6A9A) : Color(hex: 0x6F5A9A), lineWidth: 3)
+                .stroke(long ? MacPalette.railLong : MacPalette.railShort, lineWidth: 3)
                 .frame(width: 4)
         }
     }
@@ -192,7 +182,7 @@ struct NarrationSectionView: View {
 // MARK: - n06 Needs browser
 
 struct NeedsBrowserView: View {
-    @Environment(StudioDiscoveryModel.self) private var discovery
+    @Environment(MacDiscoveryModel.self) private var discovery
     let start: (NarrationNeed) -> Void
     @State private var filter: MacNeedFilter = .all
     @State private var searchText = ""
@@ -210,7 +200,7 @@ struct NeedsBrowserView: View {
                             filter = item
                         }
                         .buttonStyle(.bordered)
-                        .tint(filter == item ? Color(hex: 0xE0BE7F) : nil)
+                        .tint(filter == item ? MacPalette.brassMid : nil)
                         .accessibilityIdentifier("needsBrowser.filter.\(item.rawValue)")
                     }
                     Spacer()
@@ -289,7 +279,7 @@ struct NeedsBrowserView: View {
                 .foregroundStyle(.secondary)
             Button("Start narrating") { start(need) }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(hex: 0xE0BE7F))
+                .tint(MacPalette.brassMid)
                 .controlSize(.small)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)

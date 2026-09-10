@@ -9,7 +9,7 @@ import VoxglassCore
 /// retail choice surfaces an inline purchase sheet and, on success, continues
 /// with all selections preserved.
 struct ExportWizardView: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @Bindable var model: ExportModel
 
     var body: some View {
@@ -188,7 +188,7 @@ struct ExportWizardView: View {
 
     private func disabledReason(_ card: ExportCard) -> String? {
         if !model.availableEncoders.contains(card.primaryCodec) {
-            return "The \(card.primaryCodec) encoder could not be loaded. Reinstall Voxglass Studio."
+            return "The \(card.primaryCodec) encoder could not be loaded. Reinstall Voxglass."
         }
         switch card {
         case .librivox:
@@ -395,7 +395,7 @@ struct ExportWizardView: View {
 /// in-progress action; it appears at the step 2→3 transition, before any
 /// export work.
 struct PurchaseSheet: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @Bindable var model: ExportModel
     @State private var product: ProductInfo? = nil
     @State private var isPurchasing = false
@@ -406,12 +406,12 @@ struct PurchaseSheet: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: 32))
                 .foregroundStyle(.orange)
-            Text("Voxglass Studio Pro")
+            Text("Voxglass Pro")
                 .font(.title2.bold())
             Text(product?.displayPrice ?? "Unlock Pro")
                 .font(.title3.bold())
                 .foregroundStyle(.orange)
-            Text("Professional retail delivery is part of Voxglass Studio Pro — a one-time $149 purchase. Everything you have already done stays free.")
+            Text("Professional retail delivery is part of Voxglass Pro — a one-time $149 purchase. Everything you have already done stays free.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             if let message {

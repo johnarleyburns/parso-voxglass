@@ -3,7 +3,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// S12 diagnostics bundle (§4.6, §21.5): the zip contains the integrity
 /// report, schema version, entitlement state, encoder availability, storage
@@ -12,7 +12,7 @@ import VoxglassCoreTestSupport
 
     @Test func renderedFilesContainRequiredSections() {
         let content = DiagnosticsBundleContent(
-            appVersion: "Voxglass Studio 1.0",
+            appVersion: "Voxglass 1.0",
             schemaVersion: 1,
             entitlement: "free",
             encoderAvailability: ["mp3", "flac"],
@@ -26,7 +26,7 @@ import VoxglassCoreTestSupport
 
         #expect(files["diagnostics.txt"] != nil)
         let diagnostics = files["diagnostics.txt"] ?? ""
-        #expect(diagnostics.contains("App version: Voxglass Studio 1.0"))
+        #expect(diagnostics.contains("App version: Voxglass 1.0"))
         #expect(diagnostics.contains("Project schema version: 1"))
         #expect(diagnostics.contains("Entitlement: free"))
         #expect(diagnostics.contains("Encoders available: flac, mp3"))

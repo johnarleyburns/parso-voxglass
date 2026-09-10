@@ -11,7 +11,7 @@ import VoxglassCore
 /// is written to disk until it is pressed (§8.2: cancelling before finish
 /// creates nothing).
 struct NewProjectView: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @State private var model = NewProjectModel()
     @State private var didSeedAttestation = false
 

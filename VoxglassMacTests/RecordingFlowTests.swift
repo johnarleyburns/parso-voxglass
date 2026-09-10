@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// S5 acceptance: 100 sequential paragraphs recorded without loss, each take
 /// persisted with a real sha256 and byteCount, no take lost, no ID collision.

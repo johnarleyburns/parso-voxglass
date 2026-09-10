@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-import VoxglassStudioKit
+import VoxglassMac
 
 /// Spec §18.1.10 / §14: the review queue resolves once, holds stable, marks
 /// excluded items done in place, and expresses every action as an event.

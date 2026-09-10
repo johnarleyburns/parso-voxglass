@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-import VoxglassStudioKit
+import VoxglassMac
 
 /// Spec §18.1.11 / §12.6: the Assembly model computes render cache keys, diffs
 /// them against the store cache, renders missing chapters, and invalidates a

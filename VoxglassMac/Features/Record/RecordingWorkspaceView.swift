@@ -32,9 +32,6 @@ public struct RecordingWorkspaceView: View {
                         .padding(.vertical, 60)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("record.teleprompter")
-                        #if DEBUG
-                        .countRenders("record.teleprompter")
-                        #endif
                 } else {
                     Text("No paragraph selected")
                         .foregroundStyle(.secondary)
@@ -114,9 +111,6 @@ private struct MeterSectionView: View {
             meterBar(label: "Peak", value: meter.peakDBFS, color: .orange)
             meterBar(label: "RMS", value: meter.rmsDBFS, color: .green)
         }
-        #if DEBUG
-        .countRenders("record.meter")
-        #endif
     }
 
     private func meterBar(label: String, value: Float, color: Color) -> some View {

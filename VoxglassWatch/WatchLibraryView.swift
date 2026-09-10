@@ -12,17 +12,18 @@ struct WatchLibraryView: View {
     @State private var toastDismissWork: DispatchWorkItem?
 
     var body: some View {
-        Group {
+        List {
             if services.visibleBooks.isEmpty {
                 VStack(spacing: 8) { Image(systemName: "arrow.down.circle").font(.title2); Text("No downloaded books").font(.headline); Text("In My Books on iPhone, choose Download to Apple Watch.").font(.caption).multilineTextAlignment(.center) }
                     .accessibilityIdentifier("watch.empty.downloads")
             } else {
-                List(services.visibleBooks, id: \.id) { book in
+                ForEach(services.visibleBooks, id: \.id) { book in
                     NavigationLink { WatchBookDetailView(book: book) } label: { WatchBookRow(book: book) }.accessibilityIdentifier("watch.book.\(book.id.rawValue)")
                 }
-                .accessibilityIdentifier("watch.library")
             }
+            aboutRow
         }
+        .accessibilityIdentifier("watch.library")
         .navigationTitle("My Books")
         .overlay(alignment: .top) {
             if showConnectionToast {
@@ -32,6 +33,11 @@ struct WatchLibraryView: View {
         }
         .onAppear { presentConnectionToast() }
         .onChange(of: services.isConnected) { _, _ in presentConnectionToast() }
+    }
+
+    private var aboutRow: some View {
+        NavigationLink { WatchAboutView() } label: { Text("About") }
+            .accessibilityIdentifier("watch.about.row")
     }
 
     private var connectionToast: some View {

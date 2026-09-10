@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import VoxglassCore
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 @MainActor
 @Suite struct SourceImportModelTests {
@@ -22,7 +22,7 @@ import VoxglassCore
         let content = "# Chapter One\n\nThis is the first paragraph.\n\nThis is the second paragraph."
         try? content.write(to: fileURL, atomically: true, encoding: .utf8)
 
-        let env = StudioEnvironment.test(seed: .empty)
+        let env = MacEnvironment.test(seed: .empty)
 
         await model.importSource(from: fileURL, into: env)
 
@@ -37,7 +37,7 @@ import VoxglassCore
 
     @Test func importNonExistentFileReportsError() async {
         let model = SourceImportModel()
-        let env = StudioEnvironment.test(seed: .empty)
+        let env = MacEnvironment.test(seed: .empty)
         let nonexistentURL = URL(fileURLWithPath: "/tmp/does-not-exist-\(UUID().uuidString).txt")
 
         await model.importSource(from: nonexistentURL, into: env)
@@ -64,7 +64,7 @@ import VoxglassCore
         let store = SQLiteProductionStore(databaseURL: tempDir.appendingPathComponent("test.sqlite"))
         try await store.save(project)
 
-        let env = StudioEnvironment.test(seed: .empty)
+        let env = MacEnvironment.test(seed: .empty)
         env.store = store
         env.currentProject = project
 

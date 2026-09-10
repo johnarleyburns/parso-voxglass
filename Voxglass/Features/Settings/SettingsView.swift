@@ -35,10 +35,6 @@ struct SettingsView: View {
                 }
 
                 settingsGroup("Narration") {
-                    NarrationProCard()
-
-                    VoxglassListDivider()
-
                     Button {
                         showAudioSetup = true
                     } label: {
@@ -121,6 +117,10 @@ struct SettingsView: View {
                     WatchSyncCard()
                 }
 
+                settingsGroup("Support") {
+                    SupportDevelopmentCard()
+                }
+
                 settingsGroup("About") {
                     NavigationLink {
                         AboutView()
@@ -152,59 +152,35 @@ struct SettingsView: View {
     }
 }
 
-private struct NarrationProCard: View {
-    @State private var showProPurchase = false
-    @State private var isRestoring = false
-    @State private var restoreResult: String?
-
-    private var provider: any LicenseProvider {
-        NarrationProStore.shared.provider
-    }
+/// Every feature in the app is free. This is the only purchase surface
+/// left — a purely optional, one-time "thank you" consumable, purchasing
+/// which sets `AppPreferencesStore.Keys.isSupporter` and shows a small
+/// Supporter badge on the home view. It never gates anything.
+private struct SupportDevelopmentCard: View {
+    @AppStorage(AppPreferencesStore.Keys.isSupporter) private var isSupporter = false
+    @State private var isPurchasing = false
+    @State private var resultMessage: String?
 
     var body: some View {
         VStack(spacing: 0) {
             Button {
-                showProPurchase = true
+                Task { await purchase() }
             } label: {
                 DisclosureListRow(
-                    icon: "sparkles",
-                    title: "Commercial release",
-                    detail: "Retail profiles, mastering, M4B, reports",
+                    icon: "heart.fill",
+                    title: isSupporter ? "Thanks for supporting Voxglass" : "Contribute to Development",
+                    detail: isSupporter ? "You have the Supporter badge" : "A one-time, optional $9.99 — every feature is already free",
                     count: nil,
-                    isEnabled: true
+                    isEnabled: !isPurchasing
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier("settings.pro")
+            .disabled(isPurchasing)
+            .accessibilityIdentifier("settings.support")
 
-            VoxglassListDivider()
-
-            Button {
-                Task { await restore() }
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "arrow.clockwise.circle")
-                        .scaledFont(size: 14)
-                        .foregroundStyle(Palette.brass)
-                        .frame(width: 32, height: 32)
-                        .background {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(Color.white.opacity(0.07))
-                        }
-                    Text(isRestoring ? "Restoring…" : "Restore purchase")
-                        .scaledFont(size: 14, weight: .medium)
-                        .foregroundStyle(Palette.ink)
-                    Spacer()
-                }
-                .padding(.vertical, 11)
-            }
-            .buttonStyle(.plain)
-            .disabled(isRestoring)
-            .accessibilityIdentifier("settings.restore")
-
-            if let restoreResult {
+            if let resultMessage {
                 VoxglassListDivider()
-                Text(restoreResult)
+                Text(resultMessage)
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink2)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,23 +188,18 @@ private struct NarrationProCard: View {
             }
         }
         .glassSurface(cornerRadius: 18)
-        .sheet(isPresented: $showProPurchase) {
-            ProPurchaseView(provider: provider, model: nil) { _ in }
-        }
     }
 
-    private func restore() async {
-        isRestoring = true
-        defer { isRestoring = false }
+    private func purchase() async {
+        isPurchasing = true
+        defer { isPurchasing = false }
         do {
-            let state = try await provider.restore()
-            if case .pro = state {
-                restoreResult = "Voxglass Narration Pro restored on this device."
-            } else {
-                restoreResult = "No previous purchase was found to restore."
+            let purchased = try await SupportDevelopmentStore.shared.purchase()
+            if purchased {
+                resultMessage = "Thank you for supporting Voxglass!"
             }
         } catch {
-            restoreResult = "Restore failed: \(error.localizedDescription)"
+            resultMessage = "Purchase failed: \(error.localizedDescription)"
         }
     }
 }

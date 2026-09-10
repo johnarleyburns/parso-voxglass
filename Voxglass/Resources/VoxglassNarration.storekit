@@ -5,19 +5,19 @@
   ],
   "products" : [
     {
-      "displayPrice" : "79.00",
-      "familyShareable" : true,
-      "internalID" : "9A8B7C6D-5E4F-4A3B-8C2D-1E0F9A8B7C6D",
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "1F2E3D4C-5B6A-4978-9C0D-1E2F3A4B5C6D",
       "localizations" : [
         {
-          "description" : "Unlock professional retail delivery: mastered MP3/WAV/FLAC chapter files, chapterized M4B, retail samples, batch export, and exportable validation reports. One-time purchase, no subscription.",
-          "displayName" : "Voxglass Narration Pro",
+          "description" : "A one-time, purely optional way to support Voxglass's development. Every feature in the app is already free — this is just a thank-you, not an unlock.",
+          "displayName" : "Contribute to Development",
           "locale" : "en_US"
         }
       ],
-      "productID" : "guru.parso.voxglass.narration.pro",
-      "referenceName" : "Voxglass Narration Pro",
-      "type" : "NonConsumable"
+      "productID" : "guru.parso.voxglass.support.dev",
+      "referenceName" : "Contribute to Development",
+      "type" : "Consumable"
     }
   ],
   "settings" : {

@@ -230,19 +230,117 @@ unplant "$probe"
 expect_guard_passes "G-P4 color literal probe"
 
 # ──────────────────────────────────────────────────────────────
-# G-P5 probe: a "Mac" user-facing string in a production surface.
+# G-U1 probes (replaces G-P5): the retired Mac-handoff phrasing, not the bare
+# word "Mac" (which is now legitimate — U-2, §0.6). One probe per phrase, one
+# per surface, so the "everywhere" claim is actually exercised.
 # ──────────────────────────────────────────────────────────────
-probe="Voxglass/Features/Production/ProbeGP5.swift"
+probe="Voxglass/Features/Production/ProbeGU1.swift"
 plant "$probe" 'let caption = "Continue on Mac"'
-expect_guard_fails "P5" "'Mac' user-facing string in Features/Production"
+expect_guard_fails "U1" "retired 'Continue on Mac' phrasing in Features/Production"
 unplant "$probe"
-expect_guard_passes "G-P5 Mac string probe"
+expect_guard_passes "G-U1 Continue-on-Mac probe"
 
-probe="VoxglassWatch/Production/ProbeGP5.swift"
+probe="VoxglassWatch/Production/ProbeGU1.swift"
 plant "$probe" 'let caption = "Record on Mac"'
-expect_guard_fails "P5" "'Mac' user-facing string in Watch/Production"
+expect_guard_fails "U1" "retired 'Record on Mac' phrasing in Watch/Production"
 unplant "$probe"
-expect_guard_passes "G-P5 watch Mac string probe"
+expect_guard_passes "G-U1 watch Record-on-Mac probe"
+
+probe="VoxglassMac/ProbeGU1.swift"
+plant "$probe" 'let caption = "Requires a Mac"'
+expect_guard_fails "U1" "retired 'Requires a Mac' phrasing in VoxglassMac"
+unplant "$probe"
+expect_guard_passes "G-U1 VoxglassMac Requires-a-Mac probe"
+
+probe="Voxglass/Features/Production/ProbeGU1b.swift"
+plant "$probe" 'let caption = "Recording on your Mac keeps your book in one place"'
+expect_guard_passes "G-U1 bare 'Mac' word is legitimate (U-2)"
+unplant "$probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-U2 probe: a platform UI import reintroduced into Core/Production.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Core/Production/ProbeGU2.swift"
+plant "$probe" 'import AppKit'
+expect_guard_fails "U2" "AppKit import in Core/Production"
+unplant "$probe"
+expect_guard_passes "G-U2 Core platform-free probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-U3 probe: the Mac bundle id line removed from project.yml, and the dead
+# Studio bundle id reintroduced.
+# ──────────────────────────────────────────────────────────────
+if [ -f project.yml ] && grep -q 'PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass$' project.yml; then
+  cp project.yml project.yml.probe-hidden
+  RESTORE_ITEMS+=("project.yml")
+  # Comment out every exact-match line so none of the (possibly several)
+  # occurrences survives to satisfy the gate.
+  sed -i '' 's/^\([[:space:]]*PRODUCT_BUNDLE_IDENTIFIER: guru\.parso\.voxglass\)$/#\1/' project.yml
+  expect_guard_fails "U3" "no PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass line in project.yml"
+  mv project.yml.probe-hidden project.yml
+  RESTORE_ITEMS=()
+  expect_guard_passes "G-U3 bundle id restored"
+else
+  fail "G-U3 probe: project.yml has no 'PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass' line to remove"
+fi
+
+probe="project.yml.gu3-dead-id-probe"
+if [ -f project.yml ]; then
+  cp project.yml "$probe"
+  printf '\n# PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.studio\n' >> project.yml
+  expect_guard_fails "U3" "dead Studio bundle id reintroduced in project.yml"
+  mv "$probe" project.yml
+else
+  fail "G-U3 dead-id probe: project.yml does not exist"
+fi
+
+# ──────────────────────────────────────────────────────────────
+# G-P4 probe (VoxglassMac extension): a color literal in the Mac tree,
+# outside its palette definition file.
+# ──────────────────────────────────────────────────────────────
+probe="VoxglassMac/Features/ProbeGP4.swift"
+plant "$probe" 'struct X { let c = Color(hex: 0x21170B) }'
+expect_guard_fails "P4" "color literal in VoxglassMac feature code"
+unplant "$probe"
+expect_guard_passes "G-P4 VoxglassMac color literal probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-P6 probe (VoxglassMac extension): the deleted Studio module reintroduced
+# in the resurrected tree's own directories.
+# ──────────────────────────────────────────────────────────────
+probe="VoxglassMacTests/ProbeGP6.swift"
+plant "$probe" 'import VoxglassStudioKit'
+expect_guard_fails "P6" "VoxglassStudioKit reference in VoxglassMacTests"
+unplant "$probe"
+expect_guard_passes "G-P6 VoxglassMacTests probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-P7 probe (VoxglassMac extension): the legacy product id reintroduced in
+# the Mac tree.
+# ──────────────────────────────────────────────────────────────
+probe="VoxglassMac/Services/ProbeGP7.swift"
+plant "$probe" 'let legacy = "voxglass.studio.pro"'
+expect_guard_fails "P7" "legacy product id reference in VoxglassMac"
+unplant "$probe"
+expect_guard_passes "G-P7 VoxglassMac probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-2 / G-U5 probe: a Pro gate in a free-territory Mac file.
+# ──────────────────────────────────────────────────────────────
+probe="VoxglassMac/Features/Record/RecordingProbe.swift"
+plant "$probe" 'let g: LicenseGate? = nil'
+expect_guard_fails 2 "LicenseGate in VoxglassMac/Features/Record"
+unplant "$probe"
+expect_guard_passes "G-U5 VoxglassMac LicenseGate placement probe"
+
+# ──────────────────────────────────────────────────────────────
+# G-3 / G-U4 probe: ObservableObject reintroduced in VoxglassMac.
+# ──────────────────────────────────────────────────────────────
+probe="VoxglassMac/Features/ProbeGU4.swift"
+plant "$probe" 'class X: ObservableObject {}'
+expect_guard_fails 3 "ObservableObject in VoxglassMac"
+unplant "$probe"
+expect_guard_passes "G-U4 VoxglassMac ObservableObject probe"
 
 # ──────────────────────────────────────────────────────────────
 if ! bash "$SCRIPT_DIR/guard_watch_foundation.sh"; then

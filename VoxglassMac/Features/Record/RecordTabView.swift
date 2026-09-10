@@ -9,7 +9,7 @@ import VoxglassCore
 struct RecordTabView: View {
     let project: AudiobookProject
 
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @State private var model: RecordingModel?
     @State private var paragraphIndex = 0
     @State private var showImport = false
@@ -183,7 +183,7 @@ struct RecordTabView: View {
 
     private func wireInterruptions(_ model: RecordingModel) {
         guard let capture = env.capture as? AVAudioEngineCapture else { return }
-        capture.onInterruption = { @Sendable interruption in
+        capture.onTakeInterruption = { @Sendable interruption in
             Task { @MainActor in
                 await model.handleCaptureInterruption(interruption)
             }

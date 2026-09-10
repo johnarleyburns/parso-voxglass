@@ -5,10 +5,10 @@ import VoxglassCore
 /// The shell root (§18.1.1). `reference == nil` renders the library window
 /// (split view); a non-nil reference renders that project's window (title bar +
 /// segmented tab bar).
-struct StudioRootView: View {
+struct MacRootView: View {
     let reference: ProjectReference?
 
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -65,8 +65,8 @@ struct StudioRootView: View {
 /// The library window: sidebar sections from mockup `01` over the project
 /// grid, plus Narration Needs below.
 struct LibrarySplitView: View {
-    @Environment(StudioEnvironment.self) private var env
-    @State private var selectedSection: StudioSection = .library
+    @Environment(MacEnvironment.self) private var env
+    @State private var selectedSection: MacSection = .library
 
     var body: some View {
         NavigationSplitView {
@@ -107,19 +107,19 @@ struct LibrarySplitView: View {
         List(selection: $selectedSection) {
             Section("Library") {
                 Label("All Projects", systemImage: "tray.full")
-                    .tag(StudioSection.library)
+                    .tag(MacSection.library)
                     .accessibilityIdentifier("library.section.library")
                 Label("Needs Review", systemImage: "flag")
-                    .tag(StudioSection.needsReview)
+                    .tag(MacSection.needsReview)
                     .accessibilityIdentifier("library.section.needsReview")
                 Label("Ready to Export", systemImage: "shippingbox")
-                    .tag(StudioSection.readyToExport)
+                    .tag(MacSection.readyToExport)
                     .accessibilityIdentifier("library.section.readyToExport")
                 Label("Archive", systemImage: "archivebox")
-                    .tag(StudioSection.archive)
+                    .tag(MacSection.archive)
                     .accessibilityIdentifier("library.section.archive")
                 Label("Settings", systemImage: "gearshape")
-                    .tag(StudioSection.settings)
+                    .tag(MacSection.settings)
                     .accessibilityIdentifier("library.section.settings")
             }
         }
@@ -159,7 +159,7 @@ struct LibrarySplitView: View {
 struct ProjectWindowView: View {
     let project: AudiobookProject
 
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
 
     var body: some View {
         VStack(spacing: 0) {
@@ -301,7 +301,7 @@ struct ProjectWindowView: View {
         Binding(
             get: {
                 switch env.presentedSheet {
-                case .sourceImport, .importAudio, .export, .takeCompare, .devicePreview: return true
+                case .sourceImport, .importAudio, .export, .takeCompare: return true
                 default: return false
                 }
             },
@@ -346,16 +346,6 @@ struct ProjectWindowView: View {
                 Text("No takes yet")
                     .frame(minWidth: 400, minHeight: 300)
             }
-        case .devicePreview:
-            DevicePreviewView(model: DevicePreviewModel(
-                coordinator: env.projection,
-                project: project,
-                store: env.store,
-                assets: env.assetStoreForCurrentProject(),
-                flagsQueueIDs: project.allParagraphs
-                    .filter { $0.reviewState == .flagged }
-                    .map(\.id)
-            ))
         default:
             EmptyView()
         }
@@ -368,9 +358,9 @@ struct ProjectWindowView: View {
 /// filters never open a project database — they read `summarySnapshot`
 /// (refreshed on open/close and after sync fetches).
 struct FilteredProjectsView: View {
-    let section: StudioSection
+    let section: MacSection
 
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
     @State private var showOpenPanel = false
 
     private var filtered: [RecentProject] {

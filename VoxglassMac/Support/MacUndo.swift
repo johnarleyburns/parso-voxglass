@@ -6,7 +6,7 @@ import Foundation
 /// so each undo registration runs its closure on a `Task`; the redo pair is
 /// re-registered when the undo fires, which is what makes ⌘⇧Z work.
 @MainActor
-public final class StudioUndo {
+public final class MacUndo {
     public let manager: UndoManager
 
     public init(manager: UndoManager = UndoManager()) {

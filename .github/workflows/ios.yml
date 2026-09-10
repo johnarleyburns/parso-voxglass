@@ -64,6 +64,17 @@ jobs:
             -destination 'generic/platform=watchOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
 
+      # macOS Universal Purchase app (SPEC.md §0.6 U-8, §17 U0). Compile-only:
+      # no simulator, no signing. The Mac UI smoke test stays a local
+      # pre-commit gate only (it needs signing).
+      - name: Build macOS
+        run: |
+          xcodebuild build \
+            -project Voxglass.xcodeproj \
+            -scheme VoxglassMac \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
   logic-tests:
     name: Logic Tests (swift test)
     runs-on: macos-latest

@@ -24,9 +24,9 @@ public struct ArtworkPreview: Sendable, Equatable {
     }
 }
 
-/// Image-framework-free (in Core) 2400 px derivative generation for the Studio
+/// Image-framework-free (in Core) 2400 px derivative generation for the Mac
 /// (spec §18.1.12, F-28): `ArtworkStore` declares the `cover2400` role but
-/// nothing produced it. This uses ImageIO on the Studio target only — Core
+/// nothing produced it. This uses ImageIO on the VoxglassMac target only — Core
 /// stays image-framework-free.
 enum ArtworkResizer {
 

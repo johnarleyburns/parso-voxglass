@@ -3,7 +3,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// Spec §11.6.8 deviation note + T1d: rates outside the ReplayGain tables are
 /// resampled to 48 kHz before analysis — never silently analyzed at the wrong

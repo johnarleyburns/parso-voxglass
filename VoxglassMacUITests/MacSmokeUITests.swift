@@ -1,11 +1,11 @@
 import XCTest
 
-/// The single macOS Studio smoke test (repo convention: one UI smoke test per
+/// The single macOS smoke test (repo convention: one UI smoke test per
 /// device). Drives the New Project wizard for all three destinations — the
 /// destination is the only thing that changes between them; everything else
 /// runs under `swift test`. Runs locally (`scripts/test.sh --all`), never on
 /// GitHub Actions.
-final class StudioSmokeUITests: XCTestCase {
+final class MacSmokeUITests: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false

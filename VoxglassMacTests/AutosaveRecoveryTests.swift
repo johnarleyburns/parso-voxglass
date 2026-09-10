@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// Spec §19.4 / §7.7: crash recovery — a synthetic `session.json` plus a WAV
 /// with a stale header (as left by an AVAudioFile that was never closed) is

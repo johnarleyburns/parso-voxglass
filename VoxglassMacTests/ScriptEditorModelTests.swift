@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import VoxglassCore
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 @MainActor
 @Suite struct ScriptEditorModelTests {

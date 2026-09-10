@@ -1,9 +1,13 @@
 import Foundation
 import VoxglassCore
 
-/// App-level container for the Narration Pro license (§13.5): owns the StoreKit 2
-/// provider and exposes the gate. Core never imports StoreKit; this app-target
-/// singleton is the only place a concrete provider is constructed for shipping.
+/// There is no paid Narration Pro tier any more — every commercial-export
+/// feature (retail presets, mastering, M4B, FLAC, batch export, exportable
+/// validation reports) is free. This still hands out a `LicenseProvider`
+/// pinned to `.pro` so `NarrationFlow`'s existing `licenseGate`/
+/// `isProUnlocked` call sites keep working unchanged and never gate
+/// anything — see `LicenseTypes.swift`. Purchasing is now
+/// `SupportDevelopmentStore`'s optional, non-gating consumable.
 @MainActor
 final class NarrationProStore {
     static let shared = NarrationProStore()
@@ -11,7 +15,7 @@ final class NarrationProStore {
     let provider: any LicenseProvider
     var gate: LicenseGate { LicenseGate(provider: provider) }
 
-    init(provider: any LicenseProvider = StoreKitLicenseProvider()) {
+    init(provider: any LicenseProvider = StaticLicenseProvider(entitlement: .pro(since: .distantPast))) {
         self.provider = provider
     }
 }

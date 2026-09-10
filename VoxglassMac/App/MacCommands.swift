@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct StudioCommands: Commands {
+struct MacCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .newItem) {
             Button("New Audiobook Project") {

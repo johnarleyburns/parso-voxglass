@@ -156,6 +156,8 @@ public struct ValidationReportView: View {
         case .splitChapter: return "Script Editor"
         case .chooseArtwork: return "metadata artwork"
         case .setRetailSample: return "export retail sample"
+        case .openStorage: return "storage settings"
+        case .openAudioSetup: return "audio setup"
         }
     }
 
@@ -272,6 +274,11 @@ public struct ValidationReportView: View {
         case .setRetailSample: return "set retail sample"
         case .reanalyzeTake: return "re-analyze take"
         case .clearPickup: return "clear pickup"
+        case .hydrateAssets: return "download"
+        case .manageStorage: return "manage storage"
+        case .backupNow: return "back up now"
+        case .openAudioSetup: return "open audio setup"
+        case .normalizeLoudness: return "normalize loudness"
         }
     }
 }

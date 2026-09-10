@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// §8.4 undo table: edit text, split, merge, select take, archive take,
 /// reorder chapters all round-trip; recording is never undoable.

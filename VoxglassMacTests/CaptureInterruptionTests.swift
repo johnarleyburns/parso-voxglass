@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// WP-D interruption handling: device change, sleep, and disk full each
 /// finalize and preserve the in-flight take and surface the specific banner

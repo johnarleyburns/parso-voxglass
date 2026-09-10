@@ -122,6 +122,75 @@ import VoxglassCoreTestSupport
         #expect(!entries.isEmpty, "No mockup ids parsed — the mockup directory is the contract")
     }
 
+    // MARK: - Mac + iPad mockups (mac-ipad-universal-mvp)
+    //
+    // GAP_ANALYSIS G39: extend the mockup-identifier contract to this
+    // document's mockups in U0, before the ids have a chance to drift —
+    // without pretending U6/U7 (Mac identifier alignment) or U8 (iPad split
+    // layout) are already done. `mac-*.html` resolves against `VoxglassMac`;
+    // `ipad-*.html` resolves against the phone production surfaces (§9.2:
+    // compact width is the shipping iPhone flow; the regular-width split
+    // view these pages mostly depict doesn't exist until U8). Almost nothing
+    // resolves yet, so this runs as a **known issue** — it must keep failing
+    // (proving the check itself still runs) and must fail on the same set of
+    // ids the resurrected/adaptive UI has not yet caught up to. A later stage
+    // that aligns an id makes that specific id start resolving, which is
+    // exactly the drift this test exists to catch: shrink the mockup set's
+    // unresolved ids, don't relax the check.
+    private static func macMockupEntries() -> [MockupEntry] {
+        let dir = repositoryRoot().appendingPathComponent("docs/mac-ipad-universal-mvp/mockups")
+        guard let enumerator = FileManager.default.enumerator(
+            at: dir,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+        var entries: [MockupEntry] = []
+        while let url = enumerator.nextObject() as? URL {
+            guard url.pathExtension == "html",
+                  let content = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            let file = url.lastPathComponent
+            for match in content.matches(of: #/id="([^"]+)"/#) {
+                entries.append(MockupEntry(file: file, id: String(match.output.1)))
+            }
+        }
+        return entries
+    }
+
+    private static func macIdentifierResolves(_ entry: MockupEntry) -> Bool {
+        let dirs = entry.file.hasPrefix("mac-") ? ["VoxglassMac"] : phoneMockupSources
+        for directory in dirs {
+            let sources = sourceFiles(in: directory)
+            if sources.contains(where: { $0.contains("\"\(entry.id)") }) { return true }
+        }
+        return false
+    }
+
+    @Test func macAndIPadMockupIdentifiersResolveInAppSource() {
+        withKnownIssue("""
+        Mac identifier alignment lands in U6/U7 (SPEC.md §5.3); the iPad \
+        regular-width split layout lands in U8 (§9). Until then almost none \
+        of docs/mac-ipad-universal-mvp/mockups' ids resolve. This must keep
+        failing — a fully-green result here without those stages landing
+        would mean the check stopped running, not that the work is done.
+        """) {
+            let entries = Self.macMockupEntries()
+            let unresolved = entries.filter { !Self.macIdentifierResolves($0) }
+            #expect(unresolved.isEmpty, "Mac/iPad mockup identifiers not yet wired: \(unresolved)")
+        }
+        #expect(!Self.macMockupEntries().isEmpty, "No Mac/iPad mockup ids parsed — the mockup directory is the contract")
+    }
+
+    @Test func macAndIPadMockupIdentifiersAreWellFormed() {
+        // Malformedness is a real, always-enforced check — no known-issue
+        // wrapper. A mockup id is well-formed regardless of whether the app
+        // has caught up to it yet.
+        let pattern = #/^[a-z][a-zA-Z0-9-]*(?:\.[a-zA-Z0-9-]+)+$/#
+        let malformed = Self.macMockupEntries()
+            .map(\.id)
+            .filter { $0.wholeMatch(of: pattern) == nil }
+        #expect(malformed.isEmpty, "Malformed Mac/iPad mockup identifiers: \(malformed)")
+    }
+
     @Test func mockupIdentifiersAreWellFormed() {
         let pattern = #/^[a-z][a-zA-Z0-9-]*(?:\.[a-zA-Z0-9-]+)+$/#
         let malformed = Self.mockupEntries()

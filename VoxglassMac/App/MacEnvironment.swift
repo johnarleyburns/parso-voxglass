@@ -3,11 +3,11 @@ import Observation
 import VoxglassCore
 import VoxglassEncoders
 
-// MARK: - StudioEnvironment
+// MARK: - MacEnvironment
 
 @MainActor
 @Observable
-public final class StudioEnvironment {
+public final class MacEnvironment {
     // ── Service slots (§4.3). Injected by the composition root (`.test` /
     //    `.live`), never constructed per-route.
     public let capture: any AudioCapturing
@@ -32,8 +32,8 @@ public final class StudioEnvironment {
     public var recoveryModel: AutosaveRecoveryModel?
 
     /// Reports which encoders this build can actually use (§16.3). Set by the
-    /// app composition root (`StudioApp`), which is the only place allowed to
-    /// name `VoxTranscoder` — the SwiftPM `VoxglassStudioKit` mirror imports
+    /// app composition root (`MacApp`), which is the only place allowed to
+    /// name `VoxTranscoder` — the SwiftPM `VoxglassMac` mirror imports
     /// the encoder target but keeps the live composition root app-only (the
     /// diagnostics bundle, S12, needs the availability list without
     /// constructing an encoder itself).
@@ -50,16 +50,12 @@ public final class StudioEnvironment {
 
     public var settings: SettingsModel
 
-    /// Production sync coordinator (S10): publishes the projection to CloudKit and
-    /// ingests review events. Live only when a project is open; harmless otherwise.
-    public let projection: StudioProjectionCoordinator
-
     // ── Shell navigation (§18.1.1)
     public var selectedTab: ProjectTab = .dashboard
-    public var presentedSheet: StudioSheet?
+    public var presentedSheet: MacSheet?
     /// Set when a library-side surface (Narration Needs) wants to take over the
     /// window; the library view renders it as a full-window surface.
-    public var libraryMode: StudioLibraryMode = .library
+    public var libraryMode: MacLibraryMode = .library
     /// Callback the app shell installs to open a project window for a reference.
     public var onRequestProjectWindow: ((ProjectReference) -> Void)?
     /// Callback the app shell installs to close the current project window.
@@ -113,7 +109,6 @@ public final class StudioEnvironment {
         self.recents = recents
         self.isTestEnvironment = isTestEnvironment
         self.license = LicenseGate(provider: licenseProvider)
-        self.projection = StudioProjectionCoordinator(clock: clock)
         self.encoderAvailabilityProvider = encoderAvailability
         self.audioDecoder = audioDecoder
         let library = ProjectLibraryModel(
@@ -150,26 +145,28 @@ public final class StudioEnvironment {
 
     // MARK: - Factories (§4.3)
 
-    /// The live composition root. Called only from `StudioApp`, which can name
-    /// the encoder (`VoxTranscoder`); the SwiftPM `VoxglassStudioKit` mirror
+    /// The live composition root. Called only from `MacApp`, which can name
+    /// the encoder (`VoxTranscoder`); the SwiftPM `VoxglassMac` mirror
     /// keeps its composition-root call sites test-only, so it never calls
     /// `.live`.
     public static func live(
         package: LivePackage = .none,
         transcoder: any AudioTranscoding,
         encoderAvailability: @escaping () -> [String]
-    ) throws -> StudioEnvironment {
+    ) throws -> MacEnvironment {
         let clock = SystemClock()
         let ids = UUIDGenerator()
         let recentsDir: URL? = package.recentsStorageDirectory
         let recents = RecentsStore(storageDirectory: recentsDir)
-        let env = StudioEnvironment(
+        let env = MacEnvironment(
             capture: AVAudioEngineCapture(),
             metrics: AVMetricsCalculator(),
             player: AVSegmentPlayer(assets: FileAssetStore(root: FileManager.default.temporaryDirectory)),
             transcoder: transcoder,
             sync: ProductionSyncEngine(
-                transport: CloudKitProductionSync(),
+                // Real CloudKit wiring lands in U1 alongside the restored
+                // iCloud entitlement — see NoopProductionSyncTransport.
+                transport: NoopProductionSyncTransport(),
                 state: DefaultsSyncStateStore()
             ),
             clock: clock,
@@ -189,13 +186,13 @@ public final class StudioEnvironment {
     /// CloudKit, StoreKit, or the encoders; the fakes live in
     /// `Support/UITestFakes.swift` because gate G-9 forbids
     /// `VoxglassCoreTestSupport` in a shipping target (§19.2).
-    public static func test(seed: UITestSeed) -> StudioEnvironment {
+    public static func test(seed: UITestSeed) -> MacEnvironment {
         #if DEBUG
         let clock = UITestFixedClock()
         let ids = UITestSequentialIDGenerator()
         let recents = RecentsStore(storageDirectory: FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-ui-test-recents", isDirectory: true))
-        return StudioEnvironment(
+        return MacEnvironment(
             capture: UITestAudioCapture(clock: clock, ids: ids),
             metrics: UITestMetricsCalculator(),
             player: UITestSegmentPlayer(),
@@ -221,15 +218,15 @@ public final class StudioEnvironment {
 
     // MARK: - Navigation
 
-    public func navigate(to route: StudioRoute) {
+    public func navigate(to route: MacRoute) {
         apply(route)
     }
 
-    public func push(to route: StudioRoute) {
+    public func push(to route: MacRoute) {
         apply(route)
     }
 
-    private func apply(_ route: StudioRoute) {
+    private func apply(_ route: MacRoute) {
         switch route {
         case .dashboard: selectedTab = .dashboard; presentedSheet = nil
         case .script: selectedTab = .script; presentedSheet = nil
@@ -242,7 +239,6 @@ public final class StudioEnvironment {
         case .importAudio: presentedSheet = .importAudio
         case .export: presentedSheet = .export
         case .takeCompare: presentedSheet = .takeCompare
-        case .devicePreview: presentedSheet = .devicePreview
         case .newProject: presentedSheet = .newProject
         case .needsBrowser: presentedSheet = .needsBrowser
         case .discovery: libraryMode = .discovery
@@ -392,7 +388,7 @@ public enum LivePackage: Sendable {
 
 // MARK: - Shell vocabulary (§18.1.1)
 
-public enum StudioSection: Hashable {
+public enum MacSection: Hashable {
     case library, needsReview, readyToExport, archive, settings
 }
 
@@ -412,12 +408,12 @@ public enum ProjectTab: Hashable, CaseIterable {
     }
 }
 
-public enum StudioSheet: Hashable {
+public enum MacSheet: Hashable {
     case newProject, needsBrowser
-    case sourceImport, importAudio, export, takeCompare, devicePreview
+    case sourceImport, importAudio, export, takeCompare
 }
 
-public enum StudioLibraryMode: Hashable {
+public enum MacLibraryMode: Hashable {
     case library
     case discovery
 }
@@ -445,7 +441,7 @@ public struct ProjectReference: Codable, Hashable, Sendable {
     }
 }
 
-public enum StudioRoute: Sendable, Equatable, Hashable {
+public enum MacRoute: Sendable, Equatable, Hashable {
     case library
     case newProject
     case sourceImport
@@ -459,7 +455,6 @@ public enum StudioRoute: Sendable, Equatable, Hashable {
     case metadata
     case validate
     case export
-    case devicePreview
     case settings
     case discovery
     case needsBrowser

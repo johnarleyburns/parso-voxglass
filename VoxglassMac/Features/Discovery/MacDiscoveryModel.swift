@@ -2,12 +2,12 @@ import Foundation
 import Observation
 import VoxglassCore
 
-/// The Studio's discovery composition root (NARRATION_NEEDS_SPEC §11.2): same
+/// The Mac's discovery composition root (NARRATION_NEEDS_SPEC §11.2): same
 /// ladder as the phone, surfaced for the Mac. Short and long works are both
 /// narratable here.
 @MainActor
 @Observable
-public final class StudioDiscoveryModel {
+public final class MacDiscoveryModel {
     public let aggregator: LadderNeedsAggregator
 
     public private(set) var needs: [NarrationNeed] = []
@@ -16,9 +16,9 @@ public final class StudioDiscoveryModel {
     public private(set) var isRefreshing = false
 
     public init(
-        sources: [any NeedsSource] = StudioDiscoveryModel.defaultSources(),
-        cache: any NeedsCaching = StudioDiscoveryModel.defaultCache(),
-        fetcher: any HTTPFetching = StudioURLSessionFetcher(),
+        sources: [any NeedsSource] = MacDiscoveryModel.defaultSources(),
+        cache: any NeedsCaching = MacDiscoveryModel.defaultCache(),
+        fetcher: any HTTPFetching = MacURLSessionFetcher(),
         clock: any Clock = SystemClock()
     ) {
         self.aggregator = LadderNeedsAggregator(sources: sources, cache: cache, fetcher: fetcher, clock: clock)
@@ -38,7 +38,7 @@ public final class StudioDiscoveryModel {
 
     nonisolated public static func defaultCache() -> any NeedsCaching {
         let cacheURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("Voxglass Studio/needs-cache.json")
+            .appendingPathComponent("Voxglass/needs-cache.json")
         return FileNeedsCache(url: cacheURL, clock: SystemClock())
     }
 

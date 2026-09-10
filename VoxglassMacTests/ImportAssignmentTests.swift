@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import VoxglassCore
 import VoxglassCoreTestSupport
-@testable import VoxglassStudioKit
+@testable import VoxglassMac
 
 /// Spec §11.5 / §19.4: silence-based segmentation, assignment methods, and the
 /// slice-and-commit path of Import Audio, including the mandatory origin

@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 import VoxglassWatchCore
 import VoxglassWatchProtocol
@@ -129,6 +130,20 @@ struct WatchBookDetailView: View {
                 Text(currentChapterTitle).font(.caption).lineLimit(1)
                     .accessibilityIdentifier("watch.book.currentChapter")
             }
+            if playback.chapterIndex >= 0 {
+                Text("Chapter \(playback.chapterIndex + 1)").font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("watch.book.chapterNumber")
+            }
+            if let sourceLabel {
+                Text(sourceLabel).font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("watch.book.source")
+            }
+            // Which output the audio is actually routed to — a diagnostic
+            // for the "Cannot Open"/silent-hang class of playback failures,
+            // where the app appeared to work but nothing was audible because
+            // no output route was connected.
+            Text(outputRouteName).font(.caption2).foregroundStyle(.secondary)
+                .accessibilityIdentifier("watch.book.output")
             Text(playback.statusText).font(.caption2).foregroundStyle(statusColor).lineLimit(2)
                 .accessibilityIdentifier("watch.book.phase")
             if indeterminateProgress {
@@ -150,6 +165,18 @@ struct WatchBookDetailView: View {
                 Button("Retry") { services.retryPlayback() }.accessibilityIdentifier("watch.book.retry")
             }
         }
+    }
+
+    private var sourceLabel: String? {
+        switch playback.sourceKind {
+        case .downloaded: "Downloaded"
+        case .stream: "Streaming"
+        case nil: nil
+        }
+    }
+
+    private var outputRouteName: String {
+        AVAudioSession.sharedInstance().currentRoute.outputs.first?.portName ?? "No audio output"
     }
 
     private var currentChapterTitle: String? {

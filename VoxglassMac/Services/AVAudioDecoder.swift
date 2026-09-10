@@ -4,7 +4,7 @@ import VoxglassCore
 
 /// Concrete `AudioDecoding` implementation backed by AVFoundation (§4.2).
 /// This is the live implementation behind `AudioMetricsCalculator.metrics(for:)`
-/// in the Studio target; the Core `PlaceholderAudioDecoder` exists only so the
+/// in the VoxglassMac target; the Core `PlaceholderAudioDecoder` exists only so the
 /// library target compiles without AVFoundation.
 ///
 /// Conforms to `SeekableAudioDecoding` (§11.5) so paragraph seek / trim

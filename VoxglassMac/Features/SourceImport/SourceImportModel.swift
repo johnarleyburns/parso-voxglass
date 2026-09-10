@@ -42,7 +42,7 @@ public final class SourceImportModel {
         }
     }
 
-    public func importSource(from url: URL, into env: StudioEnvironment) async {
+    public func importSource(from url: URL, into env: MacEnvironment) async {
         isLoading = true
         error = nil
         extractedDocument = nil
@@ -65,7 +65,7 @@ public final class SourceImportModel {
         isLoading = false
     }
 
-    public func applyToProject(_ env: StudioEnvironment) async {
+    public func applyToProject(_ env: MacEnvironment) async {
         guard let project = env.currentProject else { return }
 
         let segmenter = Segmenter()
@@ -176,7 +176,7 @@ extension SourceImportModel {
     /// Removes the orphaned-recordings chapter after a re-import (mockup
     /// `19`). Retirement stays non-destructive: the audio assets remain in
     /// the store; only the project rows are dropped (§22.6).
-    public func discardOrphans(_ env: StudioEnvironment) async {
+    public func discardOrphans(_ env: MacEnvironment) async {
         guard let summary = reimportSummary,
               let chapterID = summary.orphanChapterID,
               var project = env.currentProject else { return }

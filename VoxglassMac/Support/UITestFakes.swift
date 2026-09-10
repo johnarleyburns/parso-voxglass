@@ -19,6 +19,10 @@ public final class UITestAudioCapture: AudioCapturing, @unchecked Sendable {
     public var state: CaptureState = .idle
     public let levels: AsyncStream<CaptureLevels>
     public var onStartRecording: ((URL) -> Void)?
+    public private(set) var currentRouteInfo = CaptureRouteInfo(
+        transports: [.builtIn], sampleRate: 44_100, isSampleRateStable: true, inputLatencySeconds: 0.02
+    )
+    public var onInterruption: ((CaptureInterruptionReason) -> Void)?
 
     private let clock: any Clock
     private let ids: any IDGenerator
@@ -53,7 +57,7 @@ public final class UITestAudioCapture: AudioCapturing, @unchecked Sendable {
         lastDestinationURL = destinationURL
         let sampleRate = Int(format.sampleRate)
         let frames = sampleRate * 2
-        var samples = [Int16](repeating: 0, count: frames)
+        let samples = [Int16](repeating: 0, count: frames)
         let data = samples.withUnsafeBytes { Data($0) }
         var wav = Data("RIFF".utf8)
         let dataSize = Int32(data.count)
@@ -105,6 +109,7 @@ public final class UITestSyncTransport: ProductionSyncTransport, @unchecked Send
         ZoneFetchResult()
     }
     public func pushRecords(_ records: [SyncRecord]) async throws {}
+    public func fetchRecords(_ recordNames: [String]) async throws -> [SyncRecord] { [] }
     public func deleteRecords(_ recordNames: [String]) async throws {}
 }
 
@@ -150,7 +155,7 @@ public final class UITestLicenseProvider: LicenseProvider, @unchecked Sendable {
     public func purchasePro() async throws -> EntitlementState { .free }
     public func restore() async throws -> EntitlementState { .free }
     public func product() async throws -> ProductInfo {
-        ProductInfo(displayPrice: "$149", displayName: "Voxglass Studio Pro", description: "Pro")
+        ProductInfo(displayPrice: "$149", displayName: "Voxglass Pro", description: "Pro")
     }
 }
 

@@ -39,7 +39,7 @@ public final class ScriptEditorModel {
     public static var sharedRecordedTexts: [UUID: String] = [:]
     public var recordedTexts: [UUID: String] = [:]
 
-    public let undo: StudioUndo
+    public let undo: MacUndo
     private let store: any ProductionStore
     private let debounceMilliseconds: Int64
     private var saveTasks: [UUID: Task<Void, Never>] = [:]
@@ -48,7 +48,7 @@ public final class ScriptEditorModel {
         store: any ProductionStore,
         project: AudiobookProject,
         debounceMilliseconds: Int64 = 400,
-        undo: StudioUndo = StudioUndo()
+        undo: MacUndo = MacUndo()
     ) {
         self.store = store
         self.project = project

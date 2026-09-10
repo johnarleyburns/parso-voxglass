@@ -32,8 +32,22 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
     public private(set) var state: CaptureState = .idle
 
     /// Fired when a take had to be finalized outside the normal stop path
-    /// (spec §11.2 rule 6, rule 8). The take is complete and preserved.
-    public var onInterruption: (@Sendable (CaptureInterruption) -> Void)?
+    /// (spec §11.2 rule 6, rule 8). The take is complete and preserved. This
+    /// is richer than the `AudioCapturing` protocol's own `onInterruption`
+    /// (it carries the finalized take), so it is named distinctly and wired
+    /// directly by `RecordTabView` via a concrete downcast.
+    public var onTakeInterruption: (@Sendable (CaptureInterruption) -> Void)?
+
+    /// `AudioCapturing.onInterruption` (§7.4): the plain interruption-reason
+    /// callback the interruption matrix reads. Full population of both this
+    /// and `currentRouteInfo` from real Core Audio / room-test data is U5
+    /// work (GAP_ANALYSIS G19); this satisfies the protocol now so the target
+    /// compiles (U0) without claiming the interruption matrix is wired.
+    public var onInterruption: ((CaptureInterruptionReason) -> Void)?
+
+    /// The route the capture is using (§7.1). Populated from device
+    /// enumeration; full classifier wiring lands in U5.
+    public private(set) var currentRouteInfo = CaptureRouteInfo()
 
     public var levels: AsyncStream<CaptureLevels> {
         AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
@@ -130,9 +144,8 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
 
         // Ring sized to 4 seconds at the record format (§11.2 rule 4).
         let ringFrames = Int(format.sampleRate * 4.0)
-        let ring = CaptureRingBuffer(capacityFrames: ringFrames)
+        let ring = CaptureRingBuffer(capacity: ringFrames)
         self.ring = ring
-        ring.reset()
         levelsAccumulator.reset()
 
         installTapIfNeeded()
@@ -208,7 +221,7 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
 
         // Rebuild the ring on every take so the 4-second window starts empty
         // and overrun counts are per-take.
-        let ring = CaptureRingBuffer(capacityFrames: Int(fmt.sampleRate * 4.0))
+        let ring = CaptureRingBuffer(capacity: Int(fmt.sampleRate * 4.0))
         self.ring = ring
         levelsAccumulator.reset()
         writerScratch?.deallocate()
@@ -326,8 +339,11 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
             }
             self.stateLock.withLock { self.currentInterruption = interruption }
             self.state = .idle
+            if let onTakeInterruption = self.onTakeInterruption {
+                onTakeInterruption(interruption)
+            }
             if let onInterruption = self.onInterruption {
-                onInterruption(interruption)
+                onInterruption(Self.reason(for: kind))
             }
             _ = error // the take was preserved; the write error is surfaced via the banner
         }
@@ -343,7 +359,12 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: hwFormat) { [ring, accumulator] buffer, _ in
             // Real-time thread: copy floats in and update atomics. No
             // allocation, no lock, no dispatch, no os_log, no Date().
-            ring.write(buffer)
+            // The writer path only ever drains channel 0 (mono narration
+            // capture, §7.2), so only channel 0 is pushed here.
+            if let channel0 = buffer.floatChannelData?[0] {
+                let frames = Int(buffer.frameLength)
+                ring.push(UnsafeBufferPointer(start: channel0, count: frames))
+            }
             accumulator.accumulate(buffer)
         }
         tapInstalled = true
@@ -375,7 +396,7 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
                   let converter = writerConverter,
                   let outFormat = writerOutputFormat else { break }
 
-            let count = ring.drain(into: scratch, maxFrames: Int(inputBuffer.frameCapacity))
+            let count = ring.pop(into: UnsafeMutableBufferPointer(start: scratch, count: Int(inputBuffer.frameCapacity)))
             if count > 0 {
                 if let data = inputBuffer.floatChannelData {
                     data[0].update(from: scratch, count: count)
@@ -384,7 +405,7 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
                 writeChunk(inputBuffer, converter: converter, outFormat: outFormat, outputBuffer: outputBuffer)
             } else {
                 let stop = stateLock.withLock { stopRequested }
-                if stop && ring.framesAvailable() == 0 { break }
+                if stop && ring.availableSampleCount == 0 { break }
                 try? await Task.sleep(nanoseconds: 3_000_000)
             }
         }
@@ -483,7 +504,7 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
                 rms: levels.rms,
                 clipped: levels.clipping,
                 sampleCount: levels.frameCount,
-                overruns: ring?.overrunCount() ?? 0
+                overruns: ring?.droppedSampleCount ?? 0
             )
             recordFile = nil
             recordURL = nil
@@ -743,6 +764,17 @@ public final class AVAudioEngineCapture: AudioCapturing, @unchecked Sendable {
 
     private func resolveAudioDevice(uid: String) -> CADevice? {
         enumerateAudioDevices().first { $0.uid == uid || $0.name == uid }
+    }
+
+    /// Best-effort mapping onto the plain `CaptureInterruptionReason` the
+    /// `AudioCapturing` protocol carries (§7.4). Full interruption-matrix
+    /// wiring is U5.
+    private static func reason(for kind: CaptureInterruption.Kind) -> CaptureInterruptionReason {
+        switch kind {
+        case .deviceChanged: return .deviceUnplugged
+        case .sleep: return .backgroundedOrLocked
+        case .diskFull: return .diskPressure
+        }
     }
 }
 

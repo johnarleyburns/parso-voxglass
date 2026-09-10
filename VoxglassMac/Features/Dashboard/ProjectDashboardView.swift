@@ -6,7 +6,7 @@ import VoxglassCore
 public struct ProjectDashboardView: View {
     let model: ProjectDashboardModel
 
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
 
     public init(model: ProjectDashboardModel) {
         self.model = model
@@ -83,13 +83,6 @@ public struct ProjectDashboardView: View {
                         Label("Validate", systemImage: "checkmark.seal")
                     }
                     .accessibilityIdentifier("dashboard.validate")
-
-                    Button {
-                        env.navigate(to: .devicePreview)
-                    } label: {
-                        Label("Preview on Devices", systemImage: "iphone")
-                    }
-                    .accessibilityIdentifier("dashboard.previewOnDevices")
                 }
             }
         }

@@ -37,11 +37,14 @@ public final class ProjectLibraryModel {
     /// window; a stale lock offers "Open anyway"; otherwise the project opens
     /// and the lock is written.
     public func openProject(at url: URL) async {
-        guard url.startAccessingSecurityScopedResource() else {
-            error = "Cannot access project at \(url.lastPathComponent)"
-            return
-        }
-        defer { url.stopAccessingSecurityScopedResource() }
+        // Only a URL resolved from a security-scoped bookmark (or handed
+        // back by an NSOpenPanel) is actually security-scoped; this call
+        // correctly returns `false` — a no-op, not a failure — for any other
+        // URL, including one under the app's own writable temp/container
+        // space, or one we created ourselves in this same session. Gating on
+        // that return value made every self-authored project unopenable.
+        let didStartAccessing = url.startAccessingSecurityScopedResource()
+        defer { if didStartAccessing { url.stopAccessingSecurityScopedResource() } }
 
         do {
             let package = try await ProjectPackage.open(url)
@@ -66,11 +69,8 @@ public final class ProjectLibraryModel {
     public func confirmOpenAnyway() async {
         guard let prompt = staleLockPrompt else { return }
         staleLockPrompt = nil
-        guard prompt.url.startAccessingSecurityScopedResource() else {
-            error = "Cannot access project at \(prompt.url.lastPathComponent)"
-            return
-        }
-        defer { prompt.url.stopAccessingSecurityScopedResource() }
+        let didStartAccessing = prompt.url.startAccessingSecurityScopedResource()
+        defer { if didStartAccessing { prompt.url.stopAccessingSecurityScopedResource() } }
         do {
             let package = try await ProjectPackage.open(prompt.url)
             try await openUnchecked(package, at: prompt.url)

@@ -44,12 +44,34 @@ public final class RecentsStore {
             dir = explicitDir
         } else {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            dir = appSupport.appendingPathComponent("guru.parso.voxglass.studio")
+            dir = appSupport.appendingPathComponent("guru.parso.voxglass")
         }
         self.storageURL = dir.appendingPathComponent("recents.json")
 
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        Self.migrateLegacyDirectoryIfNeeded(storageDirectory: storageDirectory, newDir: dir, newFile: storageURL)
         _ = load()
+    }
+
+    /// One-time migration (GAP_ANALYSIS G28): real local builds wrote recents
+    /// to `Application Support/guru.parso.voxglass.studio/recents.json` before
+    /// the bundle id changed to `guru.parso.voxglass` (§2.1). Unlike the P0
+    /// entitlement-key rename, this file was actually produced by builds on
+    /// this machine, so a bare rename would silently drop a user's recents
+    /// list the first time the renamed app launches. Copy (never move, so a
+    /// crash mid-migration cannot lose the source) the legacy file into the
+    /// new location exactly once, only when the new location has nothing yet.
+    private static func migrateLegacyDirectoryIfNeeded(storageDirectory: URL?, newDir: URL, newFile: URL) {
+        // An explicit `storageDirectory` means a test or preview fixture;
+        // never touch the real Application Support tree in that case.
+        guard storageDirectory == nil else { return }
+        guard !FileManager.default.fileExists(atPath: newFile.path) else { return }
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let legacyFile = appSupport
+            .appendingPathComponent("guru.parso.voxglass.studio")
+            .appendingPathComponent("recents.json")
+        guard FileManager.default.fileExists(atPath: legacyFile.path) else { return }
+        try? FileManager.default.copyItem(at: legacyFile, to: newFile)
     }
 
     /// Registers an opened project, refreshing its manifest and snapshot.

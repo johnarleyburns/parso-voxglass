@@ -4,10 +4,10 @@ import Observation
 import UniformTypeIdentifiers
 import VoxglassCore
 
-/// The Studio's app-level preferences (§18.1.16). Recording defaults apply to
+/// The Mac app's preferences (§18.1.16). Recording defaults apply to
 /// *new* projects; per-project `RecordingDefaults` (S5) continue to win while a
 /// project is open. Everything is persisted to `UserDefaults` under one key.
-public struct StudioSettings: Codable, Sendable, Equatable {
+public struct MacSettings: Codable, Sendable, Equatable {
     // Audio
     public var inputDeviceUID: String = "" // "" = system default
     public var recordingSampleRate: Double = 48_000
@@ -56,7 +56,7 @@ public final class SettingsModel {
 
     public var tab: Tab = .audio
 
-    public var settings: StudioSettings {
+    public var settings: MacSettings {
         didSet { persist() }
     }
 
@@ -78,7 +78,7 @@ public final class SettingsModel {
     public let gate: LicenseGate
 
     private let defaults: UserDefaults
-    private let settingsKey = "voxglass.studio.settings"
+    private let settingsKey = "guru.parso.voxglass.settings"
 
     public init(
         gate: LicenseGate,
@@ -87,10 +87,10 @@ public final class SettingsModel {
         self.gate = gate
         self.defaults = defaults
         if let data = defaults.data(forKey: settingsKey),
-           let decoded = try? JSONDecoder().decode(StudioSettings.self, from: data) {
+           let decoded = try? JSONDecoder().decode(MacSettings.self, from: data) {
             self.settings = decoded
         } else {
-            self.settings = StudioSettings()
+            self.settings = MacSettings()
         }
     }
 
@@ -120,7 +120,7 @@ public final class SettingsModel {
             let state = try await gate.provider.purchasePro()
             entitlement = state
             message = {
-                if case .pro = state { return "Voxglass Studio Pro is unlocked." }
+                if case .pro = state { return "Voxglass Pro is unlocked." }
                 return nil
             }()
         } catch LicenseError.cancelled {
@@ -186,7 +186,7 @@ public final class SettingsModel {
 
     public func copyDiagnostics(packageRoot: URL?) {
         let lines = [
-            "Voxglass Studio diagnostics",
+            "Voxglass diagnostics",
             "Package: \(packageRoot?.path ?? "none open")",
             "Entitlement: \(String(describing: entitlement))",
             "Storage: \(storageReport.map { "\($0.originalBytes) original bytes" } ?? "unavailable")"
@@ -211,8 +211,8 @@ public final class SettingsModel {
 
         var content = DiagnosticsBundleContent(
             appVersion: ProcessInfo.processInfo.operatingSystemVersionString.isEmpty
-                ? "Voxglass Studio"
-                : "Voxglass Studio (macOS \(ProcessInfo.processInfo.operatingSystemVersionString))",
+                ? "Voxglass"
+                : "Voxglass (macOS \(ProcessInfo.processInfo.operatingSystemVersionString))",
             entitlement: entitlementLabel(for: entitlement)
         )
         content.logTail = DiagnosticsBundleWriter.logTail()

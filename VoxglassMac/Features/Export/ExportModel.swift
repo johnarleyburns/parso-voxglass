@@ -543,7 +543,7 @@ public final class ExportModel {
         case .blockingIssues(let issues):
             return "\(issues.count) blocking issue(s) must be fixed before exporting."
         case .encoderUnavailable(let codec):
-            return "The \(codec) encoder could not be loaded, so this export is unavailable. Reinstall Voxglass Studio."
+            return "The \(codec) encoder could not be loaded, so this export is unavailable. Reinstall Voxglass."
         case .projectNotReady(let reason):
             return reason
         }
@@ -562,8 +562,8 @@ public final class ExportModel {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
         if let version {
-            return build.map { "Voxglass Studio \(version) (\($0))" } ?? "Voxglass Studio \(version)"
+            return build.map { "Voxglass \(version) (\($0))" } ?? "Voxglass \(version)"
         }
-        return "Voxglass Studio 1.0"
+        return "Voxglass 1.0"
     }
 }

@@ -1,10 +1,10 @@
 import Foundation
 import VoxglassCore
 
-/// The Studio concrete of the `HTTPFetching` seam (NARRATION_NEEDS_SPEC §4.2).
+/// The Mac concrete of the `HTTPFetching` seam (NARRATION_NEEDS_SPEC §4.2).
 /// App-target only; `Discovery/**` Core code never touches URLSession directly
 /// (G-17). Detects auth-wall redirects so L3 yields nothing on a sign-in wall.
-public struct StudioURLSessionFetcher: HTTPFetching {
+public struct MacURLSessionFetcher: HTTPFetching {
     public init() {}
 
     public func get(_ url: URL, timeout: TimeInterval, userAgent: String) async throws -> HTTPFetchResult {

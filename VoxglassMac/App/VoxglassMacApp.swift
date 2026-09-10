@@ -3,16 +3,16 @@ import VoxglassCore
 import VoxglassEncoders
 
 @main
-struct StudioApp: App {
-    @State private var environment: StudioEnvironment
-    @State private var discoveryModel = StudioDiscoveryModel()
+struct MacApp: App {
+    @State private var environment: MacEnvironment
+    @State private var discoveryModel = MacDiscoveryModel()
 
     init() {
         // Composition root (§4.3). `-uiTestSeed` wins (and implies
         // `-useTemporaryStore` semantics); otherwise `-useTemporaryStore`
         // avoids touching real user data; otherwise restore the last project.
         let args = ProcessInfo.processInfo.arguments
-        let env: StudioEnvironment
+        let env: MacEnvironment
         if let seed = UITestSeed(arguments: args) {
             env = .test(seed: seed)
         } else if args.contains("-useTemporaryStore") {
@@ -33,7 +33,7 @@ struct StudioApp: App {
 
     var body: some Scene {
         WindowGroup(for: ProjectReference.self) { $reference in
-            StudioRootView(reference: reference)
+            MacRootView(reference: reference)
                 .environment(environment)
                 .environment(discoveryModel)
                 .task {
@@ -46,7 +46,7 @@ struct StudioApp: App {
         }
         .defaultSize(width: 1080, height: 720)
         .commands {
-            StudioCommands()
+            MacCommands()
         }
 
         Settings {

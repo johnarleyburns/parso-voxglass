@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// inside `LibrarySplitView`; the split view owns the open panel and the
 /// New Project sheet.
 struct ProjectLibraryView: View {
-    @Environment(StudioEnvironment.self) private var env
+    @Environment(MacEnvironment.self) private var env
 
     var body: some View {
         VStack(spacing: 0) {

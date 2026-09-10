@@ -3,8 +3,8 @@ import StoreKit
 import VoxglassCore
 
 /// The real `LicenseProvider` backed by StoreKit 2 (§17.2). Lives in the
-/// Studio target; unit tests use `FakeLicenseProvider` so `swift test` never
-/// touches the StoreKit sandbox.
+/// `VoxglassMac` target; unit tests use `FakeLicenseProvider` so `swift test`
+/// never touches the StoreKit sandbox.
 ///
 /// StoreKit contract honored here:
 /// - The `Transaction.updates` listener is started in `init` **before** any
@@ -14,7 +14,9 @@ import VoxglassCore
 ///   against `Transaction.currentEntitlements` and updates the cache.
 /// - Unverified results map to `.unknown`, never `.pro`.
 public final class StoreKitLicenseProvider: LicenseProvider, @unchecked Sendable {
-    public static let productID = "guru.parso.voxglass.studio.pro"
+    /// `NarrationProProduct` is the single source of the product id (§2.1);
+    /// the dead legacy Studio-era product id MUST NOT return (gate G-P7).
+    public static let productID = NarrationProProduct.productID
 
     private let lock = NSLock()
     private var state: EntitlementState

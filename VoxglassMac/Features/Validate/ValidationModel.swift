@@ -20,7 +20,7 @@ public final class ValidationModel {
     public var onNavigate: ((ValidationFixNavigation) -> Void)?
 
     /// Re-analyzes a take's metrics on demand (§15.2 `reanalyzeTake`). The
-    /// Studio wires the real analyzer; tests leave it nil.
+    /// The Mac app wires the real analyzer; tests leave it nil.
     public var reanalyzeTake: ((UUID) async -> AudioQualityMetrics?)?
 
     public var eligibility: EligibilityProfile? { report?.eligibility }
@@ -178,6 +178,12 @@ public final class ValidationModel {
             return navigate(.chooseArtwork)
         case .setRetailSample:
             return navigate(.setRetailSample)
+        case .hydrateAssets, .backupNow, .manageStorage:
+            return navigate(.openStorage)
+        case .openAudioSetup:
+            return navigate(.openAudioSetup)
+        case .normalizeLoudness:
+            return await setNormalizeLoudness(true)
         }
     }
 
@@ -210,6 +216,21 @@ public final class ValidationModel {
         }
     }
 
+    /// `.normalizeLoudness` fix (§11.1): non-destructive — turns on render-time
+    /// loudness normalization for the whole project without rewriting any
+    /// recorded audio.
+    private func setNormalizeLoudness(_ on: Bool) async -> ValidationFixOutcome {
+        do {
+            var updated = try await store.load()
+            updated.profile.assembly.normalizeLoudness = on
+            try await store.save(updated)
+            await evaluate()
+            return .performed("Loudness normalization turned on")
+        } catch {
+            return .failed("Could not update assembly settings: \(error.localizedDescription)")
+        }
+    }
+
     private static var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
@@ -231,6 +252,11 @@ public enum ValidationFixNavigation: Sendable, Equatable {
     case splitChapter(UUID, atParagraph: UUID)
     case chooseArtwork
     case setRetailSample
+    /// `.hydrateAssets`, `.manageStorage`, `.backupNow` (§6) all resolve on
+    /// the same Settings storage panel, which is where the real hydrate /
+    /// backup-now / cache-limit actions live (§5.3 Settings disposition).
+    case openStorage
+    case openAudioSetup
 }
 
 /// What "Fix Next Issue" did.

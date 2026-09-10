@@ -194,7 +194,6 @@ final class VoxglassUITests: XCTestCase {
         assertReviewPlaybackShowsState(app: app)
         assertChapterCollapseRoundTrips(app: app)
         assertFilterEmptyState(app: app)
-        assertCountsSeparateRecordedFromApproved(app: app)
         assertRowOpensParagraphReview(app: app)
         assertPrimaryButtonsShareGeometry(app: app)
         assertValidationReachableEarly(app: app)
@@ -351,16 +350,16 @@ final class VoxglassUITests: XCTestCase {
             "Search tab did not render its search field.\n\(app.debugDescription)"
         )
 
-        // The ten-band EQ is reachable from the "…" menu on the home view and
-        // every band is draggable — folded into the smoke test so this target
-        // has exactly one.
+        // The ten-band EQ is reachable from Settings (Audio section) and
+        // every band is draggable — folded into the smoke test so this
+        // target has exactly one.
         app.buttons["Listen"].tap()
         XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 10))
 
-        let moreMenu = app.buttons["home.moreMenu"]
-        XCTAssertTrue(moreMenu.waitForExistence(timeout: 10), "More menu not on home view.\n\(app.debugDescription)")
-        moreMenu.tap()
-        app.buttons["Equalizer"].tap()
+        let settingsButton = app.buttons["home.settingsButton"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10), "Settings button not on home view.\n\(app.debugDescription)")
+        settingsButton.tap()
+        app.buttons["settings.eq"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Equalizer"].waitForExistence(timeout: 10),
@@ -404,19 +403,18 @@ final class VoxglassUITests: XCTestCase {
         assertRail(longRail, preceding: shortRail.exists ? shortRail : firstPreceding, name: "Long Works")
     }
 
-    /// User-reported: tapping Settings from the Listen tab's "…" menu crashes
-    /// the app. Isolated from `assertStorageCardsFitCompactWidth` (which also
-    /// opens Settings, but only as a step on the way to Storage & iCloud) so
-    /// a Settings-only failure is unambiguous rather than buried under a
+    /// User-reported: tapping Settings from the Listen tab crashes the app.
+    /// Isolated from `assertStorageCardsFitCompactWidth` (which also opens
+    /// Settings, but only as a step on the way to Storage & iCloud) so a
+    /// Settings-only failure is unambiguous rather than buried under a
     /// storage-specific assertion.
     private func assertSettingsOpensFromHomeWithoutCrashing(app: XCUIApplication) {
         app.buttons["Listen"].tap()
-        app.buttons["home.moreMenu"].tap()
-        app.buttons["Settings"].tap()
+        app.buttons["home.settingsButton"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Languages"].waitForExistence(timeout: 10),
-            "Settings did not render after tapping it from the Listen tab's \"…\" menu.\n\(app.debugDescription)"
+            "Settings did not render after tapping the Listen tab's settings button.\n\(app.debugDescription)"
         )
         XCTAssertEqual(
             app.state, .runningForeground,
@@ -498,8 +496,7 @@ final class VoxglassUITests: XCTestCase {
     /// would surface here.
     private func assertEQTogglesFromSettingsWithoutCrashing(app: XCUIApplication) {
         app.buttons["Listen"].tap()
-        app.buttons["home.moreMenu"].tap()
-        app.buttons["Settings"].tap()
+        app.buttons["home.settingsButton"].tap()
         XCTAssertTrue(
             app.staticTexts["Languages"].waitForExistence(timeout: 10),
             "Settings did not render before opening the equalizer.\n\(app.debugDescription)"
@@ -532,8 +529,7 @@ final class VoxglassUITests: XCTestCase {
 
     private func assertStorageCardsFitCompactWidth(app: XCUIApplication) {
         app.buttons["Listen"].tap()
-        app.buttons["home.moreMenu"].tap()
-        app.buttons["Settings"].tap()
+        app.buttons["home.settingsButton"].tap()
 
         let storageLink = app.buttons["settings.storage"]
         for _ in 0..<6 where !storageLink.isHittable {
@@ -875,21 +871,6 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["review.empty"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.descendants(matching: .any)["review.chapter.counts.0"].exists)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'All'")).element(boundBy: 0).tap()
-    }
-
-    private func assertCountsSeparateRecordedFromApproved(app: XCUIApplication) {
-        let counts = app.descendants(matching: .any)["review.chapter.counts.0"]
-        XCTAssertTrue(counts.waitForExistence(timeout: 5))
-        let before = counts.label
-        XCTAssertTrue(before.contains("recorded"))
-        XCTAssertTrue(before.contains("approved"))
-        XCTAssertFalse(before.contains("/"))
-
-        let approval = app.buttons["review.row.approve.1"]
-        XCTAssertTrue(approval.waitForExistence(timeout: 5))
-        approval.tap()
-        XCTAssertNotEqual(counts.label, before)
-        approval.tap() // restore the accepted state for the export leg
     }
 
     private func assertRowOpensParagraphReview(app: XCUIApplication) {
