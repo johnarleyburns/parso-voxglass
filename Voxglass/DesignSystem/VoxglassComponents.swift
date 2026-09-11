@@ -208,6 +208,13 @@ enum BookListRowStyle {
 }
 
 struct BookListRow: View {
+    /// The row's own drawn height. Fixed so the two list screens that disable
+    /// scrolling and size their `List` by row count stay in sync with it.
+    static let rowContentHeight: CGFloat = 96
+    /// Height one row occupies in a `List` — the drawn content plus the 5pt
+    /// top + 5pt bottom `listRowInsets` both screens apply.
+    static let fixedRowHeight: CGFloat = rowContentHeight + 10
+
     var title: String
     var subtitle: String
     var tertiary: String?
@@ -261,9 +268,8 @@ struct BookListRow: View {
                 Text(title)
                     .scaledFont(size: 14.5, weight: .medium)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .minimumScaleFactor(0.86)
-                    .fixedSize(horizontal: false, vertical: true)
                 Text(subtitle)
                     .scaledFont(size: 12)
                     .foregroundStyle(Palette.ink3)
@@ -324,9 +330,14 @@ struct BookListRow: View {
                 .frame(width: 44, alignment: .trailing)
                 .accessibilityHidden(true)
         }
-        .frame(minHeight: 76)
+        // Fixed, not `minHeight`: both list screens that use this row lay their
+        // `List` out at `rowCount * BookListRow.fixedRowHeight` with scrolling
+        // disabled, so every row must be exactly that tall. A `minHeight` let
+        // rows with more populated optional lines (a narration's narrator +
+        // watch-status text) grow past their neighbors and past the height the
+        // container reserved, clipping the last rows.
+        .frame(height: BookListRow.rowContentHeight)
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
         .contentShape(Rectangle())
     }
 

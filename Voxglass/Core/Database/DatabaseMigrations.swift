@@ -295,6 +295,41 @@ private struct DatabaseMigration {
                 // explicitly confirms via the book page's "+" button.
                 "ALTER TABLE books ADD COLUMN is_pending INTEGER NOT NULL DEFAULT 0"
             ]
+        ),
+        DatabaseMigration(
+            id: 13,
+            name: "cover_url_relative_to_application_support",
+            statements: [
+                // App-owned covers (local-folder imports and completed
+                // narrations) were persisted as a container-absolute `file://`
+                // URL, which breaks on every container move (reinstall, device
+                // restore, Xcode redeploy). Rewrite them to a path relative to
+                // Application Support; `LocalArtworkStore.resolve` re-anchors it
+                // on the current container at read time, exactly as
+                // `ContainerPathRebase` does for chapter audio. `FileManager`'s
+                // Application Support URL percent-encodes the space, so match
+                // that form. Rows that don't resolve after this (a container
+                // UUID changed before the migration ran) are repaired by
+                // `LibraryRepository.rebaseStaleLocalURLsIfNeeded` on launch.
+                """
+                UPDATE books
+                SET cover_url = substr(
+                    cover_url,
+                    instr(cover_url, '/Application%20Support/')
+                        + length('/Application%20Support/')
+                )
+                WHERE cover_url LIKE 'file://%/Application%20Support/%'
+                """,
+                """
+                UPDATE books
+                SET cover_url = substr(
+                    cover_url,
+                    instr(cover_url, '/Application Support/')
+                        + length('/Application Support/')
+                )
+                WHERE cover_url LIKE 'file://%/Application Support/%'
+                """
+            ]
         )
     ]
 }

@@ -26,7 +26,15 @@ struct ArtworkImageView<Placeholder: View>: View {
     }
 
     private func load() async {
-        guard let url, failedURL != url else {
+        guard let url else {
+            image = nil
+            return
+        }
+        // Only latch failures for remote URLs: a network 404 won't fix itself
+        // within a view's lifetime, but a local cover that missed (container
+        // still settling right after launch, a file being rewritten by a
+        // re-export) can succeed on the next pass, so it must stay retryable.
+        if !url.isFileURL, failedURL == url {
             image = nil
             return
         }
@@ -37,7 +45,7 @@ struct ArtworkImageView<Placeholder: View>: View {
         }
 
         image = await ArtworkService.shared.image(for: url)
-        if image == nil {
+        if image == nil, !url.isFileURL {
             failedURL = url
         }
     }

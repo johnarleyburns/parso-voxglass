@@ -81,7 +81,20 @@ final class ArtworkService: @unchecked Sendable {
         let nsURL = url as NSURL
 
         if let image = memoryCache.object(forKey: nsURL) {
-            touchKey(cacheKey(url))
+            if !url.isFileURL { touchKey(cacheKey(url)) }
+            return image
+        }
+
+        // Local covers (folder imports, completed narrations) are app-owned
+        // files that already live in durable storage. Decode them straight from
+        // disk and memory-cache only: they must never enter the purgeable blob
+        // store (14-day TTL would delete them), never run the Internet Archive
+        // placeholder heuristics, and never be fetched over the network.
+        if url.isFileURL {
+            guard let image = Self.decodeFileImage(at: url) else {
+                throw ArtworkServiceError.notFoundImage
+            }
+            memoryCache.setObject(image, forKey: nsURL)
             return image
         }
 
@@ -119,7 +132,12 @@ final class ArtworkService: @unchecked Sendable {
 
     func cachedImage(for url: URL) -> UIImage? {
         if let image = memoryCache.object(forKey: url as NSURL) {
-            touchKey(cacheKey(url))
+            if !url.isFileURL { touchKey(cacheKey(url)) }
+            return image
+        }
+        if url.isFileURL {
+            guard let image = Self.decodeFileImage(at: url) else { return nil }
+            memoryCache.setObject(image, forKey: url as NSURL)
             return image
         }
         if let image = diskImage(at: cacheFileURL(for: url)) {
@@ -133,6 +151,13 @@ final class ArtworkService: @unchecked Sendable {
     /// Disk artwork is wiped by `StreamCacheStore.clearAll()`.
     func clearMemory() {
         memoryCache.removeAllObjects()
+    }
+
+    /// Decodes an app-owned local cover file. Synchronous, small (a JPEG a few
+    /// hundred KB at most), and off any cache tier.
+    static func decodeFileImage(at url: URL) -> UIImage? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
     }
 
     static func validatedImage(from data: Data, response: URLResponse?) throws -> UIImage {

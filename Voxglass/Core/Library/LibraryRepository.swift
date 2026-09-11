@@ -215,6 +215,24 @@ public final class LibraryRepository: @unchecked Sendable {
         )
     }
 
+    /// Sets a book's persisted cover reference. `relativePath` is the value
+    /// produced by `LocalArtworkStore.storedValue(for:)` — a path relative to
+    /// Application Support for an app-owned cover, or a remote URL string.
+    public func setBookCover(bookID: UUID, relativePath: String) async throws {
+        try await database.prepare()
+        try await database.execute(
+            "UPDATE books SET cover_url = ? WHERE id = ?",
+            [.string(relativePath), ModelMapping.databaseValue(bookID)]
+        )
+    }
+
+    /// `DatabaseValue` for `books.cover_url`: app-owned covers under Application
+    /// Support are stored relative so they survive a container move.
+    static func coverURLValue(_ url: URL?) -> DatabaseValue {
+        guard let url else { return .null }
+        return .string(LocalArtworkStore.storedValue(for: url))
+    }
+
     /// Stable identities for every work that has any saved playback position.
     /// These are used to keep listened items out of recommendation shelves even
     /// when the local UUID differs from the archive.org result identifier.
@@ -558,6 +576,27 @@ public final class LibraryRepository: @unchecked Sendable {
                     updated += 1
                 }
             }
+
+            // Legacy `books.cover_url` rows hold a container-absolute `file://`
+            // URL for an app-owned cover (local import / completed narration).
+            // Rewrite them to the container-independent relative form, rebasing
+            // onto the current container where the old path went stale.
+            let coverRows = try await database.query(
+                "SELECT id, cover_url FROM books WHERE cover_url LIKE 'file://%'"
+            )
+            for row in coverRows {
+                guard let id = row.string("id"),
+                      let raw = row.string("cover_url"),
+                      let resolved = LocalArtworkStore.resolve(raw) else { continue }
+                let stored = LocalArtworkStore.storedValue(for: resolved)
+                guard stored != raw else { continue }
+                try await database.execute(
+                    "UPDATE books SET cover_url = ? WHERE id = ?",
+                    [.string(stored), .string(id)]
+                )
+                updated += 1
+            }
+
             defaults.set(marker, forKey: markerKey)
             return updated
         } catch {
@@ -755,6 +794,13 @@ public final class LibraryRepository: @unchecked Sendable {
                 try await updateBookMetadata(authors: authors, narrators: narrators, for: book.id)
                 book.authors = authors
                 book.narrators = narrators
+            }
+            // A re-export/re-import (narrations replace their folder every run)
+            // must refresh the cover reference — the old row still pointed at a
+            // file the export just removed, so it never picked up new artwork.
+            if let coverURL {
+                try await setBookCover(bookID: book.id, relativePath: LocalArtworkStore.storedValue(for: coverURL))
+                book.coverURL = coverURL
             }
         } else {
             let now = Date()
@@ -1127,7 +1173,7 @@ public final class LibraryRepository: @unchecked Sendable {
             .string(ModelMapping.narratorsJSON(book.narrators)),
             ModelMapping.databaseValue(book.summary),
             ModelMapping.databaseValue(book.sourceID),
-            ModelMapping.databaseValue(book.coverURL),
+            Self.coverURLValue(book.coverURL),
             ModelMapping.databaseValue(book.createdAt),
             ModelMapping.databaseValue(book.updatedAt),
             .bool(book.isFavorite),
@@ -1181,7 +1227,7 @@ public final class LibraryRepository: @unchecked Sendable {
             narrators: ModelMapping.narrators(from: row),
             summary: row.string("summary"),
             sourceID: try ModelMapping.uuid(row, "source_id"),
-            coverURL: ModelMapping.url(row, "cover_url"),
+            coverURL: row.string("cover_url").flatMap { LocalArtworkStore.resolve($0) },
             createdAt: ModelMapping.date(row, "created_at"),
             updatedAt: ModelMapping.date(row, "updated_at"),
             isFavorite: row.bool("is_favorite") ?? false,

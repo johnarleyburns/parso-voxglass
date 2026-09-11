@@ -30,7 +30,45 @@ import Testing
 
         #expect(components.contains("BookArtworkView(title: title, size: 56"))
         #expect(components.contains(".frame(width: 56, height: 56)"))
-        #expect(components.contains(".fixedSize()"))
+    }
+
+    @Test func sharedBookListRowHasAFixedHeightThatBothListScreensReuse() throws {
+        let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
+
+        // The row draws at a fixed height (not `minHeight`) so a row with the
+        // extra narrator / watch-status lines can't overrun the space the
+        // scroll-disabled list screens reserve for it.
+        #expect(components.contains("static let rowContentHeight: CGFloat = 96"))
+        #expect(components.contains(".frame(height: BookListRow.rowContentHeight)"))
+        #expect(!components.contains(".frame(minHeight: 76)"))
+
+        // Both screens size their List by row count × the shared constant.
+        let library = try source("Voxglass/Features/Library/LibraryView.swift")
+        #expect(library.contains("* BookListRow.fixedRowHeight"))
+        #expect(!library.contains(") * 104"))
+
+        let narrations = try source("Voxglass/Features/Production/Discovery/DiscoveryViews.swift")
+        // The narration project row's metadata line is single-line — an
+        // unbounded wrap there is what made those rows uneven.
+        #expect(narrations.range(
+            of: #"formattedShort\)"\)[\s\S]{0,200}?\.lineLimit\(1\)"#,
+            options: .regularExpression
+        ) != nil)
+    }
+
+    @Test func artworkServiceKeepsLocalFileCoversOutOfTheEvictableBlobStore() throws {
+        let service = try source("Voxglass/DesignSystem/ArtworkService.swift")
+
+        // File URLs decode straight from disk into the memory cache only — no
+        // blob-store write, no 14-day TTL, no IA placeholder heuristics.
+        #expect(service.contains("if url.isFileURL"))
+        #expect(service.contains("decodeFileImage(at: url)"))
+
+        // Failures on local covers are never latched (they can succeed on a
+        // later pass — container still settling, file being re-exported).
+        let view = try source("Voxglass/DesignSystem/BookArtworkView.swift")
+        #expect(view.contains("if image == nil, !url.isFileURL"))
+        #expect(view.contains("!url.isFileURL, failedURL == url"))
     }
 
     @Test func verticalCatalogResultListsUseGroupedRows() throws {

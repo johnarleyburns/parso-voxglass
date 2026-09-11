@@ -2846,8 +2846,21 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             if validationDestination == .personalMaster {
                 let completed = completedNarrationsDirectory.appendingPathComponent(slug, isDirectory: true)
                 try FileManager.default.createDirectory(at: completedNarrationsDirectory, withIntermediateDirectories: true)
-                try? FileManager.default.removeItem(at: completed)
-                try FileManager.default.copyItem(at: bundle.rootURL, to: completed)
+                // Stage into a sibling directory and swap it in atomically
+                // rather than deleting the live folder first: the previously
+                // imported book still references the cover (and audio) inside
+                // `completed`, and a delete-then-copy left a window where those
+                // files were gone — long enough for the cover to fail to load
+                // and latch to the placeholder.
+                let staging = completedNarrationsDirectory
+                    .appendingPathComponent(".\(slug).incoming-\(UUID().uuidString)", isDirectory: true)
+                try? FileManager.default.removeItem(at: staging)
+                try FileManager.default.copyItem(at: bundle.rootURL, to: staging)
+                if FileManager.default.fileExists(atPath: completed.path) {
+                    _ = try FileManager.default.replaceItemAt(completed, withItemAt: staging)
+                } else {
+                    try FileManager.default.moveItem(at: staging, to: completed)
+                }
                 if let project = self.project, let library {
                     let planner = PersonalExportImportPlanner()
                     let imports = planner.plan(

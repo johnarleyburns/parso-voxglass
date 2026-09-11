@@ -95,7 +95,7 @@ private enum LibraryPlaylistBook {
             authors: ModelMapping.authors(from: row),
             summary: row.string("summary"),
             sourceID: try ModelMapping.uuid(row, "source_id"),
-            coverURL: ModelMapping.url(row, "cover_url"),
+            coverURL: row.string("cover_url").flatMap { LocalArtworkStore.resolve($0) },
             createdAt: Date(timeIntervalSince1970: row.double("created_at") ?? 0),
             updatedAt: Date(timeIntervalSince1970: row.double("updated_at") ?? 0),
             isFavorite: row.bool("is_favorite") ?? false
