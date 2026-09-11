@@ -647,6 +647,8 @@ struct MyNarrationsSection: View {
                 Text("\(project.metadata.author) · \(project.totalCount) ¶ · ~\(projectTotalDuration(project).formattedShort)")
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {

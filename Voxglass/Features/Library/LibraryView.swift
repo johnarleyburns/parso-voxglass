@@ -229,7 +229,7 @@ struct LibraryView: View {
                 .listStyle(.plain)
                 .scrollDisabled(true)
                 .environment(\.editMode, .constant(isEditing ? .active : .inactive))
-                .frame(height: CGFloat(max(1, books.count)) * 104)
+                .frame(height: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
