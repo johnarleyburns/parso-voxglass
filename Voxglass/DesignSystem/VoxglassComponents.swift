@@ -538,6 +538,7 @@ struct SecondaryActionButton: View {
 struct CompactBookRowView: View {
     var book: BookWithChapters
     var sourceTitle: String?
+    var metadata: String? = nil
     var accessory: RowAccessory = .navigation
     var style: BookListRowStyle = .card
     var watchStorage: WatchBookStorageInfo?
@@ -548,7 +549,7 @@ struct CompactBookRowView: View {
             title: book.book.title,
             subtitle: book.book.authorLine,
             tertiary: book.book.narratorLine,
-            metadata: nil,
+            metadata: metadata,
             watchStatus: watchStorageText,
             coverURL: book.book.coverURL,
             accessory: accessory,
@@ -560,10 +561,14 @@ struct CompactBookRowView: View {
     }
 
     private var accessibilityText: String {
-        if let watchStorageText {
-            return "\(book.book.title) by \(book.book.authorLine), \(watchStorageText)"
+        var parts = ["\(book.book.title) by \(book.book.authorLine)"]
+        if let metadata, !metadata.isEmpty {
+            parts.append(metadata)
         }
-        return "\(book.book.title) by \(book.book.authorLine)"
+        if let watchStorageText {
+            parts.append(watchStorageText)
+        }
+        return parts.joined(separator: ", ")
     }
 
     private var watchStorageText: String? {

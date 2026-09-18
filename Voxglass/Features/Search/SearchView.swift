@@ -8,7 +8,7 @@ struct SearchView: View {
     @Binding var showingNowPlaying: Bool
     @State private var importingIdentifier: String?
     @State private var searchScope: SearchScope = .all
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false
     @State private var selectedCatalogBookID: UUID?
 
     var body: some View {

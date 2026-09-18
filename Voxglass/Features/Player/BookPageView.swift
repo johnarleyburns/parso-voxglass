@@ -543,6 +543,7 @@ struct BookPageView: View {
                 }
                 .disabled(playback.playbackPhase == .preparing)
                 .accessibilityLabel(playback.playbackPhase == .preparing ? "Loading" : (session.isPlaying ? "Pause" : "Play"))
+                .accessibilityIdentifier("bookpage.togglePlayback")
             } else {
                 Button {
                     Task {
@@ -561,6 +562,7 @@ struct BookPageView: View {
                         )
                 }
                 .accessibilityLabel("Play")
+                .accessibilityIdentifier("bookpage.play")
             }
 
             Spacer(minLength: 0)

@@ -24,6 +24,7 @@ struct ListenView: View {
         VoxglassScreen(title: "Listen") {
             VStack(alignment: .leading, spacing: 22) {
                 hero
+                continueListening
                 jumpBackIn
                 recommended
                 listeningStatsSummary
@@ -97,6 +98,57 @@ struct ListenView: View {
                 await libraryStore.refreshRecentlyPlayed()
                 await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
                 await loadListeningStatsSummary()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var continueListening: some View {
+        if let book = libraryStore.recentlyPlayed.first {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionTitle(title: "Continue Listening")
+                Button {
+                    Task {
+                        await playback.play(book)
+                        showingNowPlaying = true
+                    }
+                } label: {
+                    HStack(spacing: 14) {
+                        BookArtworkView(
+                            title: book.book.title,
+                            size: 84,
+                            coverURL: book.book.coverURL,
+                            cornerRadius: 14
+                        )
+
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(book.book.title)
+                                .scaledFont(size: 17, weight: .semibold)
+                                .foregroundStyle(Palette.ink)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                            Text(book.book.authorLine)
+                                .scaledFont(size: 12)
+                                .foregroundStyle(Palette.ink2)
+                                .lineLimit(1)
+                            Text(continueActionLabel(for: book))
+                                .scaledFont(size: 12, weight: .semibold)
+                                .foregroundStyle(Palette.brass)
+                        }
+
+                        Spacer(minLength: 4)
+                        Image(systemName: "play.circle.fill")
+                            .scaledFont(size: 30, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                    }
+                    .padding(14)
+                    .glassSurface(cornerRadius: 18, fill: Color.white.opacity(0.08))
+                }
+                .buttonStyle(.plain)
+                .tactileTap()
+                .accessibilityIdentifier("listen.continueListening")
+                .accessibilityLabel("\(continueActionLabel(for: book)) \(book.book.title)")
+                .accessibilityHint("Opens the player")
             }
         }
     }
@@ -232,6 +284,15 @@ struct ListenView: View {
 
     private func durationString(_ seconds: TimeInterval) -> String {
         seconds < 60 ? "0m" : TimeFormatting.compactDuration(seconds)
+    }
+
+    private func continueActionLabel(for book: BookWithChapters) -> String {
+        guard let progress = libraryStore.progressByBook[book.book.id],
+              progress.lastPosition > 0,
+              !progress.isFinished else {
+            return "Play"
+        }
+        return "Resume"
     }
 
     private func loadListeningStatsSummary() async {

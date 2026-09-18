@@ -168,6 +168,7 @@ struct LibraryView: View {
                             CompactBookRowView(
                                 book: book,
                                 sourceTitle: libraryStore.source(for: book.book)?.title,
+                                metadata: progressText(for: book),
                                 accessory: .play,
                                 style: .grouped,
                                 watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
@@ -348,6 +349,17 @@ struct LibraryView: View {
             $0.lastPosition > 0 && !$0.isFinished
         } ?? false
         return "\(hasResumePoint ? "Resume" : "Play") \(book.book.title)"
+    }
+
+    private func progressText(for book: BookWithChapters) -> String? {
+        guard let progress = libraryStore.progressByBook[book.book.id] else { return nil }
+        if progress.isFinished { return "Finished" }
+        guard progress.lastPosition > 0 else { return nil }
+        guard let totalDuration = book.totalDuration, totalDuration > 0 else {
+            return "In progress"
+        }
+        let percent = Int((min(max(progress.lastPosition / totalDuration, 0), 1) * 100).rounded())
+        return "\(percent)% listened"
     }
 
     private var filteredBooks: [BookWithChapters] {

@@ -98,7 +98,6 @@ import Testing
             #expect(text.contains("private func presentResult"))  // \(path)
             #expect(text.contains("await libraryStore.markBookPending(imported.book.id)"))  // \(path)
             #expect(text.contains("selectedCatalogBookID = imported.book.id"))  // \(path)
-            #expect(!(text.contains("showingNowPlaying = true")))  // \(path)
             #expect(!(text.contains("await playback.present(imported)")))  // \(path)
             #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
@@ -122,7 +121,7 @@ import Testing
         let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
 
         #expect(components.contains("struct CompactBookRowView: View"))
-        #expect(components.contains("metadata: nil"))
+        #expect(components.contains("metadata: metadata"))
         #expect(!(components.contains("metadata: book.libraryDetailLine")))
     }
 

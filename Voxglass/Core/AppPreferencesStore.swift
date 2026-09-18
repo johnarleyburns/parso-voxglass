@@ -31,7 +31,7 @@ public struct AppPreferencesStore: DynamicProperty {
     @AppStorage(Keys.hasCompletedOnboarding) public var hasCompletedOnboarding = false
     @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
-    @AppStorage(Keys.soloOnlyEnabled) public var soloOnlyEnabled = true
+    @AppStorage(Keys.soloOnlyEnabled) public var soloOnlyEnabled = false
 
     public var selectedCollectionIDs: Set<String> {
         get { Self.decodeCollectionIDs(selectedCollectionIDsRaw) }

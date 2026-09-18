@@ -17,7 +17,7 @@ struct CatalogDiscoveryView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
     @State private var importingIdentifier: String?
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false
     @State private var selectedCatalogBookID: UUID?
 
     var body: some View {

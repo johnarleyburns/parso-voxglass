@@ -54,7 +54,6 @@ import Testing
             #expect(text.contains("private func presentResult"))  // \(path)
             #expect(text.contains("await libraryStore.markBookPending(imported.book.id)"))  // \(path)
             #expect(text.contains("selectedCatalogBookID = imported.book.id"))  // \(path)
-            #expect(!(text.contains("showingNowPlaying = true")))  // \(path)
             #expect(!(text.contains("await playback.present(imported)")))  // \(path)
             #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
@@ -117,6 +116,23 @@ import Testing
         let transportSlice = sourceSlice(detail, from: "private func transportControls", to: "private func actionRow")
         let hitTestingCount = transportSlice.components(separatedBy: ".allowsHitTesting(isActiveSession)").count - 1
         #expect(hitTestingCount >= 4)
+    }
+
+    @Test func consumerNavigationPlanKeepsTheCommonPathDirect() throws {
+        let listen = try source("Voxglass/Features/Listen/ListenView.swift")
+        #expect(listen.contains("Continue Listening"))
+        #expect(listen.contains("listen.continueListening"))
+        #expect(listen.contains("await playback.play(book)"))
+
+        let library = try source("Voxglass/Features/Library/LibraryView.swift")
+        #expect(library.contains("metadata: progressText(for: book)"))
+        #expect(library.contains("Open Details"))
+        #expect(library.contains("@State private var soloOnly = false"))
+
+        let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        #expect(discover.contains("@AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false"))
+        #expect(discover.contains("discover.catalogSearch"))
+        #expect(discover.contains("discover.filterMenu"))
     }
 
     private var repoRoot: URL {

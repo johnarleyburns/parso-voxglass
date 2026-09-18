@@ -1,6 +1,6 @@
 # Voxglass interface simplification plan
 
-Status: implemented in two commits, with this document recording the research-driven follow-up.
+Status: implemented and audited, with this document recording the research-driven follow-up.
 
 ## Objective
 
@@ -26,6 +26,11 @@ library-flow gaps:
   keeping the one-tap player flow.
 - The root no longer adds a second fixed 136pt bottom reservation on top of
   the shared screen clearance and live dock safe-area inset.
+- Listen now puts a direct Continue Listening card above discovery shelves and
+  stats, and My Books rows expose saved progress alongside their Play/Resume
+  affordance.
+- Catalog discovery defaults to the full catalog; Solo narration remains an
+  advanced opt-in filter instead of silently narrowing first-run results.
 
 ## Research evidence
 
