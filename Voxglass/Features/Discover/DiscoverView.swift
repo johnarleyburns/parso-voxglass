@@ -14,7 +14,7 @@ struct BrowseView: View {
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
-    @State private var soloOnly = true
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
     @State private var searchScope: DiscoverSearchScope = .all
     @State private var showAdvanced = false
     @State private var selectedCatalogBookID: UUID?

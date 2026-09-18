@@ -7,7 +7,6 @@ struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
-    @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
     @State private var pendingDeletion: BookWithChapters?
@@ -19,7 +18,7 @@ struct LibraryView: View {
     @State private var showingAddArchiveURL = false
     @State private var bookOrder: [UUID] = []
     @State private var selectedBookID: UUID?
-    @State private var soloOnly = true
+    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
     @State private var myNarrationOnly = false
 
     var body: some View {
@@ -158,35 +157,28 @@ struct LibraryView: View {
                         // inconsistently — every row gets exactly the insets
                         // and chevron this view draws itself, always.
                         Button {
-                            selectedBookID = book.book.id
+                            Task {
+                                await playback.play(book)
+                                showingNowPlaying = true
+                            }
                         } label: {
                             CompactBookRowView(
                                 book: book,
                                 sourceTitle: libraryStore.source(for: book.book)?.title,
-                                accessory: .download(
-                                    // A local-files import (bookmark-referenced, never
-                                    // copied) has no entry in OfflineDownloadManager's
-                                    // state dictionary — it never went through a
-                                    // "download" job, so `.state(for:)` always falls
-                                    // through to `.notCached` for it, even though the
-                                    // audio genuinely is on-device. It always is, by
-                                    // definition, so it always reads as `.cached`.
-                                    libraryStore.source(for: book.book)?.kind == .localFiles
-                                        ? .cached
-                                        : offlineManager.state(for: book.book.id),
-                                    showsNavigation: true,
-                                    watchAvailable: phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available
-                                ),
+                                accessory: .play,
                                 style: .grouped,
                                 watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
                                 isMyNarration: isMyNarration(book)
                             )
-                            .accessibilityIdentifier("library.watchStatus.\(book.book.id.uuidString)")
+                            .accessibilityIdentifier("library.play.\(book.book.id.uuidString)")
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
                         .contextMenu {
+                            Button("Open Details") {
+                                selectedBookID = book.book.id
+                            }
                             Button {
                                 Task {
                                     if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
@@ -256,7 +248,7 @@ struct LibraryView: View {
                             get: { libraryStore.filter == .favorites },
                             set: { if $0 { libraryStore.filter = .favorites } else { libraryStore.filter = .all } }
                         ))
-                        Toggle("Solo narration", isOn: $soloOnly)
+                        Toggle("Solo Narration", isOn: $soloOnly)
                         Toggle("Created by me", isOn: $myNarrationOnly)
                     }
                     Section("Sort") {

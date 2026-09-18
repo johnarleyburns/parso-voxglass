@@ -75,6 +75,8 @@ plan in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md) is substa
 
 ## Manual regression testing before release
 
+The navigation simplification research and implementation plan is documented in [`docs/plans/navigation-redesign/SIMPLIFICATION_PLAN.md`](docs/plans/navigation-redesign/SIMPLIFICATION_PLAN.md).
+
 Most logic is covered headlessly by `swift test`. The commit hook runs `swift test` only; it does
 not boot simulators. Before every release, run `scripts/test.sh --all` to execute the local iPhone
 and Apple Watch simulator smoke suite, then perform the physical-device checks below. A single
