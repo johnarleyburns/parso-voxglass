@@ -6,6 +6,7 @@ import VoxglassCore
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
+    @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
@@ -140,8 +141,11 @@ struct LibraryView: View {
                 }
 
                 let books = orderedFilteredBooks
-                List {
-                    ForEach(books) { book in
+                if books.isEmpty {
+                    filteredEmptyState
+                } else {
+                    List {
+                        ForEach(books) { book in
                         // Plain `Button` + `.navigationDestination(item:)`
                         // rather than `NavigationLink` — a List row that IS
                         // (or contains, even hidden via `.background`) a
@@ -213,23 +217,49 @@ struct LibraryView: View {
                                 Label("Remove", systemImage: "trash")
                             }
                         }
+                        }
+                        .onDelete { offsets in
+                            guard let index = offsets.first, books.indices.contains(index) else { return }
+                            pendingDeletion = books[index]
+                        }
+                        .onMove { source, destination in
+                            var ids = books.map { $0.book.id }
+                            ids.move(fromOffsets: source, toOffset: destination)
+                            bookOrder = ids + bookOrder.filter { !ids.contains($0) }
+                        }
                     }
-                    .onDelete { offsets in
-                        guard let index = offsets.first, books.indices.contains(index) else { return }
-                        pendingDeletion = books[index]
-                    }
-                    .onMove { source, destination in
-                        var ids = books.map { $0.book.id }
-                        ids.move(fromOffsets: source, toOffset: destination)
-                        bookOrder = ids + bookOrder.filter { !ids.contains($0) }
-                    }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .environment(\.editMode, .constant(isEditing ? .active : .inactive))
+                    .frame(height: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                .listStyle(.plain)
-                .scrollDisabled(true)
-                .environment(\.editMode, .constant(isEditing ? .active : .inactive))
-                .frame(height: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
+        }
+    }
+
+    private var filteredEmptyState: some View {
+        if libraryStore.filter == .downloaded {
+            EmptyStatePanel(
+                title: "No Downloads Yet",
+                message: "Books you cache for offline listening will appear here.",
+                systemImage: "arrow.down.circle"
+            )
+            .accessibilityIdentifier("library.downloadedEmptyState")
+        } else if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            EmptyStatePanel(
+                title: "No Matching Books",
+                message: "Try a different title, author, or narrator.",
+                systemImage: "magnifyingglass"
+            )
+            .accessibilityIdentifier("library.filteredEmptyState")
+        } else {
+            EmptyStatePanel(
+                title: "No Books in This View",
+                message: "Try another filter to see more of your saved books.",
+                systemImage: "books.vertical"
+            )
+            .accessibilityIdentifier("library.filteredEmptyState")
         }
     }
 
@@ -253,6 +283,10 @@ struct LibraryView: View {
                         Toggle("Favorites", isOn: Binding(
                             get: { libraryStore.filter == .favorites },
                             set: { if $0 { libraryStore.filter = .favorites } else { libraryStore.filter = .all } }
+                        ))
+                        Toggle("Downloaded", isOn: Binding(
+                            get: { libraryStore.filter == .downloaded },
+                            set: { if $0 { libraryStore.filter = .downloaded } else { libraryStore.filter = .all } }
                         ))
                         Toggle("Solo Narration", isOn: $soloOnly)
                         Toggle("Created by me", isOn: $myNarrationOnly)
@@ -366,6 +400,10 @@ struct LibraryView: View {
 
     private var filteredBooks: [BookWithChapters] {
         var books = libraryStore.visibleBooks
+
+        if libraryStore.filter == .downloaded {
+            books = books.filter { offlineManager.state(for: $0.book.id) == .cached }
+        }
 
         if soloOnly {
             books = books.filter { $0.narrationKind == .solo }

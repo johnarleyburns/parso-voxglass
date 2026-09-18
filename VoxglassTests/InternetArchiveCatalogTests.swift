@@ -33,6 +33,20 @@ import Foundation
         #expect(result.narrationKind == .solo)
     }
 
+    @Test func searchResultSurfacesCompactRecordingDetails() {
+        let result = InternetArchiveSearchResult(
+            identifier: "alice_english_librivox",
+            title: "Alice's Adventures in Wonderland",
+            creators: ["Lewis Carroll"],
+            description: "Read by Peter Yearsley",
+            collections: ["librivoxaudio"],
+            downloads: nil,
+            date: nil,
+            languages: ["eng", "English"]
+        )
+        #expect(result.recordingDetailsLine == "LibriVox · English")
+    }
+
     @Test func searchResultFallsBackToNarratorCreditInTitle() {
         let result = InternetArchiveSearchResult(
             identifier: "alice_yearsley_librivox",

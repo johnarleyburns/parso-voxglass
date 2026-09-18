@@ -38,6 +38,12 @@ library-flow gaps:
   stable accessibility identifiers for UI regression coverage.
 - Mini-player Play/Pause and Next Chapter controls now use explicit 44-point
   hit targets while remaining visually compact.
+- My Books now exposes a local Downloaded refinement behind More, filters by
+  fully cached books, and explains the empty state when nothing is available
+  offline.
+- Catalog result rows now show compact source/language recording details so
+  similar public-domain recordings can be distinguished without opening every
+  preview.
 
 ## Research evidence
 
@@ -68,12 +74,14 @@ ebook readers.
 
 ### Follow-up backlog from the audit
 
-1. Add **Downloaded** as a local My Books refinement with an honest empty state
-   when no saved title is available offline. Keep it behind the existing More
-   control rather than adding another persistent tab or filter row.
-2. Add a compact “recording details” section to the book page only if users
-   need to distinguish reader, source, language, or solo/group recordings
-   before saving. This should clarify a choice, not become a review system.
+1. **Completed:** Add **Downloaded** as a local My Books refinement with an
+   honest empty state when no saved title is available offline. It remains
+   behind the existing More control rather than becoming another persistent tab
+   or filter row.
+2. **Completed:** Add compact source/language recording details to catalog
+   result rows, where users compare recordings before opening a preview. The
+   details clarify a choice without creating a review system or adding another
+   navigation surface.
 3. Defer custom collections, ratings/reviews, social sharing, purchases,
    subscriptions, and account-based cross-device catalog sync. They are either
    already covered by current contextual actions or are consequences of the

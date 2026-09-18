@@ -107,11 +107,12 @@ import Testing
         #expect(!(settings.contains("await playback.play(imported)")))
     }
 
-    @Test func catalogResultRowsUseNavigationAccessoryWithoutMetadata() throws {
+    @Test func catalogResultRowsUseNavigationAccessoryWithCompactRecordingMetadata() throws {
         let search = try source("Voxglass/Features/Search/SearchView.swift")
 
         #expect(search.contains("accessory: isLoading ? .loading : .navigation"))
-        #expect(search.contains("metadata: nil"))
+        #expect(search.contains("metadata: result.recordingDetailsLine"))
+        #expect(search.contains("result.recordingDetailsLine"))
         #expect(!(search.contains("IADateFormatting.humanReadable(result.date)")))
         #expect(!(search.contains("Recorded \\(date)")))
         #expect(!(search.contains("isPlaying ? .loading : .play")))

@@ -245,11 +245,11 @@ struct InternetArchiveResultRow: View {
             title: result.title,
             subtitle: result.authorLine,
             tertiary: result.narratorLine,
-            metadata: nil,
+            metadata: result.recordingDetailsLine,
             coverURL: result.coverURL,
             accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: "\(result.title) by \(result.authorLine)",
+            accessibilityLabel: "\(result.title) by \(result.authorLine), \(result.recordingDetailsLine)",
             showSoloBadge: result.narrationKind == .solo
         )
     }

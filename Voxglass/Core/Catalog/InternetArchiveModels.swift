@@ -56,6 +56,24 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
         NarrationClassifier.classify(narrators: narrators)
     }
 
+    /// Compact provenance details for choosing between similar recordings.
+    /// Keep this out of the primary search controls; it belongs in the result
+    /// row where the choice is being made.
+    public var recordingDetailsLine: String {
+        var details = [sourceKind == .librivox ? "LibriVox" : "Archive.org"]
+        var seenLanguages = Set<String>()
+        let displayLanguages = languages.compactMap { value -> String? in
+            guard let display = Self.displayLanguage(for: value), seenLanguages.insert(display).inserted else {
+                return nil
+            }
+            return display
+        }
+        if !displayLanguages.isEmpty {
+            details.append(displayLanguages.prefix(2).joined(separator: " / "))
+        }
+        return details.joined(separator: " · ")
+    }
+
     public var sourceKind: SourceKind {
         collections.contains { $0.localizedCaseInsensitiveCompare("librivoxaudio") == .orderedSame }
             ? .librivox
@@ -87,6 +105,19 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
 
     public var detailsURL: URL {
         InternetArchiveMetadata.detailsURL(for: identifier)
+    }
+
+    private static func displayLanguage(for value: String) -> String? {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return nil }
+        let lowercased = normalized.lowercased()
+        if let language = LibriVoxLanguage.all.first(where: { language in
+            language.id.lowercased() == lowercased
+                || language.tokens.contains { $0.lowercased() == lowercased }
+        }) {
+            return language.displayName
+        }
+        return normalized
     }
 
     public var coverURL: URL {
