@@ -131,7 +131,10 @@ import Testing
         #expect(library.contains("Toggle(\"Downloaded\""))
         #expect(library.contains("library.downloadedFilter"))
         #expect(library.contains("library.downloadedEmptyState"))
-        #expect(library.contains("offlineManager.state(for: $0.book.id) == .cached"))
+
+        let libraryStore = try source("Voxglass/Core/Library/LibraryStore.swift")
+        #expect(libraryStore.contains("case .downloaded:"))
+        #expect(libraryStore.contains("offlineManager?.state(for: $0.book.id) == .cached"))
 
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         #expect(discover.contains("@State private var soloOnly = false"))

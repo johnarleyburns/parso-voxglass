@@ -402,10 +402,6 @@ struct LibraryView: View {
     private var filteredBooks: [BookWithChapters] {
         var books = libraryStore.visibleBooks
 
-        if libraryStore.filter == .downloaded {
-            books = books.filter { offlineManager.state(for: $0.book.id) == .cached }
-        }
-
         if soloOnly {
             books = books.filter { $0.narrationKind == .solo }
         }

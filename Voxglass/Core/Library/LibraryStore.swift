@@ -31,8 +31,12 @@ public final class LibraryStore: ObservableObject {
         case .source(let sourceID):
             result = result.filter { $0.book.sourceID == sourceID }
         case .downloaded:
-            // The UI layer already reads offlineManager.state(for:) — this is the DB variant for the repository path. Fall back: keep all.
-            break
+            // Keep the in-memory view consistent with the My Books UI: only
+            // fully cached books belong in the Downloaded refinement. The
+            // repository's async filter remains available for non-UI callers,
+            // while this path stays responsive and updates as the manager's
+            // published state changes.
+            result = result.filter { offlineManager?.state(for: $0.book.id) == .cached }
         case .finished:
             result = result.filter { progressByBook[$0.book.id]?.isFinished == true }
         case .inProgress:
