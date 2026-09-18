@@ -62,10 +62,24 @@ struct CatalogDiscoveryView: View {
                         systemImage: "magnifyingglass"
                     )
                 } else {
-                    HStack(spacing: 8) {
-                        FilterChip(title: "Solo Narration", isSelected: soloOnly) {
-                            soloOnly.toggle()
+                    HStack {
+                        Menu {
+                            Toggle("Solo narration", isOn: $soloOnly)
+                        } label: {
+                            Label(
+                                soloOnly ? "Solo narration" : "Filter",
+                                systemImage: soloOnly
+                                    ? "line.3.horizontal.decrease.circle.fill"
+                                    : "line.3.horizontal.decrease.circle"
+                            )
+                            .scaledFont(size: 12, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
                         }
+                        .accessibilityIdentifier("catalog.filterMenu")
+                        Spacer()
                     }
                     .padding(.bottom, 4)
 

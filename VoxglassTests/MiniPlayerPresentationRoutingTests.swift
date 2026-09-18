@@ -168,6 +168,9 @@ import Testing
         let catalog = try source("Voxglass/Features/Player/CatalogDiscoveryView.swift")
         #expect(catalog.contains("@State private var soloOnly = false"))
         #expect(!(catalog.contains("soloOnlyEnabled")))
+        #expect(catalog.contains("catalog.filterMenu"))
+        #expect(catalog.contains("Toggle(\"Solo narration\", isOn: $soloOnly)"))
+        #expect(!(catalog.contains("FilterChip(title: \"Solo Narration\"")))
 
         let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
         #expect(dock.contains("chrome.miniPlayer"))
