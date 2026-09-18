@@ -263,6 +263,16 @@ public final class CatalogStore: ObservableObject {
         batchProgress = nil
     }
 
+    /// Clears the visible catalog results without changing the user's query.
+    /// Discover uses this when the user removes a collection scope or clears
+    /// the search field, so stale results never remain attached to a new state.
+    public func resetResultsForNavigation() {
+        results = []
+        resetPaging()
+        activeCollectionID = nil
+        catalogError = nil
+    }
+
     /// Resolves a single result for a manifest entry by querying the archive.
     private func fetchResult(for entry: CuratedManifestEntry) async throws -> InternetArchiveSearchResult {
         let query = "identifier:\"\(entry.identifier)\""

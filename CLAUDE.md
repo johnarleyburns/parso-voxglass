@@ -2,13 +2,13 @@
 
 ## Swift 6 hard rule
 
-Voxglass is fully on Swift 6 language mode with complete strict-concurrency checking and is kept as warning-free as the selected toolchain permits. Do not introduce or permit any deviation, mixed Swift modes, warning suppression, or unexplained concurrency escape hatch. A commit runs the wiring guards, logic tests, and simulator tests; a push runs no tests.
+Voxglass is fully on Swift 6 language mode with complete strict-concurrency checking and is kept as warning-free as the selected toolchain permits. Do not introduce or permit any deviation, mixed Swift modes, warning suppression, or unexplained concurrency escape hatch. A commit runs `swift test` only; release verification includes the simulator smoke suite and CI checks.
 
 Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md) for the full operating brief.
 
 ## Git hook timeouts
 
-- Set the command timeout to at least **25 minutes (1500 seconds)** for `git commit`; the pre-commit hook runs the wiring guards, logic tests, and simulator UI smoke tests.
+- Set the command timeout to at least **10 minutes (600 seconds)** for `git commit`; the pre-commit hook runs the host `swift test` suite only.
 - Set the command timeout to about **2 minutes (120 seconds)** for `git push`; the pre-push hook runs no tests or guards (CI verifies pushed commits).
 
 ## CI/CD shell portability
@@ -70,3 +70,12 @@ listed destinations. Do not work around destination failures by adding `-sdk`.
 
 For core-only verification, prefer `swift test`; it does not build the embedded
 Watch app.
+
+## No silent/magic background work — always visible, always in the user's control
+
+Any background or automatic behavior (importing, downloading art/models, syncing, migrating data, retrying) must tell the user what is happening in the moment it's happening, not just eventually succeed or fail silently. Concretely:
+
+- If the UI shows a count, progress bar, or status label, it must reflect real, current work — never a number or label that looks like progress while nothing is actually advancing. When work can't proceed, say the specific reason (downloading a resource, waiting for network/power, an error) — never collapse a real blocked/waiting state into a generic in-progress label.
+- Every such state must be inspectable from Settings (or the relevant status screen): what's running, why, and since when — not just a spinner.
+- The user must be able to stop, pause, retry, or undo the action from the same surface that reports it — a "magic" action nothing can interrupt or reverse is not acceptable, even if it usually finishes fine.
+- When adding a new automatic/background feature, design its status surface and its stop/retry control in the same change that adds the feature — not as a follow-up.

@@ -6,7 +6,6 @@ struct ListenView: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
-    var selectLibrary: () -> Void
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @EnvironmentObject private var listeningStats: ListeningStatsStore
@@ -16,19 +15,23 @@ struct ListenView: View {
     @State private var statsTotalTime: TimeInterval = 0
     @State private var statsLast7DaysTotal: TimeInterval = 0
     @State private var statsDailyBars: [ListeningStatsView.DayBar] = []
+    @State private var selectedCatalogBookID: UUID?
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
     @AppStorage(AppPreferencesStore.Keys.isSupporter) private var isSupporter = false
 
     var body: some View {
-        VoxglassScreen(title: "Voxglass") {
+        VoxglassScreen(title: "Listen") {
             VStack(alignment: .leading, spacing: 22) {
                 hero
                 jumpBackIn
-                listeningStatsSummary
                 recommended
+                listeningStatsSummary
             }
             .padding(.top, 12)
+            .navigationDestination(item: $selectedCatalogBookID) { bookID in
+                BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
+            }
         }
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 8) {
@@ -319,8 +322,8 @@ struct ListenView: View {
         defer { importingIdentifier = nil }
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
-            await playback.present(imported)
-            showingNowPlaying = true
+            await libraryStore.markBookPending(imported.book.id)
+            selectedCatalogBookID = imported.book.id
         }
     }
 }

@@ -3,10 +3,9 @@
 # Install with: git config core.hooksPath .githooks
 #
 # Push runs NO tests and NO guards: a long-running pre-push hook over SSH
-# causes GitHub to drop the push connection, and every check (logic tests,
-# simulator smoke tests, Swift 6 contract, builds) runs in CI on push. The
-# full local gate — swift test + simulator UI smoke tests — lives in the
-# pre-commit hook instead.
+# causes GitHub to drop the push connection. CI verifies pushed commits with
+# logic tests, the Swift 6 contract guard, and iOS/watchOS builds. Before a
+# release, run the local simulator smoke suite explicitly with scripts/test.sh.
 
 set -euo pipefail
 

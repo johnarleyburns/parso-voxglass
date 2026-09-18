@@ -8,7 +8,8 @@ struct SearchView: View {
     @Binding var showingNowPlaying: Bool
     @State private var importingIdentifier: String?
     @State private var searchScope: SearchScope = .all
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @State private var soloOnly = true
+    @State private var selectedCatalogBookID: UUID?
 
     var body: some View {
         VoxglassScreen(title: "Search") {
@@ -19,6 +20,9 @@ struct SearchView: View {
                 archiveResults
             }
             .padding(.top, 12)
+            .navigationDestination(item: $selectedCatalogBookID) { bookID in
+                BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
+            }
         }
         .alert("Search Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -201,12 +205,11 @@ struct SearchView: View {
         defer { importingIdentifier = nil }
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
-            // Same rule as Explore: previewing a search result must not
+            // Same rule as Discover: previewing a search result must not
             // silently land it in My Books — only the "+" on the book page
             // does that.
             await libraryStore.markBookPending(imported.book.id)
-            await playback.present(imported)
-            showingNowPlaying = true
+            selectedCatalogBookID = imported.book.id
         }
     }
 }

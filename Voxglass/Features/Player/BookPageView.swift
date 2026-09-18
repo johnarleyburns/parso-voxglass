@@ -65,6 +65,7 @@ struct BookPageView: View {
                                 coverSection(resolved)
                                 Spacer().frame(height: 22)
                                 metadataSection(resolved)
+                                libraryAction(resolved)
                                 chipRow(resolved)
                                 scrubber(resolved)
                                 transportControls(resolved)
@@ -218,22 +219,6 @@ struct BookPageView: View {
                     .padding(.top, 6)
             }
             Spacer()
-            // Only a book that's just being previewed (played from a catalog
-            // result, not yet explicitly added) shows this — it's the one
-            // and only way such a book ever becomes a real My Books entry.
-            if resolved?.book.isPending == true {
-                Button {
-                    showAddToLibraryConfirm = true
-                } label: {
-                    Image(systemName: "plus")
-                        .scaledFont(size: 17, weight: .semibold)
-                        .foregroundStyle(Palette.ink2)
-                        .frame(width: 32, height: 32)
-                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.12))
-                }
-                .accessibilityLabel("Add to My Books")
-                .accessibilityIdentifier("bookpage.addToLibrary")
-            }
         }
         .padding(.horizontal, 20)
         .confirmationDialog(
@@ -248,6 +233,25 @@ struct BookPageView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Keep this book in My Books so it's easy to find again.")
+        }
+    }
+
+    @ViewBuilder
+    private func libraryAction(_ resolved: BookWithChapters) -> some View {
+        if resolved.book.isPending {
+            Button {
+                showAddToLibraryConfirm = true
+            } label: {
+                Label("Add to My Books", systemImage: "plus")
+                    .scaledFont(size: 14, weight: .semibold)
+                    .foregroundStyle(Palette.ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.10))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("bookpage.addToLibrary")
+            .padding(.top, 15)
         }
     }
 

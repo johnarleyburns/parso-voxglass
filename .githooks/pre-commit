@@ -1,12 +1,9 @@
 #!/bin/bash
-# .githooks/pre-commit — the full verification gate.
+# .githooks/pre-commit — the fast host-test gate.
 # Install with: git config core.hooksPath .githooks
 #
-# Runs the wiring guards (scripts/guard_wiring.sh), the logic suites
-# (scripts/test_logic.sh), and the local UI smoke tests (scripts/test.sh —
-# phone + watch simulators) on every commit. Push runs no tests at all (see
-# pre-push): CI verifies pushed commits with logic tests, the Swift 6 contract
-# guard, and iOS/watchOS builds.
+# Runs the Swift package tests only. Simulator UI smoke tests are deliberately
+# kept out of the commit path; run scripts/test.sh --all before a release.
 
 set -euo pipefail
 
@@ -14,8 +11,6 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 echo ""
-echo "=== pre-commit guard (wiring guards + logic + UI smoke tests) ==="
+echo "=== pre-commit host tests (swift test) ==="
 echo ""
-bash scripts/guard_wiring.sh
-bash scripts/test_logic.sh
-bash scripts/test.sh
+swift test

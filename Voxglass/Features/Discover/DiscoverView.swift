@@ -3,7 +3,7 @@ import VoxglassCore
 
 struct BrowseView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
-    @StateObject private var catalogStore = CatalogStore()
+    @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
@@ -14,28 +14,34 @@ struct BrowseView: View {
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
-    @State private var collectionQuery = ""
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @State private var soloOnly = true
+    @State private var searchScope: DiscoverSearchScope = .all
+    @State private var showAdvanced = false
+    @State private var selectedCatalogBookID: UUID?
     @State private var showingHistory = false
 
     var body: some View {
         VoxglassScreen(
-            title: "Explore",
+            title: "Discover",
             headerSecondaryActionSystemImage: "clock.arrow.circlepath",
             headerSecondaryAction: { showingHistory = true },
             headerSecondaryActionAccessibilityLabel: "Listening History"
         ) {
             VStack(alignment: .leading, spacing: 18) {
+                searchPanel
                 collectionShelves
                 catalogResults
             }
             .padding(.top, 12)
+            .navigationDestination(item: $selectedCatalogBookID) { bookID in
+                BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
+            }
         }
         .sheet(isPresented: $showingHistory) {
             HistoryView(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
         }
-        .alert("Explore Failed", isPresented: errorBinding) {
+        .alert("Discover Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
                 catalogStore.catalogError = nil
                 libraryStore.importError = nil
@@ -60,9 +66,99 @@ struct BrowseView: View {
         .onChange(of: catalogStore.results) { _, results in
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
         }
-        .onChange(of: collectionSort) { _, sort in
-            guard let selectedCollection else { return }
-            Task { await catalogStore.searchAdvanced(selectedCollection.archiveQuery, sort: sort, collectionID: selectedCollection.id) }
+        .onChange(of: collectionSort) { _, _ in
+            guard selectedCollection != nil else { return }
+            Task { await runSearch() }
+        }
+        .onChange(of: searchScope) { _, _ in
+            guard !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            Task { await runSearch() }
+        }
+    }
+
+    private var searchPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Palette.ink3)
+
+                TextField("Search books, authors, or narrators", text: $catalogStore.query)
+                    .foregroundStyle(Palette.ink)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .submitLabel(.search)
+                    .accessibilityIdentifier("discover.catalogSearch")
+                    .onSubmit { Task { await runSearch() } }
+
+                if !catalogStore.query.isEmpty {
+                    Button {
+                        catalogStore.query = ""
+                        catalogStore.resetResultsForNavigation()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Palette.ink3)
+                    }
+                    .accessibilityLabel("Clear catalog search")
+                }
+
+                if catalogStore.isSearching {
+                    ProgressView()
+                        .frame(width: 20, height: 20)
+                }
+            }
+            .scaledFont(size: 15)
+            .padding(.horizontal, 14)
+            .frame(height: 46)
+            .glassSurface(cornerRadius: 20)
+
+            HStack(spacing: 8) {
+                if let selectedCollection {
+                    FilterChip(title: selectedCollection.title, isSelected: true) {
+                        self.selectedCollection = nil
+                        catalogStore.resetResultsForNavigation()
+                    }
+                }
+
+                Menu {
+                    Picker("Search in", selection: $searchScope) {
+                    ForEach(DiscoverSearchScope.allCases) { scope in
+                            Text(scope.title).tag(scope)
+                        }
+                    }
+                    Divider()
+                    Toggle("Solo narration", isOn: $soloOnly)
+                    if selectedCollection != nil {
+                        Picker("Sort", selection: $collectionSort) {
+                            ForEach(CatalogSort.availableSorts(for: selectedCollection ?? IACollectionStore.popular)) { sort in
+                                Text(sort.title).tag(sort)
+                            }
+                        }
+                        if selectedCollection?.isCurated == true, !catalogStore.activeCuratedManifest.isEmpty {
+                            Text("Download all is available under About")
+                                .scaledFont(size: 12)
+                                .foregroundStyle(Palette.ink3)
+                        }
+                    }
+                } label: {
+                    Label("Filter & sort", systemImage: "line.3.horizontal.decrease.circle")
+                        .scaledFont(size: 12, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+                }
+                .accessibilityIdentifier("discover.filterMenu")
+
+                if selectedCollection != nil {
+                    Button(showAdvanced ? "Less" : "About") {
+                        withAnimation(.easeInOut(duration: 0.2)) { showAdvanced.toggle() }
+                    }
+                    .buttonStyle(.plain)
+                    .scaledFont(size: 12, weight: .medium)
+                    .foregroundStyle(Palette.ink3)
+                }
+                Spacer()
+            }
         }
     }
 
@@ -95,21 +191,13 @@ struct BrowseView: View {
     @ViewBuilder
     private var catalogResults: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionTitle(title: selectedCollection?.title ?? "Explore Results")
+            SectionTitle(title: resultsTitle)
             if selectedCollection != nil {
-                collectionSearchField
-                sortPicker
-                HStack(spacing: 8) {
-                    FilterChip(title: "Solo Narration", isSelected: soloOnly) {
-                        soloOnly.toggle()
-                    }
-                }
-                .padding(.bottom, 2)
-                if selectedCollection?.isCurated == true {
+                if showAdvanced, selectedCollection?.isCurated == true {
                     curatedStatusBanner
                     downloadAllButton
                 }
-                if let collection = selectedCollection, collection.hasDescription {
+                if showAdvanced, let collection = selectedCollection, collection.hasDescription {
                     collectionDescriptionView(collection)
                 }
             }
@@ -127,8 +215,10 @@ struct BrowseView: View {
                     .glassSurface(cornerRadius: 14)
                 } else {
                     EmptyStatePanel(
-                        title: "Pick a Collection",
-                        message: "Choose a Featured Collection above to explore curated LibriVox audiobooks.",
+                        title: catalogStore.query.isEmpty ? "Browse Featured Collections" : "No Results Yet",
+                        message: catalogStore.query.isEmpty
+                            ? "Choose a Featured Collection or search above to find a book."
+                            : "Try a different title, author, or narrator.",
                         systemImage: "square.stack"
                     )
                 }
@@ -174,30 +264,12 @@ struct BrowseView: View {
         }
     }
 
-    private var sortPicker: some View {
-        Picker("Sort", selection: $collectionSort) {
-            ForEach(CatalogSort.availableSorts(for: selectedCollection ?? IACollectionStore.popular)) { sort in
-                Text(sort.title).tag(sort)
-            }
+    private var resultsTitle: String {
+        if !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Search Results"
         }
-        .pickerStyle(.segmented)
-        .tint(Palette.brass)
-        .padding(.bottom, 4)
-    }
-
-    private var collectionSearchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Palette.ink3)
-            TextField("Search this collection", text: $collectionQuery)
-                .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.search)
-                .onSubmit { searchSelectedCollection() }
-            if !collectionQuery.isEmpty {
-                Button { collectionQuery = ""; searchSelectedCollection() } label: { Image(systemName: "xmark.circle.fill") }
-                    .accessibilityLabel("Clear collection search")
-            }
-        }
-        .padding(.horizontal, 12).frame(height: 42).glassSurface(cornerRadius: 18)
-        .accessibilityIdentifier("explore.collectionSearch")
+        if let selectedCollection { return selectedCollection.title }
+        return "Browse the catalog"
     }
 
     private var curatedStatusBanner: some View {
@@ -325,18 +397,52 @@ struct BrowseView: View {
 
     private func search(_ collection: IACollection) {
         selectedCollection = collection
-        collectionQuery = ""
+        catalogStore.query = ""
         isDescriptionExpanded = false
+        showAdvanced = false
         let defaultSort = CatalogSort.defaultSort(for: collection)
         collectionSort = defaultSort
         Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
     }
 
-    private func searchSelectedCollection() {
-        guard let collection = selectedCollection else { return }
-        let term = collectionQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        let query = term.isEmpty ? collection.archiveQuery : "(\(collection.archiveQuery)) AND (title:\"\(term)\" OR creator:\"\(term)\")"
-        Task { await catalogStore.searchAdvanced(query, sort: collectionSort, collectionID: collection.id) }
+    private func runSearch() async {
+        let term = catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty || selectedCollection != nil else {
+            catalogStore.resetResultsForNavigation()
+            return
+        }
+
+        if let selectedCollection {
+            let escaped = term.replacingOccurrences(of: "\"", with: "")
+            let collectionQuery = term.isEmpty
+                ? selectedCollection.archiveQuery
+                : "(\(selectedCollection.archiveQuery)) AND (title:\"\(escaped)\" OR creator:\"\(escaped)\")"
+            await catalogStore.searchAdvanced(collectionQuery, sort: collectionSort, collectionID: selectedCollection.id)
+            return
+        }
+
+        switch searchScope {
+        case .all:
+            await catalogStore.searchLibriVox(term)
+        case .title, .author, .narrator:
+            await catalogStore.searchAdvanced(scopedQuery(term), sort: .popularity)
+        }
+    }
+
+    private func scopedQuery(_ text: String) -> String {
+        let escaped = text.replacingOccurrences(of: "\"", with: "")
+        let scopeClause = " AND \(LibriVoxCatalogScope.query)"
+
+        switch searchScope {
+        case .all:
+            return text
+        case .title:
+            return "title:\"\(escaped)\"\(scopeClause)"
+        case .author:
+            return "creator:\"\(escaped)\"\(scopeClause)"
+        case .narrator:
+            return "(creator:\"\(escaped)\" OR description:\"\(escaped)\")\(scopeClause)"
+        }
     }
 
     private func presentResult(_ result: InternetArchiveSearchResult) async {
@@ -347,8 +453,7 @@ struct BrowseView: View {
             // Browsing/previewing a catalog result must never silently land
             // it in My Books — only the book page's explicit "+" does that.
             await libraryStore.markBookPending(imported.book.id)
-            await playback.present(imported)
-            showingNowPlaying = true
+            selectedCatalogBookID = imported.book.id
         }
     }
 
@@ -398,6 +503,24 @@ struct BrowseView: View {
 
     private var selectedLanguages: Set<String> {
         AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
+    }
+}
+
+private enum DiscoverSearchScope: CaseIterable, Identifiable, Hashable {
+    case all
+    case title
+    case author
+    case narrator
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .all: return "All"
+        case .title: return "Title"
+        case .author: return "Author"
+        case .narrator: return "Narrator"
+        }
     }
 }
 

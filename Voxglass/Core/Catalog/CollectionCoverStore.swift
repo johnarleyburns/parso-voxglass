@@ -4,7 +4,7 @@ import Foundation
 /// Resolves a real cover image for every Featured Collection (§3).
 ///
 /// Static hand-typed archive.org identifiers can drift away from the live
-/// collection results. Explore therefore resolves artwork from each collection's
+/// collection results. Discover therefore resolves artwork from each collection's
 /// own visible query sorted by popularity, then caches the winning
 /// `collectionID -> itemIdentifier` with a language/query stamp.
 @MainActor

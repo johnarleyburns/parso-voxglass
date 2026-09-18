@@ -4,7 +4,7 @@ import VoxglassCore
 /// A lightweight, self-contained catalog list pushed from Now Playing's
 /// discovery links ("More by this Author / Narrator / Genre"). It owns its own
 /// `InternetArchiveClient` fetch and results state so it never clobbers the
-/// shared `CatalogStore` that drives the Explore/Search tabs. Rows reuse
+/// shared `CatalogStore` that drives the Discover surface. Rows reuse
 /// `InternetArchiveResultRow`; tapping a row imports metadata, presents the
 /// unified book page, and leaves playback paused.
 struct CatalogDiscoveryView: View {
@@ -17,7 +17,8 @@ struct CatalogDiscoveryView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
     @State private var importingIdentifier: String?
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @State private var soloOnly = true
+    @State private var selectedCatalogBookID: UUID?
 
     var body: some View {
         ZStack {
@@ -104,10 +105,13 @@ struct CatalogDiscoveryView: View {
             }
             .padding(.horizontal, 18)
             .padding(.top, 12)
-                .padding(.bottom, 28)
-            }
+            .padding(.bottom, 28)
             .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
         }
+        .navigationDestination(item: $selectedCatalogBookID) { bookID in
+            BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
+        }
+    }
 
     private var errorBinding: Binding<Bool> {
         Binding {
@@ -125,9 +129,8 @@ struct CatalogDiscoveryView: View {
         defer { importingIdentifier = nil }
 
         if let imported = await store.importResult(result, into: libraryStore) {
-            await playback.present(imported)
-            showingNowPlaying = true
-            dismiss()
+            await libraryStore.markBookPending(imported.book.id)
+            selectedCatalogBookID = imported.book.id
         }
     }
 }

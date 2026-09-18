@@ -13,8 +13,8 @@
 #   phase 1 — all logic suites, serial:  swift test --no-parallel --skip VoxglassPerformanceTests
 #   phase 2 — timing budgets, serial:    VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests
 #
-# The pre-commit hook uses this script so the full local suite, including timing
-# budgets, remains a single serialized gate. GitHub Actions intentionally runs
+# This script is an optional expanded local verification path. The pre-commit
+# hook intentionally runs the plain host `swift test` command only. GitHub Actions runs
 # only the non-performance phase because hosted macOS CPU performance is too
 # variable for the timing budgets. The EXIT trap reaps orphaned test-helper
 # processes left behind by a crashed runner (see kill_zombie_test_helpers.sh).

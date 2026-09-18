@@ -80,10 +80,9 @@ struct GlassTabBar: View {
     @Binding var selection: VoxglassTab
 
     private let items: [(VoxglassTab, String, String)] = [
-        (.home, "headphones", "Listen"),
+        (.listen, "headphones", "Listen"),
         (.library, "books.vertical.fill", "My Books"),
-        (.browse, "square.grid.2x2.fill", "Explore"),
-        (.search, "magnifyingglass", "Search"),
+        (.discover, "square.grid.2x2.fill", "Discover"),
         (.narration, "mic.fill", "Narration")
     ]
 

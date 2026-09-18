@@ -41,7 +41,7 @@ import Testing
         #expect(!(chapterSlice.contains("showingNowPlaying = true")))  // chapterList must not set showingNowPlaying
     }
 
-    @Test func remoteCatalogImportsStillPresentPausedNowPlaying() throws {
+    @Test func remoteCatalogImportsOpenPausedBookPreview() throws {
         let paths = [
             "Voxglass/Features/Discover/DiscoverView.swift",
             "Voxglass/Features/Search/SearchView.swift",
@@ -52,8 +52,10 @@ import Testing
         for path in paths {
             let text = try source(path)
             #expect(text.contains("private func presentResult"))  // \(path)
-            #expect(text.contains("await playback.present(imported)"))  // \(path)
-            #expect(text.contains("showingNowPlaying = true"))  // \(path)
+            #expect(text.contains("await libraryStore.markBookPending(imported.book.id)"))  // \(path)
+            #expect(text.contains("selectedCatalogBookID = imported.book.id"))  // \(path)
+            #expect(!(text.contains("showingNowPlaying = true")))  // \(path)
+            #expect(!(text.contains("await playback.present(imported)")))  // \(path)
             #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
 

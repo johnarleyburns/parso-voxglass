@@ -73,10 +73,12 @@ The opening is: *the same catalog in a player that respects you*.
 The pre-release plan is tracked in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md). The competitive gap
 plan in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md) is substantially complete.
 
-## Manual regression testing (recommended before every release)
+## Manual regression testing before release
 
-Most logic is covered headlessly by `swift test` (see `scripts/test.sh`), and a single
-XCUITest smoke confirms the app boots. But the **playback platform surface** — lock-screen
+Most logic is covered headlessly by `swift test`. The commit hook runs `swift test` only; it does
+not boot simulators. Before every release, run `scripts/test.sh --all` to execute the local iPhone
+and Apple Watch simulator smoke suite, then perform the physical-device checks below. A single
+XCUITest smoke confirms the app boots. The **playback platform surface** — lock-screen
 Now Playing, Control-Center / headphone remote controls, audio interruptions, and
 background/terminate position saves — can only be verified on a **real device**, because it
 runs against MediaPlayer / AVAudioSession / UIKit, which the simulator and host tests do not

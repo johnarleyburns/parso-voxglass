@@ -81,10 +81,9 @@ struct RootView: View {
 
             TabView(selection: $selectedTab) {
                 ListenView(
-                    showingNowPlaying: miniPlayerRouter.bindNowPlaying(),
-                    selectLibrary: { selectedTab = .library }
+                    showingNowPlaying: miniPlayerRouter.bindNowPlaying()
                 )
-                .tag(VoxglassTab.home)
+                .tag(VoxglassTab.listen)
                 .toolbar(.hidden, for: .tabBar)
 
                 LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
@@ -92,11 +91,7 @@ struct RootView: View {
                     .toolbar(.hidden, for: .tabBar)
 
                 BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                    .tag(VoxglassTab.browse)
-                    .toolbar(.hidden, for: .tabBar)
-
-                SearchView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                    .tag(VoxglassTab.search)
+                    .tag(VoxglassTab.discover)
                     .toolbar(.hidden, for: .tabBar)
 
                 NarrationTabView()
@@ -132,10 +127,9 @@ struct RootView: View {
 }
 
 enum VoxglassTab: Hashable {
-    case home
+    case listen
     case library
-    case browse
-    case search
+    case discover
     case narration
 
     static var launchDefault: VoxglassTab {
@@ -147,19 +141,17 @@ enum VoxglassTab: Hashable {
             return tab
         }
         #endif
-        return .home
+        return .listen
     }
 
     private init?(argument: String) {
         switch argument.lowercased() {
         case "listen", "home":
-            self = .home
+            self = .listen
         case "library":
             self = .library
-        case "explore", "browse":
-            self = .browse
-        case "search":
-            self = .search
+        case "explore", "browse", "discover", "search":
+            self = .discover
         case "narration":
             self = .narration
         default:

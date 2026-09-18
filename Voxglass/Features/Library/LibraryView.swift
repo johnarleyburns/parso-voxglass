@@ -19,13 +19,13 @@ struct LibraryView: View {
     @State private var showingAddArchiveURL = false
     @State private var bookOrder: [UUID] = []
     @State private var selectedBookID: UUID?
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    @State private var soloOnly = true
     @State private var myNarrationOnly = false
 
     var body: some View {
         VoxglassScreen(
             title: "My Books",
-            headerActionTitle: libraryStore.books.isEmpty ? nil : (isEditing ? "Done" : "Edit"),
+            headerActionTitle: nil,
             headerAction: { withAnimation { isEditing.toggle() } },
             headerSecondaryActionTitle: "+",
             headerSecondaryAction: { showingAddArchiveURL = true },
@@ -128,7 +128,7 @@ struct LibraryView: View {
             if libraryStore.books.isEmpty {
                 EmptyStatePanel(
                     title: "No Audiobooks Yet",
-                    message: "Search LibriVox or add an Internet Archive URL from Explore to build your shelf. Everything you play is cached here automatically.",
+                    message: "Search the catalog in Discover or add an audiobook to build your shelf. Everything you play is cached here automatically.",
                     systemImage: "books.vertical"
                 )
             } else {
@@ -236,13 +236,12 @@ struct LibraryView: View {
     }
 
     private var filterBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 9) {
             Picker("Filter", selection: Binding<LibraryBookFilter>(
                 get: { libraryStore.filter },
                 set: { libraryStore.filter = $0 }
             )) {
                 Text("All").tag(LibraryBookFilter.all)
-                Text("Favorites").tag(LibraryBookFilter.favorites)
                 Text("In Progress").tag(LibraryBookFilter.inProgress)
                 Text("Finished").tag(LibraryBookFilter.finished)
             }
@@ -250,13 +249,32 @@ struct LibraryView: View {
             .tint(Palette.brass)
 
             HStack(spacing: 8) {
-                FilterChip(title: "Solo Narration", isSelected: soloOnly) {
-                    soloOnly.toggle()
-                }
-                FilterChip(title: "My Narration", isSelected: myNarrationOnly) {
-                    myNarrationOnly.toggle()
-                }
                 Spacer()
+                Menu {
+                    Section("Show") {
+                        Toggle("Favorites", isOn: Binding(
+                            get: { libraryStore.filter == .favorites },
+                            set: { if $0 { libraryStore.filter = .favorites } else { libraryStore.filter = .all } }
+                        ))
+                        Toggle("Solo narration", isOn: $soloOnly)
+                        Toggle("Created by me", isOn: $myNarrationOnly)
+                    }
+                    Section("Sort") {
+                        Button { libraryStore.sort = .recent } label: { sortLabel("Recently updated", active: libraryStore.sort == .recent) }
+                        Button { libraryStore.sort = .title } label: { sortLabel("Title", active: libraryStore.sort == .title) }
+                        Button { libraryStore.sort = .author } label: { sortLabel("Author", active: libraryStore.sort == .author) }
+                        Button { libraryStore.sort = .progress } label: { sortLabel("Progress", active: libraryStore.sort == .progress) }
+                    }
+                    Divider()
+                    Button(isEditing ? "Done editing" : "Edit order") {
+                        withAnimation { isEditing.toggle() }
+                    }
+                } label: {
+                    Label("More", systemImage: "ellipsis.circle")
+                        .scaledFont(size: 12, weight: .semibold)
+                        .foregroundStyle(Palette.ink2)
+                }
+                .accessibilityIdentifier("library.moreMenu")
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         showSearch.toggle()
@@ -274,6 +292,15 @@ struct LibraryView: View {
                 }
                 .accessibilityLabel(showSearch ? "Close search" : "Search my books")
             }
+        }
+    }
+
+    @ViewBuilder
+    private func sortLabel(_ title: String, active: Bool) -> some View {
+        if active {
+            Label(title, systemImage: "checkmark")
+        } else {
+            Text(title)
         }
     }
 

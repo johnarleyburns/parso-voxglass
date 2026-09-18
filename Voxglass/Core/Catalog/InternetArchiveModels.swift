@@ -95,7 +95,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
 }
 
 /// A single page of advanced-search results plus the total match count,
-/// enabling paginated "See More" loading in Explore.
+/// enabling paginated "See More" loading in Discover.
 public struct InternetArchivePage: Equatable, Sendable {
     public var results: [InternetArchiveSearchResult]
     public var numFound: Int
