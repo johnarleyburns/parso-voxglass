@@ -12,7 +12,7 @@ struct BookPageActionRow: View {
     @Binding var showingOverflow: Bool
     @Binding var showCellularPrompt: Bool
     @Binding var showRemoveOfflineConfirm: Bool
-    @State private var showDownloadSizeWarning = false
+    @State private var showCacheSizeWarning = false
     @State private var showWatchSizeWarning = false
     @State private var showWatchCellularPrompt = false
     @State private var showRemoveWatchConfirm = false
@@ -51,11 +51,11 @@ struct BookPageActionRow: View {
             compactRow
         }
         .confirmationDialog(
-            "Download this book?",
-            isPresented: $showDownloadSizeWarning,
+            "Cache this book for offline use?",
+            isPresented: $showCacheSizeWarning,
             titleVisibility: .visible
         ) {
-            Button("Download") {
+            Button("Cache") {
                 Task { await startOffline(allowCellular: false) }
             }
             Button("Cancel", role: .cancel) {}
@@ -255,13 +255,13 @@ struct BookPageActionRow: View {
         case .notCached:
             Button {
                 TactileFeedback.tap()
-                showDownloadSizeWarning = true
+                showCacheSizeWarning = true
             } label: {
                 Image(systemName: "arrow.down.circle")
                     .scaledFont(size: 17)
                     .frame(width: 44, height: 44)
             }
-            .accessibilityLabel("Download book")
+            .accessibilityLabel("Make available offline")
             .accessibilityIdentifier("nowplaying.download")
         case .downloading(let progress):
             ZStack {
@@ -278,7 +278,7 @@ struct BookPageActionRow: View {
             .frame(width: 22, height: 22)
             .frame(width: 44, height: 44)
             .accessibilityElement()
-            .accessibilityLabel("Downloading book")
+            .accessibilityLabel("Caching book")
             .accessibilityValue("\(Int((progress * 100).rounded())) percent")
             .accessibilityIdentifier("nowplaying.download")
         case .cached:
@@ -294,29 +294,24 @@ struct BookPageActionRow: View {
                     .accessibilityLabel("On this iPhone")
                     .accessibilityIdentifier("nowplaying.download")
             } else {
-                Button {
-                    TactileFeedback.tap()
-                    showRemoveOfflineConfirm = true
-                } label: {
-                    Image(systemName: "checkmark.circle.fill")
-                        .scaledFont(size: 17, weight: .semibold)
-                        .foregroundStyle(Palette.brass)
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("Downloaded — tap to remove")
-                .accessibilityIdentifier("nowplaying.download")
+                Image(systemName: "checkmark.circle.fill")
+                    .scaledFont(size: 17, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 44, height: 44)
+                    .accessibilityLabel("Cached for offline use")
+                    .accessibilityIdentifier("nowplaying.download")
             }
         case .failed:
             Button {
                 TactileFeedback.tap()
-                showDownloadSizeWarning = true
+                showCacheSizeWarning = true
             } label: {
                 Image(systemName: "exclamationmark.arrow.circlepath")
                     .scaledFont(size: 17)
                     .foregroundStyle(Palette.danger)
                     .frame(width: 44, height: 44)
             }
-            .accessibilityLabel("Retry download")
+            .accessibilityLabel("Retry caching")
             .accessibilityIdentifier("nowplaying.download")
         }
     }

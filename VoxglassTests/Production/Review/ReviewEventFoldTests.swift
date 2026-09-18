@@ -11,7 +11,7 @@ import VoxglassCore
     private let paraA = UUID()
     private let paraB = UUID()
 
-    private func event(_ para: UUID, type: ReviewEventType, at t: TimeInterval, device: DeviceKind = .mac, note: String? = nil) -> ReviewEvent {
+    private func event(_ para: UUID, type: ReviewEventType, at t: TimeInterval, device: DeviceKind = .iPhone, note: String? = nil) -> ReviewEvent {
         ReviewEvent(
             projectID: projectID,
             paragraphID: para,
@@ -77,7 +77,7 @@ import VoxglassCore
         let result = folder.fold(
             [
                 event(paraA, type: .needsPickup, at: 100, device: .iPhone),
-                event(paraA, type: .approve, at: 110, device: .mac),
+                event(paraA, type: .approve, at: 110, device: .watch),
             ],
             into: [:]
         )
@@ -88,8 +88,8 @@ import VoxglassCore
         let folder = ReviewEventFolder()
         let result = folder.fold(
             [
-                event(paraA, type: .needsPickup, at: 100, device: .mac),
-                event(paraA, type: .approve, at: 110, device: .mac),
+                event(paraA, type: .needsPickup, at: 100, device: .iPhone),
+                event(paraA, type: .approve, at: 110, device: .iPhone),
             ],
             into: [:]
         )
@@ -116,5 +116,9 @@ import VoxglassCore
         let result = folder.fold([], into: [paraA: .approved])
         #expect(result.states[paraA] == .approved)
         #expect(result.changedParagraphIDs.isEmpty)
+    }
+
+    @Test func legacyDeviceValueMigratesToPhone() {
+        #expect(DeviceKind(rawValue: "mac") == .iPhone)
     }
 }

@@ -48,7 +48,7 @@ public enum ProductionCarPlayBuilder {
                 ProductionCarPlayItem(
                     id: "empty-productions",
                     title: "No productions yet",
-                    subtitle: "Productions you preview from Voxglass Studio on your Mac appear here.",
+                    subtitle: "Productions you start in Voxglass on iPhone appear here.",
                     isEnabled: false,
                     action: .none
                 )
@@ -247,7 +247,7 @@ public enum ProductionCarPlayBuilder {
             ProductionCarPlaySection(header: "Driving Safety", items: [
                 ProductionCarPlayItem(
                     id: "setting-safety-note",
-                    title: "Typing and free-form note entry are unavailable in CarPlay. Detailed notes can be added later on iPhone, Watch, or Mac.",
+                    title: "Typing and free-form note entry are unavailable in CarPlay. Detailed notes can be added later on iPhone or Watch.",
                     isEnabled: false,
                     action: .none
                 )

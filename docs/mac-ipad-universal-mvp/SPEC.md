@@ -1,6 +1,12 @@
 # Voxglass — Mac + iPad Universal MVP — Delta Specification
 
-**Status:** implementable specification. **Extends** `docs/iphone-watch-only-revised-mvp/SPEC.md` (the *revised* spec, which remains normative for everything not restated here).
+> **Deferred design reference (2026-09-18).** This Mac + iPad expansion is not the current shipping
+> scope. The Mac app target and Mac-specific source/tests have been removed from the checkout while
+> remaining recoverable in Git history. The current app ships iPhone/iPad support through the iOS
+> target (`TARGETED_DEVICE_FAMILY: "1,2"`); compact-width iPad reuses the iPhone flow. Keep this
+> specification for a future scope decision, but do not treat its Mac stages as active work.
+
+**Status:** deferred historical specification. **Extends** `docs/iphone-watch-only-revised-mvp/SPEC.md` (the *revised* spec, which remains normative for everything not restated here).
 **Date:** 2026-08-11.
 **Mockups:** [`mockups/index.html`](mockups/index.html).
 

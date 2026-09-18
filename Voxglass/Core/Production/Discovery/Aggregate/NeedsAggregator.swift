@@ -156,9 +156,6 @@ public struct LadderNeedsAggregator: Sendable {
         case .iOS:
             cadence = .weekly
             featuredPool = ranked.filter { $0.work.lengthClass == .short }
-        case .mac:
-            cadence = .monthly
-            featuredPool = ranked.filter { $0.work.lengthClass == .long }
         }
         let featuredNeed = featured.featured(from: featuredPool, cadence: cadence, on: clock.now)
 

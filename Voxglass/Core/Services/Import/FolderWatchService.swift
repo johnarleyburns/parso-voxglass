@@ -4,6 +4,62 @@ import Foundation
 import UIKit
 #endif
 
+/// Progress for the watched-folder sound index. The estimate is derived from
+/// completed tracks and elapsed wall-clock time, so it never presents a
+/// fabricated duration before the first track has finished probing.
+public struct SoundIndexProgress: Sendable, Equatable {
+    public let totalTracks: Int
+    public let indexedTracks: Int
+    public let startedAt: Date
+    public let estimatedSecondsRemaining: TimeInterval?
+
+    public var remainingTracks: Int {
+        max(0, totalTracks - indexedTracks)
+    }
+
+    public var fractionComplete: Double {
+        guard totalTracks > 0 else { return 0 }
+        return min(max(Double(indexedTracks) / Double(totalTracks), 0), 1)
+    }
+
+    public var estimatedTimeRemainingText: String? {
+        guard let seconds = estimatedSecondsRemaining else { return nil }
+        let rounded = max(1, Int(seconds.rounded(.up)))
+        if rounded < 60 { return String(format: "~%ds remaining", rounded) }
+
+        let minutes = rounded / 60
+        let secondsRemainder = rounded % 60
+        if minutes < 60 {
+            return secondsRemainder == 0
+                ? String(format: "~%dm remaining", minutes)
+                : String(format: "~%dm %ds remaining", minutes, secondsRemainder)
+        }
+
+        let hours = minutes / 60
+        let minutesRemainder = minutes % 60
+        return minutesRemainder == 0
+            ? String(format: "~%dh remaining", hours)
+            : String(format: "~%dh %dm remaining", hours, minutesRemainder)
+    }
+
+    public init(totalTracks: Int, indexedTracks: Int, startedAt: Date, now: Date) {
+        self.totalTracks = max(0, totalTracks)
+        self.indexedTracks = min(max(0, indexedTracks), max(0, totalTracks))
+        self.startedAt = startedAt
+
+        let elapsed = now.timeIntervalSince(startedAt)
+        let rate = elapsed > 0 && self.indexedTracks > 0
+            ? Double(self.indexedTracks) / elapsed
+            : nil
+        let remainingTracks = max(0, self.totalTracks - self.indexedTracks)
+        if let rate, remainingTracks > 0 {
+            estimatedSecondsRemaining = Double(remainingTracks) / rate
+        } else {
+            estimatedSecondsRemaining = nil
+        }
+    }
+}
+
 /// Watches user-picked folders of audio files and imports them as local books
 /// (§4). Security-scoped bookmarks are persisted so watched folders
 /// survive relaunch; a foreground rescan + `NSFilePresenter` keep them live.
@@ -17,6 +73,7 @@ public final class FolderWatchService: ObservableObject {
 
     @Published public private(set) var folders: [WatchedFolder] = []
     @Published public var errorMessage: String?
+    @Published public private(set) var soundIndexProgress: SoundIndexProgress?
 
     private let repository: LibraryRepository
     private let defaults: UserDefaults
@@ -24,6 +81,7 @@ public final class FolderWatchService: ObservableObject {
     private weak var libraryStore: LibraryStore?
     private var presenters: [FolderPresenter] = []
     private var foregroundObserver: ObserverToken?
+    private var isScanning = false
 
     public init(repository: LibraryRepository, defaults: UserDefaults = .standard) {
         self.repository = repository
@@ -105,6 +163,16 @@ public final class FolderWatchService: ObservableObject {
     }
 
     public func scan(folder: WatchedFolder) async {
+        // A file-presenter callback and a foreground refresh can arrive at the
+        // same time. Keep one truthful aggregate progress stream instead of
+        // interleaving two scans and producing an impossible ETA.
+        guard !isScanning else { return }
+        isScanning = true
+        defer {
+            isScanning = false
+            soundIndexProgress = nil
+        }
+
         let url = folder.url
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
@@ -121,7 +189,16 @@ public final class FolderWatchService: ObservableObject {
             .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
 
         var imports: [LocalAudioImport] = []
-        for fileURL in audioURLs {
+        let startedAt = Date()
+        soundIndexProgress = SoundIndexProgress(
+            totalTracks: audioURLs.count,
+            indexedTracks: 0,
+            startedAt: startedAt,
+            now: startedAt
+        )
+
+        for (index, fileURL) in audioURLs.enumerated() {
+            if Task.isCancelled { return }
             let duration = await Self.duration(of: fileURL)
             imports.append(LocalAudioImport(
                 url: fileURL,
@@ -129,6 +206,12 @@ public final class FolderWatchService: ObservableObject {
                 sortKey: fileURL.lastPathComponent,
                 duration: duration
             ))
+            soundIndexProgress = SoundIndexProgress(
+                totalTracks: audioURLs.count,
+                indexedTracks: index + 1,
+                startedAt: startedAt,
+                now: Date()
+            )
         }
         guard !imports.isEmpty else { return }
 

@@ -24,8 +24,8 @@ import VoxglassCoreTestSupport
         // needs are narratable; the actionability tie-break is neutral.
         let long = makeNeed(title: "Frankenstein", author: "Mary Shelley", estSeconds: 28800)
         let short = makeNeed(title: "Hope", author: "Emily Dickinson", estSeconds: 40, signal: .evergreen)
-        #expect(long.narratableOn == [.iOS, .mac])
-        #expect(short.narratableOn == [.iOS, .mac])
+        #expect(long.narratableOn == [.iOS])
+        #expect(short.narratableOn == [.iOS])
 
         // Same signal → actionability tie → taste tie → short-first only applies
         // within the short rail, so the deterministic id tie-break decides.
@@ -59,11 +59,4 @@ import VoxglassCoreTestSupport
         #expect(ranked1 == ranked1.sorted { $0.id < $1.id })
     }
 
-    @Test func longNeedsStillRankOnMac() {
-        let long = makeNeed(title: "Frankenstein", author: "Mary Shelley", estSeconds: 28800)
-        let short = makeNeed(title: "Hope", author: "Emily Dickinson", estSeconds: 40)
-        let ranked = ranker.rank([short, long], for: .mac)
-        // On Mac both are actionable; signal equal; short-first only applies within short rail.
-        #expect(Set(ranked.map(\.work.title)) == ["Frankenstein", "Hope"])
-    }
 }

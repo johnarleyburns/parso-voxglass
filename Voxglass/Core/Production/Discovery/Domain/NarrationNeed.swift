@@ -31,7 +31,6 @@ public enum NeedSignal: String, Sendable, Codable, CaseIterable, Comparable {
 
 public enum Platform: String, Sendable, Codable {
     case iOS
-    case mac
 }
 
 /// `.short` iff `estSeconds <= shortWorkCeilingSeconds` — exactly LibriVox's
@@ -169,7 +168,7 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
     /// *discovery* signal ("finishable in one sitting"), never as a gate on the
     /// record action (§0.6 N-1, §8.3).
     public var narratableOn: Set<Platform> {
-        [.iOS, .mac]
+        [.iOS]
     }
 
     public var isSubmittable: Bool { work.grade == .submittable }

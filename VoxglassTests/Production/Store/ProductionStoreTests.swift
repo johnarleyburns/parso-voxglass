@@ -128,7 +128,7 @@ import VoxglassCoreTestSupport
         let para = project.chapters[0].paragraphs[0]
         let event = ReviewEvent(
             id: UUID(), projectID: project.id, paragraphID: para.id,
-            type: .flag, device: .mac
+            type: .flag, device: .iPhone
         )
         try await store.appendEvents([event])
 
@@ -150,7 +150,7 @@ import VoxglassCoreTestSupport
         let para = project.chapters[0].paragraphs[0]
         let note = ReviewNote(
             id: UUID(), paragraphID: para.id,
-            text: "Pronunciation check needed", device: .mac
+            text: "Pronunciation check needed", device: .iPhone
         )
         try await store.insertNote(note)
         let notes = try await store.notes(forParagraph: para.id)

@@ -1,5 +1,10 @@
 # Gap analysis — Mac + iPad Universal MVP vs. the repository
 
+> **Deferred-scope notice (2026-09-18).** The Mac target and Mac-specific source/tests were removed
+> from the shipping checkout. This document is retained as a historical recovery checklist, not an
+> active implementation backlog. iPad remains supported by the iOS target and currently reuses the
+> compact-width iPhone flow.
+
 **Date:** 2026-08-11. **Tree:** `main` @ `495df6f` plus the resurrected `VoxglassMac*` trees (staged, unadapted).
 **Spec:** [`SPEC.md`](SPEC.md). **Method:** every row below was checked against the working tree, not inferred from documents.
 
@@ -182,3 +187,8 @@ Confirmed present in the tree. Listed so the agent does not rebuild them.
 - **iPhone→Mac handoff.** N-1 stands: length and device never gate the record action. Gate G-U1 enforces the phrasing.
 - **A second project model, package format, or CloudKit record type.** R2-1, R2-2, R2-3.
 - **iPad multiple scenes, Apple Pencil notes, customizable shortcuts.** All MAY or DEFERRED (spec §19.2).
+# Deferred-scope notice
+
+> The Mac target and Mac-specific code were removed on 2026-09-18 to keep this phase iPhone/iPad
+> focused. The analysis below is retained as a recovery checklist in Git, not as an active gap list.
+> iPad remains supported by the iOS target; its compact-width flow is the current implementation.

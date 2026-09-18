@@ -1,5 +1,9 @@
 # Voxglass — Field-Test Fixes + Offline Downloads
 
+> **Platform scope (2026-09-18):** This plan covers the shipped iPhone/iPad app and its Watch/CarPlay
+> surfaces. The deferred Mac target and Mac-specific code are not part of this plan; iPad remains in
+> the iOS target through `TARGETED_DEVICE_FAMILY: "1,2"` and uses the shared iOS flow.
+
 ## Context
 
 Field testing of the Voxglass audiobook app (SwiftUI/iOS, streaming LibriVox/Internet Archive audio
@@ -272,6 +276,19 @@ time labels in the scrubber row.
   Reuse `TimeFormatting.compactDuration` (`TimeFormatting.swift:16`) for an "Xh Ym" style; hide the
   middle label when `bookRemaining == nil`. Match the existing 11pt muted styling.
 
+## 10. Sound-index progress estimate
+
+Watched folders index each supported audio file by probing its duration before importing the
+tracks. Expose this work as a truthful progress state in Settings: completed tracks, total tracks,
+tracks remaining, and an estimate based on the observed completed-tracks-per-second rate. Until
+one track has completed, show a calculating state rather than guessing. Clear the progress when
+the scan completes, fails, or is cancelled, and prevent overlapping scans from corrupting the
+counter or estimate.
+
+The progress model is deterministic and independently testable so the UI remains a thin display
+of current work. This is intentionally scoped to watched-folder sound indexing; catalog search and
+audio playback do not need an indexing phase.
+
 ---
 
 ## Verification
@@ -300,3 +317,9 @@ for the touched suites.
 8. **#9:** Open Now Playing on a multi-chapter book → a centered "Xh Ym left in book" label sits
    between the chapter elapsed and chapter-remaining labels, and counts down across chapter
    boundaries; it hides when chapter durations are unavailable.
+
+9. **#10:** Settings → Watched Folders → add or rescan a folder with multiple audio tracks. The
+   sound-index status shows the tracks remaining and completed/total count. Before the first track
+   finishes it says that the remaining time is being calculated; afterward it shows an approximate
+   remaining time derived from the observed indexing rate. The status disappears when indexing ends
+   or is cancelled, and never reports a fabricated estimate.

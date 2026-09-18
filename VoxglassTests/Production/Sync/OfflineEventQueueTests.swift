@@ -67,7 +67,7 @@ import Testing
         #expect(records.count == 3)
         #expect(Set(records.map { $0.fields["type"]?.stringValue() }) == Set(["flag", "addNote", "approve"]))
 
-        // The Mac folds by (createdAt, id), so the arrival order in a single batch
+        // The phone folds by (createdAt, id), so the arrival order in a single batch
         // does not matter — only the timestamps do. Assert timestamp ordering.
         let codec = ProjectionRecordCodec()
         let orderedTypes = records
@@ -109,7 +109,7 @@ import Testing
         #expect(try outbox.pending().count == 1)
     }
 
-    @Test func macFold_appliesOfflineSequenceExactlyOnce() throws {
+    @Test func eventFold_appliesOfflineSequenceExactlyOnce() throws {
         // Flow D (§14.5): flag → note → approve on one paragraph yields one final
         // state (.approved) with exactly one note.
         let paragraph = UUID()

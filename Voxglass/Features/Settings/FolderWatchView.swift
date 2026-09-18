@@ -13,6 +13,9 @@ struct FolderWatchView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     intro
                     addButton
+                    if let progress = folderWatch.soundIndexProgress {
+                        indexingStatus(progress)
+                    }
                     if !folderWatch.folders.isEmpty {
                         watchedList
                     }
@@ -97,6 +100,36 @@ struct FolderWatchView: View {
             }
             .glassPanel()
         }
+    }
+
+    private func indexingStatus(_ progress: SoundIndexProgress) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                ProgressView(value: progress.fractionComplete)
+                    .tint(Palette.brass)
+                Text("Indexing \(progress.remainingTracks) tracks…")
+                    .scaledFont(size: 13, weight: .semibold)
+                    .foregroundStyle(Palette.ink)
+            }
+
+            HStack {
+                Text("\(progress.indexedTracks) of \(progress.totalTracks) indexed")
+                Spacer()
+                if let estimate = progress.estimatedTimeRemainingText {
+                    Text(estimate)
+                } else {
+                    Text("Calculating time remaining…")
+                }
+            }
+            .scaledFont(size: 11.5)
+            .foregroundStyle(Palette.ink3)
+        }
+        .padding(14)
+        .glassSurface(cornerRadius: 14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Indexing \(progress.remainingTracks) tracks")
+        .accessibilityValue(progress.estimatedTimeRemainingText ?? "Calculating time remaining")
+        .accessibilityIdentifier("folderwatch.indexProgress")
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {

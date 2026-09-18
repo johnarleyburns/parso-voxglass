@@ -61,7 +61,7 @@ import Testing
     /// The phone and watch must agree on the `reviewEvent` wire format: the watch
     /// encodes a `ReviewEvent` as a `transferUserInfo` payload under the production
     /// action namespace, and the phone-side transport decodes the same action and
-    /// payload to enqueue it for the Mac (spec §13.6, §18.2.8).
+    /// payload to enqueue it for the phone (spec §13.6, §18.2.8).
     @Test func reviewEvent_roundTripsThroughProductionActionMessage() throws {
         let event = ReviewEvent(
             id: UUID(),

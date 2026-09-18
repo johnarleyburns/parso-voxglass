@@ -730,7 +730,7 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
             projectID: try uuid(from: row, column: "project_id"),
             paragraphID: try uuid(from: row, column: "paragraph_id"), type: type,
             noteText: row.string("note_text"), tag: row.string("tag").flatMap(ReviewTag.init(rawValue:)),
-            device: DeviceKind(rawValue: row.string("device") ?? "mac") ?? .mac,
+            device: DeviceKind(rawValue: row.string("device") ?? "iPhone") ?? .iPhone,
             createdAt: Date(timeIntervalSince1970: row.double("created_at") ?? 0),
             appliedAt: row.double("applied_at").map { Date(timeIntervalSince1970: $0) },
             origin: ReviewEvent.Origin(rawValue: row.string("origin") ?? "local") ?? .local)
@@ -739,7 +739,7 @@ public final class SQLiteProductionStore: @unchecked Sendable, ProductionStore {
     private func loadNote(from row: DatabaseRow) throws -> ReviewNote {
         ReviewNote(id: try uuid(from: row, column: "id"), paragraphID: try uuid(from: row, column: "paragraph_id"),
             text: row.string("text") ?? "", tag: row.string("tag").flatMap(ReviewTag.init(rawValue:)),
-            device: DeviceKind(rawValue: row.string("device") ?? "mac") ?? .mac,
+            device: DeviceKind(rawValue: row.string("device") ?? "iPhone") ?? .iPhone,
             timecode: row.double("timecode"), createdAt: Date(timeIntervalSince1970: row.double("created_at") ?? 0),
             resolvedAt: row.double("resolved_at").map { Date(timeIntervalSince1970: $0) })
     }

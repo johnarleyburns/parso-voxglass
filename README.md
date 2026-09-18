@@ -5,6 +5,12 @@ A privacy-first iOS audiobook player for the public-domain **LibriVox** catalog,
 leaves your device (content is fetched from archive.org, and cross-device sync, when enabled, uses your
 own iCloud).
 
+The shipped app targets iPhone and iPad, with Apple Watch and CarPlay companion surfaces. The native
+macOS app is intentionally out of scope for this phase; its source and design notes remain recoverable
+in Git history for a future restart, but there is no Mac app target or Mac-specific product UI in the
+current build. The Swift package still declares macOS as a host-test platform because `swift test`
+runs locally and in CI on macOS.
+
 ## Highlights
 
 - Stream or download the full LibriVox catalog (70,000+ public-domain audiobooks) sourced through the
@@ -114,6 +120,9 @@ Simulator names vary by machine. Discover valid destinations with:
 xcodebuild -project Voxglass.xcodeproj -showdestinations -scheme Voxglass
 xcodebuild -project Voxglass.xcodeproj -showdestinations -scheme VoxglassWatch
 ```
+
+The iOS target keeps `TARGETED_DEVICE_FAMILY: "1,2"`, so iPad remains a supported destination and
+uses the shared iOS interface. There is no `VoxglassMac` scheme or Mac build step.
 
 Before a release, run the local iPhone and Watch smoke suite:
 

@@ -1,5 +1,14 @@
 # Mac + iPad Universal MVP — status check against the author's current framing
 
+> **Current status (2026-09-18): deferred.** This plan is preserved as a historical recovery plan,
+> but the Mac target, Mac source, Mac tests, and Mac CI wiring have been removed from the current
+> checkout. The active product scope is iPhone/iPad plus Watch and CarPlay. iPad remains in the iOS
+> target and uses the shared iOS flow; reopen this plan before adding Mac back.
+
+Everything below is a historical snapshot from 2026-09-07. It describes the repository before the
+Mac scope was removed and must not be read as a current tree audit or an instruction to restore the
+Mac target.
+
 **Purpose of this document.** The author asked (2026-09-07) to "update the macOS plan to our
 current flows, especially that we can now construct narrations 100% entirely on iPhone," with
 three explicit requirements: (1) the Mac app is universal, no separate purchase; (2) the same
@@ -87,11 +96,11 @@ housekeeping call for the author, not a blocker for anything.
 
 ---
 
-## 3. Current build status: not started
+## 3. Historical build snapshot: not started
 
-Checked directly against the working tree (2026-09-07):
+Checked directly against the pre-removal working tree (2026-09-07):
 
-- `VoxglassMac/`, `VoxglassMacTests/`, `VoxglassMacUITests/` exist on disk and are committed —
+- `VoxglassMac/`, `VoxglassMacTests/`, `VoxglassMacUITests/` existed on disk and were committed —
   resurrected verbatim from `c0c6712^` per `AGENT_BRIEF.md`/D-U5, under new directory names.
 - `project.yml` has **no** `VoxglassMac` target, scheme, or reference of any kind — confirmed via
   `grep -n "VoxglassMac" project.yml` (no matches). The tree is exactly as advertised: inert. It
@@ -123,15 +132,9 @@ None of these block starting U0.
 
 ---
 
-## 5. Recommended next step
+## 5. Historical recommended next step — do not execute while scope is deferred
 
-Nothing in this session's work changes the plan — it confirms the plan already anticipated it.
-The concrete next action, when the author is ready, is exactly what `AGENT_BRIEF.md` already
-prescribes: hand that file's "The prompt" section to an implementing agent as-is, starting with
-stage **U0** (§17) — amend the three CI gates that currently keep the Mac tree deleted, add the
-`VoxglassMac` target/scheme to `project.yml` at bundle id `guru.parso.voxglass`, delete the six
-files `GAP_ANALYSIS.md` names as not worth adapting, and extend `AccessibilityAuditTests` /
-`LicenseGatePlacementTests` to cover it. U0's acceptance bar is explicitly "compiles and gates
-pass," not "the Mac app works" — later stages (U1 merge model, U3 app shell, U5 capture, U9
-Universal Purchase hardening) build on top of that unlock, one reviewable commit per stage, per the
-brief's own stop-and-report discipline.
+The historical next action was to begin stage **U0** (§17). That is intentionally not the next
+action for the current product. Keep the Mac source and design material recoverable in Git, and
+reopen this plan only after an explicit decision to restore Mac support. The current next action is
+to maintain the iPhone/iPad target and its Watch/CarPlay companion surfaces.

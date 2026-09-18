@@ -27,6 +27,42 @@ import Foundation
         #expect(!(result.contains(known)))  // Known files must be excluded
     }
 
+    @Test func soundIndexProgressEstimatesRemainingAtObservedRate() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let progress = SoundIndexProgress(
+            totalTracks: 10,
+            indexedTracks: 2,
+            startedAt: start,
+            now: start.addingTimeInterval(20)
+        )
+
+        #expect(progress.remainingTracks == 8)
+        #expect(progress.fractionComplete == 0.2)
+        #expect(progress.estimatedSecondsRemaining == 80)
+        #expect(progress.estimatedTimeRemainingText == "~1m 20s remaining")
+    }
+
+    @Test func soundIndexProgressWaitsForObservedRateAndHandlesCompletion() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let calculating = SoundIndexProgress(
+            totalTracks: 3,
+            indexedTracks: 0,
+            startedAt: start,
+            now: start
+        )
+        let finished = SoundIndexProgress(
+            totalTracks: 3,
+            indexedTracks: 3,
+            startedAt: start,
+            now: start.addingTimeInterval(12)
+        )
+
+        #expect(calculating.estimatedSecondsRemaining == nil)
+        #expect(calculating.estimatedTimeRemainingText == nil)
+        #expect(finished.remainingTracks == 0)
+        #expect(finished.estimatedSecondsRemaining == nil)
+    }
+
     // MARK: - Repository idempotency
 
     @Test func importLocalFolderInsertsSourceBookAndChapters() async throws {

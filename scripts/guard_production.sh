@@ -106,11 +106,8 @@ check_fix_action_coverage() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-2 / G-U5: Pro-gate placement (no LicenseGate/isPro/ProFeature in free
-# paths). Extended to `VoxglassMac` (SPEC.md §2.3, §0.6): the permitted list
-# gains the Mac export destination picker (ExportWizardView), the Mac export
-# runner (ExportModel), and Mac Settings (SettingsModel) — the same three
-# roles as iOS, once per platform, and nothing else. This is the mechanism
+# G-2: Pro-gate placement (no LicenseGate/isPro/ProFeature in free
+# paths). The permitted list is the same three iOS roles as before. This is the mechanism
 # the spec calls `LicenseGatePlacementTests`; the repository's actual
 # permitted-site enforcement is this grep gate, not a same-named Swift test.
 # ──────────────────────────────────────────────────────────────
@@ -120,7 +117,7 @@ check_pro_gate_placement() {
   local allowed='Export|Packaging|RetailMaster|Master|License|Settings'
   local forbidden='Recording|Review|Preview|Capture|Assembly|Segment|Sync|Watch|CarPlay|Validation'
   local matches
-  matches=$(find Voxglass/Core Voxglass VoxglassWatch VoxglassMac -name '*.swift' 2>/dev/null \
+  matches=$(find Voxglass/Core Voxglass VoxglassWatch -name '*.swift' 2>/dev/null \
             | grep -E "/[^/]*($forbidden)[^/]*\.swift$" \
             | grep -vE "/[^/]*($allowed)[^/]*\.swift$" \
             | xargs grep -nE "$banned" 2>/dev/null || true)
@@ -132,12 +129,10 @@ check_pro_gate_placement() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-3 / G-U4: No ObservableObject in new Production files. Extended to
-# `VoxglassMac/` (SPEC.md §0.6, §15.3 rule 1): `@Observable` only, on every
-# platform.
+# G-3: No ObservableObject in new Production files: `@Observable` only.
 # ──────────────────────────────────────────────────────────────
 check_no_observable_object() {
-  local dirs='Voxglass/Core/Production VoxglassWatch/Production Voxglass/Features/Production VoxglassMac'
+  local dirs='Voxglass/Core/Production VoxglassWatch/Production Voxglass/Features/Production'
   for d in $dirs; do
     if [ -d "$d" ]; then
       local matches
@@ -396,12 +391,12 @@ check_iphone_never_records_long() {
       violate "G-15: $f renders a start-narrating CTA without a recordableOniOS gate"
     fi
   done
-  # The Mac handoff is retired (N-1): LongWorkHandoff must not be referenced.
+  # The long-work handoff is retired (N-1): LongWorkHandoff must not be referenced.
   local handoff
   handoff=$(find "$dir" -name '*.swift' -print0 2>/dev/null | xargs -0 grep -l 'LongWorkHandoff' 2>/dev/null || true)
   if [ -n "$handoff" ]; then
     while read -r line; do
-      violate "G-15: retired Mac handoff referenced (N-1): $line"
+      violate "G-15: retired long-work handoff referenced (N-1): $line"
     done <<< "$handoff"
   fi
 }
@@ -427,16 +422,13 @@ check_no_production_studio() {
 # the production surfaces this MVP governs — colors come from the DesignSystem
 # (`Palette` / `NarrationPalette`). Scoped to the production surfaces because the
 # pre-existing consumer feature surfaces predate the rule and are not part of
-# this MVP's delta. Extended to `VoxglassMac/` (SPEC.md §0.6): the Mac app's
-# own named-token file is `VoxglassMac/DesignSystem/MacPalette.swift`
-# (excluded here the same way `Voxglass/DesignSystem/` is never in this gate's
-# scope — a palette's *definition* site is exempt; its *consumers* are not).
+# this MVP's delta (a palette's *definition* site is exempt; its *consumers*
+# are not).
 # ──────────────────────────────────────────────────────────────
 check_no_color_literals() {
-  local dirs="Voxglass/Features/Production VoxglassWatch/Production VoxglassMac"
+  local dirs="Voxglass/Features/Production VoxglassWatch/Production"
   local matches
-  matches=$(grep -rn --include='*.swift' 'Color(hex:' $dirs 2>/dev/null \
-              | grep -v '^VoxglassMac/DesignSystem/' || true)
+  matches=$(grep -rn --include='*.swift' 'Color(hex:' $dirs 2>/dev/null || true)
   if [ -n "$matches" ]; then
     while read -r line; do
       violate "G-P4: color literal outside DesignSystem in production surface: $line"
@@ -445,26 +437,6 @@ check_no_color_literals() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-U1 (replaces G-P5): the Mac is back (SPEC.md §0.6, U-1). "Mac" as a bare
-# word is now legitimate — device-presence indicators, conflict-resolution
-# copy ("edited on your Mac"), and Universal Purchase copy all need it. What
-# G-P5 actually protected (N-1: length/device never gates the record action)
-# is preserved by banning the exact retired handoff phrases instead, across
-# every surface (not just the two production ones — the phrasing is retired
-# everywhere, including VoxglassMac/ itself).
-# ──────────────────────────────────────────────────────────────
-check_no_retired_handoff_phrasing() {
-  local dirs="Voxglass VoxglassMac VoxglassWatch"
-  local phrases='Record on Mac|Continue on Mac|Requires a Mac'
-  local matches
-  matches=$(grep -rnE --include='*.swift' "$phrases" $dirs 2>/dev/null || true)
-  if [ -n "$matches" ]; then
-    while read -r line; do
-      violate "G-U1: retired Mac-handoff phrasing (N-1): $line"
-    done <<< "$matches"
-  fi
-}
-
 # ──────────────────────────────────────────────────────────────
 # G-16: PD gate before submittable. NeedsAggregator must reference PDVerifier,
 # and the Core test target must enforce the downgrade (test-named
@@ -571,17 +543,14 @@ check_ia_no_license_gate() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-P6: No VoxglassStudio. The deleted macOS Studio tree must never be
+# G-P6: No VoxglassStudio. The retired Studio tree must never be
 # reintroduced by a partial revert (D-3). No source file and no project
 # manifest (project.yml / Package.swift) may reference VoxglassStudio or
 # VoxglassStudioKit, and the three Studio directories must not reappear.
-# Extended to `VoxglassMac VoxglassMacTests VoxglassMacUITests` (SPEC.md
-# §0.6): the resurrected tree carried the old name in several files; U0
-# renamed them, and the old directory names stay banned on disk.
 # ──────────────────────────────────────────────────────────────
 check_no_studio() {
   local matches
-  matches=$(grep -rn --include='*.swift' -E 'VoxglassStudio' Voxglass VoxglassWatch VoxglassCoreTestSupport VoxglassTests VoxglassMac VoxglassMacTests VoxglassMacUITests 2>/dev/null || true)
+  matches=$(grep -rn --include='*.swift' -E 'VoxglassStudio' Voxglass VoxglassWatch VoxglassCoreTestSupport VoxglassTests 2>/dev/null || true)
   if [ -n "$matches" ]; then
     while read -r line; do
       violate "G-P6: deleted Studio module referenced in source: $line"
@@ -605,14 +574,10 @@ check_no_studio() {
 # ──────────────────────────────────────────────────────────────
 # G-P7: The legacy Pro product id is gone. The string
 # `voxglass.studio.pro` MUST NOT appear in any source file (§2.2, D-1).
-# Extended to `VoxglassMac` (SPEC.md §0.6): the resurrected
-# `StoreKitLicenseProvider.swift` and `Resources/VoxglassStudio.storekit`
-# carried the dead id; U0 removed the file and reads the id from
-# `NarrationProProduct.productID` instead.
 # ──────────────────────────────────────────────────────────────
 check_no_legacy_product_id() {
   local matches
-  matches=$(grep -rn --include='*.swift' -F 'voxglass.studio.pro' Voxglass VoxglassWatch VoxglassCoreTestSupport VoxglassTests VoxglassMac VoxglassMacTests VoxglassMacUITests 2>/dev/null || true)
+  matches=$(grep -rn --include='*.swift' -F 'voxglass.studio.pro' Voxglass VoxglassWatch VoxglassCoreTestSupport VoxglassTests 2>/dev/null || true)
   if [ -n "$matches" ]; then
     while read -r line; do
       violate "G-P7: legacy Pro product id reference: $line"
@@ -640,29 +605,6 @@ check_core_platform_free() {
 }
 
 # ──────────────────────────────────────────────────────────────
-# G-U3: Universal Purchase bundle id. The `VoxglassMac` target's
-# `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` MUST be exactly
-# `guru.parso.voxglass` (SPEC.md §2.1, §0.6) — identical to iOS, and
-# irreversible after the first Mac sale. The dead
-# `guru.parso.voxglass.studio` id MUST NOT appear anywhere in project.yml.
-# ──────────────────────────────────────────────────────────────
-check_mac_bundle_id() {
-  if [ ! -f project.yml ]; then
-    violate "G-U3: project.yml does not exist"
-    return
-  fi
-  if ! grep -qE '^[[:space:]]*PRODUCT_BUNDLE_IDENTIFIER:[[:space:]]*guru\.parso\.voxglass[[:space:]]*$' project.yml; then
-    violate "G-U3: project.yml has no PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass line"
-  fi
-  local dead
-  dead=$(grep -nF 'guru.parso.voxglass.studio' project.yml 2>/dev/null || true)
-  if [ -n "$dead" ]; then
-    while read -r line; do
-      violate "G-U3: dead Studio bundle id in project.yml: $line"
-    done <<< "$dead"
-  fi
-}
-
 # ──────────────────────────────────────────────────────────────
 # Run all checks.
 # ──────────────────────────────────────────────────────────────
@@ -682,7 +624,6 @@ check_no_auto_upload
 check_discovery_total
 check_no_signin_ui
 check_iphone_never_records_long
-check_no_retired_handoff_phrasing
 check_no_production_studio
 check_no_color_literals
 check_pd_gate
@@ -693,7 +634,6 @@ check_no_studio
 check_no_legacy_product_id
 check_fix_action_coverage
 check_core_platform_free
-check_mac_bundle_id
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

@@ -180,7 +180,7 @@ struct BookPageView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The book stays in My Books; only the downloaded audio is freed.")
+            Text("The book stays in My Books; only its cached audio is freed.")
         }
         .confirmationDialog(
             resolved.map { "Remove \"\($0.book.title)\" from My Books?" } ?? "",
@@ -433,7 +433,7 @@ struct BookPageView: View {
                 .background(Capsule().fill(Color.white.opacity(0.07)))
 
             if offlineState == .cached {
-                Text("Downloaded")
+                Text("Available offline")
                     .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 9)

@@ -85,7 +85,32 @@ public enum ReviewTag: String, Codable, Sendable, CaseIterable {
     case misread, pronunciation, pacing, noise, performance, edit
 }
 
-public enum DeviceKind: String, Codable, Sendable { case mac, iPhone, watch, carPlay }
+public enum DeviceKind: String, Codable, Sendable {
+    case iPhone
+    case watch
+    case carPlay
+
+    /// Older local stores and sync records used `mac` as the default device
+    /// value before the Mac target was deferred. Read that value as the
+    /// current phone device so existing data remains loadable without keeping
+    /// a Mac platform in the active domain model.
+    public init?(rawValue: String) {
+        switch rawValue {
+        case "mac", "iPhone": self = .iPhone
+        case "watch": self = .watch
+        case "carPlay": self = .carPlay
+        default: return nil
+        }
+    }
+
+    public var rawValue: String {
+        switch self {
+        case .iPhone: return "iPhone"
+        case .watch: return "watch"
+        case .carPlay: return "carPlay"
+        }
+    }
+}
 
 // MARK: - Paragraph
 

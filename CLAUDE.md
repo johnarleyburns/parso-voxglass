@@ -51,8 +51,7 @@ That command failed in `VoxglassWatch/VoxglassWatchApp.swift` with
 the command, not by the Watch source: `-sdk iphonesimulator` is a global
 `SDKROOT` override, while the `Voxglass` scheme has an embedded dependency
 whose build settings require `watchos`. Xcode therefore attempted to compile
-WatchKit code in an iOS SDK context. A successful Mac build does not validate
-that relationship, and a successful host `swift test` does not compile the
+WatchKit code in an iOS SDK context. A successful host `swift test` does not compile the
 app targets, so neither can substitute for the platform-specific build.
 
 Apple's build guidance is to select a scheme and run destination together;

@@ -73,7 +73,7 @@ import Testing
         #expect(projected?.takeID == takeB.id)
         #expect(projected?.proxySourceSHA == "sha-b")
         #expect(projected?.duration == 4)
-        // Alternate take A never leaves the Mac.
+        // Alternate take A never leaves the local device.
         #expect(projected?.proxySourceSHA != "sha-a")
         #expect(projection?.project.recordedCount == 1)
     }

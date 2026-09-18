@@ -1,6 +1,15 @@
 # Agent brief — implement the Mac + iPad Universal MVP
 
+> **Status (2026-09-18): deferred, not current scope.** The native Mac target and all Mac-specific
+> source/tests were removed from the shipping checkout to keep the product iPhone/iPad-first. This
+> directory is retained as a historical design and recovery reference in Git; do not implement or
+> re-add its Mac stages unless the scope is explicitly reopened. iPad remains supported by the iOS
+> target and currently reuses the shipping iPhone flow at compact widths.
+
 Paste the block below as the opening prompt for a coding agent working in `/Users/arley/github/parso-voxglass`.
+
+That prompt is retained for a future scope decision only. Do not hand it to an agent or start U0–U9
+while the deferred status above is in effect.
 
 ---
 

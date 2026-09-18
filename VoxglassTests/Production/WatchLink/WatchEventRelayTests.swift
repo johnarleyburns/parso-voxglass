@@ -27,12 +27,12 @@ import Testing
     }
 
     /// Fold the events the phone received through the phone's fold, proving the
-    /// offline watch action reaches the Mac's review state exactly once.
-    private func foldOnMac(events: [ReviewEvent]) -> [UUID: ReviewState] {
+    /// offline watch action reaches the phone's review state exactly once.
+    private func foldOnPhone(events: [ReviewEvent]) -> [UUID: ReviewState] {
         ReviewEventFolder().fold(events, into: [:]).states
     }
 
-    @Test func offlineApproveAction_reachesMacExactlyOnceViaPhoneFold() async throws {
+    @Test func offlineApproveAction_reachesPhoneExactlyOnceViaPhoneFold() async throws {
         let (outbox, dir) = try makeOutbox()
         defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -50,10 +50,10 @@ import Testing
         // The watch's outbox is now empty: the action was not duplicated.
         #expect(try outbox.pending().isEmpty)
 
-        // The phone received it and folded it into the Mac's state.
+        // The phone received it and folded it into the phone's state.
         let snapshot = phone.snapshot()
         #expect(snapshot.events.map(\.id) == [approve.id])
-        let states = foldOnMac(events: snapshot.events)
+        let states = foldOnPhone(events: snapshot.events)
         #expect(states[paragraph] == .approved)
     }
 
@@ -87,7 +87,7 @@ import Testing
         #expect(result.transferred.count == 3)
         #expect(try outbox.pending().isEmpty)
 
-        let states = foldOnMac(events: phone.snapshot().events)
+        let states = foldOnPhone(events: phone.snapshot().events)
         #expect(states[ids[0]] == .approved)
         #expect(states[ids[1]] == .flagged)
         #expect(states[ids[2]] == .approved)

@@ -29,7 +29,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     /// The production relay transport. `WCSession` permits a single delegate, which
     /// this relay owns; incoming production messages (review events, refresh
-    /// requests) are forwarded here so the watch's offline actions reach the Mac.
+    /// requests) are forwarded here so the watch's offline actions reach the phone.
     weak var productionTransport: WatchConnectivityTransport?
 
     func registerProductionTransport(_ transport: WatchConnectivityTransport) {

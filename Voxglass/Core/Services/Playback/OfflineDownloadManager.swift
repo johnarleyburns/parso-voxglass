@@ -10,7 +10,7 @@ public enum OfflineState: Equatable {
 }
 
 /// Result of asking to make a book available offline — lets the UI decide
-/// whether to present the paywall or the cellular prompt before anything starts.
+/// whether to present the cellular prompt before anything starts.
 public enum OfflineStartDecision: Equatable {
     case start
     case needsCellularConfirmation
@@ -33,11 +33,13 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private let repository: LibraryRepository
     private let cacheStore: SparseCacheStore
     private let defaults: UserDefaults
+    private let taskRegistryKey = "voxglass.offline.taskRegistry.v1"
     private lazy var session: URLSession = makeSession()
 
     private var chapterFractions: [UUID: [UUID: Double]] = [:]  // bookID -> chapterID -> 0...1
     private var plannedCount: [UUID: Int] = [:]                 // bookID -> chapters in job
     private var failedBooks: Set<UUID> = []
+    private var taskRegistry: [Int: TaskInfo]
     private var backgroundCompletionHandler: (() -> Void)?
 
     public init(
@@ -48,6 +50,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         self.repository = repository
         self.cacheStore = cacheStore
         self.defaults = defaults
+        if let data = defaults.data(forKey: taskRegistryKey),
+           let stored = try? JSONDecoder().decode([Int: TaskInfo].self, from: data) {
+            self.taskRegistry = stored
+        } else {
+            self.taskRegistry = [:]
+        }
         super.init()
         Self.current = self
         _ = session   // eagerly reconnect the background session on launch
@@ -168,16 +176,14 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     public func removeOffline(book: BookWithChapters) async {
         await cancelTasks(forBookID: book.book.id)
         let cacheable = cacheableChapters(of: book)
-        guard !cacheable.isEmpty else {
-            state[book.book.id] = .cached
-            return
-        }
         let keys = cacheable.map { AudioCache.key(for: $0.url) }
-        await cacheStore.unpin(keys)
+        if !keys.isEmpty {
+            await cacheStore.unpin(keys)
+            await cacheStore.remove(keys: keys)
+        }
         if let coverURL = book.book.coverURL {
             await cacheStore.unpin([ArtworkCacheKey.key(for: coverURL)])
         }
-        await cacheStore.remove(keys: keys)
         try? await repository.deleteDownloadRecords(forBookID: book.book.id)
         chapterFractions[book.book.id] = nil
         plannedCount[book.book.id] = nil
@@ -203,7 +209,10 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
             }
         }
         let cacheable = cacheableChapters(of: book)
-        guard !cacheable.isEmpty else { return }
+        guard !cacheable.isEmpty else {
+            state[bookID] = .notCached
+            return
+        }
 
         plannedCount[bookID] = cacheable.count
         var fractions: [UUID: Double] = [:]
@@ -228,7 +237,10 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
 
         for item in toEnqueue {
             let task = session.downloadTask(with: item.url)
-            task.taskDescription = TaskInfo(bookID: bookID, chapterID: item.chapter.id, key: item.key).encoded
+            let info = TaskInfo(bookID: bookID, chapterID: item.chapter.id, key: item.key)
+            task.taskDescription = info.encoded
+            taskRegistry[task.taskIdentifier] = info
+            persistTaskRegistry()
             task.resume()
         }
 
@@ -237,35 +249,52 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
 
     // MARK: - Delegate hop handlers (MainActor)
 
-    private func handleProgress(taskDescription: String?, fraction: Double) {
-        guard let info = TaskInfo(taskDescription: taskDescription) else { return }
+    private func handleProgress(taskIdentifier: Int, taskDescription: String?, fraction: Double) {
+        guard let info = taskInfo(taskIdentifier: taskIdentifier, taskDescription: taskDescription) else { return }
         chapterFractions[info.bookID, default: [:]][info.chapterID] = min(max(fraction, 0), 1)
         updateBookState(info.bookID)
     }
 
-    private func handleFinished(taskDescription: String?, stagingURL: URL, totalBytes: Int64) async {
-        guard let info = TaskInfo(taskDescription: taskDescription) else {
+    private func handleFinished(taskIdentifier: Int, taskDescription: String?, stagingURL: URL, totalBytes: Int64) async {
+        guard let info = taskInfo(taskIdentifier: taskIdentifier, taskDescription: taskDescription) else {
             try? FileManager.default.removeItem(at: stagingURL)
             return
         }
+        guard FileManager.default.fileExists(atPath: stagingURL.path) else {
+            await handleFailure(taskIdentifier: taskIdentifier, taskDescription: taskDescription)
+            return
+        }
         await cacheStore.ingestCompleteFile(at: stagingURL, key: info.key, totalBytes: totalBytes)
+        guard await cacheStore.isComplete(info.key) else {
+            // SparseCacheStore intentionally keeps ingestion non-throwing so a
+            // cache failure cannot take down playback. Do not let that
+            // best-effort behavior turn a missing/corrupt blob into a false
+            // completed offline chapter.
+            await cacheStore.remove(keys: [info.key])
+            await handleFailure(taskIdentifier: taskIdentifier, taskDescription: taskDescription)
+            return
+        }
         chapterFractions[info.bookID, default: [:]][info.chapterID] = 1.0
         try? await repository.updateDownloadRecord(
             bookID: info.bookID,
             chapterID: info.chapterID,
             state: .complete
         )
+        taskRegistry[taskIdentifier] = nil
+        persistTaskRegistry()
         updateBookState(info.bookID)
     }
 
-    private func handleFailure(taskDescription: String?) async {
-        guard let info = TaskInfo(taskDescription: taskDescription) else { return }
+    private func handleFailure(taskIdentifier: Int, taskDescription: String?) async {
+        guard let info = taskInfo(taskIdentifier: taskIdentifier, taskDescription: taskDescription) else { return }
         failedBooks.insert(info.bookID)
         try? await repository.updateDownloadRecord(
             bookID: info.bookID,
             chapterID: info.chapterID,
             state: .failed
         )
+        taskRegistry[taskIdentifier] = nil
+        persistTaskRegistry()
         state[info.bookID] = .failed
     }
 
@@ -298,7 +327,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private func reattachInFlightTasks(booksByID: [UUID: BookWithChapters]) async {
         let tasks = await allTasks()
         for task in tasks {
-            guard let info = TaskInfo(taskDescription: task.taskDescription) else { continue }
+            guard let info = taskInfo(taskIdentifier: task.taskIdentifier, taskDescription: task.taskDescription) else { continue }
             if plannedCount[info.bookID] == nil, let book = booksByID[info.bookID] {
                 plannedCount[info.bookID] = cacheableChapters(of: book).count
             }
@@ -314,10 +343,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private func cancelTasks(forBookID bookID: UUID) async {
         let tasks = await allTasks()
         for task in tasks {
-            if let info = TaskInfo(taskDescription: task.taskDescription), info.bookID == bookID {
+            if let info = taskInfo(taskIdentifier: task.taskIdentifier, taskDescription: task.taskDescription), info.bookID == bookID {
                 task.cancel()
+                taskRegistry[task.taskIdentifier] = nil
             }
         }
+        persistTaskRegistry()
     }
 
     private func allTasks() async -> [URLSessionTask] {
@@ -327,6 +358,15 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     }
 
     // MARK: - Helpers
+
+    private func persistTaskRegistry() {
+        guard let data = try? JSONEncoder().encode(taskRegistry) else { return }
+        defaults.set(data, forKey: taskRegistryKey)
+    }
+
+    private func taskInfo(taskIdentifier: Int, taskDescription: String?) -> TaskInfo? {
+        TaskInfo(taskDescription: taskDescription) ?? taskRegistry[taskIdentifier]
+    }
 
     private struct CacheableChapter {
         let chapter: Chapter
@@ -390,11 +430,24 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
         // to a staging location the async ingest can consume.
         let staging = FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-offline-\(UUID().uuidString)")
-        try? FileManager.default.moveItem(at: location, to: staging)
+        do {
+            try FileManager.default.moveItem(at: location, to: staging)
+        } catch {
+            let description = downloadTask.taskDescription
+            Task { @MainActor in
+                await self.handleFailure(taskIdentifier: downloadTask.taskIdentifier, taskDescription: description)
+            }
+            return
+        }
         let description = downloadTask.taskDescription
         let bytes = max(downloadTask.countOfBytesReceived, downloadTask.response?.expectedContentLength ?? 0)
         Task { @MainActor in
-            await self.handleFinished(taskDescription: description, stagingURL: staging, totalBytes: bytes)
+            await self.handleFinished(
+                taskIdentifier: downloadTask.taskIdentifier,
+                taskDescription: description,
+                stagingURL: staging,
+                totalBytes: bytes
+            )
         }
     }
 
@@ -410,7 +463,11 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
             : 0
         let description = downloadTask.taskDescription
         Task { @MainActor in
-            self.handleProgress(taskDescription: description, fraction: fraction)
+            self.handleProgress(
+                taskIdentifier: downloadTask.taskIdentifier,
+                taskDescription: description,
+                fraction: fraction
+            )
         }
     }
 
@@ -423,7 +480,7 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
         guard let error, (error as? URLError)?.code != .cancelled else { return }
         let description = task.taskDescription
         Task { @MainActor in
-            await self.handleFailure(taskDescription: description)
+            await self.handleFailure(taskIdentifier: task.taskIdentifier, taskDescription: description)
         }
     }
 
