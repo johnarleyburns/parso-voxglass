@@ -84,6 +84,24 @@ import Testing
         #expect(!tabs.contains("ZStack(alignment: .bottom)"))
     }
 
+    @Test func consumerShellExposesOnlyPlanDestinations() throws {
+        let root = try source("Voxglass/App/RootView.swift")
+        let tabs = sourceSlice(root, from: "TabView(selection: $selectedTab)", to: "// The dock's safe-area inset")
+        #expect(tabs.contains("ListenView("))
+        #expect(tabs.contains("LibraryView("))
+        #expect(tabs.contains("BrowseView("))
+        #expect(tabs.contains("NarrationTabView()"))
+        #expect(tabs.components(separatedBy: ".tag(VoxglassTab.").count - 1 == 4)
+        #expect(!tabs.contains("SearchView("))
+
+        let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
+        let items = sourceSlice(dock, from: "private let items", to: "var body: some View")
+        #expect(items.components(separatedBy: "(.listen,").count - 1 == 1)
+        #expect(items.components(separatedBy: "(.library,").count - 1 == 1)
+        #expect(items.components(separatedBy: "(.discover,").count - 1 == 1)
+        #expect(items.components(separatedBy: "(.narration,").count - 1 == 1)
+    }
+
     @Test func sharedScreenReservesWorstCaseDockHeight() throws {
         let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
         let screen = sourceSlice(theme, from: "struct VoxglassScreen", to: "struct VoxglassBackground")
@@ -159,6 +177,10 @@ import Testing
 
         #expect(library.contains("library.searchButton"))
         #expect(library.contains("library.booksSearch"))
+
+        let discoverSearch = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        #expect(discoverSearch.contains("Search catalog for books, authors, or narrators"))
+        #expect(library.contains("accessibilityLabel(\"Search My Books\")"))
     }
 
     @Test func bookPreviewExposesClearLibraryStateAndActions() throws {

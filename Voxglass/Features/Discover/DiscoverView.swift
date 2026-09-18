@@ -90,6 +90,7 @@ struct BrowseView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .submitLabel(.search)
+                    .accessibilityLabel("Search catalog for books, authors, or narrators")
                     .accessibilityIdentifier("discover.catalogSearch")
                     .onSubmit { Task { await runSearch() } }
 

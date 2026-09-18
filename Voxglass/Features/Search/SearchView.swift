@@ -51,6 +51,7 @@ struct SearchView: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .submitLabel(.search)
+                .accessibilityLabel("Search catalog for LibriVox audiobooks")
                 .accessibilityIdentifier("search.catalogSearch")
                 .onSubmit {
                     Task { await runSearch() }

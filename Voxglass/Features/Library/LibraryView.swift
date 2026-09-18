@@ -348,6 +348,7 @@ struct LibraryView: View {
                     .foregroundStyle(Palette.ink)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
+                    .accessibilityLabel("Search My Books")
                     .accessibilityIdentifier("library.booksSearch")
 
                 if !searchText.isEmpty {
