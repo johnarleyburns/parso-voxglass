@@ -8,7 +8,7 @@ struct SearchView: View {
     @Binding var showingNowPlaying: Bool
     @State private var importingIdentifier: String?
     @State private var searchScope: SearchScope = .all
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false
+    @State private var soloOnly = false
     @State private var selectedCatalogBookID: UUID?
 
     var body: some View {
@@ -51,6 +51,7 @@ struct SearchView: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .submitLabel(.search)
+                .accessibilityIdentifier("search.catalogSearch")
                 .onSubmit {
                     Task { await runSearch() }
                 }
@@ -145,6 +146,8 @@ struct SearchView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("search.result.\(result.identifier)")
+                            .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
                             .disabled(importingIdentifier == result.identifier)
 
                             if index < results.count - 1 {

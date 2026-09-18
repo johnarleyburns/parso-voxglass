@@ -17,7 +17,6 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
         public static let cloudKitInitialLibraryEnqueued = "voxglass.cloudKit.initialLibraryEnqueued.v1"
         public static let cloudKitLibraryUploadConfirmed = "voxglass.cloudKit.libraryUploadConfirmed.v1"
-        public static let soloOnlyEnabled = "voxglass.soloOnlyEnabled"
         public static let narrationOnboardingSeen = "voxglass.narration.onboardingSeen.v1"
         public static let narrationCommercialIntroSeen = "voxglass.narration.commercialIntroSeen.v1"
         public static let narrationCollapsedChapters = "voxglass.narration.collapsedChapters.v1"
@@ -31,8 +30,6 @@ public struct AppPreferencesStore: DynamicProperty {
     @AppStorage(Keys.hasCompletedOnboarding) public var hasCompletedOnboarding = false
     @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
-    @AppStorage(Keys.soloOnlyEnabled) public var soloOnlyEnabled = false
-
     public var selectedCollectionIDs: Set<String> {
         get { Self.decodeCollectionIDs(selectedCollectionIDsRaw) }
         nonmutating set { selectedCollectionIDsRaw = Self.encodeCollectionIDs(newValue) }

@@ -14,7 +14,10 @@ struct BrowseView: View {
     @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false
+    // Advanced catalog filters belong to this discovery surface only. Do not
+    // persist them as app-wide preferences or a choice here can silently
+    // narrow another catalog surface later.
+    @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
     @State private var showAdvanced = false
     @State private var selectedCatalogBookID: UUID?
@@ -246,6 +249,8 @@ struct BrowseView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("discover.result.\(result.identifier)")
+                            .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
                             .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
 
                             if index < results.count - 1 {

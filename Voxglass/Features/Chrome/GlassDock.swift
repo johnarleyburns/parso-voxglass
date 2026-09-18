@@ -15,6 +15,7 @@ struct GlassDock: View {
                     .onTapGesture {
                         miniPlayerRouter.presentNowPlayingFromMiniPlayer(currentBookID: session.book.id)
                     }
+                    .accessibilityIdentifier("chrome.miniPlayer")
             }
             GlassTabBar(selection: $selectedTab)
         }
@@ -56,11 +57,13 @@ struct GlassMiniPlayer: View {
                         }
                     }
                     .disabled(playback.playbackPhase == .preparing)
+                    .accessibilityIdentifier("chrome.miniPlayer.playPause")
                     Button {
                         Task { await playback.skipToNextChapter() }
                     } label: {
                         Image(systemName: "forward.fill")
                     }
+                    .accessibilityIdentifier("chrome.miniPlayer.nextChapter")
                 }
                 .scaledFont(size: 16)
                 .foregroundStyle(Palette.ink)

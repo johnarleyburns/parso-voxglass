@@ -130,9 +130,35 @@ import Testing
         #expect(library.contains("@State private var soloOnly = false"))
 
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
-        #expect(discover.contains("@AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false"))
+        #expect(discover.contains("@State private var soloOnly = false"))
+        #expect(!(discover.contains("soloOnlyEnabled")))
         #expect(discover.contains("discover.catalogSearch"))
         #expect(discover.contains("discover.filterMenu"))
+
+        let search = try source("Voxglass/Features/Search/SearchView.swift")
+        #expect(search.contains("@State private var soloOnly = false"))
+        #expect(search.contains("search.catalogSearch"))
+        #expect(!(search.contains("soloOnlyEnabled")))
+
+        let catalog = try source("Voxglass/Features/Player/CatalogDiscoveryView.swift")
+        #expect(catalog.contains("@State private var soloOnly = false"))
+        #expect(!(catalog.contains("soloOnlyEnabled")))
+
+        let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
+        #expect(dock.contains("chrome.miniPlayer"))
+        #expect(dock.contains("chrome.miniPlayer.playPause"))
+
+        #expect(library.contains("library.searchButton"))
+        #expect(library.contains("library.booksSearch"))
+    }
+
+    @Test func bookPreviewExposesClearLibraryStateAndActions() throws {
+        let detail = try source("Voxglass/Features/Player/BookPageView.swift")
+        #expect(detail.contains("bookpage.addToLibrary"))
+        #expect(detail.contains("bookpage.inMyBooks"))
+        #expect(detail.contains("bookpage.previewing"))
+        #expect(detail.contains("bookpage.play"))
+        #expect(detail.contains("Previewing"))
     }
 
     private var repoRoot: URL {

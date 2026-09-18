@@ -17,7 +17,7 @@ struct CatalogDiscoveryView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = CatalogDiscoveryStore()
     @State private var importingIdentifier: String?
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = false
+    @State private var soloOnly = false
     @State private var selectedCatalogBookID: UUID?
 
     var body: some View {
@@ -92,6 +92,8 @@ struct CatalogDiscoveryView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityIdentifier("catalog.result.\(result.identifier)")
+                                .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
                                 .disabled(importingIdentifier == result.identifier)
 
                                 if index < results.count - 1 {

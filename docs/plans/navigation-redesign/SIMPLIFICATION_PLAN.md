@@ -31,6 +31,11 @@ library-flow gaps:
   affordance.
 - Catalog discovery defaults to the full catalog; Solo narration remains an
   advanced opt-in filter instead of silently narrowing first-run results.
+- Advanced catalog filters now stay local to Discover, Search, and related
+  catalog detail surfaces instead of sharing one app-wide Solo preference.
+- Book previews now identify themselves as Previewing, saved books identify as
+  In My Books, and the main search, preview, and mini-player controls have
+  stable accessibility identifiers for UI regression coverage.
 
 ## Research evidence
 
@@ -53,9 +58,13 @@ The main dock is now:
 
 Search is no longer a top-level destination. Discover owns catalog search, while My Books owns shelf search. A catalog result opens a paused preview with explicit **Add to My Books** and **Play** actions; tapping a row never silently starts playback.
 
-## Research-driven follow-up
+## Research-driven follow-up completed
 
-The remaining high-value simplification is to make the saved shelf action-oriented: tapping a My Books row should resume or start playback immediately, while book details remain available from the row's context menu. This eliminates the most common extra step without removing detail, Watch, download, or deletion functionality.
+The saved shelf is action-oriented: tapping a My Books row resumes or starts
+playback immediately, while book details remain available from the row's
+context menu. This eliminates the most common extra step without removing
+detail, Watch, download, or deletion functionality. Catalog filters remain
+surface-local, and preview state is explicit on the book page.
 
 Acceptance criteria:
 

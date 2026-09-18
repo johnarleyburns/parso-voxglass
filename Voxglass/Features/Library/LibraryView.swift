@@ -289,6 +289,7 @@ struct LibraryView: View {
                         .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.08))
                 }
                 .accessibilityLabel(showSearch ? "Close search" : "Search my books")
+                .accessibilityIdentifier("library.searchButton")
             }
         }
     }
@@ -312,6 +313,7 @@ struct LibraryView: View {
                     .foregroundStyle(Palette.ink)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
+                    .accessibilityIdentifier("library.booksSearch")
 
                 if !searchText.isEmpty {
                     Button {

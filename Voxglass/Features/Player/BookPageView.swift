@@ -239,20 +239,36 @@ struct BookPageView: View {
     @ViewBuilder
     private func libraryAction(_ resolved: BookWithChapters) -> some View {
         if resolved.book.isPending {
-            Button {
-                showAddToLibraryConfirm = true
-            } label: {
-                Label("Add to My Books", systemImage: "plus")
-                    .scaledFont(size: 14, weight: .semibold)
-                    .foregroundStyle(Palette.ink)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 46)
-                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.10))
+            VStack(alignment: .leading, spacing: 8) {
+                previewStateLabel(isPending: true)
+                Button {
+                    showAddToLibraryConfirm = true
+                } label: {
+                    Label("Add to My Books", systemImage: "plus")
+                        .scaledFont(size: 14, weight: .semibold)
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.10))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("bookpage.addToLibrary")
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("bookpage.addToLibrary")
             .padding(.top, 15)
+        } else {
+            previewStateLabel(isPending: false)
+                .padding(.top, 15)
         }
+    }
+
+    private func previewStateLabel(isPending: Bool) -> some View {
+        Label(
+            isPending ? "Previewing" : "In My Books",
+            systemImage: isPending ? "eye" : "checkmark.circle.fill"
+        )
+            .scaledFont(size: 12, weight: .semibold)
+            .foregroundStyle(Palette.brass)
+            .accessibilityIdentifier(isPending ? "bookpage.previewing" : "bookpage.inMyBooks")
     }
 
     private func coverSection(_ resolved: BookWithChapters) -> some View {
