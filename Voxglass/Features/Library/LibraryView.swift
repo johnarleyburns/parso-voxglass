@@ -288,6 +288,7 @@ struct LibraryView: View {
                             get: { libraryStore.filter == .downloaded },
                             set: { if $0 { libraryStore.filter = .downloaded } else { libraryStore.filter = .all } }
                         ))
+                        .accessibilityIdentifier("library.downloadedFilter")
                         Toggle("Solo Narration", isOn: $soloOnly)
                         Toggle("Created by me", isOn: $myNarrationOnly)
                     }

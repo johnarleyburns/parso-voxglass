@@ -129,6 +129,7 @@ import Testing
         #expect(library.contains("Open Details"))
         #expect(library.contains("@State private var soloOnly = false"))
         #expect(library.contains("Toggle(\"Downloaded\""))
+        #expect(library.contains("library.downloadedFilter"))
         #expect(library.contains("library.downloadedEmptyState"))
         #expect(library.contains("offlineManager.state(for: $0.book.id) == .cached"))
 
