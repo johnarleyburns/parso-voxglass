@@ -44,6 +44,8 @@ library-flow gaps:
 - Catalog result rows now show compact source/language recording details so
   similar public-domain recordings can be distinguished without opening every
   preview.
+- Reopening a catalog result already present in My Books preserves its saved
+  state; only newly imported previews are hidden until the user adds them.
 
 ## Research evidence
 

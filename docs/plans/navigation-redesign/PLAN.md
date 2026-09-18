@@ -103,6 +103,7 @@ Unify catalog results from Discover and recommendations:
 - Optional action: `Download`.
 - Small trailing play button may provide immediate playback without hiding the detail page.
 - Clear state labels: `In My Books`, `Downloaded`, `Previewing`.
+- Reopening a result that is already saved must preserve its `In My Books` state; only a newly imported preview may be marked pending.
 
 This replaces the current pattern where tapping a catalog row immediately starts playback and the add action is only discoverable as a plus icon on the resulting book/player page.
 
@@ -185,6 +186,7 @@ Likely files:
 
 - Every catalog result opens an obvious paused preview with Play and Add to My Books actions.
 - Pending preview books remain hidden from My Books until Add is confirmed.
+- Reopening a saved catalog result never demotes it to pending or hides it from My Books.
 - Existing playback, download, watch, and history behavior continues to work.
 
 ### Accessibility and regression coverage
