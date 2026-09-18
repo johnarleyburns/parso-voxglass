@@ -207,12 +207,15 @@ struct SearchView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
+        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
             // Same rule as Discover: previewing a search result must not
             // silently land it in My Books — only the "+" on the book page
             // does that.
-            await libraryStore.markBookPending(imported.book.id)
+            if !existingBookIDs.contains(imported.book.id) {
+                await libraryStore.markBookPending(imported.book.id)
+            }
             selectedCatalogBookID = imported.book.id
         }
     }

@@ -454,11 +454,16 @@ struct BrowseView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
+        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
             // Browsing/previewing a catalog result must never silently land
             // it in My Books — only the book page's explicit "+" does that.
-            await libraryStore.markBookPending(imported.book.id)
+            // Existing saved books must retain their library state when opened
+            // again from Discover (or a fallback catalog result).
+            if !existingBookIDs.contains(imported.book.id) {
+                await libraryStore.markBookPending(imported.book.id)
+            }
             selectedCatalogBookID = imported.book.id
         }
     }

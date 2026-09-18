@@ -381,9 +381,12 @@ struct ListenView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
+        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
-            await libraryStore.markBookPending(imported.book.id)
+            if !existingBookIDs.contains(imported.book.id) {
+                await libraryStore.markBookPending(imported.book.id)
+            }
             selectedCatalogBookID = imported.book.id
         }
     }
