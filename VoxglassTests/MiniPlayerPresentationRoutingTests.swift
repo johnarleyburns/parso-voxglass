@@ -147,6 +147,8 @@ import Testing
         let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
         #expect(dock.contains("chrome.miniPlayer"))
         #expect(dock.contains("chrome.miniPlayer.playPause"))
+        #expect(dock.contains(".frame(minWidth: 44, minHeight: 44)"))
+        #expect(dock.contains("accessibilityLabel(\"Next chapter\")"))
 
         #expect(library.contains("library.searchButton"))
         #expect(library.contains("library.booksSearch"))

@@ -52,17 +52,22 @@ struct GlassMiniPlayer: View {
                     } label: {
                         if playback.playbackPhase == .preparing {
                             ProgressView()
+                                .frame(minWidth: 44, minHeight: 44)
                         } else {
                             Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
+                                .frame(minWidth: 44, minHeight: 44)
                         }
                     }
                     .disabled(playback.playbackPhase == .preparing)
+                    .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
                     .accessibilityIdentifier("chrome.miniPlayer.playPause")
                     Button {
                         Task { await playback.skipToNextChapter() }
                     } label: {
                         Image(systemName: "forward.fill")
+                            .frame(minWidth: 44, minHeight: 44)
                     }
+                    .accessibilityLabel("Next chapter")
                     .accessibilityIdentifier("chrome.miniPlayer.nextChapter")
                 }
                 .scaledFont(size: 16)
