@@ -18,7 +18,10 @@ struct LibraryView: View {
     @State private var showingAddArchiveURL = false
     @State private var bookOrder: [UUID] = []
     @State private var selectedBookID: UUID?
-    @AppStorage(AppPreferencesStore.Keys.soloOnlyEnabled) private var soloOnly = true
+    // My Books is the user's complete shelf by default. Solo narration is a
+    // local refinement here, so a discovery preference cannot silently hide
+    // saved books from the primary library view.
+    @State private var soloOnly = false
     @State private var myNarrationOnly = false
 
     var body: some View {
@@ -173,6 +176,8 @@ struct LibraryView: View {
                             .accessibilityIdentifier("library.play.\(book.book.id.uuidString)")
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(playActionLabel(for: book))
+                        .accessibilityHint("Opens the player")
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
                         .contextMenu {
@@ -336,6 +341,13 @@ struct LibraryView: View {
 
     private func isMyNarration(_ book: BookWithChapters) -> Bool {
         libraryStore.source(for: book.book)?.kind == .localFiles && book.book.authors != ["Local Files"]
+    }
+
+    private func playActionLabel(for book: BookWithChapters) -> String {
+        let hasResumePoint = libraryStore.progressByBook[book.book.id].map {
+            $0.lastPosition > 0 && !$0.isFinished
+        } ?? false
+        return "\(hasResumePoint ? "Resume" : "Play") \(book.book.title)"
     }
 
     private var filteredBooks: [BookWithChapters] {

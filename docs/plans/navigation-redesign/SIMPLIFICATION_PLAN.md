@@ -13,6 +13,20 @@ Keep the app's full listening, importing, search, discovery, offline, Watch, nar
 
 Everything else should appear at the point of need, in a menu, or on the book detail screen instead of competing for permanent navigation space.
 
+## Audit follow-up
+
+The implementation audit against `PLAN.md` closed the remaining chrome and
+library-flow gaps:
+
+- The dock now gives the selected destination both a brass color and a capsule
+  background/outline, with the selected state exposed to accessibility.
+- My Books defaults to the complete saved shelf. Solo narration is a local
+  refinement instead of a shared preference that can silently hide books.
+- Saved-book row actions expose Play or Resume semantics to VoiceOver while
+  keeping the one-tap player flow.
+- The root no longer adds a second fixed 136pt bottom reservation on top of
+  the shared screen clearance and live dock safe-area inset.
+
 ## Research evidence
 
 - Apple's [Tab Bars guidance](https://developer.apple.com/design/human-interface-guidelines/tab-bars?changes=l_1__4&language=objc) treats tabs as top-level destinations, recommends keeping them limited and labeled, and distinguishes them from action controls.

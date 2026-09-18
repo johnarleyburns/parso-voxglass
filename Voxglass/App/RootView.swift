@@ -98,10 +98,11 @@ struct RootView: View {
                     .tag(VoxglassTab.narration)
                     .toolbar(.hidden, for: .tabBar)
             }
-            // Keep the last item in child navigation stacks above the custom
-            // dock. The dock's own safe-area inset handles the live height;
-            // this is a fixed fallback for nested/custom scroll containers.
-            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+            // The dock's safe-area inset is the single source of truth for
+            // the live chrome height. Shared screens add their own final
+            // content clearance for nested/custom scroll containers; adding
+            // the same 136pt fallback here as well created a second blank
+            // region below the last item.
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             GlassDock(

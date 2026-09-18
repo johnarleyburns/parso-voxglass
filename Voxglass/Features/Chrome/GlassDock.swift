@@ -102,9 +102,22 @@ struct GlassTabBar: View {
                     .foregroundStyle(selection == tab ? Palette.brass : Palette.ink3)
                     .frame(minHeight: 48)
                     .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background {
+                        if selection == tab {
+                            Capsule(style: .continuous)
+                                .fill(Palette.brass.opacity(0.14))
+                                .overlay {
+                                    Capsule(style: .continuous)
+                                        .stroke(Palette.brass.opacity(0.32), lineWidth: 1)
+                                }
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(label)
+                .accessibilityValue(selection == tab ? "Selected" : "Not selected")
                 .accessibilityAddTraits(selection == tab ? [.isSelected] : [])
             }
         }
