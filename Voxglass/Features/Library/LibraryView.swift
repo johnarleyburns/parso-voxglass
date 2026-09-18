@@ -19,20 +19,16 @@ struct LibraryView: View {
     @State private var showingAddArchiveURL = false
     @State private var bookOrder: [UUID] = []
     @State private var selectedBookID: UUID?
-    // My Books is the user's complete shelf by default. Solo narration is a
-    // local refinement here, so a discovery preference cannot silently hide
-    // saved books from the primary library view.
+    // My Books is the user's complete shelf by default. Solo narration and
+    // Created by me are local refinements, so a discovery preference cannot
+    // silently hide saved books from the primary library view.
     @State private var soloOnly = false
     @State private var myNarrationOnly = false
 
     var body: some View {
         VoxglassScreen(
             title: "My Books",
-            headerActionTitle: nil,
-            headerAction: { withAnimation { isEditing.toggle() } },
-            headerSecondaryActionTitle: "+",
-            headerSecondaryAction: { showingAddArchiveURL = true },
-            headerSecondaryActionAccessibilityLabel: "Add audiobook from archive.org URL"
+            headerTrailingContent: AnyView(libraryHeaderActions)
         ) {
             VStack(alignment: .leading, spacing: 18) {
                 bookList
@@ -239,13 +235,34 @@ struct LibraryView: View {
     }
 
     private var filteredEmptyState: some View {
-        if libraryStore.filter == .downloaded {
+        if libraryStore.downloadedOnly {
             EmptyStatePanel(
                 title: "No Downloads Yet",
                 message: "Books you cache for offline listening will appear here.",
                 systemImage: "arrow.down.circle"
             )
             .accessibilityIdentifier("library.downloadedEmptyState")
+        } else if libraryStore.favoriteOnly {
+            EmptyStatePanel(
+                title: "No Favorite Books",
+                message: "Favorite a book to keep it in this view.",
+                systemImage: "heart"
+            )
+            .accessibilityIdentifier("library.favoritesEmptyState")
+        } else if soloOnly {
+            EmptyStatePanel(
+                title: "No Solo Narrations",
+                message: "Turn off Solo Narration to see the rest of this view.",
+                systemImage: "mic"
+            )
+            .accessibilityIdentifier("library.soloEmptyState")
+        } else if myNarrationOnly {
+            EmptyStatePanel(
+                title: "No Narrations by Me",
+                message: "Narrations you create on this device will appear here.",
+                systemImage: "person.wave.2"
+            )
+            .accessibilityIdentifier("library.myNarrationEmptyState")
         } else if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             EmptyStatePanel(
                 title: "No Matching Books",
@@ -264,68 +281,74 @@ struct LibraryView: View {
     }
 
     private var filterBar: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Picker("Filter", selection: Binding<LibraryBookFilter>(
-                get: { libraryStore.filter },
-                set: { libraryStore.filter = $0 }
-            )) {
-                Text("All").tag(LibraryBookFilter.all)
-                Text("In Progress").tag(LibraryBookFilter.inProgress)
-                Text("Finished").tag(LibraryBookFilter.finished)
-            }
-            .pickerStyle(.segmented)
-            .tint(Palette.brass)
+        Picker("Filter", selection: $libraryStore.progressFilter) {
+            Text("All").tag(LibraryProgressFilter.all)
+            Text("In Progress").tag(LibraryProgressFilter.inProgress)
+            Text("Finished").tag(LibraryProgressFilter.finished)
+        }
+        .pickerStyle(.segmented)
+        .tint(Palette.brass)
+    }
 
-            HStack(spacing: 8) {
-                Spacer()
-                Menu {
-                    Section("Show") {
-                        Toggle("Favorites", isOn: Binding(
-                            get: { libraryStore.filter == .favorites },
-                            set: { if $0 { libraryStore.filter = .favorites } else { libraryStore.filter = .all } }
-                        ))
-                        Toggle("Downloaded", isOn: Binding(
-                            get: { libraryStore.filter == .downloaded },
-                            set: { if $0 { libraryStore.filter = .downloaded } else { libraryStore.filter = .all } }
-                        ))
-                        .accessibilityIdentifier("library.downloadedFilter")
-                        Toggle("Solo Narration", isOn: $soloOnly)
-                        Toggle("Created by me", isOn: $myNarrationOnly)
+    private var libraryHeaderActions: some View {
+        HStack(spacing: 2) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showSearch.toggle()
+                    if !showSearch {
+                        searchText = ""
+                        searchScope = .all
                     }
-                    Section("Sort") {
-                        Button { libraryStore.sort = .recent } label: { sortLabel("Recently updated", active: libraryStore.sort == .recent) }
-                        Button { libraryStore.sort = .title } label: { sortLabel("Title", active: libraryStore.sort == .title) }
-                        Button { libraryStore.sort = .author } label: { sortLabel("Author", active: libraryStore.sort == .author) }
-                        Button { libraryStore.sort = .progress } label: { sortLabel("Progress", active: libraryStore.sort == .progress) }
-                    }
-                    Divider()
-                    Button(isEditing ? "Done editing" : "Edit order") {
-                        withAnimation { isEditing.toggle() }
-                    }
-                } label: {
-                    Label("More", systemImage: "ellipsis.circle")
-                        .scaledFont(size: 12, weight: .semibold)
-                        .foregroundStyle(Palette.ink2)
                 }
-                .accessibilityIdentifier("library.moreMenu")
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showSearch.toggle()
-                        if !showSearch {
-                            searchText = ""
-                            searchScope = .all
-                        }
-                    }
-                } label: {
-                    Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                        .scaledFont(size: 18, weight: .semibold)
-                        .foregroundStyle(Palette.brass)
-                        .frame(width: 36, height: 36)
-                        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.08))
-                }
-                .accessibilityLabel(showSearch ? "Close search" : "Search my books")
-                .accessibilityIdentifier("library.searchButton")
+            } label: {
+                Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
+                    .scaledFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
             }
+            .contentShape(Rectangle())
+            .accessibilityLabel(showSearch ? "Close search" : "Search my books")
+            .accessibilityIdentifier("library.searchButton")
+
+            Button {
+                showingAddArchiveURL = true
+            } label: {
+                Text("+")
+                    .scaledFont(size: 22, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+            }
+            .contentShape(Rectangle())
+            .accessibilityLabel("Add audiobook from archive.org URL")
+            .accessibilityIdentifier("library.addButton")
+
+            Menu {
+                Section("Show") {
+                    Toggle("Favorites", isOn: $libraryStore.favoriteOnly)
+                        .accessibilityIdentifier("library.favoritesFilter")
+                    Toggle("Downloaded", isOn: $libraryStore.downloadedOnly)
+                        .accessibilityIdentifier("library.downloadedFilter")
+                    Toggle("Solo Narration", isOn: $soloOnly)
+                    Toggle("Created by me", isOn: $myNarrationOnly)
+                }
+                Section("Sort") {
+                    Button { libraryStore.sort = .recent } label: { sortLabel("Recently updated", active: libraryStore.sort == .recent) }
+                    Button { libraryStore.sort = .title } label: { sortLabel("Title", active: libraryStore.sort == .title) }
+                    Button { libraryStore.sort = .author } label: { sortLabel("Author", active: libraryStore.sort == .author) }
+                    Button { libraryStore.sort = .progress } label: { sortLabel("Progress", active: libraryStore.sort == .progress) }
+                }
+                Divider()
+                Button(isEditing ? "Done editing" : "Edit order") {
+                    withAnimation { isEditing.toggle() }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .scaledFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel("More My Books options")
+            .accessibilityIdentifier("library.moreMenu")
         }
     }
 

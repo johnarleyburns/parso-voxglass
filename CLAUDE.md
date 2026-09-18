@@ -36,6 +36,32 @@ The `Voxglass` iPhone scheme embeds the `VoxglassWatch` app. Never pass a global
 the Watch dependency too, which produces misleading `unable to resolve module
 dependency: 'WatchKit'` and Watch `AppIcon` errors even though both are valid.
 
+### Validation command postmortem
+
+On 2026-09-18, validation was incorrectly run as:
+
+```sh
+xcodebuild -project Voxglass.xcodeproj -scheme Voxglass \
+  -sdk iphonesimulator -configuration Debug build \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+That command failed in `VoxglassWatch/VoxglassWatchApp.swift` with
+`Unable to resolve module dependency: 'WatchKit'`. The failure was caused by
+the command, not by the Watch source: `-sdk iphonesimulator` is a global
+`SDKROOT` override, while the `Voxglass` scheme has an embedded dependency
+whose build settings require `watchos`. Xcode therefore attempted to compile
+WatchKit code in an iOS SDK context. A successful Mac build does not validate
+that relationship, and a successful host `swift test` does not compile the
+app targets, so neither can substitute for the platform-specific build.
+
+Apple's build guidance is to select a scheme and run destination together;
+the destination determines the platform/SDK. Always inspect the scheme and
+available destinations first, then use a concrete destination and no global
+`-sdk` override. The correct commands for this project are the ones below.
+The dedicated Watch command was verified on this machine on the same date and
+completed with `** BUILD SUCCEEDED **`.
+
 Also avoid the generic destination `generic/platform=iOS Simulator` for this
 combined scheme. Its asset-thinning step has repeatedly evaluated the Watch
 icon catalog as an iPhone asset catalog and reported that `AppIcon` has no

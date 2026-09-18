@@ -84,10 +84,10 @@ private let narrationRailTopSpacing: CGFloat = 20
 struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @AppStorage(AppPreferencesStore.Keys.narrationCommercialIntroSeen) private var commercialIntroSeen = false
-    let presentBrowse: () -> Void
     let startProject: (NarrationNeed) -> Void
     let startNew: () -> Void
     let showRails: Bool
+    @State private var showAbout = false
 
     private var shelfPlan: NarrationHomeShelfPlan {
         NarrationHomeShelfPlan(needs: discovery.availableNeeds, featured: discovery.availableFeatured)
@@ -96,7 +96,7 @@ struct NarrationHomeShelf: View {
     var body: some View {
         // NOTE: no accessibilityIdentifier on this container — a plain VStack
         // with one overrides every child's identifier (SwiftUI quirk), which
-        // would make `needs.featured` / rail CTAs unreachable from UI tests.
+        // would make rail CTAs unreachable from UI tests.
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Start a Narration")
@@ -104,12 +104,22 @@ struct NarrationHomeShelf: View {
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier("home.startNarrationShelf")
                 Spacer()
+                Button(showAbout ? "Less" : "About") {
+                    withAnimation(.easeInOut(duration: 0.2)) { showAbout.toggle() }
+                }
+                .buttonStyle(.plain)
+                .scaledFont(size: 12, weight: .medium)
+                .foregroundStyle(Palette.ink3)
+                .accessibilityIdentifier("narration.startAbout")
             }
 
-            Text("Record public-domain books. Contribute free to LibriVox and the Internet Archive — or bring your own book. Recording, LibriVox, and Internet Archive stay free forever.")
-                .scaledFont(size: 12.5)
-                .foregroundStyle(Palette.ink2)
-                .fixedSize(horizontal: false, vertical: true)
+            if showAbout {
+                Text("Record public-domain books. Contribute free to LibriVox and the Internet Archive — or bring your own book. Recording, LibriVox, and Internet Archive stay free forever.")
+                    .scaledFont(size: 12.5)
+                    .foregroundStyle(Palette.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             if !commercialIntroSeen {
                 VStack(alignment: .leading, spacing: 8) {
@@ -163,24 +173,6 @@ struct NarrationHomeShelf: View {
             .padding(.top, 12)
             .accessibilityIdentifier("narration.startNew")
 
-            Button(action: presentBrowse) {
-                Text("Browse community needs")
-                    .scaledFont(size: 14, weight: .heavy)
-                    .foregroundStyle(Palette.brass)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(Palette.brass.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [5])))
-            }
-            .tactileTap()
-            .padding(.top, 10)
-            .accessibilityIdentifier("myNarrations.newFromNeed")
-
-            if let featured = shelfPlan.featured {
-                featuredCard(featured)
-                    .padding(.top, 12)
-            }
-
             if showRails && !shelfPlan.short.isEmpty {
                 shortRail
             }
@@ -191,47 +183,6 @@ struct NarrationHomeShelf: View {
         .task { await discovery.refreshOnce() }
         .toolbar(.visible, for: .navigationBar)
         .navigationTitle("Narration")
-    }
-
-    @ViewBuilder
-    private func featuredCard(_ need: NarrationNeed) -> some View {
-        let actionable = need.recordableOniOS
-        Button {
-            if actionable { startProject(need) }
-        } label: {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(LinearGradient(colors: [NarrationPalette.umber, NarrationPalette.sand], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    Text("🎙️").scaledFont(size: 26)
-                }
-                .frame(width: 56, height: 56)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        GradeBadge(grade: need.work.grade)
-                        Text("Public domain · US").scaledFont(size: 10).foregroundStyle(Palette.ink3)
-                    }
-                    Text(need.work.title)
-                        .scaledFont(size: 16, weight: .heavy)
-                        .foregroundStyle(Palette.ink)
-                        .lineLimit(2)
-                        .accessibilityIdentifier("needs.featured.title")
-                    Text("\(need.work.author) · \(shortDuration(need.work.estSeconds)) · one tap to record")
-                        .scaledFont(size: 11.5)
-                        .foregroundStyle(Palette.ink2)
-                }
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(Palette.brass)
-            }
-            .padding(14)
-            .glassSurface(cornerRadius: 20)
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.brass.opacity(0.4), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .tactileTap()
-        .accessibilityIdentifier("needs.featured")
     }
 
     private var shortRail: some View {
@@ -512,10 +463,6 @@ struct MyNarrationsSection: View {
                 actionIdentifier: "myNarrations.edit"
             )
 
-            Text("Record short works and whole books directly on iPhone.")
-                .scaledFont(size: 12.5)
-                .foregroundStyle(Palette.ink2)
-
             let projects = orderedProjects
             if projects.isEmpty {
                 EmptyStatePanel(
@@ -569,8 +516,7 @@ struct MyNarrationsSection: View {
         }
         // NOTE: no accessibilityIdentifier on this container — a plain VStack
         // with one overrides every child's identifier (SwiftUI quirk), which
-        // would make `myNarrations.project.*` / `myNarrations.newFromNeed`
-        // unreachable from UI tests.
+        // would make `myNarrations.project.*` unreachable from UI tests.
         .navigationDestination(isPresented: dashboardBinding) {
             if let dashboardProject {
                 ProjectDashboardView(project: dashboardProject)

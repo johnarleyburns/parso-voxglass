@@ -11,7 +11,6 @@ struct BrowseView: View {
     @StateObject private var coverStore = CollectionCoverStore(artwork: ArtworkService.shared)
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
-    @State private var isDescriptionExpanded = false
     @State private var showDownloadAllAlert = false
     @State private var importingIdentifier: String?
     // Advanced catalog filters belong to this discovery surface only. Do not
@@ -115,14 +114,28 @@ struct BrowseView: View {
             .frame(height: 46)
             .glassSurface(cornerRadius: 20)
 
-            HStack(spacing: 8) {
-                if let selectedCollection {
-                    FilterChip(title: selectedCollection.title, isSelected: true) {
+            if let selectedCollection {
+                HStack(spacing: 8) {
+                    FilterChip(title: selectedCollection.title, isSelected: true, height: 34) {
                         self.selectedCollection = nil
                         catalogStore.resetResultsForNavigation()
                     }
-                }
+                    .accessibilityIdentifier("discover.selectedCollection")
 
+                    Spacer(minLength: 0)
+
+                    Button(showAdvanced ? "Less" : "About") {
+                        withAnimation(.easeInOut(duration: 0.2)) { showAdvanced.toggle() }
+                    }
+                    .buttonStyle(.plain)
+                    .scaledFont(size: 12, weight: .medium)
+                    .foregroundStyle(Palette.ink3)
+                    .frame(height: 34)
+                    .accessibilityIdentifier("discover.collectionAbout")
+                }
+            }
+
+            HStack(spacing: 8) {
                 Menu {
                     Picker("Search in", selection: $searchScope) {
                     ForEach(DiscoverSearchScope.allCases) { scope in
@@ -148,19 +161,10 @@ struct BrowseView: View {
                         .scaledFont(size: 12, weight: .semibold)
                         .foregroundStyle(Palette.brass)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
+                        .frame(height: 34)
                         .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
                 }
                 .accessibilityIdentifier("discover.filterMenu")
-
-                if selectedCollection != nil {
-                    Button(showAdvanced ? "Less" : "About") {
-                        withAnimation(.easeInOut(duration: 0.2)) { showAdvanced.toggle() }
-                    }
-                    .buttonStyle(.plain)
-                    .scaledFont(size: 12, weight: .medium)
-                    .foregroundStyle(Palette.ink3)
-                }
                 Spacer()
             }
         }
@@ -169,105 +173,111 @@ struct BrowseView: View {
     private var collectionShelves: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Featured Collections")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)) { collection in
-                        Button {
-                            search(collection)
-                        } label: {
-                            ExploreCollectionCard(
-                                collection: collection,
-                                resolvedCoverURL: coverStore.coverURL(for: collection),
-                                approximateCount: coverStore.count(for: collection),
-                                isSelected: selectedCollection?.id == collection.id
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(collection.title)
+            VStack(spacing: 10) {
+                ForEach(IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)) { collection in
+                    Button {
+                        search(collection)
+                    } label: {
+                        ExploreCollectionCard(
+                            collection: collection,
+                            resolvedCoverURL: coverStore.coverURL(for: collection),
+                            approximateCount: coverStore.count(for: collection),
+                            isSelected: selectedCollection?.id == collection.id
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(collection.title)
+                    .accessibilityIdentifier("discover.collection.\(collection.id)")
                 }
-                .padding(.horizontal, 2)
-                .padding(.vertical, 2)
             }
         }
     }
 
     @ViewBuilder
     private var catalogResults: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            SectionTitle(title: resultsTitle)
-            if selectedCollection != nil {
-                if showAdvanced, selectedCollection?.isCurated == true {
-                    curatedStatusBanner
-                    downloadAllButton
-                }
-                if showAdvanced, let collection = selectedCollection, collection.hasDescription {
-                    collectionDescriptionView(collection)
-                }
-            }
-
-            if catalogStore.results.isEmpty {
-                if catalogStore.isSearching {
-                    HStack(spacing: 12) {
-                        ProgressView()
-                        Text("Searching LibriVox")
-                            .scaledFont(size: 14)
-                            .foregroundStyle(Palette.ink2)
+        if hasActiveCatalogResultsSurface {
+            VStack(alignment: .leading, spacing: 6) {
+                SectionTitle(title: resultsTitle)
+                if selectedCollection != nil {
+                    if showAdvanced, selectedCollection?.isCurated == true {
+                        curatedStatusBanner
+                        downloadAllButton
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .glassSurface(cornerRadius: 14)
-                } else {
-                    EmptyStatePanel(
-                        title: catalogStore.query.isEmpty ? "Browse Featured Collections" : "No Results Yet",
-                        message: catalogStore.query.isEmpty
-                            ? "Choose a Featured Collection or search above to find a book."
-                            : "Try a different title, author, or narrator.",
-                        systemImage: "square.stack"
-                    )
+                    if showAdvanced, let collection = selectedCollection, collection.hasDescription {
+                        collectionDescriptionView(collection)
+                    }
                 }
-            } else {
-                let results = soloOnly
-                    ? catalogStore.results.filter { $0.narrationKind == .solo }
-                    : catalogStore.results
-                if results.isEmpty && soloOnly {
-                    EmptyStatePanel(
-                        title: "No Solo Narration Results",
-                        message: "Try turning off the solo filter to see more audiobooks.",
-                        systemImage: "mic"
-                    )
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(results.indices, id: \.self) { index in
-                            let result = results[index]
-                            Button {
-                                Task { await presentResult(result) }
-                            } label: {
-                                InternetArchiveResultRow(
-                                    result: result,
-                                    style: .grouped,
-                                    isLoading: importingIdentifier == result.identifier
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("discover.result.\(result.identifier)")
-                            .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
-                            .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
 
-                            if index < results.count - 1 {
-                                VoxglassListDivider()
+                if catalogStore.results.isEmpty {
+                    if catalogStore.isSearching {
+                        HStack(spacing: 12) {
+                            ProgressView()
+                            Text("Searching LibriVox")
+                                .scaledFont(size: 14)
+                                .foregroundStyle(Palette.ink2)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .glassSurface(cornerRadius: 14)
+                    } else {
+                        EmptyStatePanel(
+                            title: catalogStore.query.isEmpty ? "No Books Yet" : "No Results Yet",
+                            message: catalogStore.query.isEmpty
+                                ? "Try another collection or search above."
+                                : "Try a different title, author, or narrator.",
+                            systemImage: "square.stack"
+                        )
+                    }
+                } else {
+                    let results = soloOnly
+                        ? catalogStore.results.filter { $0.narrationKind == .solo }
+                        : catalogStore.results
+                    if results.isEmpty && soloOnly {
+                        EmptyStatePanel(
+                            title: "No Solo Narration Results",
+                            message: "Try turning off the solo filter to see more audiobooks.",
+                            systemImage: "mic"
+                        )
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(results.indices, id: \.self) { index in
+                                let result = results[index]
+                                Button {
+                                    Task { await presentResult(result) }
+                                } label: {
+                                    InternetArchiveResultRow(
+                                        result: result,
+                                        style: .grouped,
+                                        isLoading: importingIdentifier == result.identifier
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("discover.result.\(result.identifier)")
+                                .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
+                                .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
+
+                                if index < results.count - 1 {
+                                    VoxglassListDivider()
+                                }
                             }
                         }
+                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                        .opacity(catalogStore.isSearching ? 0.5 : 1.0)
                     }
-                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
-                    .opacity(catalogStore.isSearching ? 0.5 : 1.0)
-                }
 
-                if catalogStore.hasMore {
-                    loadMoreButton
+                    if catalogStore.hasMore {
+                        loadMoreButton
+                    }
                 }
             }
         }
+    }
+
+    private var hasActiveCatalogResultsSurface: Bool {
+        !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || selectedCollection != nil
+            || catalogStore.isSearching
+            || !catalogStore.results.isEmpty
     }
 
     private var resultsTitle: String {
@@ -275,7 +285,7 @@ struct BrowseView: View {
             return "Search Results"
         }
         if let selectedCollection { return selectedCollection.title }
-        return "Browse the catalog"
+        return "Search Results"
     }
 
     private var curatedStatusBanner: some View {
@@ -404,7 +414,6 @@ struct BrowseView: View {
     private func search(_ collection: IACollection) {
         selectedCollection = collection
         catalogStore.query = ""
-        isDescriptionExpanded = false
         showAdvanced = false
         let defaultSort = CatalogSort.defaultSort(for: collection)
         collectionSort = defaultSort
@@ -477,31 +486,12 @@ struct BrowseView: View {
                     .foregroundStyle(Palette.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isDescriptionExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(isDescriptionExpanded ? "Less" : "More About this Collection")
-                        .scaledFont(size: 12, weight: .medium)
-                    Image(systemName: isDescriptionExpanded ? "chevron.up" : "chevron.right")
-                        .scaledFont(size: 10, weight: .bold)
-                }
-                .foregroundStyle(Palette.brass)
-            }
-            .buttonStyle(.plain)
-
-            if isDescriptionExpanded {
-                Text(collection.description)
-                    .scaledFont(size: 12)
-                    .foregroundStyle(Palette.ink2)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 2)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            Text(collection.description)
+                .scaledFont(size: 12)
+                .foregroundStyle(Palette.ink2)
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
         }
         .padding(12)
         .glassSurface(cornerRadius: 12)
@@ -542,42 +532,48 @@ private struct ExploreCollectionCard: View {
     var isSelected: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack(alignment: .top) {
-                CollectionArtworkView(
-                    title: collection.title,
-                    systemImage: collection.systemImage,
-                    assetName: collection.assetName,
-                    remoteImageURL: resolvedCoverURL
-                )
-                .frame(width: 190, height: 190)
+        GeometryReader { proxy in
+            HStack(spacing: 12) {
+                ZStack(alignment: .top) {
+                    CollectionArtworkView(
+                        title: collection.title,
+                        systemImage: collection.systemImage,
+                        assetName: collection.assetName,
+                        remoteImageURL: resolvedCoverURL
+                    )
 
-                if collection.isCurated {
-                    curatedBadge
+                    if collection.isCurated {
+                        curatedBadge
+                    }
                 }
+                .frame(width: proxy.size.width * 0.42, height: 112)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(collection.title)
+                        .scaledFont(size: 15, weight: .bold)
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("collection.title")
+
+                    Text(collection.subtitle)
+                        .scaledFont(size: 11.5)
+                        .foregroundStyle(Palette.ink3)
+                        .lineLimit(3)
+
+                    if let caption = approximateCountCaption {
+                        Text(caption)
+                            .scaledFont(size: 11, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            Text(collection.title)
-                .scaledFont(size: 14, weight: .bold)
-                .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .frame(width: 190, alignment: .leading)
-
-            Text(collection.subtitle)
-                .scaledFont(size: 11.5)
-                .foregroundStyle(Palette.ink3)
-                .lineLimit(2)
-                .frame(width: 190, alignment: .leading)
-
-            if let caption = approximateCountCaption {
-                Text(caption)
-                    .scaledFont(size: 11, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-                    .frame(width: 190, alignment: .leading)
-            }
+            .padding(10)
         }
-        .frame(width: 190, alignment: .topLeading)
-        .padding(10)
+        .frame(maxWidth: .infinity)
+        .frame(height: 132)
         .glassSurface(cornerRadius: 14)
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)

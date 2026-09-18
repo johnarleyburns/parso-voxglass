@@ -70,6 +70,9 @@ struct VoxglassScreen<Content: View>: View {
     var headerSecondaryActionSystemImage: String?
     var headerSecondaryAction: (() -> Void)?
     var headerSecondaryActionAccessibilityLabel: String?
+    /// Screens with more than two compact actions can provide one composed
+    /// trailing group while keeping the shared title/header geometry.
+    var headerTrailingContent: AnyView? = nil
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -120,6 +123,9 @@ struct VoxglassScreen<Content: View>: View {
                                     .frame(width: 36, height: 36)
                                     .contentShape(Rectangle())
                                     .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
+                            }
+                            if let headerTrailingContent {
+                                headerTrailingContent
                             }
                         }
                         .padding(.horizontal, 2)

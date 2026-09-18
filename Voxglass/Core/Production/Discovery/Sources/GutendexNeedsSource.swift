@@ -1,5 +1,42 @@
 import Foundation
 
+/// Normalizes the two forms accepted by the Project Gutenberg importer:
+/// an ebook number or a gutenberg.org URL. Keeping this in the core discovery
+/// module makes the URL contract testable without constructing the recording
+/// flow or touching the network.
+public enum GutenbergInput {
+    public static func ebookID(from rawValue: String) -> String? {
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+
+        if value.allSatisfy(\.isNumber) {
+            return value
+        }
+
+        let candidate = value.lowercased().hasPrefix("http://") || value.lowercased().hasPrefix("https://")
+            ? value
+            : "https://\(value)"
+        guard let url = URL(string: candidate),
+              let host = url.host?.lowercased(),
+              host == "gutenberg.org" || host.hasSuffix(".gutenberg.org") else {
+            return nil
+        }
+
+        let components = url.path.split(separator: "/").map(String.init)
+        if let ebooksIndex = components.firstIndex(where: { $0.lowercased() == "ebooks" }),
+           components.indices.contains(ebooksIndex + 1),
+           components[ebooksIndex + 1].allSatisfy(\.isNumber) {
+            return components[ebooksIndex + 1]
+        }
+        if let epubIndex = components.firstIndex(where: { $0.lowercased() == "epub" }),
+           components.indices.contains(epubIndex + 1),
+           components[epubIndex + 1].allSatisfy(\.isNumber) {
+            return components[epubIndex + 1]
+        }
+        return components.first(where: { $0.allSatisfy(\.isNumber) })
+    }
+}
+
 /// L2 — Gutendex (NARRATION_NEEDS_SPEC §3.1): `GET gutendex.com/books?copyright=false&languages=en&topic=…&sort=popular`.
 /// `copyright=false` guarantees US-PD by query. `formats` yields the citable
 /// `sourcePageURL` + EPUB URL. Short/poetry works classify `.short`; prose

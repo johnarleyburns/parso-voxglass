@@ -73,6 +73,57 @@ The opening is: *the same catalog in a player that respects you*.
 The pre-release plan is tracked in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md). The competitive gap
 plan in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md) is substantially complete.
 
+## Build and verification
+
+Run the host package tests during development and before committing:
+
+```sh
+swift test
+```
+
+To build the iPhone app, use the `Voxglass` scheme with a concrete iOS Simulator destination:
+
+```sh
+xcodebuild \
+  -project Voxglass.xcodeproj \
+  -scheme Voxglass \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+  -derivedDataPath /tmp/voxglass-derived \
+  build CODE_SIGNING_ALLOWED=NO
+```
+
+The iPhone scheme embeds the Apple Watch app. Do not add `-sdk iphonesimulator` to this command:
+that global SDK override is also applied to the Watch dependency and makes valid WatchKit source
+fail as though it were iOS code. Do not use `generic/platform=iOS Simulator` for this combined
+scheme because its asset-thinning step can evaluate the Watch icon catalog as an iPhone catalog.
+
+Build the Watch app independently with its Watch scheme and a concrete Watch Simulator destination:
+
+```sh
+xcodebuild \
+  -project Voxglass.xcodeproj \
+  -scheme VoxglassWatch \
+  -destination 'platform=watchOS Simulator,name=Voxglass-Agent-Watch,OS=latest' \
+  -derivedDataPath /tmp/voxglass-watch-derived \
+  build CODE_SIGNING_ALLOWED=NO
+```
+
+Simulator names vary by machine. Discover valid destinations with:
+
+```sh
+xcodebuild -project Voxglass.xcodeproj -showdestinations -scheme Voxglass
+xcodebuild -project Voxglass.xcodeproj -showdestinations -scheme VoxglassWatch
+```
+
+Before a release, run the local iPhone and Watch smoke suite:
+
+```sh
+scripts/test.sh --all
+```
+
+The commit hook runs `swift test` only. Simulator smoke tests are release verification and CI
+coverage, not part of every commit.
+
 ## Manual regression testing before release
 
 The navigation simplification research and implementation plan is documented in [`docs/plans/navigation-redesign/SIMPLIFICATION_PLAN.md`](docs/plans/navigation-redesign/SIMPLIFICATION_PLAN.md).

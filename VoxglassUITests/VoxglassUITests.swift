@@ -118,44 +118,22 @@ final class VoxglassUITests: XCTestCase {
         app.buttons["Done"].tap()
         app.buttons["Close"].tap()
 
-        // Community needs remain available as a clearly-labelled secondary path.
-        app.buttons["myNarrations.newFromNeed"].tap()
+        // Community needs remain available from the New Narration flow.
+        app.buttons["import.fromNeed"].tap()
         XCTAssertTrue(
             app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
-            "Start a Narration → See All did not open Narration Needs.\n\(app.debugDescription)"
+            "New Narration → Browse narration needs did not open Narration Needs.\n\(app.debugDescription)"
         )
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        let newFromNeed = app.buttons["myNarrations.newFromNeed"]
-        XCTAssertTrue(newFromNeed.waitForExistence(timeout: 10), "New narration action was not reachable.")
-        newFromNeed.tap()
+        let firstNeed = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'need.startNarrating.'")).firstMatch
         XCTAssertTrue(
-            app.staticTexts["Narration Needs"].waitForExistence(timeout: 10),
-            "New Narration → From a Narration Need did not open Narration Needs.\n\(app.debugDescription)"
+            firstNeed.waitForExistence(timeout: 30),
+            "Narration need not found in the full needs browser.\n\(app.debugDescription)"
         )
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-
-        let featuredNeed = app.buttons["needs.featured"]
-        for _ in 0..<8 where !featuredNeed.exists {
+        for _ in 0..<4 where firstNeed.exists && !firstNeed.isHittable {
             app.swipeUp()
-            _ = featuredNeed.waitForExistence(timeout: 2)
+            _ = firstNeed.waitForExistence(timeout: 2)
         }
-        XCTAssertTrue(
-            featuredNeed.waitForExistence(timeout: 30),
-            "Featured narration need not found after ladder load.\n\(app.debugDescription)"
-        )
-        assertNarrationRailSpacing(app: app)
-        let featuredTitle = app.staticTexts["needs.featured.title"]
-        XCTAssertTrue(featuredTitle.exists, "Featured narration title not found.\n\(app.debugDescription)")
-        XCTAssertEqual(
-            app.staticTexts.matching(NSPredicate(format: "label == %@", featuredTitle.label)).count,
-            1,
-            "Featured narration title was repeated in a home rail.\n\(app.debugDescription)"
-        )
-        for _ in 0..<4 where featuredNeed.exists && !featuredNeed.isHittable {
-            app.swipeUp()
-            _ = featuredNeed.waitForExistence(timeout: 2)
-        }
-        featuredNeed.tap()
+        firstNeed.tap()
 
         XCTAssertTrue(
             app.descendants(matching: .any)["record.teleprompter"].waitForExistence(timeout: 10),
@@ -388,9 +366,6 @@ final class VoxglassUITests: XCTestCase {
         let shelf = app.descendants(matching: .any)["home.startNarrationShelf"]
         let shortRail = app.descendants(matching: .any)["needs.rail.short"]
         let longRail = app.descendants(matching: .any)["needs.rail.long"]
-        let featured = app.buttons["needs.featured"]
-        let tagline = app.staticTexts["Lend your voice to the public domain."]
-
         func assertRail(_ rail: XCUIElement, preceding: XCUIElement, name: String) {
             guard rail.exists else { return }
             XCTAssertTrue(rail.frame.minY > preceding.frame.maxY,
@@ -398,9 +373,8 @@ final class VoxglassUITests: XCTestCase {
         }
 
         XCTAssertTrue(shelf.exists, "Narration shelf disappeared before spacing assertion.")
-        let firstPreceding = featured.exists ? featured : tagline
-        assertRail(shortRail, preceding: firstPreceding, name: "Short Works")
-        assertRail(longRail, preceding: shortRail.exists ? shortRail : firstPreceding, name: "Long Works")
+        assertRail(shortRail, preceding: shelf, name: "Short Works")
+        assertRail(longRail, preceding: shortRail.exists ? shortRail : shelf, name: "Long Works")
     }
 
     /// User-reported: tapping Settings from the Listen tab crashes the app.

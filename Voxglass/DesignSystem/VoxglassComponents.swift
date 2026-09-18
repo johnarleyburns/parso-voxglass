@@ -37,6 +37,7 @@ struct FilterChip: View {
     var title: String
     var systemImage: String?
     var isSelected: Bool
+    var height: CGFloat = 44
     var action: () -> Void
 
     var body: some View {
@@ -51,7 +52,7 @@ struct FilterChip: View {
                     .lineLimit(1)
             }
             .padding(.horizontal, 14)
-            .frame(height: 44)
+            .frame(height: height)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink)
             .background {
                 Capsule()

@@ -9,9 +9,43 @@ public final class LibraryStore: ObservableObject {
     @Published public private(set) var isImporting = false
     @Published public var importError: String?
 
-    /// P1-2: in-memory filter + sort. Changing these recomputes `visibleBooks`
-    /// with zero DB round-trips.
-    @Published public var filter: LibraryBookFilter = .all
+    /// P1-2: in-memory primary scope + sort. Changing these recomputes
+    /// `visibleBooks` with zero DB round-trips. Advanced My Books refinements
+    /// remain independent so the segmented progress control always has a
+    /// selected value.
+    @Published public var progressFilter: LibraryProgressFilter = .all
+    @Published public var favoriteOnly = false
+    @Published public var downloadedOnly = false
+    /// Legacy mixed filter retained for non-UI callers. New UI code should use
+    /// `progressFilter`, `favoriteOnly`, and `downloadedOnly` separately.
+    @Published public var filter: LibraryBookFilter = .all {
+        didSet {
+            switch filter {
+            case .all:
+                progressFilter = .all
+                favoriteOnly = false
+                downloadedOnly = false
+            case .favorites:
+                progressFilter = .all
+                favoriteOnly = true
+                downloadedOnly = false
+            case .downloaded:
+                progressFilter = .all
+                favoriteOnly = false
+                downloadedOnly = true
+            case .finished:
+                progressFilter = .finished
+                favoriteOnly = false
+                downloadedOnly = false
+            case .inProgress:
+                progressFilter = .inProgress
+                favoriteOnly = false
+                downloadedOnly = false
+            case .source:
+                break
+            }
+        }
+    }
     @Published public var sort: LibrarySort = .recent
     @Published public private(set) var progressByBook: [UUID: BookProgress] = [:]
     @Published public private(set) var listenedWorkExclusionKeys: Set<String> = []
@@ -24,19 +58,8 @@ public final class LibraryStore: ObservableObject {
         // `book(withID:)`, just not surfaced in this list.
         var result = books.filter { !$0.book.isPending }
 
-        switch filter {
+        switch progressFilter {
         case .all: break
-        case .favorites:
-            result = result.filter(\.book.isFavorite)
-        case .source(let sourceID):
-            result = result.filter { $0.book.sourceID == sourceID }
-        case .downloaded:
-            // Keep the in-memory view consistent with the My Books UI: only
-            // fully cached books belong in the Downloaded refinement. The
-            // repository's async filter remains available for non-UI callers,
-            // while this path stays responsive and updates as the manager's
-            // published state changes.
-            result = result.filter { offlineManager?.state(for: $0.book.id) == .cached }
         case .finished:
             result = result.filter { progressByBook[$0.book.id]?.isFinished == true }
         case .inProgress:
@@ -44,6 +67,18 @@ public final class LibraryStore: ObservableObject {
                 guard let p = progressByBook[$0.book.id] else { return false }
                 return !p.isFinished && p.lastPosition > 0
             }
+        }
+
+        if favoriteOnly {
+            result = result.filter(\.book.isFavorite)
+        }
+        if downloadedOnly {
+            // Keep the in-memory view consistent with the My Books UI: only
+            // fully cached books belong in the Downloaded refinement. The
+            // repository's async filter remains available for non-UI callers,
+            // while this path stays responsive and updates as the manager's
+            // published state changes.
+            result = result.filter { offlineManager?.state(for: $0.book.id) == .cached }
         }
 
         result.sort(by: sort.comparator())

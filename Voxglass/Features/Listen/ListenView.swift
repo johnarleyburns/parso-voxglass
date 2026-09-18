@@ -23,7 +23,6 @@ struct ListenView: View {
     var body: some View {
         VoxglassScreen(title: "Listen") {
             VStack(alignment: .leading, spacing: 22) {
-                hero
                 continueListening
                 jumpBackIn
                 recommended
@@ -150,24 +149,6 @@ struct ListenView: View {
                 .accessibilityLabel("\(continueActionLabel(for: book)) \(book.book.title)")
                 .accessibilityHint("Opens the player")
             }
-        }
-    }
-
-    /// Shown only until the user's first listen — a welcome, not a permanent
-    /// masthead. Once there's any listening history it gives way to the
-    /// content shelves below instead of pushing them down every time.
-    @ViewBuilder
-    private var hero: some View {
-        if statsTotalTime <= 0 {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Good listening")
-                    .scaledFont(size: 31, weight: .heavy)
-                    .foregroundStyle(Palette.ink)
-                Text("Public-domain audiobooks, private by default.")
-                    .scaledFont(size: 14)
-                    .foregroundStyle(Palette.ink2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

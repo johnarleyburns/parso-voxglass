@@ -39,5 +39,17 @@ import Foundation
         store.sort = .title
         // With an empty DB, visibleBooks must stay empty.
         #expect(store.visibleBooks.isEmpty)
+        #expect(store.progressFilter == .all)
+        #expect(store.favoriteOnly)
+
+        store.progressFilter = .finished
+        store.downloadedOnly = true
+        #expect(store.progressFilter == .finished)
+        #expect(store.downloadedOnly)
+
+        store.filter = .all
+        #expect(store.progressFilter == .all)
+        #expect(!store.favoriteOnly)
+        #expect(!store.downloadedOnly)
     }
 }

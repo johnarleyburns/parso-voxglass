@@ -1041,7 +1041,10 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             importError = "Enter a gutenberg.org link or ebook number."
             return
         }
-        let ebookID = id.contains("gutenberg.org") ? (URL(string: id)?.lastPathComponent ?? id) : id
+        guard let ebookID = GutenbergInput.ebookID(from: id) else {
+            importError = "Enter a Gutenberg ebook number or a gutenberg.org link."
+            return
+        }
         guard let url = URL(string: "https://www.gutenberg.org/cache/epub/\(ebookID)/pg\(ebookID).txt") else {
             importError = "Couldn't build a Gutenberg URL."
             return
@@ -3262,7 +3265,7 @@ struct WorkImportView: View {
                     .scaledFont(size: 13)
                     .foregroundStyle(Palette.ink2)
 
-                importOption(icon: "🎙️", title: "From a Narration Need", tag: "Recommended", caption: "This week's poem, or a work that needs a reader", id: "import.fromNeed") {
+                importOption(icon: "🎙️", title: "Browse narration needs", tag: "Recommended", caption: "Find a public-domain work that needs a reader", id: "import.fromNeed") {
                     showNeedsPicker = true
                 }
                 importOption(icon: "📝", title: "Paste text", caption: "Paste a poem or short piece", id: "import.paste") {
@@ -3500,31 +3503,18 @@ struct WorkImportView: View {
 
 private struct NeedPickerSheet: View {
     @Bindable var model: NarrationFlowModel
-    @Environment(DiscoveryEnvironment.self) private var discovery
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            let needs = discovery.needs.filter { $0.recordableOniOS }
-            List {
-                if needs.isEmpty {
-                    Text("No ready-to-record needs with embedded text right now — try Paste text.")
-                }
-                ForEach(needs.prefix(20)) { need in
-                    Button {
-                        model.importNeed(need)
-                        dismiss()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(need.work.title).font(.headline)
-                            Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("From a Need")
+            NarrationNeedsView(startProject: { need in
+                model.importNeed(need)
+                dismiss()
+            })
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
             }
         }
         .presentationDetents([.medium, .large])

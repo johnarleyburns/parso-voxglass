@@ -83,4 +83,89 @@ import VoxglassCoreTestSupport
         #expect(needs.count == 1)
         #expect(needs.first!.work.sourcePageURL?.path.contains("pg1.txt") == true)
     }
+
+    @Test func fetchesProjectGutenbergBookThroughGutendex() async throws {
+        let json = """
+        {
+          "count": 1,
+          "results": [
+            {
+              "id": 1342,
+              "title": "Pride and Prejudice",
+              "authors": [ { "name": "Austen, Jane" } ],
+              "bookshelves": ["Romance", "Fiction"],
+              "languages": ["en"],
+              "copyright": false,
+              "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/1342",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/cache/epub/1342/pg1342.txt"
+              }
+            }
+          ]
+        }
+        """
+        let fetcher = StubFetcher(
+            url: source.endpoint,
+            data: Data(json.utf8),
+            finalURL: source.endpoint
+        )
+
+        let needs = try await source.fetch(using: fetcher, clock: FixedClock())
+        let request = fetcher.recordedRequests.first!
+        let query = Dictionary(
+            uniqueKeysWithValues: URLComponents(url: request, resolvingAgainstBaseURL: false)?.queryItems?.map { ($0.name, $0.value ?? "") } ?? []
+        )
+
+        #expect(query["copyright"] == "false")
+        #expect(query["languages"] == "en")
+        #expect(query["sort"] == "popular")
+        #expect(needs.count == 1)
+        #expect(needs.first?.work.title == "Pride and Prejudice")
+        #expect(needs.first?.work.author == "Jane Austen")
+        #expect(needs.first?.work.sourcePageURL?.absoluteString == "https://www.gutenberg.org/ebooks/1342")
+        #expect(needs.first?.provenance.sources.contains(.gutendex) == true)
+    }
+
+    @Test func normalizesProjectGutenbergInputs() {
+        #expect(GutenbergInput.ebookID(from: "1342") == "1342")
+        #expect(GutenbergInput.ebookID(from: "https://www.gutenberg.org/ebooks/1342/") == "1342")
+        #expect(GutenbergInput.ebookID(from: "www.gutenberg.org/cache/epub/1342/pg1342.txt") == "1342")
+        // “Project Gutenberg” is a source label, not an ebook identifier. It
+        // must produce a useful validation message rather than a malformed URL.
+        #expect(GutenbergInput.ebookID(from: "project gutenberg") == nil)
+    }
+
+    @Test func nonOKGutendexResponseIsReported() async throws {
+        let fetcher = StubFetcher(
+            url: source.endpoint,
+            data: Data(),
+            statusCode: 503,
+            finalURL: source.endpoint
+        )
+
+        do {
+            _ = try await source.fetch(using: fetcher, clock: FixedClock())
+            Issue.record("Expected Gutendex HTTP status to throw")
+        } catch let error as HTTPFetchError {
+            #expect(error == .httpStatus(503))
+        }
+    }
+
+    @Test func emptyGutendexResponseIsAValidEmptyResult() async throws {
+        let json = "{ \"count\": 0, \"results\": [] }"
+        let fetcher = StubFetcher(url: source.endpoint, data: Data(json.utf8))
+        let needs = try await source.fetch(using: fetcher, clock: FixedClock())
+        #expect(needs.isEmpty)
+    }
+
+    @Test func malformedGutendexResponseIsReported() async throws {
+        let fetcher = StubFetcher(url: source.endpoint, data: Data("not json".utf8))
+
+        do {
+            _ = try await source.fetch(using: fetcher, clock: FixedClock())
+            Issue.record("Expected malformed Gutendex JSON to throw")
+        } catch {
+            #expect(error is DecodingError)
+        }
+    }
 }

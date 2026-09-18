@@ -9,6 +9,14 @@ public enum LibraryBookFilter: Equatable, Hashable, Sendable {
     case inProgress
 }
 
+/// The primary My Books scope. Refinements such as Favorites and Downloaded
+/// are intentionally independent of this radio-style selection.
+public enum LibraryProgressFilter: Equatable, Hashable, Sendable {
+    case all
+    case inProgress
+    case finished
+}
+
 public enum LibrarySort: Equatable, Sendable {
     case recent
     case title
