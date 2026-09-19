@@ -71,7 +71,7 @@ public struct ChunkedRenderCoordinator: Sendable {
         // used while rendering must not be. Parallel renders of equivalent
         // projects (including test runs) otherwise race while moving/removing
         // the same file from the shared temporary directory.
-        let runID = UUID().uuidString
+        let runID = UUID().uuidString // determinism-exempt: transient temp filename, never persisted
 
         for (index, chapter) in chapters.enumerated() {
             try Task.checkCancellation()

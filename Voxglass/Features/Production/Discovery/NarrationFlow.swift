@@ -3568,19 +3568,20 @@ private struct PasteSheet: View {
 /// tests and the generation guards prevent an older request from overwriting
 /// a newer search or LibriVox check.
 @MainActor
-private final class GutenbergSearchModel: ObservableObject {
-    @Published var query = ""
-    @Published private(set) var results: [GutendexBook] = []
-    @Published private(set) var selectedBook: GutendexBook?
-    @Published private(set) var isSearching = false
-    @Published private(set) var isLoadingMore = false
-    @Published var errorMessage: String?
-    @Published private(set) var nextPage = 1
-    @Published private(set) var hasMore = false
-    @Published private(set) var matchCandidates: [LibriVoxMatchRanker.Candidate] = []
-    @Published private(set) var isCheckingLibriVox = false
-    @Published private(set) var didCheckLibriVox = false
-    @Published private(set) var matchError: String?
+@Observable
+private final class GutenbergSearchModel {
+    var query = ""
+    private(set) var results: [GutendexBook] = []
+    private(set) var selectedBook: GutendexBook?
+    private(set) var isSearching = false
+    private(set) var isLoadingMore = false
+    var errorMessage: String?
+    private(set) var nextPage = 1
+    private(set) var hasMore = false
+    private(set) var matchCandidates: [LibriVoxMatchRanker.Candidate] = []
+    private(set) var isCheckingLibriVox = false
+    private(set) var didCheckLibriVox = false
+    private(set) var matchError: String?
 
     private let gutendex: GutendexSearchClient
     private let fetcher: any HTTPFetching
@@ -3704,7 +3705,7 @@ private struct GutenbergSheet: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
-    @StateObject private var searchState: GutenbergSearchModel
+    @State private var searchState: GutenbergSearchModel
     @State private var manualIdentifier = ""
     @State private var showManual = false
     @State private var isPickingBook = false
@@ -3718,7 +3719,7 @@ private struct GutenbergSheet: View {
         archiveClient: any InternetArchiveCatalogClient = InternetArchiveClient()
     ) {
         self.model = model
-        _searchState = StateObject(wrappedValue: GutenbergSearchModel(
+        _searchState = State(initialValue: GutenbergSearchModel(
             gutendex: gutendex,
             fetcher: fetcher,
             archiveClient: archiveClient
