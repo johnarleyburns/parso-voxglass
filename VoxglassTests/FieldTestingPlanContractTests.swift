@@ -21,14 +21,20 @@ import Testing
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         #expect(!discover.contains("Browse the catalog"))
         #expect(discover.contains("GeometryReader"))
-        #expect(discover.contains(".frame(height: 132)"))
+        #expect(discover.contains(".frame(height: 148)"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.searchButton\")"))
+        #expect(discover.contains("accessibilityIdentifier(\"discover.dismissKeyboard\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.filterButton\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.searchScope\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.scopePicker\")"))
         #expect(discover.contains("discover.collectionInfo."))
+        #expect(discover.contains("accessibilityIdentifier(\"discover.selectedCollectionAbout\")"))
         #expect(!discover.contains("discover.collectionAbout"))
         #expect(discover.contains(".accessibilityIdentifier(\"discover.selectedCollection\")"))
+
+        let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
+        #expect(theme.contains("scrollToTopTrigger"))
+        #expect(theme.contains(".scrollDismissesKeyboard(.interactively)"))
     }
 
     @Test func listenStartsWithActionableContent() throws {

@@ -28,6 +28,7 @@ struct BrowseView: View {
     var body: some View {
         VoxglassScreen(
             title: "Discover",
+            scrollToTopTrigger: AnyHashable(selectedCollection?.id ?? "discover.featured"),
             headerTrailingContent: AnyView(discoverHeaderActions)
         ) {
             VStack(alignment: .leading, spacing: 18) {
@@ -66,6 +67,15 @@ struct BrowseView: View {
             }
         } message: {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    searchFocused = false
+                }
+                .accessibilityIdentifier("discover.dismissKeyboard")
+            }
         }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
@@ -277,6 +287,20 @@ struct BrowseView: View {
             .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
             .accessibilityIdentifier("discover.selectedCollection")
 
+            Button {
+                showingCollectionInfo = collection
+            } label: {
+                Label("About", systemImage: "info.circle")
+                    .labelStyle(.titleAndIcon)
+                    .scaledFont(size: 13, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("discover.selectedCollectionAbout")
+
             Spacer(minLength: 0)
         }
     }
@@ -314,9 +338,6 @@ struct BrowseView: View {
                     if selectedCollection?.isCurated == true {
                         curatedStatusBanner
                         downloadAllButton
-                    }
-                    if let collection = selectedCollection, collection.hasDescription {
-                        collectionDescriptionView(collection)
                     }
                 }
 
@@ -372,6 +393,7 @@ struct BrowseView: View {
                                 }
                             }
                         }
+                        .padding(.top, 4)
                         .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
                         .opacity(catalogStore.isSearching ? 0.5 : 1.0)
                     }
@@ -614,27 +636,6 @@ struct BrowseView: View {
         }
     }
 
-    @ViewBuilder
-    private func collectionDescriptionView(_ collection: IACollection) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if !collection.summaryLine.isEmpty {
-                Text(collection.summaryLine)
-                    .scaledFont(size: 12)
-                    .foregroundStyle(Palette.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Text(collection.description)
-                .scaledFont(size: 12)
-                .foregroundStyle(Palette.ink2)
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 2)
-        }
-        .padding(12)
-        .glassSurface(cornerRadius: 12)
-        .padding(.bottom, 4)
-    }
-
     private var selectedCollectionIDs: Set<String> {
         AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)
     }
@@ -694,7 +695,7 @@ private struct ExploreCollectionCard: View {
                                 curatedBadge
                             }
                         }
-                        .frame(width: proxy.size.width * 0.42, height: 112)
+                        .frame(width: proxy.size.width * 0.42, height: 128)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                         VStack(alignment: .leading, spacing: 5) {
@@ -738,7 +739,7 @@ private struct ExploreCollectionCard: View {
             .padding(10)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 132)
+        .frame(height: 148)
         .glassSurface(cornerRadius: 14)
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)

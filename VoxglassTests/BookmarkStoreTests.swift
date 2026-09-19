@@ -67,6 +67,34 @@ import Foundation
         #expect(bm.id != nil)
     }
 
+    @Test func syncUpsertIgnoresUnknownBookAndChapterForeignKeys() async throws {
+        let store = try await makeStore()
+        let unknownBook = UUID()
+        let unknownChapter = UUID()
+        let bookmark = Bookmark(
+            id: UUID(),
+            bookID: unknownBook,
+            chapterID: unknownChapter,
+            position: 12,
+            note: "arrived before its book",
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        try await store.upsertFromSync([bookmark], forBookID: unknownBook)
+        #expect(try await store.allBookmarks().isEmpty)
+
+        let knownBookUnknownChapter = Bookmark(
+            id: UUID(),
+            bookID: bookID,
+            chapterID: unknownChapter,
+            position: 24,
+            note: "arrived before its chapter",
+            updatedAt: Date(timeIntervalSince1970: 200)
+        )
+        try await store.upsertFromSync([knownBookUnknownChapter], forBookID: bookID)
+        #expect(try await store.allBookmarks().isEmpty)
+    }
+
     @Test func migration5IsIdempotentAndBackfillsUpdatedAt() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "bm-mig-\(UUID().uuidString)")
         try await db.prepare()

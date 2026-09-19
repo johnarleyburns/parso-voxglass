@@ -211,7 +211,7 @@ enum BookListRowStyle {
 struct BookListRow: View {
     /// The row's own drawn height. Fixed so the two list screens that disable
     /// scrolling and size their `List` by row count stay in sync with it.
-    static let rowContentHeight: CGFloat = 96
+    static let rowContentHeight: CGFloat = 112
     /// Height one row occupies in a `List` — the drawn content plus the 5pt
     /// top + 5pt bottom `listRowInsets` both screens apply.
     static let fixedRowHeight: CGFloat = rowContentHeight + 10

@@ -8,8 +8,8 @@ import Testing
         let onboarding = try source("Voxglass/Features/Onboarding/OnboardingPreferencesView.swift")
 
         #expect(discover.contains("GeometryReader"))
-        #expect(discover.contains(".frame(width: proxy.size.width * 0.42, height: 112)"))
-        #expect(discover.contains(".frame(height: 132)"))
+        #expect(discover.contains(".frame(width: proxy.size.width * 0.42, height: 128)"))
+        #expect(discover.contains(".frame(height: 148)"))
         #expect(!(discover.contains(".frame(width: 190, height: 190)")))
         #expect(onboarding.contains(".frame(width: 170, height: 170)"))
         #expect(!(onboarding.contains(".frame(width: 170, height: 118)")))
@@ -40,7 +40,7 @@ import Testing
         // The row draws at a fixed height (not `minHeight`) so a row with the
         // extra narrator / watch-status lines can't overrun the space the
         // scroll-disabled list screens reserve for it.
-        #expect(components.contains("static let rowContentHeight: CGFloat = 96"))
+        #expect(components.contains("static let rowContentHeight: CGFloat = 112"))
         #expect(components.contains(".frame(height: BookListRow.rowContentHeight)"))
         #expect(!components.contains(".frame(minHeight: 76)"))
 

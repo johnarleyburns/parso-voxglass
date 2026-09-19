@@ -75,6 +75,11 @@ extension Color {
 struct VoxglassScreen<Content: View>: View {
     let title: String
     var embedsNavigationStack = true
+    /// A screen can change its primary content surface (for example, from
+    /// featured shelves to a collection result list). Resetting the shared
+    /// scroll position keeps the first item fully visible instead of
+    /// inheriting the previous surface's offset.
+    var scrollToTopTrigger: AnyHashable? = nil
     var headerActionTitle: String?
     var headerAction: (() -> Void)?
     var headerSecondaryActionTitle: String?
@@ -100,52 +105,65 @@ struct VoxglassScreen<Content: View>: View {
     private var screenContent: some View {
             ZStack {
                 VoxglassBackground()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text(title)
-                                .scaledFont(size: 31, weight: .heavy, design: .default)
-                                .foregroundStyle(Palette.ink)
-                            Spacer()
-                            // "Edit" (headerActionTitle) reads left-to-right
-                            // before "+" (headerSecondaryAction) — My Books
-                            // is the one screen combining both, and this is
-                            // the requested order for it; no other screen
-                            // uses both at once, so this ordering is safe
-                            // to apply globally.
-                            if let headerActionTitle, let headerAction {
-                                Button(headerActionTitle, action: headerAction)
-                                    .scaledFont(size: 15, weight: .semibold)
-                                    .foregroundStyle(Palette.brass)
-                            }
-                            if let headerSecondaryActionSystemImage, let headerSecondaryAction {
-                                Button(action: headerSecondaryAction) {
-                                    Image(systemName: headerSecondaryActionSystemImage)
-                                        .scaledFont(size: 18, weight: .semibold)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        Color.clear
+                            .frame(height: 1)
+                            .id("voxglass.screen.top")
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text(title)
+                                    .scaledFont(size: 31, weight: .heavy, design: .default)
+                                    .foregroundStyle(Palette.ink)
+                                Spacer()
+                                // "Edit" (headerActionTitle) reads left-to-right
+                                // before "+" (headerSecondaryAction) — My Books
+                                // is the one screen combining both, and this is
+                                // the requested order for it; no other screen
+                                // uses both at once, so this ordering is safe
+                                // to apply globally.
+                                if let headerActionTitle, let headerAction {
+                                    Button(headerActionTitle, action: headerAction)
+                                        .scaledFont(size: 15, weight: .semibold)
+                                        .foregroundStyle(Palette.brass)
                                 }
-                                .foregroundStyle(Palette.brass)
-                                .frame(width: 36, height: 36)
-                                .contentShape(Rectangle())
-                                .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? "Action")
-                            } else if let headerSecondaryActionTitle, let headerSecondaryAction {
-                                Button(headerSecondaryActionTitle, action: headerSecondaryAction)
-                                    .scaledFont(size: 22, weight: .semibold)
+                                if let headerSecondaryActionSystemImage, let headerSecondaryAction {
+                                    Button(action: headerSecondaryAction) {
+                                        Image(systemName: headerSecondaryActionSystemImage)
+                                            .scaledFont(size: 18, weight: .semibold)
+                                    }
                                     .foregroundStyle(Palette.brass)
                                     .frame(width: 36, height: 36)
                                     .contentShape(Rectangle())
-                                    .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
+                                    .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? "Action")
+                                } else if let headerSecondaryActionTitle, let headerSecondaryAction {
+                                    Button(headerSecondaryActionTitle, action: headerSecondaryAction)
+                                        .scaledFont(size: 22, weight: .semibold)
+                                        .foregroundStyle(Palette.brass)
+                                        .frame(width: 36, height: 36)
+                                        .contentShape(Rectangle())
+                                        .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
+                                }
+                                if let headerTrailingContent {
+                                    headerTrailingContent
+                                }
                             }
-                            if let headerTrailingContent {
-                                headerTrailingContent
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                        .padding(.top, 8)
+                            .padding(.horizontal, 2)
+                            .padding(.top, 8)
 
-                        content
+                            content
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, VoxglassLayout.scrollContentBottomPadding)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, VoxglassLayout.scrollContentBottomPadding)
+                    .scrollDismissesKeyboard(.interactively)
+                    .onChange(of: scrollToTopTrigger) { _, _ in
+                        guard scrollToTopTrigger != nil else { return }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            proxy.scrollTo("voxglass.screen.top", anchor: .top)
+                        }
+                    }
                 }
             }
     }

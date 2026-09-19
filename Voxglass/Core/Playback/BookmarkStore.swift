@@ -95,8 +95,26 @@ public struct SQLiteBookmarkStore: BookmarkStore {
 
     public func upsertFromSync(_ bookmarks: [Bookmark], forBookID bookID: UUID) async throws {
         try await database.prepare()
+
+        // A bookmark payload can arrive before its book/chapter payload on a
+        // new device, or can still contain IDs from the other device. Never
+        // pass those foreign IDs through to SQLite: the FK error used to abort
+        // the entire iCloud sync with "FOREIGN KEY constraint failed".
+        let bookRows = try await database.query(
+            "SELECT id FROM books WHERE id = ? LIMIT 1",
+            [.string(bookID.uuidString)]
+        )
+        guard !bookRows.isEmpty else { return }
+
+        let chapterRows = try await database.query(
+            "SELECT id FROM chapters WHERE book_id = ?",
+            [.string(bookID.uuidString)]
+        )
+        let localChapterIDs = Set(chapterRows.compactMap { $0.string("id") })
+
         for b in bookmarks {
             guard let id = b.id else { continue }
+            guard localChapterIDs.contains(b.chapterID.uuidString) else { continue }
             try await database.execute("""
             INSERT INTO bookmarks (id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)

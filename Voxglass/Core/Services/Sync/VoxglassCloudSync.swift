@@ -168,13 +168,25 @@ public final class VoxglassCloudSync: ObservableObject {
         guard isAvailable, isEnabled, let bmStore = bookmarkStore else { return }
         do {
             try await database.prepare()
-            let books = try await database.query("SELECT id FROM books")
+            let books = try await database.query("SELECT id, content_key FROM books")
             let kvs = self.store
             for bookRow in books {
                 guard let bookIDStr = bookRow.string("id"),
                       let bookID = UUID(uuidString: bookIDStr) else { continue }
                 let all = try await bmStore.bookmarksForSync(bookID: bookID)
                 guard !all.isEmpty else { continue }
+                let chapterRows = try await database.query(
+                    "SELECT id, content_key FROM chapters WHERE book_id = ?",
+                    [.string(bookIDStr)]
+                )
+                let chapterContentKeys = Dictionary(
+                    uniqueKeysWithValues: chapterRows.compactMap { row -> (String, String)? in
+                        guard let id = row.string("id"), let contentKey = row.string("content_key"), !contentKey.isEmpty else {
+                            return nil
+                        }
+                        return (id, contentKey)
+                    }
+                )
                 let maxUpdated = all.map(\.updatedAt.timeIntervalSince1970).max() ?? 0
                 let key = Key.bookmarksPrefix + bookIDStr
                 let storedVersion = kvs.longLong(forKey: key + Key.versionSuffix)
@@ -184,6 +196,8 @@ public final class VoxglassCloudSync: ObservableObject {
                     [
                         "id": b.id?.uuidString ?? "",
                         "chapter_id": b.chapterID.uuidString,
+                        "book_content_key": bookRow.string("content_key") ?? "",
+                        "chapter_content_key": chapterContentKeys[b.chapterID.uuidString] ?? "",
                         "position": b.position,
                         "note": b.note ?? "",
                         "created_at": b.createdAt.timeIntervalSince1970,
@@ -216,23 +230,67 @@ public final class VoxglassCloudSync: ObservableObject {
                 $0.hasPrefix(Key.bookmarksPrefix) && !$0.hasSuffix(Key.versionSuffix)
             }
             for key in allKeys {
-                let bookIDStr = String(key.dropFirst(Key.bookmarksPrefix.count))
-                guard let bookID = UUID(uuidString: bookIDStr) else { continue }
                 guard let data = kvs.data(forKey: key),
                       let payload = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { continue }
+                let rawBookID = String(key.dropFirst(Key.bookmarksPrefix.count))
+                let bookContentKey = payload.compactMap { $0["book_content_key"] as? String }
+                    .first(where: { !$0.isEmpty }) ?? ""
+                let localBookID: String?
+                if !bookContentKey.isEmpty {
+                    let rows = try await database.query(
+                        "SELECT id FROM books WHERE content_key = ? LIMIT 1",
+                        [.string(bookContentKey)]
+                    )
+                    localBookID = rows.first?.string("id")
+                } else {
+                    let rows = try await database.query(
+                        "SELECT id FROM books WHERE id = ? LIMIT 1",
+                        [.string(rawBookID)]
+                    )
+                    localBookID = rows.first?.string("id")
+                }
+                guard let localBookID, let localBookUUID = UUID(uuidString: localBookID) else {
+                    // The book may not have been imported on this device yet.
+                    // Keep the KVS payload so a later sync can adopt it.
+                    continue
+                }
+
+                let chapterRows = try await database.query(
+                    "SELECT id, content_key FROM chapters WHERE book_id = ?",
+                    [.string(localBookID)]
+                )
+                let chapterIDsByContentKey = Dictionary(
+                    uniqueKeysWithValues: chapterRows.compactMap { row -> (String, String)? in
+                        guard let id = row.string("id"), let contentKey = row.string("content_key"), !contentKey.isEmpty else {
+                            return nil
+                        }
+                        return (contentKey, id)
+                    }
+                )
+                let localChapterIDs = Set(chapterRows.compactMap { $0.string("id") })
                 let maxCloudUpdated = Int64(payload.compactMap { $0["updated_at"] as? Double }.max() ?? 0)
                 let localRows = try await database.query(
                     "SELECT MAX(updated_at) AS max_updated FROM bookmarks WHERE book_id = ?",
-                    [.string(bookIDStr)]
+                    [.string(localBookID)]
                 )
                 let localMax = Int64(localRows.first?.double("max_updated") ?? 0)
                 if maxCloudUpdated <= localMax { continue }
 
                 let bookmarks: [Bookmark] = payload.compactMap { dict in
                     guard let id = UUID(uuidString: dict["id"] as? String ?? ""),
-                          let chapterID = UUID(uuidString: dict["chapter_id"] as? String ?? "") else { return nil }
+                          let rawChapterID = dict["chapter_id"] as? String else { return nil }
+                    let chapterIDString: String?
+                    if let chapterContentKey = dict["chapter_content_key"] as? String,
+                       !chapterContentKey.isEmpty {
+                        chapterIDString = chapterIDsByContentKey[chapterContentKey]
+                    } else if localChapterIDs.contains(rawChapterID) {
+                        chapterIDString = rawChapterID
+                    } else {
+                        chapterIDString = nil
+                    }
+                    guard let chapterIDString, let chapterID = UUID(uuidString: chapterIDString) else { return nil }
                     return Bookmark(
-                        id: id, bookID: bookID, chapterID: chapterID,
+                        id: id, bookID: localBookUUID, chapterID: chapterID,
                         position: dict["position"] as? Double ?? 0,
                         note: dict["note"] as? String,
                         createdAt: Date(timeIntervalSince1970: dict["created_at"] as? Double ?? 0),
@@ -240,7 +298,7 @@ public final class VoxglassCloudSync: ObservableObject {
                         isDeleted: dict["is_deleted"] as? Bool ?? false
                     )
                 }
-                try await bmStore.upsertFromSync(bookmarks, forBookID: bookID)
+                try await bmStore.upsertFromSync(bookmarks, forBookID: localBookUUID)
                 // Avoid dirty reads on the next push.
                 kvs.set(maxCloudUpdated, forKey: key + Key.versionSuffix)
             }
