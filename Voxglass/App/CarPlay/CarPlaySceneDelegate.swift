@@ -1,4 +1,5 @@
 import CarPlay
+import OSLog
 import UIKit
 import VoxglassCore
 
@@ -12,21 +13,34 @@ import VoxglassCore
 /// `CarPlayReviewController`; otherwise the consumer browse tree is shown.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 
+    private let logger = Logger(subsystem: "guru.parso.voxglass", category: "CarPlay")
     private var carController: CarPlayInterfaceController?
     private var productionController: CarPlayReviewController?
+    private var connectionTask: Task<Void, Never>?
+    private var connectionGeneration = 0
+    private var connectionState = CarPlayConnectionStateMachine()
 
     func templateApplicationScene(
         _ scene: CPTemplateApplicationScene,
         didConnect interfaceController: CPInterfaceController
     ) {
-        Task { @MainActor in
+        connectionTask?.cancel()
+        let generation = connectionState.connect()
+        connectionGeneration = generation
+        logger.info("sceneDidConnect generation=\(generation, privacy: .public)")
+        connectionTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard self.connectionState.owns(generation) else { return }
             let placeholder = CPListTemplate(
                 title: "Voxglass",
                 sections: [CPListSection(items: [CPListItem(text: "Loading your library…", detailText: nil)])]
             )
             interfaceController.setRootTemplate(placeholder, animated: false, completion: nil)
+            self.logger.info("placeholderInstalled generation=\(generation, privacy: .public)")
 
             await AppServices.shared.bootstrapOnce()
+            guard !Task.isCancelled, self.connectionState.owns(generation) else { return }
+            self.logger.info("servicesBootstrapped generation=\(generation, privacy: .public)")
 
             let productionProvider = LocalCarPlayProductionProvider.shared
             if !productionProvider.productionSummaries().isEmpty {
@@ -45,14 +59,21 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                         carController?.continueSections() ?? []
                     }
                 )
-                productionController = controller
-                interfaceController.setRootTemplate(controller.makeRootTemplate(), animated: false, completion: nil)
+                self.productionController = controller
+                let root = controller.makeRootTemplate()
+                guard !Task.isCancelled,
+                      self.connectionState.finishConnect(generation: generation, mode: .production),
+                      self.connectionState.owns(generation) else { return }
+                self.logger.info("productionRootBuilt generation=\(generation, privacy: .public)")
+                interfaceController.setRootTemplate(root, animated: false, completion: nil)
             } else {
-                carController = CarPlayInterfaceController(
+                self.carController = CarPlayInterfaceController(
                     interfaceController: interfaceController,
                     services: .shared
                 )
-                carController?.start()
+                guard self.connectionState.finishConnect(generation: generation, mode: .consumer) else { return }
+                self.carController?.start()
+                self.logger.info("consumerRootBuilt generation=\(generation, privacy: .public)")
             }
         }
     }
@@ -61,9 +82,14 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         _ scene: CPTemplateApplicationScene,
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
-        productionController?.stop()
-        productionController = nil
-        carController?.stop()
-        carController = nil
+        connectionState.disconnect()
+        connectionGeneration += 1
+        connectionTask?.cancel()
+        connectionTask = nil
+        self.logger.info("sceneDidDisconnect generation=\(self.connectionGeneration, privacy: .public)")
+        self.productionController?.stop()
+        self.productionController = nil
+        self.carController?.stop()
+        self.carController = nil
     }
 }

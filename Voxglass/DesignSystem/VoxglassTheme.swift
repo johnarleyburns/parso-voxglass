@@ -36,8 +36,19 @@ enum VoxglassLayout {
     /// root safe-area inset is not propagated reliably through every nested
     /// NavigationStack/ScrollView combination, so shared screens reserve the
     /// full worst-case dock height after their final item.
-    static let chromeBottomClearance: CGFloat = 136
+    static let chromeBottomClearance: CGFloat =
+        ChromeMetrics.dockItemHeight * 2 + ChromeMetrics.dockStackSpacing + ChromeMetrics.dockBottomPadding
     static let scrollContentBottomPadding: CGFloat = chromeBottomClearance
+}
+
+/// Shared outer geometry for the two controls in the bottom dock. Keeping the
+/// values here prevents the tab bar and mini-player from drifting apart as
+/// their internal content changes.
+enum ChromeMetrics {
+    static let dockItemHeight: CGFloat = 68
+    static let dockStackSpacing: CGFloat = 9
+    static let dockBottomPadding: CGFloat = 8
+    static let minimumControlHitTarget: CGFloat = 44
 }
 
 enum Palette {

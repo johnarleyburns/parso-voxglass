@@ -18,20 +18,29 @@ struct BrowseView: View {
     // narrow another catalog surface later.
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
-    @State private var showAdvanced = false
     @State private var selectedCatalogBookID: UUID?
     @State private var showingHistory = false
+    @State private var showSearch = false
+    @State private var discoverScope: DiscoverBrowseScope = .collection
+    @State private var showingCollectionInfo: IACollection?
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VoxglassScreen(
             title: "Discover",
-            headerSecondaryActionSystemImage: "clock.arrow.circlepath",
-            headerSecondaryAction: { showingHistory = true },
-            headerSecondaryActionAccessibilityLabel: "Listening History"
+            headerTrailingContent: AnyView(discoverHeaderActions)
         ) {
             VStack(alignment: .leading, spacing: 18) {
-                searchPanel
-                collectionShelves
+                scopeBar
+                if let selectedCollection {
+                    selectedCollectionPill(selectedCollection)
+                }
+                if showSearch {
+                    searchPanel
+                }
+                if shouldShowFeaturedCollections {
+                    collectionShelves
+                }
                 catalogResults
             }
             .padding(.top, 12)
@@ -42,6 +51,13 @@ struct BrowseView: View {
         .sheet(isPresented: $showingHistory) {
             HistoryView(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
+        }
+        .sheet(item: $showingCollectionInfo) { collection in
+            CollectionInfoSheet(
+                collection: collection,
+                resolvedCoverURL: coverStore.coverURL(for: collection),
+                approximateCount: coverStore.count(for: collection)
+            )
         }
         .alert("Discover Failed", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
@@ -76,6 +92,105 @@ struct BrowseView: View {
             guard !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             Task { await runSearch() }
         }
+        .onChange(of: discoverScope) { _, scope in
+            let hasQuery = !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if scope == .all {
+                guard selectedCollection != nil || hasQuery else { return }
+                selectedCollection = nil
+                if hasQuery {
+                    Task { await runSearch() }
+                } else {
+                    catalogStore.resetResultsForNavigation()
+                }
+            } else {
+                guard selectedCollection == nil || hasQuery else {
+                    Task { await loadSelectedCollection() }
+                    return
+                }
+                if hasQuery {
+                    catalogStore.query = ""
+                    searchScope = .all
+                }
+                catalogStore.resetResultsForNavigation()
+            }
+        }
+    }
+
+    private var discoverHeaderActions: some View {
+        HStack(spacing: 2) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showSearch.toggle()
+                    if showSearch {
+                        if selectedCollection == nil {
+                            discoverScope = .all
+                            catalogStore.resetResultsForNavigation()
+                        }
+                        searchFocused = true
+                    } else {
+                        searchFocused = false
+                        clearSearchAndRestoreBrowseState()
+                    }
+                }
+            } label: {
+                Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
+                    .scaledFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel(showSearch ? "Close search" : "Search Discover")
+            .accessibilityIdentifier("discover.searchButton")
+
+            Menu {
+                Picker("Search in", selection: $searchScope) {
+                    ForEach(DiscoverSearchScope.allCases) { scope in
+                        Text(scope.title).tag(scope)
+                    }
+                }
+                Divider()
+                Toggle("Solo narration", isOn: $soloOnly)
+                if selectedCollection != nil {
+                    Picker("Sort", selection: $collectionSort) {
+                        ForEach(CatalogSort.availableSorts(for: selectedCollection ?? IACollectionStore.popular)) { sort in
+                            Text(sort.title).tag(sort)
+                        }
+                    }
+                    if selectedCollection?.isCurated == true, !catalogStore.activeCuratedManifest.isEmpty {
+                        Text("Download all is available in collection details")
+                            .scaledFont(size: 12)
+                            .foregroundStyle(Palette.ink3)
+                    }
+                }
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .scaledFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel("Filter and sort")
+            .accessibilityIdentifier("discover.filterButton")
+
+            Button {
+                showingHistory = true
+            } label: {
+                Image(systemName: "clock.arrow.circlepath")
+                    .scaledFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel("Listening History")
+            .accessibilityIdentifier("discover.historyButton")
+        }
+    }
+
+    private var scopeBar: some View {
+        Picker("Discover scope", selection: $discoverScope) {
+            Text("All").tag(DiscoverBrowseScope.all)
+            Text("Collection").tag(DiscoverBrowseScope.collection)
+        }
+        .pickerStyle(.segmented)
+        .tint(Palette.brass)
+        .accessibilityIdentifier("discover.scopePicker")
     }
 
     private var searchPanel: some View {
@@ -91,12 +206,16 @@ struct BrowseView: View {
                     .submitLabel(.search)
                     .accessibilityLabel("Search catalog for books, authors, or narrators")
                     .accessibilityIdentifier("discover.catalogSearch")
+                    .focused($searchFocused)
                     .onSubmit { Task { await runSearch() } }
 
                 if !catalogStore.query.isEmpty {
                     Button {
-                        catalogStore.query = ""
-                        catalogStore.resetResultsForNavigation()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showSearch = false
+                            searchFocused = false
+                            clearSearchAndRestoreBrowseState()
+                        }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(Palette.ink3)
@@ -114,59 +233,51 @@ struct BrowseView: View {
             .frame(height: 46)
             .glassSurface(cornerRadius: 20)
 
-            if let selectedCollection {
-                HStack(spacing: 8) {
-                    FilterChip(title: selectedCollection.title, isSelected: true, height: 34) {
-                        self.selectedCollection = nil
-                        catalogStore.resetResultsForNavigation()
-                    }
-                    .accessibilityIdentifier("discover.selectedCollection")
-
-                    Spacer(minLength: 0)
-
-                    Button(showAdvanced ? "Less" : "About") {
-                        withAnimation(.easeInOut(duration: 0.2)) { showAdvanced.toggle() }
-                    }
-                    .buttonStyle(.plain)
-                    .scaledFont(size: 12, weight: .medium)
-                    .foregroundStyle(Palette.ink3)
-                    .frame(height: 34)
-                    .accessibilityIdentifier("discover.collectionAbout")
+            Picker("Search in", selection: $searchScope) {
+                ForEach(DiscoverSearchScope.allCases) { scope in
+                    Text(scope.title).tag(scope)
                 }
             }
+            .pickerStyle(.segmented)
+            .tint(Palette.brass)
+            .accessibilityIdentifier("discover.searchScope")
+        }
+    }
 
-            HStack(spacing: 8) {
-                Menu {
-                    Picker("Search in", selection: $searchScope) {
-                    ForEach(DiscoverSearchScope.allCases) { scope in
-                            Text(scope.title).tag(scope)
-                        }
-                    }
-                    Divider()
-                    Toggle("Solo narration", isOn: $soloOnly)
-                    if selectedCollection != nil {
-                        Picker("Sort", selection: $collectionSort) {
-                            ForEach(CatalogSort.availableSorts(for: selectedCollection ?? IACollectionStore.popular)) { sort in
-                                Text(sort.title).tag(sort)
-                            }
-                        }
-                        if selectedCollection?.isCurated == true, !catalogStore.activeCuratedManifest.isEmpty {
-                            Text("Download all is available under About")
-                                .scaledFont(size: 12)
-                                .foregroundStyle(Palette.ink3)
+    private func selectedCollectionPill(_ collection: IACollection) -> some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "square.grid.2x2.fill")
+                    .scaledFont(size: 12, weight: .semibold)
+                Text(collection.title)
+                    .scaledFont(size: 12, weight: .semibold)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        selectedCollection = nil
+                        discoverScope = catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .collection : .all
+                        if catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            catalogStore.resetResultsForNavigation()
+                        } else {
+                            Task { await runSearch() }
                         }
                     }
                 } label: {
-                    Label("Filter & sort", systemImage: "line.3.horizontal.decrease.circle")
-                        .scaledFont(size: 12, weight: .semibold)
-                        .foregroundStyle(Palette.brass)
-                        .padding(.horizontal, 10)
-                        .frame(height: 34)
-                        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+                    Image(systemName: "xmark")
+                        .scaledFont(size: 11, weight: .bold)
+                        .frame(width: 28, height: 28)
                 }
-                .accessibilityIdentifier("discover.filterMenu")
-                Spacer()
+                .accessibilityLabel("Clear selected collection")
+                .accessibilityIdentifier("discover.selectedCollection.clear")
             }
+            .foregroundStyle(Palette.brass)
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+            .accessibilityIdentifier("discover.selectedCollection")
+
+            Spacer(minLength: 0)
         }
     }
 
@@ -175,22 +286,23 @@ struct BrowseView: View {
             SectionTitle(title: "Featured Collections")
             VStack(spacing: 10) {
                 ForEach(IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)) { collection in
-                    Button {
-                        search(collection)
-                    } label: {
-                        ExploreCollectionCard(
-                            collection: collection,
-                            resolvedCoverURL: coverStore.coverURL(for: collection),
-                            approximateCount: coverStore.count(for: collection),
-                            isSelected: selectedCollection?.id == collection.id
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(collection.title)
-                    .accessibilityIdentifier("discover.collection.\(collection.id)")
+                    ExploreCollectionCard(
+                        collection: collection,
+                        resolvedCoverURL: coverStore.coverURL(for: collection),
+                        approximateCount: coverStore.count(for: collection),
+                        isSelected: false,
+                        onSelect: { search(collection) },
+                        onInfo: { showingCollectionInfo = collection }
+                    )
                 }
             }
+            .transition(.opacity.combined(with: .move(edge: .top)))
         }
+        .animation(.easeInOut(duration: 0.25), value: shouldShowFeaturedCollections)
+    }
+
+    private var shouldShowFeaturedCollections: Bool {
+        discoverScope == .collection && selectedCollection == nil
     }
 
     @ViewBuilder
@@ -199,11 +311,11 @@ struct BrowseView: View {
             VStack(alignment: .leading, spacing: 6) {
                 SectionTitle(title: resultsTitle)
                 if selectedCollection != nil {
-                    if showAdvanced, selectedCollection?.isCurated == true {
+                    if selectedCollection?.isCurated == true {
                         curatedStatusBanner
                         downloadAllButton
                     }
-                    if showAdvanced, let collection = selectedCollection, collection.hasDescription {
+                    if let collection = selectedCollection, collection.hasDescription {
                         collectionDescriptionView(collection)
                     }
                 }
@@ -240,8 +352,7 @@ struct BrowseView: View {
                         )
                     } else {
                         VStack(spacing: 0) {
-                            ForEach(results.indices, id: \.self) { index in
-                                let result = results[index]
+                            ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
                                 Button {
                                     Task { await presentResult(result) }
                                 } label: {
@@ -278,6 +389,7 @@ struct BrowseView: View {
             || selectedCollection != nil
             || catalogStore.isSearching
             || !catalogStore.results.isEmpty
+            || discoverScope == .all
     }
 
     private var resultsTitle: String {
@@ -412,12 +524,25 @@ struct BrowseView: View {
     }
 
     private func search(_ collection: IACollection) {
-        selectedCollection = collection
-        catalogStore.query = ""
-        showAdvanced = false
+        withAnimation(.easeInOut(duration: 0.25)) {
+            selectedCollection = collection
+            discoverScope = .collection
+            showSearch = false
+            searchFocused = false
+            catalogStore.query = ""
+        }
         let defaultSort = CatalogSort.defaultSort(for: collection)
         collectionSort = defaultSort
-        Task { await catalogStore.searchAdvanced(collection.archiveQuery, sort: defaultSort, collectionID: collection.id) }
+        Task { await loadSelectedCollection() }
+    }
+
+    private func loadSelectedCollection() async {
+        guard let selectedCollection else { return }
+        await catalogStore.searchAdvanced(
+            selectedCollection.archiveQuery,
+            sort: collectionSort,
+            collectionID: selectedCollection.id
+        )
     }
 
     private func runSearch() async {
@@ -428,14 +553,14 @@ struct BrowseView: View {
         }
 
         if let selectedCollection {
-            let escaped = term.replacingOccurrences(of: "\"", with: "")
             let collectionQuery = term.isEmpty
                 ? selectedCollection.archiveQuery
-                : "(\(selectedCollection.archiveQuery)) AND (title:\"\(escaped)\" OR creator:\"\(escaped)\")"
+                : "(\(selectedCollection.archiveQuery)) AND (\(scopedQuery(term, includeCatalogScope: false)))"
             await catalogStore.searchAdvanced(collectionQuery, sort: collectionSort, collectionID: selectedCollection.id)
             return
         }
 
+        discoverScope = .all
         switch searchScope {
         case .all:
             await catalogStore.searchLibriVox(term)
@@ -444,9 +569,9 @@ struct BrowseView: View {
         }
     }
 
-    private func scopedQuery(_ text: String) -> String {
+    private func scopedQuery(_ text: String, includeCatalogScope: Bool = true) -> String {
         let escaped = text.replacingOccurrences(of: "\"", with: "")
-        let scopeClause = " AND \(LibriVoxCatalogScope.query)"
+        let scopeClause = includeCatalogScope ? " AND \(LibriVoxCatalogScope.query)" : ""
 
         switch searchScope {
         case .all:
@@ -457,6 +582,18 @@ struct BrowseView: View {
             return "creator:\"\(escaped)\"\(scopeClause)"
         case .narrator:
             return "(creator:\"\(escaped)\" OR description:\"\(escaped)\")\(scopeClause)"
+        }
+    }
+
+    private func clearSearchAndRestoreBrowseState() {
+        catalogStore.query = ""
+        searchScope = .all
+        if selectedCollection == nil {
+            discoverScope = .collection
+            catalogStore.resetResultsForNavigation()
+        } else {
+            discoverScope = .collection
+            Task { await loadSelectedCollection() }
         }
     }
 
@@ -525,50 +662,78 @@ private enum DiscoverSearchScope: CaseIterable, Identifiable, Hashable {
     }
 }
 
+private enum DiscoverBrowseScope: String, CaseIterable, Identifiable {
+    case all
+    case collection
+
+    var id: String { rawValue }
+}
+
 private struct ExploreCollectionCard: View {
     var collection: IACollection
     var resolvedCoverURL: URL?
     var approximateCount: Int?
     var isSelected: Bool
+    var onSelect: () -> Void
+    var onInfo: () -> Void
 
     var body: some View {
         GeometryReader { proxy in
             HStack(spacing: 12) {
-                ZStack(alignment: .top) {
-                    CollectionArtworkView(
-                        title: collection.title,
-                        systemImage: collection.systemImage,
-                        assetName: collection.assetName,
-                        remoteImageURL: resolvedCoverURL
-                    )
+                Button(action: onSelect) {
+                    HStack(spacing: 12) {
+                        ZStack(alignment: .top) {
+                            CollectionArtworkView(
+                                title: collection.title,
+                                systemImage: collection.systemImage,
+                                assetName: collection.assetName,
+                                remoteImageURL: resolvedCoverURL
+                            )
 
-                    if collection.isCurated {
-                        curatedBadge
+                            if collection.isCurated {
+                                curatedBadge
+                            }
+                        }
+                        .frame(width: proxy.size.width * 0.42, height: 112)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(collection.title)
+                                .scaledFont(size: 15, weight: .bold)
+                                .foregroundStyle(Palette.ink)
+                                .lineLimit(2)
+                                .accessibilityIdentifier("collection.title")
+
+                            Text(collection.subtitle)
+                                .scaledFont(size: 11.5)
+                                .foregroundStyle(Palette.ink3)
+                                .lineLimit(3)
+
+                            if let caption = approximateCountCaption {
+                                Text(caption)
+                                    .scaledFont(size: 11, weight: .semibold)
+                                    .foregroundStyle(Palette.brass)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .frame(width: proxy.size.width * 0.42, height: 112)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(collection.title)
-                        .scaledFont(size: 15, weight: .bold)
-                        .foregroundStyle(Palette.ink)
-                        .lineLimit(2)
-                        .accessibilityIdentifier("collection.title")
-
-                    Text(collection.subtitle)
-                        .scaledFont(size: 11.5)
-                        .foregroundStyle(Palette.ink3)
-                        .lineLimit(3)
-
-                    if let caption = approximateCountCaption {
-                        Text(caption)
-                            .scaledFont(size: 11, weight: .semibold)
-                            .foregroundStyle(Palette.brass)
-                    }
+                VStack {
                     Spacer(minLength: 0)
+                    Button(action: onInfo) {
+                        Image(systemName: "info.circle")
+                            .scaledFont(size: 16, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("About \(collection.title)")
+                    .accessibilityIdentifier("discover.collectionInfo.\(collection.id)")
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(10)
         }
@@ -622,5 +787,56 @@ private struct ExploreCollectionCard: View {
         let digits = Int(floor(log10(Double(value)))) + 1
         let factor = Int(pow(10.0, Double(digits - 2)))
         return Int((Double(value) / Double(factor)).rounded()) * factor
+    }
+}
+
+private struct CollectionInfoSheet: View {
+    let collection: IACollection
+    let resolvedCoverURL: URL?
+    let approximateCount: Int?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    CollectionArtworkView(
+                        title: collection.title,
+                        systemImage: collection.systemImage,
+                        assetName: collection.assetName,
+                        remoteImageURL: resolvedCoverURL
+                    )
+                    .frame(height: 150)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    Text(collection.title)
+                        .scaledFont(size: 24, weight: .heavy)
+                        .foregroundStyle(Palette.ink)
+                    if let approximateCount, approximateCount > 0 {
+                        Text("Approximately \(approximateCount.formatted()) books")
+                            .scaledFont(size: 13, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                    }
+                    if !collection.summaryLine.isEmpty {
+                        Text(collection.summaryLine)
+                            .scaledFont(size: 14, weight: .semibold)
+                            .foregroundStyle(Palette.ink2)
+                    }
+                    Text(collection.description)
+                        .scaledFont(size: 14)
+                        .foregroundStyle(Palette.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(18)
+            }
+            .background(VoxglassBackground())
+            .navigationTitle("Collection info")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }

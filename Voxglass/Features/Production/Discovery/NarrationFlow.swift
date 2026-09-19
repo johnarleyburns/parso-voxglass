@@ -226,6 +226,31 @@ enum NarrationStep: Hashable {
     case submit
 }
 
+/// The user-facing destination is deliberately more precise than the
+/// persisted `ProjectPurpose`: LibriVox and Internet Archive share the same
+/// broad purpose but are different output lanes.
+enum NarrationDestinationChoice: String, CaseIterable, Identifiable {
+    case personal
+    case librivox
+    case internetArchive
+    case commercial
+
+    var id: String { rawValue }
+
+    var purpose: ProjectPurpose {
+        self == .personal ? .personal : (self == .commercial ? .commercial : .publicDomainCommunity)
+    }
+
+    var destination: DestinationID {
+        switch self {
+        case .personal: .personalMaster
+        case .librivox: .librivox
+        case .internetArchive: .internetArchive
+        case .commercial: .acx
+        }
+    }
+}
+
 enum TakePlayback: Equatable {
     case idle
     case playing(paragraph: UUID, chapter: UUID?)
@@ -289,7 +314,8 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// destinations — but it is persisted into the project profile, the
     /// package manifest, and the CloudKit projection so the value the user
     /// chose is the value that ships.
-    var draftPurpose: ProjectPurpose = .publicDomainCommunity
+    var draftPurpose: ProjectPurpose = .personal
+    var draftDestinationChoice: NarrationDestinationChoice = .personal
     var sourceURL: String?
     var importError: String?
     var isImporting = false
@@ -1116,9 +1142,9 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 sourceURLKnownUnavailable: pendingNeedSourceURLKnownUnavailable
             ),
             profile: ProductionProfile(
-                purpose: .publicDomainCommunity,
+                purpose: draftDestinationChoice.purpose,
                 recording: RecordingDefaults(),
-                intendedDestination: DestinationProfile.destination(for: draftPurpose)
+                intendedDestination: draftDestinationChoice.destination
             ),
             source: nil,
             chapters: [chapter],
@@ -1131,8 +1157,8 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             ids: repository.ids,
             clock: repository.clock
         )
-        project.profile.purpose = draftPurpose
-        project.profile.intendedDestination = DestinationProfile.destination(for: draftPurpose)
+        project.profile.purpose = draftDestinationChoice.purpose
+        project.profile.intendedDestination = draftDestinationChoice.destination
         self.project = project
         if let needID = pendingNeedID {
             try? await repository.setNeedID(needID, for: project.id)
@@ -1175,7 +1201,8 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         draftTitle = title
         draftAuthor = author
         var project = build.project
-        project.profile.purpose = draftPurpose
+        project.profile.purpose = draftDestinationChoice.purpose
+        project.profile.intendedDestination = draftDestinationChoice.destination
         self.project = project
     }
 
@@ -3261,20 +3288,17 @@ struct WorkImportView: View {
                 Text("New Narration")
                     .scaledFont(size: 26, weight: .heavy)
                     .foregroundStyle(Palette.ink)
-                Text("Record a public-domain work — a poem, a short story, or a whole book, chapter by chapter.")
-                    .scaledFont(size: 13)
-                    .foregroundStyle(Palette.ink2)
 
-                importOption(icon: "🎙️", title: "Browse narration needs", tag: "Recommended", caption: "Find a public-domain work that needs a reader", id: "import.fromNeed") {
+                importOption(icon: "🎙️", title: "Browse narration needs", id: "import.fromNeed") {
                     showNeedsPicker = true
                 }
-                importOption(icon: "📝", title: "Paste text", caption: "Paste a poem or short piece", id: "import.paste") {
+                importOption(icon: "📝", title: "Paste text", id: "import.paste") {
                     showPaste = true
                 }
-                importOption(icon: "📄", title: "Import a file", caption: "EPUB, TXT, Markdown, or DOCX — free for LibriVox & Internet Archive, or master it for commercial release with Pro.", id: "import.files") {
+                importOption(icon: "📄", title: "Import a file", id: "import.files") {
                     presentFilesPicker()
                 }
-                importOption(icon: "🌐", title: "Fetch from Project Gutenberg", caption: "Paste a gutenberg.org link or ebook number", id: "import.gutenberg") {
+                importOption(icon: "🌐", title: "Fetch from Project Gutenberg", id: "import.gutenberg") {
                     showGutenberg = true
                 }
 
@@ -3359,7 +3383,7 @@ struct WorkImportView: View {
         return types
     }
 
-    private func importOption(icon: String, title: String, tag: String? = nil, caption: String, id: String, action: @escaping () -> Void) -> some View {
+    private func importOption(icon: String, title: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 13) {
                 ZStack {
@@ -3369,16 +3393,7 @@ struct WorkImportView: View {
                 }
                 .frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(title).scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.ink)
-                        if let tag {
-                            Text(tag).scaledFont(size: 10, weight: .bold).foregroundStyle(Palette.brass)
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(Palette.brass.opacity(0.12), in: Capsule())
-                                .overlay(Capsule().stroke(Palette.brass.opacity(0.5), lineWidth: 1))
-                        }
-                    }
-                    Text(caption).scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                    Text(title).scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.ink)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
@@ -3396,25 +3411,22 @@ struct WorkImportView: View {
         pickedFileURL = URL(fileURLWithPath: "/") // triggers the sheet
     }
 
-    /// The four-way purpose picker (mockup 02 "WHERE THIS IS GOING"). Purpose
-    /// is informational — it never gates a destination — but the choice is
-    /// persisted into the project profile, the package manifest, and the
-    /// CloudKit projection. The mockup's two free community lanes both map to
-    /// `ProjectPurpose.publicDomainCommunity`.
+    /// The destination picker keeps the two community lanes separate even
+    /// though they share the same broad persisted purpose.
     private var purposePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("WHERE THIS IS GOING")
                 .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
                 .padding(.top, 6)
             VStack(spacing: 0) {
-                purposeRow(title: "LibriVox", caption: "Free · 128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", purpose: .publicDomainCommunity)
+                destinationRow(title: "Just for me", caption: "Free · lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
                 VoxglassListDivider()
-                purposeRow(title: "Internet Archive", caption: "Free · FLAC masters + MP3 derivatives", id: "wizard.purpose.internetArchive", purpose: .publicDomainCommunity)
+                destinationRow(title: "LibriVox", caption: "Free · 128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", choice: .librivox)
                 VoxglassListDivider()
-                purposeRow(title: "Just for me", caption: "Free · lossless WAV chapters", id: "wizard.purpose.personal", purpose: .personal)
+                destinationRow(title: "Internet Archive", caption: "Free · FLAC masters + MP3 derivatives", id: "wizard.purpose.internetArchive", choice: .internetArchive)
                 VoxglassListDivider()
-                purposeRow(title: "Commercial release", caption: "ACX, Apple Books, aggregators", id: "wizard.purpose.commercial", purpose: .commercial, proChip: true)
-                if model.draftPurpose == .commercial {
+                destinationRow(title: "Commercial release", caption: "ACX, Apple Books, aggregators", id: "wizard.purpose.commercial", choice: .commercial, proChip: true)
+                if model.draftDestinationChoice == .commercial {
                     Text("Delivered with Voxglass Narration Pro — a one-time purchase. Everything else here is free.")
                         .scaledFont(size: 11)
                         .foregroundStyle(Palette.ink2)
@@ -3430,10 +3442,11 @@ struct WorkImportView: View {
         .accessibilityIdentifier("wizard.purpose")
     }
 
-    private func purposeRow(title: String, caption: String, id: String, purpose: ProjectPurpose, proChip: Bool = false) -> some View {
-        let selected = model.draftPurpose == purpose
+    private func destinationRow(title: String, caption: String, id: String, choice: NarrationDestinationChoice, proChip: Bool = false) -> some View {
+        let selected = model.draftDestinationChoice == choice
         return Button {
-            model.draftPurpose = purpose
+            model.draftDestinationChoice = choice
+            model.draftPurpose = choice.purpose
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
@@ -3550,35 +3563,443 @@ private struct PasteSheet: View {
     }
 }
 
+/// Owns the network-backed Gutenberg picker state so the view remains a
+/// presentation layer. Both network seams are injectable for deterministic
+/// tests and the generation guards prevent an older request from overwriting
+/// a newer search or LibriVox check.
+@MainActor
+private final class GutenbergSearchModel: ObservableObject {
+    @Published var query = ""
+    @Published private(set) var results: [GutendexBook] = []
+    @Published private(set) var selectedBook: GutendexBook?
+    @Published private(set) var isSearching = false
+    @Published private(set) var isLoadingMore = false
+    @Published var errorMessage: String?
+    @Published private(set) var nextPage = 1
+    @Published private(set) var hasMore = false
+    @Published private(set) var matchCandidates: [LibriVoxMatchRanker.Candidate] = []
+    @Published private(set) var isCheckingLibriVox = false
+    @Published private(set) var didCheckLibriVox = false
+    @Published private(set) var matchError: String?
+
+    private let gutendex: GutendexSearchClient
+    private let fetcher: any HTTPFetching
+    private let archiveClient: any InternetArchiveCatalogClient
+    private var searchGeneration = 0
+    private var matchGeneration = 0
+
+    init(
+        gutendex: GutendexSearchClient = GutendexSearchClient(),
+        fetcher: any HTTPFetching = URLSessionFetcher(),
+        archiveClient: any InternetArchiveCatalogClient = InternetArchiveClient()
+    ) {
+        self.gutendex = gutendex
+        self.fetcher = fetcher
+        self.archiveClient = archiveClient
+    }
+
+    func clearSearch() {
+        searchGeneration += 1
+        query = ""
+        results = []
+        selectedBook = nil
+        nextPage = 1
+        hasMore = false
+        isSearching = false
+        isLoadingMore = false
+        errorMessage = nil
+        clearMatchState()
+    }
+
+    func select(_ book: GutendexBook) {
+        selectedBook = book
+        clearMatchState()
+    }
+
+    func search(reset: Bool) async {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return }
+
+        searchGeneration += 1
+        let generation = searchGeneration
+        if reset {
+            isSearching = true
+            results = []
+            selectedBook = nil
+            nextPage = 1
+            hasMore = false
+            clearMatchState()
+        } else {
+            guard hasMore, !isSearching, !isLoadingMore else { return }
+            isLoadingMore = true
+        }
+        errorMessage = nil
+        defer {
+            if generation == searchGeneration {
+                isSearching = false
+                isLoadingMore = false
+            }
+        }
+
+        do {
+            let page = try await gutendex.search(query: term, page: nextPage, using: fetcher)
+            guard generation == searchGeneration else { return }
+            let existingIDs = Set(results.map(\.id))
+            results.append(contentsOf: page.results.filter { !existingIDs.contains($0.id) })
+            nextPage = page.page + 1
+            hasMore = page.next != nil
+        } catch is CancellationError {
+            return
+        } catch {
+            guard generation == searchGeneration else { return }
+            errorMessage = "Couldn't search Project Gutenberg. Check your connection and try again."
+        }
+    }
+
+    func searchLibriVox(for book: GutendexBook) async {
+        matchGeneration += 1
+        let generation = matchGeneration
+        isCheckingLibriVox = true
+        didCheckLibriVox = false
+        matchError = nil
+        matchCandidates = []
+        defer {
+            if generation == matchGeneration { isCheckingLibriVox = false }
+        }
+
+        do {
+            let query = LibriVoxMatchRanker.searchQuery(title: book.title, author: book.authorLine)
+            let results = try await archiveClient.searchAdvanced(query: query, rows: 50, sort: .popularity)
+            guard generation == matchGeneration else { return }
+            matchCandidates = LibriVoxMatchRanker.rank(
+                title: book.title,
+                author: book.authorLine,
+                results: results
+            )
+            didCheckLibriVox = true
+        } catch is CancellationError {
+            return
+        } catch {
+            guard generation == matchGeneration else { return }
+            matchError = "Couldn't check LibriVox right now. Try again."
+        }
+    }
+
+    func reportMatchError(_ message: String) {
+        matchError = message
+    }
+
+    private func clearMatchState() {
+        matchGeneration += 1
+        isCheckingLibriVox = false
+        didCheckLibriVox = false
+        matchCandidates = []
+        matchError = nil
+    }
+}
+
 private struct GutenbergSheet: View {
     @Bindable var model: NarrationFlowModel
     @Environment(\.dismiss) private var dismiss
-    @State private var identifier = ""
+    @EnvironmentObject private var catalogStore: CatalogStore
+    @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(PlaybackCoordinator.self) private var playback
+    @StateObject private var searchState: GutenbergSearchModel
+    @State private var manualIdentifier = ""
+    @State private var showManual = false
+    @State private var isPickingBook = false
+    @State private var nowPlayingBook: BookWithChapters?
+    @State private var showNowPlaying = false
+
+    init(
+        model: NarrationFlowModel,
+        gutendex: GutendexSearchClient = GutendexSearchClient(),
+        fetcher: any HTTPFetching = URLSessionFetcher(),
+        archiveClient: any InternetArchiveCatalogClient = InternetArchiveClient()
+    ) {
+        self.model = model
+        _searchState = StateObject(wrappedValue: GutenbergSearchModel(
+            gutendex: gutendex,
+            fetcher: fetcher,
+            archiveClient: archiveClient
+        ))
+    }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("ebook number or gutenberg.org link", text: $identifier)
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled()
-                        .accessibilityIdentifier("import.gutenberg")
-                } footer: {
-                    Text("Fetch is best-effort and offline-friendly: if it fails, Paste text instead.")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    searchField
+                    Button(showManual ? "Hide manual Gutenberg link" : "Use an ebook number or link instead") {
+                        withAnimation { showManual.toggle() }
+                    }
+                    .buttonStyle(.plain)
+                    .scaledFont(size: 12, weight: .medium)
+                    .foregroundStyle(Palette.ink3)
+                    .accessibilityIdentifier("gutenberg.manualToggle")
+                    if showManual {
+                        HStack(spacing: 8) {
+                            TextField("ebook number or gutenberg.org link", text: $manualIdentifier)
+                                .keyboardType(.URL)
+                                .autocorrectionDisabled()
+                                .accessibilityIdentifier("gutenberg.manualIdentifier")
+                            Button("Fetch") {
+                                let identifier = manualIdentifier
+                                dismiss()
+                                Task { await model.fetchGutenberg(identifier: identifier) }
+                            }
+                            .scaledFont(size: 12, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                            .disabled(manualIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                        .padding(12)
+                        .glassSurface(cornerRadius: 14)
+                    }
+                    resultsContent
+                    selectedBookContent
+                }
+                .padding(18)
+            }
+            .background(VoxglassBackground())
+            .navigationTitle("Project Gutenberg")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
                 }
             }
-            .navigationTitle("Project Gutenberg")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fetch") {
-                        let id = identifier
-                        dismiss()
-                        Task { await model.fetchGutenberg(identifier: id) }
-                    }
-                    .disabled(identifier.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
+            .alert("Project Gutenberg search failed", isPresented: errorBinding) {
+                Button("OK", role: .cancel) { searchState.errorMessage = nil }
+            } message: {
+                Text(searchState.errorMessage ?? "")
+            }
+            .sheet(isPresented: $showNowPlaying) {
+                BookPageView(
+                    book: nowPlayingBook,
+                    showingNowPlaying: $showNowPlaying,
+                    presentationContext: .nowPlayingSheet
+                )
+                .environment(playback)
+                .environmentObject(libraryStore)
             }
         }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Palette.ink3)
+            TextField("Search title, author, or subject", text: $searchState.query)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.words)
+                .submitLabel(.search)
+                .accessibilityLabel("Search Project Gutenberg")
+                .accessibilityIdentifier("gutenberg.searchField")
+                .onSubmit { Task { await searchState.search(reset: true) } }
+            if !searchState.query.isEmpty {
+                Button {
+                    searchState.clearSearch()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Palette.ink3)
+                }
+                .accessibilityLabel("Clear Gutenberg search")
+            }
+            Button("Search") { Task { await searchState.search(reset: true) } }
+                .scaledFont(size: 12, weight: .semibold)
+                .foregroundStyle(Palette.brass)
+                .disabled(searchState.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || searchState.isSearching)
+                .accessibilityIdentifier("gutenberg.searchButton")
+        }
+        .scaledFont(size: 14)
+        .padding(.horizontal, 14)
+        .frame(minHeight: 46)
+        .glassSurface(cornerRadius: 18)
+    }
+
+    @ViewBuilder
+    private var resultsContent: some View {
+        if searchState.isSearching && searchState.results.isEmpty {
+            ProgressView("Searching Project Gutenberg…")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else if searchState.results.isEmpty {
+            Text("Search for a title, author, or subject to choose a public-domain work.")
+                .scaledFont(size: 13)
+                .foregroundStyle(Palette.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("gutenberg.emptyState")
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Project Gutenberg results")
+                    .scaledFont(size: 13, weight: .bold)
+                    .foregroundStyle(Palette.ink3)
+                    .padding(.bottom, 6)
+                ForEach(searchState.results, id: \.id) { book in
+                    Button {
+                        searchState.select(book)
+                    } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: searchState.selectedBook?.id == book.id ? "checkmark.circle.fill" : "book.closed")
+                                .foregroundStyle(searchState.selectedBook?.id == book.id ? Palette.brass : Palette.ink3)
+                                .frame(width: 22)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(book.title)
+                                    .scaledFont(size: 14, weight: .semibold)
+                                    .foregroundStyle(Palette.ink)
+                                    .multilineTextAlignment(.leading)
+                                Text(book.authorLine)
+                                    .scaledFont(size: 12)
+                                    .foregroundStyle(Palette.ink2)
+                                Text("\(book.languages.map { $0.uppercased() }.joined(separator: ", ")) · \(book.isPublicDomain ? "Public domain" : "Rights status unavailable")")
+                                    .scaledFont(size: 10)
+                                    .foregroundStyle(Palette.ink3)
+                                Text("Gutenberg ebook \(book.id)")
+                                    .scaledFont(size: 10)
+                                    .foregroundStyle(Palette.ink3)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("gutenberg.result.\(book.id)")
+                    if book.id != searchState.results.last?.id { VoxglassListDivider() }
+                }
+                if searchState.hasMore {
+                    Button {
+                        Task { await searchState.search(reset: false) }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if searchState.isLoadingMore { ProgressView() }
+                            Text(searchState.isLoadingMore ? "Loading…" : "Load more")
+                                .scaledFont(size: 13, weight: .semibold)
+                            Spacer()
+                        }
+                        .foregroundStyle(Palette.brass)
+                        .padding(.vertical, 10)
+                    }
+                    .disabled(searchState.isLoadingMore)
+                    .accessibilityIdentifier("gutenberg.loadMore")
+                }
+            }
+            .padding(.horizontal, 12)
+            .glassSurface(cornerRadius: 16)
+        }
+    }
+
+    @ViewBuilder
+    private var selectedBookContent: some View {
+        if let selectedBook = searchState.selectedBook {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Selected book")
+                    .scaledFont(size: 13, weight: .bold)
+                    .foregroundStyle(Palette.ink3)
+                Text(selectedBook.title)
+                    .scaledFont(size: 18, weight: .heavy)
+                    .foregroundStyle(Palette.ink)
+                Text(selectedBook.authorLine)
+                    .scaledFont(size: 13)
+                    .foregroundStyle(Palette.ink2)
+
+                Button("Pick this book") {
+                    let book = selectedBook
+                    model.draftTitle = book.title
+                    model.draftAuthor = book.authorLine
+                    isPickingBook = true
+                    Task {
+                        await model.fetchGutenberg(identifier: String(book.id))
+                        isPickingBook = false
+                        dismiss()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.brass)
+                .disabled(isPickingBook)
+                .accessibilityIdentifier("gutenberg.pickBook")
+                if isPickingBook {
+                    ProgressView("Fetching selected book…")
+                        .scaledFont(size: 12)
+                }
+
+                Button("Search for existing LibriVox audiobook?") {
+                    Task { await searchState.searchLibriVox(for: selectedBook) }
+                }
+                .buttonStyle(.bordered)
+                .foregroundStyle(Palette.brass)
+                .disabled(searchState.isCheckingLibriVox)
+                .accessibilityIdentifier("gutenberg.searchLibriVox")
+
+                if searchState.isCheckingLibriVox {
+                    ProgressView("Checking LibriVox…")
+                } else if let matchError = searchState.matchError {
+                    Text(matchError)
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.danger)
+                        .accessibilityIdentifier("gutenberg.librivoxError")
+                } else if !searchState.matchCandidates.isEmpty {
+                    Text("Already found on LibriVox")
+                        .scaledFont(size: 13, weight: .bold)
+                        .foregroundStyle(Palette.ok)
+                        .accessibilityIdentifier("gutenberg.librivoxFound")
+                    ForEach(searchState.matchCandidates, id: \.result.identifier) { candidate in
+                        Button {
+                            Task { await openInNowPlaying(candidate.result) }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(candidate.result.title)
+                                        .scaledFont(size: 13, weight: .semibold)
+                                        .foregroundStyle(Palette.ink)
+                                    Text(candidate.result.authorLine)
+                                        .scaledFont(size: 11)
+                                        .foregroundStyle(Palette.ink2)
+                                    Link(candidate.result.detailsURL.absoluteString, destination: candidate.result.detailsURL)
+                                        .scaledFont(size: 10)
+                                        .foregroundStyle(Palette.ink3)
+                                }
+                                Spacer()
+                                Image(systemName: "play.circle.fill")
+                                    .foregroundStyle(Palette.brass)
+                            }
+                            .padding(10)
+                            .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.05))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("gutenberg.librivoxMatch.\(candidate.result.identifier)")
+                    }
+                } else if searchState.didCheckLibriVox {
+                    Text("No existing LibriVox audiobook found. This book is a candidate for a LibriVox recording.")
+                        .scaledFont(size: 12)
+                        .foregroundStyle(Palette.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("gutenberg.librivoxNoMatch")
+                }
+            }
+            .padding(14)
+            .glassSurface(cornerRadius: 16)
+        }
+    }
+
+    private var errorBinding: Binding<Bool> {
+        Binding {
+            searchState.errorMessage != nil
+        } set: { presented in
+            if !presented { searchState.errorMessage = nil }
+        }
+    }
+
+    private func openInNowPlaying(_ result: InternetArchiveSearchResult) async {
+        let existingIDs = Set(libraryStore.books.map(\.book.id))
+        guard let imported = await catalogStore.importResult(result, into: libraryStore) else {
+            searchState.reportMatchError("This LibriVox recording could not be opened right now. Try again.")
+            return
+        }
+        if !existingIDs.contains(imported.book.id) {
+            await libraryStore.markBookPending(imported.book.id)
+        }
+        await playback.play(imported)
+        nowPlayingBook = imported
+        showNowPlaying = true
     }
 }

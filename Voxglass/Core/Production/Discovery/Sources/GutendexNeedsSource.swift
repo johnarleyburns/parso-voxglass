@@ -75,6 +75,60 @@ public struct GutendexNeedsSource: NeedsSource {
     }
 }
 
+/// Search client for the explicit Project Gutenberg picker. This is separate
+/// from `GutendexNeedsSource`: the needs ladder asks for popular works, while
+/// the picker must honor the user's title/author query and pagination.
+public struct GutendexSearchClient: Sendable {
+    public let endpoint: URL
+
+    public init(endpoint: URL = URL(string: "https://gutendex.com/books")!) {
+        self.endpoint = endpoint
+    }
+
+    public func search(
+        query: String,
+        page: Int = 1,
+        using fetcher: any HTTPFetching
+    ) async throws -> GutendexSearchPage {
+        var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        components?.queryItems = [
+            URLQueryItem(name: "search", value: trimmed),
+            URLQueryItem(name: "page", value: String(max(1, page))),
+            URLQueryItem(name: "languages", value: "en"),
+            URLQueryItem(name: "copyright", value: "false")
+        ]
+        guard let url = components?.url else { throw HTTPFetchError.invalidURL }
+        let result = try await fetcher.get(
+            url,
+            timeout: 15,
+            userAgent: "Voxglass/1.1 (project-gutenberg-search; contact: hello@parso.guru)"
+        )
+        guard result.statusCode == 200 else { throw HTTPFetchError.httpStatus(result.statusCode) }
+        let response = try NeedsJSONCoding.decoder.decode(GutendexResponse.self, from: result.data)
+        return GutendexSearchPage(
+            count: response.count,
+            next: response.next,
+            page: max(1, page),
+            results: response.results
+        )
+    }
+}
+
+public struct GutendexSearchPage: Sendable, Equatable {
+    public let count: Int
+    public let next: String?
+    public let page: Int
+    public let results: [GutendexBook]
+
+    public init(count: Int, next: String?, page: Int, results: [GutendexBook]) {
+        self.count = count
+        self.next = next
+        self.page = page
+        self.results = results
+    }
+}
+
 // MARK: - Decodables
 
 public struct GutendexResponse: Sendable, Codable {
@@ -89,7 +143,7 @@ public struct GutendexResponse: Sendable, Codable {
     }
 }
 
-public struct GutendexBook: Sendable, Codable {
+public struct GutendexBook: Sendable, Codable, Equatable {
     public var id: Int
     public var title: String
     public var authors: [GutendexAuthor]
@@ -116,12 +170,31 @@ public struct GutendexBook: Sendable, Codable {
         self.formats = formats
     }
 
+    public var authorLine: String {
+        authors.isEmpty ? "Unknown author" : authors.map(Self.displayAuthor).joined(separator: ", ")
+    }
+
+    public var sourcePageURL: URL? {
+        URL(string: "https://www.gutenberg.org/ebooks/\(id)")
+    }
+
+    public var textURL: URL? {
+        firstFormat(in: ["text/plain; charset=utf-8", "text/plain", "text/html; charset=utf-8", "text/html"])
+            .flatMap(URL.init(string:))
+    }
+
+    public var epubURL: URL? {
+        firstFormat(in: ["application/epub+zip", "application/epub"]).flatMap(URL.init(string:))
+    }
+
+    public var isPublicDomain: Bool { copyright != true }
+
     func toNeed(now: Date) -> NarrationNeed? {
         guard copyright != true else { return nil }
         guard let sourceURL = firstFormat(in: ["text/html", "text/html; charset=utf-8", "text/plain"]),
               let pageURL = URL(string: sourceURL) else { return nil }
 
-        let authorName = authors.first.map(formatAuthor) ?? "Unknown"
+        let authorName = authors.first.map(Self.displayAuthor) ?? "Unknown"
         let isPoetry = bookshelves.contains { $0.localizedCaseInsensitiveContains("poetry") }
         let estSeconds = isPoetry ? 180 : 16_200
         let work = NarratableWork(
@@ -166,7 +239,7 @@ public struct GutendexBook: Sendable, Codable {
             .first ?? raw
     }
 
-    private func formatAuthor(_ author: GutendexAuthor) -> String {
+    private static func displayAuthor(_ author: GutendexAuthor) -> String {
         // "Shakespeare, William" → "William Shakespeare"
         let parts = author.name.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         if parts.count >= 2 {
@@ -176,7 +249,7 @@ public struct GutendexBook: Sendable, Codable {
     }
 }
 
-public struct GutendexAuthor: Sendable, Codable {
+public struct GutendexAuthor: Sendable, Codable, Equatable {
     public var name: String
     public var birthYear: Int?
     public var deathYear: Int?

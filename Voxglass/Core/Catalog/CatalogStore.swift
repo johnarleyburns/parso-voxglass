@@ -38,6 +38,7 @@ public final class CatalogStore: ObservableObject {
     private var seenIdentifiers: Set<String> = []
     private var chainFetchCount = 0
     private var curatedManifest: [CuratedManifestEntry] = []
+    private var searchGeneration = 0
 
     public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
         self.client = client
@@ -48,16 +49,25 @@ public final class CatalogStore: ObservableObject {
     }
 
     public func searchLibriVox(_ query: String) async {
+        searchGeneration += 1
+        let generation = searchGeneration
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         self.query = trimmed
         guard !trimmed.isEmpty else {
             resetResults()
             return
         }
-        await runSearch(query: InternetArchiveClient.libriVoxQuery(for: trimmed) + languageClause, sort: .popularity)
+        await runSearch(
+            query: InternetArchiveClient.libriVoxQuery(for: trimmed) + languageClause,
+            sort: .popularity,
+            generation: generation
+        )
     }
 
     public func searchAdvanced(_ query: String, sort: CatalogSort = .popularity, collectionID: String? = nil) async {
+        catalogError = nil
+        searchGeneration += 1
+        let generation = searchGeneration
         activeCollectionID = collectionID
         curatedManifest = []
         if sort == .curation, let id = collectionID,
@@ -66,9 +76,9 @@ public final class CatalogStore: ObservableObject {
             curatedManifest = CuratedManifest.load(named: curatedName)
         }
         if sort == .curation {
-            await runCurationSearch()
+            await runCurationSearch(generation: generation)
         } else {
-            await runSearch(query: query + languageClause, sort: sort)
+            await runSearch(query: query + languageClause, sort: sort, generation: generation)
         }
     }
 
@@ -79,6 +89,7 @@ public final class CatalogStore: ObservableObject {
             return
         }
         guard let query = activeQuery else { return }
+        let generation = searchGeneration
 
         isLoadingMore = true
         defer { isLoadingMore = false }
@@ -91,6 +102,7 @@ public final class CatalogStore: ObservableObject {
                 page: nextPage,
                 sort: activeSort
             )
+            guard generation == searchGeneration else { return }
             currentPage = nextPage
             numFound = page.numFound
             let appended = filteredResults(page.results, for: query)
@@ -102,7 +114,7 @@ public final class CatalogStore: ObservableObject {
         }
     }
 
-    private func runCurationSearch() async {
+    private func runCurationSearch(generation: Int) async {
         isSearching = true
         defer { isSearching = false }
 
@@ -121,6 +133,7 @@ public final class CatalogStore: ObservableObject {
 
         do {
             let page = try await client.searchAdvancedPage(query: identifierQuery, rows: pageSize, page: 1, sort: .popularity)
+            guard generation == searchGeneration else { return }
             seenIdentifiers = []
             let ordered = CuratedPager.order(results: page.results, by: slice)
             let filtered = filteredResults(ordered, for: identifierQuery)
@@ -137,6 +150,7 @@ public final class CatalogStore: ObservableObject {
         defer { isLoadingMore = false }
 
         let nextPage = currentPage + 1
+        let generation = searchGeneration
         let slice = CuratedPager.slice(manifest: curatedManifest, page: nextPage, size: pageSize)
         guard !slice.isEmpty else {
             updateHasMore()
@@ -146,6 +160,7 @@ public final class CatalogStore: ObservableObject {
 
         do {
             let page = try await client.searchAdvancedPage(query: identifierQuery, rows: pageSize, page: 1, sort: .popularity)
+            guard generation == searchGeneration else { return }
             currentPage = nextPage
             let ordered = CuratedPager.order(results: page.results, by: slice)
             let appended = ordered.filter { seenIdentifiers.insert($0.identifier).inserted }
@@ -188,7 +203,8 @@ public final class CatalogStore: ObservableObject {
         do {
             switch resource {
             case .advancedSearch(let query):
-                await runSearch(query: query + languageClause, sort: .popularity)
+                searchGeneration += 1
+                await runSearch(query: query + languageClause, sort: .popularity, generation: searchGeneration)
                 return nil
             case .identifier(let identifier):
                 let metadata = try await client.metadata(for: identifier)
@@ -284,7 +300,7 @@ public final class CatalogStore: ObservableObject {
         return result
     }
 
-    private func runSearch(query: String, sort: CatalogSort) async {
+    private func runSearch(query: String, sort: CatalogSort, generation: Int) async {
         isSearching = true
         defer { isSearching = false }
 
@@ -294,12 +310,14 @@ public final class CatalogStore: ObservableObject {
 
         do {
             let page = try await client.searchAdvancedPage(query: query, rows: pageSize, page: 1, sort: sort)
+            guard generation == searchGeneration else { return }
             numFound = page.numFound
             seenIdentifiers = []
             results = filteredResults(page.results, for: query)
                 .filter { seenIdentifiers.insert($0.identifier).inserted }
             updateHasMore()
         } catch {
+            guard generation == searchGeneration else { return }
             catalogError = error.localizedDescription
         }
     }
@@ -334,7 +352,9 @@ public final class CatalogStore: ObservableObject {
     private func reloadForLanguageChange() {
         guard let base = baseQuery(from: activeQuery) else { return }
         let sort = activeSort
-        Task { await runSearch(query: base + languageClause, sort: sort) }
+        searchGeneration += 1
+        let generation = searchGeneration
+        Task { await runSearch(query: base + languageClause, sort: sort, generation: generation) }
     }
 
     /// Strips a previously-appended language clause so the base query can be

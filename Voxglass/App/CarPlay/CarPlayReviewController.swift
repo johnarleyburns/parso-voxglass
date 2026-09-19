@@ -27,6 +27,7 @@ public final class CarPlayReviewController {
     private let player: any CarPlayProductionPlaying
     private let cuePlayer: any CarPlayCuePlaying
     private weak var interfaceController: CPInterfaceController?
+    private var playbackTask: Task<Void, Never>?
     private let continueProvider: () -> [CarPlaySection]
     private let mapper = CarPlayReviewCommandMapper()
 
@@ -49,7 +50,7 @@ public final class CarPlayReviewController {
 
     // MARK: - Root
 
-    public func makeRootTemplate() -> CPTabBarTemplate {
+    public func makeRootTemplate() -> CPTemplate {
         ProductionCarPlayRenderer.tabBar(
             tabs: ProductionCarPlayBuilder.rootTabs(
                 continueSections: continueProvider(),
@@ -90,7 +91,8 @@ public final class CarPlayReviewController {
         if let interfaceController {
             interfaceController.presentTemplate(template, animated: true, completion: nil)
         }
-        Task { await player.play(paragraphID: payload.paragraphIDs[0], in: payload) }
+        playbackTask?.cancel()
+        playbackTask = Task { await player.play(paragraphID: payload.paragraphIDs[0], in: payload) }
         return CarPlayNowPlayingSession(template: template, reviewButtonIDs: ids)
     }
 
@@ -119,7 +121,8 @@ public final class CarPlayReviewController {
 
         if let paragraphID = current.currentParagraphID {
             updateNowPlayingInfo(paragraphLabel: current.currentChapterLabel ?? "Paragraph")
-            Task { await player.play(paragraphID: paragraphID, in: current.payload) }
+            playbackTask?.cancel()
+            playbackTask = Task { await player.play(paragraphID: paragraphID, in: current.payload) }
         }
 
         if outcome.confirmed {
@@ -132,6 +135,9 @@ public final class CarPlayReviewController {
         session = nil
         remoteCommandMapping = .consumer
         uninstallParagraphCommands()
+        playbackTask?.cancel()
+        playbackTask = nil
+        interfaceController = nil
         Task { await player.pause() }
     }
 

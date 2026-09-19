@@ -67,6 +67,11 @@ public struct ChunkedRenderCoordinator: Sendable {
         var renderings: [UUID: ChapterRendering] = [:]
         var completed: [UUID] = []
         let done = ProgressCounter()
+        // A cache key is intentionally deterministic, but the temporary file
+        // used while rendering must not be. Parallel renders of equivalent
+        // projects (including test runs) otherwise race while moving/removing
+        // the same file from the shared temporary directory.
+        let runID = UUID().uuidString
 
         for (index, chapter) in chapters.enumerated() {
             try Task.checkCancellation()
@@ -82,27 +87,31 @@ public struct ChunkedRenderCoordinator: Sendable {
             }
 
             let tmpURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("render-\(plan.cacheKey.prefix(16)).caf")
-            let rendering = try await renderer.render(plan, to: tmpURL) { fraction in
-                progress(Progress(
-                    completedChapterCount: done.value,
-                    totalChapterCount: total,
-                    currentChapterOrdinal: index,
-                    currentChapterTitle: chapter.title,
-                    currentChapterFraction: fraction
-                ))
-            }
+                .appendingPathComponent("render-\(runID)-\(index)-\(plan.cacheKey.prefix(16)).caf")
+            let rendering: ChapterRendering
+            do {
+                defer { try? FileManager.default.removeItem(at: tmpURL) }
+                rendering = try await renderer.render(plan, to: tmpURL) { fraction in
+                    progress(Progress(
+                        completedChapterCount: done.value,
+                        totalChapterCount: total,
+                        currentChapterOrdinal: index,
+                        currentChapterTitle: chapter.title,
+                        currentChapterFraction: fraction
+                    ))
+                }
 
-            // Bytes durable in the content store before the cache index moves
-            // (§9.4 ordering); the render store is the first eviction class.
-            let stored = try await assets.ingest(
-                fileAt: tmpURL,
-                ext: "caf",
-                contentType: "audio/caf",
-                subdirectory: .render,
-                moving: true
-            )
-            try await cache.store(stored, for: plan.cacheKey)
+                // Bytes durable in the content store before the cache index moves
+                // (§9.4 ordering); the render store is the first eviction class.
+                let stored = try await assets.ingest(
+                    fileAt: tmpURL,
+                    ext: "caf",
+                    contentType: "audio/caf",
+                    subdirectory: .render,
+                    moving: true
+                )
+                try await cache.store(stored, for: plan.cacheKey)
+            }
             renderings[chapter.id] = rendering
             completed.append(chapter.id)
             done.value += 1

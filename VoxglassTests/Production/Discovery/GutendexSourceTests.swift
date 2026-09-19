@@ -126,6 +126,99 @@ import VoxglassCoreTestSupport
         #expect(needs.first?.provenance.sources.contains(.gutendex) == true)
     }
 
+    @Test func searchableGutendexRequestCarriesQueryAndPagingConstraints() async throws {
+        let client = GutendexSearchClient()
+        let json = """
+        {
+          "count": 2,
+          "next": "https://gutendex.com/books?page=2",
+          "results": [
+            { "id": 1342, "title": "Pride and Prejudice", "authors": [{"name": "Austen, Jane"}], "bookshelves": [], "languages": ["en"], "copyright": false, "formats": {} },
+            { "id": 84, "title": "Frankenstein", "authors": [{"name": "Shelley, Mary"}], "bookshelves": [], "languages": ["en"], "copyright": false, "formats": {} }
+          ]
+        }
+        """
+        let fetcher = StubFetcher()
+        fetcher.setDefault(.init(result: HTTPFetchResult(data: Data(json.utf8), statusCode: 200, finalURL: client.endpoint)))
+
+        let page = try await client.search(query: "Jane Austen", page: 3, using: fetcher)
+        let request = try #require(fetcher.recordedRequests.first)
+        let query = Dictionary(
+            uniqueKeysWithValues: URLComponents(url: request, resolvingAgainstBaseURL: false)?.queryItems?.map { ($0.name, $0.value ?? "") } ?? []
+        )
+
+        #expect(query["search"] == "Jane Austen")
+        #expect(query["page"] == "3")
+        #expect(query["languages"] == "en")
+        #expect(query["copyright"] == "false")
+        #expect(page.results.count == 2)
+        #expect(page.results.first?.authorLine == "Jane Austen")
+        #expect(page.results.first?.sourcePageURL?.absoluteString == "https://www.gutenberg.org/ebooks/1342")
+    }
+
+    @Test func searchableGutendexEmptyResponseIsPreserved() async throws {
+        let client = GutendexSearchClient()
+        let fetcher = StubFetcher()
+        fetcher.setDefault(.init(result: HTTPFetchResult(
+            data: Data("{ \"count\": 0, \"results\": [] }".utf8),
+            statusCode: 200,
+            finalURL: client.endpoint
+        )))
+
+        let page = try await client.search(query: "no such book", using: fetcher)
+        #expect(page.count == 0)
+        #expect(page.results.isEmpty)
+        #expect(page.next == nil)
+    }
+
+    @Test func searchableGutendexMalformedAndNonOKResponsesAreReported() async throws {
+        let client = GutendexSearchClient()
+        let malformed = StubFetcher()
+        malformed.setDefault(.init(result: HTTPFetchResult(
+            data: Data("not json".utf8),
+            statusCode: 200,
+            finalURL: client.endpoint
+        )))
+        do {
+            _ = try await client.search(query: "book", using: malformed)
+            Issue.record("Expected malformed searchable Gutendex JSON to throw")
+        } catch is DecodingError {
+            // Expected.
+        }
+
+        let unavailable = StubFetcher()
+        unavailable.setDefault(.init(result: HTTPFetchResult(
+            data: Data(),
+            statusCode: 503,
+            finalURL: client.endpoint
+        )))
+        do {
+            _ = try await client.search(query: "book", using: unavailable)
+            Issue.record("Expected searchable Gutendex HTTP status to throw")
+        } catch let error as HTTPFetchError {
+            #expect(error == .httpStatus(503))
+        }
+    }
+
+    @Test func searchableGutendexTimeoutAndCancellationRemainDistinct() async throws {
+        let client = GutendexSearchClient()
+        let timeout = StubFetcher()
+        timeout.failAll(.timeout)
+        do {
+            _ = try await client.search(query: "book", using: timeout)
+            Issue.record("Expected searchable Gutendex timeout to throw")
+        } catch let error as HTTPFetchError {
+            #expect(error == .timeout)
+        }
+
+        do {
+            _ = try await client.search(query: "book", using: CancellationFetcher())
+            Issue.record("Expected searchable Gutendex cancellation to throw")
+        } catch is CancellationError {
+            // Expected: cancellation must not be presented as a timeout.
+        }
+    }
+
     @Test func normalizesProjectGutenbergInputs() {
         #expect(GutenbergInput.ebookID(from: "1342") == "1342")
         #expect(GutenbergInput.ebookID(from: "https://www.gutenberg.org/ebooks/1342/") == "1342")
@@ -167,5 +260,11 @@ import VoxglassCoreTestSupport
         } catch {
             #expect(error is DecodingError)
         }
+    }
+}
+
+private struct CancellationFetcher: HTTPFetching {
+    func get(_ url: URL, timeout: TimeInterval, userAgent: String) async throws -> HTTPFetchResult {
+        throw CancellationError()
     }
 }

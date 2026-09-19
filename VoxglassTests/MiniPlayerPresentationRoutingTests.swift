@@ -111,7 +111,9 @@ import Testing
     @Test func sharedScreenReservesWorstCaseDockHeight() throws {
         let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
         let screen = sourceSlice(theme, from: "struct VoxglassScreen", to: "struct VoxglassBackground")
-        #expect(theme.contains("static let chromeBottomClearance: CGFloat = 136"))
+        #expect(theme.contains("ChromeMetrics.dockItemHeight * 2"))
+        #expect(theme.contains("ChromeMetrics.dockStackSpacing"))
+        #expect(theme.contains("ChromeMetrics.dockBottomPadding"))
         #expect(theme.contains("static let scrollContentBottomPadding: CGFloat = chromeBottomClearance"))
         #expect(screen.contains(".padding(.bottom, VoxglassLayout.scrollContentBottomPadding)"))
     }
@@ -164,7 +166,7 @@ import Testing
         #expect(discover.contains("@State private var soloOnly = false"))
         #expect(!(discover.contains("soloOnlyEnabled")))
         #expect(discover.contains("discover.catalogSearch"))
-        #expect(discover.contains("discover.filterMenu"))
+        #expect(discover.contains("discover.filterButton"))
 
         let search = try source("Voxglass/Features/Search/SearchView.swift")
         #expect(search.contains("@State private var soloOnly = false"))

@@ -26,13 +26,13 @@ public struct URLSessionFetcher: HTTPFetching {
                 finalURL: http.url ?? url
             )
         } catch is CancellationError {
-            throw HTTPFetchError.timeout
+            throw CancellationError()
         } catch let error as URLError {
             switch error.code {
             case .timedOut:
                 throw HTTPFetchError.timeout
             case .cancelled:
-                throw HTTPFetchError.timeout
+                throw CancellationError()
             default:
                 throw HTTPFetchError.transport
             }

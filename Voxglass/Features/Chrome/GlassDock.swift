@@ -8,7 +8,7 @@ struct GlassDock: View {
     @Binding var showingNowPlaying: Bool
 
     var body: some View {
-        VStack(spacing: 9) {
+        VStack(spacing: ChromeMetrics.dockStackSpacing) {
             if let session = playback.currentSession,
                miniPlayerRouter.shouldShowMiniPlayer(currentBookID: session.book.id) {
                 GlassMiniPlayer(showingNowPlaying: $showingNowPlaying)
@@ -20,7 +20,7 @@ struct GlassDock: View {
             GlassTabBar(selection: $selectedTab)
         }
         .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.bottom, ChromeMetrics.dockBottomPadding)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chrome.dock")
     }
@@ -76,6 +76,7 @@ struct GlassMiniPlayer: View {
             }
             .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 14))
             .adaptiveGlass(cornerRadius: 22)
+            .frame(height: ChromeMetrics.dockItemHeight)
         }
     }
 
@@ -108,20 +109,10 @@ struct GlassTabBar: View {
                             .minimumScaleFactor(0.75)
                     }
                     .foregroundStyle(selection == tab ? Palette.brass : Palette.ink3)
-                    .frame(minHeight: 48)
+                    .frame(minWidth: ChromeMetrics.minimumControlHitTarget,
+                           minHeight: ChromeMetrics.minimumControlHitTarget)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background {
-                        if selection == tab {
-                            Capsule(style: .continuous)
-                                .fill(Palette.brass.opacity(0.14))
-                                .overlay {
-                                    Capsule(style: .continuous)
-                                        .stroke(Palette.brass.opacity(0.32), lineWidth: 1)
-                                }
-                        }
-                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(label)
@@ -129,7 +120,7 @@ struct GlassTabBar: View {
                 .accessibilityAddTraits(selection == tab ? [.isSelected] : [])
             }
         }
-        .padding(.vertical, 9)
+        .frame(height: ChromeMetrics.dockItemHeight)
         .padding(.horizontal, 4)
         .adaptiveGlass(cornerRadius: 26)
         .accessibilityElement(children: .contain)

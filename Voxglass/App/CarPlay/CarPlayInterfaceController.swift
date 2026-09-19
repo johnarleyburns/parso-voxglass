@@ -140,8 +140,18 @@ final class CarPlayInterfaceController {
     private func buildRoot() {
         guard let dispatcher else { return }
         let interface = CarPlayMenuBuilder.root(makeState())
+        let validation = CarPlayTemplateValidation.consumerResult(interface.tabs)
         tabTemplates = [:]
-        let templates = interface.tabs.map { tab in
+        guard !validation.requiresFallback else {
+            tabBar = nil
+            interfaceController.setRootTemplate(
+                CarPlayTemplateRenderer.fallbackTemplate(reason: validation.diagnosticReason),
+                animated: false,
+                completion: nil
+            )
+            return
+        }
+        let templates = validation.normalizedTabs.map { tab in
             let template = CarPlayTemplateRenderer.tabTemplate(
                 tab,
                 dispatcher: .init(dispatch: { [weak dispatcher] in dispatcher?.dispatch($0) }),
@@ -158,7 +168,20 @@ final class CarPlayInterfaceController {
     private func refreshTabs() {
         guard let dispatcher else { return }
         let interface = CarPlayMenuBuilder.root(makeState())
-        for tab in interface.tabs {
+        let validation = CarPlayTemplateValidation.consumerResult(interface.tabs)
+        guard !validation.requiresFallback else {
+            // A changed root shape must be installed as a complete root. Do
+            // not leave a stale tab dictionary pointing at an obsolete set.
+            buildRoot()
+            return
+        }
+        let currentIDs = Set(tabTemplates.keys)
+        let nextIDs = Set(validation.normalizedTabs.map(\.id))
+        guard currentIDs == nextIDs else {
+            buildRoot()
+            return
+        }
+        for tab in validation.normalizedTabs {
             guard let template = tabTemplates[tab.id] else { continue }
             template.updateSections(CarPlayTemplateRenderer.sections(
                 tab.sections,

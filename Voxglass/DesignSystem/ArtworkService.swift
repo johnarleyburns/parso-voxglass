@@ -1,5 +1,7 @@
 import CryptoKit
 import Foundation
+import ImageIO
+import os
 import ParsoAudioStreaming
 import UIKit
 import VoxglassCore
@@ -9,6 +11,31 @@ enum ArtworkServiceError: Error, Equatable {
     case notFoundImage
     case tinyImage
     case undecodableImage
+}
+
+private actor ArtworkRequestRegistry {
+    private var inFlight: [NSURL: Task<UIImage, Error>] = [:]
+
+    func image(
+        for key: NSURL,
+        operation: @escaping @Sendable () async throws -> UIImage
+    ) async throws -> UIImage {
+        if let task = inFlight[key] {
+            return try await task.value
+        }
+        let task = Task { try await operation() }
+        inFlight[key] = task
+        defer { inFlight[key] = nil }
+        return try await task.value
+    }
+}
+
+private final class SendableFileManager: @unchecked Sendable {
+    let value: FileManager
+
+    init(_ value: FileManager) {
+        self.value = value
+    }
 }
 
 final class ArtworkService: @unchecked Sendable {
@@ -23,11 +50,13 @@ final class ArtworkService: @unchecked Sendable {
     private let cacheDirectory: URL
     private let timeToLive: TimeInterval
     private let fetcher: Fetcher
-    private let fileManager: FileManager
+    private let fileManager: SendableFileManager
     private let registerBytes: RegisterHook
     private let touchKey: TouchHook
     private let isPinned: PinnedHook
     private let ioQueue = DispatchQueue(label: "guru.parso.voxglass.artwork-cache")
+    private let requestRegistry = ArtworkRequestRegistry()
+    private let logger = Logger(subsystem: "guru.parso.voxglass", category: "Artwork")
 
     init(
         cacheDirectory: URL? = nil,
@@ -38,7 +67,7 @@ final class ArtworkService: @unchecked Sendable {
         touchKey: TouchHook? = nil,
         isPinned: PinnedHook? = nil
     ) {
-        self.fileManager = fileManager
+        self.fileManager = SendableFileManager(fileManager)
         self.timeToLive = timeToLive
         self.fetcher = fetcher ?? { url in
             let (data, response) = try await URLSession.shared.data(from: url)
@@ -53,6 +82,8 @@ final class ArtworkService: @unchecked Sendable {
         self.isPinned = isPinned ?? { key in
             await AudioCache.shared.isDurable(key)
         }
+        memoryCache.countLimit = 200
+        memoryCache.totalCostLimit = 64 * 1024 * 1024
 
         if let cacheDirectory {
             self.cacheDirectory = cacheDirectory
@@ -61,7 +92,7 @@ final class ArtworkService: @unchecked Sendable {
         }
 
         ioQueue.sync {
-            try? fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
+            try? self.fileManager.value.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
         }
     }
 
@@ -78,6 +109,12 @@ final class ArtworkService: @unchecked Sendable {
     }
 
     func loadImage(for url: URL) async throws -> UIImage {
+        try await requestRegistry.image(for: url as NSURL) { [self] in
+            try await self.loadImageUncoalesced(for: url)
+        }
+    }
+
+    private func loadImageUncoalesced(for url: URL) async throws -> UIImage {
         let nsURL = url as NSURL
 
         if let image = memoryCache.object(forKey: nsURL) {
@@ -114,6 +151,7 @@ final class ArtworkService: @unchecked Sendable {
         let (data, response) = try await fetcher(url)
         let image = try Self.validatedImage(from: data, response: response)
         memoryCache.setObject(image, forKey: nsURL)
+        logger.debug("artworkNetworkDecodeCompleted")
         write(data, to: cacheFileURL(for: url))
         registerBytes(cacheKey(url), Int64(data.count))
         return image
@@ -157,7 +195,7 @@ final class ArtworkService: @unchecked Sendable {
     /// hundred KB at most), and off any cache tier.
     static func decodeFileImage(at url: URL) -> UIImage? {
         guard let data = try? Data(contentsOf: url) else { return nil }
-        return UIImage(data: data)
+        return downsampledImage(from: data)
     }
 
     static func validatedImage(from data: Data, response: URLResponse?) throws -> UIImage {
@@ -212,7 +250,23 @@ final class ArtworkService: @unchecked Sendable {
             throw ArtworkServiceError.notFoundImage
         }
 
-        return image
+        return downsampledImage(from: data) ?? image
+    }
+
+    private static func downsampledImage(from data: Data, maxPixelSize: Int = 1024) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(
+                  source,
+                  0,
+                  [
+                      kCGImageSourceCreateThumbnailFromImageAlways: true,
+                      kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+                      kCGImageSourceCreateThumbnailWithTransform: true
+                  ] as CFDictionary
+              ) else {
+            return nil
+        }
+        return UIImage(cgImage: thumbnail)
     }
 
     private static func isIAUnwantedPlaceholder(image: UIImage, dataCount: Int) -> Bool {
@@ -295,13 +349,13 @@ final class ArtworkService: @unchecked Sendable {
         let pinned = await isPinned(Self.cacheKey(for: sourceURL))
         return ioQueue.sync(execute: { () -> UIImage? in
             guard
-                let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                let attributes = try? self.fileManager.value.attributesOfItem(atPath: url.path),
                 let modificationDate = attributes[.modificationDate] as? Date,
                 (pinned || Date().timeIntervalSince(modificationDate) <= timeToLive),
                 let data = try? Data(contentsOf: url),
-                let image = UIImage(data: data)
+                let image = Self.downsampledImage(from: data)
             else {
-                try? fileManager.removeItem(at: url)
+                try? self.fileManager.value.removeItem(at: url)
                 return nil
             }
             return image
@@ -313,19 +367,19 @@ final class ArtworkService: @unchecked Sendable {
     private func diskImage(at url: URL) -> UIImage? {
         return ioQueue.sync(execute: {
             guard
-                let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                let attributes = try? self.fileManager.value.attributesOfItem(atPath: url.path),
                 let modificationDate = attributes[.modificationDate] as? Date,
                 Date().timeIntervalSince(modificationDate) <= timeToLive,
                 let data = try? Data(contentsOf: url),
-                let image = UIImage(data: data)
+                let image = Self.downsampledImage(from: data)
             else { return nil }
             return image
         })
     }
 
     private func write(_ data: Data, to url: URL) {
-        ioQueue.async { [fileManager] in
-            try? fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
+        ioQueue.async { [fileManager = self.fileManager] in
+            try? fileManager.value.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
             try? data.write(to: url, options: [.atomic])
         }
     }

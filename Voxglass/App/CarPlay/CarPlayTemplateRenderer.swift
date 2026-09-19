@@ -28,10 +28,25 @@ enum CarPlayTemplateRenderer {
         _ interface: CarPlayInterface,
         dispatcher: Dispatcher,
         artwork: ArtworkSource
-    ) -> CPTabBarTemplate {
-        CPTabBarTemplate(templates: interface.tabs.map {
+    ) -> CPTemplate {
+        let result = CarPlayTemplateValidation.consumerResult(interface.tabs)
+        guard !result.requiresFallback else {
+            return fallbackTemplate(reason: result.diagnosticReason)
+        }
+        return CPTabBarTemplate(templates: result.normalizedTabs.map {
             tabTemplate($0, dispatcher: dispatcher, artwork: artwork)
         })
+    }
+
+    static func fallbackTemplate(reason: String? = nil) -> CPListTemplate {
+        _ = reason
+        let item = CPListItem(text: "CarPlay is loading", detailText: "Return to Voxglass and try again")
+        item.isEnabled = false
+        item.setImage(UIImage(systemName: "arrow.clockwise"))
+        return CPListTemplate(
+            title: "Voxglass",
+            sections: [CPListSection(items: [item])]
+        )
     }
 
     static func tabTemplate(

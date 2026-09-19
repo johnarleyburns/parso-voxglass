@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 import VoxglassCore
 
 struct ListenView: View {
@@ -16,6 +17,9 @@ struct ListenView: View {
     @State private var statsLast7DaysTotal: TimeInterval = 0
     @State private var statsDailyBars: [ListeningStatsView.DayBar] = []
     @State private var selectedCatalogBookID: UUID?
+    @State private var refreshTask: Task<Void, Never>?
+    @State private var refreshGeneration = 0
+    private let performanceLogger = Logger(subsystem: "guru.parso.voxglass", category: "ListenPerformance")
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
     @AppStorage(AppPreferencesStore.Keys.isSupporter) private var isSupporter = false
@@ -74,30 +78,25 @@ struct ListenView: View {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
         }
         .task {
-            await libraryStore.refreshRecentlyPlayed()
-            await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
-            await loadListeningStatsSummary()
+            scheduleHomeRefresh()
         }
         .onChange(of: selectedCollectionIDsRaw) { _, _ in
-            Task {
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
-            }
+            scheduleHomeRefresh()
         }
         .onChange(of: selectedLanguagesRaw) { _, _ in
-            Task {
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
-            }
+            scheduleHomeRefresh()
         }
         .onChange(of: showingNowPlaying) { wasShowing, isShowing in
             // Reflect just-finished listening immediately: when Now Playing is
             // dismissed, the taste profile may have shifted, so refresh the shelf
             // (and Jump Back In) without waiting for a tab switch.
             guard wasShowing, !isShowing else { return }
-            Task {
-                await libraryStore.refreshRecentlyPlayed()
-                await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
-                await loadListeningStatsSummary()
-            }
+            scheduleHomeRefresh()
+        }
+        .onDisappear {
+            refreshTask?.cancel()
+            refreshTask = nil
+            refreshGeneration += 1
         }
     }
 
@@ -192,7 +191,7 @@ struct ListenView: View {
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(title: "Jump Back In")
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                    LazyHStack(spacing: 12) {
                         ForEach(libraryStore.recentlyPlayed) { book in
                             NavigationLink {
                                 BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
@@ -276,18 +275,58 @@ struct ListenView: View {
         return "Resume"
     }
 
-    private func loadListeningStatsSummary() async {
-        statsTotalTime = await listeningStats.totalTime()
+    private struct ListeningStatsSnapshot {
+        var totalTime: TimeInterval
+        var last7DaysTotal: TimeInterval
+        var dailyBars: [ListeningStatsView.DayBar]
+    }
+
+    private func loadListeningStatsSummary() async -> ListeningStatsSnapshot {
+        let totalTime = await listeningStats.totalTime()
         let calendar = Calendar.current
         let now = Date()
         let totals = await listeningStats.dailyTotals(days: 7, calendar: calendar, now: now)
-        statsLast7DaysTotal = totals.values.reduce(0, +)
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEEE"
-        statsDailyBars = (0..<7).reversed().map { offset in
+        let dailyBars = (0..<7).reversed().map { offset in
             let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -offset, to: now) ?? now)
             return ListeningStatsView.DayBar(label: formatter.string(from: day), seconds: totals[day] ?? 0)
         }
+        return ListeningStatsSnapshot(
+            totalTime: totalTime,
+            last7DaysTotal: totals.values.reduce(0, +),
+            dailyBars: dailyBars
+        )
+    }
+
+    private func scheduleHomeRefresh() {
+        refreshTask?.cancel()
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        refreshTask = Task {
+            // Coalesce preference and Now Playing changes that arrive
+            // together so a scroll gesture never competes with overlapping
+            // store refreshes.
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled, generation == refreshGeneration else { return }
+            await refreshHome(generation: generation)
+        }
+    }
+
+    private func refreshHome(generation: Int) async {
+        let startedAt = Date()
+        performanceLogger.debug("listenRefreshStarted generation=\(generation, privacy: .public)")
+        await libraryStore.refreshRecentlyPlayed()
+        guard !Task.isCancelled, generation == refreshGeneration else { return }
+        await recommendations.load(selectedCollectionIDs: selectedCollectionIDs, selectedLanguages: selectedLanguages)
+        guard !Task.isCancelled, generation == refreshGeneration else { return }
+        let stats = await loadListeningStatsSummary()
+        guard !Task.isCancelled, generation == refreshGeneration else { return }
+        statsTotalTime = stats.totalTime
+        statsLast7DaysTotal = stats.last7DaysTotal
+        statsDailyBars = stats.dailyBars
+        let durationMilliseconds = Int(Date().timeIntervalSince(startedAt) * 1_000)
+        performanceLogger.debug("listenRefreshCompleted generation=\(generation, privacy: .public) durationMs=\(durationMilliseconds, privacy: .public)")
     }
 
     @ViewBuilder
@@ -303,7 +342,7 @@ struct ListenView: View {
                 )
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                    LazyHStack(spacing: 12) {
                         ForEach(recommendations.recommendations) { result in
                             Button {
                                 Task { await presentResult(result) }
