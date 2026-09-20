@@ -1,6 +1,15 @@
 {
-  "originHash" : "735ed775440d9896e4b7d7687eaa6594d5bf25b5f0cd2e46f3b138c3dda771b0",
+  "originHash" : "e358e7e4b3d61c2011b38c3369ef152ca32570a1f280abab7682db7dbb19f536",
   "pins" : [
+    {
+      "identity" : "parso-audio-engine",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/johnarleyburns/parso-audio-engine.git",
+      "state" : {
+        "revision" : "bd1fd012b7c862db1250b60372d8d414e43b1372",
+        "version" : "1.2.1"
+      }
+    },
     {
       "identity" : "zipfoundation",
       "kind" : "remoteSourceControl",

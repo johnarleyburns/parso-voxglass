@@ -114,6 +114,35 @@ import Foundation
         #expect(bookItems.first?.action == .openBook(bookID: book.id))
     }
 
+    @Test func libraryTabOffersVoiceSearchAcrossMyBooksFields() {
+        let tab = CarPlayMenuBuilder.libraryTab(CarPlayState())
+        let search = tab.sections.flatMap(\.items).first { $0.id == "search-my-books" }
+        #expect(search?.action == .beginMyBooksSearch)
+        #expect(search?.subtitle?.contains("title") == true)
+        #expect(search?.subtitle?.contains("narrator") == true)
+    }
+
+    @Test func myBooksSearchMatchesTitleAuthorAndNarrator() {
+        let bookID = UUID()
+        let book = CarPlayBookSnapshot(
+            id: bookID,
+            title: "The Odyssey",
+            authorLine: "Homer",
+            authors: ["Homer"],
+            narrators: ["Emily Wilson"],
+            chapterCount: 24
+        )
+
+        let byTitle = CarPlayMenuBuilder.myBooksSearchResults(query: "odyssey", books: [book])
+        let byAuthor = CarPlayMenuBuilder.myBooksSearchResults(query: "homer", books: [book])
+        let byNarrator = CarPlayMenuBuilder.myBooksSearchResults(query: "emily wilson", books: [book])
+
+        #expect(byTitle.first?.action == .playBook(bookID: bookID))
+        #expect(byAuthor.first?.action == .playBook(bookID: bookID))
+        #expect(byNarrator.first?.action == .playBook(bookID: bookID))
+        #expect(byNarrator.first?.detailText?.contains("Emily Wilson") == true)
+    }
+
     @Test func libraryTabExposesFavoritesRouteOnlyWhenFavoritesExist() {
         let fav = makeBook(id: UUID(), title: "Fav", isFavorite: true)
         let state = CarPlayState(books: [fav])

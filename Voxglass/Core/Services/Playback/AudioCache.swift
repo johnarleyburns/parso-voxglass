@@ -11,6 +11,28 @@ import ParsoAudioStreaming
 /// downloads live under Application Support where the OS never reclaims them.
 public enum AudioCache {
 
+    public struct StorageUsage: Equatable, Sendable {
+        public let streamingBytes: Int64
+        public let durableBytes: Int64
+        public let streamingAudioCount: Int
+        public let durableAudioCount: Int
+
+        public var totalBytes: Int64 { streamingBytes + durableBytes }
+        public var totalAudioCount: Int { streamingAudioCount + durableAudioCount }
+
+        public init(
+            streamingBytes: Int64,
+            durableBytes: Int64,
+            streamingAudioCount: Int,
+            durableAudioCount: Int
+        ) {
+            self.streamingBytes = streamingBytes
+            self.durableBytes = durableBytes
+            self.streamingAudioCount = streamingAudioCount
+            self.durableAudioCount = durableAudioCount
+        }
+    }
+
     /// Custom scheme the resource loader answers for; rewritten from http(s).
     public static let scheme = "voxglass-cache"
 
@@ -87,8 +109,33 @@ public enum AudioCache {
         await shared.setLimit(CachePreset.selected.rawValue)
     }
 
-    /// Clears the on-disk stream cache. The in-memory artwork tier is cleared
-    /// separately by the caller (`ArtworkService.clearMemory()`).
+    public static func storageUsage() async -> StorageUsage {
+        StorageUsage(
+            streamingBytes: await shared.totalCachedBytes(),
+            durableBytes: await shared.totalDurableBytes(),
+            streamingAudioCount: await shared.completeEntryCount(kind: "audio", durable: false),
+            durableAudioCount: await shared.completeEntryCount(kind: "audio", durable: true)
+        )
+    }
+
+    /// Clears only the evictable streaming tier. The in-memory artwork tier is
+    /// cleared separately by the caller (`ArtworkService.clearMemory()`).
+    public static func clearStreamingCache() async {
+        await shared.clearEvictable()
+    }
+
+    /// Clears only pinned/offline files. Download records are owned by
+    /// `OfflineDownloadManager` and are cleared by that manager before this is
+    /// called from the Settings screen.
+    public static func clearOfflineCache() async {
+        await shared.clearDurable()
+    }
+
+    /// Clears both streaming and pinned/offline files.
+    ///
+    /// This only touches the two cache roots. It never deletes the library
+    /// database or user-selected local-book files, which remain at their
+    /// original URLs outside the cache.
     public static func clearCache() async {
         await shared.clearAll()
     }

@@ -161,6 +161,7 @@ public enum CarPlayAction: Equatable, Sendable {
     case download(bookID: UUID)                         // free for everyone
     case removeDownload(bookID: UUID)
     case beginSearch
+    case beginMyBooksSearch
     case runSearch(query: String)
     case setSleepTimer(SleepTimer.Mode)
     case addBookmark
@@ -255,10 +256,10 @@ downloaded set, recommendations, latest search results, `hasCurrentSession`,
 | Tab | `systemImage` | Contents |
 |---|---|---|
 | **Continue** | `arrow.clockwise.circle.fill` | "Now Playing" row (if a session exists) → resumeCurrent; then in-progress books newest-first (progress bars + resume detail); then "Recently finished". Empty → warm CTA to Discover. |
-| **Library** | `books.vertical.fill` | Your imported books (title A–Z or recent). Header rows push routes: Favorites, Playlists, Browse by Author, Browse by Narrator. Book → chapter list. |
+| **Library** | `books.vertical.fill` | Your imported books (title A–Z or recent). The first action is voice search across My Books by title, author, or narrator; header rows then push Favorites, Playlists, Browse by Author, and Browse by Narrator. Book → chapter list. |
 | **Downloaded** | `arrow.down.circle.fill` | Only `.downloaded` books — safe with no signal. Empty → "Download books on Wi-Fi to listen offline." |
 | **Discover** | `sparkles` | Recommendations (from `HomeRecommendationStore`), then Featured Collections / Genres (from `CatalogStore`/`LibriVoxBrowseCategory`). Item → import-then-play, disclosure → detail. |
-| **Search** | `magnifyingglass` | A launcher row that pushes `CPSearchTemplate`. Voice-first (keyboard disabled while moving). Results → import-then-play. |
+| **Search** | `magnifyingglass` | A launcher row that pushes `CPSearchTemplate`. Voice-first search covers My Books and LibriVox by title, author, or narrator; My Books matches play directly and catalog matches import-then-play. |
 
 Playlists & Favorites fold into Library (as routes) rather than spending scarce tab slots — everything stays
 reachable within the 5-tab limit.
@@ -430,9 +431,12 @@ final class AppServices: ObservableObject {
 
 If the user gets in the car with the phone locked and the app not running, iOS launches the app **directly
 into the CarPlay scene** — `RootView.task` may never fire, so the library would be empty and nothing could
-play. Therefore `CarPlaySceneDelegate.templateApplicationScene(_:didConnect:)` must **also** call
-`await AppServices.shared.bootstrapOnce()` before building the interface (show a "Loading your library…"
-`CPListTemplate` placeholder while it runs). `bootstrapOnce()`'s guard makes the double-trigger safe.
+play. Therefore `CarPlaySceneDelegate.templateApplicationScene(_:didConnect:)` must **also** start
+`AppServices.shared.bootstrapOnce()` before building the interface. CarPlay waits at most two seconds on
+that full phone bootstrap, then replaces the placeholder with the usable tab shell while the bootstrap
+continues in the background; store subscriptions fill the library as soon as it is available. This keeps
+network-backed recommendations, sync, and folder scans from trapping the driver on a loading screen.
+`bootstrapOnce()`'s guard makes the double-trigger safe.
 Audio-session activation and `MPRemoteCommandCenter` wiring already happen in `PlaybackCoordinator.init` /
 `SystemPlaybackBridge.init`, which run as soon as `AppServices.shared` is first touched — so playback works
 with no phone UI ever shown.
@@ -446,7 +450,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     func templateApplicationScene(_ scene: CPTemplateApplicationScene,
                                   didConnect interfaceController: CPInterfaceController) {
         Task { @MainActor in
-            await AppServices.shared.bootstrapOnce()
+            let bootstrap = Task { await AppServices.shared.bootstrapOnce() }
+            await waitForBootstrap(bootstrap, timeout: .seconds(2))
             carController = CarPlayInterfaceController(
                 interfaceController: interfaceController,
                 services: .shared
@@ -484,7 +489,8 @@ case .playCatalogItem:          Task { importThenPlay(identifier) }   // library
 case .download:                 offlineDownloadManager.download(book:)
 case .setSleepTimer:            coordinator.setSleepTimer(mode)
 case .addBookmark:              coordinator.addBookmark()
-case .beginSearch:              push CPSearchTemplate
+case .beginSearch:              push CPSearchTemplate (My Books + LibriVox)
+case .beginMyBooksSearch:       push CPSearchTemplate (My Books only)
 case .runSearch:                Task { results = try await libriVoxClient.search(query) }
 …
 ```

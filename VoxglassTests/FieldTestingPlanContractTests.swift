@@ -95,6 +95,8 @@ import Testing
         #expect(scene.contains("connectionGeneration"))
         #expect(scene.contains("connectionTask?.cancel()"))
         #expect(scene.contains("guard !Task.isCancelled"))
+        #expect(scene.contains("waitForBootstrap"))
+        #expect(scene.contains(".seconds(2)"))
     }
 
     @Test func narrationHomeHidesUnstartedProjectsAndMovesNeedsIntoNewFlow() throws {

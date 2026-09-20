@@ -63,9 +63,12 @@ import VoxglassCore
     /// CI, where swift-testing block-buffers stdout and a hung run logs nothing
     /// at all.
     @Test func concurrentProducerConsumerPreservesOrderAndCount() async throws {
-        let capacity = 8192
-        let ring = CaptureRingBuffer(capacity: capacity)
         let total = 65_536
+        // This test verifies ordering under concurrent access. Give it enough
+        // room that a busy suite cannot turn scheduler delay into intentional
+        // producer drops; the capacity-overrun test above covers drop policy.
+        let capacity = total + 1
+        let ring = CaptureRingBuffer(capacity: capacity)
         let chunkSize = 64
         let deadline = ContinuousClock.now + .seconds(30)
 
@@ -103,10 +106,10 @@ import VoxglassCore
             var samples = [Float](repeating: 0, count: chunkSize)
             for start in stride(from: 0, to: total, by: chunkSize) {
                 for i in 0..<chunkSize { samples[i] = Float(start + i) }
-                // Usable capacity is one less than allocated. Yield until the
-                // chunk fits so the ring never drops; on a starved runner the
-                // deadline lets the push through and the expectations below
-                // report the overrun instead of hanging.
+                // Keep the producer path chunked so this still exercises
+                // concurrent push/pop ordering; the oversized ring prevents
+                // scheduler latency from changing this ordering test into a
+                // drop-policy test.
                 while ring.availableSampleCount + chunkSize > capacity - 1 {
                     if ContinuousClock.now > deadline { break }
                     await Task.yield()

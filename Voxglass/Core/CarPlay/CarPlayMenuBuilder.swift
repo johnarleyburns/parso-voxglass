@@ -70,7 +70,14 @@ public enum CarPlayMenuBuilder {
     public static func libraryTab(_ state: CarPlayState) -> CarPlayTab {
         var sections: [CarPlaySection] = []
 
-        var routes: [CarPlayItem] = []
+        var routes: [CarPlayItem] = [CarPlayItem(
+            id: "search-my-books",
+            title: "Search My Books",
+            subtitle: "Speak a title, author, or narrator",
+            artwork: .symbol("magnifyingglass"),
+            accessory: .disclosure,
+            action: .beginMyBooksSearch
+        )]
         if state.books.contains(where: { $0.isFavorite }) {
             routes.append(routeItem(id: "route-favorites", title: "Favorites",
                                     symbol: "heart.fill", route: .favorites))
@@ -170,8 +177,8 @@ public enum CarPlayMenuBuilder {
             sections: [CarPlaySection(items: [
                 CarPlayItem(
                     id: "search-launcher",
-                    title: "Search LibriVox",
-                    subtitle: "Tap, then speak a title or author",
+                    title: "Search Voxglass",
+                    subtitle: "Speak a title, author, or narrator · My Books + LibriVox",
                     artwork: .symbol("magnifyingglass"),
                     accessory: .disclosure,
                     action: .beginSearch
@@ -263,6 +270,46 @@ public enum CarPlayMenuBuilder {
             ])]
         }
         return [CarPlaySection(items: applyCap(deduped.map(catalogItem)))]
+    }
+
+    /// Matches every searchable My Books field with an AND-of-tokens query.
+    /// This keeps in-car search useful when a driver says a narrator or author
+    /// rather than the exact title. The result remains a direct play action so
+    /// it resumes from the saved position without opening another menu.
+    public static func myBooksSearchResults(
+        query: String,
+        books: [CarPlayBookSnapshot]
+    ) -> [CarPlayItem] {
+        let tokens = query
+            .split { !$0.isLetter && !$0.isNumber }
+            .map { $0.lowercased() }
+            .filter { !$0.isEmpty }
+        guard !tokens.isEmpty else { return [] }
+
+        let matches = books.filter { book in
+            let fields = ([book.title, book.authorLine] + book.authors + book.narrators)
+                .map { $0.lowercased() }
+            return tokens.allSatisfy { token in fields.contains { $0.localizedStandardContains(token) } }
+        }
+        .sorted { lhs, rhs in
+            let leftScore = myBooksSearchScore(lhs, tokens: tokens)
+            let rightScore = myBooksSearchScore(rhs, tokens: tokens)
+            if leftScore != rightScore { return leftScore > rightScore }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+
+        return applyCap(matches.map { book in
+            var item = bookItem(book, action: .playBook(bookID: book.id))
+            item.id = "my-book-search-\(book.id.uuidString)"
+            item.artwork = book.coverURL.map { .url($0) } ?? .symbol("books.vertical.fill")
+            if !book.narrators.isEmpty {
+                let narrator = "Narrated by \(book.narrators.joined(separator: ", "))"
+                item.detailText = [narrator, item.detailText]
+                    .compactMap { $0 }
+                    .joined(separator: " · ")
+            }
+            return item
+        })
     }
 
     // MARK: - Pure helpers
@@ -384,6 +431,17 @@ public enum CarPlayMenuBuilder {
             artwork: snapshot.coverURL.map { .url($0) } ?? .symbol("headphones"),
             action: action
         )
+    }
+
+    private static func myBooksSearchScore(_ book: CarPlayBookSnapshot, tokens: [String]) -> Int {
+        let title = book.title.lowercased()
+        let authors = ([book.authorLine] + book.authors).map { $0.lowercased() }
+        let narrators = book.narrators.map { $0.lowercased() }
+        return tokens.reduce(0) { score, token in
+            score + (title == token ? 100 : title.hasPrefix(token) ? 50 : title.localizedStandardContains(token) ? 25 : 0)
+                + (authors.contains { $0.hasPrefix(token) } ? 15 : 0)
+                + (narrators.contains { $0.hasPrefix(token) } ? 15 : 0)
+        }
     }
 
     private static func routeItem(id: String, title: String, symbol: String, route: CarPlayBrowseRoute) -> CarPlayItem {

@@ -489,7 +489,6 @@
 		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
 		D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionSmokeSeed.swift; sourceTree = "<group>"; };
 		D85F389E6310626F4B2F88D2 /* CarPlayReviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayReviewController.swift; sourceTree = "<group>"; };
-		D9248CA839F2E58A892CC521 /* parso-audio-engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-audio-engine"; path = "../parso-audio-engine"; sourceTree = SOURCE_ROOT; };
 		D95EEA019E1770E27663315D /* tom_sawyer_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tom_sawyer_librivox.jpg; sourceTree = "<group>"; };
 		D99745AB51C27E3F7194CA27 /* BundledArtworkProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledArtworkProvider.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
@@ -989,7 +988,6 @@
 		EBC1B200DDF902108E6154DD /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				D9248CA839F2E58A892CC521 /* parso-audio-engine */,
 				D78C6344FCDC530F80FCD2DE /* parso-voxglass */,
 			);
 			name = Packages;
@@ -1210,8 +1208,8 @@
 			mainGroup = A8CDFF63283253FCE1DB2B33;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				E2F1F57A2E614305746BE10D /* XCRemoteSwiftPackageReference "parso-audio-engine" */,
 				4ABBA9978D2D897986204F97 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-				4CFA7860EC471D88502E344F /* XCLocalSwiftPackageReference "../parso-audio-engine" */,
 				620520AC8F752923B71E97DA /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1977,10 +1975,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		4CFA7860EC471D88502E344F /* XCLocalSwiftPackageReference "../parso-audio-engine" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../parso-audio-engine";
-		};
 		620520AC8F752923B71E97DA /* XCLocalSwiftPackageReference "." */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = .;
@@ -1994,6 +1988,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.9.20;
+			};
+		};
+		E2F1F57A2E614305746BE10D /* XCRemoteSwiftPackageReference "parso-audio-engine" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/johnarleyburns/parso-audio-engine.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.2.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -2023,6 +2025,7 @@
 		};
 		56C535A680FBE03F3A1CD690 /* ParsoAudioPlayback */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E2F1F57A2E614305746BE10D /* XCRemoteSwiftPackageReference "parso-audio-engine" */;
 			productName = ParsoAudioPlayback;
 		};
 		5A9D81AAA34E5257F736E8A0 /* VoxglassWatchCore */ = {
@@ -2039,6 +2042,7 @@
 		};
 		7AB8B250D3942B60F221985F /* ParsoAudioStreaming */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E2F1F57A2E614305746BE10D /* XCRemoteSwiftPackageReference "parso-audio-engine" */;
 			productName = ParsoAudioStreaming;
 		};
 		939374D7CC51C05995A3F339 /* VoxglassEncoders */ = {

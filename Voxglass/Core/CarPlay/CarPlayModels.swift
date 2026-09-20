@@ -114,6 +114,7 @@ public enum CarPlayAction: Equatable, Sendable {
     case download(bookID: UUID)
     case removeDownload(bookID: UUID)
     case beginSearch
+    case beginMyBooksSearch
     case runSearch(query: String)
     case setSleepTimer(SleepTimer.Mode)
     case addBookmark

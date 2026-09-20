@@ -13,9 +13,12 @@ let package = Package(
     ],
     dependencies: [
         // Audio-engine unification (parso-audio-engine/docs/UNIFICATION_PLAN.md).
-        // Local path override on the migration branch; swaps to a version tag on
-        // merge. Requires parso-audio-engine checked out as a sibling directory.
-        .package(path: "../parso-audio-engine")
+        // Consume the published release so local and CI builds validate the same
+        // immutable engine revision.
+        .package(
+            url: "https://github.com/johnarleyburns/parso-audio-engine.git",
+            exact: "1.2.1"
+        )
     ],
     targets: [
         .target(

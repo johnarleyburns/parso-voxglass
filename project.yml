@@ -9,10 +9,11 @@ packages:
   VoxglassCore:
     path: .
   # Audio-engine unification (parso-audio-engine/docs/UNIFICATION_PLAN.md).
-  # Local path override during the migration; swaps to a tag pin on merge to
-  # main. Requires parso-audio-engine checked out as a sibling directory.
+  # Pin the published engine release so local and CI builds use the same
+  # immutable revision.
   ParsoAudioEngine:
-    path: ../parso-audio-engine
+    url: https://github.com/johnarleyburns/parso-audio-engine.git
+    exactVersion: 1.2.1
   ZIPFoundation:
     url: https://github.com/weichsel/ZIPFoundation.git
     from: 0.9.20

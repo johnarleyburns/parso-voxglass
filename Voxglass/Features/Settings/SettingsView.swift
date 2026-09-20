@@ -270,10 +270,31 @@ private struct LanguagesCard: View {
 }
 
 private struct CacheSettingsCard: View {
-    @State private var cacheUsed: Int64 = 0
+    private enum ClearTarget: String, Identifiable {
+        case streaming
+        case offline
+        case all
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .streaming: return "Streaming Cache"
+            case .offline: return "Offline Downloads"
+            case .all: return "All Cached Data"
+            }
+        }
+    }
+
+    @EnvironmentObject private var offlineDownloadManager: OfflineDownloadManager
+    @State private var usage = AudioCache.StorageUsage(
+        streamingBytes: 0,
+        durableBytes: 0,
+        streamingAudioCount: 0,
+        durableAudioCount: 0
+    )
     @State private var cacheLimit: Int64 = SparseCacheStore.defaultLimit
-    @State private var cachedCount: Int = 0
-    @State private var showClearConfirm = false
+    @State private var clearTarget: ClearTarget?
     @AppStorage(AppPreferencesStore.Keys.cacheFullBooksOnCellular) private var cacheFullBooksOnCellular = false
 
     var body: some View {
@@ -284,18 +305,21 @@ private struct CacheSettingsCard: View {
         }
         .task { await refresh() }
         .confirmationDialog(
-            "Clear \(ByteFormatting.string(cacheUsed)) of cached audio and artwork?",
-            isPresented: $showClearConfirm,
+            clearConfirmationTitle,
+            isPresented: clearDialogPresented,
             titleVisibility: .visible
         ) {
-            Button("Clear Cache", role: .destructive) {
-                Task {
-                    await AudioCache.clearCache()
-                    // Core's CacheManager no longer reaches into the UIKit artwork
-                    // tier; clear its in-memory cache app-side.
-                    ArtworkService.shared.clearMemory()
-                    await refresh()
+            if let clearTarget {
+                Button("Clear \(clearTarget.title)", role: .destructive) {
+                    let target = clearTarget
+                    self.clearTarget = nil
+                    Task {
+                        await clear(target)
+                    }
                 }
+            }
+            Button("Cancel", role: .cancel) {
+                clearTarget = nil
             }
         }
     }
@@ -303,15 +327,22 @@ private struct CacheSettingsCard: View {
     private var usageCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Streaming Cache")
+                Text("Cached Storage")
                     .scaledFont(size: 13, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
-                Text("\(ByteFormatting.string(cacheUsed)) of \(ByteFormatting.string(cacheLimit))")
-                    .scaledFont(size: 11)
-                    .foregroundStyle(Palette.ink3)
+                Text(ByteFormatting.string(usage.totalBytes))
+                    .scaledFont(size: 11, weight: .semibold)
+                    .foregroundStyle(Palette.ink2)
             }
-            .padding(.bottom, 11)
+            .padding(.bottom, 13)
+
+            storageRow(
+                title: "Streaming cache",
+                bytes: usage.streamingBytes,
+                detail: "\(usage.streamingAudioCount) tracks · oldest evicted first",
+                limit: cacheLimit
+            )
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -324,16 +355,28 @@ private struct CacheSettingsCard: View {
                 }
             }
             .frame(height: 10)
+            .padding(.top, 9)
+
+            storageRow(
+                title: "Offline downloads",
+                bytes: usage.durableBytes,
+                detail: "\(usage.durableAudioCount) tracks · kept until cleared",
+                limit: nil
+            )
+            .padding(.top, 15)
+
+            Divider()
+                .overlay(Color.white.opacity(0.1))
+                .padding(.vertical, 13)
 
             HStack {
-                Text("\(cachedCount) tracks cached")
-                    .scaledFont(size: 10.5)
+                Text("Total cached storage")
+                    .scaledFont(size: 11.5, weight: .semibold)
                 Spacer()
-                Text("oldest evicted first")
-                    .scaledFont(size: 10.5)
+                Text(ByteFormatting.string(usage.totalBytes))
+                    .scaledFont(size: 11.5, weight: .semibold)
             }
-            .foregroundStyle(Palette.ink3)
-            .padding(.top, 8)
+            .foregroundStyle(Palette.ink2)
 
             HStack(spacing: 6) {
                 ForEach(AudioCache.CachePreset.allCases, id: \.rawValue) { preset in
@@ -344,6 +387,30 @@ private struct CacheSettingsCard: View {
         }
         .padding(15)
         .glassSurface(cornerRadius: 18)
+    }
+
+    private func storageRow(title: String, bytes: Int64, detail: String, limit: Int64?) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .scaledFont(size: 12.5, weight: .semibold)
+                    .foregroundStyle(Palette.ink)
+                Text(detail)
+                    .scaledFont(size: 10.5)
+                    .foregroundStyle(Palette.ink3)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(ByteFormatting.string(bytes))
+                    .scaledFont(size: 12, weight: .semibold)
+                    .foregroundStyle(Palette.ink2)
+                if let limit {
+                    Text("of \(ByteFormatting.string(limit))")
+                        .scaledFont(size: 10)
+                        .foregroundStyle(Palette.ink3)
+                }
+            }
+        }
     }
 
     private func presetButton(_ preset: AudioCache.CachePreset) -> some View {
@@ -388,33 +455,87 @@ private struct CacheSettingsCard: View {
     }
 
     private var clearCard: some View {
+        VStack(spacing: 0) {
+            clearButton(.streaming, bytes: usage.streamingBytes, detail: "Audio and artwork that can be downloaded again")
+            VoxglassListDivider()
+            clearButton(.offline, bytes: usage.durableBytes, detail: "Books saved for offline listening")
+            VoxglassListDivider()
+            clearButton(.all, bytes: usage.totalBytes, detail: "Streaming cache and offline downloads")
+        }
+        .padding(.horizontal, 15)
+        .glassSurface(cornerRadius: 18)
+    }
+
+    private func clearButton(_ target: ClearTarget, bytes: Int64, detail: String) -> some View {
         Button {
-            showClearConfirm = true
+            clearTarget = target
         } label: {
-            HStack {
-                Text("Clear Cache")
-                    .scaledFont(size: 13.5, weight: .semibold)
+            HStack(spacing: 11) {
+                Image(systemName: target == .all ? "trash.fill" : "trash")
                     .foregroundStyle(Palette.danger)
-                Spacer()
-                Text(ByteFormatting.string(cacheUsed))
-                    .scaledFont(size: 13)
-                    .foregroundStyle(Palette.ink3)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Clear \(target.title)")
+                        .scaledFont(size: 13.5, weight: .semibold)
+                        .foregroundStyle(Palette.danger)
+                    Text(detail)
+                        .scaledFont(size: 10.5)
+                        .foregroundStyle(Palette.ink3)
+                }
+                Spacer(minLength: 8)
+                Text(ByteFormatting.string(bytes))
+                    .scaledFont(size: 11.5, weight: .semibold)
+                    .foregroundStyle(Palette.ink2)
             }
-            .padding(15)
-            .glassSurface(cornerRadius: 18)
+            .frame(minHeight: 54)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("cache.clear.\(target.rawValue)")
     }
 
     private var fillFraction: Double {
         guard cacheLimit > 0 else { return 0 }
-        return min(1, Double(cacheUsed) / Double(cacheLimit))
+        return min(1, Double(usage.streamingBytes) / Double(cacheLimit))
+    }
+
+    private var clearConfirmationTitle: String {
+        guard let clearTarget else { return "Clear cached data?" }
+        return "Clear \(ByteFormatting.string(bytes(for: clearTarget))) of \(clearTarget.title.lowercased())?"
+    }
+
+    private var clearDialogPresented: Binding<Bool> {
+        Binding(
+            get: { clearTarget != nil },
+            set: { if !$0 { clearTarget = nil } }
+        )
+    }
+
+    private func bytes(for target: ClearTarget) -> Int64 {
+        switch target {
+        case .streaming: return usage.streamingBytes
+        case .offline: return usage.durableBytes
+        case .all: return usage.totalBytes
+        }
+    }
+
+    private func clear(_ target: ClearTarget) async {
+        switch target {
+        case .streaming:
+            await AudioCache.clearStreamingCache()
+            ArtworkService.shared.clearMemory()
+        case .offline:
+            await offlineDownloadManager.removeAllOffline()
+        case .all:
+            await offlineDownloadManager.removeAllOffline()
+            await AudioCache.clearCache()
+            ArtworkService.shared.clearMemory()
+        }
+        await refresh()
     }
 
     private func refresh() async {
-        cacheUsed = await AudioCache.shared.totalCachedBytes()
+        usage = await AudioCache.storageUsage()
         cacheLimit = AudioCache.CachePreset.selected.rawValue
-        cachedCount = await AudioCache.shared.completeEntryCount(kind: "audio")
     }
 }
 

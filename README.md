@@ -180,6 +180,9 @@ If every step passes, the playback bridge is behaving. Any failure in sections 3
 
 ## License
 
+Voxglass consumes the published `parso-audio-engine` (PAE) **1.2.1** release;
+the app and CI resolve that immutable version rather than a local or migration-branch checkout.
+
 GNU General Public License v3.0 or later, with an additional permission under
 GPLv3 §7 allowing distribution through Apple's App Store. See `LICENSE`.
 

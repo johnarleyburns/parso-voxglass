@@ -68,7 +68,10 @@ final class CarPlayActionDispatcher {
             Task { await services.offlineDownloadManager.removeOffline(book: book) }
 
         case .beginSearch:
-            beginSearch()
+            beginSearch(myBooksOnly: false)
+
+        case .beginMyBooksSearch:
+            beginSearch(myBooksOnly: true)
 
         case .runSearch(let query):
             runSearch(query: query)
@@ -198,9 +201,13 @@ final class CarPlayActionDispatcher {
         }
     }
 
-    private func beginSearch() {
+    private func beginSearch(myBooksOnly: Bool) {
         let template = CPSearchTemplate()
-        let delegate = CarPlaySearchDelegate(dispatcher: self, controller: controller)
+        let delegate = CarPlaySearchDelegate(
+            dispatcher: self,
+            controller: controller,
+            myBooksOnly: myBooksOnly
+        )
         searchDelegate = delegate
         template.delegate = delegate
         controller?.push(template)
@@ -246,12 +253,18 @@ final class CarPlayActionDispatcher {
 private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
     private weak var dispatcher: CarPlayActionDispatcher?
     private weak var controller: CarPlayInterfaceController?
-    private var latestResults: [InternetArchiveSearchResult] = []
+    private let myBooksOnly: Bool
+    private var actionByItem: [ObjectIdentifier: CarPlayAction] = [:]
     private var searchTask: Task<Void, Never>?
 
-    init(dispatcher: CarPlayActionDispatcher, controller: CarPlayInterfaceController?) {
+    init(
+        dispatcher: CarPlayActionDispatcher,
+        controller: CarPlayInterfaceController?,
+        myBooksOnly: Bool
+    ) {
         self.dispatcher = dispatcher
         self.controller = controller
+        self.myBooksOnly = myBooksOnly
     }
 
     nonisolated func searchTemplate(
@@ -264,26 +277,34 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
             self.searchTask?.cancel()
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard trimmed.count >= 2 else {
+                self.actionByItem.removeAll()
                 completionBox.value([])
                 return
             }
             self.searchTask = Task { [weak self] in
-                let results = (try? await InternetArchiveClient().searchLibriVox(query: trimmed, rows: 12)) ?? []
-                guard let self, !Task.isCancelled else {
+                guard let self else {
                     completionBox.value([])
                     return
                 }
-                self.latestResults = results
-                completionBox.value(results.map { result in
+                let localItems = CarPlayMenuBuilder.myBooksSearchResults(
+                    query: trimmed,
+                    books: self.controller?.makeState().books ?? []
+                )
+                let remoteResults = self.myBooksOnly
+                    ? []
+                    : ((try? await InternetArchiveClient().searchLibriVox(query: trimmed, rows: 12)) ?? [])
+                guard !Task.isCancelled else {
+                    completionBox.value([])
+                    return
+                }
+                self.actionByItem.removeAll()
+                let localCPItems = localItems.map { self.makeListItem(from: $0) }
+                let remoteCPItems = remoteResults.map { result in
                     let item = CPListItem(text: result.title, detailText: result.authorLine)
-                    item.handler = { [weak self] _, done in
-                        Task { @MainActor in
-                            self?.dispatcher?.dispatch(.playCatalogItem(identifier: result.identifier))
-                            done()
-                        }
-                    }
+                    self.configure(item, action: .playCatalogItem(identifier: result.identifier))
                     return item
-                })
+                }
+                completionBox.value(localCPItems + remoteCPItems)
             }
         }
     }
@@ -295,10 +316,30 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
     ) {
         let completionBox = UncheckedBox(completionHandler)
         Task { @MainActor in
-            if let match = self.latestResults.first(where: { $0.title == item.text }) {
-                self.dispatcher?.dispatch(.playCatalogItem(identifier: match.identifier))
+            if let action = self.actionByItem[ObjectIdentifier(item)] {
+                self.dispatcher?.dispatch(action)
             }
             completionBox.value()
+        }
+    }
+
+    private func makeListItem(from model: CarPlayItem) -> CPListItem {
+        let detail = [model.subtitle, model.detailText]
+            .compactMap { $0 }
+            .joined(separator: " · ")
+        let item = CPListItem(text: model.title, detailText: detail.isEmpty ? nil : detail)
+        item.setImage(UIImage(systemName: "books.vertical.fill"))
+        configure(item, action: model.action)
+        return item
+    }
+
+    private func configure(_ item: CPListItem, action: CarPlayAction) {
+        actionByItem[ObjectIdentifier(item)] = action
+        item.handler = { [weak self] _, completion in
+            Task { @MainActor in
+                self?.dispatcher?.dispatch(action)
+                completion()
+            }
         }
     }
 }

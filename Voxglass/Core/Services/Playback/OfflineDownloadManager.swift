@@ -39,6 +39,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private var chapterFractions: [UUID: [UUID: Double]] = [:]  // bookID -> chapterID -> 0...1
     private var plannedCount: [UUID: Int] = [:]                 // bookID -> chapters in job
     private var failedBooks: Set<UUID> = []
+    private var cancelledTaskIdentifiers: Set<Int> = []
     private var taskRegistry: [Int: TaskInfo]
     private var backgroundCompletionHandler: (() -> Void)?
 
@@ -191,6 +192,27 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         state[book.book.id] = .notCached
     }
 
+    /// Removes every user-requested offline download, including any durable
+    /// cache entries that no longer have a matching library record.
+    public func removeAllOffline() async {
+        await cancelAllTasks()
+        let books = (try? await repository.fetchLibrary()) ?? []
+        for book in books {
+            await removeOffline(book: book)
+        }
+        let orphanedBookIDs = Set(
+            ((try? await repository.fetchAllDownloadRecords()) ?? []).map(\.bookID)
+        )
+        for bookID in orphanedBookIDs {
+            try? await repository.deleteDownloadRecords(forBookID: bookID)
+        }
+        await cacheStore.clearDurable()
+        chapterFractions.removeAll()
+        plannedCount.removeAll()
+        failedBooks.removeAll()
+        state.removeAll()
+    }
+
     /// Stores the system-provided completion handler for background events; the
     /// session calls it once all events have been delivered.
     public func handleBackgroundEvents(completionHandler: @escaping () -> Void) {
@@ -256,6 +278,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     }
 
     private func handleFinished(taskIdentifier: Int, taskDescription: String?, stagingURL: URL, totalBytes: Int64) async {
+        if cancelledTaskIdentifiers.remove(taskIdentifier) != nil {
+            try? FileManager.default.removeItem(at: stagingURL)
+            taskRegistry[taskIdentifier] = nil
+            persistTaskRegistry()
+            return
+        }
         guard let info = taskInfo(taskIdentifier: taskIdentifier, taskDescription: taskDescription) else {
             try? FileManager.default.removeItem(at: stagingURL)
             return
@@ -286,6 +314,11 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     }
 
     private func handleFailure(taskIdentifier: Int, taskDescription: String?) async {
+        if cancelledTaskIdentifiers.remove(taskIdentifier) != nil {
+            taskRegistry[taskIdentifier] = nil
+            persistTaskRegistry()
+            return
+        }
         guard let info = taskInfo(taskIdentifier: taskIdentifier, taskDescription: taskDescription) else { return }
         failedBooks.insert(info.bookID)
         try? await repository.updateDownloadRecord(
@@ -344,9 +377,23 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         let tasks = await allTasks()
         for task in tasks {
             if let info = taskInfo(taskIdentifier: task.taskIdentifier, taskDescription: task.taskDescription), info.bookID == bookID {
+                cancelledTaskIdentifiers.insert(task.taskIdentifier)
                 task.cancel()
                 taskRegistry[task.taskIdentifier] = nil
             }
+        }
+        persistTaskRegistry()
+    }
+
+    private func cancelAllTasks() async {
+        let tasks = await allTasks()
+        for task in tasks {
+            guard taskInfo(taskIdentifier: task.taskIdentifier, taskDescription: task.taskDescription) != nil else {
+                continue
+            }
+            cancelledTaskIdentifiers.insert(task.taskIdentifier)
+            task.cancel()
+            taskRegistry[task.taskIdentifier] = nil
         }
         persistTaskRegistry()
     }

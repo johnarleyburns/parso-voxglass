@@ -38,9 +38,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             interfaceController.setRootTemplate(placeholder, animated: false, completion: nil)
             self.logger.info("placeholderInstalled generation=\(generation, privacy: .public)")
 
-            await AppServices.shared.bootstrapOnce()
+            // The full phone bootstrap also refreshes recommendations, sync,
+            // folder watches, and other network-backed services. CarPlay must
+            // not remain on a loading screen while those optional tasks wait
+            // on the network. Let the bootstrap continue in the background,
+            // but render the library shell after a short bounded wait; the
+            // controller's store subscriptions fill it in as data arrives.
+            let bootstrapStatus = BootstrapStatus()
+            Task { @MainActor in
+                await AppServices.shared.bootstrapOnce()
+                await bootstrapStatus.markCompleted()
+            }
+            await Self.waitForBootstrap(bootstrapStatus, timeout: .seconds(2))
             guard !Task.isCancelled, self.connectionState.owns(generation) else { return }
-            self.logger.info("servicesBootstrapped generation=\(generation, privacy: .public)")
+            self.logger.info("servicesBootstrapWaitFinished generation=\(generation, privacy: .public)")
 
             let productionProvider = LocalCarPlayProductionProvider.shared
             if !productionProvider.productionSummaries().isEmpty {
@@ -91,5 +102,27 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.productionController = nil
         self.carController?.stop()
         self.carController = nil
+    }
+
+    private static func waitForBootstrap(
+        _ status: BootstrapStatus,
+        timeout: Duration
+    ) async {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+        while !(await status.isCompleted) {
+            guard clock.now < deadline else { return }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+    }
+
+    private actor BootstrapStatus {
+        private var completed = false
+
+        func markCompleted() {
+            completed = true
+        }
+
+        var isCompleted: Bool { completed }
     }
 }
