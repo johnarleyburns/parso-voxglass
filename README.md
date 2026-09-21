@@ -153,6 +153,45 @@ xcodebuild \
 If `project.yml` changes, regenerate the Xcode project first with `xcodegen generate`. The native
 Mac target requires macOS 14 or newer and does not link WatchConnectivity or CarPlay.
 
+### Native macOS TestFlight distribution
+
+The release workflow uploads both the iOS/Watch build and the native `VoxglassMac` build when the
+macOS App Store Connect platform and `MAC_PROVISIONING_PROFILE_BASE64` repository secret are
+configured. The existing `BUILD_CERTIFICATE_BASE64` must contain an Apple Distribution certificate.
+The Mac profile must be a **Mac App Store Connect** profile for `guru.parso.voxglass`, named
+`Parso Voxglass Mac App Store`, and must include the app's sandbox, iCloud, network-client, and
+audio-input entitlements.
+
+To enable the upload once per repository:
+
+1. In App Store Connect, open Voxglass, choose **Add Platform → macOS**, enter the macOS version
+   metadata, and save it. The macOS platform uses the same app record and bundle ID as iOS.
+2. In Apple Developer → Certificates, Identifiers & Profiles → **Profiles**, create a profile with
+   **Distribution → Mac App Store Connect**, select the `guru.parso.voxglass` App ID and an
+   **Apple Distribution** certificate, name it `Parso Voxglass Mac App Store`, and download it.
+3. Base64-encode that profile without line wrapping and add the result as the GitHub Actions
+   repository secret `MAC_PROVISIONING_PROFILE_BASE64`:
+
+   ```sh
+   base64 < "$HOME/Downloads/Parso Voxglass Mac App Store.provisionprofile" | pbcopy
+   ```
+
+   In GitHub: **Settings → Secrets and variables → Actions → New repository secret**, enter the
+   name exactly and paste the clipboard contents as the value.
+4. Push to `main`, or use **Actions → iOS → Run workflow**. The workflow validates the profile,
+   archives `VoxglassMac`, exports it for App Store Connect, and uploads it to TestFlight. If the
+   Mac secret or platform is absent, the iOS/Watch upload still runs and the Mac upload is clearly
+   reported as skipped.
+
+5. In App Store Connect, open **Apps → Voxglass → TestFlight → macOS**. Wait for the build to finish
+   processing, answer any export-compliance questions, add the build to an internal tester group,
+   and invite the Apple Account used on the Mac.
+
+On the Mac, install Apple’s **TestFlight** app from the Mac App Store, accept the invitation, open
+TestFlight, select Voxglass under the macOS tab, and click **Install**. Native Mac TestFlight builds
+must be uploaded with application identifiers in their provisioning profile and expire after Apple’s
+normal beta-testing period.
+
 Before a release, run the local iPhone and Watch smoke suite:
 
 ```sh
