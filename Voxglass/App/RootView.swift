@@ -4,6 +4,7 @@ import VoxglassCore
 struct RootView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var offlineDownloadManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @State private var selectedTab: VoxglassTab = .launchDefault
@@ -43,7 +44,7 @@ struct RootView: View {
                             hasCompletedOnboarding = true
                         }
                     } else {
-                        tabs
+                        tabsWithPresentation
                     }
                 }
             }
@@ -75,42 +76,115 @@ struct RootView: View {
         }
     }
 
+    @ViewBuilder
     private var tabs: some View {
-        ZStack {
-            VoxglassBackground()
+        if surface.usesSidebar {
+            adaptiveTabs
+        } else {
+            compactTabs
+        }
+    }
 
-            TabView(selection: $selectedTab) {
-                ListenView(
-                    showingNowPlaying: miniPlayerRouter.bindNowPlaying()
-                )
+    private var surface: VoxglassSurface {
+        if VoxglassPlatform.isMacCatalyst || horizontalSizeClass == .regular {
+            return .regular
+        }
+        return .compact
+    }
+
+    private var compactTabs: some View {
+        TabView(selection: $selectedTab) {
+            ListenView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
                 .tag(VoxglassTab.listen)
                 .toolbar(.hidden, for: .tabBar)
-
-                LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                    .tag(VoxglassTab.library)
-                    .toolbar(.hidden, for: .tabBar)
-
-                BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-                    .tag(VoxglassTab.discover)
-                    .toolbar(.hidden, for: .tabBar)
-
-                NarrationTabView()
-                    .tag(VoxglassTab.narration)
-                    .toolbar(.hidden, for: .tabBar)
-            }
-            // The dock's safe-area inset is the single source of truth for
-            // the live chrome height. Shared screens add their own final
-            // content clearance for nested/custom scroll containers; adding
-            // the same 136pt fallback here as well created a second blank
-            // region below the last item.
+            LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                .tag(VoxglassTab.library)
+                .toolbar(.hidden, for: .tabBar)
+            BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                .tag(VoxglassTab.discover)
+                .toolbar(.hidden, for: .tabBar)
+            NarrationTabView()
+                .tag(VoxglassTab.narration)
+                .toolbar(.hidden, for: .tabBar)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            GlassDock(
-                selectedTab: $selectedTab,
-                showingNowPlaying: miniPlayerRouter.bindNowPlaying()
-            )
-            .environment(playback)
+                GlassDock(
+                    selectedTab: $selectedTab,
+                    showingNowPlaying: miniPlayerRouter.bindNowPlaying()
+                )
+                .environment(playback)
+            }
+    }
+
+    private var adaptiveTabs: some View {
+        NavigationSplitView {
+            List {
+                Section("Voxglass") {
+                    navigationRow(.listen, title: "Listen", systemImage: "headphones")
+                    navigationRow(.library, title: "My Books", systemImage: "books.vertical.fill")
+                    navigationRow(.discover, title: "Discover", systemImage: "square.grid.2x2.fill")
+                    navigationRow(.narration, title: "Narration", systemImage: "mic.fill")
+                }
+            }
+            .navigationTitle("Voxglass")
+            .listStyle(.sidebar)
+            .frame(minWidth: 220, idealWidth: 250)
+        } detail: {
+            ZStack {
+                VoxglassBackground()
+                tabContent
+                    .frame(maxWidth: 1100, maxHeight: .infinity, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let session = playback.currentSession,
+                   miniPlayerRouter.shouldShowMiniPlayer(currentBookID: session.book.id) {
+                    GlassMiniPlayer(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+                        .onTapGesture {
+                            miniPlayerRouter.presentNowPlayingFromMiniPlayer(currentBookID: session.book.id)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
+                        .environment(playback)
+                }
+            }
         }
+        .navigationSplitViewStyle(.balanced)
+        .background(VoxglassBackground())
+        .overlay(alignment: .topLeading) {
+            AdaptiveNavigationShortcuts(selection: $selectedTab)
+        }
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .listen:
+            ListenView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+        case .library:
+            LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+        case .discover:
+            BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+        case .narration:
+            NarrationTabView()
+        }
+    }
+
+    private func navigationRow(_ tab: VoxglassTab, title: String, systemImage: String) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            Label(title, systemImage: systemImage)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(selectedTab == tab ? Palette.brass : Palette.ink)
+        .listRowBackground(selectedTab == tab ? Palette.brass.opacity(0.14) : Color.clear)
+            .accessibilityIdentifier("navigation.\(title.lowercased().replacingOccurrences(of: " ", with: "-"))")
+    }
+
+    private var tabsWithPresentation: some View {
+        tabs
         .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
             BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
                 .environment(playback)

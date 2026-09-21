@@ -15,6 +15,9 @@ struct AudioSetupView: View {
     @State private var routeInfo: CaptureRouteInfo
     @State private var classification: CaptureRouteClass
     @State private var isTesting = false
+    @State private var isSelectingInput = false
+    @State private var devices: [AudioDeviceInfo] = []
+    @State private var selectedDeviceID: String = "default"
     @State private var result: RoomTestResult?
     @State private var errorText: String?
 
@@ -42,10 +45,14 @@ struct AudioSetupView: View {
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Use this input") { dismiss() }
+                Button(isSelectingInput ? "Selecting…" : "Use this input") {
+                    Task { await selectInputAndDismiss() }
+                }
+                .disabled(isSelectingInput)
                     .accessibilityIdentifier("audioSetup.done")
             }
         }
+        .task { await loadInputDevices() }
     }
 
     // MARK: - Cards
@@ -64,6 +71,16 @@ struct AudioSetupView: View {
                     .background(classificationColor.opacity(0.15), in: Capsule())
                     .foregroundStyle(classificationColor)
                     .accessibilityIdentifier("audioSetup.classification")
+            }
+            if devices.count > 1 || VoxglassPlatform.isMacCatalyst {
+                Picker("Input device", selection: $selectedDeviceID) {
+                    ForEach(devices) { device in
+                        Text(device.name)
+                            .tag(device.id)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityIdentifier("audioSetup.inputDevicePicker")
             }
             kv("Device", transportLabel)
             kv("Format", formatLabel)
@@ -230,7 +247,7 @@ struct AudioSetupView: View {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("room-test-\(UUID().uuidString).wav")
         do {
-            try await capture.prepare(device: nil, format: RecordingDefaults())
+            try await capture.prepare(device: selectedDeviceID, format: RecordingDefaults())
             try await capture.startRecording(to: url)
             try await Task.sleep(for: .seconds(10))
             let take = try await capture.stopRecording()
@@ -266,5 +283,26 @@ struct AudioSetupView: View {
         var noiseFloorDBFS: Double
         var peakDBFS: Double
         var isStable: Bool
+    }
+
+    private func loadInputDevices() async {
+        let available = await capture.availableInputDevices()
+        devices = available
+        if let preferred = available.first(where: { $0.isDefault }) ?? available.first {
+            selectedDeviceID = preferred.id
+        }
+    }
+
+    private func selectInputAndDismiss() async {
+        isSelectingInput = true
+        defer { isSelectingInput = false }
+        do {
+            try await capture.prepare(device: selectedDeviceID, format: RecordingDefaults())
+            routeInfo = capture.currentRouteInfo
+            classification = CaptureRouteClassifier.classify(routeInfo)
+            dismiss()
+        } catch {
+            errorText = "That input couldn't be selected. (error.localizedDescription)"
+        }
     }
 }

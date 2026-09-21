@@ -13,7 +13,7 @@ packages:
   # immutable revision.
   ParsoAudioEngine:
     url: https://github.com/johnarleyburns/parso-audio-engine.git
-    exactVersion: 1.2.1
+    exactVersion: 1.2.2
   ZIPFoundation:
     url: https://github.com/weichsel/ZIPFoundation.git
     from: 0.9.20
@@ -60,6 +60,7 @@ targets:
       - package: ZIPFoundation
         product: ZIPFoundation
       - target: VoxglassWatch
+        platformFilter: iOS
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
       - sdk: CarPlay.framework
@@ -110,6 +111,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
         PRODUCT_NAME: Voxglass
+        SUPPORTS_MACCATALYST: YES
         INFOPLIST_FILE: Voxglass/Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Voxglass/Resources/Voxglass.entitlements
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

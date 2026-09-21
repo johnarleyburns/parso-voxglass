@@ -3073,6 +3073,7 @@ struct NarrationFlowRoot: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") { dismiss() }
+                        .keyboardShortcut(.escape, modifiers: [])
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 6) {

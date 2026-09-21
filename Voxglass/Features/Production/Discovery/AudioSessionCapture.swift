@@ -17,7 +17,7 @@ enum CaptureSetupError: LocalizedError {
     }
 }
 
-/// iOS concrete of the `AudioCapturing` seam (spec §7.2–§7.4). The audio tap
+/// Apple-platform concrete of the `AudioCapturing` seam (spec §7.2–§7.4). The audio tap
 /// is the single producer of a lock-free `CaptureRingBuffer`; a writer task is
 /// the single consumer that drains into `Autosave/takes/<uuid>.wav`. The tap
 /// body therefore obeys the real-time discipline the spec and CI review for:
@@ -73,6 +73,9 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     private var tapInstalled = false
     private var writerTask: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
+    #if targetEnvironment(macCatalyst)
+    private var selectedCatalystDeviceID: String?
+    #endif
 
     public init() {
         registerNotifications()
@@ -88,7 +91,11 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
     // MARK: - AudioCapturing
 
     public func availableInputDevices() async -> [AudioDeviceInfo] {
+        #if targetEnvironment(macCatalyst)
+        return catalystInputDevices()
+        #else
         [AudioDeviceInfo(id: "default", name: "iPhone Microphone", channelCount: 1, supportedSampleRates: [44_100, 48_000], isDefault: true, transport: "Built-in")]
+        #endif
     }
 
     public func prepare(device: String?, format: RecordingDefaults) async throws {
@@ -117,6 +124,15 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         }
 
         try await MainActor.run {
+            #if targetEnvironment(macCatalyst)
+            if let device {
+                guard !device.isEmpty else {
+                    throw CaptureSetupError.step("selectInputDevice", underlying: CaptureError.deviceUnavailable)
+                }
+                selectedCatalystDeviceID = device
+            }
+            try selectCatalystInputDevice()
+            #else
             let session = AVAudioSession.sharedInstance()
             // The player can leave the session ACTIVE with .playback; on
             // recent iOS an active session can reject a category change with
@@ -143,6 +159,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
             } catch {
                 throw CaptureSetupError.step("setActive", underlying: error)
             }
+            #endif
         }
 
         recordFormat = format
@@ -510,6 +527,44 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     // MARK: - Route
 
+    #if targetEnvironment(macCatalyst)
+    private func catalystInputDevices() -> [AudioDeviceInfo] {
+        let session = AVAudioSession.sharedInstance()
+        let inputs = session.availableInputs ?? session.currentRoute.inputs
+        return inputs.enumerated().map { index, input in
+            AudioDeviceInfo(
+                id: input.uid,
+                name: input.portName,
+                channelCount: input.channels?.count ?? 1,
+                supportedSampleRates: [44_100, 48_000],
+                isDefault: index == 0,
+                transport: catalystTransportLabel(for: input.portType)
+            )
+        }
+    }
+
+    private func catalystTransportLabel(for portType: AVAudioSession.Port) -> String {
+        switch portType {
+        case .usbAudio: return "USB"
+        case .bluetoothHFP, .bluetoothA2DP, .bluetoothLE: return "Bluetooth"
+        case .builtInMic: return "Built-in"
+        case .headsetMic, .headphones: return "Wired"
+        default: return "Mac input"
+        }
+    }
+
+    private func selectCatalystInputDevice() throws {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+        try session.setCategory(.record, mode: .spokenAudio, options: [.duckOthers])
+        if let selectedCatalystDeviceID,
+           let input = session.availableInputs?.first(where: { $0.uid == selectedCatalystDeviceID }) {
+            try session.setPreferredInput(input)
+        }
+        try session.setActive(true)
+    }
+    #endif
+
     private func snapshotRoute() {
         let session = AVAudioSession.sharedInstance()
         let route = session.currentRoute
@@ -540,6 +595,13 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
 
     private func registerNotifications() {
         let center = NotificationCenter.default
+        #if targetEnvironment(macCatalyst)
+        observers.append(center.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.forward(.backgroundedOrLocked)
+        })
+        #else
         observers.append(center.addObserver(
             forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
         ) { [weak self] note in
@@ -564,6 +626,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         ) { [weak self] _ in
             self?.forward(.backgroundedOrLocked)
         })
+        #endif
     }
 
     private func handleRouteChange(_ note: Notification) {

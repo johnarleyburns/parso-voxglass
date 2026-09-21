@@ -17,7 +17,7 @@ let package = Package(
         // immutable engine revision.
         .package(
             url: "https://github.com/johnarleyburns/parso-audio-engine.git",
-            exact: "1.2.1"
+            exact: "1.2.2"
         )
     ],
     targets: [

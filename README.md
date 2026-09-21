@@ -5,11 +5,11 @@ A privacy-first iOS audiobook player for the public-domain **LibriVox** catalog,
 leaves your device (content is fetched from archive.org, and cross-device sync, when enabled, uses your
 own iCloud).
 
-The shipped app targets iPhone and iPad, with Apple Watch and CarPlay companion surfaces. The native
-macOS app is intentionally out of scope for this phase; its source and design notes remain recoverable
-in Git history for a future restart, but there is no Mac app target or Mac-specific product UI in the
-current build. The Swift package still declares macOS as a host-test platform because `swift test`
-runs locally and in CI on macOS.
+The shipped app targets iPhone and iPad, with Apple Watch and CarPlay companion surfaces. The main
+application also builds as Mac Catalyst, using the same adaptive navigation and narration flow with
+a persistent sidebar and keyboard controls. There is no separate native `VoxglassMac` target; the
+old source remains available only in Git history. The Swift package still declares macOS as a
+host-test platform because `swift test` runs locally and in CI on macOS.
 
 ## Highlights
 
@@ -122,7 +122,22 @@ xcodebuild -project Voxglass.xcodeproj -showdestinations -scheme VoxglassWatch
 ```
 
 The iOS target keeps `TARGETED_DEVICE_FAMILY: "1,2"`, so iPad remains a supported destination and
-uses the shared iOS interface. There is no `VoxglassMac` scheme or Mac build step.
+uses the regular-width sidebar/detail interface when space permits. Mac Catalyst is built from the
+same scheme with a Mac Catalyst destination:
+
+```sh
+xcodebuild \
+  -project Voxglass.xcodeproj \
+  -scheme Voxglass \
+  -destination 'platform=macOS,variant=Mac Catalyst' \
+  -derivedDataPath /tmp/voxglass-catalyst-derived \
+  build CODE_SIGNING_ALLOWED=NO
+```
+
+On iPad and Catalyst, `⌘1`–`⌘4` switch between Listen, My Books, Discover, and Narration. During
+narration, `⌘R` records/stops, `⌘Space` plays the current take, `⌘←`/`⌘→` move between paragraphs,
+`⌘Return` accepts and advances, and Escape closes the flow. The Mac microphone selector lists
+available input devices so a USB/custom microphone can be chosen before recording.
 
 Before a release, run the local iPhone and Watch smoke suite:
 

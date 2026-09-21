@@ -92,13 +92,20 @@ import Testing
 
     @Test func consumerShellExposesOnlyPlanDestinations() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        let tabs = sourceSlice(root, from: "TabView(selection: $selectedTab)", to: "// The dock's safe-area inset")
+        let tabs = sourceSlice(root, from: "private var compactTabs", to: "private var adaptiveTabs")
         #expect(tabs.contains("ListenView("))
         #expect(tabs.contains("LibraryView("))
         #expect(tabs.contains("BrowseView("))
         #expect(tabs.contains("NarrationTabView()"))
-        #expect(tabs.components(separatedBy: ".tag(VoxglassTab.").count - 1 == 4)
         #expect(!tabs.contains("SearchView("))
+        #expect(tabs.components(separatedBy: ".tag(VoxglassTab.").count - 1 == 4)
+
+        let detail = sourceSlice(root, from: "private var tabContent", to: "private func navigationRow")
+        #expect(detail.contains("ListenView("))
+        #expect(detail.contains("LibraryView("))
+        #expect(detail.contains("BrowseView("))
+        #expect(detail.contains("NarrationTabView()"))
+        #expect(!detail.contains("SearchView("))
 
         let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
         let items = sourceSlice(dock, from: "private let items", to: "var body: some View")

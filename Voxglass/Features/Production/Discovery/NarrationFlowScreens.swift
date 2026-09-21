@@ -155,6 +155,7 @@ struct RecordView: View {
     let fromReview: Bool
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var navigateToReview = false
     @State private var showAudioSetup = false
     @State private var showMicCheck = false
@@ -229,6 +230,10 @@ struct RecordView: View {
     /// paragraphs, so each paragraph does not push a new view onto the stack.
     private var currentParagraphID: UUID {
         model.currentParagraphID ?? paragraphID
+    }
+
+    private var usesRegularSurface: Bool {
+        VoxglassPlatform.isMacCatalyst || horizontalSizeClass == .regular
     }
 
     private var paragraphNumber: Int {
@@ -560,7 +565,7 @@ struct RecordView: View {
             .disabled(model.isRecordingTransitioning)
             // §9.3 external controls: a connected hardware keyboard records and
             // stops with Command-R while the record screen is armed.
-            .keyboardShortcut("r", modifiers: [.command])
+            .voxglassKeyboardShortcut(VoxglassKeyboardShortcut.record, modifiers: [.command], enabled: usesRegularSurface)
 
             Button {
                 model.togglePlayback(currentParagraphID)
@@ -571,6 +576,7 @@ struct RecordView: View {
             .disabled(model.paragraph(at: currentParagraphID)?.take == nil)
             .accessibilityIdentifier("record.transport.playTake")
             .accessibilityLabel("Play back the latest take for this paragraph")
+            .voxglassKeyboardShortcut(.space, modifiers: [.command], enabled: usesRegularSurface)
         }
         .padding(.vertical, 10)
         if model.playbackDuration > 0 {
@@ -648,6 +654,7 @@ struct RecordView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("record.previousParagraph")
+            .voxglassKeyboardShortcut(.leftArrow, modifiers: [.command], enabled: usesRegularSurface)
 
             Button {
                 Task { await goNext(from: paragraph, flag: true) }
@@ -677,6 +684,8 @@ struct RecordView: View {
             .tactileTap()
             .disabled(paragraph.take == nil)
             .accessibilityIdentifier("record.acceptAndNext")
+            .voxglassKeyboardShortcut(.return, modifiers: [.command], enabled: usesRegularSurface)
+            .voxglassKeyboardShortcut(.rightArrow, modifiers: [.command], enabled: usesRegularSurface)
         }
         .padding(.top, 8)
     }
