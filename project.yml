@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: guru.parso
   deploymentTarget:
     iOS: "17.0"
+    macOS: "14.0"
     watchOS: "10.0"
   createIntermediateGroups: true
 packages:
@@ -225,6 +226,73 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp.uitests
         TEST_TARGET_NAME: VoxglassWatch
         CODE_SIGNING_ALLOWED: NO
+  VoxglassMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: VoxglassMac
+        excludes:
+          - Resources/Info.plist
+          - Resources/VoxglassMac.entitlements
+          - Resources/VoxglassMac-release.entitlements
+      - path: Voxglass/Features/Production/Discovery/NarrationProjectRepository.swift
+      - path: Voxglass/Features/Production/AVChapterRenderer.swift
+    dependencies:
+      - package: VoxglassCore
+        product: VoxglassCore
+      - package: VoxglassCore
+        product: VoxglassEncoders
+      - package: ParsoAudioEngine
+        product: ParsoAudioStreaming
+      - package: ParsoAudioEngine
+        product: ParsoAudioPlayback
+      - package: ZIPFoundation
+        product: ZIPFoundation
+      - sdk: AVFoundation.framework
+      - sdk: AudioToolbox.framework
+      - sdk: CloudKit.framework
+      - sdk: UniformTypeIdentifiers.framework
+      - sdk: libsqlite3.tbd
+    info:
+      path: VoxglassMac/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Voxglass
+        CFBundleIconName: AppIcon
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
+        NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this Mac unless you choose to sync or export them."
+        LSMinimumSystemVersion: "14.0"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
+        PRODUCT_NAME: Voxglass
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        INFOPLIST_FILE: VoxglassMac/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: VoxglassMac/Resources/VoxglassMac.entitlements
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_EMIT_LOC_STRINGS: YES
+      configs:
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass App Store"
+          CODE_SIGN_ENTITLEMENTS: VoxglassMac/Resources/VoxglassMac-release.entitlements
+  VoxglassMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - VoxglassMacTests
+    dependencies:
+      - target: VoxglassMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.mactests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Contents/MacOS/Voxglass"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGNING_ALLOWED: NO
   VoxglassNarrationE2E:
     type: bundle.unit-test
     platform: iOS
@@ -270,3 +338,11 @@ schemes:
       gatherCoverageData: false
       targets:
         - VoxglassNarrationE2E
+  VoxglassMac:
+    build:
+      targets:
+        VoxglassMac: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - VoxglassMacTests

@@ -136,6 +136,12 @@ struct StreamCacheUnifiedTests {
 
         loader.warm(upTo: 8192)
         await poll { await store.rangeMap(for: loader.cacheKey).contiguousBytes(from: 0) >= 8192 }
+        // The loader updates its range map before the asynchronous blob flush
+        // is visible on disk. Wait for both halves of the cache contract before
+        // shutting the loader down; otherwise a fast full-suite run can race
+        // the final file move and report a false cache miss.
+        let cacheURL = await store.fileURL(for: loader.cacheKey)
+        await poll { FileManager.default.fileExists(atPath: cacheURL.path) }
         loader.shutdown()
 
         RangeStub.offline = true

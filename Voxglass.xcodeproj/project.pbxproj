@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		00BD9E1FDB911BA9BC24D3CD /* AudioSessionCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396BF796DE405288AE846317 /* AudioSessionCapture.swift */; };
 		00FFA880CAA14A1624EC1369 /* 1891_collection_bt_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 088AA4A9A7602E0A0C49E97C /* 1891_collection_bt_librivox.jpg */; };
+		015D93E451F9C1CE0C297E47 /* VoxglassMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */; };
 		0193ADEF7F113C634D383390 /* adventures_pinocchio_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C4982A67A97291048FEDCB58 /* adventures_pinocchio_librivox.jpg */; };
 		089C22BB4A3D9F9B62E7ADC7 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */; };
 		0CBE46248F46F1B561E3D602 /* ParsoAudioPlayback in Frameworks */ = {isa = PBXBuildFile; productRef = 56C535A680FBE03F3A1CD690 /* ParsoAudioPlayback */; };
@@ -22,6 +23,7 @@
 		13F549B7F9C14C1BE46E77AD /* uncle_toms_cabin_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = ED05E4824CBB1D2D7D9CA849 /* uncle_toms_cabin_librivox.jpg */; };
 		146A11873D483EDE4293F89F /* VoxglassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6AA015D08BC5D3D56CA570C /* VoxglassApp.swift */; };
 		157BBC198B58706DE0DF0765 /* DiscoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B5AF4E9D3A269D27ABC1CBB /* DiscoveryViews.swift */; };
+		1859F915193EA0CC8AF81BB3 /* MacCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DECFDC1574A2A92EBD8F94 /* MacCommands.swift */; };
 		18E7B50A58D8BFD5CE5D1678 /* bequest_jg_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7AEB9CCDB3E70DB0915C1CAA /* bequest_jg_librivox.jpg */; };
 		18EA1BDFC93497E116D5894B /* aesop_fables_volume_one_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 196740ED53FE2AEBC7990EDA /* aesop_fables_volume_one_librivox.jpg */; };
 		1A0557A760508FD7D37136E5 /* WatchLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB8C22B2266982EC4AB941AF /* WatchLibraryView.swift */; };
@@ -65,6 +67,7 @@
 		3D51A4C34568B7ACF13475CB /* count_montecristo_1308_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 15A4E3200D9B6B41414C5FC2 /* count_montecristo_1308_librivox.jpg */; };
 		3D6AA56B17B1960C63A6EED3 /* amateur_cracksman_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 018C274D1C0769FF60E74A17 /* amateur_cracksman_librivox.jpg */; };
 		3D8C8B1449EF43B15461FD00 /* AdaptiveSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFECD5339EB6C1C24D99A4FF /* AdaptiveSurface.swift */; };
+		3DD5FE3A8A0DD9B9E89DF1F7 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF296A86B135507051DFBBD2 /* AVFoundation.framework */; };
 		3F1CA81A8D2B0EF71C6265A3 /* VoxglassWatchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25914293BEDD3EF6748F5259 /* VoxglassWatchUITests.swift */; };
 		3FEEE5663792C3026722EDE7 /* king_solomon_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2C89F09B2802010B27CD6943 /* king_solomon_librivox.jpg */; };
 		4066ABDD4010CF0B8FCAAD2B /* pride_prejudice_krs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E967226D4468771DC77D2A02 /* pride_prejudice_krs_librivox.jpg */; };
@@ -85,22 +88,29 @@
 		4F9783F7FD52124391DB96D0 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
 		4FBFE6080E5B038FB49A075F /* american_indian_tales_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4F695ED501176D7E86BED918 /* american_indian_tales_librivox.jpg */; };
 		5133DE23448FC0452273DBB3 /* CarPlayInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC17411DDC89002281222ACC /* CarPlayInterfaceController.swift */; };
+		552C47FD28A5FA8CD5062A05 /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 401A6A7A2EAF21C7B1B57B98 /* UniformTypeIdentifiers.framework */; };
 		56AC66DBDC7979DC60C6D1C8 /* VoxglassWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964D3BE184AAF9B15290B979 /* VoxglassWatchApp.swift */; };
 		5AFE4EE447AFE5A13DB146F5 /* NarrationE2EFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784B723EEBDD956370DAC471 /* NarrationE2EFixture.swift */; };
 		5C33FE25E8D64A9D57412112 /* VoxglassEncoders in Frameworks */ = {isa = PBXBuildFile; productRef = 6709F24E350537E4003AB7B1 /* VoxglassEncoders */; };
 		5D629DB586AFD196EA102F07 /* franklin_autobio_gg_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C916EE82BAA77FF01E218A4E /* franklin_autobio_gg_librivox.jpg */; };
+		5DE536FABB7B415F98E659C6 /* ParsoAudioStreaming in Frameworks */ = {isa = PBXBuildFile; productRef = 602927A35C5285855BE8C762 /* ParsoAudioStreaming */; };
 		5E3A2634A58DF800FBC119D0 /* AVPlayerAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407C1274451E832DF8086039 /* AVPlayerAudioEngine.swift */; };
 		5F0DF26D3A418D5EA6C2BEB9 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4008972DE2117B1781A316A6 /* SearchView.swift */; };
 		60C8E2CAACAC8AD0AB92EE61 /* fabulas_esopo_02_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6B0227E7DDA4A542B1026CE7 /* fabulas_esopo_02_librivox.jpg */; };
+		63FF3FCA96388B9CB363390D /* MacAppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF19B5E3393345D782C7B90 /* MacAppServices.swift */; };
 		6491F6B3D3E24F36631B9C95 /* ScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */; };
 		6539622E0D5E728F474586F8 /* sense_sensibility_ver3_ek.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */; };
 		65921983DD70A9C16EA07F0D /* call_of_the_wild.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */; };
+		666D60D797C0D1B5A4597EE4 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
+		674AD5502945010B1E3CA0CF /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4C575CBDD93E9B86A04AEA4 /* CloudKit.framework */; };
 		67626E8072FA87A36903DC64 /* ImportAudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E4F547147A2C3B9F1F8ABD /* ImportAudioView.swift */; };
 		68712C04A349BE64077A817A /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E0138B81F7532946A478D9 /* MiniPlayerView.swift */; };
 		696C1A68A6B01A3EAF5C5DF2 /* english_fairy_tales_joy_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 48AD36A085B88B984ACA97FE /* english_fairy_tales_joy_librivox.jpg */; };
+		6A200E007A4BC2F75F330027 /* MacAudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854A3A693E60EED9A9637983 /* MacAudioCapture.swift */; };
 		6CDE07AD83D42675CA6333C4 /* EQView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F8ACEE07BAD813F34C6DBE /* EQView.swift */; };
 		6D1F2947C9F08205C5A4C991 /* ArtworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F75882B51F22C8D3A3EEAAD /* ArtworkService.swift */; };
 		6E1AF6876C0B03D2CD4E4D3F /* Artwork in Resources */ = {isa = PBXBuildFile; fileRef = 1AAEC7E4D58E0CABD44AE90F /* Artwork */; };
+		700494798ED57CFC111DA9FC /* MacPlaybackAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A213002451AFFE8EAC59E44 /* MacPlaybackAudioEngine.swift */; };
 		70BCC91376F471E4CB18CEEC /* TTSAudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8077EBEF9C060ACA4C53E35 /* TTSAudioCapture.swift */; };
 		713811C821F808FF77A38F59 /* VoxglassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6263EDA39C0F570D2A4A685 /* VoxglassTheme.swift */; };
 		716150C3153D5655183A373A /* emma_solo_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2503F5269E8A159A62B785C6 /* emma_solo_librivox.jpg */; };
@@ -113,8 +123,11 @@
 		79935A2261A23D4B387A6083 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336F165C2E66C5C32ABDD2CA /* CarPlaySceneDelegate.swift */; };
 		7B13FCB97794AC8C13DD0BCF /* war_worlds_solo_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 0EA653ABDAA7D0F2AE6ACE7E /* war_worlds_solo_librivox.jpg */; };
 		7C236517C4D8F6F2324A4CBF /* BundledArtworkProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99745AB51C27E3F7194CA27 /* BundledArtworkProvider.swift */; };
+		7D35F4197BFC9B94C3D658E6 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = CC47B0A42E6FF588D7780691 /* ZIPFoundation */; };
 		7D9C2E22E6DF8072E4EA774F /* AdaptiveGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */; };
 		7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */; };
+		7F6CC048FE6AC0EFCCC6D39E /* MacViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3672644BB8FBEB437A8442B5 /* MacViews.swift */; };
+		804F43C374A56FDF2AD78E52 /* NarrationProjectRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */; };
 		80A80266C5F84B32A0F214B2 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CD3C1E4D608137C5EB95024 /* VoxglassCore */; };
 		846BF99F1EBD8A2AB2914127 /* CarPlayCues in Resources */ = {isa = PBXBuildFile; fileRef = 17E06DEE185B6A8309E3F8BA /* CarPlayCues */; };
 		85B29F15855ACB432C7F1D2F /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */; };
@@ -133,6 +146,7 @@
 		9005B6ABE5E61D5BEAA71186 /* WatchRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE058162DB1348D28317C06A /* WatchRootView.swift */; };
 		9153C0963F9A39A8E0BCB7D8 /* 1601_0903_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6651677A03062028BC949542 /* 1601_0903_librivox.jpg */; };
 		917FC5B3C23CF26B23C9B79F /* CatalogDiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE26F9079A1C12E2BAD8E865 /* CatalogDiscoveryView.swift */; };
+		91E49AE9F36CAA84EBC69BC1 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49FA6D58EC651570824B18FE /* AudioToolbox.framework */; };
 		91F6B6F98B06B976D3339722 /* NarrateBookE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BA040539B746FC98946D3D5 /* NarrateBookE2ETests.swift */; };
 		92772E8F02D1568850BF2103 /* ParagraphReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 589CF16A642F15A7E3797D65 /* ParagraphReviewView.swift */; };
 		92DA452F703F3B8154D93E0A /* peter_pan_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BD276A6BF5801E2B15EBA44B /* peter_pan_0707_librivox.jpg */; };
@@ -163,9 +177,11 @@
 		B14B2AE1CA11BC46846AA0E9 /* NarrationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */; };
 		B329B42E0CA9E0B40B1BEAD1 /* return_holmes_0708_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A42A7E5AF0C1B49C5E7A01FB /* return_holmes_0708_librivox.jpg */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
+		B5952AA049E325B3CBC54AF9 /* MacProductionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F87771897D730480805E37 /* MacProductionSync.swift */; };
 		B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2D878648CFAE6A1DA9323D89 /* 2br02b_0801_librivox.jpg */; };
 		B81166F9E83FE40C68D7DCE5 /* AVChapterRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */; };
 		B81B94ADA69B5E21B5DFF130 /* TakeComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4725E461AC38924B64E0F1F9 /* TakeComparisonView.swift */; };
+		B86CD3B877613388BF8FC142 /* MacCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6FD170564D3A3F653A6BD4 /* MacCommandTests.swift */; };
 		B8BBDD56E99C8F49BF022ED2 /* andersensfairy_1307_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */; };
 		B8D77B123CC0612D7FA46EF8 /* BookPageActionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8DFE7B33D0A5AB70593632 /* BookPageActionRow.swift */; };
 		BB92423FB45EE5D963ED7BAA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF296A86B135507051DFBBD2 /* AVFoundation.framework */; };
@@ -175,6 +191,7 @@
 		C2E58CF0D325808D06BA604B /* wizard_of_oz.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B7B41CFE2DB33DDCA5488BAB /* wizard_of_oz.jpg */; };
 		C377A5DA921F3AB7A15B0623 /* andersens_fairytales_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2CD52D45D1EC2B1B4C8D2A32 /* andersens_fairytales_librivox.jpg */; };
 		C45EF208CB11E140103D4FDC /* great_expectations_mfs_0812_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 348FE56BD340B5F368EB305A /* great_expectations_mfs_0812_librivox.jpg */; };
+		C4AC96EBEB1D5CB8B6FB9C56 /* VoxglassEncoders in Frameworks */ = {isa = PBXBuildFile; productRef = 683E509A0AE3D0D65EAF1C3B /* VoxglassEncoders */; };
 		C7394209E512C5C9C0FCA27E /* WatchConnectivityTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */; };
 		C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6031F6F3B50C0C1657E73466 /* ObservationSubscription.swift */; };
 		C8DB058328B566CB1C27B916 /* dracula_1006_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 30D528330E6ECF511FDDDD5B /* dracula_1006_librivox.jpg */; };
@@ -184,6 +201,7 @@
 		CD5F9F386CBBD79CE6BB523B /* alice_wonderland_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CC9FC90F429E3A6FF0763EF3 /* alice_wonderland_0711_librivox.jpg */; };
 		CF5B708D0222E8900BB02D3D /* memoirs_holmes_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A863A5C2B74DE190C0ED26CB /* memoirs_holmes_0709_librivox.jpg */; };
 		CFFA9AD88269992EB457F35D /* gods_of_mars_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7CB5032639CF00041C20C04D /* gods_of_mars_librivox.jpg */; };
+		D060A43125DE7A03F1DE22EE /* ParsoAudioPlayback in Frameworks */ = {isa = PBXBuildFile; productRef = C00C8F0E0C1AFE3C8EA4F77D /* ParsoAudioPlayback */; };
 		D0A8BA5AD04EE6FEDEDF5C6A /* NarrationPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9944B5A2F639717640BB81F7 /* NarrationPalette.swift */; };
 		D1DB078A196600B28D4BD877 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC318EB68E5165403477C6D /* DiscoverView.swift */; };
 		D4505117C8D75D481294269A /* romeo_and_juliet_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2220F5BD5DBA4CE50C8E4459 /* romeo_and_juliet_librivox.jpg */; };
@@ -209,6 +227,7 @@
 		E2C8D782C3327D8BF72024C1 /* aliceinwonderland_1102_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 76F77E862DBA8E6F6449833B /* aliceinwonderland_1102_librivox.jpg */; };
 		E3030A7DE0905476B64A8619 /* flag.wav in Resources */ = {isa = PBXBuildFile; fileRef = FCBA4FCCF47EA1619C25179B /* flag.wav */; };
 		E3992AD6F8D76143C3113AC4 /* 8thanniversary_1308_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6FF3F7E592030AE8DB6A3300 /* 8thanniversary_1308_librivox.jpg */; };
+		E49B96933CC7CFC6A2335E63 /* AVChapterRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */; };
 		E4D272BAADB2E5D3B087D9DB /* PhoneAudioRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 545AD98342DD254058C3BA00 /* PhoneAudioRelay.swift */; };
 		E6D16B14A78484C5D7A0CC3D /* heart_of_darkness.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3B393E27114CA65865E52B0E /* heart_of_darkness.jpg */; };
 		E80388EE0E7634877EFFDDA4 /* walden_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5ACD76A1FBF9F2436A430A97 /* walden_librivox.jpg */; };
@@ -231,6 +250,7 @@
 		F14C7CF0EA99F6CF748CF52A /* CarPlayTemplateRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9FF2C66B604A483005DF1CF /* CarPlayTemplateRenderer.swift */; };
 		F15464A41C029B457BC3D6D1 /* WatchBookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DEF7AEC3EC06D2401F4B097 /* WatchBookDetailView.swift */; };
 		F16486C499C074C1BD162E69 /* art_war_ps_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 034B5DB162C110775DD52953 /* art_war_ps_librivox.jpg */; };
+		F3C099DEB37C7261526CE617 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = BBF10BDC58416E5EC8E2BACF /* VoxglassCore */; };
 		F47B97B3095214949D078D8A /* ScriptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CFFA4CFF485791A9300AA1 /* ScriptEditorView.swift */; };
 		F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841534B2BAC23D46DACCD5B1 /* LibraryView.swift */; };
 		F599D1C5F53B2038A34866A0 /* huck_finn_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B954A59F4997A15A1DF6DB40 /* huck_finn_librivox.jpg */; };
@@ -273,6 +293,13 @@
 			remoteGlobalIDString = 0C8750037BEC39E703C622B9;
 			remoteInfo = VoxglassWatch;
 		};
+		7C1BC62A48E02E5EE85A867B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F003E1B22C828F1992CEEED;
+			remoteInfo = VoxglassMac;
+		};
 		C286DB67187B0CA95E219115 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
@@ -301,6 +328,7 @@
 		002282F116F378F36244C4B6 /* StoreKitLicenseProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitLicenseProvider.swift; sourceTree = "<group>"; };
 		018C274D1C0769FF60E74A17 /* amateur_cracksman_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = amateur_cracksman_librivox.jpg; sourceTree = "<group>"; };
 		034B5DB162C110775DD52953 /* art_war_ps_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = art_war_ps_librivox.jpg; sourceTree = "<group>"; };
+		03F87771897D730480805E37 /* MacProductionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacProductionSync.swift; sourceTree = "<group>"; };
 		04B66C3C492D866E4776DDF9 /* WatchAppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAppServices.swift; sourceTree = "<group>"; };
 		04E0B8E527FDF636C42B6FAC /* UITestAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestAudioCapture.swift; sourceTree = "<group>"; };
 		04FCC00384E0A94423E5BF7C /* frankenstein_shelley.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = frankenstein_shelley.jpg; sourceTree = "<group>"; };
@@ -333,6 +361,7 @@
 		25914293BEDD3EF6748F5259 /* VoxglassWatchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassWatchUITests.swift; sourceTree = "<group>"; };
 		2761AA70F89396E53EE93D01 /* 0_sense_and_sensibility_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 0_sense_and_sensibility_librivox.jpg; sourceTree = "<group>"; };
 		28210879609150716CCE1C62 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
+		2A213002451AFFE8EAC59E44 /* MacPlaybackAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPlaybackAudioEngine.swift; sourceTree = "<group>"; };
 		2A5D4A562FBA3FDB85832876 /* timemachine_sjm_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = timemachine_sjm_librivox.jpg; sourceTree = "<group>"; };
 		2C1D4B2582FA10BB7AE1E88C /* BundledCarPlayCuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledCarPlayCuePlayer.swift; sourceTree = "<group>"; };
 		2C32F38CFF851AFE807E124B /* ScaledFontModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaledFontModifier.swift; sourceTree = "<group>"; };
@@ -343,6 +372,7 @@
 		2FA8E1DA7900280C3F2E8925 /* NarrationFlowScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationFlowScreens.swift; sourceTree = "<group>"; };
 		305628B60168BDF452A13A74 /* letters_brides_0709_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = letters_brides_0709_librivox.jpg; sourceTree = "<group>"; };
 		30D528330E6ECF511FDDDD5B /* dracula_1006_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dracula_1006_librivox.jpg; sourceTree = "<group>"; };
+		31DECFDC1574A2A92EBD8F94 /* MacCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCommands.swift; sourceTree = "<group>"; };
 		336F165C2E66C5C32ABDD2CA /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		33E22B53A145A61875D154EB /* jane_eyre_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = jane_eyre_librivox.jpg; sourceTree = "<group>"; };
 		3420F92FBD012D819BABA640 /* StorageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSettingsView.swift; sourceTree = "<group>"; };
@@ -351,9 +381,11 @@
 		348FE56BD340B5F368EB305A /* great_expectations_mfs_0812_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = great_expectations_mfs_0812_librivox.jpg; sourceTree = "<group>"; };
 		3614549857B18C6870AD8A76 /* secret_garden_version2_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = secret_garden_version2_librivox.jpg; sourceTree = "<group>"; };
 		3616511B3047863DE929EEC4 /* solo_pride_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = solo_pride_librivox.jpg; sourceTree = "<group>"; };
+		3672644BB8FBEB437A8442B5 /* MacViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacViews.swift; sourceTree = "<group>"; };
 		385DE7B6080DA38D4B429672 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		396BF796DE405288AE846317 /* AudioSessionCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionCapture.swift; sourceTree = "<group>"; };
 		39C00D54A32B0CDBB2B78CB5 /* science_gettingrich_1005_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = science_gettingrich_1005_librivox.jpg; sourceTree = "<group>"; };
+		3AF19B5E3393345D782C7B90 /* MacAppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAppServices.swift; sourceTree = "<group>"; };
 		3B393E27114CA65865E52B0E /* heart_of_darkness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = heart_of_darkness.jpg; sourceTree = "<group>"; };
 		4008972DE2117B1781A316A6 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		401A6A7A2EAF21C7B1B57B98 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
@@ -371,6 +403,7 @@
 		48AD36A085B88B984ACA97FE /* english_fairy_tales_joy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = english_fairy_tales_joy_librivox.jpg; sourceTree = "<group>"; };
 		49FA6D58EC651570824B18FE /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		4AAEDDB3F34068321C643AD3 /* prince_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = prince_librivox.jpg; sourceTree = "<group>"; };
+		4D20BE7960CDF63B338A9B8B /* VoxglassMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoxglassMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D4C14EF3CC1FDD728821195 /* alice_in_wonderland_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alice_in_wonderland_librivox.jpg; sourceTree = "<group>"; };
 		4DE029504EEF4954467251CA /* swiss_family_robinson_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = swiss_family_robinson_librivox.jpg; sourceTree = "<group>"; };
 		4F695ED501176D7E86BED918 /* american_indian_tales_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = american_indian_tales_librivox.jpg; sourceTree = "<group>"; };
@@ -389,6 +422,7 @@
 		5B5AF4E9D3A269D27ABC1CBB /* DiscoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryViews.swift; sourceTree = "<group>"; };
 		5BA040539B746FC98946D3D5 /* NarrateBookE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrateBookE2ETests.swift; sourceTree = "<group>"; };
 		5CF9F9C666BC7F602B75DB50 /* beyond_good_and_evil_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beyond_good_and_evil_librivox.jpg; sourceTree = "<group>"; };
+		5E6FD170564D3A3F653A6BD4 /* MacCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCommandTests.swift; sourceTree = "<group>"; };
 		5FE9C1DD357179B18F33DD7C /* FolderWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatchView.swift; sourceTree = "<group>"; };
 		6031F6F3B50C0C1657E73466 /* ObservationSubscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationSubscription.swift; sourceTree = "<group>"; };
 		60F7BC9A74D4150042BA1CF8 /* alexander_great_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alexander_great_ld_librivox.jpg; sourceTree = "<group>"; };
@@ -400,6 +434,7 @@
 		651043E3C279BA705B4D4256 /* as_a_man_thinketh_mc_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = as_a_man_thinketh_mc_librivox.jpg; sourceTree = "<group>"; };
 		6651677A03062028BC949542 /* 1601_0903_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 1601_0903_librivox.jpg; sourceTree = "<group>"; };
 		66F7A9D279793D2432215537 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		66FA1EB81F1F1B3C0375CFAB /* VoxglassMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoxglassMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B0227E7DDA4A542B1026CE7 /* fabulas_esopo_02_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fabulas_esopo_02_librivox.jpg; sourceTree = "<group>"; };
 		6BE0C0AD38F30780B11D2A91 /* andersensfairy_1307_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = andersensfairy_1307_librivox.jpg; sourceTree = "<group>"; };
 		6D8E90829CAAF88F8C4F577B /* bleak_house_cl_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bleak_house_cl_librivox.jpg; sourceTree = "<group>"; };
@@ -427,8 +462,10 @@
 		82ACAE08A854D9C0B7A70CA9 /* mysterious_island_ms_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mysterious_island_ms_librivox.jpg; sourceTree = "<group>"; };
 		841534B2BAC23D46DACCD5B1 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		84A1AC3F062A5AC1804A3500 /* beowulf_te_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = beowulf_te_librivox.jpg; sourceTree = "<group>"; };
+		854A3A693E60EED9A9637983 /* MacAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAudioCapture.swift; sourceTree = "<group>"; };
 		85B1181A1D8983DA914206C2 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gulliver_ld_librivox.jpg; sourceTree = "<group>"; };
+		8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassMacApp.swift; sourceTree = "<group>"; };
 		8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationTabView.swift; sourceTree = "<group>"; };
 		8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = les_mis_vol01_0810_librivox.jpg; sourceTree = "<group>"; };
 		92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = divine_comedy_librivox.jpg; sourceTree = "<group>"; };
@@ -509,6 +546,7 @@
 		F0CAA54FADE549D2158FAB93 /* secret_garden_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = secret_garden_librivox.jpg; sourceTree = "<group>"; };
 		F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVChapterRenderer.swift; sourceTree = "<group>"; };
 		F2C0CC7564136E84756F685C /* AdaptiveGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveGlass.swift; sourceTree = "<group>"; };
+		F4C575CBDD93E9B86A04AEA4 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		F5BC54EC40C451E0F6AA0124 /* ProductionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionModels.swift; sourceTree = "<group>"; };
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F7768800DF20C5E1108C2165 /* NarrationButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationButtons.swift; sourceTree = "<group>"; };
@@ -585,9 +623,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FC8D5DE084D6636294CAF33D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F3C099DEB37C7261526CE617 /* VoxglassCore in Frameworks */,
+				C4AC96EBEB1D5CB8B6FB9C56 /* VoxglassEncoders in Frameworks */,
+				5DE536FABB7B415F98E659C6 /* ParsoAudioStreaming in Frameworks */,
+				D060A43125DE7A03F1DE22EE /* ParsoAudioPlayback in Frameworks */,
+				7D35F4197BFC9B94C3D658E6 /* ZIPFoundation in Frameworks */,
+				3DD5FE3A8A0DD9B9E89DF1F7 /* AVFoundation.framework in Frameworks */,
+				91E49AE9F36CAA84EBC69BC1 /* AudioToolbox.framework in Frameworks */,
+				674AD5502945010B1E3CA0CF /* CloudKit.framework in Frameworks */,
+				552C47FD28A5FA8CD5062A05 /* UniformTypeIdentifiers.framework in Frameworks */,
+				666D60D797C0D1B5A4597EE4 /* libsqlite3.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		056794988E3F84D274B9DE0A /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				854A3A693E60EED9A9637983 /* MacAudioCapture.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
 		11936CC254801B6E56EF9602 /* Discovery */ = {
 			isa = PBXGroup;
 			children = (
@@ -619,6 +682,7 @@
 				49FA6D58EC651570824B18FE /* AudioToolbox.framework */,
 				BF296A86B135507051DFBBD2 /* AVFoundation.framework */,
 				BDA53866164FE87F59B27A2D /* CarPlay.framework */,
+				F4C575CBDD93E9B86A04AEA4 /* CloudKit.framework */,
 				85B1181A1D8983DA914206C2 /* libsqlite3.tbd */,
 				80E5861D18CA56AA2AD9FC21 /* MediaPlayer.framework */,
 				401A6A7A2EAF21C7B1B57B98 /* UniformTypeIdentifiers.framework */,
@@ -643,12 +707,32 @@
 			path = VoxglassWatch;
 			sourceTree = "<group>";
 		};
+		1BB19596517098F9E4EE4698 /* VoxglassMacTests */ = {
+			isa = PBXGroup;
+			children = (
+				5E6FD170564D3A3F653A6BD4 /* MacCommandTests.swift */,
+			);
+			path = VoxglassMacTests;
+			sourceTree = "<group>";
+		};
 		1E93EB5C7699769678CDC116 /* Support */ = {
 			isa = PBXGroup;
 			children = (
 				43F07E2CABCBF7D22E5D7C8C /* SupportDevelopmentStore.swift */,
 			);
 			path = Support;
+			sourceTree = "<group>";
+		};
+		2B47B2EF857EC35D6CBBB07B /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3AF19B5E3393345D782C7B90 /* MacAppServices.swift */,
+				31DECFDC1574A2A92EBD8F94 /* MacCommands.swift */,
+				2A213002451AFFE8EAC59E44 /* MacPlaybackAudioEngine.swift */,
+				03F87771897D730480805E37 /* MacProductionSync.swift */,
+				8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */,
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 		2FD1F66FADFA63C33D73FE19 /* Listen */ = {
@@ -884,12 +968,22 @@
 			children = (
 				B5D32B1ADBD5E2A825589454 /* Voxglass.app */,
 				F9C1AC88D4122B2F6085A567 /* VoxglassCarPlaySmokeTests.xctest */,
+				66FA1EB81F1F1B3C0375CFAB /* VoxglassMac.app */,
+				4D20BE7960CDF63B338A9B8B /* VoxglassMacTests.xctest */,
 				FAD7EEB9979659075EFB5D01 /* VoxglassNarrationE2E.xctest */,
 				502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */,
 				1399460F5AB0EEA78A9F6B79 /* VoxglassWatch.app */,
 				F048D421BA997703B42A14D4 /* VoxglassWatchUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		85BA3DB4AAA4337C61BD4E44 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				3672644BB8FBEB437A8442B5 /* MacViews.swift */,
+			);
+			path = Features;
 			sourceTree = "<group>";
 		};
 		977B5A609EF8BE9B399FF945 /* VoxglassWatchUITests */ = {
@@ -915,6 +1009,8 @@
 				EBC1B200DDF902108E6154DD /* Packages */,
 				F7EF5EDAB0E5DBEA3523BBFE /* Voxglass */,
 				B98F8FCFE82D1AD01DA42197 /* VoxglassCarPlaySmokeTests */,
+				F42A68593A971347192F7EA1 /* VoxglassMac */,
+				1BB19596517098F9E4EE4698 /* VoxglassMacTests */,
 				F1EEA7FE9FB3BC61686E2C61 /* VoxglassNarrationE2E */,
 				F1BE95C159C6821B95663D5C /* VoxglassUITests */,
 				1A2173D840425F15B525BF0A /* VoxglassWatch */,
@@ -1021,6 +1117,16 @@
 				FD2993CB8F5B2A3A7B506245 /* NarrationStateFreshnessTests.swift */,
 			);
 			path = VoxglassNarrationE2E;
+			sourceTree = "<group>";
+		};
+		F42A68593A971347192F7EA1 /* VoxglassMac */ = {
+			isa = PBXGroup;
+			children = (
+				2B47B2EF857EC35D6CBBB07B /* App */,
+				056794988E3F84D274B9DE0A /* Audio */,
+				85BA3DB4AAA4337C61BD4E44 /* Features */,
+			);
+			path = VoxglassMac;
 			sourceTree = "<group>";
 		};
 		F7EF5EDAB0E5DBEA3523BBFE /* Voxglass */ = {
@@ -1136,6 +1242,47 @@
 			productReference = 502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		4F003E1B22C828F1992CEEED /* VoxglassMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CAA19B992B6AD1B6F02046DF /* Build configuration list for PBXNativeTarget "VoxglassMac" */;
+			buildPhases = (
+				B2B251F4CF3E7BE215BAE886 /* Sources */,
+				FC8D5DE084D6636294CAF33D /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoxglassMac;
+			packageProductDependencies = (
+				BBF10BDC58416E5EC8E2BACF /* VoxglassCore */,
+				683E509A0AE3D0D65EAF1C3B /* VoxglassEncoders */,
+				602927A35C5285855BE8C762 /* ParsoAudioStreaming */,
+				C00C8F0E0C1AFE3C8EA4F77D /* ParsoAudioPlayback */,
+				CC47B0A42E6FF588D7780691 /* ZIPFoundation */,
+			);
+			productName = VoxglassMac;
+			productReference = 66FA1EB81F1F1B3C0375CFAB /* VoxglassMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		63DE23AD860561F6163C99D3 /* VoxglassMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 355E6026488E5A903D0F93BD /* Build configuration list for PBXNativeTarget "VoxglassMacTests" */;
+			buildPhases = (
+				32054A8D4124CAD8B883F070 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F668DFA3A705906B178E1819 /* PBXTargetDependency */,
+			);
+			name = VoxglassMacTests;
+			packageProductDependencies = (
+			);
+			productName = VoxglassMacTests;
+			productReference = 4D20BE7960CDF63B338A9B8B /* VoxglassMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		66284DBA90AC39B124263951 /* Voxglass */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2E32793A1CF978D956C91D25 /* Build configuration list for PBXNativeTarget "Voxglass" */;
@@ -1225,6 +1372,8 @@
 				3B8880C71EB76B457C2934CE /* VoxglassUITests */,
 				CA2AB979DA67E0AF8133D1BE /* VoxglassCarPlaySmokeTests */,
 				1F672496B40AE2799422B3C4 /* VoxglassWatchUITests */,
+				4F003E1B22C828F1992CEEED /* VoxglassMac */,
+				63DE23AD860561F6163C99D3 /* VoxglassMacTests */,
 				3B4441B2FDC4A03E62767F24 /* VoxglassNarrationE2E */,
 			);
 		};
@@ -1389,6 +1538,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		32054A8D4124CAD8B883F070 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B86CD3B877613388BF8FC142 /* MacCommandTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		79662845A239BA8E7AE43638 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1525,6 +1682,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B2B251F4CF3E7BE215BAE886 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E49B96933CC7CFC6A2335E63 /* AVChapterRenderer.swift in Sources */,
+				63FF3FCA96388B9CB363390D /* MacAppServices.swift in Sources */,
+				6A200E007A4BC2F75F330027 /* MacAudioCapture.swift in Sources */,
+				1859F915193EA0CC8AF81BB3 /* MacCommands.swift in Sources */,
+				700494798ED57CFC111DA9FC /* MacPlaybackAudioEngine.swift in Sources */,
+				B5952AA049E325B3CBC54AF9 /* MacProductionSync.swift in Sources */,
+				7F6CC048FE6AC0EFCCC6D39E /* MacViews.swift in Sources */,
+				804F43C374A56FDF2AD78E52 /* NarrationProjectRepository.swift in Sources */,
+				015D93E451F9C1CE0C297E47 /* VoxglassMacApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1553,6 +1726,11 @@
 			isa = PBXTargetDependency;
 			target = 66284DBA90AC39B124263951 /* Voxglass */;
 			targetProxy = 4ABC8B1E77C9408CA3FF2C02 /* PBXContainerItemProxy */;
+		};
+		F668DFA3A705906B178E1819 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F003E1B22C828F1992CEEED /* VoxglassMac */;
+			targetProxy = 7C1BC62A48E02E5EE85A867B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1685,6 +1863,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1695,6 +1874,23 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		5B8DD384A95F2E65C6824545 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.mactests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Contents/MacOS/Voxglass";
 			};
 			name = Debug;
 		};
@@ -1756,6 +1952,44 @@
 			};
 			name = Release;
 		};
+		81DDC75B6FA0A61966AD0AED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.mactests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Contents/MacOS/Voxglass";
+			};
+			name = Release;
+		};
+		829453556BED5AF69DE290F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VoxglassMac/Resources/VoxglassMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = VoxglassMac/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass;
+				PRODUCT_NAME = Voxglass;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
 		C377CD741073040E22C12DCF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1797,6 +2031,29 @@
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D91FE02C2BC38C1DA1DF4DE8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "VoxglassMac/Resources/VoxglassMac-release.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = VoxglassMac/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass;
+				PRODUCT_NAME = Voxglass;
+				PROVISIONING_PROFILE_SPECIFIER = "Parso Voxglass App Store";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
@@ -1883,6 +2140,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -1934,6 +2192,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		355E6026488E5A903D0F93BD /* Build configuration list for PBXNativeTarget "VoxglassMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B8DD384A95F2E65C6824545 /* Debug */,
+				81DDC75B6FA0A61966AD0AED /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		3AC26F685B9AD260CF53ADA4 /* Build configuration list for PBXNativeTarget "VoxglassCarPlaySmokeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1975,6 +2242,15 @@
 			buildConfigurations = (
 				6DDC33DC98C737257F43A71F /* Debug */,
 				0F4DDF366A07F2E88AC66FE6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CAA19B992B6AD1B6F02046DF /* Build configuration list for PBXNativeTarget "VoxglassMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				829453556BED5AF69DE290F1 /* Debug */,
+				D91FE02C2BC38C1DA1DF4DE8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -2039,7 +2315,16 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassWatchCore;
 		};
+		602927A35C5285855BE8C762 /* ParsoAudioStreaming */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E2F1F57A2E614305746BE10D /* XCRemoteSwiftPackageReference "parso-audio-engine" */;
+			productName = ParsoAudioStreaming;
+		};
 		6709F24E350537E4003AB7B1 /* VoxglassEncoders */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoxglassEncoders;
+		};
+		683E509A0AE3D0D65EAF1C3B /* VoxglassEncoders */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassEncoders;
 		};
@@ -2059,6 +2344,20 @@
 		9B485229260A8760BC0E4948 /* VoxglassCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassCore;
+		};
+		BBF10BDC58416E5EC8E2BACF /* VoxglassCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoxglassCore;
+		};
+		C00C8F0E0C1AFE3C8EA4F77D /* ParsoAudioPlayback */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E2F1F57A2E614305746BE10D /* XCRemoteSwiftPackageReference "parso-audio-engine" */;
+			productName = ParsoAudioPlayback;
+		};
+		CC47B0A42E6FF588D7780691 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4ABBA9978D2D897986204F97 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 		FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */ = {
 			isa = XCSwiftPackageProductDependency;

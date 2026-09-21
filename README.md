@@ -6,10 +6,10 @@ leaves your device (content is fetched from archive.org, and cross-device sync, 
 own iCloud).
 
 The shipped app targets iPhone and iPad, with Apple Watch and CarPlay companion surfaces. The main
-application also builds as Mac Catalyst, using the same adaptive navigation and narration flow with
-a persistent sidebar and keyboard controls. There is no separate native `VoxglassMac` target; the
-old source remains available only in Git history. The Swift package still declares macOS as a
-host-test platform because `swift test` runs locally and in CI on macOS.
+application also builds as Mac Catalyst, and the repository now includes a separate native
+`VoxglassMac` macOS app for the wide, keyboard-first narration workflow. Both Mac surfaces use the
+same library, playback, narration packages, and iCloud identity; the old source remains available
+only in Git history.
 
 ## Highlights
 
@@ -138,6 +138,20 @@ On iPad and Catalyst, `⌘1`–`⌘4` switch between Listen, My Books, Discover,
 narration, `⌘R` records/stops, `⌘Space` plays the current take, `⌘←`/`⌘→` move between paragraphs,
 `⌘Return` accepts and advances, and Escape closes the flow. The Mac microphone selector lists
 available input devices so a USB/custom microphone can be chosen before recording.
+
+Build the native macOS app with a concrete macOS destination:
+
+```sh
+xcodebuild \
+  -project Voxglass.xcodeproj \
+  -scheme VoxglassMac \
+  -destination 'platform=macOS' \
+  -derivedDataPath /tmp/voxglass-mac-derived \
+  build CODE_SIGNING_ALLOWED=NO
+```
+
+If `project.yml` changes, regenerate the Xcode project first with `xcodegen generate`. The native
+Mac target requires macOS 14 or newer and does not link WatchConnectivity or CarPlay.
 
 Before a release, run the local iPhone and Watch smoke suite:
 
