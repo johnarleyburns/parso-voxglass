@@ -830,6 +830,11 @@ The following remain open and are not claimed as complete:
   success is insufficient evidence. The CarPlay loading lifecycle, failure
   diagnostics, and real-car test must be fixed before the cross-platform
   release gate can pass.
+- TestFlight signing has been exercised through native Mac archive in CI. The
+  export profile must name the installed Keychain identity exactly—currently
+  `3rd Party Mac Developer Installer`—rather than the generic certificate
+  family label. CI upload remains an open gate until an export and App Store
+  Connect upload complete successfully.
 
 ## 12. Design references
 
