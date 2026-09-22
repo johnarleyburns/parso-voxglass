@@ -835,6 +835,10 @@ The following remain open and are not claimed as complete:
   `3rd Party Mac Developer Installer`—rather than the generic certificate
   family label. CI upload remains an open gate until an export and App Store
   Connect upload complete successfully.
+- CI also exposed one App Store Connect packaging requirement that the local
+  build did not catch: the Mac app must declare `LSApplicationCategoryType`.
+  The native target now declares `public.app-category.books`, which matches
+  Voxglass's audiobook/library focus and is required for Mac App Store upload.
 
 ## 12. Design references
 

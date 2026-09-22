@@ -26,6 +26,8 @@
 	<false/>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.books</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Voxglass records your narration for the audiobook you are producing. Your recordings stay on this Mac unless you choose to sync or export them.</string>
 </dict>
