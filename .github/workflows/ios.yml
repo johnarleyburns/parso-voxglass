@@ -381,7 +381,9 @@ jobs:
           profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist_path")"
           profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$profile_plist_path")"
           profile_platform="$(/usr/libexec/PlistBuddy -c 'Print :Platform:0' "$profile_plist_path")"
-          profile_app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$profile_plist_path")"
+          # macOS profiles use com.apple.application-identifier; iOS profiles use
+          # application-identifier. Read the macOS-specific key for this target.
+          profile_app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.application-identifier' "$profile_plist_path")"
           expected_app_id="${DEVELOPMENT_TEAM_ID}.${APP_BUNDLE_ID}"
 
           if [ "$profile_platform" != "OSX" ]; then
