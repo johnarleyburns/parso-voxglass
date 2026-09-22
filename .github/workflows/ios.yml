@@ -134,6 +134,8 @@ jobs:
       BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
       WATCH_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_PROVISIONING_PROFILE_BASE64 }}
       MAC_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_PROVISIONING_PROFILE_BASE64 }}
+      MAC_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.MAC_INSTALLER_CERTIFICATE_BASE64 }}
+      MAC_INSTALLER_P12_PASSWORD: ${{ secrets.MAC_INSTALLER_P12_PASSWORD }}
       DEVELOPMENT_TEAM_ID: ${{ secrets.DEVELOPMENT_TEAM_ID }}
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
@@ -255,16 +257,18 @@ jobs:
           end
           RUBY
 
-      - name: Check macOS TestFlight profile secret
+      - name: Check macOS TestFlight signing secrets
         if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         id: mac_preflight
         run: |
           set -euo pipefail
-          if [ -n "${MAC_PROVISIONING_PROFILE_BASE64:-}" ]; then
+          if [ -n "${MAC_PROVISIONING_PROFILE_BASE64:-}" \
+            && -n "${MAC_INSTALLER_CERTIFICATE_BASE64:-}" \
+          ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=macOS TestFlight skipped::Add the MAC_PROVISIONING_PROFILE_BASE64 repository secret to enable native macOS uploads. iOS/Watch TestFlight remains enabled."
+            echo "::notice title=macOS TestFlight skipped::Add MAC_PROVISIONING_PROFILE_BASE64 and MAC_INSTALLER_CERTIFICATE_BASE64 repository secrets. iOS/Watch TestFlight remains enabled."
           fi
 
       - name: Check macOS platform in App Store Connect
@@ -395,6 +399,16 @@ jobs:
             exit 1
           fi
 
+          installer_certificate_path="$RUNNER_TEMP/mac_installer_certificate.p12"
+          printf '%s' "$MAC_INSTALLER_CERTIFICATE_BASE64" | base64 --decode > "$installer_certificate_path"
+          security import "$installer_certificate_path" \
+            -P "$MAC_INSTALLER_P12_PASSWORD" -A -t cert -f pkcs12 \
+            -k "$RUNNER_TEMP/app-signing.keychain-db"
+          if ! security find-identity -v -p basic "$RUNNER_TEMP/app-signing.keychain-db" | grep -q '3rd Party Mac Developer Installer'; then
+            echo "::error title=Mac Installer Distribution certificate missing::The supplied PKCS#12 file does not contain a usable Mac Installer Distribution identity."
+            exit 1
+          fi
+
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.provisionprofile"
           echo "profile_name=$profile_name" >> "$GITHUB_OUTPUT"
@@ -431,6 +445,8 @@ jobs:
             <string>app-store-connect</string>
             <key>signingCertificate</key>
             <string>Apple Distribution</string>
+            <key>installerSigningCertificate</key>
+            <string>Mac Installer Distribution</string>
             <key>signingStyle</key>
             <string>manual</string>
             <key>teamID</key>

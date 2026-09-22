@@ -156,34 +156,48 @@ Mac target requires macOS 14 or newer and does not link WatchConnectivity or Car
 ### Native macOS TestFlight distribution
 
 The release workflow uploads both the iOS/Watch build and the native `VoxglassMac` build when the
-macOS App Store Connect platform and `MAC_PROVISIONING_PROFILE_BASE64` repository secret are
-configured. The existing `BUILD_CERTIFICATE_BASE64` must contain an Apple Distribution certificate.
-The Mac profile must be a **Mac App Store Connect** profile for `guru.parso.voxglass`, named
-`Parso Voxglass Mac App Store`, and must include the app's sandbox, iCloud, network-client, and
-audio-input entitlements.
+macOS App Store Connect platform and its signing material are configured. The existing
+`BUILD_CERTIFICATE_BASE64` must contain the **Apple Distribution** identity that signs the app. Mac
+App Store Connect export also requires a separate **Mac Installer Distribution** identity to sign
+the installer package. The Mac profile must be a **Mac App Store Connect** profile for
+`guru.parso.voxglass`, named `Parso Voxglass Mac App Store`.
 
 To enable the upload once per repository:
 
 1. In App Store Connect, open Voxglass, choose **Add Platform → macOS**, enter the macOS version
    metadata, and save it. The macOS platform uses the same app record and bundle ID as iOS.
-2. In Apple Developer → Certificates, Identifiers & Profiles → **Profiles**, create a profile with
-   **Distribution → Mac App Store Connect**, select the `guru.parso.voxglass` App ID and an
+2. Create a **Mac Installer Distribution** certificate in Apple Developer → Certificates,
+   Identifiers & Profiles → **Certificates**. Use Keychain Access → **Certificate Assistant →
+   Request a Certificate From a Certificate Authority** to generate a CSR and private key. Upload
+   that CSR when creating the certificate, download the issued certificate, and open it in Keychain
+   Access. In **My Certificates**, export the resulting **3rd Party Mac Developer Installer** identity
+   as a `.p12`. The export password may be blank; if you set one, also add it as the
+   `MAC_INSTALLER_P12_PASSWORD` repository secret. This identity is separate from the Apple
+   Distribution identity used to sign the app itself.
+3. In Apple Developer → Certificates, Identifiers & Profiles → **Profiles**, create a profile with
+   **Distribution → Mac App Store Connect**, select the `guru.parso.voxglass` App ID and the
    **Apple Distribution** certificate, name it `Parso Voxglass Mac App Store`, and download it.
-3. Base64-encode that profile without line wrapping and add the result as the GitHub Actions
-   repository secret `MAC_PROVISIONING_PROFILE_BASE64`:
+4. Add the downloaded profile as the GitHub Actions repository secret
+   `MAC_PROVISIONING_PROFILE_BASE64`:
 
    ```sh
-   base64 < "$HOME/Downloads/Parso Voxglass Mac App Store.provisionprofile" | pbcopy
+   base64 < "$HOME/Downloads/Parso_Voxglass_Mac_App_Store.provisionprofile" | tr -d '\n' | gh secret set MAC_PROVISIONING_PROFILE_BASE64 -R johnarleyburns/parso-voxglass
    ```
 
-   In GitHub: **Settings → Secrets and variables → Actions → New repository secret**, enter the
-   name exactly and paste the clipboard contents as the value.
-4. Push to `main`, or use **Actions → iOS → Run workflow**. The workflow validates the profile,
-   archives `VoxglassMac`, exports it for App Store Connect, and uploads it to TestFlight. If the
-   Mac secret or platform is absent, the iOS/Watch upload still runs and the Mac upload is clearly
-   reported as skipped.
+5. Add the exported installer identity as a repository secret:
 
-5. In App Store Connect, open **Apps → Voxglass → TestFlight → macOS**. Wait for the build to finish
+   ```sh
+   base64 < "$HOME/Downloads/Parso_Voxglass_Mac_Installer.p12" | tr -d '\n' | gh secret set MAC_INSTALLER_CERTIFICATE_BASE64 -R johnarleyburns/parso-voxglass
+   ```
+
+   The workflow supplies an empty password when `MAC_INSTALLER_P12_PASSWORD` is not configured.
+   Never commit or print the `.p12` file or its password.
+6. Push to `main`, or use **Actions → iOS → Run workflow**. The workflow validates both Mac signing
+   identities and the profile, archives `VoxglassMac`, exports it for App Store Connect, and uploads
+   it to TestFlight. If Mac signing secrets or the platform are absent, iOS/Watch uploads remain
+   enabled and the Mac upload is reported as skipped.
+
+7. In App Store Connect, open **Apps → Voxglass → TestFlight → macOS**. Wait for the build to finish
    processing, answer any export-compliance questions, add the build to an internal tester group,
    and invite the Apple Account used on the Mac.
 
