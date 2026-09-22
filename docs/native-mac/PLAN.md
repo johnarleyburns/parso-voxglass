@@ -799,6 +799,38 @@ record family. Any future expansion of full-project peer hydration must extend
 the existing transport contract and its fixtures; it is not represented as a
 Mac-only workaround here.
 
+## 13. Follow-up audit — 2026-09-22
+
+This follow-up audit corrected several gaps in the first implementation audit:
+
+- Command routing is now per focused Mac window through `FocusedValues`, rather
+  than one app-global router that could deliver commands to the wrong window.
+- Commands are state-gated: narration actions require the narration destination
+  and a selected paragraph, accept/retry require a selected take, playback
+  requires an active session, and commands are suppressed while a search/editor
+  field owns focus. Stop playback and the keyboard-shortcuts help action now
+  have real handlers.
+- Narration's Accept and Next control is disabled until a take exists and the
+  workspace keeps the command context synchronized with paragraph/take state.
+- Listen's empty-state navigation and My Books favorite action now perform real
+  work. Dead History/See All controls were removed instead of presenting
+  buttons with no behavior.
+- The Mac Test target now covers delivery order, editor/take gating, and
+  playback-session gating.
+
+The following remain open and are not claimed as complete:
+
+- The native Mac build and Mac UI test matrix still require CI/hardware
+  verification after these changes; host `swift test` does not compile the
+  native app target.
+- Full-project peer hydration across Mac and iOS remains an open transport
+  limitation; local recording must continue to work without network access.
+- CarPlay field testing is currently blocked by a real-car failure: the app
+  remains on “Loading Library…” for several seconds and then exits. Simulator
+  success is insufficient evidence. The CarPlay loading lifecycle, failure
+  diagnostics, and real-car test must be fixed before the cross-platform
+  release gate can pass.
+
 ## 12. Design references
 
 The platform decisions are consistent with Apple's current guidance:

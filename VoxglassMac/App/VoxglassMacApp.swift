@@ -3,11 +3,10 @@ import SwiftUI
 @main
 struct VoxglassMacApp: App {
     @StateObject private var services = MacAppServices()
-    @StateObject private var commandRouter = MacCommandRouter()
 
     var body: some Scene {
         WindowGroup("Voxglass") {
-            VoxglassMacRootView(services: services, router: commandRouter)
+            VoxglassMacRootView(services: services)
                 .environmentObject(services.libraryStore)
                 .environmentObject(services.catalogStore)
                 .environmentObject(services.offlineDownloads)
@@ -15,7 +14,7 @@ struct VoxglassMacApp: App {
                 .preferredColorScheme(.dark)
                 .task { await services.bootstrap() }
         }
-        .commands { VoxglassMacCommands(router: commandRouter) }
+        .commands { VoxglassMacCommands() }
 
         Settings {
             MacSettingsView(services: services)

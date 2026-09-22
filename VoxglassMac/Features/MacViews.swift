@@ -16,12 +16,13 @@ enum MacDestination: String, CaseIterable, Hashable, Identifiable {
 
 struct VoxglassMacRootView: View {
     let services: MacAppServices
-    @ObservedObject var router: MacCommandRouter
+    @StateObject private var router = MacCommandRouter()
     @EnvironmentObject private var library: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
     @State private var selection: MacDestination = .listen
     @State private var searchRequest = 0
     @State private var showInspector = false
+    @State private var showKeyboardShortcuts = false
 
     var body: some View {
         NavigationSplitView {
@@ -38,11 +39,11 @@ struct VoxglassMacRootView: View {
                 Group {
                     switch selection {
                     case .listen:
-                        MacListenView()
+                        MacListenView(onNavigate: { selection = $0 })
                     case .books:
-                        MacBooksView(searchRequest: $searchRequest)
+                        MacBooksView(router: router, searchRequest: $searchRequest)
                     case .discover:
-                        MacDiscoverView(searchRequest: $searchRequest)
+                        MacDiscoverView(router: router, searchRequest: $searchRequest)
                     case .narration:
                         MacNarrationView(services: services, router: router)
                     }
@@ -70,8 +71,24 @@ struct VoxglassMacRootView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
-        .onAppear { installRouter() }
-        .onChange(of: selection) { _, _ in installRouter() }
+        .focusedSceneValue(\.voxglassMacCommandRouter, router)
+        .onAppear {
+            router.setDestination(selection)
+            router.setHasPlaybackSession(playback.currentSession != nil)
+            installRouter()
+        }
+        .onChange(of: selection) { _, destination in
+            router.setDestination(destination)
+            installRouter()
+        }
+        .onChange(of: playback.currentSession != nil) { _, hasSession in
+            router.setHasPlaybackSession(hasSession)
+        }
+        .alert("Keyboard Shortcuts", isPresented: $showKeyboardShortcuts) {
+            Button("Done", role: .cancel) {}
+        } message: {
+            Text("Listen ⌘1   My Books ⌘2   Discover ⌘3   Narration ⌘4\nSearch ⌘F   Play/Pause Space   Record ⌘R\nAccept ⌘Return   Retry ⌘⇧R   Next/Previous ⌘↓/⌘↑")
+        }
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
@@ -82,6 +99,8 @@ struct VoxglassMacRootView: View {
             case .search: searchRequest += 1
             case .toggleInspector: showInspector.toggle()
             case .showNowPlaying: services.playback.togglePlayPause()
+            case .stopPlayback: services.playback.pause()
+            case .showKeyboardShortcuts: showKeyboardShortcuts = true
             case .record, .acceptAndNext, .retry, .nextParagraph, .previousParagraph:
                 // The focused narration workspace observes the typed command
                 // event. No global notification broadcast is used.
@@ -120,6 +139,8 @@ struct MacListenView: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @State private var recent: [BookWithChapters] = []
 
+    let onNavigate: (MacDestination) -> Void
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -130,9 +151,11 @@ struct MacListenView: View {
                 } else {
                     MacEmptyCard(title: "Nothing is playing", message: "Open My Books or Discover to start listening.", actions: [
                         ("Open My Books", "books.vertical.fill"), ("Discover", "sparkles")
-                    ])
+                    ]) { title in
+                        onNavigate(title == "Open My Books" ? .books : .discover)
+                    }
                 }
-                MacSectionTitle("Continue listening", action: "History")
+                MacSectionTitle(title: "Continue listening")
                 if recent.isEmpty {
                     MacEmptyCard(title: "Your listening history will appear here", message: "Resume a book and Voxglass will keep your place.", actions: [])
                 } else {
@@ -140,7 +163,7 @@ struct MacListenView: View {
                         ForEach(recent) { book in MacBookRow(book: book, actionTitle: "Resume") }
                     }
                 }
-                MacSectionTitle("Downloaded", action: "See all")
+                MacSectionTitle(title: "Downloaded")
                 LazyVStack(spacing: 10) {
                     ForEach(library.visibleBooks.filter { book in
                         if case .cached = offlineDownloads.state(for: book.book.id) { return true }
@@ -188,6 +211,7 @@ struct MacResumeCard: View {
 }
 
 struct MacBooksView: View {
+    @ObservedObject var router: MacCommandRouter
     @EnvironmentObject private var library: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var searchRequest: Int
@@ -235,6 +259,8 @@ struct MacBooksView: View {
         }
         .background(MacBackground())
         .onChange(of: searchRequest) { _, _ in isSearching = true; searchFocused = true }
+        .onChange(of: searchFocused) { _, focused in router.setTextEditorFocused(focused) }
+        .onDisappear { router.setTextEditorFocused(false) }
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [.folder]) { result in
             guard case .success(let folderURL) = result else { return }
             Task { await importLocalFolder(folderURL) }
@@ -265,6 +291,7 @@ struct MacBooksView: View {
 }
 
 struct MacDiscoverView: View {
+    @ObservedObject var router: MacCommandRouter
     @EnvironmentObject private var catalog: CatalogStore
     @EnvironmentObject private var library: LibraryStore
     @Binding var searchRequest: Int
@@ -292,12 +319,12 @@ struct MacDiscoverView: View {
                                 Text("Sort").font(.headline)
                                 ForEach(CatalogSort.allCases.filter { $0 != .curation }) { candidate in
                                     Button { sort = candidate; showFilters = false; runSearch() } label: {
-                                        Label(candidate.title, systemImage: candidate == sort ? "checkmark" : "")
+                                        let iconName = candidate == sort ? "checkmark" : "circle"
+                                        Label(candidate.title, systemImage: iconName)
                                     }
                                 }
                             }.padding(16).frame(width: 190)
                         }
-                    Button { } label: { Label("History", systemImage: "clock") }
                 }
             ))
             if isSearching {
@@ -307,7 +334,7 @@ struct MacDiscoverView: View {
                         .focused($searchFocused)
                         .onSubmit { runSearch() }
                     Picker("Search in", selection: $searchScope) {
-                        ForEach(SearchScope.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        ForEach(SearchScope.allCases, id: \.self, content: searchScopeRow)
                     }.pickerStyle(.menu).labelsHidden()
                     if !query.isEmpty { Button("Clear") { query = ""; catalog.resetResultsForNavigation() } }
                 }
@@ -333,7 +360,7 @@ struct MacDiscoverView: View {
                         }
                     }
                     if !catalog.results.isEmpty {
-                        MacSectionTitle("Catalog", action: catalog.isLoadingMore ? "Loading…" : "")
+                        MacSectionTitle(title: "Catalog")
                         ForEach(catalog.results) { result in MacCatalogRow(result: result) }
                     } else if catalog.isSearching {
                         ProgressView("Searching catalog…").frame(maxWidth: .infinity, minHeight: 180)
@@ -347,9 +374,15 @@ struct MacDiscoverView: View {
         }
         .background(MacBackground())
         .onChange(of: searchRequest) { _, _ in isSearching = true; searchFocused = true }
+        .onChange(of: searchFocused) { _, focused in router.setTextEditorFocused(focused) }
+        .onDisappear { router.setTextEditorFocused(false) }
         .sheet(item: $infoCollection) { collection in
             MacCollectionInfoView(collection: collection)
         }
+    }
+
+    private func searchScopeRow(_ scope: SearchScope) -> some View {
+        Text(scope.rawValue).tag(scope)
     }
 
     private func runSearch() {
@@ -495,12 +528,15 @@ struct MacNarrationWorkspace: View {
                         Text("PARAGRAPH \(paragraph.ordinal + 1)").font(.caption.bold()).foregroundStyle(.secondary)
                         Text(paragraph.text).font(.system(size: 24, design: .serif)).lineSpacing(7).textSelection(.enabled)
                         if let message { Text(message).foregroundStyle(.orange) }
-                        HStack { Button(isRecording ? "Stop" : "Record") { isRecording ? stopRecording() : startRecording() }.buttonStyle(.borderedProminent).keyboardShortcut("r", modifiers: .command).accessibilityIdentifier("native-mac.record.toggle"); Button("Accept and next") { acceptAndNext() }.keyboardShortcut(.return, modifiers: .command); Spacer() }
+                        HStack { Button(isRecording ? "Stop" : "Record") { isRecording ? stopRecording() : startRecording() }.buttonStyle(.borderedProminent).keyboardShortcut("r", modifiers: .command).accessibilityIdentifier("native-mac.record.toggle"); Button("Accept and next") { acceptAndNext() }.keyboardShortcut(.return, modifiers: .command).disabled(paragraph.selectedTakeID == nil || isRecording); Spacer() }
                     } else { Text("Choose a paragraph").foregroundStyle(.secondary) }
                     Spacer()
                 }.padding(32).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .onAppear { updateCommandContext() }
+        .onChange(of: selectedParagraphID) { _, _ in updateCommandContext() }
+        .onChange(of: project.recordedCount) { _, _ in updateCommandContext() }
         .onChange(of: router.latestEvent?.id) { _, _ in
             guard let action = router.latestEvent?.action else { return }
             switch action { case .record: isRecording ? stopRecording() : startRecording(); case .acceptAndNext: acceptAndNext(); case .nextParagraph: moveParagraph(by: 1); case .previousParagraph: moveParagraph(by: -1); case .retry: startRecording(); default: break }
@@ -509,6 +545,10 @@ struct MacNarrationWorkspace: View {
             MacReviewExportView(project: project, services: services)
                 .frame(minWidth: 620, minHeight: 520)
         }
+    }
+
+    private func updateCommandContext() {
+        router.setWorkspaceSelection(hasParagraph: paragraph != nil, hasTake: paragraph?.selectedTakeID != nil)
     }
 
     private func startRecording() {
@@ -733,7 +773,7 @@ struct MacFeaturedCollections: View {
     let select: (IACollection) -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            MacSectionTitle("Featured Collections")
+            MacSectionTitle(title: "Featured Collections")
             LazyVStack(spacing: 10) {
                 ForEach(collections) { collection in
                     HStack(spacing: 14) {
@@ -774,15 +814,16 @@ struct MacBookRow: View {
     var action: (() -> Void)?
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var offlineDownloads: OfflineDownloadManager
+    @EnvironmentObject private var library: LibraryStore
     init(book: BookWithChapters, actionTitle: String, action: (() -> Void)? = nil) { self.book = book; self.actionTitle = actionTitle; self.action = action }
-    var body: some View { HStack { MacCover(title: book.book.title, size: CGSize(width: 54, height: 70)); VStack(alignment: .leading, spacing: 4) { Text(book.book.title).fontWeight(.semibold); Text(book.book.authorLine).font(.caption).foregroundStyle(.secondary); if let narrator = book.book.narratorLine { Text(narrator).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Button(actionTitle) { openBook() }.buttonStyle(.borderedProminent); Menu { Button("Play") { Task { await playback.play(book) } }; Button(book.book.isFavorite ? "Remove favorite" : "Add favorite") { }; Divider(); if case .cached = offlineDownloads.state(for: book.book.id) { Button("Remove offline copy") { Task { await offlineDownloads.removeOffline(book: book) } } } else { Button("Make available offline") { Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) } } } } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton) }.padding(12).background(MacPanel()) }
+    var body: some View { HStack { MacCover(title: book.book.title, size: CGSize(width: 54, height: 70)); VStack(alignment: .leading, spacing: 4) { Text(book.book.title).fontWeight(.semibold); Text(book.book.authorLine).font(.caption).foregroundStyle(.secondary); if let narrator = book.book.narratorLine { Text(narrator).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Button(actionTitle) { openBook() }.buttonStyle(.borderedProminent); Menu { Button("Play") { Task { await playback.play(book) } }; Button(book.book.isFavorite ? "Remove favorite" : "Add favorite") { Task { await library.setFavorite(!book.book.isFavorite, for: book.book.id) } }; Divider(); if case .cached = offlineDownloads.state(for: book.book.id) { Button("Remove offline copy") { Task { await offlineDownloads.removeOffline(book: book) } } } else { Button("Make available offline") { Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) } } } } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton) }.padding(12).background(MacPanel()) }
     private func openBook() { if let action { action() } else { Task { await playback.present(book) } } }
 }
 
 struct MacFilterButton: View { let title: String; let selected: Bool; let action: () -> Void; var body: some View { Button(title, action: action).buttonStyle(.borderedProminent).tint(selected ? .accentColor : .gray.opacity(0.3)) } }
 struct MacPageHeader: View { let eyebrow: String; let title: String; var trailing: AnyView? = nil; var body: some View { HStack(alignment: .bottom) { VStack(alignment: .leading, spacing: 6) { Text(eyebrow).macEyebrow(); Text(title).font(.system(size: 30, weight: .bold, design: .rounded)) }; Spacer(); if let trailing { trailing } }.padding(.horizontal, 28).padding(.top, 28).padding(.bottom, 10) } }
-struct MacSectionTitle: View { let title: String; let action: String; init(_ title: String, action: String = "") { self.title = title; self.action = action }; var body: some View { HStack { Text(title).font(.title3.bold()); Spacer(); if !action.isEmpty { Button(action) { } .buttonStyle(.borderless) } } } }
-struct MacEmptyCard: View { let title: String; let message: String; let actions: [(String, String)]; var body: some View { VStack(alignment: .leading, spacing: 10) { Text(title).font(.title3.bold()); Text(message).foregroundStyle(.secondary); if !actions.isEmpty { HStack { ForEach(actions, id: \.0) { Button($0.0) {}.buttonStyle(.borderedProminent) } } } }.frame(maxWidth: .infinity, alignment: .leading).padding(22).background(MacPanel()) } }
+struct MacSectionTitle: View { let title: String; var body: some View { HStack { Text(title).font(.title3.bold()); Spacer() } } }
+struct MacEmptyCard: View { let title: String; let message: String; let actions: [(String, String)]; var action: ((String) -> Void)? = nil; var body: some View { VStack(alignment: .leading, spacing: 10) { Text(title).font(.title3.bold()); Text(message).foregroundStyle(.secondary); if !actions.isEmpty { HStack { ForEach(actions, id: \.0) { item in Button(item.0) { action?(item.0) }.buttonStyle(.borderedProminent).disabled(action == nil) } } } }.frame(maxWidth: .infinity, alignment: .leading).padding(22).background(MacPanel()) } }
 struct MacCover: View { let title: String; let size: CGSize; var body: some View { RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [.brown.opacity(0.8), .mint.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)).frame(width: size.width, height: size.height).overlay(Text(title.prefix(2).uppercased()).font(.system(size: min(size.width, size.height) / 3, weight: .heavy, design: .serif)).foregroundStyle(.white.opacity(0.85))) } }
 struct MacBackground: View { var body: some View { Color(nsColor: .windowBackgroundColor).ignoresSafeArea() } }
 struct MacPanel: View { var body: some View { RoundedRectangle(cornerRadius: 12).fill(Color(nsColor: .controlBackgroundColor)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08))) } }

@@ -262,9 +262,8 @@ jobs:
         id: mac_preflight
         run: |
           set -euo pipefail
-          if [ -n "${MAC_PROVISIONING_PROFILE_BASE64:-}" \
-            && -n "${MAC_INSTALLER_CERTIFICATE_BASE64:-}" \
-          ]; then
+          if [ -n "${MAC_PROVISIONING_PROFILE_BASE64:-}" ] \
+            && [ -n "${MAC_INSTALLER_CERTIFICATE_BASE64:-}" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
