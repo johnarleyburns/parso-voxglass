@@ -820,25 +820,45 @@ This follow-up audit corrected several gaps in the first implementation audit:
 
 The following remain open and are not claimed as complete:
 
-- The native Mac build and Mac UI test matrix still require CI/hardware
-  verification after these changes; host `swift test` does not compile the
-  native app target.
 - Full-project peer hydration across Mac and iOS remains an open transport
   limitation; local recording must continue to work without network access.
 - CarPlay field testing is currently blocked by a real-car failure: the app
-  remains on “Loading Library…” for several seconds and then exits. Simulator
-  success is insufficient evidence. The CarPlay loading lifecycle, failure
-  diagnostics, and real-car test must be fixed before the cross-platform
-  release gate can pass.
-- TestFlight signing has been exercised through native Mac archive in CI. The
-  export profile must name the installed Keychain identity exactly—currently
-  `3rd Party Mac Developer Installer`—rather than the generic certificate
-  family label. CI upload remains an open gate until an export and App Store
-  Connect upload complete successfully.
-- CI also exposed one App Store Connect packaging requirement that the local
-  build did not catch: the Mac app must declare `LSApplicationCategoryType`.
-  The native target now declares `public.app-category.books`, which matches
-  Voxglass's audiobook/library focus and is required for Mac App Store upload.
+
+The native Mac build, Mac unit-test target, archive/export, and TestFlight
+upload have since passed in CI run `35798648295`. The export workflow uses the
+exact installed `3rd Party Mac Developer Installer` identity, and the native
+target declares `LSApplicationCategoryType = public.app-category.books` in
+`project.yml`, so those release gates are closed.
+
+## 14. Crash-point audit — 2026-09-22
+
+The supplied crash point was audited from its embedded crash logs and
+`PointInfo.json`. Every reproduced report aborts in
+`CPTabBarTemplate.validateTemplates:` while
+`CarPlayInterfaceController.buildRoot()` constructs the consumer tab bar. The
+implementation had hard-coded five tabs even though CarPlay's permitted tab
+count is entitlement/runtime dependent. That abort occurs before the CarPlay
+library-loading lifecycle can complete, which explains the field symptom of
+“Loading Library…” followed by exit.
+
+The fix is now complete in the implementation:
+
+- `CarPlayTemplateValidation.maximumTabCount` is derived from
+  `CPTabBarTemplate.maximumTabCount`, clamped to the app's supported range.
+- The consumer renderer drops tabs above that runtime limit before creating the
+  `CPTabBarTemplate`.
+- Tab selection resolves the retained template instance instead of indexing the
+  original five-tab enum, so selection remains correct when Search is omitted.
+- The CarPlay smoke test asserts both the runtime count and the retained
+  Continue row. The test scheme passes `-uiTestDisableCloudKit` because the
+  unsigned simulator host has no CloudKit entitlement; this prevents unrelated
+  simulator bootstrap from aborting before the hosted test runs.
+- The targeted iOS Simulator CarPlay smoke action passes both tests.
+
+The actual-car “Loading Library…” report remains an explicit field-validation
+item: simulator coverage proves the invalid-tab startup path is fixed, but only
+hardware CarPlay testing can confirm the complete connection/loading lifecycle
+and any entitlement-specific tab limit on the affected vehicle.
 
 ## 12. Design references
 

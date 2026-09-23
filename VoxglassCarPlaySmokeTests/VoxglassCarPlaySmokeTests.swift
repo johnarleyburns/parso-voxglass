@@ -11,15 +11,18 @@ import XCTest
 final class VoxglassCarPlaySmokeTests: XCTestCase {
 
     @MainActor
-    func testRendererBuildsFiveTabsAndResumeRowFromModel() throws {
+    func testRendererBuildsSupportedTabCountAndResumeRowFromModel() throws {
         let state = CarPlayState.fixtureWithOneInProgressBook()
         let interface = CarPlayMenuBuilder.root(state)
 
-        let tabBar = CarPlayTemplateRenderer.render(interface,
-                                                    dispatcher: .noop,
-                                                    artwork: .noop)
+        let tabBar = try XCTUnwrap(CarPlayTemplateRenderer.render(
+            interface,
+            dispatcher: .noop,
+            artwork: .noop
+        ) as? CPTabBarTemplate)
 
-        XCTAssertEqual(tabBar.templates.count, 5)
+        XCTAssertEqual(tabBar.templates.count, max(0, min(5, CPTabBarTemplate.maximumTabCount)))
+        XCTAssertLessThanOrEqual(tabBar.templates.count, CPTabBarTemplate.maximumTabCount)
         let continueList = try XCTUnwrap(tabBar.templates.first as? CPListTemplate)
         XCTAssertEqual(continueList.tabTitle, "Continue")
         let firstItem = try XCTUnwrap(continueList.sections.first?.items.first as? CPListItem)

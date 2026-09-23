@@ -8,7 +8,14 @@ import VoxglassCore
 /// boundary before constructing `CPTabBarTemplate`.
 @MainActor
 enum CarPlayTemplateValidation {
-    static let maximumTabCount = 5
+    /// The available tab count is entitlement-dependent. Audio apps commonly
+    /// receive fewer slots than the five tabs in our value model, and
+    /// CPTabBarTemplate throws an Objective-C exception when given too many
+    /// root templates. Always ask CarPlay for the runtime limit immediately
+    /// before constructing the tab bar.
+    static var maximumTabCount: Int {
+        max(0, min(5, CPTabBarTemplate.maximumTabCount))
+    }
     static let maximumSectionCount = 12
     static let maximumItemsPerSection = 12
     private static let fallbackSystemImage = "rectangle.stack.fill"

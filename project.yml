@@ -263,6 +263,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this Mac unless you choose to sync or export them."
         LSMinimumSystemVersion: "14.0"
+        LSApplicationCategoryType: public.app-category.books
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass
@@ -317,6 +318,8 @@ schemes:
         Voxglass: all
     test:
       gatherCoverageData: true
+      commandLineArguments:
+        -uiTestDisableCloudKit: true
       targets:
         - VoxglassUITests
         - VoxglassCarPlaySmokeTests

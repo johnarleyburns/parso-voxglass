@@ -233,8 +233,8 @@ final class CarPlayInterfaceController {
 
     func selectTab(_ id: CarPlayTabID) {
         guard let tabBar,
-              let index = CarPlayTabID.allCases.firstIndex(of: id),
-              tabBar.templates.indices.contains(index) else { return }
+              let template = tabTemplates[id],
+              let index = tabBar.templates.firstIndex(where: { $0 === template }) else { return }
         interfaceController.popToRootTemplate(animated: true, completion: nil)
         tabBar.selectTemplate(at: index)
     }
