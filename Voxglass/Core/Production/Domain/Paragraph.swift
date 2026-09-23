@@ -87,16 +87,17 @@ public enum ReviewTag: String, Codable, Sendable, CaseIterable {
 
 public enum DeviceKind: String, Codable, Sendable {
     case iPhone
+    case mac
     case watch
     case carPlay
 
-    /// Older local stores and sync records used `mac` as the default device
-    /// value before the Mac target was deferred. Read that value as the
-    /// current phone device so existing data remains loadable without keeping
-    /// a Mac platform in the active domain model.
+    /// The `mac` value was already present in older local stores and sync
+    /// records. Keep it as a first-class value now that the native Mac target
+    /// is active, while continuing to decode all existing device values.
     public init?(rawValue: String) {
         switch rawValue {
-        case "mac", "iPhone": self = .iPhone
+        case "mac": self = .mac
+        case "iPhone": self = .iPhone
         case "watch": self = .watch
         case "carPlay": self = .carPlay
         default: return nil
@@ -106,6 +107,7 @@ public enum DeviceKind: String, Codable, Sendable {
     public var rawValue: String {
         switch self {
         case .iPhone: return "iPhone"
+        case .mac: return "mac"
         case .watch: return "watch"
         case .carPlay: return "carPlay"
         }

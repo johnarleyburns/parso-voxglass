@@ -8,6 +8,10 @@ import VoxglassCore
 /// current default input through the AVAudioEngine input node; device selection
 /// is kept behind this type so Core never imports AppKit or CoreAudio UI types.
 final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
+    static func dbfs(forLinearAmplitude amplitude: Double) -> Double {
+        20 * log10(max(amplitude, 0.000_001))
+    }
+
     private let lock = NSLock()
     private let engine = AVAudioEngine()
     private var file: AVAudioFile?
@@ -20,6 +24,7 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
     private var selectedFormat = RecordingDefaults()
     private var preferredDeviceID: String?
     private var configurationObserver: NSObjectProtocol?
+    private var tapInstalled = false
 
     init() {
         configurationObserver = NotificationCenter.default.addObserver(
@@ -102,11 +107,32 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
 
     func startMonitoring() async throws {
         guard state == .prepared || state == .monitoring else { throw CaptureError.invalidState }
+        guard !tapInstalled else {
+            lock.withLock { _state = .monitoring }
+            return
+        }
+        let input = engine.inputNode
+        let format = input.inputFormat(forBus: 0)
+        guard format.channelCount > 0 else { throw CaptureError.deviceUnavailable }
+        installLevelTap(on: input, format: format)
+        engine.prepare()
+        do {
+            try engine.start()
+        } catch {
+            input.removeTap(onBus: 0)
+            tapInstalled = false
+            throw error
+        }
         lock.withLock { _state = .monitoring }
     }
 
     func stopMonitoring() async {
         guard state != .recording else { return }
+        if tapInstalled {
+            engine.inputNode.removeTap(onBus: 0)
+            engine.stop()
+            tapInstalled = false
+        }
         lock.withLock { _state = .prepared }
     }
 
@@ -126,6 +152,11 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
             AVLinearPCMIsNonInterleaved: false
         ]
         let output = try AVAudioFile(forWriting: destinationURL, settings: settings)
+        if tapInstalled {
+            input.removeTap(onBus: 0)
+            engine.stop()
+            tapInstalled = false
+        }
         lock.withLock {
             file = output
             startedAt = Date()
@@ -141,9 +172,11 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
             } catch { self.onInterruption?(.diskPressure) }
             self.publishLevels(buffer)
         }
+        tapInstalled = true
         engine.prepare()
         do { try engine.start() } catch {
             input.removeTap(onBus: 0)
+            tapInstalled = false
             lock.withLock { _state = .failed(error.localizedDescription) }
             throw error
         }
@@ -153,6 +186,7 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
         guard state == .recording else { throw CaptureError.invalidState }
         lock.withLock { _state = .stopping }
         engine.inputNode.removeTap(onBus: 0)
+        tapInstalled = false
         engine.stop()
         let duration = Date().timeIntervalSince(startedAt ?? Date())
         let url = file?.url
@@ -170,12 +204,13 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
             duration: max(0, duration),
             format: format,
             clippedDuringCapture: clipped,
-            peakDBFS: Double(peak)
+            peakDBFS: Self.dbfs(forLinearAmplitude: Double(peak))
         )
     }
 
     func cancelRecording() async {
-        if state == .recording { engine.inputNode.removeTap(onBus: 0); engine.stop() }
+        if tapInstalled { engine.inputNode.removeTap(onBus: 0); tapInstalled = false }
+        if state == .recording { engine.stop() }
         file = nil
         lock.withLock { _state = .prepared }
     }
@@ -209,6 +244,13 @@ final class MacAudioCapture: AudioCapturing, @unchecked Sendable {
             )
             for continuation in levelContinuations.values { continuation.yield(levels) }
         }
+    }
+
+    private func installLevelTap(on input: AVAudioInputNode, format: AVAudioFormat) {
+        input.installTap(onBus: 0, bufferSize: 2_048, format: format) { [weak self] buffer, _ in
+            self?.publishLevels(buffer)
+        }
+        tapInstalled = true
     }
 
     private func resolveDeviceID(_ requested: String?) throws -> AudioDeviceID {

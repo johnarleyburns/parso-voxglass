@@ -3,16 +3,28 @@ import SwiftUI
 
 enum MacCommandAction: Equatable {
     case destination(MacDestination)
+    case newNarration
     case search
+    case openProject
+    case importBook
+    case importAudio
     case record
     case acceptAndNext
     case retry
     case nextParagraph
     case previousParagraph
+    case previousChapter
+    case nextChapter
+    case addBookmark
+    case addNote
+    case openAudioSetup
+    case openReviewExport
     case toggleInspector
     case showNowPlaying
     case stopPlayback
     case showKeyboardShortcuts
+    case showRecordingTroubleshooting
+    case sendDiagnostics
 }
 
 struct MacCommandEvent: Identifiable {
@@ -29,15 +41,19 @@ struct MacCommandContext: Equatable {
 
     func canPerform(_ action: MacCommandAction) -> Bool {
         switch action {
-        case .destination, .toggleInspector, .showKeyboardShortcuts:
+        case .destination, .newNarration, .toggleInspector, .showKeyboardShortcuts,
+             .openProject, .importBook, .importAudio, .showRecordingTroubleshooting,
+             .sendDiagnostics:
             !isTextEditorFocused
         case .search:
             destination != .narration && !isTextEditorFocused
+        case .openAudioSetup, .openReviewExport, .addNote:
+            destination == .narration && hasSelectedParagraph && !isTextEditorFocused
         case .record, .nextParagraph, .previousParagraph:
             destination == .narration && hasSelectedParagraph && !isTextEditorFocused
         case .acceptAndNext, .retry:
             destination == .narration && hasSelectedTake && !isTextEditorFocused
-        case .showNowPlaying, .stopPlayback:
+        case .previousChapter, .nextChapter, .addBookmark, .showNowPlaying, .stopPlayback:
             hasPlaybackSession
         }
     }
@@ -104,8 +120,13 @@ struct VoxglassMacCommands: Commands {
                 .keyboardShortcut(",", modifiers: .command)
         }
         CommandMenu("File") {
-            Button("New Narration") { send(.destination(.narration)) }
+            Button("New Narration") { send(.newNarration) }
                 .keyboardShortcut("n", modifiers: .command)
+            Button("Open Project…") { send(.openProject) }
+                .keyboardShortcut("o", modifiers: .command)
+            Divider()
+            Button("Import Book…") { send(.importBook) }
+            Button("Import Audio…") { send(.importAudio) }
             Divider()
             Button("Close Window") { NSApp.keyWindow?.performClose(nil) }
                 .keyboardShortcut("w", modifiers: .command)
@@ -133,6 +154,13 @@ struct VoxglassMacCommands: Commands {
             Button("Stop") { send(.stopPlayback) }
                 .keyboardShortcut(.escape, modifiers: [])
                 .disabled(!canPerform(.stopPlayback))
+            Divider()
+            Button("Previous Chapter") { send(.previousChapter) }
+                .disabled(!canPerform(.previousChapter))
+            Button("Next Chapter") { send(.nextChapter) }
+                .disabled(!canPerform(.nextChapter))
+            Button("Add Bookmark") { send(.addBookmark) }
+                .disabled(!canPerform(.addBookmark))
         }
         CommandMenu("Narration") {
             Button("Record / Stop") { send(.record) }
@@ -151,6 +179,13 @@ struct VoxglassMacCommands: Commands {
             Button("Next Paragraph") { send(.nextParagraph) }
                 .keyboardShortcut(.downArrow, modifiers: .command)
                 .disabled(!canPerform(.nextParagraph))
+            Divider()
+            Button("Add Note to Selected Paragraph") { send(.addNote) }
+                .disabled(!canPerform(.addNote))
+            Button("Open Audio Setup…") { send(.openAudioSetup) }
+                .disabled(!canPerform(.openAudioSetup))
+            Button("Open Review & Export…") { send(.openReviewExport) }
+                .disabled(!canPerform(.openReviewExport))
         }
         CommandGroup(after: .windowArrangement) {
             Button("Bring All to Front") { NSApp.activate(ignoringOtherApps: true) }
@@ -158,6 +193,8 @@ struct VoxglassMacCommands: Commands {
         CommandGroup(replacing: .help) {
             Button("Voxglass Help") { NSWorkspace.shared.open(URL(string: "https://github.com/johnarleyburns/parso-voxglass")!) }
             Button("Keyboard Shortcuts") { send(.showKeyboardShortcuts) }
+            Button("Recording Troubleshooting") { send(.showRecordingTroubleshooting) }
+            Button("Send Diagnostics…") { send(.sendDiagnostics) }
         }
     }
 

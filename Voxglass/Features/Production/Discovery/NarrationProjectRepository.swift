@@ -112,6 +112,30 @@ public final class NarrationProjectRepository {
         try? FileManager.default.removeItem(at: layout(for: id).root)
     }
 
+    /// Imports an existing `.voxproject` directory selected by the native Mac
+    /// file panel. The package remains opaque: it is copied into the same
+    /// Application Support package root used by projects created on this Mac,
+    /// so subsequent edits and sync use the normal repository path.
+    public func importProjectPackage(from sourceURL: URL) async throws {
+        let accessing = sourceURL.startAccessingSecurityScopedResource()
+        defer { if accessing { sourceURL.stopAccessingSecurityScopedResource() } }
+        guard sourceURL.hasDirectoryPath,
+              let id = UUID(uuidString: sourceURL.lastPathComponent) else {
+            throw RepositoryError.invalidProjectPackage
+        }
+        let destination = layout(for: id).root
+        let fm = FileManager.default
+        guard !fm.fileExists(atPath: destination.path) else { return }
+        try fm.createDirectory(at: projectsRoot, withIntermediateDirectories: true)
+        try fm.copyItem(at: sourceURL, to: destination)
+        do {
+            _ = try await load(id)
+        } catch {
+            try? fm.removeItem(at: destination)
+            throw error
+        }
+    }
+
     // MARK: - Need dedupe (resume-by-need)
 
     /// Finds an already-started project for the same need (by need ID, then
@@ -333,5 +357,13 @@ public final class NarrationProjectRepository {
     public func resetAll() {
         try? FileManager.default.removeItem(at: projectsRoot)
         try? FileManager.default.removeItem(at: legacyNarrationsRoot)
+    }
+}
+
+private enum RepositoryError: LocalizedError {
+    case invalidProjectPackage
+
+    var errorDescription: String? {
+        "Choose a Voxglass project package whose folder name is its project ID."
     }
 }

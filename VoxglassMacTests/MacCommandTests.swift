@@ -55,4 +55,13 @@ final class MacCommandTests: XCTestCase {
     func testDestinationsExposeTheFourNativeMacProductSurfaces() {
         XCTAssertEqual(MacDestination.allCases.map(\.title), ["Listen", "My Books", "Discover", "Narration"])
     }
+
+    func testLinearAmplitudeIsReportedAsDBFS() {
+        XCTAssertEqual(MacAudioCapture.dbfs(forLinearAmplitude: 1), 0, accuracy: 0.000_1)
+        XCTAssertEqual(MacAudioCapture.dbfs(forLinearAmplitude: 0.5), -6.0206, accuracy: 0.001)
+    }
+
+    func testSilenceUsesAStableDBFSFloor() {
+        XCTAssertEqual(MacAudioCapture.dbfs(forLinearAmplitude: 0), -120, accuracy: 0.000_1)
+    }
 }

@@ -63,6 +63,7 @@
 		354513B397ABB4AC56935EB6 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5061FBEF9FB1D37EA33526A /* WatchConnectivity.framework */; };
 		36D2D07C3CCD608C1140CDFB /* ProductionSmokeSeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */; };
 		3AFC314231FBC67DF480EFA5 /* solo_pride_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3616511B3047863DE929EEC4 /* solo_pride_librivox.jpg */; };
+		3B62DF81CDBB303F86867755 /* VoxglassMacUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8DD106C794155842B23EFD6 /* VoxglassMacUITests.swift */; };
 		3D1FDC4720D46F3585E91D38 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1BBA5A2E92771EE1379D897D /* Assets.xcassets */; };
 		3D51A4C34568B7ACF13475CB /* count_montecristo_1308_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 15A4E3200D9B6B41414C5FC2 /* count_montecristo_1308_librivox.jpg */; };
 		3D6AA56B17B1960C63A6EED3 /* amateur_cracksman_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 018C274D1C0769FF60E74A17 /* amateur_cracksman_librivox.jpg */; };
@@ -307,6 +308,13 @@
 			remoteGlobalIDString = 0C8750037BEC39E703C622B9;
 			remoteInfo = VoxglassWatch;
 		};
+		F35A0DAE24DD39E252B2FF8A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F003E1B22C828F1992CEEED;
+			remoteInfo = VoxglassMac;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -411,6 +419,7 @@
 		502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionSync.swift; sourceTree = "<group>"; };
 		5151457A11B54D1C07091BFC /* AudioSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSetupView.swift; sourceTree = "<group>"; };
+		517313AFEE920D385A5A0082 /* VoxglassMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoxglassMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		532142CAFAA3305FE98E66A2 /* anthem_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = anthem_librivox.jpg; sourceTree = "<group>"; };
 		5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryEnvironment.swift; sourceTree = "<group>"; };
 		53A474946D40785F6D80F576 /* jane_eyre_ver03_0809_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = jane_eyre_ver03_0809_librivox.jpg; sourceTree = "<group>"; };
@@ -527,6 +536,7 @@
 		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
 		D7DEA1EABCABDE5F86FCE8F0 /* ProductionSmokeSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionSmokeSeed.swift; sourceTree = "<group>"; };
 		D85F389E6310626F4B2F88D2 /* CarPlayReviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayReviewController.swift; sourceTree = "<group>"; };
+		D8DD106C794155842B23EFD6 /* VoxglassMacUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassMacUITests.swift; sourceTree = "<group>"; };
 		D95EEA019E1770E27663315D /* tom_sawyer_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tom_sawyer_librivox.jpg; sourceTree = "<group>"; };
 		D99745AB51C27E3F7194CA27 /* BundledArtworkProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledArtworkProvider.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
@@ -721,6 +731,14 @@
 				43F07E2CABCBF7D22E5D7C8C /* SupportDevelopmentStore.swift */,
 			);
 			path = Support;
+			sourceTree = "<group>";
+		};
+		26798C0A87A91E9C0B8D558B /* VoxglassMacUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D8DD106C794155842B23EFD6 /* VoxglassMacUITests.swift */,
+			);
+			path = VoxglassMacUITests;
 			sourceTree = "<group>";
 		};
 		2B47B2EF857EC35D6CBBB07B /* App */ = {
@@ -970,6 +988,7 @@
 				F9C1AC88D4122B2F6085A567 /* VoxglassCarPlaySmokeTests.xctest */,
 				66FA1EB81F1F1B3C0375CFAB /* VoxglassMac.app */,
 				4D20BE7960CDF63B338A9B8B /* VoxglassMacTests.xctest */,
+				517313AFEE920D385A5A0082 /* VoxglassMacUITests.xctest */,
 				FAD7EEB9979659075EFB5D01 /* VoxglassNarrationE2E.xctest */,
 				502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */,
 				1399460F5AB0EEA78A9F6B79 /* VoxglassWatch.app */,
@@ -1011,6 +1030,7 @@
 				B98F8FCFE82D1AD01DA42197 /* VoxglassCarPlaySmokeTests */,
 				F42A68593A971347192F7EA1 /* VoxglassMac */,
 				1BB19596517098F9E4EE4698 /* VoxglassMacTests */,
+				26798C0A87A91E9C0B8D558B /* VoxglassMacUITests */,
 				F1EEA7FE9FB3BC61686E2C61 /* VoxglassNarrationE2E */,
 				F1BE95C159C6821B95663D5C /* VoxglassUITests */,
 				1A2173D840425F15B525BF0A /* VoxglassWatch */,
@@ -1331,6 +1351,24 @@
 			productReference = F9C1AC88D4122B2F6085A567 /* VoxglassCarPlaySmokeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		DF1EB81F3BAA7C4D97AE8AE5 /* VoxglassMacUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 126C7298F1011503FB10A99D /* Build configuration list for PBXNativeTarget "VoxglassMacUITests" */;
+			buildPhases = (
+				60B9D8533367CCA616749D29 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A5D8FE0A039CD9801BE03528 /* PBXTargetDependency */,
+			);
+			name = VoxglassMacUITests;
+			packageProductDependencies = (
+			);
+			productName = VoxglassMacUITests;
+			productReference = 517313AFEE920D385A5A0082 /* VoxglassMacUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1345,6 +1383,9 @@
 					};
 					3B8880C71EB76B457C2934CE = {
 						TestTargetID = 66284DBA90AC39B124263951;
+					};
+					DF1EB81F3BAA7C4D97AE8AE5 = {
+						TestTargetID = 4F003E1B22C828F1992CEEED;
 					};
 				};
 			};
@@ -1374,6 +1415,7 @@
 				1F672496B40AE2799422B3C4 /* VoxglassWatchUITests */,
 				4F003E1B22C828F1992CEEED /* VoxglassMac */,
 				63DE23AD860561F6163C99D3 /* VoxglassMacTests */,
+				DF1EB81F3BAA7C4D97AE8AE5 /* VoxglassMacUITests */,
 				3B4441B2FDC4A03E62767F24 /* VoxglassNarrationE2E */,
 			);
 		};
@@ -1543,6 +1585,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				B86CD3B877613388BF8FC142 /* MacCommandTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60B9D8533367CCA616749D29 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B62DF81CDBB303F86867755 /* VoxglassMacUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1722,6 +1772,11 @@
 			target = 66284DBA90AC39B124263951 /* Voxglass */;
 			targetProxy = 5D44F3BB7C258632BECB468F /* PBXContainerItemProxy */;
 		};
+		A5D8FE0A039CD9801BE03528 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F003E1B22C828F1992CEEED /* VoxglassMac */;
+			targetProxy = F35A0DAE24DD39E252B2FF8A /* PBXContainerItemProxy */;
+		};
 		CD2CF8BC0ECA3E2EB40F7E0B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 66284DBA90AC39B124263951 /* Voxglass */;
@@ -1735,6 +1790,23 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		071A76BAC32CAFFE164D215B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.macuitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = VoxglassMac;
+			};
+			name = Release;
+		};
 		0F4DDF366A07F2E88AC66FE6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1805,6 +1877,23 @@
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = VoxglassWatch;
+			};
+			name = Debug;
+		};
+		3A2BBE0DC2D398A64D12B354 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.macuitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = VoxglassMac;
 			};
 			name = Debug;
 		};
@@ -2179,6 +2268,15 @@
 			buildConfigurations = (
 				DD9F8B5614D40897FE0A47B5 /* Debug */,
 				7C67789B8FE29E30DBBF5FCC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		126C7298F1011503FB10A99D /* Build configuration list for PBXNativeTarget "VoxglassMacUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A2BBE0DC2D398A64D12B354 /* Debug */,
+				071A76BAC32CAFFE164D215B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

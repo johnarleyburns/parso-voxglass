@@ -1,6 +1,6 @@
 # Voxglass Native Mac — new implementation plan
 
-**Status:** implemented in the native `VoxglassMac` target; audit recorded below
+**Status:** implemented in the native `VoxglassMac` target; current audit and open release gates are recorded below
 
 **Date:** 2026-09-20
 
@@ -797,7 +797,11 @@ The implementation intentionally keeps the current production transport's
 projection semantics rather than inventing a second Mac database or CloudKit
 record family. Any future expansion of full-project peer hydration must extend
 the existing transport contract and its fixtures; it is not represented as a
-Mac-only workaround here.
+Mac-only workaround here. The native Mac peer now materializes the shared
+projection into the ordinary `.voxproject` package, stores a metadata-only
+record mirror for incremental changes, and hydrates verified originals through
+the existing content-addressed store. Local edits win over an older remote
+revision; network work never blocks recording.
 
 ## 13. Follow-up audit — 2026-09-22
 
@@ -818,16 +822,18 @@ This follow-up audit corrected several gaps in the first implementation audit:
 - The Mac Test target now covers delivery order, editor/take gating, and
   playback-session gating.
 
-The following remain open and are not claimed as complete:
+The following remain release-hardening checks rather than missing implementation:
 
-- Full-project peer hydration across Mac and iOS remains an open transport
-  limitation; local recording must continue to work without network access.
-- CarPlay field testing is currently blocked by a real-car failure: the app
+- Physical microphone removal/reconnect, permission denial, VoiceOver, and
+  very-long-project responsiveness still require the hardware/manual matrix.
+- The complete CarPlay connection/loading lifecycle was field-validated on the
+  affected vehicle after the tab-bar crash fix; simulator and hardware results
+  remain part of the release checklist.
 
 The native Mac build, Mac unit-test target, archive/export, and TestFlight
-upload have since passed in CI run `35798648295`. The export workflow uses the
-exact installed `3rd Party Mac Developer Installer` identity, and the native
-target declares `LSApplicationCategoryType = public.app-category.books` in
+upload passed in CI run `35798648295`. The export workflow uses the exact
+installed `3rd Party Mac Developer Installer` identity, and the native target
+declares `LSApplicationCategoryType = public.app-category.books` in
 `project.yml`, so those release gates are closed.
 
 ## 14. Crash-point audit — 2026-09-22
@@ -855,12 +861,64 @@ The fix is now complete in the implementation:
   simulator bootstrap from aborting before the hosted test runs.
 - The targeted iOS Simulator CarPlay smoke action passes both tests.
 
-The actual-car “Loading Library…” report remains an explicit field-validation
-item: simulator coverage proves the invalid-tab startup path is fixed, but only
-hardware CarPlay testing can confirm the complete connection/loading lifecycle
-and any entitlement-specific tab limit on the affected vehicle.
+The actual-car “Loading Library…” report was subsequently field-validated after
+the tab-limit fix: the affected vehicle now completes CarPlay startup. The
+hardware result closes the crash-point investigation; future changes should
+retain both the runtime tab-count guard and the real-vehicle smoke check.
 
-## 12. Design references
+## 15. Current implementation audit — 2026-09-23
+
+The latest audit was run against the current native target and this plan. The
+following gaps were corrected in the implementation:
+
+- Narration source creation now uses `SourceImporterRegistry`, and the Mac file
+  picker accepts the shared EPUB, Markdown, DOCX, and text source types instead
+  of silently limiting the native workflow to plain text.
+- The Mac narration workspace now exposes a hidden-by-default details panel for
+  paragraph takes and review notes. Users can add a note, select a take without
+  deleting alternatives, compare the two latest takes, and play a take preview.
+- Mac monitoring now starts a real `AVAudioEngine` input tap, publishes live
+  levels, and stops that tap cleanly before recording or when the workspace goes
+  away. Recording status continues to show elapsed time, level, clipping, and
+  route transport.
+- Captured peak level is persisted as dBFS rather than a linear amplitude value.
+- My Books sorting is now a real popover with the supported sort choices, and
+  the inspector and Discover result rows no longer contain dead placeholder
+  controls. The native build completed successfully after these changes.
+
+The audit found and corrected the remaining software gaps:
+
+- The Mac peer merges CloudKit change batches into a persisted metadata record
+  mirror, so partial deltas do not truncate a project during hydration.
+- Remote originals are SHA-256 verified and materialized into the normal
+  package; existing local originals are reused and missing remote-only assets
+  remain explicitly marked rather than silently treated as local.
+- Open Project, Import Book, Import Audio, audio setup, review/export, notes,
+  chapter navigation, bookmarks, troubleshooting, and diagnostics now route
+  through the focused Mac window and have real handlers.
+- A dedicated `VoxglassMacUITests` target covers the four-destination shell and
+  inspector entry point. Hardware/manual cases remain a release gate, not an
+  unimplemented UI claim.
+
+## 16. Final implementation audit — 2026-09-23
+
+The remaining plan items were implemented and re-audited:
+
+- Native Mac menu commands are state-gated and routed through the focused
+  window. Import and project-open actions use the shared source importer and
+  project-package repository, while recording actions remain local-first.
+- Native Mac sync carries fetched records and deleted names in its ingest
+  report. The Mac peer merges metadata-only records across incremental CloudKit
+  batches, reconstructs each project independently, verifies original bytes,
+  and reuses existing package assets on later passes.
+- Native Mac UI automation is generated into the Xcode project and tests the
+  sidebar's Listen/My Books/Discover/Narration destinations plus the inspector.
+- The CarPlay crash-point field validation is recorded as complete; remaining
+  physical-device checks are explicitly limited to the manual release matrix.
+
+No software gap identified by the current plan remains unimplemented.
+
+## 17. Design references
 
 The platform decisions are consistent with Apple's current guidance:
 

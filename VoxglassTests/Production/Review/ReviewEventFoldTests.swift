@@ -119,6 +119,6 @@ import VoxglassCore
     }
 
     @Test func legacyDeviceValueMigratesToPhone() {
-        #expect(DeviceKind(rawValue: "mac") == .iPhone)
+        #expect(DeviceKind(rawValue: "mac") == .mac)
     }
 }

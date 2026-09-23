@@ -151,6 +151,8 @@ public actor ProductionSyncEngine {
         var events: [ReviewEvent] = []
         var eventNames: [String] = []
         var proxyAssets: [UUID: Data] = [:]
+        var originalAssets: [String: Data] = [:]
+        var assetMirrors: [AssetMirrorRecord] = []
         for record in records {
             if record.recordType == ProductionRecordType.event.rawValue {
                 if let event = codec.event(from: record) {
@@ -161,15 +163,26 @@ public actor ProductionSyncEngine {
                       let id = record.fields[ProductionField.paragraphID]?.stringValue().flatMap(UUID.init(uuidString:)),
                       let data = record.assetFields[ProductionAssetField.proxy] {
                 proxyAssets[id] = data
+            } else if record.recordType == ProductionRecordType.asset.rawValue {
+                if let mirror = codec.assetMirror(from: record) {
+                    assetMirrors.append(mirror)
+                    if let data = record.assetFields[ProductionAssetField.original] {
+                        originalAssets[mirror.sha256] = data
+                    }
+                }
             }
         }
 
         let projection = codec.projection(from: records)
         return IngestReport(
+            records: records,
+            deletedRecordNames: deletedNames,
             events: events,
             eventRecordNames: eventNames,
             projection: projection,
             proxyAssets: proxyAssets,
+            originalAssets: originalAssets,
+            assetMirrors: assetMirrors,
             deletedParagraphNames: deletedNames.filter { $0.hasPrefix("para-") },
             fullRefetchUsed: fullRefetchUsed
         )

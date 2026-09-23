@@ -142,6 +142,12 @@ public enum PublishOutcome: Sendable, Equatable {
 // MARK: - IngestReport
 
 public struct IngestReport: Sendable, Equatable {
+    /// The records returned by the server in this pump. Consumers that maintain
+    /// a materialized peer can merge these deltas with their last record set;
+    /// asset payloads are included for the current pass only.
+    public var records: [SyncRecord]
+    /// Server record names deleted in this change batch.
+    public var deletedRecordNames: [String]
     /// Review events decoded from fetched `VGReviewEvent` records, in fetch order.
     public var events: [ReviewEvent]
     /// Record names of the consumed events; the consumer deletes them after applying.
@@ -150,23 +156,36 @@ public struct IngestReport: Sendable, Equatable {
     public var projection: SyncProjection?
     /// Proxy audio downloaded with the fetch, keyed by paragraph ID (phone side).
     public var proxyAssets: [UUID: Data]
+    /// Content-addressed originals included with fetched asset records. A peer
+    /// can use these to materialize a project package instead of stopping at a
+    /// read-only summary.
+    public var originalAssets: [String: Data]
+    public var assetMirrors: [AssetMirrorRecord]
     /// Paragraph records withdrawn from devices (hidden project).
     public var deletedParagraphNames: [String]
     /// True when a stale change token was recovered by refetching from scratch.
     public var fullRefetchUsed: Bool
 
     public init(
+        records: [SyncRecord] = [],
+        deletedRecordNames: [String] = [],
         events: [ReviewEvent] = [],
         eventRecordNames: [String] = [],
         projection: SyncProjection? = nil,
         proxyAssets: [UUID: Data] = [:],
+        originalAssets: [String: Data] = [:],
+        assetMirrors: [AssetMirrorRecord] = [],
         deletedParagraphNames: [String] = [],
         fullRefetchUsed: Bool = false
     ) {
+        self.records = records
+        self.deletedRecordNames = deletedRecordNames
         self.events = events
         self.eventRecordNames = eventRecordNames
         self.projection = projection
         self.proxyAssets = proxyAssets
+        self.originalAssets = originalAssets
+        self.assetMirrors = assetMirrors
         self.deletedParagraphNames = deletedParagraphNames
         self.fullRefetchUsed = fullRefetchUsed
     }
