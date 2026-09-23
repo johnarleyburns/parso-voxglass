@@ -55,6 +55,26 @@ import Foundation
         #expect(abs((latest.position) - (7)) <= 0.001)
     }
 
+    @Test func olderPositionCannotOverwriteNewerPosition() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "position-last-writer-wins")
+        let ids = try await seedBook(in: database)
+        let store = SQLitePositionStore(database: database)
+
+        try await store.save(PlaybackPosition(
+            bookID: ids.bookID, chapterID: ids.chapterID, position: 90,
+            duration: 300, updatedAt: Date(timeIntervalSince1970: 200)
+        ))
+        try await store.save(PlaybackPosition(
+            bookID: ids.bookID, chapterID: ids.chapterID, position: 12,
+            duration: 300, updatedAt: Date(timeIntervalSince1970: 100)
+        ))
+
+        let fetchedOptional = try await store.position(for: ids.bookID, chapterID: ids.chapterID)
+        let fetched = try try #require(fetchedOptional)
+        #expect(abs(fetched.position - 90) <= 0.001)
+        #expect(fetched.updatedAt == Date(timeIntervalSince1970: 200))
+    }
+
     private func seedBook(
         in database: AppDatabase,
         title: String = "Seed Book"

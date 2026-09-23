@@ -40,6 +40,7 @@ final class FakeAudioEngine: AudioEngine {
     }
 
     var onPlaybackEnded: (@MainActor () -> Void)?
+    var onPlaybackIssue: (@MainActor (AudioEngineIssue) -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
     var onSilenceChanged: (@MainActor (Bool) -> Void)?
 
@@ -49,6 +50,7 @@ final class FakeAudioEngine: AudioEngine {
     /// simulates a spurious end.
     var lastEndPosition: TimeInterval = 0
     var lastEndDuration: TimeInterval?
+    var lastEndWasVerified: Bool = true
 
     /// When set, the next `load` records the call and then throws (lazy-load
     /// failure path: the presented session must survive the error).
@@ -150,6 +152,7 @@ final class FakeAudioEngine: AudioEngine {
 
     /// The engine callbacks are `@MainActor`; fire them synchronously in tests.
     func firePlaybackEnded() { onPlaybackEnded?() }
+    func firePlaybackIssue(_ issue: AudioEngineIssue) { onPlaybackIssue?(issue) }
     func fireItemChanged() { onItemChanged?() }
 
     func fireSilenceChanged(_ isSilent: Bool) {

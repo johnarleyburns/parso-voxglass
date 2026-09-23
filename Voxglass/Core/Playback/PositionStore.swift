@@ -35,6 +35,7 @@ public struct SQLitePositionStore: PositionStore {
             duration_seconds = excluded.duration_seconds,
             updated_at = excluded.updated_at,
             is_finished = excluded.is_finished
+        WHERE excluded.updated_at >= playback_positions.updated_at
         """, [
             ModelMapping.databaseValue(clamped.id),
             ModelMapping.databaseValue(clamped.bookID),
@@ -95,4 +96,3 @@ public struct SQLitePositionStore: PositionStore {
         )
     }
 }
-

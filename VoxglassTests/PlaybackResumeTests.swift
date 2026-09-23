@@ -188,4 +188,43 @@ import Foundation
         let saved = try await store.position(for: bookID, chapterID: chapters[0].id)
         #expect(abs((saved?.position ?? -1) - (60)) <= 0.001)  // A not-ready engine reporting 0 must never overwrite a good saved position
     }
+
+    @Test func engineIssuePreservesLastConfirmedPositionAndRetryResumesThere() async throws {
+        let (coordinator, engine, store, db) = makeCoordinator()
+        let bookID = UUID()
+        let chapters = makeChapters(2, bookID: bookID)
+        try await seedBook(in: db, chapters: chapters)
+        try await store.save(PlaybackPosition(
+            bookID: bookID, chapterID: chapters[0].id,
+            position: 20, duration: 100
+        ))
+        let book = BookWithChapters(book: Book(id: bookID, title: "Book", authors: ["A"], sourceID: UUID()), chapters: chapters)
+
+        await coordinator.play(book)
+        engine.currentTime = 60
+        await coordinator.tickProgress()
+
+        // The engine has failed and temporarily reports zero/not-ready. The
+        // failure path must preserve the last healthy point rather than write 0.
+        engine.currentTime = 0
+        engine.isReady = false
+        engine.firePlaybackIssue(.unverifiedEnd)
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(coordinator.currentSession?.chapter.id == chapters[0].id)
+        #expect(coordinator.playbackPhase == .failed(PlaybackFailure(
+            message: "Playback stopped before the chapter end could be verified.",
+            isRetryable: true
+        )))
+        let preserved = try await store.position(for: bookID, chapterID: chapters[0].id)
+        #expect(abs((preserved?.position ?? -1) - 60) <= 0.001)
+
+        engine.isReady = true
+        coordinator.retryPlayback()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(coordinator.currentSession?.chapter.id == chapters[0].id)
+        #expect(abs((engine.loadCalls.last?.startTime ?? -1) - 60) <= 0.001)
+        #expect(coordinator.playbackPhase == .playing)
+    }
 }

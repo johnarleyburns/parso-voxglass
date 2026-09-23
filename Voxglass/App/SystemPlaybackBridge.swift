@@ -194,22 +194,29 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
 
     private func configureNotifications() {
         let center = NotificationCenter.default
-        // willResignActive is the last moment a synchronous main-thread write is
-        // guaranteed to run before background/kill. No Task hop on purpose.
+        // Lifecycle notifications arrive on the main queue. Hop to the
+        // coordinator's actor explicitly so Swift 6 does not rely on an
+        // unchecked synchronous actor assumption while the app transitions.
         observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.coordinator?.handleWillResignActive() }
+            Task { @MainActor [weak self] in
+                self?.coordinator?.handleWillResignActive()
+            }
         })
         observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.coordinator?.handleWillBackgroundOrTerminate() }
+            Task { @MainActor [weak self] in
+                self?.coordinator?.handleWillBackgroundOrTerminate()
+            }
         })
         observerRegistry.tokens.append(center.addObserver(
             forName: UIApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.coordinator?.handleWillBackgroundOrTerminate() }
+            Task { @MainActor [weak self] in
+                self?.coordinator?.handleWillBackgroundOrTerminate()
+            }
         })
         observerRegistry.tokens.append(center.addObserver(
             forName: AVAudioSession.interruptionNotification, object: nil, queue: .main

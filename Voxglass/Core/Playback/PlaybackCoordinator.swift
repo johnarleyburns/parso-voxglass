@@ -66,6 +66,18 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var lastPeriodicSave = Date.distantPast
     @ObservationIgnored private var isHandlingInterruption = false
 
+    /// Last position observed from a healthy engine for the current chapter.
+    /// AVPlayer can report zero or an invalid time while failing; retaining the
+    /// last confirmed value prevents an error callback from replacing a useful
+    /// savepoint with zero.
+    @ObservationIgnored private var lastConfirmedPosition: ConfirmedPosition?
+
+    private struct ConfirmedPosition {
+        let bookID: UUID
+        let chapterID: UUID
+        let position: TimeInterval
+    }
+
     /// Whether the engine currently has the presented session's chapter loaded.
     /// Launch restore is presentation-only (`restorePresentedSession` never
     /// touches the engine); the first play/seek entry point loads the engine
@@ -125,6 +137,9 @@ public final class PlaybackCoordinator {
                 await self?.advanceAfterChapterEnd()
             }
         }
+        self.engine.onPlaybackIssue = { [weak self] issue in
+            self?.handleEngineIssue(issue)
+        }
         self.engine.onItemChanged = { [weak self] in
             Task { @MainActor in
                 await self?.handleItemChanged()
@@ -175,6 +190,7 @@ public final class PlaybackCoordinator {
                 ?? target.chapter.duration,
             isPlaying: false
         )
+        if let currentSession { resetConfirmedPosition(for: currentSession) }
         isEngineLoaded = false
         updateNowPlayingInfo()
     }
@@ -404,6 +420,7 @@ public final class PlaybackCoordinator {
             duration: duration,
             isPlaying: false
         )
+        if let currentSession { resetConfirmedPosition(for: currentSession) }
         playbackError = nil
         playbackPhase = .preparing
 
@@ -522,6 +539,7 @@ public final class PlaybackCoordinator {
             duration: target.chapter.duration ?? target.savedDuration,
             isPlaying: false
         )
+        if let currentSession { resetConfirmedPosition(for: currentSession) }
         isEngineLoaded = false
         updateNowPlayingInfo()
     }
@@ -546,6 +564,7 @@ public final class PlaybackCoordinator {
             duration: chapter.duration ?? target.savedDuration,
             isPlaying: false
         )
+        if let currentSession { resetConfirmedPosition(for: currentSession) }
         playhead = startTime
         playheadDuration = validTime(chapter.duration ?? target.savedDuration)
 
@@ -751,6 +770,25 @@ public final class PlaybackCoordinator {
         }
     }
 
+    /// Retries the current chapter at the last confirmed position after a
+    /// stream/decode failure. The snapshot is written before the new load so a
+    /// second failure or process termination still has the same recovery point.
+    public func retryPlayback() {
+        guard let session = currentSession else { return }
+        let book = BookWithChapters(book: session.book, chapters: session.chapters)
+        let chapter = session.chapter
+        let position = confirmedPosition(for: session)
+        snapshotStore.save(PlaybackPosition(
+            bookID: session.book.id,
+            chapterID: chapter.id,
+            position: position,
+            duration: session.duration,
+            updatedAt: Date(),
+            isFinished: false
+        ))
+        selectAndPlay(book, chapter: chapter)
+    }
+
     public func pause() {
         guard currentSession != nil else { return }
         if let bookID = currentSession?.book.id {
@@ -798,6 +836,11 @@ public final class PlaybackCoordinator {
             $0.position = clamped
             $0.duration = $0.duration
         }
+        lastConfirmedPosition = ConfirmedPosition(
+            bookID: session.book.id,
+            chapterID: session.chapter.id,
+            position: clamped
+        )
         await persistCurrentPosition(reason: .seek)
         updateNowPlayingInfoIfNeeded(force: true)
     }
@@ -1214,6 +1257,7 @@ public final class PlaybackCoordinator {
                 isPlaying: shouldPlay
             )
             currentSession = newSession
+            resetConfirmedPosition(for: newSession)
             playbackPhase = shouldPlay ? .playing : .paused
             // A durable row for the just-started chapter. `persistCurrentPosition`
             // would drop this write behind the anti-zero guard (the engine just
@@ -1276,6 +1320,11 @@ public final class PlaybackCoordinator {
             return
         }
 
+        // A queue change without a verified end (especially an unknown-duration
+        // stream) is not permission to advance. The engine has already reported
+        // the issue and preserved the current savepoint.
+        guard engine.lastEndWasVerified else { return }
+
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else {
             updateNowPlayingInfo()
@@ -1296,6 +1345,7 @@ public final class PlaybackCoordinator {
             isPlaying: engine.isPlaying
         )
         currentSession = newSession
+        resetConfirmedPosition(for: newSession)
         // Durable row for the new chapter right away: the anti-zero guard drops
         // periodic/snapshot writes for the first seconds after an auto-advance,
         // so without this a force quit at the boundary restores the *finished*
@@ -1387,6 +1437,14 @@ public final class PlaybackCoordinator {
         accumulateListening()
 
         let livePosition = relativeEngineTime(for: session)
+
+        if livePosition.isFinite, livePosition > 0 {
+            lastConfirmedPosition = ConfirmedPosition(
+                bookID: session.book.id,
+                chapterID: session.chapter.id,
+                position: livePosition
+            )
+        }
 
         let engineDuration = validTime(engine.duration)
         let liveDuration = validTime(session.duration) ?? engineDuration
@@ -1541,6 +1599,57 @@ public final class PlaybackCoordinator {
             updatedAt: Date(),
             isFinished: false
         ))
+    }
+
+    private func handleEngineIssue(_ issue: AudioEngineIssue) {
+        guard let session = currentSession else { return }
+
+        let position = confirmedPosition(for: session)
+        mutateSession {
+            $0.position = position
+            $0.isPlaying = false
+        }
+        if position > 0 {
+            let savepoint = PlaybackPosition(
+                bookID: session.book.id,
+                chapterID: session.chapter.id,
+                position: position,
+                duration: session.duration,
+                updatedAt: Date(),
+                isFinished: false
+            )
+            // This synchronous UserDefaults write is the crash-safe first half
+            // of the recovery save. SQLite is flushed immediately afterward.
+            snapshotStore.save(savepoint)
+            Task { [weak self] in
+                guard let self else { return }
+                try? await self.positionStore.save(savepoint)
+            }
+        }
+
+        engine.pause()
+        progressTask?.cancel()
+        progressTask = nil
+        isEngineLoaded = false
+        playbackError = issue.userMessage
+        playbackPhase = .failed(PlaybackFailure(message: issue.userMessage, isRetryable: true))
+        updateNowPlayingInfo()
+    }
+
+    private func confirmedPosition(for session: PlaybackSession) -> TimeInterval {
+        let live = relativeEngineTime(for: session)
+        let remembered = lastConfirmedPosition.map {
+            $0.bookID == session.book.id && $0.chapterID == session.chapter.id ? $0.position : 0
+        } ?? 0
+        return max(0, live, remembered, session.position, playhead)
+    }
+
+    private func resetConfirmedPosition(for session: PlaybackSession) {
+        lastConfirmedPosition = ConfirmedPosition(
+            bookID: session.book.id,
+            chapterID: session.chapter.id,
+            position: max(0, session.position)
+        )
     }
 
     private func mutateSession(_ mutation: (inout PlaybackSession) -> Void) {

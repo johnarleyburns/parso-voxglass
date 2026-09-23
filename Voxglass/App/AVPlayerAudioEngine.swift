@@ -14,6 +14,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// gapless advance leaked the previous item's observer, and a stale observer
     /// could keep firing for an item that was never at its end.
     private var endObservers: [ObjectIdentifier: ObserverToken] = [:]
+    private var itemStatusObservers: [ObjectIdentifier: NSKeyValueObservation] = [:]
+    private var reportedIssueKinds: [ObjectIdentifier: Set<String>] = [:]
+    private let failureTokenStore = FailureObserverRegistry()
     private var currentItemObserver: NSKeyValueObservation?
     private var preloadedItem: AVPlayerItem?
 
@@ -22,6 +25,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// Used by the coordinator to reject a spurious item change (§consumer).
     private(set) var lastEndPosition: TimeInterval = 0
     private(set) var lastEndDuration: TimeInterval?
+    private(set) var lastEndWasVerified = false
     private let eqProcessor = EQAudioProcessor()
     private static let loaderConfig = CachingResourceLoaderConfig(
         scheme: AudioCache.scheme, keyStrategy: AudioCache.keyStrategy)
@@ -32,6 +36,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private var eqEngagedDesired = false
 
     var onPlaybackEnded: (@MainActor () -> Void)?
+    var onPlaybackIssue: (@MainActor (AudioEngineIssue) -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
     var onSilenceChanged: (@MainActor (Bool) -> Void)? {
         get { eqProcessor.onSilenceChanged }
@@ -198,6 +203,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     func load(url: URL, startTime: TimeInterval) async throws {
         configureAudioSession()
         tearDownCurrentItem()
+        lastEndPosition = 0
+        lastEndDuration = nil
+        lastEndWasVerified = false
         preloadedItem = nil
         shutdownPrefetch()
 
@@ -239,6 +247,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private func tearDownCurrentItem() {
         eqProcessor.detachAll()
         removeObservers()
+        itemStatusObservers.removeAll()
+        reportedIssueKinds.removeAll()
         loaders.forEach { $0.shutdown() }
         loaders.removeAll()
     }
@@ -247,6 +257,12 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         if let item = preloadedItem {
             eqProcessor.detach(from: item)
             removeEndObserver(for: item)
+            let key = ObjectIdentifier(item)
+            itemStatusObservers.removeValue(forKey: key)?.invalidate()
+            if let tokens = failureTokenStore.tokens.removeValue(forKey: key) {
+                for token in tokens { NotificationCenter.default.removeObserver(token) }
+            }
+            reportedIssueKinds.removeValue(forKey: key)
             player.remove(item)
             preloadedItem = nil
         }
@@ -293,6 +309,39 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         ))
         endObservers[key] = token
 
+        itemStatusObservers[key] = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+            guard !isPreloaded else { return }
+            Task { @MainActor [weak self] in
+                guard let self, item.status == .failed else { return }
+                self.reportIssue(.failed(item.error?.localizedDescription ?? "The audio could not be opened."), for: item)
+            }
+        }
+
+        let failureToken = center.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] notification in
+            guard !isPreloaded else { return }
+            let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+            Task { @MainActor [weak self] in
+                self?.reportIssue(.failed(error?.localizedDescription ?? "The audio stopped unexpectedly."), for: item)
+            }
+        }
+        failureTokenStore.tokens[key, default: []].append(failureToken)
+
+        let stalledToken = center.addObserver(
+            forName: .AVPlayerItemPlaybackStalled,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            guard !isPreloaded else { return }
+            Task { @MainActor [weak self] in
+                self?.reportIssue(.stalled, for: item)
+            }
+        }
+        failureTokenStore.tokens[key, default: []].append(stalledToken)
+
         if isPreloaded {
             currentItemObserver = player.observe(\.currentItem, options: [.new]) { [weak self] player, _ in
                 Task { @MainActor [weak self] in
@@ -316,6 +365,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// position is at its reported duration — advances playback. A spurious end
     /// resumes the player if it stopped and never notifies the coordinator.
     private func handleItemDidPlayToEnd(_ item: AVPlayerItem) {
+        guard item == player.currentItem else { return }
         if item == preloadedItem {
             preloadedItem = nil
         }
@@ -326,24 +376,39 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             lastEndPosition = position
             lastEndDuration = duration
         } else {
-            // Unknown duration (e.g. streaming): cannot verify, and a stale
-            // value must not make the coordinator reject a genuine advance.
+            // Unknown duration cannot prove completion. Preserve the current
+            // chapter and let the coordinator expose a retryable issue rather
+            // than converting a stream failure into a finished/zero savepoint.
             lastEndPosition = 0
             lastEndDuration = nil
         }
 
-        let isGenuineEnd = !durationIsUsable || !position.isFinite || position >= duration - 0.75
+        let isGenuineEnd = durationIsUsable && position.isFinite && position >= duration - 0.75
         if isGenuineEnd {
+            lastEndWasVerified = true
             // Real end: the item will not end again, so drop its observer and
             // let the coordinator advance.
             removeEndObserver(for: item)
             onPlaybackEnded?()
         } else {
-            // Spurious end: resume if the player stopped, never advance.
-            if player.timeControlStatus == .paused, player.currentItem != nil {
-                player.play()
-            }
+            lastEndWasVerified = false
+            removeEndObserver(for: item)
+            player.pause()
+            reportIssue(.unverifiedEnd, for: item)
         }
+    }
+
+    private func reportIssue(_ issue: AudioEngineIssue, for item: AVPlayerItem) {
+        let key = ObjectIdentifier(item)
+        let kind: String
+        switch issue {
+        case .stalled: kind = "stalled"
+        case .failed: kind = "failed"
+        case .unverifiedEnd: kind = "unverifiedEnd"
+        }
+        guard !reportedIssueKinds[key, default: []].contains(kind) else { return }
+        reportedIssueKinds[key, default: []].insert(kind)
+        onPlaybackIssue?(issue)
     }
 
     private func removeEndObserver(for item: AVPlayerItem) {
@@ -357,6 +422,13 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             NotificationCenter.default.removeObserver(token.value)
         }
         endObservers.removeAll()
+        for observer in itemStatusObservers.values { observer.invalidate() }
+        itemStatusObservers.removeAll()
+        for tokens in failureTokenStore.tokens.values {
+            for token in tokens { NotificationCenter.default.removeObserver(token) }
+        }
+        failureTokenStore.tokens.removeAll()
+        reportedIssueKinds.removeAll()
         currentItemObserver?.invalidate()
         currentItemObserver = nil
     }
@@ -366,7 +438,15 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         for token in endObservers.values {
             NotificationCenter.default.removeObserver(token.value)
         }
+        for observer in itemStatusObservers.values { observer.invalidate() }
+        for tokens in failureTokenStore.tokens.values {
+            for token in tokens { NotificationCenter.default.removeObserver(token) }
+        }
         currentItemObserver?.invalidate()
+    }
+
+    private final class FailureObserverRegistry: @unchecked Sendable {
+        var tokens: [ObjectIdentifier: [NSObjectProtocol]] = [:]
     }
 
     private final class ObserverToken: @unchecked Sendable {

@@ -19,19 +19,24 @@ public protocol AudioEngine: AnyObject {
     var volume: Float { get set }              // P0-2 fade-out
     var isEQEngaged: Bool { get }
     var onPlaybackEnded: (@MainActor () -> Void)? { get set }
+    /// Reports a stall or unverified/failed playback event. Issues preserve the
+    /// current chapter; only `onPlaybackEnded` may advance the queue.
+    var onPlaybackIssue: (@MainActor (AudioEngineIssue) -> Void)? { get set }
     var onItemChanged: (@MainActor () -> Void)? { get set }
     var onSilenceChanged: (@MainActor (Bool) -> Void)? { get set }
 
     /// Playback position and reported duration of the item that most recently
     /// reached (or prematurely reported) its end, captured from the item itself
     /// at the moment of the end event. `nil` duration means the end could not be
-    /// verified (e.g. a streaming item with an unknown duration), and the
-    /// coordinator then treats the next item change as genuine. The coordinator
+    /// verified (e.g. a streaming item with an unknown duration). The coordinator
     /// uses these to reject a *spurious* item change — AVFoundation can emit
     /// `AVPlayerItemDidPlayToEndTime` early on some device/file combinations,
     /// which would otherwise skip the chapter the user was listening to.
     var lastEndPosition: TimeInterval { get }
     var lastEndDuration: TimeInterval? { get }
+    /// True only when the most recent end event was verified against a finite
+    /// duration. Queue item changes without this proof must not advance.
+    var lastEndWasVerified: Bool { get }
 
     func configureAudioSession()
     func load(url: URL, startTime: TimeInterval) async throws
@@ -46,6 +51,27 @@ public protocol AudioEngine: AnyObject {
     func applyEQPreset(_ preset: EQPreset)
     func setEQGain(_ gain: Float, at band: Int)
     func setEQGains(_ gains: [Float])
+}
+
+/// A playback-engine problem that must not be interpreted as chapter
+/// completion. The app layer translates AVFoundation events into this small
+/// platform-neutral vocabulary so the coordinator can preserve the savepoint
+/// and expose a retry path without importing AVFoundation.
+public enum AudioEngineIssue: Equatable, Sendable {
+    case stalled
+    case failed(String)
+    case unverifiedEnd
+
+    public var userMessage: String {
+        switch self {
+        case .stalled:
+            return "Playback paused while the audio source was buffering."
+        case .failed(let message):
+            return message.isEmpty ? "The audio could not continue playing." : message
+        case .unverifiedEnd:
+            return "Playback stopped before the chapter end could be verified."
+        }
+    }
 }
 
 public enum AudioEngineError: Error, LocalizedError {

@@ -36,6 +36,21 @@ import Foundation
         #expect(store.all().count <= LastPlaybackSnapshotStore.maxSnapshots)
     }
 
+    @Test func olderSnapshotCannotOverwriteNewerSnapshotForBook() {
+        let store = makeSnapshotStore()
+        let bookID = UUID()
+        store.save(PlaybackPosition(
+            bookID: bookID, chapterID: UUID(), position: 80,
+            updatedAt: Date(timeIntervalSince1970: 200)
+        ))
+        store.save(PlaybackPosition(
+            bookID: bookID, chapterID: UUID(), position: 10,
+            updatedAt: Date(timeIntervalSince1970: 100)
+        ))
+
+        #expect(abs((store.position(forBookID: bookID)?.position ?? -1) - 80) <= 0.001)
+    }
+
     @Test func restorePrefersDurableSnapshotOverStaleDatabaseRow() {
         // DB row @ 40 s, UserDefaults snapshot @ 137 s for the same (book, chapter):
         // the durable snapshot wins even though a lost SQLite write is why it is

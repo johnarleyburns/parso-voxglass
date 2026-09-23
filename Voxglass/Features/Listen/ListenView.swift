@@ -69,13 +69,20 @@ struct ListenView: View {
             }
             .presentationDragIndicator(.visible)
         }
-        .alert("Playback Failed", isPresented: errorBinding) {
+        .alert(errorTitle, isPresented: errorBinding) {
+            if let failure = playbackFailure, failure.isRetryable {
+                Button("Try Again") {
+                    playback.playbackError = nil
+                    playback.retryPlayback()
+                }
+            }
             Button("OK", role: .cancel) {
                 catalogStore.catalogError = nil
                 libraryStore.importError = nil
+                playback.playbackError = nil
             }
         } message: {
-            Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
+            Text(errorMessage)
         }
         .task {
             scheduleHomeRefresh()
@@ -389,13 +396,27 @@ struct ListenView: View {
 
     private var errorBinding: Binding<Bool> {
         Binding {
-            catalogStore.catalogError != nil || libraryStore.importError != nil
+            catalogStore.catalogError != nil || libraryStore.importError != nil || playback.playbackError != nil
         } set: { isPresented in
             if !isPresented {
                 catalogStore.catalogError = nil
                 libraryStore.importError = nil
+                playback.playbackError = nil
             }
         }
+    }
+
+    private var playbackFailure: PlaybackFailure? {
+        guard case .failed(let failure) = playback.playbackPhase else { return nil }
+        return failure
+    }
+
+    private var errorTitle: String {
+        playbackFailure == nil ? "Playback Failed" : "Playback Interrupted"
+    }
+
+    private var errorMessage: String {
+        playback.playbackError ?? catalogStore.catalogError ?? libraryStore.importError ?? ""
     }
 
     private func presentResult(_ result: InternetArchiveSearchResult) async {

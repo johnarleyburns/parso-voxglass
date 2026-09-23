@@ -167,6 +167,19 @@ struct BookPageView: View {
         } message: {
             Text(phoneAudioRelay.watchTransferError ?? "")
         }
+        .alert("Playback Interrupted", isPresented: playbackErrorBinding) {
+            if let failure = playbackFailure, failure.isRetryable {
+                Button("Try Again") {
+                    playback.playbackError = nil
+                    playback.retryPlayback()
+                }
+            }
+            Button("OK", role: .cancel) {
+                playback.playbackError = nil
+            }
+        } message: {
+            Text(playback.playbackError ?? "")
+        }
         .confirmationDialog(
             "Remove the offline copy?",
             isPresented: $showRemoveOfflineConfirm,
@@ -198,6 +211,19 @@ struct BookPageView: View {
         } message: {
             Text("This deletes the book and its cached audio from this device.")
         }
+    }
+
+    private var playbackErrorBinding: Binding<Bool> {
+        Binding {
+            playback.playbackError != nil
+        } set: { isPresented in
+            if !isPresented { playback.playbackError = nil }
+        }
+    }
+
+    private var playbackFailure: PlaybackFailure? {
+        guard case .failed(let failure) = playback.playbackPhase else { return nil }
+        return failure
     }
 
     private var topBar: some View {

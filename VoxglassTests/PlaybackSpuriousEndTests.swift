@@ -88,24 +88,23 @@ import Foundation
         #expect(coordinator.currentSession?.chapter.id == book.chapters[1].id)
     }
 
-    @Test func unverifiedEndStillAdvances() async {
+    @Test func unverifiedEndDoesNotAdvance() async {
         let (coordinator, engine) = makeCoordinator()
         let book = makeBook()
         await coordinator.play(book)
 
-        // Unknown duration (e.g. streaming): `lastEndDuration` is nil, so the
-        // coordinator must not reject the change.
+        // Unknown duration (e.g. streaming) cannot prove that the chapter
+        // finished. A queue callback must not advance the chapter.
         engine.currentTime = 0
         engine.duration = nil
         engine.isPlaying = true
         engine.lastEndPosition = 0
         engine.lastEndDuration = nil
+        engine.lastEndWasVerified = false
 
         engine.fireItemChanged()
-        await waitUntil {
-            coordinator.currentSession?.chapter.id == book.chapters[1].id
-        }
+        await waitUntil { coordinator.playbackPhase == .playing }
 
-        #expect(coordinator.currentSession?.chapter.id == book.chapters[1].id)
+        #expect(coordinator.currentSession?.chapter.id == book.chapters[0].id)
     }
 }

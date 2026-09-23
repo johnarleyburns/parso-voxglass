@@ -19,6 +19,9 @@ public struct LastPlaybackSnapshotStore {
 
     public func save(_ position: PlaybackPosition) {
         var map = loadMap()
+        if let existing = map[position.bookID.uuidString], existing.updatedAt > position.updatedAt {
+            return
+        }
         map[position.bookID.uuidString] = position
         if map.count > Self.maxSnapshots {
             let newest = map.values
