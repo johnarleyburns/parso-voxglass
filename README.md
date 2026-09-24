@@ -68,7 +68,8 @@ The opening is: *the same catalog in a player that respects you*.
 ### Future (not yet planned)
 
 - **Skip silence** device-sign-off (the toggle is built but not released).
-- **Apple Watch app** — browse your library and control playback from your wrist.
+- **Apple Watch polish** — the companion is shipped; additional complications and richer controls
+  remain future work.
 - **Widgets, Siri & App Shortcuts** — needs an app-group entitlement and relocated SQLite database.
 - **Localization** — the UI is English-only today (catalog already supports 15 languages).
 - **Narrator-centric discovery, Project Gutenberg read-along** — longer-term differentiators unique to
@@ -77,7 +78,9 @@ The opening is: *the same catalog in a player that respects you*.
 ## Current focus
 
 The pre-release plan is tracked in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md). The competitive gap
-plan in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md) is substantially complete.
+plan in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md) is substantially complete. The
+current App Store Connect copy and submission checklist are in
+[`docs/native-mac/APP_STORE_METADATA.md`](docs/native-mac/APP_STORE_METADATA.md).
 
 ## Build and verification
 
@@ -148,6 +151,12 @@ xcodebuild \
   -destination 'platform=macOS' \
   -derivedDataPath /tmp/voxglass-mac-derived \
   build CODE_SIGNING_ALLOWED=NO
+```
+
+Audit the source-side App Store requirements before an archive:
+
+```sh
+scripts/audit_app_store_release.sh
 ```
 
 If `project.yml` changes, regenerate the Xcode project first with `xcodegen generate`. The native
@@ -262,7 +271,7 @@ If every step passes, the playback bridge is behaving. Any failure in sections 3
 
 ## License
 
-Voxglass consumes the published `parso-audio-engine` (PAE) **1.2.1** release;
+Voxglass consumes the published `parso-audio-engine` (PAE) **1.2.2** release;
 the app and CI resolve that immutable version rather than a local or migration-branch checkout.
 
 GNU General Public License v3.0 or later, with an additional permission under

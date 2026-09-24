@@ -76,7 +76,6 @@ import VoxglassCore
             var received = 0
             var mismatches = 0
             var lastValue = -1
-            var produced = false
         }
         let box = Box()
 
@@ -85,9 +84,13 @@ import VoxglassCore
             while box.received < total {
                 let n = buffer.withUnsafeMutableBufferPointer { ring.pop(into: $0) }
                 if n == 0 {
-                    // Nothing left and nothing more coming, or we are out of
-                    // time: stop instead of spinning forever.
-                    if box.produced || ContinuousClock.now > deadline { break }
+                    // The producer and consumer are intentionally concurrent.
+                    // Do not use a second unsynchronized completion flag here:
+                    // it can become visible before the ring's release/acquire
+                    // publication and make the consumer exit before reading
+                    // samples. The deadline keeps a genuinely stalled ring
+                    // from hanging the suite.
+                    if ContinuousClock.now > deadline { break }
                     try? await Task.sleep(for: .microseconds(50))
                     continue
                 }
@@ -117,7 +120,6 @@ import VoxglassCore
                 samples.withUnsafeBufferPointer { ring.push($0) }
                 await Task.yield()
             }
-            box.produced = true
         }
 
         await producer.value

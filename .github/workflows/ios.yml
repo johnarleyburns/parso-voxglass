@@ -32,6 +32,9 @@ jobs:
       - name: Enforce Swift 6 contract
         run: bash scripts/check-swift6.sh
 
+      - name: Audit App Store release inputs
+        run: bash scripts/audit_app_store_release.sh
+
       - name: Build iOS
         run: |
           xcodebuild build \
@@ -101,6 +104,9 @@ jobs:
 
       - name: Run production feature guards (G-1..G-18)
         run: bash scripts/guard_production.sh
+
+      - name: Audit App Store release inputs
+        run: bash scripts/audit_app_store_release.sh
 
       - name: Guard runtime network endpoints
         run: |
@@ -343,6 +349,14 @@ jobs:
           security import "$certificate_path" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
           security list-keychain -d user -s "$keychain_path"
 
+          distribution_identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F '"' '/Apple Distribution:/{if ($0 !~ /CSSMERR/) {print $2; exit}}')"
+          if [ -z "$distribution_identity" ]; then
+            echo "::error title=Apple Distribution certificate invalid::The BUILD_CERTIFICATE_BASE64 secret does not contain a valid, non-revoked Apple Distribution identity. Create a new Apple Distribution certificate, export it with its private key, and update the secret."
+            security find-identity -v -p codesigning "$keychain_path" || true
+            exit 1
+          fi
+          echo "Using Apple Distribution identity: $distribution_identity"
+
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
 
           # Install iOS provisioning profile
@@ -403,7 +417,7 @@ jobs:
           security import "$installer_certificate_path" \
             -P "$MAC_INSTALLER_P12_PASSWORD" -A -t cert -f pkcs12 \
             -k "$RUNNER_TEMP/app-signing.keychain-db"
-          if ! security find-identity -v -p basic "$RUNNER_TEMP/app-signing.keychain-db" | grep -q '3rd Party Mac Developer Installer'; then
+          if ! security find-identity -v -p basic "$RUNNER_TEMP/app-signing.keychain-db" | grep '3rd Party Mac Developer Installer' | grep -vq 'CSSMERR'; then
             echo "::error title=Mac Installer Distribution certificate missing::The supplied PKCS#12 file does not contain a usable Mac Installer Distribution identity."
             exit 1
           fi
@@ -427,6 +441,10 @@ jobs:
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
             PROVISIONING_PROFILE_SPECIFIER="${{ steps.mac_signing.outputs.profile_name }}" \
             archive
+
+      - name: Audit archived native macOS app
+        if: steps.mac_signing.outputs.profile_name != ''
+        run: bash scripts/audit_app_store_release.sh --bundle "$RUNNER_TEMP/VoxglassMac.xcarchive/Products/Applications/Voxglass.app"
 
       - name: Upload native macOS app to TestFlight
         if: steps.mac_signing.outputs.profile_name != ''
@@ -484,6 +502,12 @@ jobs:
             MARKETING_VERSION="${{ steps.build_number.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
             archive
+
+      - name: Audit archived iOS app and embedded Watch app
+        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
+        run: |
+          bash scripts/audit_app_store_release.sh --bundle "$RUNNER_TEMP/Voxglass.xcarchive/Products/Applications/Voxglass.app"
+          bash scripts/audit_app_store_release.sh --bundle "$RUNNER_TEMP/Voxglass.xcarchive/Products/Applications/Voxglass.app/Watch/VoxglassWatch.app"
 
       - name: Upload to TestFlight
         if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'

@@ -59,20 +59,21 @@ sync over LibriVox. But nobody combines read-along with a real player (CarPlay +
 durability + no subscription). That combination is the post-launch moat; Lex closing the player gap
 is the clock.
 
-## Pre-release checklist (remaining work)
+## Pre-release checklist
 
-1. **README refresh** (`README.md`) — flip CarPlay from "Near-term ☐" to Shipped; update the
-   competitive section (BookDesign subscription pricing; add Lex); name read-along as the next
-   differentiator.
-2. **Accessibility sweep** — extend labels/values beyond Now Playing to `LibraryView`,
-   `SettingsView`, `SearchView`, `BookRowView`, playlist/favorites rows, following the
-   `NowPlayingView.swift:159` pattern. App Review risk; audience skews older; on-brand.
-3. **Sign off the two unadvertised Pro gates** (`cachePresets`, `prefetchDepth`) as intentional
-   internal knobs — no code change expected.
-4. **Device pass** (human, physical device): the 9 checks in `RELEASE_PLAN.md` §Verification —
+The build-side App Store audit is now automated by `scripts/audit_app_store_release.sh` and the
+GitHub workflow. The remaining release actions are account-side or device-side:
+
+1. **App Store Connect metadata** — use [`docs/native-mac/APP_STORE_METADATA.md`](native-mac/APP_STORE_METADATA.md);
+   confirm the privacy-policy URL, App Privacy answers, screenshots, platform metadata, and review
+   notes describe the current Voxglass product rather than the retired Studio drafts.
+2. **Physical-device pass** — run the playback checks in `RELEASE_PLAN.md` §Verification, including
    force-quit/crash resume, reinstall restore on a free build, skip-silence on a real LibriVox
-   recording (E4), VoiceOver over Now Playing.
-5. Gates: `scripts/guard_wiring.sh` + `scripts/test.sh` green; `xcodegen generate` diff clean.
+   recording, VoiceOver, CarPlay cold launch, and native Mac microphone/import flows.
+3. **App Store processing** — after upload, answer export compliance, wait for processing, select the
+   processed build for the iOS and macOS versions, and test the actual TestFlight artifacts.
+4. Gates: `swift test`, `scripts/guard_wiring.sh`, `scripts/guard_production.sh`, and
+   `xcodegen generate` diff clean. Simulator smoke remains release verification, not a commit hook.
 
 ## Post-launch roadmap
 
