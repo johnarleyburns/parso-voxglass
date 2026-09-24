@@ -91,6 +91,12 @@ public final class PlaybackCoordinator {
     /// every caller awaits the same in-flight load instead of issuing a second.
     @ObservationIgnored private var engineLoadTask: Task<Bool, Never>?
 
+    /// A queued item-change callback may arrive before the end notification,
+    /// or vice versa. Keep the pending transition explicit so the second event
+    /// completes the same transition instead of starting another load.
+    @ObservationIgnored private var pendingQueueItemChange = false
+    @ObservationIgnored private var queueTransitionInFlightFor: UUID?
+
     /// Cancellation token for the active selection so stale requests cannot
     /// overwrite state.
     @ObservationIgnored private var selectionTask: Task<Void, Never>?
@@ -1299,6 +1305,9 @@ public final class PlaybackCoordinator {
     private func handleItemChanged() async {
         guard let session = currentSession else { return }
         resetSilenceBoost()
+        if engine.isCurrentItemPreloaded {
+            pendingQueueItemChange = true
+        }
 
         // AVQueuePlayer can advance to the preloaded item even when the current
         // item did not genuinely end — AVFoundation sometimes reports a
@@ -1311,6 +1320,7 @@ public final class PlaybackCoordinator {
            endDuration > 0,
            engine.lastEndPosition.isFinite,
            engine.lastEndPosition < endDuration - 0.75 {
+            pendingQueueItemChange = false
             await loadChapter(
                 session.chapter,
                 in: session,
@@ -1324,6 +1334,17 @@ public final class PlaybackCoordinator {
         // stream) is not permission to advance. The engine has already reported
         // the issue and preserved the current savepoint.
         guard engine.lastEndWasVerified else { return }
+
+        // End and current-item callbacks can both arrive for the same queued
+        // transition. Only the first verified handler may mutate the session.
+        guard queueTransitionInFlightFor != session.chapter.id else { return }
+        queueTransitionInFlightFor = session.chapter.id
+        defer {
+            if queueTransitionInFlightFor == session.chapter.id {
+                queueTransitionInFlightFor = nil
+            }
+            pendingQueueItemChange = false
+        }
 
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex) else {
@@ -1402,6 +1423,21 @@ public final class PlaybackCoordinator {
         // The handleItemChanged callback will update the session. Just persist position.
         await persistCurrentPosition(reason: .chapterChange, finished: true)
 
+        // The current-item callback and the end callback are independently
+        // scheduled by AVFoundation. If the current-item callback arrived
+        // first but was waiting for end verification, complete it now. If the
+        // queue has not switched yet, leave the queued item in place and let
+        // its current-item callback finish the transition.
+        if engine.isCurrentItemPreloaded {
+            if pendingQueueItemChange {
+                await handleItemChanged()
+            }
+            return
+        }
+        if engine.hasPreloadedItem {
+            return
+        }
+
         // Fallback: if preloading didn't happen, do a manual load
         let nextChapter = session.chapters[nextIndex]
         guard await playbackURL(for: nextChapter) != nil else {
@@ -1409,9 +1445,11 @@ public final class PlaybackCoordinator {
             return
         }
 
-        // Check if engine has already moved to the next item
+        // Check if engine has already moved to the next item. Do not compare
+        // durations: separate LibriVox chapters often have equal durations,
+        // and that comparison races AVQueuePlayer into a second load.
         if usesSharedAudioAsset(in: BookWithChapters(book: session.book, chapters: session.chapters), for: session.chapter)
-            || engine.duration == nil || engine.duration == session.duration {
+            || (!engine.hasPreloadedItem && !engine.isCurrentItemPreloaded) {
             // Engine hasn't advanced - manually load
             await loadChapter(nextChapter, in: session, startTime: 0, shouldPlay: true)
         }

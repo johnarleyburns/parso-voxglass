@@ -25,6 +25,15 @@ public protocol AudioEngine: AnyObject {
     var onItemChanged: (@MainActor () -> Void)? { get set }
     var onSilenceChanged: (@MainActor (Bool) -> Void)? { get set }
 
+    /// Whether a next chapter is currently queued behind the active item.
+    /// PlaybackCoordinator uses this to wait for AVQueuePlayer's item-change
+    /// callback instead of racing it with a second manual load.
+    var hasPreloadedItem: Bool { get }
+    /// True after the queued item has become the engine's current item. This
+    /// remains explicit because AVFoundation can deliver the end notification
+    /// before or after the KVO current-item notification.
+    var isCurrentItemPreloaded: Bool { get }
+
     /// Playback position and reported duration of the item that most recently
     /// reached (or prematurely reported) its end, captured from the item itself
     /// at the moment of the end event. `nil` duration means the end could not be

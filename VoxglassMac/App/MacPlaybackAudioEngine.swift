@@ -18,6 +18,8 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
     var onPlaybackIssue: (@MainActor (AudioEngineIssue) -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
     var onSilenceChanged: (@MainActor (Bool) -> Void)?
+    var hasPreloadedItem: Bool { false }
+    var isCurrentItemPreloaded: Bool { false }
 
     var currentTime: TimeInterval { player.currentTime().seconds.isFinite ? player.currentTime().seconds : 0 }
     var duration: TimeInterval? {

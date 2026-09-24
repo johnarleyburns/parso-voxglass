@@ -43,6 +43,8 @@ final class FakeAudioEngine: AudioEngine {
     var onPlaybackIssue: (@MainActor (AudioEngineIssue) -> Void)?
     var onItemChanged: (@MainActor () -> Void)?
     var onSilenceChanged: (@MainActor (Bool) -> Void)?
+    var hasPreloadedItem = false
+    var isCurrentItemPreloaded = false
 
     /// Position and duration of the item whose end event was most recently seen.
     /// Defaults (`0`, `nil`) tell the coordinator that the end was genuine (or

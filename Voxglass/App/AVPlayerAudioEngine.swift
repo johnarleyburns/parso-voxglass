@@ -19,6 +19,13 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private let failureTokenStore = FailureObserverRegistry()
     private var currentItemObserver: NSKeyValueObservation?
     private var preloadedItem: AVPlayerItem?
+    /// The item that was active before a queued transition. AVFoundation can
+    /// deliver the end notification after `currentItem` has already advanced,
+    /// so requiring the ended item to still be current loses the transition.
+    private var activeItem: AVPlayerItem?
+    private(set) var isCurrentItemPreloaded = false
+
+    var hasPreloadedItem: Bool { preloadedItem != nil }
 
     /// Playback position and reported duration of the item whose end event was
     /// most recently seen, read from the item itself before the queue advances.
@@ -207,11 +214,14 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         lastEndDuration = nil
         lastEndWasVerified = false
         preloadedItem = nil
+        activeItem = nil
+        isCurrentItemPreloaded = false
         shutdownPrefetch()
 
         let item = makePlayerItem(for: url)
         player.removeAllItems()
         player.insert(item, after: nil)
+        activeItem = item
         observe(item: item, isPreloaded: false)
 
         let isPlayable = try await item.asset.load(.isPlayable)
@@ -227,15 +237,19 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         guard preloadedItem == nil else { return }
 
         let item = makePlayerItem(for: url)
+        guard player.canInsert(item, after: player.currentItem) else { return }
         preloadedItem = item
+        // The previous end belongs to the previous current item. Reset it as
+        // soon as a new queued transition is armed so a stale verified end
+        // cannot authorize a later item change before that chapter ends.
+        lastEndPosition = 0
+        lastEndDuration = nil
+        lastEndWasVerified = false
+        player.insert(item, after: player.currentItem)
+        observe(item: item, isPreloaded: true)
 
-        if player.canInsert(item, after: player.currentItem) {
-            player.insert(item, after: player.currentItem)
-            observe(item: item, isPreloaded: true)
-
-            eqProcessor.attach(to: item)
-            eqProcessor.setEQStagesEnabled(eqEngagedDesired)
-        }
+        eqProcessor.attach(to: item)
+        eqProcessor.setEQStagesEnabled(eqEngagedDesired)
     }
 
     private func shutdownPrefetch() {
@@ -265,6 +279,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             reportedIssueKinds.removeValue(forKey: key)
             player.remove(item)
             preloadedItem = nil
+            isCurrentItemPreloaded = false
         }
     }
 
@@ -348,6 +363,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
                     guard let self else { return }
                     if player.currentItem == item {
                         self.preloadedItem = nil
+                        self.isCurrentItemPreloaded = true
                         // The previous chapter's item has left the queue; drop its
                         // now-orphaned EQ tap so only live items keep taps.
                         self.eqProcessor.pruneTaps(keeping: player.items())
@@ -365,7 +381,14 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// position is at its reported duration — advances playback. A spurious end
     /// resumes the player if it stopped and never notifies the coordinator.
     private func handleItemDidPlayToEnd(_ item: AVPlayerItem) {
-        guard item == player.currentItem else { return }
+        // `AVQueuePlayer` may switch to the preloaded item before this
+        // notification's MainActor task runs. Accept the known active item as
+        // well as the current item; otherwise the coordinator never receives
+        // proof that the chapter really ended.
+        guard item == player.currentItem || item == activeItem else { return }
+        if item == player.currentItem {
+            activeItem = item
+        }
         if item == preloadedItem {
             preloadedItem = nil
         }

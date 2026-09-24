@@ -107,4 +107,63 @@ import Foundation
 
         #expect(coordinator.currentSession?.chapter.id == book.chapters[0].id)
     }
+
+    @Test func endCallbackAfterQueueSwitchCompletesPendingTransition() async {
+        let (coordinator, engine) = makeCoordinator()
+        let book = makeBook()
+        await coordinator.play(book)
+
+        // Model AVQueuePlayer switching currentItem before the end
+        // notification's task runs. The first callback must wait; the later
+        // verified end must complete the same transition.
+        engine.hasPreloadedItem = true
+        engine.isCurrentItemPreloaded = true
+        engine.lastEndWasVerified = false
+        engine.lastEndPosition = 0
+        engine.lastEndDuration = nil
+        engine.fireItemChanged()
+        try? await Task.sleep(nanoseconds: 20_000_000)
+
+        engine.hasPreloadedItem = false
+        engine.lastEndWasVerified = true
+        engine.lastEndPosition = 100
+        engine.lastEndDuration = 100
+        engine.firePlaybackEnded()
+        await waitUntil {
+            coordinator.currentSession?.chapter.id == book.chapters[1].id
+        }
+
+        #expect(coordinator.currentSession?.chapter.id == book.chapters[1].id)
+        #expect(engine.loadCalls.count == 1) // initial load only; no queue replacement
+    }
+
+    @Test func equalDurationChaptersNeverTriggerASecondManualLoad() async {
+        let (coordinator, engine) = makeCoordinator()
+        let book = makeBook()
+        await coordinator.play(book)
+        engine.reset()
+
+        // Equal durations are normal for LibriVox chapters. A verified end
+        // with the next item still queued must wait for the queue transition,
+        // not manually replace the item.
+        engine.hasPreloadedItem = true
+        engine.lastEndWasVerified = true
+        engine.lastEndPosition = 100
+        engine.lastEndDuration = 100
+        engine.firePlaybackEnded()
+        try? await Task.sleep(nanoseconds: 20_000_000)
+
+        #expect(coordinator.currentSession?.chapter.id == book.chapters[0].id)
+        #expect(engine.loadCalls.isEmpty)
+
+        engine.hasPreloadedItem = false
+        engine.isCurrentItemPreloaded = true
+        engine.fireItemChanged()
+        await waitUntil {
+            coordinator.currentSession?.chapter.id == book.chapters[1].id
+        }
+
+        #expect(coordinator.currentSession?.chapter.id == book.chapters[1].id)
+        #expect(engine.loadCalls.isEmpty)
+    }
 }
