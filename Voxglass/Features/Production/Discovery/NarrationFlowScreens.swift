@@ -1000,6 +1000,9 @@ struct ReviewView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Chapter \(chapter.ordinal + 1)")
+                .accessibilityValue(collapsedChapterIDs.contains(chapter.id) ? "Collapsed" : "Expanded")
+                .accessibilityHint("Double-tap to \(collapsedChapterIDs.contains(chapter.id) ? "expand" : "collapse")")
                 .accessibilityIdentifier("review.chapter.header.\(chapter.ordinal)")
                 Spacer()
                 Button {
@@ -1010,6 +1013,7 @@ struct ReviewView: View {
                         .scaledFont(size: 24)
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel(model.playbackChapterID == chapter.id && model.isPlayingTake ? "Pause chapter" : "Play chapter")
                 .accessibilityIdentifier("review.chapter.play.\(chapter.ordinal)")
                 Button("Approve chapter") {
                     for paragraph in chapter.paragraphs where paragraph.selectedTakeID != nil && paragraph.reviewState == .unreviewed {
@@ -1054,6 +1058,12 @@ struct ReviewView: View {
                     .accessibilityIdentifier("review.nowPlaying.label")
                 ProgressView(value: model.playbackDuration > 0 ? model.playbackPosition / model.playbackDuration : 0)
                     .tint(Palette.brass)
+                    .accessibilityLabel("Paragraph playback progress")
+                    .accessibilityValue(
+                        model.playbackDuration > 0
+                            ? "\(Int((model.playbackPosition / model.playbackDuration * 100).rounded())) percent"
+                            : "Not started"
+                    )
             }
             Button { model.toggleCurrentPlayback() } label: {
                 Image(systemName: model.isPlayingTake ? "pause.fill" : "play.fill")
@@ -1062,8 +1072,10 @@ struct ReviewView: View {
             .accessibilityIdentifier("review.nowPlaying.pause")
             Button { model.nextPlaybackParagraph() } label: { Image(systemName: "forward.end.fill") }
                 .disabled(model.playbackChapterID == nil)
+                .accessibilityLabel("Next paragraph")
                 .accessibilityIdentifier("review.nowPlaying.next")
             Button { model.stopPlayback() } label: { Image(systemName: "stop.fill") }
+                .accessibilityLabel("Stop playback")
                 .accessibilityIdentifier("review.nowPlaying.stop")
         }
         .padding(.horizontal, 18).padding(.vertical, 10)

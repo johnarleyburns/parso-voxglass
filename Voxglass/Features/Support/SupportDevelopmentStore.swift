@@ -24,7 +24,7 @@ final class SupportDevelopmentStore {
             for await result in Transaction.updates {
                 guard let self else { return }
                 if case .verified(let transaction) = result, transaction.productID == Self.productID {
-                    await self.markSupporter()
+                    self.markSupporter()
                     await transaction.finish()
                 }
             }

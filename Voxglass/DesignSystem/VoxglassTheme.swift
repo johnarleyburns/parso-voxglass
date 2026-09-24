@@ -55,7 +55,10 @@ enum Palette {
     static let bg = Color(hex: 0x0A0B0D)
     static let ink = Color(hex: 0xF2F4F6)
     static let ink2 = Color(white: 0.92).opacity(0.58)
-    static let ink3 = Color(white: 0.92).opacity(0.34)
+    // Keep tertiary text readable on both the dark background and raised
+    // material surfaces. The previous translucent value fell below AA for
+    // the small metadata labels used throughout the app.
+    static let ink3 = Color(hex: 0xAEB2B8)
     static let brass = Color(hex: 0xE3A44B)
     static let brassDeep = Color(hex: 0xB97F2E)
     static let ok = Color(hex: 0x4CD471)

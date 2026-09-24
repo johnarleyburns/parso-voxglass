@@ -32,10 +32,9 @@ public struct SourceImporterRegistry: Sendable {
         if isZIP {
             // Distinguish EPUB from DOCX by looking for META-INF/container.xml
             // vs word/document.xml in the central directory.
-            if let whole = try? Data(contentsOf: url) {
-                let ns = String(data: whole, encoding: .utf8) ?? ""
-                if ns.contains("META-INF/container.xml") { return EPUBImporter() }
-                if ns.contains("word/document.xml") { return DOCXImporter() }
+            if let names = try? ZipReader(contentsOf: url).fileNames {
+                if names.contains("META-INF/container.xml") { return EPUBImporter() }
+                if names.contains("word/document.xml") { return DOCXImporter() }
             }
         }
 

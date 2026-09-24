@@ -10,8 +10,7 @@ public struct DOCXImporter: SourceImporting {
     }
 
     public func extract(from url: URL) async throws -> ExtractedDocument {
-        let zipData = try Data(contentsOf: url)
-        let zip = try ZipReader(data: zipData)
+        let zip = try ZipReader(contentsOf: url)
 
         guard let docEntry = zip.entry(named: "word/document.xml") else {
             throw ImportError.missingContainer

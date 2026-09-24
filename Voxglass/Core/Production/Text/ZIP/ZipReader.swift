@@ -20,17 +20,33 @@ public enum ZipReaderError: Error {
 
 // MARK: - implementation-determinism-exempt: uses system randomness (Compression) and filesystem reads
 public struct ZipReader: Sendable {
+    /// Import limits protect the app from ZIP bombs and malformed archives.
+    /// EPUB/DOCX are user-selected documents, so archive metadata is not
+    /// trusted merely because the file came from the Files picker.
+    public static let maxArchiveSize = 512 * 1024 * 1024
+    public static let maxEntryCount = 4_096
+    public static let maxEntryUncompressedSize = 128 * 1024 * 1024
+    public static let maxTotalUncompressedSize = 1 * 1024 * 1024 * 1024
+    public static let maxCompressionRatio = 1_000.0
+
     private let data: Data
     private let entries: [ZipEntry]
 
     public init(data: Data) throws {
+        guard data.count <= Self.maxArchiveSize else {
+            throw ZipReaderError.fileTooLarge
+        }
         self.data = data
         let endRecord = try Self.findEndOfCentralDirectory(in: data)
         self.entries = try Self.readCentralDirectory(in: data, endRecord: endRecord)
     }
 
     public init(contentsOf url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+        if let fileSize = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+           fileSize > Self.maxArchiveSize {
+            throw ZipReaderError.fileTooLarge
+        }
+        try self.init(data: try Data(contentsOf: url, options: [.mappedIfSafe]))
     }
 
     public var fileNames: [String] { entries.map(\.filename) }
@@ -43,8 +59,9 @@ public struct ZipReader: Sendable {
         guard let idx = entries.firstIndex(where: { $0.filename == entry.filename }) else {
             throw ZipReaderError.dataCorrupt("entry not found in directory: \(entry.filename)")
         }
-        _ = idx
-        return try Self.extractFile(data: data, entry: entry)
+        // Use the parsed entry, not a caller-supplied copy with potentially
+        // inflated size/offset metadata.
+        return try Self.extractFile(data: data, entry: entries[idx])
     }
 
     public func read(filename: String) throws -> Data {
@@ -65,6 +82,7 @@ public struct ZipReader: Sendable {
     }
 
     private static func findEndOfCentralDirectory(in data: Data) throws -> (offset: Int, entryCount: UInt16, dirSize: UInt32, dirOffset: UInt32) {
+        guard data.count >= 22 else { throw ZipReaderError.notAZipFile }
         let minSearch = max(0, data.count - 65557)
         for i in stride(from: data.count - 22, through: minSearch, by: -1) {
             if readUInt32(data, at: i) == 0x06054b50 {
@@ -78,12 +96,22 @@ public struct ZipReader: Sendable {
     }
 
     private static func readCentralDirectory(in data: Data, endRecord: (offset: Int, entryCount: UInt16, dirSize: UInt32, dirOffset: UInt32)) throws -> [ZipEntry] {
+        guard Int(endRecord.entryCount) <= Self.maxEntryCount else {
+            throw ZipReaderError.fileTooLarge
+        }
+
         var entries: [ZipEntry] = []
         var offset = Int(endRecord.dirOffset)
+        guard offset <= data.count,
+              Int(endRecord.dirSize) <= data.count - offset else {
+            throw ZipReaderError.dataCorrupt("central directory out of bounds")
+        }
         let limit = offset + Int(endRecord.dirSize)
 
         for _ in 0..<endRecord.entryCount {
-            guard offset + 46 <= limit else { break }
+            guard limit - offset >= 46 else {
+                throw ZipReaderError.dataCorrupt("truncated central directory")
+            }
             guard readUInt32(data, at: offset) == 0x02014b50 else {
                 throw ZipReaderError.dataCorrupt("invalid central directory signature")
             }
@@ -97,9 +125,20 @@ public struct ZipReader: Sendable {
             let commentLen = Int(readUInt16(data, at: offset + 32))
             let localHeaderOffset = readUInt32(data, at: offset + 42)
 
-            guard offset + 46 + filenameLen <= data.count else { break }
-            let filename = String(data: data.subdata(in: (offset + 46)..<(offset + 46 + filenameLen)), encoding: .utf8) ?? ""
+            let recordLength = 46 + filenameLen + extraLen + commentLen
+            guard recordLength <= limit - offset else {
+                throw ZipReaderError.dataCorrupt("truncated central directory entry")
+            }
+            guard offset + recordLength <= data.count else {
+                throw ZipReaderError.dataCorrupt("central directory entry out of bounds")
+            }
+            let filename = String(data: data.subdata(in: (offset + 46)..<(offset + 46 + filenameLen)), encoding: .utf8)
+                ?? ""
             let isDirectory = filename.hasSuffix("/")
+
+            if !isDirectory {
+                try validateEntrySize(compressedSize: compressedSize, uncompressedSize: uncompressedSize)
+            }
 
             entries.append(ZipEntry(
                 filename: filename,
@@ -111,16 +150,28 @@ public struct ZipReader: Sendable {
                 isDirectory: isDirectory
             ))
 
-            offset += 46 + filenameLen + extraLen + commentLen
+            offset += recordLength
         }
 
+        guard entries.count == Int(endRecord.entryCount), offset == limit else {
+            throw ZipReaderError.dataCorrupt("central directory entry count mismatch")
+        }
+        let totalUncompressedSize = entries.reduce(into: 0) { total, entry in
+            total += Int64(entry.uncompressedSize)
+        }
+        guard totalUncompressedSize <= Int64(Self.maxTotalUncompressedSize) else {
+            throw ZipReaderError.fileTooLarge
+        }
         return entries
     }
 
     private static func extractFile(data: Data, entry: ZipEntry) throws -> Data {
+        if entry.isDirectory { return Data() }
+        try validateEntrySize(compressedSize: entry.compressedSize, uncompressedSize: entry.uncompressedSize)
+
         var offset = Int(entry.localHeaderOffset)
 
-        guard offset + 30 <= data.count else {
+        guard offset <= data.count, 30 <= data.count - offset else {
             throw ZipReaderError.dataCorrupt("local header out of bounds")
         }
         guard readUInt32(data, at: offset) == 0x04034b50 else {
@@ -129,16 +180,24 @@ public struct ZipReader: Sendable {
 
         let filenameLen = Int(readUInt16(data, at: offset + 26))
         let extraLen = Int(readUInt16(data, at: offset + 28))
-        offset += 30 + filenameLen + extraLen
+        let headerLength = 30 + filenameLen + extraLen
+        guard headerLength <= data.count - offset else {
+            throw ZipReaderError.dataCorrupt("local file header out of bounds")
+        }
+        offset += headerLength
 
-        guard offset + Int(entry.compressedSize) <= data.count else {
+        let compressedSize = Int(entry.compressedSize)
+        guard compressedSize <= data.count - offset else {
             throw ZipReaderError.dataCorrupt("file data out of bounds")
         }
 
-        let compressed = data.subdata(in: offset..<(offset + Int(entry.compressedSize)))
+        let compressed = data.subdata(in: offset..<(offset + compressedSize))
 
         switch entry.compressionMethod {
         case 0:
+            guard compressed.count == Int(entry.uncompressedSize) else {
+                throw ZipReaderError.dataCorrupt("stored entry size mismatch")
+            }
             return compressed
         case 8:
             return try inflate(compressed, expectedSize: Int(entry.uncompressedSize))
@@ -148,33 +207,39 @@ public struct ZipReader: Sendable {
     }
 
     private static func inflate(_ compressed: Data, expectedSize: Int) throws -> Data {
-        var result = Data(count: expectedSize > 0 ? expectedSize : 1024 * 1024)
+        guard expectedSize <= Self.maxEntryUncompressedSize else {
+            throw ZipReaderError.fileTooLarge
+        }
+        if expectedSize == 0 { return Data() }
+        guard !compressed.isEmpty,
+              Double(expectedSize) / Double(max(compressed.count, 1)) <= Self.maxCompressionRatio else {
+            throw ZipReaderError.fileTooLarge
+        }
+
+        var result = Data(count: expectedSize)
         let written = try result.withUnsafeMutableBytes { (dest: UnsafeMutableRawBufferPointer) -> Int in
-            if dest.count == 0 {
-                var big = Data(count: 1024 * 1024)
-                return try big.withUnsafeMutableBytes { (bigDest: UnsafeMutableRawBufferPointer) -> Int in
-                    try compressed.withUnsafeBytes { (src: UnsafeRawBufferPointer) -> Int in
-                        guard let srcBase = src.baseAddress, let destBase = bigDest.baseAddress else {
-                            throw ZipReaderError.dataCorrupt("buffer address nil")
-                        }
-                        let outSize = compression_decode_buffer(destBase, bigDest.count, srcBase, src.count, nil, COMPRESSION_ZLIB)
-                        guard outSize > 0 else { throw ZipReaderError.dataCorrupt("decompression failed") }
-                        return outSize
-                    }
-                }
-            }
             return try compressed.withUnsafeBytes { (src: UnsafeRawBufferPointer) -> Int in
                 guard let srcBase = src.baseAddress, let destBase = dest.baseAddress else {
                     throw ZipReaderError.dataCorrupt("buffer address nil")
                 }
-                let headerOffset: Int = (src.count > 0 && src[0] == 0x78) ? 2 : 0
+                let headerOffset: Int = (src.count >= 2 && src[0] == 0x78) ? 2 : 0
                 let srcPtr = srcBase.advanced(by: headerOffset)
                 let outSize = compression_decode_buffer(destBase, dest.count, srcPtr, src.count - headerOffset, nil, COMPRESSION_ZLIB)
                 guard outSize > 0 else { throw ZipReaderError.dataCorrupt("decompression failed") }
+                guard outSize <= expectedSize else { throw ZipReaderError.fileTooLarge }
                 return outSize
             }
         }
         result.count = written
         return result
+    }
+
+    private static func validateEntrySize(compressedSize: UInt32, uncompressedSize: UInt32) throws {
+        guard Int(uncompressedSize) <= Self.maxEntryUncompressedSize else {
+            throw ZipReaderError.fileTooLarge
+        }
+        guard Double(uncompressedSize) / Double(max(Int(compressedSize), 1)) <= Self.maxCompressionRatio else {
+            throw ZipReaderError.fileTooLarge
+        }
     }
 }

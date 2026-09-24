@@ -410,7 +410,9 @@ struct MacDiscoverView: View {
                 if let selectedCollection {
                     HStack(spacing: 6) {
                         Text(selectedCollection.title).font(.callout.weight(.semibold))
-                        Button { clearCollection() } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless)
+                        Button { clearCollection() } label: { Image(systemName: "xmark.circle.fill") }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Clear selected collection")
                     }.padding(.horizontal, 10).padding(.vertical, 6).background(Capsule().fill(Color.accentColor.opacity(0.18)))
                 }
                 Spacer()
@@ -1354,7 +1356,7 @@ struct MacBookRow: View {
     @EnvironmentObject private var offlineDownloads: OfflineDownloadManager
     @EnvironmentObject private var library: LibraryStore
     init(book: BookWithChapters, actionTitle: String, action: (() -> Void)? = nil) { self.book = book; self.actionTitle = actionTitle; self.action = action }
-    var body: some View { HStack { MacCover(title: book.book.title, size: CGSize(width: 54, height: 70)); VStack(alignment: .leading, spacing: 4) { Text(book.book.title).fontWeight(.semibold); Text(book.book.authorLine).font(.caption).foregroundStyle(.secondary); if let narrator = book.book.narratorLine { Text(narrator).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Button(actionTitle) { openBook() }.buttonStyle(.borderedProminent); Menu { Button("Play") { Task { await playback.play(book) } }; Button(book.book.isFavorite ? "Remove favorite" : "Add favorite") { Task { await library.setFavorite(!book.book.isFavorite, for: book.book.id) } }; Divider(); if case .cached = offlineDownloads.state(for: book.book.id) { Button("Remove offline copy") { Task { await offlineDownloads.removeOffline(book: book) } } } else { Button("Make available offline") { Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) } } } } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton) }.padding(12).background(MacPanel()) }
+    var body: some View { HStack { MacCover(title: book.book.title, size: CGSize(width: 54, height: 70)); VStack(alignment: .leading, spacing: 4) { Text(book.book.title).fontWeight(.semibold); Text(book.book.authorLine).font(.caption).foregroundStyle(.secondary); if let narrator = book.book.narratorLine { Text(narrator).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Button(actionTitle) { openBook() }.buttonStyle(.borderedProminent); Menu { Button("Play") { Task { await playback.play(book) } }; Button(book.book.isFavorite ? "Remove favorite" : "Add favorite") { Task { await library.setFavorite(!book.book.isFavorite, for: book.book.id) } }; Divider(); if case .cached = offlineDownloads.state(for: book.book.id) { Button("Remove offline copy") { Task { await offlineDownloads.removeOffline(book: book) } } } else { Button("Make available offline") { Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) } } } } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).accessibilityLabel("More options for \(book.book.title)") }.padding(12).background(MacPanel()) }
     private func openBook() { if let action { action() } else { Task { await playback.present(book) } } }
 }
 

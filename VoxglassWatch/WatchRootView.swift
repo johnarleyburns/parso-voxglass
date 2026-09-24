@@ -14,6 +14,7 @@ struct WatchRootView: View {
                         if let book = services.playbackBook {
                             NavigationLink { WatchBookDetailView(book: book) } label: { Image(systemName: "waveform") }
                                 .accessibilityIdentifier("watch.nowPlaying")
+                                .accessibilityLabel("Now Playing")
                         }
                     }
                 }

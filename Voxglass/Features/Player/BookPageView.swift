@@ -238,6 +238,7 @@ struct BookPageView: View {
                         .frame(width: 32, height: 32)
                         .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.12))
                 }
+                .accessibilityLabel("Back")
             } else {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .fill(Color.white.opacity(0.35))

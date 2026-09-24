@@ -10,8 +10,7 @@ public struct EPUBImporter: SourceImporting {
     }
 
     public func extract(from url: URL) async throws -> ExtractedDocument {
-        let zipData = try Data(contentsOf: url)
-        let zip = try ZipReader(data: zipData)
+        let zip = try ZipReader(contentsOf: url)
 
         guard let containerEntry = zip.entry(named: "META-INF/container.xml") else {
             // §19.3: a malformed EPUB must fall back, not throw.
@@ -90,8 +89,7 @@ public struct EPUBImporter: SourceImporting {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let zipData = try Data(contentsOf: url)
-                    let zip = try ZipReader(data: zipData)
+                    let zip = try ZipReader(contentsOf: url)
                     guard let containerEntry = zip.entry(named: "META-INF/container.xml") else {
                         let doc = ExtractedDocument(
                             sections: [],

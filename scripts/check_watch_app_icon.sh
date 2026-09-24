@@ -47,11 +47,11 @@ images = manifest.get("images")
 if not isinstance(images, list):
     raise SystemExit("Watch app icon manifest must contain an images array")
 
-def find(idiom, *, scale=None):
+def find(idiom, *, scale=None, platform=None):
     matches = [
         image for image in images
         if image.get("idiom") == idiom
-        and image.get("platform") == "watchos"
+        and (platform is None or image.get("platform") == platform)
         and image.get("size") == "1024x1024"
         and (scale is None or image.get("scale") == scale)
     ]
@@ -93,7 +93,7 @@ def validate_icon_file(image, label):
     return filename
 
 # The runtime icon: the entry that actually ships as the app's icon.
-universal = find("universal")
+universal = find("universal", platform="watchos")
 if len(universal) != 1:
     raise SystemExit(
         "Watch app icon manifest must contain exactly one 'universal' "

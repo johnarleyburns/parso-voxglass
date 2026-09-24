@@ -270,6 +270,8 @@ public struct ProductionReviewPlayerView: View {
                         Image(systemName: model.autoAdvance ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle")
                     }
                     .help(model.autoAdvance ? "Auto-advance on" : "Auto-advance off")
+                    .accessibilityLabel(model.autoAdvance ? "Auto-advance on" : "Auto-advance off")
+                    .accessibilityValue(model.autoAdvance ? "On" : "Off")
                     .accessibilityIdentifier("player.autoAdvance")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -278,6 +280,7 @@ public struct ProductionReviewPlayerView: View {
                     } label: {
                         Image(systemName: "list.bullet")
                     }
+                    .accessibilityLabel("Paragraph queue")
                     .accessibilityIdentifier("player.queue")
                 }
             }

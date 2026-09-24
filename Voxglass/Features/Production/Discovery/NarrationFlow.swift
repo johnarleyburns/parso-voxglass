@@ -3084,6 +3084,7 @@ struct NarrationFlowRoot: View {
                                 Image(systemName: "trash")
                                     .scaledFont(size: 16, weight: .semibold)
                             }
+                            .accessibilityLabel("Delete narration")
                             .accessibilityIdentifier("narration.delete")
                         }
                         Button {
@@ -3092,6 +3093,7 @@ struct NarrationFlowRoot: View {
                             Image(systemName: "questionmark.circle")
                                 .scaledFont(size: 17, weight: .semibold)
                         }
+                        .accessibilityLabel("Narration help")
                         .accessibilityIdentifier("narration.help")
                     }
                 }
