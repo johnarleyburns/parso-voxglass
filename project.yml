@@ -138,6 +138,7 @@ targets:
           - "$(SRCROOT)/scripts/check_watch_app_icon.sh"
           - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json"
           - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
+          - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024-runtime.png"
         basedOnDependencyAnalysis: false
     sources:
       - path: VoxglassWatch
