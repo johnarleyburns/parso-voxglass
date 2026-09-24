@@ -154,7 +154,7 @@ Confirmed present in the tree. Listed so the agent does not rebuild them.
 
 | # | Gap | Fix | Stage |
 |---|---|---|---|
-| **G39** | `AccessibilityAuditTests` parses **only** `docs/iphone-watch-only-revised-mvp/mockups` as the identifier contract. The new Mac/iPad mockups are therefore a design contract but not a test-enforced one. | Extend it to `docs/mac-ipad-universal-mvp/mockups`, resolving Mac ids against `VoxglassMac/` and iPad ids against `Voxglass/Features/Production/`. **Do this in U0**, before the ids have a chance to drift. | **U0** |
+| **G39** | The deferred Mac/iPad mockups are historical design references, not the current shipping iPad identifier contract. | Keep their identifiers well-formed and keep the deferred status explicit; audit the live adaptive iOS source instead. | **Closed by scope decision (2026-09-18)** |
 | **G40** | CI has no macOS build. The `build-mac` job was deleted in P0; the `compile` job builds iOS and watchOS only. | Add a macOS build step to `compile` (`runs-on: macos-latest`). **Needs no simulator and no signing** — it is the cheapest catch for the most common breakage. CI still boots no simulator. | **U0** |
 | **G41** | Two UI smoke tests (iPhone, Watch), both local pre-commit. No Mac smoke test. | Add a third. Its distinguishing requirement: **drive the record loop from the keyboard only** (`⌘R`, `⌘⏎`, `⌘→`) — a Mac smoke test that clicks buttons tests nothing this MVP added. Stays local (signing). Gotchas: terminate the app between runs or `PackageLock` reports the project already open; `NSOpenPanel` cannot be driven from a UI test, so the fixture path must be injectable; seeders idempotent. | U9 |
 

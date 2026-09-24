@@ -754,7 +754,7 @@ macOS-specific rendering notes, none of which change a token:
 | mac-09 | Storage & iCloud | [`mac-09-storage.html`](mockups/mac-09-storage.html) | Settings | `Features/Settings/` 🔧 |
 | mac-10 | Export wizard | [`mac-10-export.html`](mockups/mac-10-export.html) | `⌘E` | `Features/Export/ExportWizardView.swift` 🔧 |
 
-### 15.3 iPad screen inventory
+### 15.3 iPad screen inventory (historical design reference)
 
 | # | Screen | Mockup | Note |
 |---|---|---|---|
@@ -764,11 +764,18 @@ macOS-specific rendering notes, none of which change a token:
 
 Compact-width iPad reuses the iPhone mockups unchanged (§9.2) — there are deliberately no compact iPad pages.
 
-### 15.4 Identifiers
+### 15.4 Identifiers (historical design reference)
 
-**Inherited rule (revised §15.3 rule 2, and the contract `AccessibilityAuditTests` enforces):** HTML `id` attributes in the mockups are the `.accessibilityIdentifier` values the implementation must use.
+The HTML `id` attributes in these deferred mockups are retained as historical
+design references. They are not the active identifier contract for the current
+shipping iPad surface; `AccessibilityAuditTests` verifies their formatting and
+the explicit deferred status, while the live iOS source audit covers the
+adaptive implementation.
 
-`AccessibilityAuditTests` currently parses **only** `docs/iphone-watch-only-revised-mvp/mockups`. Stage **U0** extends it to this directory as well, with the Mac and iPad ids resolved against `VoxglassMac/` and `Voxglass/Features/Production/` respectively. Until that extension lands, the new mockups are **not** yet a test-enforced contract — which is exactly why extending the test is a U0 task and not an afterthought.
+The former U0 identifier-extension task is superseded by the 2026-09-18
+decision to defer this design expansion. The current iPad implementation uses
+the shared iOS flow and adaptive navigation in `RootView`; no historical
+mockup identifier is required to ship a different regular-width surface.
 
 Identifiers already shipping on iOS — `record.*`, `player.*`, `paragraphList.*`, `queueBuilder.*`, `note.*`, `import.*`, `export.*`, `review.*`, `script.*`, `newProject.*`, `settings.*`, `validation.*` — are **reused** on Mac and iPad wherever the control means the same thing. New prefixes introduced by this MVP: `library.*`, `batch.*`, `conflict.*`, `shortcut.*`, `sidebar.*`, `queue.*`, `presence.*`, `window.*`.
 

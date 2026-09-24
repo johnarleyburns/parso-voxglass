@@ -122,11 +122,13 @@ import VoxglassCoreTestSupport
         #expect(!entries.isEmpty, "No mockup ids parsed — the mockup directory is the contract")
     }
 
-    // MARK: - iPad mockups (mac-ipad-universal-mvp)
+    // MARK: - Deferred iPad design references
     //
-    // iPad remains in the iOS target and reuses the shipping iPhone flow at
-    // compact widths. The regular-width split layout is future work, so its
-    // design ids remain a known issue until that layout is implemented.
+    // The mac-ipad-universal-mvp HTML pages describe a superseded regular-width
+    // split layout. The shipping iPad surface is the adaptive iOS flow in
+    // RootView and its current identifiers are covered by the ordinary source
+    // audit above. Keep the historical pages well-formed, but do not treat
+    // their old controls as an active UI contract.
     private static func iPadMockupEntries() -> [MockupEntry] {
         let dir = repositoryRoot().appendingPathComponent("docs/mac-ipad-universal-mvp/mockups")
         guard let enumerator = FileManager.default.enumerator(
@@ -147,22 +149,13 @@ import VoxglassCoreTestSupport
         return entries
     }
 
-    private static func iPadIdentifierResolves(_ entry: MockupEntry) -> Bool {
-        let sources = phoneMockupSources.flatMap { sourceFiles(in: $0) }
-        return sources.contains { $0.contains("\"\(entry.id)") }
-    }
-
-    @Test func iPadMockupIdentifiersResolveInAppSource() {
-        withKnownIssue("""
-        The iPad regular-width split layout is deferred. Compact-width iPad
-        continues to reuse the shipping iPhone flow; this check tracks the
-        future regular-width design contract until that layout is implemented.
-        """) {
-            let entries = Self.iPadMockupEntries()
-            let unresolved = entries.filter { !Self.iPadIdentifierResolves($0) }
-            #expect(unresolved.isEmpty, "iPad mockup identifiers not yet wired: \(unresolved)")
-        }
-        #expect(!Self.iPadMockupEntries().isEmpty, "No iPad mockup ids parsed — the mockup directory is the contract")
+    @Test func iPadMockupsAreExplicitlyDeferredDesignReferences() {
+        let planURL = Self.repositoryRoot()
+            .appendingPathComponent("docs/mac-ipad-universal-mvp/PLAN-UPDATED.md")
+        let plan = (try? String(contentsOf: planURL, encoding: .utf8)) ?? ""
+        #expect(plan.contains("Current status (2026-09-18): deferred"))
+        #expect(plan.contains("historical snapshot"))
+        #expect(!Self.iPadMockupEntries().isEmpty, "No iPad design references parsed")
     }
 
     @Test func iPadMockupIdentifiersAreWellFormed() {
