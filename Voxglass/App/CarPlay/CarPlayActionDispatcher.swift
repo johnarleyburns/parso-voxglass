@@ -257,10 +257,14 @@ final class CarPlayActionDispatcher {
     }
 }
 
-/// Voice-first search: results stream into the search template's own list; a
-/// selected result imports-then-plays through the dispatcher.
+/// Keyboard search (iOS 27+ only — see CarPlaySearchAvailability): results
+/// stream into the search template's own list; a selected result
+/// imports-then-plays through the dispatcher.
 @MainActor
 private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
+    /// CarPlay calls `updatedSearchText` per keystroke; wait for typing to
+    /// settle before querying archive.org.
+    private static let debounce: Duration = .milliseconds(350)
     private weak var dispatcher: CarPlayActionDispatcher?
     private weak var controller: CarPlayInterfaceController?
     private let myBooksOnly: Bool
@@ -292,7 +296,8 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
                 return
             }
             self.searchTask = Task { [weak self] in
-                guard let self else {
+                try? await Task.sleep(for: Self.debounce)
+                guard let self, !Task.isCancelled else {
                     completionBox.value([])
                     return
                 }
@@ -308,13 +313,16 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
                     return
                 }
                 self.actionByItem.removeAll()
+                let cap = max(1, min(CPListTemplate.maximumItemCount, 2 * CarPlayMenuBuilder.drivingItemCap))
                 let localCPItems = localItems.map { self.makeListItem(from: $0) }
-                let remoteCPItems = remoteResults.map { result in
-                    let item = CPListItem(text: result.title, detailText: result.authorLine)
-                    self.configure(item, action: .playCatalogItem(identifier: result.identifier))
-                    return item
-                }
-                completionBox.value(localCPItems + remoteCPItems)
+                let remoteCPItems = remoteResults
+                    .prefix(max(0, cap - localCPItems.count))
+                    .map { result in
+                        let item = CPListItem(text: result.title, detailText: result.authorLine)
+                        self.configure(item, action: .playCatalogItem(identifier: result.identifier))
+                        return item
+                    }
+                completionBox.value(Array((localCPItems + remoteCPItems).prefix(cap)))
             }
         }
     }
@@ -343,14 +351,12 @@ private final class CarPlaySearchDelegate: NSObject, CPSearchTemplateDelegate {
         return item
     }
 
+    /// Records the result's action for `searchTemplate(_:selectedResult:)`,
+    /// the documented callback for a search-result tap. Deliberately no
+    /// `item.handler`: with both set, one tap could dispatch twice and
+    /// `importThenPlay` would import and start the same LibriVox book twice.
     private func configure(_ item: CPListItem, action: CarPlayAction) {
         actionByItem[ObjectIdentifier(item)] = action
-        item.handler = { [weak self] _, completion in
-            Task { @MainActor in
-                self?.dispatcher?.dispatch(action)
-                completion()
-            }
-        }
     }
 }
 

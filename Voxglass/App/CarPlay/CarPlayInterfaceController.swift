@@ -1,6 +1,7 @@
 import CarPlay
 import Combine
 import Observation
+import OSLog
 import UIKit
 import VoxglassCore
 
@@ -10,6 +11,11 @@ import VoxglassCore
 /// debounced store subscriptions (docs/CARPLAY_DESIGN.md §6.4).
 @MainActor
 final class CarPlayInterfaceController {
+    /// Audio apps may push at most five templates, root included (CarPlay
+    /// Developer Guide, "Templates").
+    static let maximumDepth = 5
+    private static let logger = Logger(subsystem: "guru.parso.voxglass", category: "CarPlay")
+
     private let interfaceController: CPInterfaceController
     private let services: AppServices
     private var dispatcher: CarPlayActionDispatcher?
@@ -19,6 +25,10 @@ final class CarPlayInterfaceController {
     private var tabTemplates: [CarPlayTabID: CPListTemplate] = [:]
     private var coordinatorSignal: ObservationSubscription?
     private let sessionIdentityPublisher = PassthroughSubject<Void, Never>()
+    private var sessionConfiguration: CPSessionConfiguration?
+    private var sessionObserver: CarPlaySessionObserver?
+    /// The car limits keyboard use right now (usually while moving).
+    private var keyboardLimited = false
 
     init(interfaceController: CPInterfaceController, services: AppServices) {
         self.interfaceController = interfaceController
@@ -32,6 +42,7 @@ final class CarPlayInterfaceController {
             coordinator: services.playbackCoordinator,
             dispatcher: dispatcher
         )
+        observeSessionLimits()
         buildRoot()
         subscribe()
     }
@@ -39,6 +50,8 @@ final class CarPlayInterfaceController {
     func stop() {
         coordinatorSignal?.cancel()
         coordinatorSignal = nil
+        sessionConfiguration = nil
+        sessionObserver = nil
         cancellables.removeAll()
         nowPlayingConfigurator = nil
         dispatcher = nil
@@ -74,7 +87,8 @@ final class CarPlayInterfaceController {
             searchResults: services.catalogStore.results.map(makeCatalogSnapshot),
             hasCurrentSession: coordinator.currentSession != nil,
             currentBookID: coordinator.currentSession?.book.id,
-            searchTemplateSupported: CarPlaySearchAvailability.templateSupported
+            searchTemplateSupported: CarPlaySearchAvailability.templateSupported,
+            keyboardLimited: keyboardLimited
         )
     }
 
@@ -134,6 +148,25 @@ final class CarPlayInterfaceController {
             progress: progress,
             download: download
         )
+    }
+
+    // MARK: - Session limits
+
+    /// Many cars turn the keyboard off while moving. iOS disables it inside
+    /// the search template itself; Apple's guidance is that the app adjusts
+    /// its own entry points (CPSessionConfiguration.limitedUserInterfaces), so
+    /// the Library search row goes disabled rather than opening a dead field.
+    private func observeSessionLimits() {
+        let observer = CarPlaySessionObserver { [weak self] limited in
+            guard let self, self.keyboardLimited != limited else { return }
+            self.keyboardLimited = limited
+            Self.logger.info("keyboardLimitChanged limited=\(limited, privacy: .public)")
+            self.refreshTabs()
+        }
+        let configuration = CPSessionConfiguration(delegate: observer)
+        sessionObserver = observer
+        sessionConfiguration = configuration
+        keyboardLimited = configuration.limitedUserInterfaces.contains(.keyboard)
     }
 
     // MARK: - Rendering
@@ -248,7 +281,7 @@ final class CarPlayInterfaceController {
             dispatcher: .init(dispatch: { [weak dispatcher] in dispatcher?.dispatch($0) }),
             artwork: .shared
         )
-        interfaceController.pushTemplate(template, animated: true, completion: nil)
+        pushWithinDepthLimit(template)
     }
 
     /// Pushes the search template. Only `CPListTemplate` may be pushed on top
@@ -259,18 +292,42 @@ final class CarPlayInterfaceController {
     func pushSearch(_ template: CPSearchTemplate) {
         let hasNowPlaying = interfaceController.templates.contains { $0 is CPNowPlayingTemplate }
         guard hasNowPlaying else {
+            pushWithinDepthLimit(template)
+            return
+        }
+        popToRootThenPush(template, reason: "searchOverNowPlaying")
+    }
+
+    /// Shows Now Playing without ever stacking the shared template twice.
+    /// Chapters opened from Now Playing's "Chapters" button sit *above* it;
+    /// playing a chapter there must pop back to it, not push a second copy.
+    func pushNowPlaying() {
+        let stack = interfaceController.templates
+        if stack.last is CPNowPlayingTemplate { return }
+        if let nowPlaying = stack.last(where: { $0 is CPNowPlayingTemplate }) {
+            interfaceController.pop(to: nowPlaying, animated: true, completion: nil)
+            return
+        }
+        pushWithinDepthLimit(CPNowPlayingTemplate.shared)
+    }
+
+    /// e.g. Library → Authors → author → book → Now Playing is already five
+    /// deep; "Chapters" from there would be a sixth. Return to the tab bar
+    /// first instead of exceeding the audio-app depth limit.
+    private func pushWithinDepthLimit(_ template: CPTemplate) {
+        guard interfaceController.templates.count >= Self.maximumDepth else {
             interfaceController.pushTemplate(template, animated: true, completion: nil)
             return
         }
+        popToRootThenPush(template, reason: "depthLimit")
+    }
+
+    private func popToRootThenPush(_ template: CPTemplate, reason: StaticString) {
+        Self.logger.info("popToRootThenPush reason=\(String(describing: reason), privacy: .public) depth=\(self.interfaceController.templates.count, privacy: .public)")
         Task { @MainActor [interfaceController] in
             _ = try? await interfaceController.popToRootTemplate(animated: false)
             _ = try? await interfaceController.pushTemplate(template, animated: true)
         }
-    }
-
-    func pushNowPlaying() {
-        guard !(interfaceController.topTemplate is CPNowPlayingTemplate) else { return }
-        interfaceController.pushTemplate(CPNowPlayingTemplate.shared, animated: true, completion: nil)
     }
 
     func present(_ template: CPTemplate) {
@@ -280,5 +337,29 @@ final class CarPlayInterfaceController {
     func dismissPresented() {
         guard interfaceController.presentedTemplate != nil else { return }
         interfaceController.dismissTemplate(animated: true, completion: nil)
+    }
+}
+
+/// `CPSessionConfigurationDelegate` must be an `NSObject`, which
+/// `CarPlayInterfaceController` is not. Forwards keyboard-limit changes to the
+/// main actor, using the same nonisolated → `Task { @MainActor }` pattern as
+/// `CarPlayNowPlayingConfigurator` (no `assumeIsolated`: check-swift6.sh bans it).
+@MainActor
+private final class CarPlaySessionObserver: NSObject, CPSessionConfigurationDelegate {
+    private let onKeyboardLimitChange: @MainActor (Bool) -> Void
+
+    init(onKeyboardLimitChange: @escaping @MainActor (Bool) -> Void) {
+        self.onKeyboardLimitChange = onKeyboardLimitChange
+        super.init()
+    }
+
+    nonisolated func sessionConfiguration(
+        _ sessionConfiguration: CPSessionConfiguration,
+        limitedUserInterfacesChanged limitedUserInterfaces: CPLimitableUserInterface
+    ) {
+        let keyboardLimited = limitedUserInterfaces.contains(.keyboard)
+        Task { @MainActor in
+            self.onKeyboardLimitChange(keyboardLimited)
+        }
     }
 }
