@@ -541,7 +541,6 @@ jobs:
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
             MARKETING_VERSION="${{ steps.build_number.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
-            PROVISIONING_PROFILE_SPECIFIER="${{ steps.signing.outputs.profile_name }}" \
             archive
 
       - name: Audit archived iOS app and embedded Watch app
