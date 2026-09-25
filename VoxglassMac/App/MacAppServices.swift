@@ -16,13 +16,17 @@ final class MacAppServices: ObservableObject {
     let narrationRepository: NarrationProjectRepository
     let productionSync: MacProductionSync
     let capture: MacAudioCapture
+    private var automaticSyncTask: Task<Void, Never>?
 
-    init() {
-        let database = AppDatabase.makeApplicationDatabase()
+    init(database: AppDatabase = AppDatabase.makeApplicationDatabase()) {
         let repository = LibraryRepository(database: database)
-        let positionStore = SQLitePositionStore(database: database)
-        let bookmarkStore = SQLiteBookmarkStore(database: database)
+        var positionStore = SQLitePositionStore(database: database)
+        var bookmarkStore = SQLiteBookmarkStore(database: database)
         let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: bookmarkStore)
+        let mutationLog = SyncMutationLog(stateStore: CloudSyncStateStore(database: database))
+        repository.mutationLog = mutationLog
+        positionStore.mutationLog = mutationLog
+        bookmarkStore.mutationLog = mutationLog
         let playback = PlaybackCoordinator(
             engine: MacPlaybackAudioEngine(),
             positionStore: positionStore,
@@ -51,15 +55,65 @@ final class MacAppServices: ObservableObject {
     }
 
     func bootstrap() async {
-        await libraryStore.refresh()
-        await offlineDownloads.refreshState(for: libraryStore.books)
-        await playback.restorePresentedSession(from: libraryStore.books)
+        await MacSyncBootstrap.run(
+            local: { [weak self] in
+                guard let self else { return }
+                await self.libraryStore.refresh()
+                await self.libraryRepository.backfillContentKeysIfNeeded()
+                await self.enqueueInitialLibraryForCloudKitIfNeeded()
+                await self.offlineDownloads.refreshState(for: self.libraryStore.books)
+                await self.playback.restorePresentedSession(from: self.libraryStore.books)
+            },
+            sync: { [weak self] in
+                guard let self else { return }
+                await self.syncLibrary()
+            }
+        )
+        startAutomaticSync()
     }
 
     func syncLibrary() async {
+        guard cloudSync.isEnabled else { return }
         await cloudSync.sync()
-        await cloudKitSync.fetchChanges()
+        await cloudKitSync.start()
+        if cloudKitSync.lastUploadedCount > 0 {
+            UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+        }
         await productionSync.checkForUpdates()
         await libraryStore.refresh()
+    }
+
+    private func startAutomaticSync() {
+        guard automaticSyncTask == nil else { return }
+        automaticSyncTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(60))
+                } catch {
+                    return
+                }
+                guard let self else { return }
+                await self.syncLibrary()
+            }
+        }
+    }
+
+    private func enqueueInitialLibraryForCloudKitIfNeeded() async {
+        let defaults = UserDefaults.standard
+        if !defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued) {
+            _ = await libraryRepository.enqueueExistingLibraryForSync()
+            defaults.set(true, forKey: AppPreferencesStore.Keys.cloudKitInitialLibraryEnqueued)
+            return
+        }
+
+        let uploadConfirmed = defaults.bool(forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+        let pending = (try? await CloudSyncStateStore(database: database).pendingCount()) ?? 0
+        if !uploadConfirmed && pending == 0 {
+            _ = await libraryRepository.enqueueExistingLibraryForSync()
+        }
+    }
+
+    deinit {
+        automaticSyncTask?.cancel()
     }
 }

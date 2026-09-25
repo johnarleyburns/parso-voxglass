@@ -99,6 +99,7 @@
 		5E3A2634A58DF800FBC119D0 /* AVPlayerAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407C1274451E832DF8086039 /* AVPlayerAudioEngine.swift */; };
 		5F0DF26D3A418D5EA6C2BEB9 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4008972DE2117B1781A316A6 /* SearchView.swift */; };
 		60C8E2CAACAC8AD0AB92EE61 /* fabulas_esopo_02_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6B0227E7DDA4A542B1026CE7 /* fabulas_esopo_02_librivox.jpg */; };
+		60CB47A98B10CBFB01E1A34F /* MacSyncBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC594C14224B308CBB8AC9E /* MacSyncBootstrap.swift */; };
 		63FF3FCA96388B9CB363390D /* MacAppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF19B5E3393345D782C7B90 /* MacAppServices.swift */; };
 		6491F6B3D3E24F36631B9C95 /* ScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */; };
 		6539622E0D5E728F474586F8 /* sense_sensibility_ver3_ek.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */; };
@@ -485,6 +486,7 @@
 		8B92C41C9007B71F7A4BB38C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassMacApp.swift; sourceTree = "<group>"; };
 		8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationTabView.swift; sourceTree = "<group>"; };
+		8EC594C14224B308CBB8AC9E /* MacSyncBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSyncBootstrap.swift; sourceTree = "<group>"; };
 		8FA121B410B6E8D51EF2A2A6 /* les_mis_vol01_0810_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = les_mis_vol01_0810_librivox.jpg; sourceTree = "<group>"; };
 		92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = divine_comedy_librivox.jpg; sourceTree = "<group>"; };
 		93ECD54380A215C3A3831A60 /* SkipSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipSymbol.swift; sourceTree = "<group>"; };
@@ -758,6 +760,7 @@
 				31DECFDC1574A2A92EBD8F94 /* MacCommands.swift */,
 				2A213002451AFFE8EAC59E44 /* MacPlaybackAudioEngine.swift */,
 				03F87771897D730480805E37 /* MacProductionSync.swift */,
+				8EC594C14224B308CBB8AC9E /* MacSyncBootstrap.swift */,
 				8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */,
 			);
 			path = App;
@@ -1779,6 +1782,7 @@
 				1859F915193EA0CC8AF81BB3 /* MacCommands.swift in Sources */,
 				700494798ED57CFC111DA9FC /* MacPlaybackAudioEngine.swift in Sources */,
 				B5952AA049E325B3CBC54AF9 /* MacProductionSync.swift in Sources */,
+				60CB47A98B10CBFB01E1A34F /* MacSyncBootstrap.swift in Sources */,
 				7F6CC048FE6AC0EFCCC6D39E /* MacViews.swift in Sources */,
 				804F43C374A56FDF2AD78E52 /* NarrationProjectRepository.swift in Sources */,
 				015D93E451F9C1CE0C297E47 /* VoxglassMacApp.swift in Sources */,

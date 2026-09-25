@@ -64,4 +64,15 @@ final class MacCommandTests: XCTestCase {
     func testSilenceUsesAStableDBFSFloor() {
         XCTAssertEqual(MacAudioCapture.dbfs(forLinearAmplitude: 0), -120, accuracy: 0.000_1)
     }
+
+    func testMacBootstrapRunsSyncAfterLocalStatePreparation() async {
+        var events: [String] = []
+
+        await MacSyncBootstrap.run(
+            local: { events.append("local") },
+            sync: { events.append("sync") }
+        )
+
+        XCTAssertEqual(events, ["local", "sync"])
+    }
 }

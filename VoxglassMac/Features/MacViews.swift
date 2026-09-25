@@ -1100,6 +1100,7 @@ struct MacSettingsView: View {
     @State private var selectedDeviceID = ""
     @State private var confirmStreamingClear = false
     @State private var confirmOfflineClear = false
+    @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
 
     var body: some View {
         Form {
@@ -1137,8 +1138,18 @@ struct MacSettingsView: View {
                 }
             }
             Section("Sync") {
+                Toggle("Sync with iCloud", isOn: $syncEnabled)
+                    .onChange(of: syncEnabled) { _, newValue in
+                        services.cloudSync.isEnabled = newValue
+                        if newValue {
+                            Task { await services.syncLibrary() }
+                        }
+                    }
                 Button("Check iCloud now") { Task { await services.syncLibrary() } }
-                Text("Local recording never waits for iCloud. Projects sync through the existing production package and CloudKit transport.").font(.caption).foregroundStyle(.secondary)
+                Text(syncEnabled
+                     ? "Local recording never waits for iCloud. Sync runs at startup and periodically while Voxglass is open."
+                     : "Sync is off. Local books, positions, and projects stay on this Mac.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
