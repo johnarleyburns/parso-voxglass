@@ -77,7 +77,7 @@ struct ImportAudioView: View {
 
     private var pickPrompt: some View {
         VStack(spacing: 12) {
-            Text("♪").scaledFont(size: 34)
+            Image(systemName: "music.note").scaledFont(size: 34)
             Text("Choose a WAV, AIFF, CAF, M4A, MP3, or FLAC file")
                 .scaledFont(size: 14)
                 .foregroundStyle(Palette.ink)
@@ -97,13 +97,13 @@ struct ImportAudioView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func storageCard(_ selection: FlowImportedAudio) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                Text("♪").scaledFont(size: 22)
+                Image(systemName: "music.note").scaledFont(size: 22)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selection.fileName)
                         .scaledFont(size: 14, weight: .heavy)
@@ -136,7 +136,7 @@ struct ImportAudioView: View {
             .accessibilityIdentifier("importAudio.trashOriginal")
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var assignmentCard: some View {
@@ -153,7 +153,7 @@ struct ImportAudioView: View {
                 assignmentRow("One paragraph, whole file", caption: "For a single poem or a pickup", mode: .wholeParagraph, id: "importAudio.mode.whole")
             }
             .padding(.horizontal, 13)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
             .accessibilityIdentifier("importAudio.mode")
 
             if let plan = model.importPlan, !plan.slices.isEmpty, plan.mode != .wholeParagraph {
@@ -179,7 +179,7 @@ struct ImportAudioView: View {
                                 .foregroundStyle(Palette.ink2)
                                 .lineLimit(1)
                             Spacer()
-                            Text(slice.paragraphID != nil ? "¶ matched" : "extra")
+                            Text(slice.paragraphID != nil ? "paragraphs matched" : "extra")
                                 .scaledFont(size: 10, weight: .bold)
                                 .foregroundStyle(slice.paragraphID != nil ? Palette.ok : Palette.brass)
                         }
@@ -188,7 +188,7 @@ struct ImportAudioView: View {
                     }
                 }
                 .padding(.horizontal, 13)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
             }
         }
     }
@@ -209,7 +209,7 @@ struct ImportAudioView: View {
                 originRow("I'm not sure", caption: "Blocks LibriVox export", origin: .unknown, id: "importAudio.origin.unknown")
             }
             .padding(.horizontal, 13)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
             .accessibilityIdentifier("importAudio.origin")
 
             Text(LegalStrings.librivoxHumanOnly)

@@ -1,0 +1,105 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Listen": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Hören" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Escuchar" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Écouter" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Ascolta" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "聴く" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Ouvir" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "聆听" } }
+      }
+    },
+    "My Books": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Meine Bücher" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Mis libros" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Mes livres" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "I miei libri" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "マイブック" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Meus livros" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "我的书籍" } }
+      }
+    },
+    "Discover": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Entdecken" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Descubrir" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Découvrir" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Scopri" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "見つける" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Descobrir" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "发现" } }
+      }
+    },
+    "Narrate": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Sprechen" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Narrar" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Narrer" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Narra" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "ナレーション" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Narrar" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "旁白" } }
+      }
+    },
+    "Resume Voxglass": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Voxglass fortsetzen" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Reanudar Voxglass" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Reprendre Voxglass" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Riprendi Voxglass" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "Voxglassを再開" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Retomar Voxglass" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "继续 Voxglass" } }
+      }
+    },
+    "Show on widgets": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Auf Widgets anzeigen" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Mostrar en widgets" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Afficher dans les widgets" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Mostra nei widget" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "ウィジェットに表示" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Mostrar nos widgets" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "在小组件中显示" } }
+      }
+    },
+    "Waiting for a reader": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Warten auf eine Lesung" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Esperando un lector" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "En attente d’un lecteur" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "In attesa di un lettore" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "朗読者を待っています" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Aguardando um leitor" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "等待朗读者" } }
+      }
+    },
+    "Ready for LibriVox": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Bereit für LibriVox" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Listo para LibriVox" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Prêt pour LibriVox" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Pronto per LibriVox" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "LibriVox向けに準備完了" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Pronto para o LibriVox" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "已准备好发布到 LibriVox" } }
+      }
+    },
+    "Ready for the Internet Archive": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "needs_review", "value": "Bereit für das Internet Archive" } },
+        "es": { "stringUnit": { "state": "needs_review", "value": "Listo para Internet Archive" } },
+        "fr": { "stringUnit": { "state": "needs_review", "value": "Prêt pour Internet Archive" } },
+        "it": { "stringUnit": { "state": "needs_review", "value": "Pronto per Internet Archive" } },
+        "ja": { "stringUnit": { "state": "needs_review", "value": "Internet Archive向けに準備完了" } },
+        "pt-BR": { "stringUnit": { "state": "needs_review", "value": "Pronto para o Internet Archive" } },
+        "zh-Hans": { "stringUnit": { "state": "needs_review", "value": "已准备好发布到 Internet Archive" } }
+      }
+    }
+  },
+  "version": "1.0"
+}

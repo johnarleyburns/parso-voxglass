@@ -86,7 +86,7 @@ struct StorageSettingsView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.workingCache")
     }
@@ -123,7 +123,7 @@ struct StorageSettingsView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.audiobookCache")
     }
@@ -151,7 +151,7 @@ struct StorageSettingsView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.iCloudBackup")
     }
@@ -176,7 +176,7 @@ struct StorageSettingsView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage.evictionOrder")
     }

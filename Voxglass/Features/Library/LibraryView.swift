@@ -164,18 +164,7 @@ struct LibraryView: View {
                                 await playback.play(book)
                                 showingNowPlaying = true
                             }
-                        } label: {
-                            CompactBookRowView(
-                                book: book,
-                                sourceTitle: libraryStore.source(for: book.book)?.title,
-                                metadata: progressText(for: book),
-                                accessory: .play,
-                                style: .grouped,
-                                watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
-                                isMyNarration: isMyNarration(book)
-                            )
-                            .accessibilityIdentifier("library.play.\(book.book.id.uuidString)")
-                        }
+                        } label: { libraryRowLabel(book) }
                         .buttonStyle(.plain)
                         .accessibilityLabel(playActionLabel(for: book))
                         .accessibilityHint("Opens the player")
@@ -251,8 +240,8 @@ struct LibraryView: View {
             .accessibilityIdentifier("library.favoritesEmptyState")
         } else if soloOnly {
             EmptyStatePanel(
-                title: "No Solo Narrations",
-                message: "Turn off Solo Narration to see the rest of this view.",
+                title: "No Single-narrator Books",
+                message: "Turn off Single narrator to see the rest of this view.",
                 systemImage: "mic"
             )
             .accessibilityIdentifier("library.soloEmptyState")
@@ -277,6 +266,43 @@ struct LibraryView: View {
                 systemImage: "books.vertical"
             )
             .accessibilityIdentifier("library.filteredEmptyState")
+        }
+    }
+
+    private func libraryRowLabel(_ book: BookWithChapters) -> some View {
+        let isFinished = libraryStore.progressByBook[book.book.id]?.isFinished == true
+        return CompactBookRowView(
+            book: book,
+            sourceTitle: libraryStore.source(for: book.book)?.title,
+            metadata: progressText(for: book),
+            accessory: .play,
+            style: .grouped,
+            watchStorage: phoneAudioRelay.watchStorageInfo(for: book.book.id),
+            isMyNarration: isMyNarration(book),
+            progress: progressFraction(for: book)
+        )
+        .accessibilityIdentifier("library.play.\(book.book.id.uuidString)")
+        .accessibilityActions {
+            Button("Resume") {
+                Task {
+                    await playback.play(book)
+                    showingNowPlaying = true
+                }
+            }
+            Button("Download") {
+                Task {
+                    _ = await offlineManager.makeAvailableOffline(
+                        book: book,
+                        isCellular: NetworkMonitor.shared.isCellular
+                    )
+                }
+            }
+            Button(isFinished ? "Mark unfinished" : "Mark finished") {
+                Task {
+                    await playback.setBookFinished(book, finished: !isFinished)
+                    await libraryStore.refresh()
+                }
+            }
         }
     }
 
@@ -328,7 +354,7 @@ struct LibraryView: View {
                         .accessibilityIdentifier("library.favoritesFilter")
                     Toggle("Downloaded", isOn: $libraryStore.downloadedOnly)
                         .accessibilityIdentifier("library.downloadedFilter")
-                    Toggle("Solo Narration", isOn: $soloOnly)
+                    Toggle("Single narrator", isOn: $soloOnly)
                     Toggle("Created by me", isOn: $myNarrationOnly)
                 }
                 Section("Sort") {
@@ -389,7 +415,7 @@ struct LibraryView: View {
             .padding(.horizontal, 14)
             .frame(height: 40)
             .contentShape(Rectangle())
-            .glassSurface(cornerRadius: 18)
+            .raisedSurface()
 
             Picker("Scope", selection: $searchScope) {
                 ForEach(LibrarySearchScope.allCases) { scope in
@@ -421,6 +447,15 @@ struct LibraryView: View {
         }
         let percent = Int((min(max(progress.lastPosition / totalDuration, 0), 1) * 100).rounded())
         return "\(percent)% listened"
+    }
+
+    private func progressFraction(for book: BookWithChapters) -> Double? {
+        guard let progress = libraryStore.progressByBook[book.book.id],
+              let totalDuration = book.totalDuration,
+              totalDuration > 0,
+              progress.lastPosition > 0,
+              !progress.isFinished else { return nil }
+        return min(max(progress.lastPosition / totalDuration, 0), 1)
     }
 
     private var filteredBooks: [BookWithChapters] {
@@ -582,7 +617,7 @@ private struct AddArchiveURLSheet: View {
                         .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
                     }
                     .padding(14)
-                    .glassSurface(cornerRadius: 18)
+                    .raisedSurface()
 
                     // MARK: Local folder
                     VStack(alignment: .leading, spacing: 10) {
@@ -636,7 +671,7 @@ private struct AddArchiveURLSheet: View {
                             .foregroundStyle(Palette.ink3)
                     }
                     .padding(14)
-                    .glassSurface(cornerRadius: 18)
+                    .raisedSurface()
 
                     Spacer()
                 }
@@ -872,11 +907,11 @@ private struct ChapterFileExampleView: View {
                             .foregroundStyle(Palette.ink2)
 
                         Text(Self.example)
-                            .scaledFont(size: 13, design: .monospaced)
+                            .scaledFont(size: 13, design: .monospaced) // mono-exempt: progress percentage
                             .foregroundStyle(Palette.ink)
                             .padding(14)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .glassSurface(cornerRadius: 12)
+                            .raisedSurface()
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Format: Chapter <number>: <title> <timestamp>")

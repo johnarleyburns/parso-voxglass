@@ -95,7 +95,7 @@ struct ProPurchaseView: View {
             featureRow("Validation reports as files", "HTML or JSON, for a client or a rights holder", symbol: "doc.text.fill")
         }
         .padding(.horizontal, 14)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     private func featureRow(_ title: String, _ detail: String, symbol: String) -> some View {
@@ -154,7 +154,7 @@ struct ProPurchaseView: View {
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private var purchaseButton: some View {

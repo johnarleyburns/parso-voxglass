@@ -58,7 +58,7 @@ struct TakeComparisonView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func takeCard(_ side: TakeComparison.Side, cardID: String, playID: String, inContextID: String) -> some View {
@@ -118,7 +118,7 @@ struct TakeComparisonView: View {
             }
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.hairline, lineWidth: 1))
         .accessibilityIdentifier(cardID)
     }

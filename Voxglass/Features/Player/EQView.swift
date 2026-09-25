@@ -75,7 +75,7 @@ struct EQView: View {
         .tint(Palette.brass)
         .accessibilityIdentifier("eq.engage")
         .padding(15)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var presetPicker: some View {
@@ -113,14 +113,14 @@ struct EQView: View {
             }
             .frame(height: 220)
             .padding(15)
-            .glassSurface(cornerRadius: 16)
+            .raisedSurface()
         }
     }
 
     private func bandSlider(_ band: Int) -> some View {
         VStack(spacing: 6) {
             Text(gainLabel(gains[band]))
-                .scaledFont(size: 9, design: .monospaced)
+                .scaledFont(size: 9, design: .monospaced) // mono-exempt: EQ frequency labels
                 .foregroundStyle(Palette.ink3)
             Slider(
                 value: Binding(

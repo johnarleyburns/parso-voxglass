@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 enum BookPagePresentationContext {
     case pushedDetail
@@ -6,8 +7,10 @@ enum BookPagePresentationContext {
 }
 
 @MainActor
-final class MiniPlayerPresentationRouter: ObservableObject {
-    @Published var isNowPlayingPresented = false
+@Observable
+final class MiniPlayerPresentationRouter {
+    var isNowPlayingPresented = false
+    var listenHeroIsVisible = false
     private var pushedPlayerCount = 0
 
     func bindNowPlaying() -> Binding<Bool> {
@@ -25,7 +28,8 @@ final class MiniPlayerPresentationRouter: ObservableObject {
     func shouldShowMiniPlayer(currentBookID: UUID?) -> Bool {
         guard let currentBookID,
               !isNowPlayingPresented,
-              pushedPlayerCount == 0 else { return false }
+              pushedPlayerCount == 0,
+              !listenHeroIsVisible else { return false }
         _ = currentBookID
         return true
     }

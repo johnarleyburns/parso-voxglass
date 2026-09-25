@@ -155,7 +155,7 @@ struct ScriptEditorView: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderTint(paragraph).opacity(0.5), lineWidth: 1))
         }
         .buttonStyle(.plain)

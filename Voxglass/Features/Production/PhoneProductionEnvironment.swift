@@ -127,7 +127,7 @@ public final class PhoneProductionEnvironment {
 
     private func chapterLabel(for paragraph: ParagraphProjection, in projection: SyncProjection) -> (UUID, String)? {
         guard let chapter = projection.chapters.first(where: { $0.id == paragraph.chapterID }) else { return nil }
-        return (paragraph.id, "Chapter \(chapter.ordinal + 1) · ¶ \(paragraph.globalOrdinal + 1)")
+        return (paragraph.id, "Chapter \(chapter.ordinal + 1) · paragraphs \(paragraph.globalOrdinal + 1)")
     }
 
     private func dictionary<Key: Hashable, Value>(_ pairs: [(Key, Value)]) -> [Key: Value] {

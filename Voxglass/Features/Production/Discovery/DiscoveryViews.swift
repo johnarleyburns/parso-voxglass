@@ -152,7 +152,7 @@ struct NarrationHomeShelf: View {
                 }
                 .padding(13)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
                 .accessibilityIdentifier("narration.commercialIntro")
             }
 
@@ -252,7 +252,7 @@ struct ShortNeedCard: View {
         }
         .padding(12)
         .frame(width: 150, alignment: .leading)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.hairline, lineWidth: 1))
     }
 }
@@ -401,7 +401,7 @@ struct NeedRow: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 9)
                     .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
-                Text(need.work.lengthClass == .short ? "📜" : "📕")
+                Image(systemName: need.work.lengthClass == .short ? "scroll" : "book.closed")
                     .scaledFont(size: 18)
             }
             .frame(width: 44, height: 58)
@@ -581,7 +581,7 @@ struct MyNarrationsSection: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 9)
                     .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
-                Text("🎙️").scaledFont(size: 18)
+                Image(systemName: "mic.fill").font(.title3).foregroundStyle(Palette.brass)
             }
             .frame(width: 46, height: 60)
 
@@ -590,7 +590,7 @@ struct MyNarrationsSection: View {
                     .scaledFont(size: 14.5, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
-                Text("\(project.metadata.author) · \(project.totalCount) ¶ · ~\(projectTotalDuration(project).formattedShort)")
+                Text("\(project.metadata.author) · \(project.totalCount) paragraphs · ~\(projectTotalDuration(project).formattedShort)")
                     .scaledFont(size: 11.5)
                     .foregroundStyle(Palette.ink2)
                     .lineLimit(1)
@@ -606,7 +606,7 @@ struct MyNarrationsSection: View {
                 }
                 .frame(height: 6)
 
-                Text(project.statusCaption)
+        Text(project.phase.caption)
                     .scaledFont(size: 11)
                     .foregroundStyle(Palette.ink3)
             }
@@ -614,19 +614,19 @@ struct MyNarrationsSection: View {
             statusPill(project)
         }
         .padding(13)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     @ViewBuilder
     private func statusPill(_ project: AudiobookProject) -> some View {
-        let (text, tint) = project.statusPill
-        Text(text)
+        let phase = project.phase
+        Text(phase.label)
             .scaledFont(size: 11, weight: .bold)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .foregroundStyle(tint)
-            .background(tint.opacity(0.14), in: Capsule())
-            .overlay(Capsule().stroke(tint.opacity(0.4), lineWidth: 1))
+            .foregroundStyle(project.isReady ? NarrationPalette.mint : (project.isDraft ? Palette.ink3 : Palette.brass))
+            .background((project.isReady ? NarrationPalette.mint : Palette.brass).opacity(0.14), in: Capsule())
+            .overlay(Capsule().stroke((project.isReady ? NarrationPalette.mint : Palette.brass).opacity(0.4), lineWidth: 1))
     }
 
     private func needSlugFromTitle(_ title: String) -> String {
@@ -638,7 +638,7 @@ struct MyNarrationsSection: View {
     }
 }
 
-private extension AudiobookProject {
+extension AudiobookProject {
     var percent: Double {
         guard totalCount > 0 else { return 0 }
         return Double(recordedCount) / Double(totalCount)
@@ -648,17 +648,9 @@ private extension AudiobookProject {
         allParagraphs.count { $0.reviewState == .approved }
     }
 
-    var statusCaption: String {
-        if approvedCount == totalCount && totalCount > 0 { return "LibriVox package ready" }
-        if recordedCount > 0 { return "\(recordedCount) of \(totalCount) paragraphs recorded" }
-        return "Draft — disclaimer & rights ready"
-    }
-
-    var statusPill: (String, Color) {
-        if approvedCount == totalCount && totalCount > 0 { return ("Ready", NarrationPalette.mint) }
-        if recordedCount > 0 { return ("Recording", Palette.brass) }
-        return ("Draft", Palette.ink3)
-    }
+    var phase: NarrationPhase { NarrationPhase(recorded: recordedCount, approved: approvedCount, total: totalCount, hasExport: false) }
+    var isReady: Bool { if case .ready = phase { return true }; return false }
+    var isDraft: Bool { if case .draft = phase { return true }; return false }
 }
 
 // MARK: - n04 Long-work handoff

@@ -75,11 +75,11 @@ final class VoxglassUITests: XCTestCase {
         let tabs: [(button: String, anchor: String)] = [
             ("My Books", "My Books"),
             ("Discover", "Featured Collections"),
-            ("Narration", "Start a Narration"),
+            ("Narrate", "Start a Narration"),
             ("Listen", "Recommended for You")
         ]
         for tab in tabs {
-            app.buttons[tab.button].tap()
+            tab(tab.button, in: app).tap()
             XCTAssertTrue(
                 app.staticTexts[tab.anchor].waitForExistence(timeout: 10),
                 "Tab \(tab.button) did not render its content"
@@ -97,7 +97,7 @@ final class VoxglassUITests: XCTestCase {
         // every paragraph (at least two) with the fake capture → review →
         // validate → LibriVox export, then verify the produced files.
         // ──────────────────────────────────────────────────────────────────
-        app.buttons["Narration"].tap()
+        tab("Narrate", in: app).tap()
         XCTAssertTrue(
             app.staticTexts["Start a Narration"].waitForExistence(timeout: 10),
             "Narration tab did not render after returning\n\(app.debugDescription)"
@@ -313,14 +313,14 @@ final class VoxglassUITests: XCTestCase {
 
         // The EQ step needs the Listen tab anyway; switch there first (also
         // forces a clean tab re-render after the cover dismissal), then Discover.
-        app.buttons["Listen"].tap()
+        tab("Listen", in: app).tap()
         XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 10))
 
         // Discover renders the catalog search field (kept last: it puts focus in a text field).
-        app.buttons["Discover"].tap()
+        tab("Discover", in: app).tap()
         let searchField = app.textFields["discover.catalogSearch"]
         if !searchField.waitForExistence(timeout: 20) {
-            app.buttons["Discover"].tap()
+            tab("Discover", in: app).tap()
             _ = searchField.waitForExistence(timeout: 20)
         }
         XCTAssertTrue(
@@ -331,7 +331,7 @@ final class VoxglassUITests: XCTestCase {
         // The ten-band EQ is reachable from Settings (Audio section) and
         // every band is draggable — folded into the smoke test so this
         // target has exactly one.
-        app.buttons["Listen"].tap()
+        tab("Listen", in: app).tap()
         XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 10))
 
         let settingsButton = app.buttons["home.settingsButton"]
@@ -383,7 +383,7 @@ final class VoxglassUITests: XCTestCase {
     /// Settings-only failure is unambiguous rather than buried under a
     /// storage-specific assertion.
     private func assertSettingsOpensFromHomeWithoutCrashing(app: XCUIApplication) {
-        app.buttons["Listen"].tap()
+        tab("Listen", in: app).tap()
         app.buttons["home.settingsButton"].tap()
 
         XCTAssertTrue(
@@ -408,7 +408,7 @@ final class VoxglassUITests: XCTestCase {
     /// the other half of that change: the "Listening History" entry point
     /// (Discover's history icon) renders and opens without crashing.
     private func assertHistoryOpensFromExploreWithoutCrashing(app: XCUIApplication) {
-        app.buttons["Discover"].tap()
+        tab("Discover", in: app).tap()
         XCTAssertTrue(
             app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
             "Discover did not render before opening History.\n\(app.debugDescription)"
@@ -442,7 +442,7 @@ final class VoxglassUITests: XCTestCase {
     /// user has actually selected — the default onboarding selection is
     /// English only, so the German/Spanish titles must not appear.
     private func assertFeaturedCollectionsRespectSelectedLanguage(app: XCUIApplication) {
-        app.buttons["Discover"].tap()
+        tab("Discover", in: app).tap()
         XCTAssertTrue(
             app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
             "Discover did not render.\n\(app.debugDescription)"
@@ -469,7 +469,7 @@ final class VoxglassUITests: XCTestCase {
     /// EQ engage/playback wiring (as opposed to just rendering the sheet)
     /// would surface here.
     private func assertEQTogglesFromSettingsWithoutCrashing(app: XCUIApplication) {
-        app.buttons["Listen"].tap()
+        tab("Listen", in: app).tap()
         app.buttons["home.settingsButton"].tap()
         XCTAssertTrue(
             app.staticTexts["Languages"].waitForExistence(timeout: 10),
@@ -502,7 +502,7 @@ final class VoxglassUITests: XCTestCase {
     }
 
     private func assertStorageCardsFitCompactWidth(app: XCUIApplication) {
-        app.buttons["Listen"].tap()
+        tab("Listen", in: app).tap()
         app.buttons["home.settingsButton"].tap()
 
         let storageLink = app.buttons["settings.storage"]
@@ -578,12 +578,11 @@ final class VoxglassUITests: XCTestCase {
             "\(screen) final content is missing.\n\(app.debugDescription)"
         )
 
-        let dock = app.otherElements["chrome.dock"]
         func obstructionTop() -> CGFloat {
-            if dock.exists, app.buttons["Narration"].isHittable {
-                return dock.frame.minY
-            }
-            return app.frame.maxY - 8
+            let tabTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
+            let accessory = app.otherElements["chrome.miniPlayer"]
+            let accessoryTop = accessory.exists ? accessory.frame.minY : app.frame.maxY
+            return min(tabTop, accessoryTop)
         }
 
         for _ in 0..<8 where finalElement.frame.maxY > obstructionTop() {
@@ -593,7 +592,7 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertLessThanOrEqual(
             finalElement.frame.maxY,
             obstructionTop() + 1,
-            "\(screen) final content intersects the dock or bottom safe area. Final: \(finalElement.frame), dock: \(dock.frame)."
+            "\(screen) final content intersects the tab bar, accessory, or bottom safe area. Final: \(finalElement.frame)."
         )
     }
 
@@ -650,7 +649,7 @@ final class VoxglassUITests: XCTestCase {
     }
 
     private func assertCompletedDashboardRoutesToReview(app: XCUIApplication) {
-        app.buttons["Narration"].tap()
+        tab("Narrate", in: app).tap()
         let project = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH 'myNarrations.project.'"))
             .firstMatch
@@ -1095,6 +1094,10 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Free stays free"].exists)
     }
 
+    private func tab(_ label: String, in app: XCUIApplication) -> XCUIElement {
+        app.tabBars.buttons[label]
+    }
+
     private func launchNarrationEntry() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -1106,7 +1109,7 @@ final class VoxglassUITests: XCTestCase {
             "-uiTestDisableCloudKit"
         ]
         app.launch()
-        app.buttons["Narration"].tap()
+        tab("Narrate", in: app).tap()
         XCTAssertTrue(app.buttons["narration.startNew"].waitForExistence(timeout: 15))
         return app
     }

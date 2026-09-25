@@ -19,7 +19,7 @@ struct ValidationReportView: View {
                 .foregroundStyle(Palette.ink2)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
                 .accessibilityIdentifier("validation.backingUp")
             }
             let blocking = model.blockingValidationIssues
@@ -55,7 +55,7 @@ struct ValidationReportView: View {
                 .foregroundStyle(Palette.ink2)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
                 .accessibilityIdentifier("validation.analyzing")
             }
             if !model.isValidating, !blocking.isEmpty { issueSection("BLOCKS EXPORT", issues: blocking) }
@@ -66,7 +66,7 @@ struct ValidationReportView: View {
                     .foregroundStyle(Palette.ok)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .glassSurface(cornerRadius: 14)
+                    .raisedSurface()
             }
         }
     }
@@ -91,7 +91,7 @@ struct ValidationReportView: View {
                     }
                 }
                 .padding(11)
-                .glassSurface(cornerRadius: 12)
+                .raisedSurface()
                 .accessibilityIdentifier(index == 0 ? "validation.issue.\(issue.code.rawValue)" : "validation.issue.\(issue.code.rawValue).\(index + 1)")
             }
         }

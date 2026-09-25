@@ -44,12 +44,15 @@ struct BookmarksView: View {
                         .padding(.top, 16)
                         .padding(.bottom, 20)
                     }
-                    .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+                    .safeAreaPadding(.bottom, Spacing.section)
                 }
             }
         }
         .navigationTitle("Bookmarks")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityRotor("Bookmarks") {
+            AccessibilityRotorEntry("Bookmark list", id: "bookmarks")
+        }
         .task { await load() }
         .confirmationDialog(
             "Delete this bookmark?",
@@ -120,7 +123,7 @@ struct BookmarksView: View {
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Text(TimeFormatting.clock(bookmark.position))
-                    .scaledFont(size: 11.5, design: .monospaced)
+                    .scaledFont(size: 11.5, design: .monospaced) // mono-exempt: bookmark timecode
                     .foregroundStyle(Palette.ink3)
                 if let note = bookmark.note, !note.isEmpty {
                     Text(note)
@@ -136,7 +139,7 @@ struct BookmarksView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+        .raisedSurface()
     }
 
     private func load() async {

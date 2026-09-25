@@ -5,6 +5,7 @@ struct BookPageOverflowSheet: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
+    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     let book: BookWithChapters
     @Binding var showingNowPlaying: Bool
     @Binding var showRemoveOfflineConfirm: Bool
@@ -181,7 +182,32 @@ struct BookPageOverflowSheet: View {
                 } label: {
                     overflowRow(icon: "trash", title: "Remove offline copy")
                 }
+                .accessibilityIdentifier("nowplaying.download")
+            } else {
+                Button {
+                    Task {
+                        _ = await offlineManager.makeAvailableOffline(
+                            book: book,
+                            isCellular: NetworkMonitor.shared.isCellular
+                        )
+                    }
+                } label: {
+                    overflowRow(icon: "arrow.down.circle", title: "Make available offline")
+                }
+                .accessibilityIdentifier("nowplaying.download")
             }
+
+            Button {
+                Task {
+                    _ = await phoneAudioRelay.transferBookToWatch(
+                        book,
+                        allowCellularOverride: false
+                    )
+                }
+            } label: {
+                overflowRow(icon: "applewatch", title: "Send to Apple Watch")
+            }
+            .accessibilityIdentifier("nowplaying.watchDownload")
 
             Button(role: .destructive) {
                 showRemoveConfirm = true
@@ -205,7 +231,7 @@ struct BookPageOverflowSheet: View {
             Spacer(minLength: 8)
             if let detail {
                 Text(detail)
-                    .scaledFont(size: 11, weight: .semibold, design: .monospaced)
+                    .scaledFont(size: 11, weight: .semibold, design: .monospaced) // mono-exempt: storage estimate
                     .foregroundStyle(Palette.ink3)
                     .padding(.horizontal, 8)
                     .frame(height: 24)

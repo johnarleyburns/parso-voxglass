@@ -1477,7 +1477,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     // MARK: - Script editing (spec §8.4)
 
     /// The global document position of a paragraph (1-based), as the script
-    /// editor numbers its rows ("¶ 1205").
+    /// editor numbers its rows ("paragraphs 1205").
     func globalNumber(of id: UUID) -> Int? {
         project?.allParagraphs.firstIndex(where: { $0.id == id }).map { $0 + 1 }
     }
@@ -3233,7 +3233,7 @@ struct NarrationHelpSheet: View {
                 .padding(.top, 4)
         }
         .padding(12)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.hairline, lineWidth: 1))
     }
 }
@@ -3292,16 +3292,16 @@ struct WorkImportView: View {
                     .scaledFont(size: 26, weight: .heavy)
                     .foregroundStyle(Palette.ink)
 
-                importOption(icon: "🎙️", title: "Browse narration needs", id: "import.fromNeed") {
+                importOption(systemImage: "text.book.closed", title: "Find a book that needs a reader", id: "import.fromNeed") {
                     showNeedsPicker = true
                 }
-                importOption(icon: "📝", title: "Paste text", id: "import.paste") {
+                importOption(systemImage: "doc.on.clipboard", title: "Paste text", id: "import.paste") {
                     showPaste = true
                 }
-                importOption(icon: "📄", title: "Import a file", id: "import.files") {
+                importOption(systemImage: "doc.badge.plus", title: "Import a file", id: "import.files") {
                     presentFilesPicker()
                 }
-                importOption(icon: "🌐", title: "Fetch from Project Gutenberg", id: "import.gutenberg") {
+                importOption(systemImage: "globe", title: "Project Gutenberg", id: "import.gutenberg") {
                     showGutenberg = true
                 }
 
@@ -3327,7 +3327,7 @@ struct WorkImportView: View {
                     }
                     .padding(13)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .glassSurface(cornerRadius: 14)
+                    .raisedSurface()
                     .padding(.top, 8)
                 }
                 if let error = model.importError {
@@ -3336,7 +3336,7 @@ struct WorkImportView: View {
 
                 purposePicker
 
-                Button("See what Commercial (Pro) includes") {
+                Button("Learn about export formats") {
                     showProDetails = true
                 }
                 .scaledFont(size: 13, weight: .bold)
@@ -3386,13 +3386,13 @@ struct WorkImportView: View {
         return types
     }
 
-    private func importOption(icon: String, title: String, id: String, action: @escaping () -> Void) -> some View {
+    private func importOption(systemImage: String, title: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 13) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
-                    Text(icon).scaledFont(size: 20)
+                    Image(systemName: systemImage).font(.title3).foregroundStyle(Palette.brass)
                 }
                 .frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 2) {
@@ -3402,7 +3402,7 @@ struct WorkImportView: View {
                 Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
             }
             .padding(14)
-            .glassSurface(cornerRadius: 16)
+            .raisedSurface()
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -3422,11 +3422,11 @@ struct WorkImportView: View {
                 .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
                 .padding(.top, 6)
             VStack(spacing: 0) {
-                destinationRow(title: "Just for me", caption: "Free · lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
+                    destinationRow(title: "Just for me", caption: "Lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
                 VoxglassListDivider()
-                destinationRow(title: "LibriVox", caption: "Free · 128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", choice: .librivox)
+                    destinationRow(title: "LibriVox", caption: "128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", choice: .librivox)
                 VoxglassListDivider()
-                destinationRow(title: "Internet Archive", caption: "Free · FLAC masters + MP3 derivatives", id: "wizard.purpose.internetArchive", choice: .internetArchive)
+                    destinationRow(title: "Internet Archive", caption: "FLAC masters + MP3 copies", id: "wizard.purpose.internetArchive", choice: .internetArchive)
                 VoxglassListDivider()
                 destinationRow(title: "Commercial release", caption: "ACX, Apple Books, aggregators", id: "wizard.purpose.commercial", choice: .commercial, proChip: true)
                 if model.draftDestinationChoice == .commercial {
@@ -3439,7 +3439,7 @@ struct WorkImportView: View {
                         .accessibilityIdentifier("wizard.purpose.commercial.hint")
                 }
             }
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("wizard.purpose")
@@ -3757,7 +3757,7 @@ private struct GutenbergSheet: View {
                             .disabled(manualIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
                         .padding(12)
-                        .glassSurface(cornerRadius: 14)
+                        .raisedSurface()
                     }
                     resultsContent
                     selectedBookContent
@@ -3818,7 +3818,7 @@ private struct GutenbergSheet: View {
         .scaledFont(size: 14)
         .padding(.horizontal, 14)
         .frame(minHeight: 46)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     @ViewBuilder
@@ -3888,7 +3888,7 @@ private struct GutenbergSheet: View {
                 }
             }
             .padding(.horizontal, 12)
-            .glassSurface(cornerRadius: 16)
+            .raisedSurface()
         }
     }
 
@@ -3967,7 +3967,7 @@ private struct GutenbergSheet: View {
                                     .foregroundStyle(Palette.brass)
                             }
                             .padding(10)
-                            .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.05))
+                            .raisedSurface()
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("gutenberg.librivoxMatch.\(candidate.result.identifier)")
@@ -3981,7 +3981,7 @@ private struct GutenbergSheet: View {
                 }
             }
             .padding(14)
-            .glassSurface(cornerRadius: 16)
+            .raisedSurface()
         }
     }
 

@@ -53,7 +53,7 @@ struct FilterChip: View {
             }
             .padding(.horizontal, 14)
             .frame(height: height)
-            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink)
+            .foregroundStyle(isSelected ? Palette.onBrass : Palette.ink)
             .background {
                 Capsule()
                     .fill(isSelected ? Palette.brass : Color.white.opacity(0.08))
@@ -133,7 +133,7 @@ struct VoxglassGroupedSection<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
-            .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+            .raisedSurface()
         }
     }
 }
@@ -144,54 +144,6 @@ struct VoxglassListDivider: View {
             .fill(Palette.hairline)
             .frame(height: 1)
             .padding(.leading, 58)
-    }
-}
-
-struct SoloNarrationBadge: View {
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(Palette.brass)
-                .frame(width: 4, height: 4)
-            Text("Solo Narration")
-                .scaledFont(size: 9.5, weight: .bold)
-                .kerning(0.3)
-                .lineLimit(1)
-                .fixedSize()
-        }
-        .foregroundStyle(Palette.brass)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(
-            Capsule()
-                .fill(Palette.brass.opacity(0.12))
-        )
-        .overlay(
-            Capsule()
-                .stroke(Palette.brass.opacity(0.35), lineWidth: 1)
-        )
-        .accessibilityLabel("Solo Narration")
-    }
-}
-
-struct MyNarrationBadge: View {
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(NarrationPalette.mint)
-                .frame(width: 4, height: 4)
-            Text("My Narration")
-                .scaledFont(size: 9.5, weight: .bold)
-                .kerning(0.3)
-                .lineLimit(1)
-                .fixedSize()
-        }
-        .foregroundStyle(NarrationPalette.mint)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(Capsule().fill(NarrationPalette.mint.opacity(0.12)))
-        .overlay(Capsule().stroke(NarrationPalette.mint.opacity(0.35), lineWidth: 1))
-        .accessibilityLabel("My Narration")
     }
 }
 
@@ -211,7 +163,7 @@ enum BookListRowStyle {
 struct BookListRow: View {
     /// The row's own drawn height. Fixed so the two list screens that disable
     /// scrolling and size their `List` by row count stay in sync with it.
-    static let rowContentHeight: CGFloat = 112
+    static let rowContentHeight: CGFloat = 72
     /// Height one row occupies in a `List` — the drawn content plus the 5pt
     /// top + 5pt bottom `listRowInsets` both screens apply.
     static let fixedRowHeight: CGFloat = rowContentHeight + 10
@@ -221,12 +173,12 @@ struct BookListRow: View {
     var tertiary: String?
     var metadata: String?
     var watchStatus: String?
+    var progress: Double? = nil
     var coverURL: URL?
     var accessory: RowAccessory = .navigation
     var style: BookListRowStyle = .card
     var accessibilityLabel: String?
-    var showSoloBadge: Bool = false
-    var showMyNarrationBadge: Bool = false
+    var isImported: Bool = false
 
     var body: some View {
         styledRow
@@ -239,7 +191,7 @@ struct BookListRow: View {
         switch style {
         case .card:
             rowContent
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
         case .grouped:
             rowContent
         }
@@ -262,8 +214,7 @@ struct BookListRow: View {
             // natural size instead of the intended 56×56, pushing the whole
             // row's artwork and trailing accessory outward for exactly the
             // books missing real cover art.
-            BookArtworkView(title: title, size: 56, coverURL: coverURL, cornerRadius: 12)
-                .frame(width: 56, height: 56)
+            CoverPlate(title: title, author: subtitle, coverURL: coverURL, size: 48)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -271,10 +222,14 @@ struct BookListRow: View {
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.86)
-                Text(subtitle)
-                    .scaledFont(size: 12)
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
+                if isImported {
+                    ImportedTag()
+                } else {
+                    Text(subtitle)
+                        .voxType(.meta)
+                        .foregroundStyle(Palette.ink3)
+                        .lineLimit(1)
+                }
                 if let tertiary, !tertiary.isEmpty {
                     Text(tertiary)
                         .scaledFont(size: 12)
@@ -293,36 +248,17 @@ struct BookListRow: View {
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
-                // An invisible badge purely to reserve this row's height —
-                // the real, visible badge(s) render as an `.overlay` below,
-                // which lets them draw at full natural size and, when there
-                // are two of them or the title is long, overflow rightward
-                // into the row's empty space instead of either shrinking
-                // (illegible) or forcing the whole HStack wider (which
-                // shoved the artwork left and the accessory right — see the
-                // overlay comment below for why an overlay avoids that).
-                SoloNarrationBadge().opacity(0)
-                    .padding(.top, 2)
-            }
-            .overlay(alignment: .bottomLeading) {
-                // Full-size, un-shrunk badges, but as an overlay rather
-                // than a normal stacked child: an overlay's content doesn't
-                // count toward its parent's layout size, so however wide
-                // these pills naturally want to be, they never change how
-                // much width this VStack asks the outer HStack for. That's
-                // what lets them spill past the text column's own width —
-                // there's ample empty space to the right before the
-                // trailing accessory — without that overflow pushing the
-                // artwork or the accessory out of their fixed columns.
-                HStack(spacing: 5) {
-                    if showSoloBadge {
-                        SoloNarrationBadge()
+                if let progress, progress > 0, progress < 1 {
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Palette.ink3.opacity(0.20))
+                            Capsule().fill(Palette.brass).frame(width: geometry.size.width * min(max(progress, 0), 1))
+                        }
                     }
-                    if showMyNarrationBadge {
-                        MyNarrationBadge()
-                    }
+                    .frame(height: 3)
+                    .frame(maxWidth: 160)
+                    .accessibilityHidden(true)
                 }
-                .padding(.top, 2)
             }
 
             Spacer(minLength: 8)
@@ -337,7 +273,8 @@ struct BookListRow: View {
         // rows with more populated optional lines (a narration's narrator +
         // watch-status text) grow past their neighbors and past the height the
         // container reserved, clipping the last rows.
-        .frame(height: BookListRow.rowContentHeight)
+        .frame(minHeight: 72)
+        .alignmentGuide(.listRowSeparatorLeading) { dimensions in dimensions[.leading] }
         .padding(.horizontal, 12)
         .contentShape(Rectangle())
     }
@@ -500,11 +437,11 @@ struct PrimaryActionButton: View {
                 .scaledFont(size: 15.5, weight: .bold)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
-                .foregroundStyle(Color(hex: 0x221503))
+                .foregroundStyle(Palette.onBrass)
                 .background {
                     Capsule()
                         .fill(LinearGradient(
-                            colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                            colors: [Palette.brass, Palette.brassDeep],
                             startPoint: .top, endPoint: .bottom))
                 }
         }
@@ -528,7 +465,7 @@ struct SecondaryActionButton: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .foregroundStyle(isEnabled ? Palette.ink : Palette.ink3)
-                .glassSurface(cornerRadius: 18)
+                .raisedSurface()
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -544,6 +481,7 @@ struct CompactBookRowView: View {
     var style: BookListRowStyle = .card
     var watchStorage: WatchBookStorageInfo?
     var isMyNarration: Bool = false
+    var progress: Double? = nil
 
     var body: some View {
         BookListRow(
@@ -552,12 +490,12 @@ struct CompactBookRowView: View {
             tertiary: book.book.narratorLine,
             metadata: metadata,
             watchStatus: watchStorageText,
+            progress: progress,
             coverURL: book.book.coverURL,
             accessory: accessory,
             style: style,
             accessibilityLabel: accessibilityText,
-            showSoloBadge: book.narrationKind == .solo,
-            showMyNarrationBadge: isMyNarration
+            isImported: book.book.displayAuthorLine == nil
         )
     }
 
@@ -618,7 +556,7 @@ struct EmptyStatePanel: View {
         }
         .frame(maxWidth: .infinity)
         .padding(18)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 }
 
@@ -673,7 +611,7 @@ extension SourceKind {
         case .internetArchiveURL:
             return "Archive URL"
         case .localFiles:
-            return "Local Files"
+            return "Imported"
         }
     }
 }

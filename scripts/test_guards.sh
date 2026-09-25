@@ -83,6 +83,46 @@ else
 fi
 
 # ──────────────────────────────────────────────────────────────
+# G-A1…G-A6 probes: the iOS 26 redesign ratchets.
+# ──────────────────────────────────────────────────────────────
+probe="Voxglass/Features/_probe_ga1.swift"
+plant "$probe" 'if #available(iOS 18.0, *) {}'
+expect_guard_fails "A1" "dead iOS availability check"
+unplant "$probe"
+expect_guard_passes "G-A1 availability probe"
+
+probe="Voxglass/Features/_probe_ga2.swift"
+plant "$probe" 'let label = "🎙️"'
+expect_guard_fails "A2" "emoji string literal"
+unplant "$probe"
+expect_guard_passes "G-A2 emoji probe"
+
+probe="Voxglass/Features/_probe_ga3.swift"
+plant "$probe" 'let surface = AnyView(Color.clear.background(.ultraThinMaterial))'
+expect_guard_fails "A3" "custom material chrome"
+unplant "$probe"
+expect_guard_passes "G-A3 custom chrome probe"
+
+probe="Voxglass/Features/_probe_ga4.swift"
+plant "$probe" 'let stable = title.hashValue'
+expect_guard_fails "A4" "unstable visual hash"
+unplant "$probe"
+expect_guard_passes "G-A4 hash probe"
+
+probe="Voxglass/Features/_probe_ga5.swift"
+plant "$probe" 'let brass = Palette.brass'
+for i in $(seq 1 8); do printf '%s\n' 'let moreBrass = Palette.brass' >> "$probe"; done
+expect_guard_fails "A5" "brass budget overflow"
+unplant "$probe"
+expect_guard_passes "G-A5 brass budget probe"
+
+probe="Voxglass/Features/_probe_ga6.swift"
+plant "$probe" 'Text("0").scaledFont(size: 11, design: .monospaced)'
+expect_guard_fails "A6" "unannotated monospaced font"
+unplant "$probe"
+expect_guard_passes "G-A6 monospaced probe"
+
+# ──────────────────────────────────────────────────────────────
 # G-1 probes: AVSpeechSynthesizer symbol and CoreML import.
 # ──────────────────────────────────────────────────────────────
 probe="Voxglass/Core/Production/ProbeG1Synthesizer.swift"

@@ -90,7 +90,7 @@ struct AudioSetupView: View {
                 .foregroundStyle(Palette.ink3)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var roomTestCard: some View {
@@ -140,7 +140,7 @@ struct AudioSetupView: View {
             .accessibilityIdentifier("audioSetup.runTest")
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var inputGuidance: some View {
@@ -166,7 +166,7 @@ struct AudioSetupView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func guidanceRow(_ title: String, _ caption: String, _ color: Color, _ chip: String) -> some View {

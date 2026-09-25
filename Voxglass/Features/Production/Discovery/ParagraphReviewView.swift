@@ -86,7 +86,7 @@ struct ParagraphReviewView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var driftBanner: some View {
@@ -140,7 +140,7 @@ struct ParagraphReviewView: View {
                         Spacer()
                         Text("-\(max(0, model.playbackDuration - model.playbackPosition).formattedShort)")
                     }
-                    .scaledFont(size: 11, design: .monospaced)
+                    .scaledFont(size: 11, design: .monospaced) // mono-exempt: paragraph index
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("paragraphReview.progress")
                 }
@@ -185,7 +185,7 @@ struct ParagraphReviewView: View {
             }
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     /// One action per row: three targets crammed into a single `HStack` were

@@ -11,9 +11,10 @@ import Testing
         let rootView = try source("Voxglass/App/RootView.swift", root: root)
         let adaptiveSurface = try source("Voxglass/App/AdaptiveSurface.swift", root: root)
 
-        #expect(rootView.contains("NavigationSplitView"))
-        #expect(rootView.contains("horizontalSizeClass == .regular"))
-        #expect(rootView.contains("GlassMiniPlayer"))
+        #expect(rootView.contains(".tabViewStyle(.sidebarAdaptable)"))
+        #expect(rootView.contains("Tab(\"Listen\""))
+        #expect(rootView.contains("Tab(\"Narrate\""))
+        #expect(rootView.contains("MiniPlayerAccessory"))
         #expect(adaptiveSurface.contains("KeyEquivalent(\"1\")"))
         #expect(adaptiveSurface.contains("KeyEquivalent(\"4\")"))
         #expect(adaptiveSurface.contains("textDidBeginEditingNotification"))

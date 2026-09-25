@@ -20,14 +20,15 @@ import Testing
     @Test func discoverUsesCompactCollectionsAndNoDeadCatalogPlaceholder() throws {
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         #expect(!discover.contains("Browse the catalog"))
-        #expect(discover.contains("GeometryReader"))
-        #expect(discover.contains(".frame(height: 148)"))
+        #expect(discover.contains("ExploreCollectionCard"))
+        #expect(discover.contains("CollectionFan("))
         #expect(discover.contains("accessibilityIdentifier(\"discover.searchButton\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.dismissKeyboard\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.filterButton\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.searchScope\")"))
         #expect(discover.contains("accessibilityIdentifier(\"discover.scopePicker\")"))
-        #expect(discover.contains("discover.collectionInfo."))
+        #expect(discover.contains("discover.collection."))
+        #expect(!discover.contains("discover.collectionInfo."))
         #expect(discover.contains("accessibilityIdentifier(\"discover.selectedCollectionAbout\")"))
         #expect(!discover.contains("discover.collectionAbout"))
         #expect(discover.contains(".accessibilityIdentifier(\"discover.selectedCollection\")"))
@@ -52,17 +53,15 @@ import Testing
         #expect(artwork.contains("CGImageSourceCreateThumbnailAtIndex"))
         #expect(artwork.contains("memoryCache.countLimit"))
         let artworkView = try source("Voxglass/DesignSystem/BookArtworkView.swift")
-        #expect(artworkView.contains(".task(id: url)"))
+        #expect(artworkView.contains("CoverPlate("))
     }
 
     @Test func chromeUsesColorOnlySelectionAndSharedHeight() throws {
-        let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
+        let dock = try source("Voxglass/Features/Chrome/MiniPlayerAccessory.swift")
         let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
-        #expect(!dock.contains("Capsule(style: .continuous)"))
-        #expect(dock.contains("struct GlassTabBar"))
-        #expect(dock.contains("ChromeMetrics.dockItemHeight"))
-        #expect(dock.contains("ChromeMetrics.dockItemHeight"))
-        #expect(theme.contains("static let dockItemHeight"))
+        #expect(dock.contains("struct MiniPlayerAccessory"))
+        #expect(dock.contains("chrome.miniPlayer.playPause"))
+        #expect(dock.contains("chrome.miniPlayer.skipForward"))
         #expect(theme.contains("minimumControlHitTarget"))
     }
 
@@ -113,7 +112,7 @@ import Testing
         #expect(!views.contains("Record short works and whole books directly on iPhone."))
 
         let flow = try source("Voxglass/Features/Production/Discovery/NarrationFlow.swift")
-        #expect(flow.contains("Browse narration needs"))
+        #expect(flow.contains("Find a book that needs a reader"))
         #expect(flow.contains("NarrationNeedsView(startProject:"))
         #expect(flow.contains("Button(\"Done\") { dismiss() }"))
         #expect(flow.contains("enum NarrationDestinationChoice"))

@@ -60,7 +60,7 @@ struct ProjectDashboardView: View {
             }
             .padding(18)
         }
-        .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+        .safeAreaPadding(.bottom, Spacing.section)
         .background(VoxglassBackground())
         .toolbar(.visible, for: .navigationBar)
         .navigationTitle(project.metadata.title)
@@ -239,7 +239,7 @@ struct ProjectDashboardView: View {
             let reviewComplete = dashboard.approvedCount == dashboard.paragraphCount && dashboard.flaggedCount == 0
             return reviewComplete ? "Everything recorded — export" : "Everything recorded — review"
         }
-        return "Record next — ¶ \(next.paragraphNumber), Chapter \(next.chapterOrdinal + 1)"
+        return "Record next — paragraphs \(next.paragraphNumber), Chapter \(next.chapterOrdinal + 1)"
     }
 
     // MARK: - Progress
@@ -249,15 +249,15 @@ struct ProjectDashboardView: View {
             HStack {
                 Text("Progress").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
-                Text("\(Int(dashboard.percentRecorded * 100))%").scaledFont(size: 14, weight: .bold, design: .monospaced).foregroundStyle(Palette.ink)
+                Text("\(Int(dashboard.percentRecorded * 100))%").scaledFont(size: 14, weight: .bold, design: .monospaced).foregroundStyle(Palette.ink) // mono-exempt: progress percentage
             }
             progressBar(value: dashboard.percentRecorded)
-            kv("Recorded", "\(dashboard.recordedCount) of \(dashboard.paragraphCount) ¶")
-            kv("Approved", "\(dashboard.approvedCount) ¶")
+            kv("Recorded", "\(dashboard.recordedCount) of \(dashboard.paragraphCount) paragraphs")
+            kv("Approved", "\(dashboard.approvedCount) paragraphs")
             kv("Chapters complete", "\(dashboard.chaptersComplete) of \(dashboard.chapterCount)")
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
         .accessibilityIdentifier("dashboard.progress")
     }
 
@@ -282,7 +282,7 @@ struct ProjectDashboardView: View {
             detailField("Source URL", field: .sourceURL)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     /// Reading is the default; editing is a deliberate mode. Tapping a value no
@@ -385,11 +385,11 @@ struct ProjectDashboardView: View {
             }
             .padding(.bottom, 4)
 
-            attentionRow("Flagged", "\(dashboard.flaggedCount) ¶", systemImage: "flag.fill", tint: NarrationPalette.brassSoft, id: "dashboard.flagged")
+            attentionRow("Flagged", "\(dashboard.flaggedCount) paragraphs", systemImage: "flag.fill", tint: NarrationPalette.brassSoft, id: "dashboard.flagged")
             VoxglassListDivider()
-            attentionRow("Needs pickup", "\(dashboard.needsPickupCount) ¶ · blocks export", systemImage: "arrow.clockwise", tint: NarrationPalette.brassSoft, id: "dashboard.pickups")
+            attentionRow("Needs pickup", "\(dashboard.needsPickupCount) paragraphs · blocks export", systemImage: "arrow.clockwise", tint: NarrationPalette.brassSoft, id: "dashboard.pickups")
             VoxglassListDivider()
-            attentionRow("Text changed after recording", "\(dashboard.driftCount) ¶", systemImage: "pencil", tint: NarrationPalette.brassSoft, id: "dashboard.drift")
+            attentionRow("Text changed after recording", "\(dashboard.driftCount) paragraphs", systemImage: "pencil", tint: NarrationPalette.brassSoft, id: "dashboard.drift")
 
             NarrationSecondaryButton(title: "Start review queue", identifier: "dashboard.startReviewQueue") {
                 flowProjectID = FlowTarget(id: project.id)
@@ -397,7 +397,7 @@ struct ProjectDashboardView: View {
             .padding(.top, 11)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func attentionRow(_ title: String, _ detail: String, systemImage: String, tint: Color, id: String) -> some View {
@@ -453,7 +453,7 @@ struct ProjectDashboardView: View {
             .accessibilityIdentifier("dashboard.manageStorage")
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
         .accessibilityIdentifier("dashboard.storage")
     }
 
@@ -487,7 +487,7 @@ struct ProjectDashboardView: View {
             }
         }
         .padding(6)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func workOnRow(_ title: String, _ detail: String, systemImage: String, id: String, action: @escaping () -> Void) -> some View {
@@ -520,7 +520,7 @@ struct ProjectDashboardView: View {
             }
         }
         .padding(6)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func chapterRow(_ chapter: ChapterProgress) -> some View {
@@ -530,7 +530,7 @@ struct ProjectDashboardView: View {
                     .scaledFont(size: 14, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
-                Text("\(chapter.paragraphCount) ¶")
+                Text("\(chapter.paragraphCount) paragraphs")
                     .scaledFont(size: 12)
                     .foregroundStyle(Palette.ink3)
             }

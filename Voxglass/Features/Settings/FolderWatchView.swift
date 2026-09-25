@@ -47,7 +47,7 @@ struct FolderWatchView: View {
             .foregroundStyle(Palette.ink2)
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
     }
 
     private var addButton: some View {
@@ -65,7 +65,7 @@ struct FolderWatchView: View {
                     .foregroundStyle(Palette.brass)
             }
             .padding(14)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("folderwatch.add")
@@ -98,7 +98,7 @@ struct FolderWatchView: View {
                     .padding(.vertical, 12)
                 }
             }
-            .glassPanel()
+            .raisedSurface()
         }
     }
 
@@ -125,7 +125,7 @@ struct FolderWatchView: View {
             .foregroundStyle(Palette.ink3)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Indexing \(progress.remainingTracks) tracks")
         .accessibilityValue(progress.estimatedTimeRemainingText ?? "Calculating time remaining")

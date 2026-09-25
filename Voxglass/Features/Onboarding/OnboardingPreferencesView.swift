@@ -57,7 +57,7 @@ struct OnboardingPreferencesView: View {
                 .scaledFont(size: 20)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 44, height: 44)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
 
             Text("Choose a few interests")
                 .scaledFont(size: 31, weight: .heavy)
@@ -221,7 +221,7 @@ private struct OnboardingCollectionCard: View {
         }
         .frame(width: 170, alignment: .topLeading)
         .padding(10)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)

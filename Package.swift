@@ -1,9 +1,9 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
     name: "VoxglassCore",
-    platforms: [.iOS(.v17), .macOS(.v14), .watchOS(.v10)],
+    platforms: [.iOS(.v26), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
         .library(name: "VoxglassWatchProtocol", targets: ["VoxglassWatchProtocol"]),

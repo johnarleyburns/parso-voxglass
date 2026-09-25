@@ -47,7 +47,7 @@ struct ListeningStatsView: View {
             .padding(.top, 12)
             .padding(.bottom, 28)
         }
-        .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+        .safeAreaPadding(.bottom, Spacing.section)
     }
 
     private var headline: some View {
@@ -68,7 +68,7 @@ struct ListeningStatsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(15)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var weeklyChart: some View {
@@ -95,7 +95,7 @@ struct ListeningStatsView: View {
             .frame(height: 150, alignment: .bottom)
         }
         .padding(15)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func termsCard(title: String, terms: [(term: String, seconds: TimeInterval)]) -> some View {
@@ -111,13 +111,13 @@ struct ListeningStatsView: View {
                         .lineLimit(1)
                     Spacer()
                     Text(durationString(terms[index].seconds))
-                        .scaledFont(size: 12, design: .monospaced)
+                        .scaledFont(size: 12, design: .monospaced) // mono-exempt: statistics value
                         .foregroundStyle(Palette.ink3)
                 }
             }
         }
         .padding(15)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private func durationString(_ seconds: TimeInterval) -> String {

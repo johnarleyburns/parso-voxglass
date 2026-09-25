@@ -75,7 +75,7 @@ struct MicCheckView: View {
                 .foregroundStyle(Palette.ink2)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var statusText: String {
@@ -93,7 +93,7 @@ struct MicCheckView: View {
                 .frame(height: 64)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var bandsCard: some View {
@@ -105,7 +105,7 @@ struct MicCheckView: View {
                 .frame(height: 64)
         }
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
     }
 
     private var actionButton: some View {

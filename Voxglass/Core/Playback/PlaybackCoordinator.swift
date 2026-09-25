@@ -757,6 +757,23 @@ public final class PlaybackCoordinator {
         return ResumeTarget(chapter: chapter, startTime: saved.position)
     }
 
+    /// Marks every chapter in a book finished or unfinished for accessibility
+    /// actions and other system surfaces that cannot present the player first.
+    public func setBookFinished(_ book: BookWithChapters, finished: Bool) async {
+        for chapter in book.chapters {
+            let existing: PlaybackPosition? = try? await positionStore.position(for: book.book.id, chapterID: chapter.id)
+            guard finished || existing != nil else { continue }
+            try? await positionStore.save(PlaybackPosition(
+                id: existing?.id ?? UUID(),
+                bookID: book.book.id,
+                chapterID: chapter.id,
+                position: finished ? (existing?.duration ?? chapter.duration ?? 0) : (existing?.position ?? 0),
+                duration: existing?.duration ?? chapter.duration,
+                updatedAt: Date(),
+                isFinished: finished
+            ))
+        }
+    }
 
     public func togglePlayPause() {
         guard currentSession != nil else { return }

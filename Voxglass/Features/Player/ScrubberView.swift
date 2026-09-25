@@ -54,6 +54,12 @@ struct ScrubberView: View {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(isActiveBook ? Color.white.opacity(0.90) : Palette.brass.opacity(0.85))
                         .frame(width: max(geometry.size.width * CGFloat(chapterProgress), 0), height: 7)
+
+                    Circle()
+                        .fill(.white)
+                        .frame(width: isScrubbing ? 20 : 13, height: isScrubbing ? 20 : 13)
+                        .shadow(color: .black.opacity(0.25), radius: 2)
+                        .offset(x: max(0, min(geometry.size.width - (isScrubbing ? 20 : 13), geometry.size.width * CGFloat(chapterProgress) - (isScrubbing ? 10 : 6.5))))
                 }
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -76,6 +82,14 @@ struct ScrubberView: View {
             .frame(height: 32)
             .accessibilityLabel("Playback position")
             .accessibilityValue(TimeFormatting.clock(chapterPosition))
+            .accessibilityIdentifier("nowplaying.scrubber")
+            .accessibilityAdjustableAction { direction in
+                guard isActiveBook else { return }
+                let delta: TimeInterval = direction == .increment ? 30 : -15
+                let target = max(0, min(chapterDuration, liveChapterPosition + delta))
+                scrubPosition = target
+                onSeekChapterPosition(target)
+            }
 
             HStack {
                 Text(TimeFormatting.clock(chapterPosition))
@@ -86,8 +100,19 @@ struct ScrubberView: View {
                 }
                 Text("-\(TimeFormatting.clock(max(chapterDuration - chapterPosition, 0)))")
             }
-            .scaledFont(size: 11, design: .monospaced)
+            .scaledFont(size: 11)
+            .monospacedDigit()
             .foregroundStyle(Color.white.opacity(0.55))
+
+            if let totalBookDuration, totalBookDuration > 0 {
+                GeometryReader { geometry in
+                    Capsule()
+                        .fill(Palette.brass.opacity(0.80))
+                        .frame(width: max(2, geometry.size.width * CGFloat(min(max(bookElapsed / totalBookDuration, 0), 1))), height: 2)
+                }
+                .frame(height: 2)
+                .accessibilityHidden(true)
+            }
         }
         .padding(.horizontal, 2)
         .padding(.top, 20)

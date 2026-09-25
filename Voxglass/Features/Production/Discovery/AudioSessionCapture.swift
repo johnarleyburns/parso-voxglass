@@ -297,13 +297,7 @@ public final class AudioSessionCapture: AudioCapturing, @unchecked Sendable {
         }
 
         // Finalize the header so the take is a clean file on normal stop.
-        // iOS 18+ closes explicitly; on iOS 17 AVAudioFile finalizes the
-        // header on deinit, which happens the moment the writer task and this
-        // local reference both release the object — a crash is the only way a
-        // stale header survives (WAVHeaderRepair covers that case).
-        if #available(iOS 18.0, *) {
-            file.close()
-        }
+        file.close()
         let duration = Double(teardown.sampleCount) / format.sampleRate
         let peakDBFS = 20.0 * log10(max(Double(teardown.peak), 1e-7))
         if engine.isRunning { engine.stop() }

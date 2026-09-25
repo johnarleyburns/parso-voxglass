@@ -24,6 +24,7 @@ public struct AppPreferencesStore: DynamicProperty {
         /// reset by a later purchase failing or being skipped — this is a
         /// one-way supporter badge, not a re-checked entitlement.
         public static let isSupporter = "voxglass.isSupporter"
+        public static let widgetSnapshot = "settings.widgetSnapshot"
     }
 
     @AppStorage(Keys.hasCompletedSplash) public var hasCompletedSplash = false

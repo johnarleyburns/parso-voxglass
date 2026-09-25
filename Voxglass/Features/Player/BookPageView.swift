@@ -6,7 +6,8 @@ struct BookPageView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
-    @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
+    @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter
+    @Environment(\.voxglassZoomNamespace) private var zoomNamespace
     @Environment(\.dismiss) private var dismiss
     var book: BookWithChapters?
     @Binding var showingNowPlaying: Bool
@@ -22,6 +23,13 @@ struct BookPageView: View {
     @State private var genre: LibriVoxBrowseCategory?
     @State private var bookmarkCount: Int?
     @State private var isDescriptionExpanded = false
+    @State private var ambientPalette = ArtworkPalette(
+        dominant: PlateRGB(red: 0.16, green: 0.12, blue: 0.08),
+        vivid: PlateRGB(red: 0.32, green: 0.20, blue: 0.08),
+        deep: PlateRGB(red: 0.04, green: 0.03, blue: 0.02)
+    )
+    @State private var showCompactHeader = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
 
     private var resolved: BookWithChapters? {
@@ -42,48 +50,64 @@ struct BookPageView: View {
 
     var body: some View {
         ZStack {
-            VoxglassTheme.warmBackground.ignoresSafeArea()
-            Rectangle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(hex: 0x8A5A24).opacity(0.28), .clear],
-                        center: .top,
-                        startRadius: 0,
-                        endRadius: 300
-                    )
-                )
-                .blur(radius: 30)
+            ArtworkAmbientBackground(palette: ambientPalette)
                 .ignoresSafeArea()
 
             if let resolved {
                 NavigationStack {
                     VStack(spacing: 0) {
-                        topBar
-                        ScrollView(showsIndicators: false) {
-                            VStack(spacing: 0) {
-                                Spacer().frame(height: 16)
-                                coverSection(resolved)
-                                Spacer().frame(height: 22)
-                                metadataSection(resolved)
-                                libraryAction(resolved)
-                                chipRow(resolved)
-                                scrubber(resolved)
-                                transportControls(resolved)
-                                actionRow(resolved)
-                                aboutSection(resolved)
-                                chapterList(resolved)
-                                discoveryLinks(resolved)
-                                Spacer(minLength: 24)
+                        ScrollViewReader { proxy in
+                            ScrollView(showsIndicators: false) {
+                                VStack(spacing: 0) {
+                                    Spacer().frame(height: 16)
+                                    coverSection(resolved)
+                                    Spacer().frame(height: 22)
+                                    metadataSection(resolved)
+                                    libraryAction(resolved)
+                                    chipRow(resolved)
+                                    scrubber(resolved)
+                                    transportControls(resolved)
+                                    actionRow(resolved)
+                                    Button("Chapters · About · Bookmarks") {
+                                        withAnimation(Motion.standard) {
+                                            proxy.scrollTo("nowplaying.details", anchor: .top)
+                                        }
+                                    }
+                                    .voxType(.meta)
+                                    .foregroundStyle(Palette.ink2)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .accessibilityIdentifier("nowplaying.detailsHint")
+                                    aboutSection(resolved)
+                                        .id("nowplaying.details")
+                                    chapterList(resolved)
+                                    discoveryLinks(resolved)
+                                    Spacer(minLength: 24)
+                                }
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 20)
                             }
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 20)
+                            .safeAreaPadding(.bottom, Spacing.section)
+                            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                                geometry.contentOffset.y + geometry.contentInsets.top
+                            } action: { _, offset in
+                                showCompactHeader = offset > 320
+                            }
                         }
-                        .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
                     }
-                    .toolbar(.hidden, for: .navigationBar)
+                    .navigationTitle(resolved.book.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .overlay(alignment: .top) {
+                        if showCompactHeader {
+                            compactHeader(resolved)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                    }
                 }
                 .task(id: resolved.book.id) {
                     await loadGenre(for: resolved)
+                }
+                .task(id: resolved.book.coverURL) {
+                    await loadAmbientPalette(for: resolved.book.coverURL)
                 }
                 .task {
                     await playback.refreshBookmarkCount(for: resolved.book.id)
@@ -108,8 +132,21 @@ struct BookPageView: View {
                 }
             } else {
                 ContentUnavailableView("Nothing Playing", systemImage: "headphones")
-                    .foregroundStyle(.white)
+                .foregroundStyle(.white)
             }
+        }
+        .confirmationDialog(
+            "Add to My Books?",
+            isPresented: $showAddToLibraryConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Add") {
+                guard let bookID = resolved?.book.id else { return }
+                Task { await libraryStore.confirmAddToLibrary(bookID) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Keep this book in My Books so it's easy to find again.")
         }
         .sheet(isPresented: $showingEQ) {
             NavigationStack {
@@ -137,6 +174,7 @@ struct BookPageView: View {
             .environment(playback)
             .environmentObject(libraryStore)
             .environmentObject(offlineManager)
+            .environmentObject(phoneAudioRelay)
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingPlaylistPicker) {
@@ -226,43 +264,6 @@ struct BookPageView: View {
         return failure
     }
 
-    private var topBar: some View {
-        HStack {
-            if book != nil {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .scaledFont(size: 17, weight: .semibold)
-                        .foregroundStyle(Palette.ink2)
-                        .frame(width: 32, height: 32)
-                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.12))
-                }
-                .accessibilityLabel("Back")
-            } else {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(Color.white.opacity(0.35))
-                    .frame(width: 36, height: 5)
-                    .padding(.top, 6)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .confirmationDialog(
-            "Add to My Books?",
-            isPresented: $showAddToLibraryConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Add") {
-                guard let bookID = resolved?.book.id else { return }
-                Task { await libraryStore.confirmAddToLibrary(bookID) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Keep this book in My Books so it's easy to find again.")
-        }
-    }
-
     @ViewBuilder
     private func libraryAction(_ resolved: BookWithChapters) -> some View {
         if resolved.book.isPending {
@@ -276,7 +277,7 @@ struct BookPageView: View {
                         .foregroundStyle(Palette.ink)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
-                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.10))
+                        .raisedSurface()
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("bookpage.addToLibrary")
@@ -299,15 +300,10 @@ struct BookPageView: View {
     }
 
     private func coverSection(_ resolved: BookWithChapters) -> some View {
-        let size: CGFloat = isActiveSession ? 214 : 190
+        let size: CGFloat = dynamicTypeSize >= .accessibility2 ? 160 : (isActiveSession ? 236 : 210)
         return ZStack(alignment: .bottomLeading) {
-            BookArtworkView(title: resolved.book.title, size: size, coverURL: resolved.book.coverURL, cornerRadius: 16)
+            coverArtwork(resolved, size: size)
                 .shadow(color: .black.opacity(0.55), radius: 24, y: 0)
-
-            if let source = libraryStore.source(for: resolved.book) {
-                ProvenanceChip(sourceKind: source.kind)
-                    .padding(6)
-            }
 
             if !isActiveSession {
                 ProgressRing(progress: progressFor(resolved))
@@ -316,6 +312,54 @@ struct BookPageView: View {
             }
         }
         .frame(width: size, height: size)
+        .accessibilityIdentifier("nowplaying.cover")
+    }
+
+    private func compactHeader(_ resolved: BookWithChapters) -> some View {
+        HStack(spacing: 10) {
+            CoverPlate(title: resolved.book.title, author: resolved.book.authorLine, coverURL: resolved.book.coverURL, size: 44)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(resolved.book.title).voxType(.body).lineLimit(1)
+                Text("\(Int((progressFor(resolved) * 100).rounded()))% · \(TimeFormatting.compactDuration(playback.currentSession?.bookRemaining ?? 0)) left")
+                    .voxType(.timecode)
+                    .foregroundStyle(Palette.ink2)
+            }
+            Spacer(minLength: 4)
+            if let session = playback.currentSession, session.book.id == resolved.book.id {
+                Button { playback.togglePlayPause() } label: {
+                    Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 56)
+        .glassEffect(.regular, in: .capsule)
+        .accessibilityIdentifier("nowplaying.compactHeader")
+        .padding(.horizontal, 12)
+    }
+
+    private func loadAmbientPalette(for url: URL?) async {
+        guard let url else { return }
+        let image: UIImage?
+        if let cached = ArtworkService.shared.cachedImage(for: url) {
+            image = cached
+        } else {
+            image = await ArtworkService.shared.image(for: url)
+        }
+        guard let image else { return }
+        ambientPalette = ArtworkPaletteProvider.shared.palette(for: image, url: url)
+    }
+
+    @ViewBuilder
+    private func coverArtwork(_ resolved: BookWithChapters, size: CGFloat) -> some View {
+        let plate = CoverPlate(title: resolved.book.title, author: resolved.book.authorLine, coverURL: resolved.book.coverURL, size: size)
+        if let zoomNamespace {
+            plate.matchedGeometryEffect(id: "book.cover.\(resolved.book.id.uuidString)", in: zoomNamespace)
+        } else {
+            plate
+        }
     }
 
     private func progressFor(_ resolved: BookWithChapters) -> Double {
@@ -354,7 +398,7 @@ struct BookPageView: View {
             }
 
             if resolved.narrationKind == .solo {
-                Text("Solo Narration")
+                Text("Single narrator")
                     .scaledFont(size: 11, weight: .bold)
                     .kerning(0.7)
                     .foregroundStyle(Palette.brass)
@@ -362,8 +406,14 @@ struct BookPageView: View {
             }
 
             chapterLine(resolved)
+            if let source = libraryStore.source(for: resolved.book) {
+                Text("· \(source.kind.displayName)")
+                    .voxType(.meta)
+                    .foregroundStyle(Palette.ink2)
+            }
         }
         .padding(.horizontal, 16)
+        .accessibilityIdentifier("nowplaying.title")
     }
 
     private func authorLinks(_ resolved: BookWithChapters) -> some View {
@@ -415,8 +465,9 @@ struct BookPageView: View {
     @ViewBuilder
     private func chapterLine(_ resolved: BookWithChapters) -> some View {
         if isActiveSession, let session = playback.currentSession {
+            let display = ChapterDisplayTitles.make(for: resolved.chapters)[session.chapter.id]
             VStack(spacing: 2) {
-                Text(session.chapter.title)
+                Text(display?.eyebrow.map { "\($0) · \(display?.title ?? session.chapter.title)" } ?? (display?.title ?? session.chapter.title))
                     .scaledFont(size: 12)
                     .foregroundStyle(Color.white.opacity(0.50))
                     .lineLimit(1)
@@ -525,7 +576,7 @@ struct BookPageView: View {
     }
 
     private func transportControls(_ resolved: BookWithChapters) -> some View {
-        HStack(spacing: 0) {
+        let controls = HStack(spacing: 0) {
             Button {
                 Task { await playback.skipToPreviousChapter() }
             } label: {
@@ -533,11 +584,12 @@ struct BookPageView: View {
                     .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
-                    .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
+                    .raisedSurface()
             }
             .opacity(isActiveSession ? 1 : 0.42)
             .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Previous chapter")
+            .accessibilityIdentifier("nowplaying.previousChapter")
 
             Spacer(minLength: 0)
 
@@ -552,11 +604,12 @@ struct BookPageView: View {
                     .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
-                    .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
+                    .raisedSurface()
             }
             .opacity(isActiveSession ? 1 : 0.42)
             .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Back \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15) seconds")
+            .accessibilityIdentifier("nowplaying.skipBack")
 
             Spacer(minLength: 0)
 
@@ -595,12 +648,12 @@ struct BookPageView: View {
                 } label: {
                     Image(systemName: "play.fill")
                         .scaledFont(size: 26, weight: .bold)
-                        .foregroundStyle(Color(hex: 0x221503))
+                        .foregroundStyle(Palette.onBrass)
                         .frame(width: 66, height: 66)
                         .background(
                             Circle()
                                 .fill(LinearGradient(
-                                    colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                                    colors: [Palette.brass, Palette.brassDeep],
                                     startPoint: .top, endPoint: .bottom))
                         )
                 }
@@ -622,11 +675,12 @@ struct BookPageView: View {
                     .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
-                    .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
+                    .raisedSurface()
             }
             .opacity(isActiveSession ? 1 : 0.42)
             .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Forward \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30) seconds")
+            .accessibilityIdentifier("nowplaying.skipForward")
 
             Spacer(minLength: 0)
 
@@ -637,16 +691,19 @@ struct BookPageView: View {
                     .scaledFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
-                    .glassSurface(cornerRadius: 26, fill: Color.white.opacity(0.12))
+                    .raisedSurface()
             }
             .opacity(isActiveSession ? 1 : 0.42)
             .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Next chapter")
+            .accessibilityIdentifier("nowplaying.nextChapter")
         }
+        return controls
         .frame(maxWidth: 360)
         .frame(maxWidth: .infinity)
         .buttonStyle(.plain)
         .padding(.top, 16)
+        .accessibilityIdentifier("nowplaying.details")
     }
 
     private func actionRow(_ resolved: BookWithChapters) -> some View {
@@ -688,7 +745,7 @@ struct BookPageView: View {
                     }
                 }
                 .padding(14)
-                .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                .raisedSurface()
             }
             .padding(.top, 16)
         }
@@ -723,6 +780,7 @@ struct BookPageView: View {
     private func chapterList(_ resolved: BookWithChapters) -> some View {
         let allChapters = resolved.chapters
         let chapters = chapterPreview(resolved)
+        let displayTitles = ChapterDisplayTitles.make(for: allChapters)
         return VoxglassGroupedSection(title: "Chapters") {
             ForEach(chapters.indices, id: \.self) { index in
                 let chapter = chapters[index]
@@ -743,11 +801,12 @@ struct BookPageView: View {
                 } label: {
                     VStack(spacing: 3) {
                         HStack {
-                            Text(chapter.title)
+                            let display = displayTitles[chapter.id]
+                            Text(display?.eyebrow.map { "\($0) · \(display?.title ?? chapter.title)" } ?? (display?.title ?? chapter.title))
                                 .lineLimit(1)
                             Spacer()
                             Text(TimeFormatting.clock(chapter.duration))
-                                .scaledFont(size: 11.5, design: .monospaced)
+                                .scaledFont(size: 11.5, design: .monospaced) // mono-exempt: chapter duration
                                 .foregroundStyle(Color.white.opacity(0.58))
                         }
                         if let narrator = NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: resolved.book.narrators) {
@@ -765,9 +824,10 @@ struct BookPageView: View {
                     .padding(.vertical, 9)
                     .foregroundStyle(isCurrent ? Palette.brass : Color.white.opacity(0.82))
                     .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                if index < chapters.count - 1 {
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("chapter.row.\(index)")
+                                if index < chapters.count - 1 {
                     VoxglassListDivider()
                 }
             }
@@ -808,6 +868,9 @@ struct BookPageView: View {
             }
         }
         .padding(.top, 16)
+        .accessibilityRotor("Chapters") {
+            AccessibilityRotorEntry("Chapter list", id: "chapters")
+        }
     }
 
     @ViewBuilder
@@ -961,6 +1024,6 @@ private struct ProgressRing: View {
                 .foregroundStyle(Palette.brass)
         }
         .frame(width: 44, height: 44)
-        .background(Circle().fill(Color(hex: 0x12171A)).shadow(color: .black.opacity(0.5), radius: 6, y: 0))
+                .background(Circle().fill(Palette.surface).shadow(color: .black.opacity(0.5), radius: 6, y: 0))
     }
 }

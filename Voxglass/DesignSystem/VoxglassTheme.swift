@@ -32,22 +32,10 @@ enum VoxglassTheme {
 }
 
 enum VoxglassLayout {
-    /// Clearance for the custom tab dock plus its optional mini-player. The
-    /// root safe-area inset is not propagated reliably through every nested
-    /// NavigationStack/ScrollView combination, so shared screens reserve the
-    /// full worst-case dock height after their final item.
-    static let chromeBottomClearance: CGFloat =
-        ChromeMetrics.dockItemHeight * 2 + ChromeMetrics.dockStackSpacing + ChromeMetrics.dockBottomPadding
-    static let scrollContentBottomPadding: CGFloat = chromeBottomClearance
+    static let minimumControlHitTarget: CGFloat = 44
 }
 
-/// Shared outer geometry for the two controls in the bottom dock. Keeping the
-/// values here prevents the tab bar and mini-player from drifting apart as
-/// their internal content changes.
 enum ChromeMetrics {
-    static let dockItemHeight: CGFloat = 68
-    static let dockStackSpacing: CGFloat = 9
-    static let dockBottomPadding: CGFloat = 8
     static let minimumControlHitTarget: CGFloat = 44
 }
 
@@ -64,6 +52,10 @@ enum Palette {
     static let ok = Color(hex: 0x4CD471)
     static let danger = Color(hex: 0xFF6B5E)
     static let hairline = Color.white.opacity(0.10)
+    static let surface = Color(hex: 0x17191D)
+    static let surfaceLine = Color.white.opacity(0.08)
+    static let scrim = Color(hex: 0x0A0B0D).opacity(0.92)
+    static let onBrass = Color(hex: 0x21170B)
 }
 
 extension Color {
@@ -98,7 +90,6 @@ struct VoxglassScreen<Content: View>: View {
         Group {
             if embedsNavigationStack {
                 NavigationStack { screenContent }
-                    .toolbar(.hidden, for: .navigationBar)
             } else {
                 screenContent
             }
@@ -106,67 +97,46 @@ struct VoxglassScreen<Content: View>: View {
     }
 
     private var screenContent: some View {
-            ZStack {
-                VoxglassBackground()
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        Color.clear
-                            .frame(height: 1)
-                            .id("voxglass.screen.top")
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text(title)
-                                    .scaledFont(size: 31, weight: .heavy, design: .default)
-                                    .foregroundStyle(Palette.ink)
-                                Spacer()
-                                // "Edit" (headerActionTitle) reads left-to-right
-                                // before "+" (headerSecondaryAction) — My Books
-                                // is the one screen combining both, and this is
-                                // the requested order for it; no other screen
-                                // uses both at once, so this ordering is safe
-                                // to apply globally.
-                                if let headerActionTitle, let headerAction {
-                                    Button(headerActionTitle, action: headerAction)
-                                        .scaledFont(size: 15, weight: .semibold)
-                                        .foregroundStyle(Palette.brass)
-                                }
-                                if let headerSecondaryActionSystemImage, let headerSecondaryAction {
-                                    Button(action: headerSecondaryAction) {
-                                        Image(systemName: headerSecondaryActionSystemImage)
-                                            .scaledFont(size: 18, weight: .semibold)
-                                    }
-                                    .foregroundStyle(Palette.brass)
-                                    .frame(width: 36, height: 36)
-                                    .contentShape(Rectangle())
-                                    .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? "Action")
-                                } else if let headerSecondaryActionTitle, let headerSecondaryAction {
-                                    Button(headerSecondaryActionTitle, action: headerSecondaryAction)
-                                        .scaledFont(size: 22, weight: .semibold)
-                                        .foregroundStyle(Palette.brass)
-                                        .frame(width: 36, height: 36)
-                                        .contentShape(Rectangle())
-                                        .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
-                                }
-                                if let headerTrailingContent {
-                                    headerTrailingContent
-                                }
+            ScrollViewReader { proxy in
+                ScrollView {
+                    content
+                        .padding(.horizontal, Spacing.gutter)
+                        .padding(.top, 8)
+                        .padding(.bottom, Spacing.section)
+                        .id("voxglass.screen.content")
+                }
+                .background(VoxglassBackground())
+                .scrollEdgeEffectStyle(.soft, for: .bottom)
+                .scrollDismissesKeyboard(.interactively)
+                .navigationTitle(title)
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    if let headerActionTitle, let headerAction {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(headerActionTitle, action: headerAction)
+                                .accessibilityIdentifier(headerActionTitle)
+                        }
+                    }
+                    if let headerSecondaryActionSystemImage, let headerSecondaryAction {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(action: headerSecondaryAction) {
+                                Image(systemName: headerSecondaryActionSystemImage)
                             }
-                            .padding(.horizontal, 2)
-                            .padding(.top, 8)
-
-                            content
+                            .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? "Action")
                         }
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, VoxglassLayout.scrollContentBottomPadding)
-                    }
-                    .scrollDismissesKeyboard(.interactively)
-                    .onChange(of: scrollToTopTrigger) { _, _ in
-                        guard scrollToTopTrigger != nil else { return }
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            proxy.scrollTo("voxglass.screen.top", anchor: .top)
+                    } else if let headerSecondaryActionTitle, let headerSecondaryAction {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(headerSecondaryActionTitle, action: headerSecondaryAction)
+                                .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
                         }
                     }
+                    if let headerTrailingContent {
+                        ToolbarItemGroup(placement: .topBarTrailing) { headerTrailingContent }
+                    }
+                }
+                .onChange(of: scrollToTopTrigger) { _, _ in
+                    guard scrollToTopTrigger != nil else { return }
+                    withAnimation(Motion.standard) { proxy.scrollTo("voxglass.screen.content", anchor: .top) }
                 }
             }
     }
@@ -184,42 +154,7 @@ struct VoxglassBackground: View {
     }
 }
 
-struct GlassSurface: ViewModifier {
-    var cornerRadius: CGFloat = 18
-    var strokeOpacity: Double = 0.13
-    var fill: Color = Color.white.opacity(0.085)
-
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    func body(content: Content) -> some View {
-        content
-            .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(reduceTransparency ? AnyShapeStyle(Color(hex: 0x1B1D22)) : AnyShapeStyle(.ultraThinMaterial))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(fill)
-                    )
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(strokeOpacity), lineWidth: 1)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-    }
-}
-
 extension View {
-    func glassSurface(cornerRadius: CGFloat = 18,
-                      strokeOpacity: Double = 0.13,
-                      fill: Color = Color.white.opacity(0.085)) -> some View {
-        modifier(GlassSurface(cornerRadius: cornerRadius, strokeOpacity: strokeOpacity, fill: fill))
-    }
-
-    func glassPanel() -> some View {
-        modifier(GlassSurface())
-    }
-
     func tactileTap() -> some View {
         simultaneousGesture(TapGesture().onEnded { TactileFeedback.tap() })
     }

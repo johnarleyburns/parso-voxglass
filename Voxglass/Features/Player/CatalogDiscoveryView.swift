@@ -54,7 +54,7 @@ struct CatalogDiscoveryView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .glassSurface(cornerRadius: 14)
+                    .raisedSurface()
                 } else if store.results.isEmpty {
                     EmptyStatePanel(
                         title: "Nothing Found",
@@ -76,7 +76,7 @@ struct CatalogDiscoveryView: View {
                             .foregroundStyle(Palette.brass)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 7)
-                            .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+                            .raisedSurface()
                         }
                         .accessibilityIdentifier("catalog.filterMenu")
                         Spacer()
@@ -88,7 +88,7 @@ struct CatalogDiscoveryView: View {
                         : store.results
                     if results.isEmpty {
                         EmptyStatePanel(
-                            title: "No Solo Narration Results",
+                            title: "No Single-narrator Results",
                             message: "Try turning off the solo filter to see more results.",
                             systemImage: "mic"
                         )
@@ -115,14 +115,14 @@ struct CatalogDiscoveryView: View {
                                 }
                             }
                         }
-                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                        .raisedSurface()
                     }
                 }
             }
             .padding(.horizontal, 18)
             .padding(.top, 12)
             .padding(.bottom, 28)
-            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+            .safeAreaPadding(.bottom, Spacing.section)
         }
         .navigationDestination(item: $selectedCatalogBookID) { bookID in
             BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)

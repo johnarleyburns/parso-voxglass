@@ -41,7 +41,7 @@ struct ChaptersView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
-            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+            .safeAreaPadding(.bottom, Spacing.section)
         }
         .navigationTitle("Chapters")
         .navigationBarTitleDisplayMode(.inline)
@@ -100,7 +100,7 @@ struct AuthorDetailView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
-            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+            .safeAreaPadding(.bottom, Spacing.section)
         }
         .navigationTitle("Author")
         .navigationBarTitleDisplayMode(.inline)
@@ -159,7 +159,7 @@ struct NarratorDetailView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
-            .safeAreaPadding(.bottom, VoxglassLayout.chromeBottomClearance)
+            .safeAreaPadding(.bottom, Spacing.section)
         }
         .navigationTitle("Narrator")
         .navigationBarTitleDisplayMode(.inline)
@@ -187,7 +187,7 @@ struct ChapterRow: View {
                         .lineLimit(2)
                     HStack(spacing: 6) {
                         Text(TimeFormatting.clock(chapter.duration))
-                            .scaledFont(size: 11.5, design: .monospaced)
+                            .scaledFont(size: 11.5, design: .monospaced) // mono-exempt: chapter duration
                             .foregroundStyle(Palette.ink3)
                         if let narrator = NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: bookNarrators) {
                             Text("·")

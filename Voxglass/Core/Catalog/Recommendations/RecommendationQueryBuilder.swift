@@ -138,7 +138,8 @@ public enum RecommendationQueryBuilder {
 
     public static func hashForDate(_ dateSeed: String, salt: String) -> Int {
         let input = "\(dateSeed):\(salt)"
-        return abs(input.hashValue)
+        let hex = SHA256Hex.hex(Data(input.utf8))
+        return Int(hex.prefix(8), radix: 16) ?? 0
     }
 
     private static func escapeSolr(_ term: String) -> String {

@@ -77,7 +77,7 @@ struct SearchView: View {
         .padding(.horizontal, 14)
         .frame(height: 44)
         .contentShape(Rectangle())
-        .glassSurface(cornerRadius: 20)
+        .raisedSurface()
     }
 
     private var scopePicker: some View {
@@ -92,7 +92,7 @@ struct SearchView: View {
 
     private var filterBar: some View {
         HStack(spacing: 8) {
-            FilterChip(title: "Solo Narration", isSelected: soloOnly) {
+            FilterChip(title: "Single narrator", isSelected: soloOnly) {
                 soloOnly.toggle()
             }
         }
@@ -116,7 +116,7 @@ struct SearchView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
             } else if catalogStore.results.isEmpty {
                 EmptyStatePanel(
                     title: "No Results",
@@ -129,7 +129,7 @@ struct SearchView: View {
                     : catalogStore.results
                 if results.isEmpty {
                     EmptyStatePanel(
-                        title: "No Solo Narration Results",
+                        title: "No Single-narrator Results",
                         message: "Try turning off the solo filter or using different search terms.",
                         systemImage: "mic"
                     )
@@ -156,7 +156,7 @@ struct SearchView: View {
                             }
                         }
                     }
-                    .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                    .raisedSurface()
                 }
             }
         }
@@ -253,8 +253,7 @@ struct InternetArchiveResultRow: View {
             coverURL: result.coverURL,
             accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: "\(result.title) by \(result.authorLine), \(result.recordingDetailsLine)",
-            showSoloBadge: result.narrationKind == .solo
+            accessibilityLabel: "\(result.title) by \(result.authorLine), \(result.recordingDetailsLine)"
         )
     }
 }

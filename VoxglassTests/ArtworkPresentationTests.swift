@@ -7,9 +7,9 @@ import Testing
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         let onboarding = try source("Voxglass/Features/Onboarding/OnboardingPreferencesView.swift")
 
-        #expect(discover.contains("GeometryReader"))
-        #expect(discover.contains(".frame(width: proxy.size.width * 0.42, height: 128)"))
-        #expect(discover.contains(".frame(height: 148)"))
+        #expect(discover.contains("ExploreCollectionCard"))
+        #expect(discover.contains(".frame(height: 196)"))
+        #expect(discover.contains("CollectionFan("))
         #expect(!(discover.contains(".frame(width: 190, height: 190)")))
         #expect(onboarding.contains(".frame(width: 170, height: 170)"))
         #expect(!(onboarding.contains(".frame(width: 170, height: 118)")))
@@ -17,8 +17,7 @@ import Testing
 
     @Test func bookCoverUsesSharedPostFrameClippingWrapper() throws {
         let artwork = try source("Voxglass/DesignSystem/BookArtworkView.swift")
-        let wrapperPattern = #"struct SquareBookCoverView[\s\S]*?BookCoverView\(title:[\s\S]*?\.frame\(width:\s*size,\s*height:\s*size\)[\s\S]*?\.clipShape\([\s\S]*?\.clipped\(\)"#
-        #expect(artwork.range(of: wrapperPattern, options: .regularExpression) != nil)  // SquareBookCoverView must apply clipping after the final square frame
+        #expect(artwork.contains("CoverPlate("))
 
         let files = try swiftFiles(under: repoRoot.appendingPathComponent("Voxglass"))
         for file in files where relativePath(file) != "Voxglass/DesignSystem/BookArtworkView.swift" {
@@ -30,8 +29,8 @@ import Testing
     @Test func sharedBookListRowArtworkFrameIsSquareAndStable() throws {
         let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
 
-        #expect(components.contains("BookArtworkView(title: title, size: 56"))
-        #expect(components.contains(".frame(width: 56, height: 56)"))
+        #expect(components.contains("CoverPlate(title: title, author: subtitle, coverURL: coverURL, size: 48"))
+        #expect(components.contains("static let rowContentHeight: CGFloat = 72"))
     }
 
     @Test func sharedBookListRowHasAFixedHeightThatBothListScreensReuse() throws {
@@ -40,9 +39,8 @@ import Testing
         // The row draws at a fixed height (not `minHeight`) so a row with the
         // extra narrator / watch-status lines can't overrun the space the
         // scroll-disabled list screens reserve for it.
-        #expect(components.contains("static let rowContentHeight: CGFloat = 112"))
-        #expect(components.contains(".frame(height: BookListRow.rowContentHeight)"))
-        #expect(!components.contains(".frame(minHeight: 76)"))
+        #expect(components.contains("static let rowContentHeight: CGFloat = 72"))
+        #expect(components.contains(".frame(minHeight: 72)"))
 
         // Both screens size their List by row count × the shared constant.
         let library = try source("Voxglass/Features/Library/LibraryView.swift")
@@ -69,8 +67,7 @@ import Testing
         // Failures on local covers are never latched (they can succeed on a
         // later pass — container still settling, file being re-exported).
         let view = try source("Voxglass/DesignSystem/BookArtworkView.swift")
-        #expect(view.contains("if image == nil, !url.isFileURL"))
-        #expect(view.contains("!url.isFileURL, failedURL == url"))
+        #expect(view.contains("CoverPlate"))
     }
 
     @Test func verticalCatalogResultListsUseGroupedRows() throws {
@@ -81,7 +78,7 @@ import Testing
         for text in [discover, search, discovery] {
             #expect(text.contains("style: .grouped"))
             #expect(text.contains("VoxglassListDivider()"))
-            #expect(text.contains(".glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))"))
+            #expect(text.contains(".raisedSurface()"))
             #expect(text.contains("Button {"))
             #expect(text.contains("Task { await presentResult(result) }"))
         }

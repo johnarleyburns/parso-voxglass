@@ -11,7 +11,7 @@ import Testing
 
         #expect(row.contains(".multilineTextAlignment(.leading)"))
         #expect(row.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
-        #expect(row.contains(".glassSurface(cornerRadius: 12)"))
+        #expect(row.contains(".raisedSurface()"))
         #expect(row.contains(".accessibilityIdentifier(\"review.chapter.textContainer.\\(index)\")"))
         #expect(!(row.contains(".lineLimit(2)")))
 

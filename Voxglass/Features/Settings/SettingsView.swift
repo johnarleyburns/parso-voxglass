@@ -74,6 +74,7 @@ struct SettingsView: View {
                     // SkipSilenceRow()
                     VolumeNormalizationRow()
                     SleepTimerDefaultRow()
+                    WidgetSnapshotSettingsRow()
                 }
 
                 settingsGroup("Insights") {
@@ -187,7 +188,7 @@ private struct SupportDevelopmentCard: View {
                     .padding(.horizontal, 14).padding(.vertical, 9)
             }
         }
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     private func purchase() async {
@@ -227,7 +228,7 @@ private struct LanguagesCard: View {
             }
         }
         .padding(15)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     private func languageChip(_ language: LibriVoxLanguage) -> some View {
@@ -386,7 +387,7 @@ private struct CacheSettingsCard: View {
             .padding(.top, 12)
         }
         .padding(15)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     private func storageRow(title: String, bytes: Int64, detail: String, limit: Int64?) -> some View {
@@ -451,7 +452,7 @@ private struct CacheSettingsCard: View {
         }
         .tint(Palette.brass)
         .padding(15)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     private var clearCard: some View {
@@ -463,7 +464,7 @@ private struct CacheSettingsCard: View {
             clearButton(.all, bytes: usage.totalBytes, detail: "Streaming cache and offline downloads")
         }
         .padding(.horizontal, 15)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 
     private func clearButton(_ target: ClearTarget, bytes: Int64, detail: String) -> some View {
@@ -602,7 +603,7 @@ struct SourcesView: View {
                 .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
             }
             .padding(12)
-            .glassPanel()
+            .raisedSurface()
         }
     }
 
@@ -654,7 +655,7 @@ struct AboutView: View {
                                 .foregroundStyle(Palette.ink3)
                         }
                         .padding(14)
-                        .glassSurface(cornerRadius: 14)
+                        .raisedSurface()
                     }
                     .buttonStyle(.plain)
                     Link(destination: privacyURL) {
@@ -670,7 +671,7 @@ struct AboutView: View {
                                 .foregroundStyle(Palette.ink3)
                         }
                         .padding(14)
-                        .glassSurface(cornerRadius: 14)
+                        .raisedSurface()
                     }
                     .buttonStyle(.plain)
                 }
@@ -705,7 +706,7 @@ struct AboutView: View {
                 .foregroundStyle(Palette.ink2)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
         }
     }
 
@@ -719,7 +720,7 @@ struct AboutView: View {
                 .foregroundStyle(Palette.ink2)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
         }
     }
 
@@ -733,7 +734,7 @@ struct AboutView: View {
                 .foregroundStyle(Palette.ink2)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
         }
     }
 
@@ -771,7 +772,7 @@ struct AboutView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }
-        .glassPanel()
+        .raisedSurface()
 
         Text("Voxglass Pro is a one-time purchase. Availability and feature details are shown in the app.")
             .scaledFont(size: 11.5)
@@ -854,7 +855,7 @@ private struct SyncSettingsCard: View {
             }
         }
         .padding(15)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 }
 
@@ -928,7 +929,7 @@ private struct WatchSyncCard: View {
                 .foregroundStyle(Palette.ink3)
         }
         .padding(15)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
     }
 }
 
@@ -956,6 +957,37 @@ private struct EQSettingsRow: View {
             }
             .presentationDragIndicator(.visible)
         }
+    }
+}
+
+private struct WidgetSnapshotSettingsRow: View {
+    @State private var enabled: Bool
+
+    init() {
+        let defaults = UserDefaults(suiteName: "group.guru.parso.voxglass") ?? .standard
+        _enabled = State(initialValue: defaults.object(forKey: AppPreferencesStore.Keys.widgetSnapshot) as? Bool ?? true)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Toggle(isOn: $enabled) {
+                Label("Show on widgets", systemImage: "rectangle.on.rectangle")
+                    .voxType(.body)
+                    .foregroundStyle(Palette.ink)
+            }
+            .onChange(of: enabled) { _, value in
+                UserDefaults.standard.set(value, forKey: AppPreferencesStore.Keys.widgetSnapshot)
+                (UserDefaults(suiteName: "group.guru.parso.voxglass") ?? .standard)
+                    .set(value, forKey: AppPreferencesStore.Keys.widgetSnapshot)
+                if !value { WidgetSnapshotWriter.remove() }
+            }
+            Text("Writes the current title and progress to this device's Voxglass widget every minute while listening.")
+                .voxType(.meta)
+                .foregroundStyle(Palette.ink3)
+        }
+        .padding(14)
+        .raisedSurface()
+        .accessibilityIdentifier("settings.widgetSnapshot")
     }
 }
 

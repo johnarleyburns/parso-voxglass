@@ -241,7 +241,7 @@ struct BrowseView: View {
             .scaledFont(size: 15)
             .padding(.horizontal, 14)
             .frame(height: 46)
-            .glassSurface(cornerRadius: 20)
+            .raisedSurface()
 
             Picker("Search in", selection: $searchScope) {
                 ForEach(DiscoverSearchScope.allCases) { scope in
@@ -284,7 +284,7 @@ struct BrowseView: View {
             .foregroundStyle(Palette.brass)
             .padding(.horizontal, 10)
             .frame(height: 34)
-            .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+            .raisedSurface()
             .accessibilityIdentifier("discover.selectedCollection")
 
             Button {
@@ -296,7 +296,7 @@ struct BrowseView: View {
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 12)
                     .frame(height: 34)
-                    .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.06))
+                    .raisedSurface()
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("discover.selectedCollectionAbout")
@@ -315,8 +315,7 @@ struct BrowseView: View {
                         resolvedCoverURL: coverStore.coverURL(for: collection),
                         approximateCount: coverStore.count(for: collection),
                         isSelected: false,
-                        onSelect: { search(collection) },
-                        onInfo: { showingCollectionInfo = collection }
+                        onSelect: { search(collection) }
                     )
                 }
             }
@@ -351,7 +350,7 @@ struct BrowseView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(16)
-                        .glassSurface(cornerRadius: 14)
+                        .raisedSurface()
                     } else {
                         EmptyStatePanel(
                             title: catalogStore.query.isEmpty ? "No Books Yet" : "No Results Yet",
@@ -367,7 +366,7 @@ struct BrowseView: View {
                         : catalogStore.results
                     if results.isEmpty && soloOnly {
                         EmptyStatePanel(
-                            title: "No Solo Narration Results",
+                            title: "No Single-narrator Results",
                             message: "Try turning off the solo filter to see more audiobooks.",
                             systemImage: "mic"
                         )
@@ -394,7 +393,7 @@ struct BrowseView: View {
                             }
                         }
                         .padding(.top, 4)
-                        .glassSurface(cornerRadius: 16, fill: Color.white.opacity(0.065))
+                        .raisedSurface()
                         .opacity(catalogStore.isSearching ? 0.5 : 1.0)
                     }
 
@@ -482,7 +481,7 @@ struct BrowseView: View {
                         .foregroundStyle(Palette.brass)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 12)
-                        .glassSurface(cornerRadius: 10, fill: Color.white.opacity(0.05))
+                        .raisedSurface()
                     }
                     .buttonStyle(.plain)
                     .confirmationDialog(
@@ -525,7 +524,7 @@ struct BrowseView: View {
             .foregroundStyle(Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
         }
         .buttonStyle(.plain)
         .disabled(catalogStore.isLoadingMore)
@@ -676,71 +675,33 @@ private struct ExploreCollectionCard: View {
     var approximateCount: Int?
     var isSelected: Bool
     var onSelect: () -> Void
-    var onInfo: () -> Void
 
     var body: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 12) {
-                Button(action: onSelect) {
-                    HStack(spacing: 12) {
-                        ZStack(alignment: .top) {
-                            CollectionArtworkView(
-                                title: collection.title,
-                                systemImage: collection.systemImage,
-                                assetName: collection.assetName,
-                                remoteImageURL: resolvedCoverURL
-                            )
-
-                            if collection.isCurated {
-                                curatedBadge
-                            }
-                        }
-                        .frame(width: proxy.size.width * 0.42, height: 128)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(collection.title)
-                                .scaledFont(size: 15, weight: .bold)
-                                .foregroundStyle(Palette.ink)
-                                .lineLimit(2)
-                                .accessibilityIdentifier("collection.title")
-
-                            Text(collection.subtitle)
-                                .scaledFont(size: 11.5)
-                                .foregroundStyle(Palette.ink3)
-                                .lineLimit(3)
-
-                            if let caption = approximateCountCaption {
-                                Text(caption)
-                                    .scaledFont(size: 11, weight: .semibold)
-                                    .foregroundStyle(Palette.brass)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    CollectionFan(books: [
+                        (collection.title, nil),
+                        ("Essential Works", nil),
+                        ("Public Domain", nil)
+                    ])
+                    Spacer()
                 }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                VStack {
-                    Spacer(minLength: 0)
-                    Button(action: onInfo) {
-                        Image(systemName: "info.circle")
-                            .scaledFont(size: 16, weight: .semibold)
-                            .foregroundStyle(Palette.brass)
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("About \(collection.title)")
-                    .accessibilityIdentifier("discover.collectionInfo.\(collection.id)")
+                HStack(alignment: .firstTextBaseline) {
+                    Text(collection.title).voxType(.collectionTitle).foregroundStyle(Palette.ink).lineLimit(1)
+                    Spacer(minLength: 4)
+                    if collection.isCurated { curatedBadge }
                 }
+                Text(collection.description).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(2)
+                if let caption = approximateCountCaption { Text(caption).voxType(.eyebrow).foregroundStyle(Palette.ink2) }
             }
-            .padding(10)
+            .padding(14)
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("discover.collection.\(collection.id)")
         .frame(maxWidth: .infinity)
-        .frame(height: 148)
-        .glassSurface(cornerRadius: 14)
+        .frame(height: 196)
+        .raisedSurface()
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
@@ -773,7 +734,7 @@ private struct ExploreCollectionCard: View {
         }
         let rounded = Self.roundedToTwoSignificantFigures(count)
         let formatted = Self.formatter.string(from: NSNumber(value: rounded)) ?? "\(rounded)"
-        return "~\(formatted) book\(rounded == 1 ? "" : "s")"
+        return "\(formatted)+ books"
     }
 
     private static let formatter: NumberFormatter = {

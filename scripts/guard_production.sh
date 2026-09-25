@@ -605,6 +605,83 @@ check_core_platform_free() {
 }
 
 # ──────────────────────────────────────────────────────────────
+# G-A1…G-A6: ADA redesign ratchets from SPEC §8.3.
+# ──────────────────────────────────────────────────────────────
+check_ada_ios_floor() {
+  if ! grep -q 'iOS: "26.0"' project.yml || ! grep -q 'IPHONEOS_DEPLOYMENT_TARGET: "26.0"' project.yml; then
+    violate "G-A1: project.yml is not on the iOS 26 floor"
+  fi
+  if ! grep -q '\.iOS(\.v26)' Package.swift; then
+    violate "G-A1: Package.swift is not on the iOS 26 floor"
+  fi
+  local matches
+  matches=$(grep -rn --include='*.swift' -E '#available\(iOS (1[0-9]|2[0-5])' Voxglass 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A1: dead iOS availability check: $line"; done <<< "$matches"
+  fi
+  matches=$(find Voxglass -name '*.plist' -print0 2>/dev/null | xargs -0 grep -n 'UIDesignRequiresCompatibility' 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A1: UIKit compatibility mode remains: $line"; done <<< "$matches"
+  fi
+}
+
+check_ada_no_emoji() {
+  local matches
+  matches=$(perl -CSD -ne 'print "$ARGV:$.:$_" if /"[^"\n]*[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B50}][^"\n]*"/; close ARGV if eof' \
+    $(find Voxglass/Features Voxglass/DesignSystem -name '*.swift' -print) 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A2: emoji in feature/design string literal: $line"; done <<< "$matches"
+  fi
+}
+
+check_ada_no_custom_chrome() {
+  local material_matches
+  material_matches=$(find Voxglass -path 'Voxglass/DesignSystem' -prune -o -name '*.swift' -print0 2>/dev/null \
+    | xargs -0 grep -nE 'ultraThinMaterial|thinMaterial|regularMaterial' 2>/dev/null || true)
+  if [ -n "$material_matches" ]; then
+    while read -r line; do violate "G-A3: custom material chrome outside DesignSystem: $line"; done <<< "$material_matches"
+  fi
+  local banned='GlassDock|GlassTabBar|GlassMiniPlayer|glassSurface\(|glassPanel\(|adaptiveGlass\(|chromeBottomClearance|\.toolbar\(\.hidden, for: \.tabBar\)'
+  local matches
+  matches=$(grep -rn --include='*.swift' -E "$banned" Voxglass 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A3: retired custom chrome symbol: $line"; done <<< "$matches"
+  fi
+}
+
+check_ada_stable_visual_hashing() {
+  local matches
+  matches=$(grep -rn --include='*.swift' -E 'hashValue|Hasher' Voxglass/DesignSystem Voxglass/Features 2>/dev/null \
+    | grep -v 'hash-exempt:' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A4: unstable visual hash: $line"; done <<< "$matches"
+  fi
+}
+
+check_ada_brass_budget() {
+  local budget_file="scripts/brass_budget.txt"
+  if [ ! -f "$budget_file" ]; then
+    violate "G-A5: missing $budget_file"
+    return
+  fi
+  local budget count
+  budget=$(tr -d '[:space:]' < "$budget_file")
+  count=$(grep -rhoE 'Palette\.brass|VoxglassTheme\.accent|VoxglassTheme\.brass' Voxglass/Features Voxglass/DesignSystem 2>/dev/null | wc -l | tr -d ' ')
+  if ! [[ "$budget" =~ ^[0-9]+$ ]] || [ "$count" -gt "$budget" ]; then
+    violate "G-A5: brass references $count exceed budget $budget"
+  fi
+}
+
+check_ada_monospaced_digits() {
+  local matches
+  matches=$(grep -rn --include='*.swift' 'design: \.monospaced' Voxglass/Features 2>/dev/null \
+    | grep -v 'mono-exempt:' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A6: monospaced font without mono-exempt: $line"; done <<< "$matches"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────
 # ──────────────────────────────────────────────────────────────
 # Run all checks.
 # ──────────────────────────────────────────────────────────────
@@ -634,6 +711,12 @@ check_no_studio
 check_no_legacy_product_id
 check_fix_action_coverage
 check_core_platform_free
+check_ada_ios_floor
+check_ada_no_emoji
+check_ada_no_custom_chrome
+check_ada_stable_visual_hashing
+check_ada_brass_budget
+check_ada_monospaced_digits
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

@@ -300,7 +300,7 @@ public struct ProductionReviewPlayerView: View {
 
     private var chapterLabel: String {
         guard let current = model.current else { return "" }
-        return "Chapter · ¶ \(current.globalOrdinal + 1)"
+        return "Chapter · paragraphs \(current.globalOrdinal + 1)"
     }
 
     private var transport: some View {

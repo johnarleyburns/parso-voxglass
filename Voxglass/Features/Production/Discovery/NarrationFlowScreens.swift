@@ -38,7 +38,7 @@ struct SourceReviewView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 9)
                             .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .top, endPoint: .bottom))
-                        Text("📗").scaledFont(size: 22)
+                        Image(systemName: "book.closed.fill").font(.title2).foregroundStyle(Palette.brass)
                     }
                     .frame(width: 48, height: 62)
                     VStack(alignment: .leading, spacing: 2) {
@@ -58,9 +58,9 @@ struct SourceReviewView: View {
                         .overlay(Capsule().stroke(Palette.brass.opacity(0.5), lineWidth: 1))
                 }
                 .padding(13)
-                .glassSurface(cornerRadius: 16)
+                .raisedSurface()
 
-                Text("📄 1 piece · \(model.paragraphs.count) spoken paragraphs · ~\(model.totalDuration.formattedShort)")
+                Label("1 piece · \(model.paragraphs.count) spoken paragraphs · ~\(model.totalDuration.formattedShort)", systemImage: "doc.text")
                     .scaledFont(size: 12)
                     .foregroundStyle(Palette.ink2)
                     .accessibilityIdentifier("import.chapterCount")
@@ -131,7 +131,7 @@ struct SourceReviewView: View {
             }
         }
         .padding(11)
-        .glassSurface(cornerRadius: 12)
+        .raisedSurface()
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(paragraph.role == .body ? Palette.hairline : Palette.brass.opacity(0.4), lineWidth: 1))
     }
 
@@ -222,7 +222,7 @@ struct RecordView: View {
             ImportAudioView(model: model)
         }
         .narrationFlowBackOnlyToolbar(if: fromReview)
-        .navigationTitle("¶ \(paragraphNumber) · Chapter \(chapterNumber)")
+        .navigationTitle("paragraphs \(paragraphNumber) · Chapter \(chapterNumber)")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -382,7 +382,7 @@ struct RecordView: View {
                         .accessibilityIdentifier("capture.discardTake")
                     }
                     .padding(11)
-                    .glassSurface(cornerRadius: 12)
+                    .raisedSurface()
                 }
             }
             .padding(.bottom, 10)
@@ -395,7 +395,7 @@ struct RecordView: View {
               let index = model.paragraphs.firstIndex(where: { $0.id == paragraphID }) else {
             return "Recovered take"
         }
-        return "¶ \(index + 1)"
+        return "paragraphs \(index + 1)"
     }
 
     private func teleprompter(_ paragraph: FlowParagraph) -> some View {
@@ -413,7 +413,7 @@ struct RecordView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity)
-        .glassSurface(cornerRadius: 18)
+        .raisedSurface()
         // Keep the paragraph text independently addressable in UI tests and
         // assistive technology; newer SwiftUI runtimes otherwise collapse the
         // nested Text into the teleprompter container's accessibility element.
@@ -516,7 +516,7 @@ struct RecordView: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("record.analysis")
         }
@@ -592,7 +592,7 @@ struct RecordView: View {
                     Spacer()
                     Text("-\(max(0, model.playbackDuration - model.playbackPosition).formattedShort)")
                 }
-                .scaledFont(size: 11, design: .monospaced)
+                .scaledFont(size: 11, design: .monospaced) // mono-exempt: export progress
                 .foregroundStyle(Palette.ink3)
             }
         }
@@ -1079,14 +1079,14 @@ struct ReviewView: View {
                 .accessibilityIdentifier("review.nowPlaying.stop")
         }
         .padding(.horizontal, 18).padding(.vertical, 10)
-        .background(.thinMaterial)
+        .background(Palette.surface)
     }
 
     private var nowPlayingLabel: String {
         guard let project = model.project, let id = model.playbackParagraphID,
               let chapter = project.chapters.first(where: { $0.paragraphs.contains(where: { $0.id == id }) }),
               let paragraphIndex = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return "Playing" }
-        return "Chapter \(chapter.ordinal + 1) · ¶ \(paragraphIndex + 1)"
+        return "Chapter \(chapter.ordinal + 1) · paragraphs \(paragraphIndex + 1)"
     }
 
     private func toggleChapter(_ id: UUID) {
@@ -1133,7 +1133,7 @@ struct ReviewView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 12)
+                .raisedSurface()
                 .overlay {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Palette.hairline, lineWidth: 1)
@@ -1256,7 +1256,7 @@ struct ReviewView: View {
         switch paragraph.role {
         case .intro: parts.append("Intro")
         case .outro: parts.append("Outro")
-        case .body: parts.append("¶")
+        case .body: parts.append("paragraphs")
         }
         if let take = paragraph.take { parts.append(take.duration.formattedShort) }
         parts.append(stateText(paragraph.state))
@@ -1343,7 +1343,7 @@ struct AssembleView: View {
                         .scaledFont(size: 12).foregroundStyle(Palette.ink2)
                 }
                 Spacer()
-                Text("\(project.recordedCount) ¶")
+                Text("\(project.recordedCount) paragraphs")
                     .scaledFont(size: 11, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 8).padding(.vertical, 3)
@@ -1356,7 +1356,7 @@ struct AssembleView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 16)
+        .raisedSurface()
         .accessibilityIdentifier("assemble.renderPreview")
     }
 
@@ -1370,7 +1370,7 @@ struct AssembleView: View {
                 .scaledFont(size: 11).foregroundStyle(Palette.ink3)
         }
         .padding(13)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private var togglesCard: some View {
@@ -1380,7 +1380,7 @@ struct AssembleView: View {
             toggleRow("Normalise take-to-take loudness", caption: "ReplayGain, applied at render", isOn: normalizeBinding, id: "assemble.normalise")
         }
         .padding(13)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private var renderCacheCard: some View {
@@ -1457,7 +1457,7 @@ struct AssembleView: View {
                 .scaledFont(size: 11).foregroundStyle(Palette.ink3)
         }
         .padding(13)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private func renderRow(_ chapter: ProductionChapter, project: AudiobookProject) -> some View {
@@ -1494,7 +1494,7 @@ struct AssembleView: View {
         if recorded == 0 { return "Not recorded yet" }
         let segments = SegmentQueueBuilder().build(.chapter(chapter.id), from: project, settings: model.assembly)
         let duration = AssemblyDuration.duration(of: segments)
-        return "\(recorded) ¶ · \(duration.formattedShort)"
+        return "\(recorded) paragraphs · \(duration.formattedShort)"
     }
 
     private func renderProgressText(_ progress: ChunkedRenderCoordinator.Progress) -> String {
@@ -1522,7 +1522,7 @@ struct AssembleView: View {
                 .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
         }
         .padding(13)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     // MARK: - Bindings
@@ -1663,7 +1663,7 @@ struct MetadataView: View {
                     Button {
                         model.attest()
                     } label: {
-                        Label(model.rightsAttested ? "Rights attested ✓" : "Attest public domain (US)", systemImage: model.rightsAttested ? "checkmark.circle.fill" : "circle")
+                        Label(model.rightsAttested ? "Rights attested" : "Attest public domain (US)", systemImage: model.rightsAttested ? "checkmark.circle.fill" : "circle")
                             .scaledFont(size: 13.5, weight: .semibold)
                             .foregroundStyle(model.rightsAttested ? Palette.ok : Palette.brass)
                     }
@@ -1674,7 +1674,7 @@ struct MetadataView: View {
                 }
                 .padding(13)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.35), lineWidth: 1))
 
                 NarrationPrimaryButton(
@@ -1792,7 +1792,7 @@ struct ValidateExportView: View {
                     VoxglassListDivider()
                     destinationRow(.acx, label: "Commercial retail", subtitle: "ACX, Apple Books, aggregator, M4B", id: "validation.destination.retail", proChip: true)
                 }
-                .glassSurface(cornerRadius: 14)
+                .raisedSurface()
                 .accessibilityIdentifier("validation.destination")
 
                 if model.isValidating {
@@ -1946,7 +1946,7 @@ struct ValidateExportView: View {
             VoxglassListDivider()
             scopeRow(.reviewQueue, subtitle: reviewQueueSubtitle)
         }
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private func scopeRow(_ choice: ExportScopeSelection, subtitle: String) -> some View {
@@ -2131,7 +2131,7 @@ struct ValidateExportView: View {
                     issueRow(row.issue, id: row.id, index: index)
                 }
             }
-            .glassSurface(cornerRadius: 14)
+            .raisedSurface()
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.hairline, lineWidth: 1))
         }
     }
@@ -2288,7 +2288,7 @@ struct ValidateExportView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.45), lineWidth: 1))
         .accessibilityIdentifier("validation.issue.assetRemoteOnly")
     }
@@ -2347,7 +2347,7 @@ struct ExportRunView: View {
                         .foregroundStyle(Palette.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(14)
-                        .glassSurface(cornerRadius: 14)
+                        .raisedSurface()
                         .accessibilityIdentifier("exportRun.storageNote")
 
                     if !model.isExporting && model.exportBundle == nil {
@@ -2403,7 +2403,7 @@ struct ExportRunView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.ok.opacity(0.45), lineWidth: 1))
         .accessibilityIdentifier("exportRun.resumed")
     }
@@ -2467,7 +2467,7 @@ struct ExportRunView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private var terminalActions: some View {
@@ -2505,7 +2505,7 @@ struct ExportRunView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private func pipelineRow(verified: Bool? = nil, step: String, chip: String? = nil, active: Bool = false) -> some View {
@@ -2547,7 +2547,7 @@ struct ExportRunView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
     }
 
     private func chapterRow(range: String, chip: String, chipColor: Color?) -> some View {
@@ -2580,7 +2580,7 @@ struct ExportRunView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassSurface(cornerRadius: 14)
+        .raisedSurface()
         .accessibilityIdentifier("exportRun.keepAwake")
     }
 
@@ -2661,14 +2661,14 @@ struct SubmitView: View {
     @Bindable var model: NarrationFlowModel
     var isPushed = false
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var miniPlayerRouter: MiniPlayerPresentationRouter
+    @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter
     @State private var projectCopyURL: URL?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(spacing: 6) {
-                    Text("🎉").scaledFont(size: 40)
+                    Image(systemName: "checkmark.seal.fill").scaledFont(size: 40).foregroundStyle(NarrationPalette.mint)
                     Text(model.validationDestination == .personalMaster ? "Your audiobook is ready to listen" : "Your recording is ready")
                         .scaledFont(size: 22, weight: .heavy).foregroundStyle(Palette.ink)
                     if let project = model.project {
@@ -2701,7 +2701,17 @@ struct SubmitView: View {
                         }
                     }
                     .padding(.horizontal, 13)
-                    .glassSurface(cornerRadius: 14)
+                    .raisedSurface()
+                }
+
+                if let project = model.project,
+                   let bundle = model.exportBundle,
+                   model.validationDestination != .personalMaster {
+                    HandoffCeremony(
+                        project: project,
+                        packageURL: bundle.shareURL,
+                        destination: model.validationDestination
+                    )
                 }
 
                 if model.validationDestination == .personalMaster {
@@ -2848,5 +2858,92 @@ struct SubmitView: View {
     private func byteString(_ url: URL) -> String {
         let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
         return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+    }
+}
+
+private struct HandoffCeremony: View {
+    let project: AudiobookProject
+    let packageURL: URL
+    let destination: DestinationID
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var cardURL: URL?
+    @State private var celebration = false
+
+    private var destinationLabel: String {
+        destination == .librivox ? "LibriVox" : "the Internet Archive"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 14) {
+                CoverPlate(title: project.metadata.title, author: project.metadata.author, coverURL: nil, size: 76, shape: .portrait)
+                    .scaleEffect(reduceMotion ? 1 : (celebration ? 1.06 : 1))
+                    .accessibilityIdentifier("handoff.plate")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Ready for \(destinationLabel)").voxType(.heroTitle).foregroundStyle(Palette.ink)
+                    Text("Upload the package from Files or share it. Voxglass never uploads for you.")
+                        .voxType(.meta).foregroundStyle(Palette.ink2).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            ShareLink(item: packageURL) {
+                Label("Share package", systemImage: "folder.badge.plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glassProminent)
+            .tint(Palette.brass)
+            .accessibilityIdentifier("handoff.sharePackage")
+            if let cardURL {
+                ShareLink(item: cardURL) {
+                    Label("Share title card", systemImage: "photo")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glass)
+                .accessibilityIdentifier("handoff.shareCard")
+            }
+        }
+        .padding(16)
+        .raisedSurface(tint: Palette.brass.opacity(0.12))
+        .sensoryFeedback(.success, trigger: celebration)
+        .task {
+            cardURL = makeShareCard()
+            if reduceMotion {
+                celebration = true
+            } else {
+                withAnimation(.easeInOut(duration: 0.9)) { celebration = true }
+                try? await Task.sleep(for: .milliseconds(900))
+                withAnimation(.easeInOut(duration: 0.35)) { celebration = false }
+            }
+        }
+    }
+
+    private func makeShareCard() -> URL? {
+        let renderer = ImageRenderer(content: HandoffShareCard(project: project, destination: destinationLabel).frame(width: 1080, height: 1350))
+        renderer.scale = 1
+        guard let data = renderer.uiImage?.pngData() else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("voxglass-handoff-card.png")
+        try? data.write(to: url, options: .atomic)
+        return url
+    }
+}
+
+private struct HandoffShareCard: View {
+    let project: AudiobookProject
+    let destination: String
+
+    var body: some View {
+        ZStack {
+            Palette.bg
+            VStack(spacing: 34) {
+                CoverPlate(title: project.metadata.title, author: project.metadata.author, coverURL: nil, size: 420, shape: .portrait)
+                VStack(spacing: 12) {
+                    Text(project.metadata.title).voxType(.heroTitle).foregroundStyle(Palette.ink).multilineTextAlignment(.center)
+                    Text(project.metadata.author).voxType(.bookTitle).foregroundStyle(Palette.ink2)
+                    Text("read by \(project.metadata.narrator)").voxType(.meta).foregroundStyle(Palette.ink2)
+                    Text("Public-domain audio · \(destination)").voxType(.meta).foregroundStyle(Palette.brass)
+                }
+                Text("Voxglass").font(.system(.largeTitle, design: .serif)).foregroundStyle(Palette.ink)
+            }
+            .padding(80)
+        }
     }
 }

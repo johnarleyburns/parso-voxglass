@@ -70,59 +70,43 @@ import Testing
     }
 
     @Test func dockUsesRouterForMiniPlayerVisibility() throws {
-        let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
-        let scope = sourceSlice(dock, from: "struct GlassDock", to: "struct GlassMiniPlayer")
-        #expect(scope.contains("shouldShowMiniPlayer"))  // GlassDock must use router for mini-player visibility
-        #expect(scope.contains("presentNowPlayingFromMiniPlayer"))  // GlassDock must route mini-player tap through router
+        let accessory = try source("Voxglass/Features/Chrome/MiniPlayerAccessory.swift")
+        #expect(accessory.contains("shouldShowMiniPlayer"))
+        #expect(accessory.contains("presentNowPlayingFromMiniPlayer"))
     }
 
     @Test func rootViewOwnsAndInjectsRouter() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        #expect(root.contains("StateObject private var miniPlayerRouter"))
-        #expect(root.contains(".environmentObject(miniPlayerRouter)"))
+        #expect(root.contains("State private var miniPlayerRouter"))
+        #expect(root.contains(".environment(miniPlayerRouter)"))
     }
 
     @Test func rootDockReservesItsLiveSafeArea() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        let tabs = sourceSlice(root, from: "private var tabs", to: "enum VoxglassTab")
-        #expect(tabs.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
-        #expect(tabs.contains("GlassDock("))
-        #expect(!tabs.contains("ZStack(alignment: .bottom)"))
+        let tabs = sourceSlice(root, from: "private var tabsWithPresentation", to: "enum VoxglassTab")
+        #expect(tabs.contains(".tabViewBottomAccessory"))
+        #expect(tabs.contains("MiniPlayerAccessory"))
+        #expect(!tabs.contains("safeAreaInset(edge: .bottom"))
     }
 
     @Test func consumerShellExposesOnlyPlanDestinations() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        let tabs = sourceSlice(root, from: "private var compactTabs", to: "private var adaptiveTabs")
+        let tabs = sourceSlice(root, from: "private var tabsWithPresentation", to: ".sheet(isPresented")
         #expect(tabs.contains("ListenView("))
         #expect(tabs.contains("LibraryView("))
         #expect(tabs.contains("BrowseView("))
         #expect(tabs.contains("NarrationTabView()"))
         #expect(!tabs.contains("SearchView("))
-        #expect(tabs.components(separatedBy: ".tag(VoxglassTab.").count - 1 == 4)
-
-        let detail = sourceSlice(root, from: "private var tabContent", to: "private func navigationRow")
-        #expect(detail.contains("ListenView("))
-        #expect(detail.contains("LibraryView("))
-        #expect(detail.contains("BrowseView("))
-        #expect(detail.contains("NarrationTabView()"))
-        #expect(!detail.contains("SearchView("))
-
-        let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
-        let items = sourceSlice(dock, from: "private let items", to: "var body: some View")
-        #expect(items.components(separatedBy: "(.listen,").count - 1 == 1)
-        #expect(items.components(separatedBy: "(.library,").count - 1 == 1)
-        #expect(items.components(separatedBy: "(.discover,").count - 1 == 1)
-        #expect(items.components(separatedBy: "(.narration,").count - 1 == 1)
+        #expect(tabs.components(separatedBy: "Tab(").count - 1 == 4)
     }
 
     @Test func sharedScreenReservesWorstCaseDockHeight() throws {
         let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
         let screen = sourceSlice(theme, from: "struct VoxglassScreen", to: "struct VoxglassBackground")
-        #expect(theme.contains("ChromeMetrics.dockItemHeight * 2"))
-        #expect(theme.contains("ChromeMetrics.dockStackSpacing"))
-        #expect(theme.contains("ChromeMetrics.dockBottomPadding"))
-        #expect(theme.contains("static let scrollContentBottomPadding: CGFloat = chromeBottomClearance"))
-        #expect(screen.contains(".padding(.bottom, VoxglassLayout.scrollContentBottomPadding)"))
+        #expect(theme.contains(".navigationTitle(title)"))
+        #expect(theme.contains(".scrollEdgeEffectStyle(.soft, for: .bottom)"))
+        #expect(!theme.contains("scrollContentBottomPadding"))
+        #expect(!screen.contains("chromeBottomClearance"))
     }
 
     @Test func editableLibrariesExposeStandardDeleteActions() throws {
@@ -187,11 +171,11 @@ import Testing
         #expect(catalog.contains("Toggle(\"Solo narration\", isOn: $soloOnly)"))
         #expect(!(catalog.contains("FilterChip(title: \"Solo Narration\"")))
 
-        let dock = try source("Voxglass/Features/Chrome/GlassDock.swift")
+        let dock = try source("Voxglass/Features/Chrome/MiniPlayerAccessory.swift")
         #expect(dock.contains("chrome.miniPlayer"))
         #expect(dock.contains("chrome.miniPlayer.playPause"))
-        #expect(dock.contains(".frame(minWidth: 44, minHeight: 44)"))
-        #expect(dock.contains("accessibilityLabel(\"Next chapter\")"))
+        #expect(dock.contains("chrome.miniPlayer.skipForward"))
+        #expect(dock.contains("frame(minWidth: 44, minHeight: 44)"))
 
         #expect(library.contains("library.searchButton"))
         #expect(library.contains("library.booksSearch"))

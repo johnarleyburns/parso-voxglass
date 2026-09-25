@@ -108,10 +108,6 @@ struct BookPageActionRow: View {
             Spacer(minLength: 0)
             bookmarkButton
             Spacer(minLength: 0)
-            offlineButton
-            Spacer(minLength: 0)
-            watchButton
-            Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
             overflowButton
@@ -121,8 +117,6 @@ struct BookPageActionRow: View {
     private var compactRow: some View {
         HStack(spacing: 0) {
             speedButton
-            Spacer(minLength: 0)
-            offlineButton
             Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
@@ -146,7 +140,7 @@ struct BookPageActionRow: View {
             }
         } label: {
             Text(PlaybackRate.label(playback.playbackRate))
-                .scaledFont(size: 13, weight: .bold, design: .monospaced)
+                .scaledFont(size: 13, weight: .bold, design: .monospaced) // mono-exempt: playback rate
                 .frame(minWidth: 44, minHeight: 44)
         }
         .accessibilityLabel("Playback speed")
@@ -223,7 +217,7 @@ struct BookPageActionRow: View {
                 Image(systemName: "moon.zzz.fill")
                 if let remaining = playback.sleepRemaining {
                     Text(sleepCountdown(remaining))
-                        .scaledFont(size: 12, weight: .semibold, design: .monospaced)
+                        .scaledFont(size: 12, weight: .semibold, design: .monospaced) // mono-exempt: sleep countdown
                 }
             }
             .foregroundStyle(Palette.brass)

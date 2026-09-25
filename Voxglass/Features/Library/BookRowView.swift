@@ -34,6 +34,6 @@ struct BookRowView: View {
             .accessibilityLabel(isCurrent ? "Current book" : "Play \(book.book.title)")
         }
         .padding(12)
-        .glassPanel()
+        .raisedSurface()
     }
 }

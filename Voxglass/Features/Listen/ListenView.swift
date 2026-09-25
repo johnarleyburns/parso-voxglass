@@ -6,6 +6,7 @@ struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter
     @Binding var showingNowPlaying: Bool
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
@@ -25,27 +26,22 @@ struct ListenView: View {
     @AppStorage(AppPreferencesStore.Keys.isSupporter) private var isSupporter = false
 
     var body: some View {
-        VoxglassScreen(title: "Listen") {
+        VoxglassScreen(title: "Listen", headerTrailingContent: AnyView(
+            HStack(spacing: 14) {
+                if isSupporter { supporterBadge }
+                settingsButton
+            }
+        )) {
             VStack(alignment: .leading, spacing: 22) {
                 continueListening
+                weekStrip
                 jumpBackIn
                 recommended
-                listeningStatsSummary
             }
             .padding(.top, 12)
             .navigationDestination(item: $selectedCatalogBookID) { bookID in
                 BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
             }
-        }
-        .overlay(alignment: .topTrailing) {
-            HStack(spacing: 8) {
-                if isSupporter {
-                    supporterBadge
-                }
-                settingsButton
-            }
-            .padding(.trailing, 16)
-            .padding(.top, 6)
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -119,26 +115,31 @@ struct ListenView: View {
                     }
                 } label: {
                     HStack(spacing: 14) {
-                        BookArtworkView(
+                        CoverPlate(
                             title: book.book.title,
-                            size: 84,
+                            author: book.book.displayAuthorLine,
                             coverURL: book.book.coverURL,
-                            cornerRadius: 14
+                            size: 84,
+                            shape: .portrait
                         )
 
                         VStack(alignment: .leading, spacing: 5) {
                             Text(book.book.title)
-                                .scaledFont(size: 17, weight: .semibold)
+                                .voxType(.heroTitle)
                                 .foregroundStyle(Palette.ink)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
-                            Text(book.book.authorLine)
-                                .scaledFont(size: 12)
+                            Text(book.book.displayAuthorLine ?? "Imported")
+                                .voxType(.meta)
                                 .foregroundStyle(Palette.ink2)
                                 .lineLimit(1)
                             Text(continueActionLabel(for: book))
-                                .scaledFont(size: 12, weight: .semibold)
-                                .foregroundStyle(Palette.brass)
+                                .voxType(.body)
+                                .foregroundStyle(Palette.onBrass)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Palette.brass, in: Capsule())
+                                .accessibilityIdentifier("listen.resume")
                         }
 
                         Spacer(minLength: 4)
@@ -147,15 +148,42 @@ struct ListenView: View {
                             .foregroundStyle(Palette.brass)
                     }
                     .padding(14)
-                    .glassSurface(cornerRadius: 18, fill: Color.white.opacity(0.08))
+                    .raisedSurface(tint: Palette.brass.opacity(0.20))
                 }
                 .buttonStyle(.plain)
                 .tactileTap()
                 .accessibilityIdentifier("listen.continueListening")
                 .accessibilityLabel("\(continueActionLabel(for: book)) \(book.book.title)")
                 .accessibilityHint("Opens the player")
+                .onAppear { miniPlayerRouter.listenHeroIsVisible = true }
+                .onDisappear { miniPlayerRouter.listenHeroIsVisible = false }
+                .onScrollVisibilityChange(threshold: 0.2) { visible in
+                    miniPlayerRouter.listenHeroIsVisible = visible
+                }
             }
         }
+    }
+
+    private var weekStrip: some View {
+        Button { showStats = true } label: {
+            HStack(spacing: 12) {
+                HStack(alignment: .bottom, spacing: 5) {
+                    ForEach(0..<7, id: \.self) { index in
+                        Capsule().fill(index == 6 ? Palette.brass : Palette.ink3.opacity(0.45)).frame(width: 5, height: CGFloat(8 + (index % 4) * 5))
+                    }
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("This week").voxType(.section)
+                    Text("\(durationString(statsLast7DaysTotal)) · Longest day: \(statsDailyBars.last?.label ?? "—")").voxType(.meta).foregroundStyle(Palette.ink2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(Palette.ink3)
+            }
+            .padding(14)
+            .raisedSurface()
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("listen.weekStrip")
     }
 
     /// Replaces the old "…" more-menu: Equalizer already lives in Settings
@@ -174,7 +202,6 @@ struct ListenView: View {
         .foregroundStyle(Palette.brass)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.07))
         .accessibilityIdentifier("home.supporterBadge")
     }
 
@@ -186,7 +213,6 @@ struct ListenView: View {
                 .scaledFont(size: 19, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
                 .frame(width: 40, height: 40)
-                .glassSurface(cornerRadius: 12, fill: Color.white.opacity(0.07))
         }
         .accessibilityIdentifier("home.settingsButton")
         .accessibilityLabel("Settings")
@@ -194,12 +220,12 @@ struct ListenView: View {
 
     @ViewBuilder
     private var jumpBackIn: some View {
-        if !libraryStore.recentlyPlayed.isEmpty {
+        if libraryStore.recentlyPlayed.count > 1 {
             VStack(alignment: .leading, spacing: 10) {
                 SectionTitle(title: "Jump Back In")
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
-                        ForEach(libraryStore.recentlyPlayed) { book in
+                        ForEach(Array(libraryStore.recentlyPlayed.dropFirst())) { book in
                             NavigationLink {
                                 BookPageView(book: book, showingNowPlaying: $showingNowPlaying)
                             } label: {
@@ -244,7 +270,7 @@ struct ListenView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+                .raisedSurface()
     }
 
     private var weeklyChart: some View {
@@ -254,7 +280,7 @@ struct ListenView: View {
                 VStack(spacing: 4) {
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .fill(LinearGradient(
-                            colors: [Color(hex: 0xEEB35B), Color(hex: 0xCF8F34)],
+                            colors: [Palette.brass, Palette.brassDeep],
                             startPoint: .top, endPoint: .bottom))
                         .frame(height: max(3, CGFloat(bar.seconds / maxSeconds) * 44))
                     Text(bar.label)
@@ -266,7 +292,7 @@ struct ListenView: View {
         }
         .frame(height: 58, alignment: .bottom)
         .padding(14)
-        .glassSurface(cornerRadius: 16)
+                .raisedSurface()
     }
 
     private func durationString(_ seconds: TimeInterval) -> String {
@@ -378,7 +404,7 @@ struct ListenView: View {
                     if recommendations.isRefreshing {
                         ProgressView()
                             .padding(8)
-                            .glassSurface(cornerRadius: 18)
+                            .raisedSurface()
                             .padding(4)
                     }
                 }
@@ -439,7 +465,7 @@ struct ListenBookCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            BookArtworkView(title: book.book.title, size: 132, coverURL: book.book.coverURL, cornerRadius: 14, showBorder: false)
+            CoverPlate(title: book.book.title, author: book.book.authorLine, coverURL: book.book.coverURL, size: 132)
             Text(book.book.title)
                 .scaledFont(size: 12.5, weight: .semibold)
                 .foregroundStyle(Palette.ink)
@@ -450,14 +476,6 @@ struct ListenBookCard: View {
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)
-            if book.narrationKind == .solo {
-                SoloNarrationBadge()
-                    .padding(.top, 4)
-            } else {
-                SoloNarrationBadge()
-                    .opacity(0)
-                    .padding(.top, 4)
-            }
         }
         .frame(width: 132)
     }
