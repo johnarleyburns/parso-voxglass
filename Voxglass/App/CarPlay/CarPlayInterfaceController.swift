@@ -73,7 +73,8 @@ final class CarPlayInterfaceController {
             recommendations: services.homeRecommendationStore.recommendations.map(makeCatalogSnapshot),
             searchResults: services.catalogStore.results.map(makeCatalogSnapshot),
             hasCurrentSession: coordinator.currentSession != nil,
-            currentBookID: coordinator.currentSession?.book.id
+            currentBookID: coordinator.currentSession?.book.id,
+            searchTemplateSupported: CarPlaySearchAvailability.templateSupported
         )
     }
 
@@ -250,8 +251,21 @@ final class CarPlayInterfaceController {
         interfaceController.pushTemplate(template, animated: true, completion: nil)
     }
 
-    func push(_ template: CPTemplate) {
-        interfaceController.pushTemplate(template, animated: true, completion: nil)
+    /// Pushes the search template. Only `CPListTemplate` may be pushed on top
+    /// of Now Playing (CarPlay Developer Guide, "Now playing template"), and
+    /// search is not a list — so if Now Playing is anywhere on the stack, pop
+    /// to the tab bar first. Callers must already have passed
+    /// `CarPlaySearchAvailability.templateSupported`.
+    func pushSearch(_ template: CPSearchTemplate) {
+        let hasNowPlaying = interfaceController.templates.contains { $0 is CPNowPlayingTemplate }
+        guard hasNowPlaying else {
+            interfaceController.pushTemplate(template, animated: true, completion: nil)
+            return
+        }
+        Task { @MainActor [interfaceController] in
+            _ = try? await interfaceController.popToRootTemplate(animated: false)
+            _ = try? await interfaceController.pushTemplate(template, animated: true)
+        }
     }
 
     func pushNowPlaying() {

@@ -43,10 +43,17 @@ import Foundation
 
     // MARK: - Root
 
-    @Test func rootHasFiveTabsInCanonicalOrder() {
+    @Test func rootHasFourTabsInCanonicalOrder() {
         let interface = CarPlayMenuBuilder.root(CarPlayState())
         let ids = interface.tabs.map(\.id)
-        #expect(ids == [.continueListening, .library, .downloaded, .discover, .search])
+        #expect(ids == [.continueListening, .library, .downloaded, .discover])
+    }
+
+    /// Audio apps get four tabs (`CPTabBarTemplate.maximumTabCount`); a fifth
+    /// model tab was always silently dropped by `CarPlayTemplateValidation`.
+    @Test func rootNeverExceedsTheAudioTabLimit() {
+        let state = CarPlayState(searchTemplateSupported: true)
+        #expect(CarPlayMenuBuilder.root(state).tabs.count <= 4)
     }
 
     // MARK: - Continue tab
@@ -114,12 +121,36 @@ import Foundation
         #expect(bookItems.first?.action == .openBook(bookID: book.id))
     }
 
-    @Test func libraryTabOffersVoiceSearchAcrossMyBooksFields() {
-        let tab = CarPlayMenuBuilder.libraryTab(CarPlayState())
+    @Test func libraryTabOffersSearchWhenTemplateSupported() {
+        let tab = CarPlayMenuBuilder.libraryTab(CarPlayState(searchTemplateSupported: true))
         let search = tab.sections.flatMap(\.items).first { $0.id == "search-my-books" }
         #expect(search?.action == .beginMyBooksSearch)
+        #expect(search?.isEnabled == true)
         #expect(search?.subtitle?.contains("title") == true)
         #expect(search?.subtitle?.contains("narrator") == true)
+        // CPSearchTemplate is a keyboard UI; the row must not promise voice.
+        #expect(search?.subtitle?.localizedCaseInsensitiveContains("speak") == false)
+    }
+
+    /// The in-car crash: before iOS 27 an audio app may not push
+    /// CPSearchTemplate at all, so no row anywhere may lead to it.
+    @Test func noTabOffersSearchWhenTemplateUnsupported() {
+        let book = makeBook(id: UUID(), title: "Test Book")
+        let state = CarPlayState(books: [book], searchTemplateSupported: false)
+        let items = CarPlayMenuBuilder.root(state).tabs.flatMap(\.sections).flatMap(\.items)
+        #expect(!items.contains { $0.id == "search-my-books" })
+        #expect(!items.contains { $0.action == .beginMyBooksSearch || $0.action == .beginSearch })
+    }
+
+    @Test func libraryTabDisablesSearchWhileKeyboardIsLimited() {
+        let state = CarPlayState(searchTemplateSupported: true, keyboardLimited: true)
+        let tab = CarPlayMenuBuilder.libraryTab(state)
+        let search = tab.sections.flatMap(\.items).first { $0.id == "search-my-books" }
+        #expect(search != nil)
+        #expect(search?.isEnabled == false)
+        #expect(search?.action == CarPlayAction.none)
+        // Never instruct the driver to pick up the phone (CarPlay guideline #2).
+        #expect(search?.subtitle?.localizedCaseInsensitiveContains("phone") == false)
     }
 
     @Test func myBooksSearchMatchesTitleAuthorAndNarrator() {
@@ -248,6 +279,5 @@ import Foundation
         #expect(titles[.library] == "Library")
         #expect(titles[.downloaded] == "Downloaded")
         #expect(titles[.discover] == "Discover")
-        #expect(titles[.search] == "Search")
     }
 }

@@ -1,4 +1,5 @@
 import CarPlay
+import OSLog
 import UIKit
 import VoxglassCore
 
@@ -7,6 +8,7 @@ import VoxglassCore
 /// zero new playback paths (docs/CARPLAY_DESIGN.md §6.4).
 @MainActor
 final class CarPlayActionDispatcher {
+    private static let logger = Logger(subsystem: "guru.parso.voxglass", category: "CarPlay")
     private let services: AppServices
     private weak var controller: CarPlayInterfaceController?
     private var searchDelegate: CarPlaySearchDelegate?
@@ -202,15 +204,23 @@ final class CarPlayActionDispatcher {
     }
 
     private func beginSearch(myBooksOnly: Bool) {
-        let template = CPSearchTemplate()
+        // Hard platform gate — see CarPlaySearchAvailability. The Library row
+        // that leads here is already absent before iOS 27; this guard keeps any
+        // future caller from reaching the push. Never remove it.
+        guard CarPlaySearchAvailability.templateSupported else {
+            Self.logger.error("beginSearch blocked: CPSearchTemplate is unsupported for audio apps before iOS 27")
+            return
+        }
+        guard let controller else { return }
         let delegate = CarPlaySearchDelegate(
             dispatcher: self,
             controller: controller,
             myBooksOnly: myBooksOnly
         )
-        searchDelegate = delegate
+        searchDelegate = delegate // CPSearchTemplate.delegate is weak.
+        let template = CPSearchTemplate()
         template.delegate = delegate
-        controller?.push(template)
+        controller.pushSearch(template)
     }
 
     private func runSearch(query: String) {

@@ -21,7 +21,7 @@ final class VoxglassCarPlaySmokeTests: XCTestCase {
             artwork: .noop
         ) as? CPTabBarTemplate)
 
-        XCTAssertEqual(tabBar.templates.count, max(0, min(5, CPTabBarTemplate.maximumTabCount)))
+        XCTAssertEqual(tabBar.templates.count, min(interface.tabs.count, CPTabBarTemplate.maximumTabCount))
         XCTAssertLessThanOrEqual(tabBar.templates.count, CPTabBarTemplate.maximumTabCount)
         let continueList = try XCTUnwrap(tabBar.templates.first as? CPListTemplate)
         XCTAssertEqual(continueList.tabTitle, "Continue")

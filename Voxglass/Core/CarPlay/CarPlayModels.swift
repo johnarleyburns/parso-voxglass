@@ -13,7 +13,7 @@ public struct CarPlayInterface: Equatable, Sendable {
 }
 
 public enum CarPlayTabID: String, Equatable, Sendable, CaseIterable {
-    case continueListening, library, downloaded, discover, search
+    case continueListening, library, downloaded, discover
 }
 
 public struct CarPlayTab: Equatable, Sendable, Identifiable {

@@ -181,6 +181,15 @@ public struct CarPlayState: Equatable, Sendable {
     public var searchResults: [CarPlayCatalogSnapshot]
     public var hasCurrentSession: Bool
     public var currentBookID: UUID?
+    /// Whether the platform lets this app category push `CPSearchTemplate`.
+    /// Apple's CarPlay Developer Guide (June 2026, Templates table) allows the
+    /// Search template for Audio apps only on iOS 27 or later; earlier iOS
+    /// aborts inside `pushTemplate`. The app layer computes this
+    /// (`CarPlaySearchAvailability`) so the builder stays pure and testable.
+    public var searchTemplateSupported: Bool
+    /// The car currently limits keyboard use (typically while moving —
+    /// `CPSessionConfiguration.limitedUserInterfaces.contains(.keyboard)`).
+    public var keyboardLimited: Bool
 
     public init(
         books: [CarPlayBookSnapshot] = [],
@@ -189,7 +198,9 @@ public struct CarPlayState: Equatable, Sendable {
         recommendations: [CarPlayCatalogSnapshot] = [],
         searchResults: [CarPlayCatalogSnapshot] = [],
         hasCurrentSession: Bool = false,
-        currentBookID: UUID? = nil
+        currentBookID: UUID? = nil,
+        searchTemplateSupported: Bool = false,
+        keyboardLimited: Bool = false
     ) {
         self.books = books
         self.recentlyPlayed = recentlyPlayed
@@ -198,6 +209,8 @@ public struct CarPlayState: Equatable, Sendable {
         self.searchResults = searchResults
         self.hasCurrentSession = hasCurrentSession
         self.currentBookID = currentBookID
+        self.searchTemplateSupported = searchTemplateSupported
+        self.keyboardLimited = keyboardLimited
     }
 
     /// A representative fixture: one in-progress book, mid-chapter. Used by the

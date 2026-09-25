@@ -198,6 +198,7 @@
 		C4AC96EBEB1D5CB8B6FB9C56 /* VoxglassEncoders in Frameworks */ = {isa = PBXBuildFile; productRef = 683E509A0AE3D0D65EAF1C3B /* VoxglassEncoders */; };
 		C7394209E512C5C9C0FCA27E /* WatchConnectivityTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 443A6011BBE1B2D4DBEF90DE /* WatchConnectivityTransport.swift */; };
 		C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6031F6F3B50C0C1657E73466 /* ObservationSubscription.swift */; };
+		BCA9F891044D0A77A0748D34 /* CarPlaySearchAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F123C489D1D807F84133074 /* CarPlaySearchAvailability.swift */; };
 		C8DB058328B566CB1C27B916 /* dracula_1006_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 30D528330E6ECF511FDDDD5B /* dracula_1006_librivox.jpg */; };
 		CA2AF75687570E66B1AD5EB6 /* little_princess_krs.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7D05BD54482E13A57D007AE1 /* little_princess_krs.jpg */; };
 		CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06CDA895FD619425E8633059 /* OnboardingPreferencesView.swift */; };
@@ -438,6 +439,7 @@
 		5E6FD170564D3A3F653A6BD4 /* MacCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCommandTests.swift; sourceTree = "<group>"; };
 		5FE9C1DD357179B18F33DD7C /* FolderWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatchView.swift; sourceTree = "<group>"; };
 		6031F6F3B50C0C1657E73466 /* ObservationSubscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationSubscription.swift; sourceTree = "<group>"; };
+		3F123C489D1D807F84133074 /* CarPlaySearchAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySearchAvailability.swift; sourceTree = "<group>"; };
 		60F7BC9A74D4150042BA1CF8 /* alexander_great_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alexander_great_ld_librivox.jpg; sourceTree = "<group>"; };
 		614EDDFDEE2D6D46377341C6 /* AnimatedSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedSplashView.swift; sourceTree = "<group>"; };
 		61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = don_quijote_vol1_0706_librivox.jpg; sourceTree = "<group>"; };
@@ -946,6 +948,7 @@
 				A9FF2C66B604A483005DF1CF /* CarPlayTemplateRenderer.swift */,
 				08B309922E7F9EA263E5DDF7 /* CarPlayTemplateValidation.swift */,
 				6031F6F3B50C0C1657E73466 /* ObservationSubscription.swift */,
+				3F123C489D1D807F84133074 /* CarPlaySearchAvailability.swift */,
 				00206E2895F3BD8366845490 /* ProductionCarPlayPhoneSupport.swift */,
 				E78CE200BE688B70B10C8ACC /* ProductionCarPlayRenderer.swift */,
 			);
@@ -1710,6 +1713,7 @@
 				9313773ED1C718003C5FC794 /* NarrationProjectRepository.swift in Sources */,
 				DBBDBF3E02DCB27296991885 /* NarrationTabView.swift in Sources */,
 				C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */,
+				BCA9F891044D0A77A0748D34 /* CarPlaySearchAvailability.swift in Sources */,
 				CA61D150C3E12F06FB56A257 /* OnboardingPreferencesView.swift in Sources */,
 				92772E8F02D1568850BF2103 /* ParagraphReviewView.swift in Sources */,
 				E4D272BAADB2E5D3B087D9DB /* PhoneAudioRelay.swift in Sources */,

@@ -26,11 +26,10 @@ import Foundation
     }
 
     @Test func carPlayTabIDAllCasesCovered() {
-        #expect(CarPlayTabID.allCases.count == 5)
+        #expect(CarPlayTabID.allCases.count == 4)
         #expect(CarPlayTabID.allCases.contains(.continueListening))
         #expect(CarPlayTabID.allCases.contains(.library))
         #expect(CarPlayTabID.allCases.contains(.downloaded))
         #expect(CarPlayTabID.allCases.contains(.discover))
-        #expect(CarPlayTabID.allCases.contains(.search))
     }
 }

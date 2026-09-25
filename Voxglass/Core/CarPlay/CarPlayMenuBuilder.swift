@@ -11,13 +11,15 @@ public enum CarPlayMenuBuilder {
 
     // MARK: - Root
 
+    /// Four tabs. Audio apps get `CPTabBarTemplate.maximumTabCount == 4`, and
+    /// the tab bar may only hold List/Grid/Information/POI templates — never
+    /// `CPSearchTemplate` — so search is a row in the Library tab, not a tab.
     public static func root(_ state: CarPlayState) -> CarPlayInterface {
         CarPlayInterface(tabs: [
             continueTab(state),
             libraryTab(state),
             downloadedTab(state),
-            discoverTab(state),
-            searchTab(state)
+            discoverTab(state)
         ])
     }
 
@@ -70,14 +72,10 @@ public enum CarPlayMenuBuilder {
     public static func libraryTab(_ state: CarPlayState) -> CarPlayTab {
         var sections: [CarPlaySection] = []
 
-        var routes: [CarPlayItem] = [CarPlayItem(
-            id: "search-my-books",
-            title: "Search My Books",
-            subtitle: "Speak a title, author, or narrator",
-            artwork: .symbol("magnifyingglass"),
-            accessory: .disclosure,
-            action: .beginMyBooksSearch
-        )]
+        var routes: [CarPlayItem] = []
+        if let search = searchItem(state) {
+            routes.append(search)
+        }
         if state.books.contains(where: { $0.isFavorite }) {
             routes.append(routeItem(id: "route-favorites", title: "Favorites",
                                     symbol: "heart.fill", route: .favorites))
@@ -169,21 +167,32 @@ public enum CarPlayMenuBuilder {
         )
     }
 
-    public static func searchTab(_ state: CarPlayState) -> CarPlayTab {
-        CarPlayTab(
-            id: .search,
-            title: "Search",
-            systemImage: "magnifyingglass",
-            sections: [CarPlaySection(items: [
-                CarPlayItem(
-                    id: "search-launcher",
-                    title: "Search Voxglass",
-                    subtitle: "Speak a title, author, or narrator · My Books + LibriVox",
-                    artwork: .symbol("magnifyingglass"),
-                    accessory: .disclosure,
-                    action: .beginSearch
-                )
-            ])]
+    /// The Library tab's search row, or `nil` where the platform forbids the
+    /// Search template for audio apps (before iOS 27) — the row must not exist
+    /// at all there, because tapping it would abort the app. While the car
+    /// limits the keyboard the row stays in place but disabled, so the list
+    /// does not reshuffle under the driver's finger. The copy never tells the
+    /// driver to use the phone (CarPlay guidelines for all apps, #2), and does
+    /// not promise voice input: `CPSearchTemplate` is a keyboard UI.
+    public static func searchItem(_ state: CarPlayState) -> CarPlayItem? {
+        guard state.searchTemplateSupported else { return nil }
+        if state.keyboardLimited {
+            return CarPlayItem(
+                id: "search-my-books",
+                title: "Search My Books",
+                subtitle: "Available when parked",
+                artwork: .symbol("magnifyingglass"),
+                isEnabled: false,
+                action: .none
+            )
+        }
+        return CarPlayItem(
+            id: "search-my-books",
+            title: "Search My Books",
+            subtitle: "Search by title, author, or narrator",
+            artwork: .symbol("magnifyingglass"),
+            accessory: .disclosure,
+            action: .beginMyBooksSearch
         )
     }
 
@@ -407,14 +416,6 @@ public enum CarPlayMenuBuilder {
                 artwork: .symbol("sparkles"),
                 isEnabled: false,
                 action: .none
-            )])
-        case .search:
-            return CarPlaySection(items: [CarPlayItem(
-                id: "empty-search",
-                title: "Search LibriVox",
-                artwork: .symbol("magnifyingglass"),
-                accessory: .disclosure,
-                action: .beginSearch
             )])
         }
     }
