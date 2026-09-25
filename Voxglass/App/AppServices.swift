@@ -116,6 +116,8 @@ final class AppServices: ObservableObject {
         await AudioCache.evictToCurrentBudget()
         await AudioCache.shared.garbageCollectStalePartials()
         await libraryStore.refresh()
+        // Siri's spoken book names ("Play <book> in Voxglass") track the library.
+        VoxglassIntentBridge.observeLibrary(libraryStore)
         await phoneAudioRelay.publishLibrarySnapshot()
         #if DEBUG
         // Seed the production preview synchronously at bootstrap so the smoke
