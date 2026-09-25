@@ -141,6 +141,7 @@ jobs:
       APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
       BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
       BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+      WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
       WATCH_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_PROVISIONING_PROFILE_BASE64 }}
       MAC_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_PROVISIONING_PROFILE_BASE64 }}
       MAC_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.MAC_INSTALLER_CERTIFICATE_BASE64 }}
@@ -166,6 +167,7 @@ jobs:
             APP_STORE_CONNECT_API_KEY_P8_BASE64
             BUILD_CERTIFICATE_BASE64
             BUILD_PROVISION_PROFILE_BASE64
+            WIDGET_PROVISIONING_PROFILE_BASE64
             WATCH_PROVISIONING_PROFILE_BASE64
             DEVELOPMENT_TEAM_ID
             KEYCHAIN_PASSWORD
@@ -337,13 +339,16 @@ jobs:
           set -euo pipefail
           certificate_path="$RUNNER_TEMP/build_certificate.p12"
           profile_path="$RUNNER_TEMP/build_profile.mobileprovision"
+          widget_profile_path="$RUNNER_TEMP/widget_profile.mobileprovision"
           watch_profile_path="$RUNNER_TEMP/watch_profile.mobileprovision"
           profile_plist_path="$RUNNER_TEMP/build_profile.plist"
+          widget_profile_plist_path="$RUNNER_TEMP/widget_profile.plist"
           watch_profile_plist_path="$RUNNER_TEMP/watch_profile.plist"
           keychain_path="$RUNNER_TEMP/app-signing.keychain-db"
 
           printf '%s' "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
           printf '%s' "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$profile_path"
+          printf '%s' "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$widget_profile_path"
           printf '%s' "$WATCH_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$watch_profile_path"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
@@ -366,8 +371,39 @@ jobs:
           security cms -D -i "$profile_path" > "$profile_plist_path"
           profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist_path")"
           profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$profile_plist_path")"
+          app_group="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups:0' "$profile_plist_path" 2>/dev/null || true)"
+          if [ "$app_group" != "group.guru.parso.voxglass" ]; then
+            echo "::notice title=TestFlight skipped::The iOS provisioning profile '$profile_name' does not include group.guru.parso.voxglass. Regenerate the App Store profile with App Groups enabled, then update BUILD_PROVISION_PROFILE_BASE64."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
           echo "profile_name=$profile_name" >> "$GITHUB_OUTPUT"
+
+          # Install the WidgetKit extension profile. The widget shares the
+          # App Group with the app and therefore needs its own App Store
+          # provisioning profile for distribution archives.
+          security cms -D -i "$widget_profile_path" > "$widget_profile_plist_path"
+          widget_profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$widget_profile_plist_path")"
+          widget_profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$widget_profile_plist_path")"
+          widget_profile_app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$widget_profile_plist_path")"
+          widget_app_group="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups:0' "$widget_profile_plist_path" 2>/dev/null || true)"
+          expected_widget_app_id="${DEVELOPMENT_TEAM_ID}.guru.parso.voxglass.widgets"
+          expected_widget_profile="Parso Voxglass Widgets App Store"
+          if [ "$widget_profile_app_id" != "$expected_widget_app_id" ]; then
+            echo "::error title=Widget provisioning profile bundle mismatch::Profile '$widget_profile_name' targets '$widget_profile_app_id'; expected '$expected_widget_app_id'."
+            exit 1
+          fi
+          if [ "$widget_profile_name" != "$expected_widget_profile" ]; then
+            echo "::error title=Widget provisioning profile mismatch::Installed widget profile '$widget_profile_name' does not match '$expected_widget_profile'."
+            exit 1
+          fi
+          if [ "$widget_app_group" != "group.guru.parso.voxglass" ]; then
+            echo "::error title=Widget App Group capability missing::Profile '$widget_profile_name' does not include group.guru.parso.voxglass."
+            exit 1
+          fi
+          cp "$widget_profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$widget_profile_uuid.mobileprovision"
+          echo "widget_profile_name=$widget_profile_name" >> "$GITHUB_OUTPUT"
 
           # Install watch provisioning profile
           security cms -D -i "$watch_profile_path" > "$watch_profile_plist_path"
@@ -386,6 +422,7 @@ jobs:
           if [ "$watch_profile_name" != "$expected_watch_profile" ]; then
             echo "::warning title=Watch provisioning profile name::Installed watch profile '$watch_profile_name' does not match expected '$expected_watch_profile'."
           fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Install macOS signing material
         if: steps.mac_preflight.outputs.ready == 'true' && steps.mac_platform.outputs.ready == 'true'
@@ -492,7 +529,7 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Archive app
-        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
           xcodebuild \
@@ -504,16 +541,17 @@ jobs:
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
             MARKETING_VERSION="${{ steps.build_number.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.build_number.outputs.value }}" \
+            PROVISIONING_PROFILE_SPECIFIER="${{ steps.signing.outputs.profile_name }}" \
             archive
 
       - name: Audit archived iOS app and embedded Watch app
-        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           bash scripts/audit_app_store_release.sh --bundle "$RUNNER_TEMP/Voxglass.xcarchive/Products/Applications/Voxglass.app"
           bash scripts/audit_app_store_release.sh --bundle "$RUNNER_TEMP/Voxglass.xcarchive/Products/Applications/Voxglass.app/Watch/VoxglassWatch.app"
 
       - name: Upload to TestFlight
-        if: steps.preflight.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
         run: |
           set -euo pipefail
           export_options="$RUNNER_TEMP/ExportOptions.plist"
@@ -532,6 +570,8 @@ jobs:
             <dict>
               <key>${APP_BUNDLE_ID}</key>
               <string>${{ steps.signing.outputs.profile_name }}</string>
+              <key>guru.parso.voxglass.widgets</key>
+              <string>${{ steps.signing.outputs.widget_profile_name }}</string>
               <key>guru.parso.voxglass.watchkitapp</key>
               <string>${{ steps.signing.outputs.watch_profile_name }}</string>
             </dict>
@@ -559,6 +599,6 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Report skipped TestFlight build
-        if: steps.preflight.outputs.ready != 'true' || steps.app_record.outputs.ready != 'true'
+        if: steps.signing.outputs.ready != 'true' || steps.app_record.outputs.ready != 'true'
         run: |
-          echo "TestFlight upload skipped because signing secrets, the App Store Connect app record, or Xcode 26+ are not ready."
+          echo "TestFlight upload skipped because signing secrets, App Store Connect records, or required App Group provisioning profiles are not ready."

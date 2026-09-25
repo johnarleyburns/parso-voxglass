@@ -2267,6 +2267,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VoxglassWidgets/VoxglassWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
 				INFOPLIST_FILE = VoxglassWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2275,6 +2277,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.widgets;
 				PRODUCT_NAME = VoxglassWidgets;
+				PROVISIONING_PROFILE_SPECIFIER = "Parso Voxglass Widgets App Store";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
