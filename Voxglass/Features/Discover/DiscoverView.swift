@@ -158,7 +158,7 @@ struct BrowseView: View {
                     }
                 }
                 Divider()
-                Toggle("Solo narration", isOn: $soloOnly)
+                Toggle("Single narrator", isOn: $soloOnly)
                 if selectedCollection != nil {
                     Picker("Sort", selection: $collectionSort) {
                         ForEach(CatalogSort.availableSorts(for: selectedCollection ?? IACollectionStore.popular)) { sort in
@@ -367,7 +367,7 @@ struct BrowseView: View {
                     if results.isEmpty && soloOnly {
                         EmptyStatePanel(
                             title: "No Single-narrator Results",
-                            message: "Try turning off the solo filter to see more audiobooks.",
+                            message: "Try turning off the Single narrator filter to see more audiobooks.",
                             systemImage: "mic"
                         )
                     } else {

@@ -275,7 +275,8 @@ check_narration_tactile_guards() {
     fi
   done
 
-  # Solo Narration toggle must exist on every applicable surface
+  # The single-narrator toggle must exist on every applicable surface. The
+  # product copy was renamed from "Solo Narration" by the iOS 26 redesign.
   # ListenView intentionally omits the filter chip — solo titles get 2x scoring boost instead.
   local solo_toggle_surfaces=(
     "Voxglass/Features/Search/SearchView.swift"
@@ -285,8 +286,8 @@ check_narration_tactile_guards() {
   )
   for file in "${solo_toggle_surfaces[@]}"; do
     if [ -f "$file" ]; then
-      if ! grep -q 'Solo Narration' "$file" 2>/dev/null; then
-        echo "::error title=Narration-solo-toggle guard::$file does not contain a Solo Narration filter toggle."
+      if ! grep -Eq 'Single narrator|Solo Narration' "$file" 2>/dev/null; then
+        echo "::error title=Narration-solo-toggle guard::$file does not contain a single-narrator filter toggle."
         had_failure=1
       fi
     fi

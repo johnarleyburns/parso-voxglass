@@ -64,10 +64,10 @@ struct CatalogDiscoveryView: View {
                 } else {
                     HStack {
                         Menu {
-                            Toggle("Solo narration", isOn: $soloOnly)
+                            Toggle("Single narrator", isOn: $soloOnly)
                         } label: {
                             Label(
-                                soloOnly ? "Solo narration" : "Filter",
+                                soloOnly ? "Single narrator" : "Filter",
                                 systemImage: soloOnly
                                     ? "line.3.horizontal.decrease.circle.fill"
                                     : "line.3.horizontal.decrease.circle"
