@@ -143,6 +143,9 @@ targets:
         product: VoxglassCore
     info:
       path: VoxglassWidgets/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.widgets
