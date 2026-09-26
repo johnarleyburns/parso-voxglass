@@ -144,6 +144,9 @@ targets:
     info:
       path: VoxglassWidgets/Info.plist
       properties:
+        CFBundleDisplayName: Voxglass Widgets
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

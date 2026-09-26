@@ -67,6 +67,35 @@ import Testing
         }
     }
 
+    @Test func widgetExtensionPlistHasAppStoreRequiredMetadata() throws {
+        let plistURL = repoRoot.appendingPathComponent("VoxglassWidgets/Info.plist")
+        guard
+            let data = try? Data(contentsOf: plistURL),
+            let object = try? PropertyListSerialization.propertyList(from: data, format: nil),
+            let plist = object as? [String: Any]
+        else {
+            return fail("WHY THIS TEST FAILS: The WidgetKit extension Info.plist is missing or invalid at \(plistURL.path).")
+        }
+
+        #expect(
+            (plist["CFBundleDisplayName"] as? String)?.isEmpty == false,
+            Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The widget extension has no CFBundleDisplayName, so App Store Connect rejects the upload."))
+        )
+        #expect(
+            plist["CFBundleShortVersionString"] as? String == "$(MARKETING_VERSION)",
+            Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The widget extension version is not tied to MARKETING_VERSION, so it can diverge from the containing app during export."))
+        )
+        #expect(
+            plist["CFBundleVersion"] as? String == "$(CURRENT_PROJECT_VERSION)",
+            Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The widget extension build number is not tied to CURRENT_PROJECT_VERSION, so it can diverge from the containing app during export."))
+        )
+        let extensionPoint = (plist["NSExtension"] as? [String: Any])?["NSExtensionPointIdentifier"] as? String
+        #expect(
+            extensionPoint == "com.apple.widgetkit-extension",
+            Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The widget extension is missing NSExtensionPointIdentifier=com.apple.widgetkit-extension, so App Store Connect cannot identify it as a WidgetKit extension."))
+        )
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
