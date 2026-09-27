@@ -9,6 +9,7 @@
 import SwiftUI
 import VoxglassCore
 import CloudKit
+import os
 
 @main
 struct VoxglassApp: App {
@@ -46,11 +47,93 @@ struct VoxglassApp: App {
     }
 }
 
+/// Small, durable launch breadcrumb for failures that never become a crash
+/// report. iOS watchdog terminations and jetsam events can leave TestFlight
+/// with no ordinary exception report, while this file still tells us which
+/// bootstrap phase was active on the next launch.
+@MainActor
+final class LaunchDiagnostics {
+    static let shared = LaunchDiagnostics()
+
+    private static let logger = Logger(subsystem: "guru.parso.voxglass", category: "launch")
+    private let fileURL: URL
+    private var record: [String: Any] = [:]
+
+    private init() {
+        let support = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )) ?? FileManager.default.temporaryDirectory
+        let directory = support.appendingPathComponent("Voxglass", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        fileURL = directory.appendingPathComponent("launch-diagnostics.json")
+
+        if let data = try? Data(contentsOf: fileURL),
+           let previous = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let state = previous["state"] as? String,
+           state == "running" || state == "deferred" {
+            let phase = previous["phase"] as? String ?? "unknown"
+            Self.logger.error("previous launch ended during phase=\(phase, privacy: .public)")
+        }
+    }
+
+    func begin() {
+        record = [
+            "state": "running",
+            "phase": "app-delegate",
+            "startedAt": Date().timeIntervalSince1970,
+            "updatedAt": Date().timeIntervalSince1970
+        ]
+        write()
+        Self.logger.info("launch started")
+    }
+
+    func phase(_ name: String) {
+        record["phase"] = name
+        record["updatedAt"] = Date().timeIntervalSince1970
+        write()
+        Self.logger.info("launch phase=\(name, privacy: .public)")
+    }
+
+    func markInteractive() {
+        record["state"] = "ready"
+        record["phase"] = "interactive"
+        record["updatedAt"] = Date().timeIntervalSince1970
+        write()
+        Self.logger.info("launch interactive")
+    }
+
+    func beginDeferredWork() {
+        record["state"] = "deferred"
+        record["updatedAt"] = Date().timeIntervalSince1970
+        write()
+    }
+
+    func finishDeferredWork() {
+        record["state"] = "ready"
+        record["phase"] = "complete"
+        record["updatedAt"] = Date().timeIntervalSince1970
+        write()
+        Self.logger.info("launch bootstrap complete")
+    }
+
+    private func write() {
+        guard JSONSerialization.isValidJSONObject(record),
+              let data = try? JSONSerialization.data(withJSONObject: record, options: [.sortedKeys]) else {
+            return
+        }
+        try? data.write(to: fileURL, options: .atomic)
+    }
+}
+
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        LaunchDiagnostics.shared.begin()
         application.registerForRemoteNotifications()
         return true
     }

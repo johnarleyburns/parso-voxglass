@@ -113,33 +113,62 @@ final class AppServices: ObservableObject {
     private var didBootstrap = false
 
     func bootstrap() async {
-        await AudioCache.evictToCurrentBudget()
-        await AudioCache.shared.garbageCollectStalePartials()
+        let diagnostics = LaunchDiagnostics.shared
+        diagnostics.phase("library-refresh")
         await libraryStore.refresh()
         // Siri's spoken book names ("Play <book> in Voxglass") track the library.
         VoxglassIntentBridge.observeLibrary(libraryStore)
         await phoneAudioRelay.publishLibrarySnapshot()
+        diagnostics.phase("playback-restore")
+        await playbackCoordinator.reconcileSnapshots()
+        await playbackCoordinator.restorePresentedSession(from: libraryStore.books)
+        await phoneAudioRelay.publishLibrarySnapshot()
+
+        // The first frame must not wait on cache eviction, migrations for
+        // legacy metadata, folder audio probing, iCloud, or archive.org. Those
+        // operations are useful, but none is required to show the already
+        // persisted library and restore the paused player.
+        homeRecommendationStore.markEngineReady()
         #if DEBUG
-        // Seed the production preview synchronously at bootstrap so the smoke
-        // test's My Productions shelf is populated before the UI asks for it —
-        // not gated behind the CloudKit background sync (§18.2, WP-G).
+        // This is a local deterministic UI-test fixture, not launch
+        // maintenance; keep it before the smoke test starts querying the
+        // Narration surface.
         await seedProductionPreviewIfRequested()
         #endif
+        diagnostics.markInteractive()
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            await self.finishDeferredBootstrap()
+        }
+    }
+
+    private func finishDeferredBootstrap() async {
+        let diagnostics = LaunchDiagnostics.shared
+        diagnostics.beginDeferredWork()
+
+        diagnostics.phase("cache-maintenance")
+        await AudioCache.evictToCurrentBudget()
+        await AudioCache.shared.garbageCollectStalePartials()
+
+        diagnostics.phase("local-url-rebase")
         let rebased = await libraryRepository.rebaseStaleLocalURLsIfNeeded()
         if rebased > 0 {
             await libraryStore.refresh()
             await phoneAudioRelay.publishLibrarySnapshot()
         }
-        await playbackCoordinator.reconcileSnapshots()
-        await playbackCoordinator.restorePresentedSession(from: libraryStore.books)
-        await phoneAudioRelay.publishLibrarySnapshot()
 
+        diagnostics.phase("legacy-metadata")
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
         await enqueueInitialLibraryForCloudKitIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()
         _ = await libraryRepository.resplitBookTasteSubjectsIfNeeded()
         await rebuildTasteHistory()
+
+        diagnostics.phase("recommendations")
         homeRecommendationStore.markEngineReady()
         let selectedIDs = AppPreferencesStore.decodeCollectionIDs(
             UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.selectedCollectionIDs) ?? ""
@@ -148,9 +177,14 @@ final class AppServices: ObservableObject {
             UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.selectedLanguages) ?? "eng"
         )
         await homeRecommendationStore.load(selectedCollectionIDs: selectedIDs, selectedLanguages: selectedLanguages)
+
+        diagnostics.phase("offline-state")
         await offlineDownloadManager.refreshState(for: libraryStore.books)
+
+        diagnostics.phase("folder-watch")
         await folderWatchService.rescanAll()
 
+        diagnostics.phase("cloud-positions")
         await cloudSync.pullPlaybackPositions()
         await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
 
@@ -161,20 +195,21 @@ final class AppServices: ObservableObject {
         #else
         let cloudBootstrapDisabled = false
         #endif
-        Task(priority: .background) { @MainActor [weak self] in
-            guard let self else { return }
-            // Unsigned simulator UI-test bundles do not carry the CloudKit
-            // entitlement. The smoke path is entirely local and explicitly
-            // opts out before any CKContainer-backed service is touched.
-            guard !cloudBootstrapDisabled else { return }
-            await self.cloudSync.sync()
-            await self.cloudKitSyncEngine.start()
-            if self.cloudKitSyncEngine.lastUploadedCount > 0 {
+        diagnostics.phase("cloudkit-and-production")
+        // Unsigned simulator UI-test bundles do not carry the CloudKit
+        // entitlement. The smoke path is entirely local and explicitly opts
+        // out before any CKContainer-backed service is touched.
+        if !cloudBootstrapDisabled {
+            await cloudSync.sync()
+            await cloudKitSyncEngine.start()
+            if cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }
             // Pull production previews and relay them to the watch (spec §13.6).
             await production.checkForUpdates()
         }
+
+        diagnostics.finishDeferredWork()
     }
 
     /// `-uiTestSeed onePreviewProject` seeds one previewable production so the

@@ -790,6 +790,40 @@ public final class LibraryRepository: @unchecked Sendable {
 
     // MARK: - Local folder import (Folder Watch, §4)
 
+    /// Returns the local audio URLs already imported from a watched folder.
+    /// Folder Watch uses this before probing durations so a relaunch does not
+    /// reopen every existing audio asset just to discard it during the idempotent
+    /// import pass.
+    public func knownLocalFileURLs(forFolder folderURL: URL) async -> Set<URL> {
+        let canonicalFolder = folderURL.resolvingSymlinksInPath()
+        do {
+            try await database.prepare()
+            let rows = try await database.query(
+                """
+                SELECT c.local_url
+                FROM chapters c
+                JOIN books b ON b.id = c.book_id
+                JOIN sources s ON s.id = b.source_id
+                WHERE s.kind = ? AND s.url = ? AND c.local_url IS NOT NULL
+                """,
+                [
+                    .string(SourceKind.localFiles.rawValue),
+                    ModelMapping.databaseValue(canonicalFolder)
+                ]
+            )
+            return Set(rows.compactMap { row in
+                guard let raw = row.string("local_url"), let url = URL(string: raw) else { return nil }
+                return Self.canonicalLocalURL(url)
+            })
+        } catch {
+            return []
+        }
+    }
+
+    private static func canonicalLocalURL(_ url: URL) -> URL {
+        URL(fileURLWithPath: url.path).standardizedFileURL.resolvingSymlinksInPath()
+    }
+
     /// Imports (or re-syncs) a watched folder: one `localFiles` source + one book
     /// per folder, one chapter per audio file. Idempotent — re-scanning only
     /// appends chapters for files not already present, so no duplicates.

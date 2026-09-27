@@ -185,7 +185,12 @@ public final class FolderWatchService: ObservableObject {
             return
         }
 
-        let audioURLs = Self.newAudioFiles(in: contents, knownURLs: [])
+        // Do not probe AVURLAsset duration for files that are already in the
+        // database. This scan runs on every launch and used to reopen every
+        // audiobook in every watched folder before bootstrap could finish.
+        let knownURLs = await repository.knownLocalFileURLs(forFolder: url)
+        let canonicalContents = contents.map { URL(fileURLWithPath: $0.path).standardizedFileURL.resolvingSymlinksInPath() }
+        let audioURLs = Self.newAudioFiles(in: canonicalContents, knownURLs: knownURLs)
             .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
 
         var imports: [LocalAudioImport] = []
