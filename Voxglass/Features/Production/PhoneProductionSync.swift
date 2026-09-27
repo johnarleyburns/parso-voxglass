@@ -73,6 +73,14 @@ public final class PhoneProductionSync {
     /// verified against its record before it flips to `localAndRemote`; failures
     /// stay `.remoteOnly` and are retried by the next sync pass.
     public func hydrateAssets(_ assetIDs: Set<UUID>, in projectID: UUID) async -> AssetHydrationReport {
+#if targetEnvironment(simulator)
+        // The simulator build is intentionally local-only. Constructing the
+        // production CloudKit transport raises an Objective-C exception when
+        // the unsigned simulator bundle has no iCloud entitlement.
+        _ = assetIDs
+        _ = projectID
+        return AssetHydrationReport()
+#else
         guard !assetIDs.isEmpty else { return AssetHydrationReport() }
         let repository = SQLiteProductionAssetRepository(databaseURL: narrationRepository.layout(for: projectID).databaseURL)
         let records = (try? await repository.records()) ?? []
@@ -86,6 +94,7 @@ public final class PhoneProductionSync {
             assetStore: narrationRepository.fileStore(for: projectID)
         )
         return (try? await executor.hydrate(plan)) ?? AssetHydrationReport()
+#endif
     }
 
     /// One phone-as-writer sync pass: publish local projects, upload originals,
@@ -93,6 +102,16 @@ public final class PhoneProductionSync {
     /// available; then fold queued review events — which is local-only and never
     /// waits on iCloud.
     public func checkForUpdates() async {
+#if targetEnvironment(simulator)
+        // Do not even initialize PhoneSyncCore here: CloudKit's initializer
+        // terminates an unentitled simulator process before Swift can handle it.
+        // Local review events still fold normally below.
+        await foldPendingReviewEvents()
+        refreshPendingCount()
+        lastSyncDate = Date()
+        onProjectionsUpdated?()
+        return
+#endif
         isChecking = true
         defer { isChecking = false }
 

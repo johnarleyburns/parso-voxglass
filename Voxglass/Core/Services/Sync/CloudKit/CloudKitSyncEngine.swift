@@ -188,11 +188,24 @@ public final class CloudKitSyncEngine: ObservableObject {
             return
         }
         #endif
+
+        #if targetEnvironment(simulator)
+        // CKContainer(identifier:) raises an Objective-C exception when the
+        // simulator bundle is not backed by a signed iCloud container. That
+        // exception cannot be caught by Swift and used to terminate the app
+        // during the first background bootstrap. Simulator runs are local
+        // by design; keep the CloudKit gate closed without touching the
+        // container. Signed device builds continue through the real status
+        // check below.
+        accountStatus = .noAccount
+        return
+#else
         accountStatus = await withCheckedContinuation { continuation in
             container.accountStatus { status, _ in
                 continuation.resume(returning: status)
             }
         }
+#endif
     }
 
     #if DEBUG
