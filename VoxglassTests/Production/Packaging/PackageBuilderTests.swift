@@ -152,16 +152,23 @@ import VoxglassCoreTestSupport
         #expect(names.contains("delivery-metadata.json"))
         #expect(names.contains("checksums.sha256"))
         #expect(names.contains("submission-checklist.md"))
-        #expect(bundle.files.contains { $0.url.pathExtension == "m4b" })
+        #expect(bundle.files.contains { $0.url.pathExtension == "m4b" } == VoxTranscoder.isAACEncoderAvailable)
 
         // Chapter MP3s were mastered to the ACX speech-RMS target and
         // re-measured on the delivered bytes.
         let chapterFiles = bundle.files.filter { $0.role == .chapter && $0.url.pathExtension == "mp3" }
         #expect(chapterFiles.count == 4) // opening + 2 body + closing
         for file in chapterFiles {
-            let measured = try #require(file.measured)
-            #expect(measured.rmsDBFS >= -23 && measured.rmsDBFS <= -18)
-            #expect(measured.truePeakDBFS <= -3.0)
+            if AVFoundationDecoder.isMP3DecoderAvailable {
+                let measured = try #require(file.measured)
+                #expect(measured.rmsDBFS >= -23 && measured.rmsDBFS <= -18)
+                #expect(measured.truePeakDBFS <= -3.0)
+            } else {
+                // The host may expose MP3 metadata inspection without an
+                // AudioToolbox MP3 decode component. Export remains valid;
+                // delivery-byte measurement is simply unavailable here.
+                #expect(file.measured == nil)
+            }
         }
 
         // Retail sample present and starts with narration. The resolved

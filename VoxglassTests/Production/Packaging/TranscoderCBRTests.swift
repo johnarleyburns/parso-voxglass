@@ -38,7 +38,8 @@ import VoxglassEncoders
         #expect(file.byteCount < 170_000, "10 s at 128 kbps ≈ 160 KB")
     }
 
-    @Test func decodesBackToMono44100() async throws {
+    @Test(.enabled(if: AVFoundationDecoder.isMP3DecoderAvailable))
+    func decodesBackToMono44100() async throws {
         let transcoder = VoxTranscoder()
         let input = try TestAudio.toneFile(duration: 3)
         defer { try? FileManager.default.removeItem(at: input) }

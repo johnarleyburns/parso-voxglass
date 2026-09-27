@@ -13,7 +13,7 @@ import VoxglassCoreTestSupport
         #expect(!disabled.availableEncoders.contains(.mp3))
         #expect(!disabled.availableEncoders.contains(.flac))
         #expect(disabled.availableEncoders.contains(.pcm))
-        #expect(disabled.availableEncoders.contains(.aacLC))
+        #expect(disabled.availableEncoders.contains(.aacLC) == VoxTranscoder.isAACEncoderAvailable)
     }
 
     @Test func librivoxBuilderFailsBeforeWritingWhenMp3Unavailable() async throws {

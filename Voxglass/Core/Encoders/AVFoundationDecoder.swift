@@ -1,4 +1,5 @@
 @preconcurrency import AVFoundation
+import AudioToolbox
 import Foundation
 import ParsoAudioCore
 import VoxglassCore
@@ -10,6 +11,25 @@ import VoxglassCore
 /// MP3 decode stays AudioToolbox-backed inside `ParsoAudioCore`; FLAC files are
 /// routed to `FLACDecoder` by `RoutingAudioDecoder`, never through this type.
 public struct AVFoundationDecoder: SeekableAudioDecoding {
+
+    /// Some macOS command-line hosts expose MP3 metadata inspection but not
+    /// the decode component used by AVAudioFile. Acceptance tests that need
+    /// decoded MP3 PCM should be enabled only when that component is present.
+    public static let isMP3DecoderAvailable: Bool = {
+        var size: UInt32 = 0
+        guard AudioFormatGetPropertyInfo(
+            kAudioFormatProperty_DecodeFormatIDs, 0, nil, &size
+        ) == noErr else { return false }
+        var formats = [AudioFormatID](repeating: 0, count: Int(size) / MemoryLayout<AudioFormatID>.size)
+        guard AudioFormatGetProperty(
+            kAudioFormatProperty_DecodeFormatIDs,
+            0,
+            nil,
+            &size,
+            &formats
+        ) == noErr else { return false }
+        return formats.contains(kAudioFormatMPEGLayer3)
+    }()
 
     public init() {}
 

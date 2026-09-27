@@ -1,4 +1,5 @@
 import AVFoundation
+import AudioToolbox
 import Foundation
 import ParsoAudioCore
 import VoxglassCore
@@ -16,6 +17,26 @@ import VoxglassCore
 /// third-party codecs so a platform without them still degrades gracefully.
 public struct VoxTranscoder: AudioTranscoding {
 
+    /// AudioToolbox codec components vary by host OS. In particular, a
+    /// command-line macOS test process may have no AAC encoder even though
+    /// the same app target has one on iOS. Do not advertise a codec that the
+    /// current process cannot actually open.
+    public static let isAACEncoderAvailable: Bool = {
+        var size: UInt32 = 0
+        guard AudioFormatGetPropertyInfo(
+            kAudioFormatProperty_EncodeFormatIDs, 0, nil, &size
+        ) == noErr else { return false }
+        var formats = [AudioFormatID](repeating: 0, count: Int(size) / MemoryLayout<AudioFormatID>.size)
+        guard AudioFormatGetProperty(
+            kAudioFormatProperty_EncodeFormatIDs,
+            0,
+            nil,
+            &size,
+            &formats
+        ) == noErr else { return false }
+        return formats.contains(kAudioFormatMPEG4AAC)
+    }()
+
     public var mp3Available: Bool
     public var flacAvailable: Bool
     public var decoder: any AudioDecoding
@@ -31,7 +52,8 @@ public struct VoxTranscoder: AudioTranscoding {
     }
 
     public var availableEncoders: Set<Codec> {
-        var set: Set<Codec> = [.pcm, .aacLC, .alac] // AVFoundation always available on macOS.
+        var set: Set<Codec> = [.pcm, .alac]
+        if Self.isAACEncoderAvailable { set.insert(.aacLC) }
         if mp3Available { set.insert(.mp3) }
         if flacAvailable { set.insert(.flac) }
         return set

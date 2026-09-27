@@ -85,7 +85,8 @@ import VoxglassEncoders
 
     // MARK: - MPEG-4 (M4B)
 
-    @Test func m4bConcatenatesIntoValidAudiobook() async throws {
+    @Test(.enabled(if: VoxTranscoder.isAACEncoderAvailable))
+    func m4bConcatenatesIntoValidAudiobook() async throws {
         let transcoder = VoxTranscoder()
         let a = try TestAudio.toneFile(duration: 2, frequency: 220)
         let b = try TestAudio.toneFile(duration: 2, frequency: 330)

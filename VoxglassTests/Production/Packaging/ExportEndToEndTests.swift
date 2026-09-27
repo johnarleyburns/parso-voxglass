@@ -9,7 +9,8 @@ import VoxglassCoreTestSupport
 /// correct ID3 tags and filenames, and pass a re-validation of the *output*."
 @Suite struct ExportEndToEndTests {
 
-    @Test func librivoxReadyExportsAValidPackage() async throws {
+    @Test(.enabled(if: AVFoundationDecoder.isMP3DecoderAvailable))
+    func librivoxReadyExportsAValidPackage() async throws {
         let project = ProjectFixtures.librivoxReady()
         let exportsRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("e2e-\(UUID().uuidString)", isDirectory: true)
