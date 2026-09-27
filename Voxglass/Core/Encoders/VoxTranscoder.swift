@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import ParsoAudioCore
 import VoxglassCore
 
 /// The composition point of the encoder pipeline (§16.3): AVFoundation for
@@ -123,25 +124,19 @@ public struct VoxTranscoder: AudioTranscoding {
     // MARK: - Writers
 
     private func writePCM(_ samples: [Float], sampleRate: Double, bitDepth: Int, to url: URL) throws {
-        try? FileManager.default.removeItem(at: url)
         let dithered = MasteringChain.tpdfDither(samples, bitDepth: bitDepth)
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: sampleRate,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: bitDepth,
-            AVLinearPCMIsFloatKey: bitDepth == 32,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsNonInterleaved: false
-        ]
-        let file = try AVAudioFile(forWriting: url, settings: settings)
-        let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1, interleaved: false)!
-        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(dithered.count))!
-        buffer.frameLength = AVAudioFrameCount(dithered.count)
-        if let channel = buffer.floatChannelData?[0] {
-            dithered.withUnsafeBufferPointer { channel.update(from: $0.baseAddress!, count: dithered.count) }
+        let format = AudioFormat(sampleRate: sampleRate, channelCount: 1)
+        let buffer = PCMBuffer(format: format, capacity: dithered.count)
+        let channel = buffer.channel(0)
+        for index in dithered.indices {
+            channel[index] = dithered[index]
         }
-        try file.write(from: buffer)
+        let writer = try AudioFileWriter(
+            url: url,
+            format: format,
+            codec: .wavPCM(bitDepth: bitDepth)
+        )
+        try writer.write(buffer)
     }
 
     private func writeCompressed(_ samples: [Float], sampleRate: Double, bitrateKbps: Int, alac: Bool, tags: AudioTags, to url: URL) throws {
