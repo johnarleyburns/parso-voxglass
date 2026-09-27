@@ -80,15 +80,17 @@ struct BrowseView: View {
         .task {
             catalogStore.selectedLanguages = selectedLanguages
             let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
-            await coverStore.resolveCovers(for: collections, languages: selectedLanguages)
-            await coverStore.resolveCounts(for: collections, languages: selectedLanguages)
+            async let covers: Void = coverStore.resolveCovers(for: collections, languages: selectedLanguages)
+            async let counts: Void = coverStore.resolveCounts(for: collections, languages: selectedLanguages)
+            _ = await (covers, counts)
         }
         .onChange(of: selectedLanguagesRaw) { _, _ in
             catalogStore.selectedLanguages = selectedLanguages
             Task {
                 let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
-                await coverStore.resolveCovers(for: collections, languages: selectedLanguages, force: true)
-                await coverStore.resolveCounts(for: collections, languages: selectedLanguages, force: true)
+                async let covers: Void = coverStore.resolveCovers(for: collections, languages: selectedLanguages, force: true)
+                async let counts: Void = coverStore.resolveCounts(for: collections, languages: selectedLanguages, force: true)
+                _ = await (covers, counts)
             }
         }
         .onChange(of: catalogStore.results) { _, results in
@@ -312,6 +314,7 @@ struct BrowseView: View {
                 ForEach(IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)) { collection in
                     ExploreCollectionCard(
                         collection: collection,
+                        previews: coverStore.previews(for: collection),
                         resolvedCoverURL: coverStore.coverURL(for: collection),
                         approximateCount: coverStore.count(for: collection),
                         isSelected: false,
@@ -671,6 +674,7 @@ private enum DiscoverBrowseScope: String, CaseIterable, Identifiable {
 
 private struct ExploreCollectionCard: View {
     var collection: IACollection
+    var previews: [CollectionBookPreview]
     var resolvedCoverURL: URL?
     var approximateCount: Int?
     var isSelected: Bool
@@ -681,9 +685,11 @@ private struct ExploreCollectionCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     CollectionFan(books: [
-                        (collection.title, nil),
-                        ("Essential Works", nil),
-                        ("Public Domain", nil)
+                        previews.isEmpty
+                            ? (collection.title, nil)
+                            : (previews[0].title, previews[0].author),
+                        previews.dropFirst().first.map { ($0.title, $0.author) } ?? (collection.title, nil),
+                        previews.dropFirst(2).first.map { ($0.title, $0.author) } ?? (collection.title, nil)
                     ])
                     Spacer()
                 }

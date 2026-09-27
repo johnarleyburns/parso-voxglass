@@ -78,11 +78,11 @@ final class VoxglassUITests: XCTestCase {
             ("Narrate", "Start a Narration"),
             ("Listen", "Recommended for You")
         ]
-        for tab in tabs {
-            tab(tab.button, in: app).tap()
+        for tabSpec in tabs {
+            tab(tabSpec.button, in: app).tap()
             XCTAssertTrue(
-                app.staticTexts[tab.anchor].waitForExistence(timeout: 10),
-                "Tab \(tab.button) did not render its content"
+                app.staticTexts[tabSpec.anchor].waitForExistence(timeout: 10),
+                "Tab \(tabSpec.button) did not render its content"
             )
         }
 
@@ -116,7 +116,6 @@ final class VoxglassUITests: XCTestCase {
         app.buttons["import.proDetails"].tap()
         XCTAssertTrue(app.buttons["pro.purchase"].waitForExistence(timeout: 10), "Pro details sheet was not reachable.")
         app.buttons["Done"].tap()
-        app.buttons["Close"].tap()
 
         // Community needs remain available from the New Narration flow.
         app.buttons["import.fromNeed"].tap()
@@ -448,19 +447,19 @@ final class VoxglassUITests: XCTestCase {
             "Discover did not render.\n\(app.debugDescription)"
         )
         XCTAssertTrue(
-            app.buttons["Great Books"].waitForExistence(timeout: 10),
+            app.buttons["discover.collection.great-books"].waitForExistence(timeout: 10),
             "The English Great Books collection should be visible by default.\n\(app.debugDescription)"
         )
         XCTAssertFalse(
-            app.buttons["Grandes Libros"].exists,
+            app.buttons["discover.collection.great-books-spa"].exists,
             "The Spanish Great Books collection must not show for an English-only selection.\n\(app.debugDescription)"
         )
         XCTAssertFalse(
-            app.buttons["Große Bücher"].exists,
+            app.buttons["discover.collection.great-books-deu"].exists,
             "The German Great Books collection must not show for an English-only selection.\n\(app.debugDescription)"
         )
         XCTAssertFalse(
-            app.buttons["Grandi Libri"].exists,
+            app.buttons["discover.collection.great-books-ita"].exists,
             "The Italian Great Books collection must not show for an English-only selection.\n\(app.debugDescription)"
         )
     }
@@ -489,7 +488,15 @@ final class VoxglassUITests: XCTestCase {
             app.state == .runningForeground,
             "App terminated after toggling the equalizer engage switch."
         )
-        let after = engage.value as? String
+        // iOS 27 delivers the accessibility value on the next run-loop turn;
+        // reading it immediately after the synthesized tap races SwiftUI's
+        // state update and produced a false negative in this smoke test.
+        var after = engage.value as? String
+        let deadline = Date().addingTimeInterval(3)
+        while after == before, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+            after = engage.value as? String
+        }
         XCTAssertNotEqual(before, after, "Toggling the equalizer switch should change its state")
 
         app.buttons["Done"].tap()
@@ -579,9 +586,14 @@ final class VoxglassUITests: XCTestCase {
         )
 
         func obstructionTop() -> CGFloat {
-            let tabTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
+            // A sheet can leave the root tab bar in the accessibility tree
+            // while it is fully covered and non-hittable. It is not an
+            // obstruction for modal content, so only use its frame when the
+            // bar is actually visible to the user.
+            let tabBar = app.tabBars.firstMatch
+            let tabTop = tabBar.exists && tabBar.isHittable ? tabBar.frame.minY : app.frame.maxY
             let accessory = app.otherElements["chrome.miniPlayer"]
-            let accessoryTop = accessory.exists ? accessory.frame.minY : app.frame.maxY
+            let accessoryTop = accessory.exists && accessory.isHittable ? accessory.frame.minY : app.frame.maxY
             return min(tabTop, accessoryTop)
         }
 

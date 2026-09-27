@@ -16,12 +16,25 @@ struct MiniPlayerAccessory: View {
                     HStack(spacing: 10) {
                         CoverPlate(title: session.book.title, author: session.book.authorLine, coverURL: session.book.coverURL, size: placement == .inline ? 28 : 32, shape: .circle)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(session.book.title).voxType(.body).lineLimit(1)
+                            Text(session.book.title)
+                                .voxType(.body)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.62)
+                                .allowsTightening(true)
                             if placement == .expanded {
-                                Text(session.chapter.title).voxType(.eyebrow).lineLimit(1)
-                                Text(remainingText(session)).voxType(.timecode).foregroundStyle(Palette.ink2)
+                                Text(session.chapter.title)
+                                    .voxType(.eyebrow)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.62)
+                                    .allowsTightening(true)
+                                Text(remainingText(session))
+                                    .voxType(.timecode)
+                                    .foregroundStyle(Palette.ink2)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.62)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .buttonStyle(.plain)
@@ -45,7 +58,7 @@ struct MiniPlayerAccessory: View {
                 }
             }
             .padding(.horizontal, 10)
-            .frame(minHeight: placement == .inline ? 44 : 60)
+            .frame(minHeight: placement == .inline ? 50 : 60)
             .glassEffect(.regular, in: .capsule)
             .accessibilityIdentifier("chrome.miniPlayer")
             .accessibilityElement(children: .contain)

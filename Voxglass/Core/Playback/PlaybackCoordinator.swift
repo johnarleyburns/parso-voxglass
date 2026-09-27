@@ -65,6 +65,11 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     @ObservationIgnored private var lastPeriodicSave = Date.distantPast
     @ObservationIgnored private var isHandlingInterruption = false
+    /// Limits automatic reloads for AVFoundation's transient "interrupted /
+    /// action could not be completed" failures. A user-initiated play resets
+    /// this budget; a failed retry falls through to the normal retryable error.
+    @ObservationIgnored private var transientRecoveryAttempts = 0
+    @ObservationIgnored private var isAutomaticTransientRecovery = false
 
     /// Last position observed from a healthy engine for the current chapter.
     /// AVPlayer can report zero or an invalid time while failing; retaining the
@@ -551,6 +556,9 @@ public final class PlaybackCoordinator {
     }
 
     public func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
+        if !isAutomaticTransientRecovery {
+            transientRecoveryAttempts = 0
+        }
         guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }
         let chapter = target.chapter
         let startTime = target.startTime
@@ -1659,6 +1667,44 @@ public final class PlaybackCoordinator {
     private func handleEngineIssue(_ issue: AudioEngineIssue) {
         guard let session = currentSession else { return }
 
+        if case .failed(let message) = issue,
+           isTransientPlaybackFailure(message),
+           transientRecoveryAttempts < 2 {
+            transientRecoveryAttempts += 1
+            let position = confirmedPosition(for: session)
+            let book = BookWithChapters(book: session.book, chapters: session.chapters)
+            let chapter = session.chapter
+            mutateSession {
+                $0.position = position
+                $0.isPlaying = false
+            }
+            if position > 0 {
+                snapshotStore.save(PlaybackPosition(
+                    bookID: session.book.id,
+                    chapterID: session.chapter.id,
+                    position: position,
+                    duration: session.duration,
+                    updatedAt: Date(),
+                    isFinished: false
+                ))
+            }
+            engine.pause()
+            progressTask?.cancel()
+            progressTask = nil
+            isEngineLoaded = false
+            playbackPhase = .preparing
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(350))
+                guard let self,
+                      self.currentSession?.book.id == book.book.id,
+                      self.currentSession?.chapter.id == chapter.id else { return }
+                self.isAutomaticTransientRecovery = true
+                await self.play(book, chapter: chapter)
+                self.isAutomaticTransientRecovery = false
+            }
+            return
+        }
+
         let position = confirmedPosition(for: session)
         mutateSession {
             $0.position = position
@@ -1689,6 +1735,12 @@ public final class PlaybackCoordinator {
         playbackError = issue.userMessage
         playbackPhase = .failed(PlaybackFailure(message: issue.userMessage, isRetryable: true))
         updateNowPlayingInfo()
+    }
+
+    private func isTransientPlaybackFailure(_ message: String) -> Bool {
+        let normalized = message.localizedLowercase
+        return normalized.contains("interrupted")
+            || normalized.contains("action could not be completed")
     }
 
     private func confirmedPosition(for session: PlaybackSession) -> TimeInterval {

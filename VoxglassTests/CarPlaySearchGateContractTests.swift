@@ -4,7 +4,9 @@ import Testing
 /// Source contract for the in-car search crash.
 ///
 /// Apple's CarPlay Developer Guide (June 2026, "Templates" table) allows the
-/// Search template for Audio apps only on iOS 27 or later; on earlier iOS
+/// Search template for Audio apps only on iOS 27 or later; the app now has an
+/// iOS 27 deployment floor, so the runtime gate is a single always-true seam.
+/// On earlier iOS
 /// `pushTemplate(CPSearchTemplate)` raises an uncatchable Objective-C
 /// exception (`CPAssertAllowedClasses`). The app target is not compiled by
 /// `swift test`, so these checks read the source text: exactly one place may
@@ -26,9 +28,17 @@ import Testing
         #expect(gate.lowerBound < construction.lowerBound)
     }
 
-    @Test func availabilityGateIsIOS27() throws {
+    @Test func availabilityPolicyIsIOS27Floor() throws {
         let availability = try source(Self.availabilityPath)
-        #expect(availability.contains("#available(iOS 27.0, *)"))
+        #expect(availability.contains("static let templateSupported = true"))
+        #expect(!availability.contains("#available(iOS 27.0, *)"))
+    }
+
+    @Test func renderedListsExposeNativeVoiceSearch() throws {
+        let renderer = try source("Voxglass/App/CarPlay/CarPlayTemplateRenderer.swift")
+        #expect(renderer.contains("CPAssistantCellConfiguration("))
+        #expect(renderer.contains("assistantAction: .playMedia"))
+        #expect(renderer.contains("assistantCellConfiguration: assistantCellConfiguration"))
     }
 
     @Test func tabBarNeverReceivesASearchTemplate() throws {

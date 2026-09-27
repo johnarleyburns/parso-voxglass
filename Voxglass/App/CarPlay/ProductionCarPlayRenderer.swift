@@ -8,6 +8,12 @@ import VoxglassCore
 @MainActor
 enum ProductionCarPlayRenderer {
 
+    private static let assistantCellConfiguration = CPAssistantCellConfiguration(
+        position: .top,
+        visibility: .always,
+        assistantAction: .playMedia
+    )
+
     typealias ActionHandler = @MainActor (ProductionCarPlayAction) -> Void
 
     static func tabBar(tabs: [ProductionCarPlayTab], handler: @escaping ActionHandler) -> CPTemplate {
@@ -32,7 +38,8 @@ enum ProductionCarPlayRenderer {
     static func tabTemplate(_ tab: ProductionCarPlayTab, handler: @escaping ActionHandler) -> CPListTemplate {
         let template = CPListTemplate(
             title: tab.title,
-            sections: sections(tab.sections, handler: handler)
+            sections: sections(tab.sections, handler: handler),
+            assistantCellConfiguration: assistantCellConfiguration
         )
         template.tabTitle = tab.title
         template.tabImage = UIImage(systemName: tab.systemImage)
@@ -44,7 +51,11 @@ enum ProductionCarPlayRenderer {
         sections modelSections: [ProductionCarPlaySection],
         handler: @escaping ActionHandler
     ) -> CPListTemplate {
-        CPListTemplate(title: title, sections: sections(modelSections, handler: handler))
+        CPListTemplate(
+            title: title,
+            sections: sections(modelSections, handler: handler),
+            assistantCellConfiguration: assistantCellConfiguration
+        )
     }
 
     static func sections(

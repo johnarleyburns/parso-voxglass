@@ -83,10 +83,10 @@ else
 fi
 
 # ──────────────────────────────────────────────────────────────
-# G-A1…G-A6 probes: the iOS 26 redesign ratchets.
+# G-A1…G-A6 probes: the iOS 27 redesign ratchets.
 # ──────────────────────────────────────────────────────────────
 probe="Voxglass/Features/_probe_ga1.swift"
-plant "$probe" 'if #available(iOS 18.0, *) {}'
+plant "$probe" 'if #available(iOS 26.0, *) {}'
 expect_guard_fails "A1" "dead iOS availability check"
 unplant "$probe"
 expect_guard_passes "G-A1 availability probe"

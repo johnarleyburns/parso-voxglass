@@ -107,9 +107,10 @@ public final class LibraryStore: ObservableObject {
 
     public func refresh() async {
         do {
-            books = try await repository.fetchLibrary()
+            let fetchedBooks = try await repository.fetchLibrary()
+            books = fetchedBooks
             sources = try await repository.fetchSources()
-            recentlyPlayed = try await repository.fetchRecentlyPlayed()
+            recentlyPlayed = try await repository.fetchRecentlyPlayed(from: fetchedBooks)
             progressByBook = try await repository.fetchBookProgress()
             listenedWorkExclusionKeys = try await repository.fetchListenedWorkExclusionKeys()
         } catch let fetchError {

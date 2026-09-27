@@ -608,14 +608,14 @@ check_core_platform_free() {
 # G-A1…G-A6: ADA redesign ratchets from SPEC §8.3.
 # ──────────────────────────────────────────────────────────────
 check_ada_ios_floor() {
-  if ! grep -q 'iOS: "26.0"' project.yml || ! grep -q 'IPHONEOS_DEPLOYMENT_TARGET: "26.0"' project.yml; then
-    violate "G-A1: project.yml is not on the iOS 26 floor"
+  if ! grep -q 'iOS: "27.0"' project.yml || ! grep -q 'IPHONEOS_DEPLOYMENT_TARGET: "27.0"' project.yml; then
+    violate "G-A1: project.yml is not on the iOS 27 floor"
   fi
-  if ! grep -q '\.iOS(\.v26)' Package.swift; then
-    violate "G-A1: Package.swift is not on the iOS 26 floor"
+  if ! grep -q '\.iOS("27\.0")' Package.swift; then
+    violate "G-A1: Package.swift is not on the iOS 27 floor"
   fi
   local matches
-  matches=$(grep -rn --include='*.swift' -E '#available\(iOS (1[0-9]|2[0-5])' Voxglass 2>/dev/null || true)
+  matches=$(grep -rn --include='*.swift' -E '#available\(iOS (1[0-9]|2[0-6])' Voxglass 2>/dev/null || true)
   if [ -n "$matches" ]; then
     while read -r line; do violate "G-A1: dead iOS availability check: $line"; done <<< "$matches"
   fi

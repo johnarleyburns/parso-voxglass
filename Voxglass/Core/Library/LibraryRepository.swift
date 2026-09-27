@@ -151,6 +151,17 @@ public final class LibraryRepository: @unchecked Sendable {
     }
 
     public func fetchRecentlyPlayed(limit: Int = 50) async throws -> [BookWithChapters] {
+        let library = try await fetchLibrary()
+        return try await fetchRecentlyPlayed(from: library, limit: limit)
+    }
+
+    /// Resolves listening order against an already-fetched library snapshot.
+    /// This avoids the old double library/chapter query during every My Books
+    /// refresh.
+    public func fetchRecentlyPlayed(
+        from library: [BookWithChapters],
+        limit: Int = 50
+    ) async throws -> [BookWithChapters] {
         try await database.prepare()
 
         let rows = try await database.query("""
@@ -163,7 +174,7 @@ public final class LibraryRepository: @unchecked Sendable {
             .int(Int64(max(0, limit)))
         ])
         let orderedIDs = try rows.map { try ModelMapping.uuid($0, "book_id") }
-        let libraryByID = Dictionary(uniqueKeysWithValues: try await fetchLibrary().map { ($0.book.id, $0) })
+        let libraryByID = Dictionary(uniqueKeysWithValues: library.map { ($0.book.id, $0) })
         // "Jump Back In" is a My Books surface — a book only previewed from
         // a catalog result (not yet explicitly added) stays out of it, same
         // as it stays out of the My Books list itself, until confirmed.

@@ -9,21 +9,39 @@ struct ArtworkAmbientBackground: View {
     @State private var drift = false
 
     var body: some View {
-        if reduceTransparency {
-            color(for: palette.deep)
-        } else {
-            MeshGradient(
-                width: 3,
-                height: 3,
-                points: points,
-                colors: colors
-            )
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
-                    drift = true
-                }
+        Group {
+            if reduceTransparency {
+                color(for: palette.deep)
+            } else {
+                MeshGradient(
+                    width: 3,
+                    height: 3,
+                    points: points,
+                    colors: colors
+                )
             }
+        }
+        .onChange(of: reduceMotion, initial: true) { _, _ in
+            updateDriftAnimation()
+        }
+        .onChange(of: reduceTransparency, initial: true) { _, _ in
+            updateDriftAnimation()
+        }
+    }
+
+    private func updateDriftAnimation() {
+        guard !reduceMotion, !reduceTransparency else {
+            var transaction = Transaction()
+            transaction.animation = nil
+            withTransaction(transaction) {
+                drift = false
+            }
+            return
+        }
+
+        guard !drift else { return }
+        withAnimation(.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
+            drift = true
         }
     }
 

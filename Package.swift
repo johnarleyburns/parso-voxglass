@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "VoxglassCore",
-    platforms: [.iOS(.v26), .macOS(.v14), .watchOS(.v10)],
+    platforms: [.iOS("27.0"), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
         .library(name: "VoxglassWatchProtocol", targets: ["VoxglassWatchProtocol"]),

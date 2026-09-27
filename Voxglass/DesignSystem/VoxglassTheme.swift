@@ -99,11 +99,16 @@ struct VoxglassScreen<Content: View>: View {
     private var screenContent: some View {
             ScrollViewReader { proxy in
                 ScrollView {
-                    content
-                        .padding(.horizontal, Spacing.gutter)
-                        .padding(.top, 8)
-                        .padding(.bottom, Spacing.section)
-                        .id("voxglass.screen.content")
+                        content
+                            .padding(.horizontal, Spacing.gutter)
+                            .padding(.top, 8)
+                            .padding(.bottom, Spacing.section)
+                            // Keep the last row scrollable above the tab bar
+                            // and the optional tab-view bottom accessory on
+                            // compact devices. Plain padding is not included
+                            // in the system safe-area inset used by ScrollView.
+                            .safeAreaPadding(.bottom, Spacing.section)
+                            .id("voxglass.screen.content")
                 }
                 .background(VoxglassBackground())
                 .scrollEdgeEffectStyle(.soft, for: .bottom)

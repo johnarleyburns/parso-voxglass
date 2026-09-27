@@ -67,25 +67,8 @@ struct RootView: View {
     }
 
     private var tabsWithPresentation: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Listen", systemImage: "headphones", value: VoxglassTab.listen) {
-                ListenView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-            }
-            Tab("My Books", systemImage: "books.vertical", value: VoxglassTab.library) {
-                LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-            }
-            Tab("Discover", systemImage: "square.grid.2x2", value: VoxglassTab.discover) {
-                BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-            }
-            Tab("Narrate", systemImage: "mic", value: VoxglassTab.narration) {
-                NarrationTabView()
-            }
-        }
-        .tabViewStyle(.sidebarAdaptable)
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .tabViewBottomAccessory {
-            MiniPlayerAccessory().environment(playback)
-        }
+        tabShell
+            .modifier(MiniPlayerBottomAccessory(isVisible: shouldShowMiniPlayer))
         .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
             BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
                 .environment(playback)
@@ -113,6 +96,30 @@ struct RootView: View {
         }
     }
 
+    private var tabShell: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Listen", systemImage: "headphones", value: VoxglassTab.listen) {
+                ListenView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+            }
+            Tab("My Books", systemImage: "books.vertical", value: VoxglassTab.library) {
+                LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+            }
+            Tab("Discover", systemImage: "square.grid.2x2", value: VoxglassTab.discover) {
+                BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
+            }
+            Tab("Narrate", systemImage: "mic", value: VoxglassTab.narration) {
+                NarrationTabView()
+            }
+        }
+        .tabViewStyle(.sidebarAdaptable)
+        .tabBarMinimizeBehavior(.onScrollDown)
+    }
+
+    private var shouldShowMiniPlayer: Bool {
+        guard let session = playback.currentSession else { return false }
+        return miniPlayerRouter.shouldShowMiniPlayer(currentBookID: session.book.id)
+    }
+
     @MainActor
     private func handleWidgetCommand() async {
         guard WidgetPlaybackCommandStore.consume() == .resume else { return }
@@ -125,6 +132,22 @@ struct RootView: View {
             await playback.play(book)
         }
         WidgetSnapshotWriter.write(playback: playback)
+    }
+}
+
+private struct MiniPlayerBottomAccessory: ViewModifier {
+    let isVisible: Bool
+    @Environment(PlaybackCoordinator.self) private var playback
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isVisible {
+            content.tabViewBottomAccessory {
+                MiniPlayerAccessory().environment(playback)
+            }
+        } else {
+            content
+        }
     }
 }
 

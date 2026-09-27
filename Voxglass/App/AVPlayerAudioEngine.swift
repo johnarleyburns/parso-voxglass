@@ -40,6 +40,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     private var loaders: [CachingResourceLoader] = []
     private var prefetchLoaders: [CachingResourceLoader] = []
     private var prefetchItems: [AVPlayerItem] = []
+    private var stallRecoveryTask: Task<Void, Never>?
     private var eqEngagedDesired = false
 
     var onPlaybackEnded: (@MainActor () -> Void)?
@@ -259,6 +260,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     }
 
     private func tearDownCurrentItem() {
+        stallRecoveryTask?.cancel()
+        stallRecoveryTask = nil
         eqProcessor.detachAll()
         removeObservers()
         itemStatusObservers.removeAll()
@@ -352,7 +355,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         ) { [weak self] _ in
             guard !isPreloaded else { return }
             Task { @MainActor [weak self] in
-                self?.reportIssue(.stalled, for: item)
+                self?.scheduleStallRecovery(for: item)
             }
         }
         failureTokenStore.tokens[key, default: []].append(stalledToken)
@@ -371,6 +374,28 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
                     }
                 }
             }
+        }
+    }
+
+    /// AVPlayer reports short network/route stalls as playback failures even
+    /// while the item is still healthy. Retry these transient interruptions
+    /// before surfacing an error to the user; normal streaming should never
+    /// turn a recoverable buffer refill into a playback alert.
+    private func scheduleStallRecovery(for item: AVPlayerItem) {
+        stallRecoveryTask?.cancel()
+        stallRecoveryTask = Task { @MainActor [weak self, weak item] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, let self, let item,
+                  self.player.currentItem === item,
+                  item.status != .failed else { return }
+            self.configureAudioSession()
+            self.player.play()
+
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled,
+                  self.player.currentItem === item,
+                  self.player.timeControlStatus != .playing else { return }
+            self.reportIssue(.stalled, for: item)
         }
     }
 

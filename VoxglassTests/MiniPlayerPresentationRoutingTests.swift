@@ -83,7 +83,7 @@ import Testing
 
     @Test func rootDockReservesItsLiveSafeArea() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        let tabs = sourceSlice(root, from: "private var tabsWithPresentation", to: "enum VoxglassTab")
+        let tabs = sourceSlice(root, from: "private struct MiniPlayerBottomAccessory", to: "enum VoxglassTab")
         #expect(tabs.contains(".tabViewBottomAccessory"))
         #expect(tabs.contains("MiniPlayerAccessory"))
         #expect(!tabs.contains("safeAreaInset(edge: .bottom"))
@@ -91,7 +91,7 @@ import Testing
 
     @Test func consumerShellExposesOnlyPlanDestinations() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        let tabs = sourceSlice(root, from: "private var tabsWithPresentation", to: ".sheet(isPresented")
+        let tabs = sourceSlice(root, from: "private var tabShell", to: "private var shouldShowMiniPlayer")
         #expect(tabs.contains("ListenView("))
         #expect(tabs.contains("LibraryView("))
         #expect(tabs.contains("BrowseView("))

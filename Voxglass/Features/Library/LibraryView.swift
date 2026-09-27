@@ -112,7 +112,6 @@ struct LibraryView: View {
         .task {
             libraryStore.sort = .recent
             await libraryStore.refresh()
-            await libraryStore.refreshRecentlyPlayed()
             bookOrder = libraryStore.books.map { $0.book.id }
         }
         .onChange(of: libraryStore.books) { _, books in
@@ -308,9 +307,9 @@ struct LibraryView: View {
 
     private var filterBar: some View {
         Picker("Filter", selection: $libraryStore.progressFilter) {
-            Text("All").tag(LibraryProgressFilter.all)
             Text("In Progress").tag(LibraryProgressFilter.inProgress)
             Text("Finished").tag(LibraryProgressFilter.finished)
+            Text("All").tag(LibraryProgressFilter.all)
         }
         .pickerStyle(.segmented)
         .tint(Palette.brass)

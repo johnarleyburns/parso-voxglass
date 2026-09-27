@@ -168,12 +168,10 @@ public enum CarPlayMenuBuilder {
     }
 
     /// The Library tab's search row, or `nil` where the platform forbids the
-    /// Search template for audio apps (before iOS 27) — the row must not exist
-    /// at all there, because tapping it would abort the app. While the car
-    /// limits the keyboard the row stays in place but disabled, so the list
-    /// does not reshuffle under the driver's finger. The copy never tells the
-    /// driver to use the phone (CarPlay guidelines for all apps, #2), and does
-    /// not promise voice input: `CPSearchTemplate` is a keyboard UI.
+    /// The keyboard search row is available on the iOS 27 floor. While the car
+    /// limits the keyboard it stays in place but disabled, so the list does
+    /// not reshuffle under the driver's finger. Voice search is provided by
+    /// the native Siri assistant cell on every rendered list template.
     public static func searchItem(_ state: CarPlayState) -> CarPlayItem? {
         guard state.searchTemplateSupported else { return nil }
         if state.keyboardLimited {

@@ -2,7 +2,7 @@ name: Voxglass
 options:
   bundleIdPrefix: guru.parso
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "27.0"
     macOS: "14.0"
     watchOS: "10.0"
   createIntermediateGroups: true
@@ -24,7 +24,7 @@ settings:
     CURRENT_PROJECT_VERSION: "52"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
-    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "27.0"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: YES
 targets:

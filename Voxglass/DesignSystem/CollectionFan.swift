@@ -6,12 +6,12 @@ struct CollectionFan: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ForEach(Array(books.prefix(3).enumerated()), id: \.offset) { index, book in
-                CoverPlate(title: book.title, author: book.author, coverURL: nil, size: 60, shape: .portrait)
-                    .frame(width: 60, height: 86)
+                CoverPlate(title: book.title, author: book.author, coverURL: nil, size: 72, shape: .portrait)
+                    .frame(width: 72, height: 101)
                     .rotationEffect(.degrees([-10, -2, 8][index]))
-                    .offset(x: CGFloat(index) * -18, y: CGFloat(index) * 4)
+                    .offset(x: CGFloat(index) * -21, y: CGFloat(index) * 4)
             }
         }
-        .frame(width: 120, height: 100, alignment: .topTrailing)
+        .frame(width: 145, height: 112, alignment: .topTrailing)
     }
 }
