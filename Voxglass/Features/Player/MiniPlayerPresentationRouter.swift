@@ -25,10 +25,9 @@ final class MiniPlayerPresentationRouter {
     /// Show the miniplayer whenever a playback session exists and neither the
     /// Now Playing sheet nor a pushed BookPageView is visible.
     func shouldShowMiniPlayer(currentBookID: UUID?) -> Bool {
-        guard let currentBookID,
+        guard currentBookID != nil,
               !isNowPlayingPresented,
               pushedPlayerCount == 0 else { return false }
-        _ = currentBookID
         return true
     }
 

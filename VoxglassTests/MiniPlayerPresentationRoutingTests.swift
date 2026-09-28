@@ -7,7 +7,10 @@ import Testing
     @Test func miniPlayerVisibleForActiveSession() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
-        #expect(scope.contains("guard let currentBookID"))  // shouldShowMiniPlayer must guard against nil currentBookID
+        #expect(scope.contains("guard currentBookID != nil"))  // shouldShowMiniPlayer must guard against nil currentBookID
+        #expect(scope.contains("pushedPlayerCount == 0"))  // pushed detail must remain excluded
+        #expect(scope.contains("return true"))  // an active session must take the visible path
+        #expect(!scope.contains("_ = currentBookID"))  // session presence is the only required input
         // Simplified rule: show miniplayer when session exists and Now Playing not presented.
         // Does not require lifecycle-based visiblePushedBookID.
     }
@@ -27,14 +30,13 @@ import Testing
     @Test func todayHeroLifecycleDoesNotSuppressMiniPlayer() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         let listen = try source("Voxglass/Features/Listen/ListenView.swift")
-        let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
 
         // The Today/Listen hero and the tab accessory have independent
         // visibility. A scroll callback must not turn an active accessory
         // into the registered-but-empty placeholder.
         #expect(!router.contains("listenHeroIsVisible"))
         #expect(!listen.contains("listenHeroIsVisible"))
-        #expect(!scope.contains("onScrollVisibilityChange"))
+        #expect(!listen.contains("onScrollVisibilityChange"))
     }
 
     @Test func routerHasNoLifecycleRegistration() throws {
@@ -102,9 +104,14 @@ import Testing
         #expect(!tabs.contains("safeAreaInset(edge: .bottom"))
     }
 
+    @Test func rootDoesNotDuplicateMiniPlayerVisibilityPolicy() throws {
+        let root = try source("Voxglass/App/RootView.swift")
+        #expect(!root.contains("private var shouldShowMiniPlayer"))
+    }
+
     @Test func consumerShellExposesOnlyPlanDestinations() throws {
         let root = try source("Voxglass/App/RootView.swift")
-        let tabs = sourceSlice(root, from: "private var tabShell", to: "private var shouldShowMiniPlayer")
+        let tabs = sourceSlice(root, from: "private var tabShell", to: "private struct MiniPlayerBottomAccessory")
         #expect(tabs.contains("ListenView("))
         #expect(tabs.contains("LibraryView("))
         #expect(tabs.contains("BrowseView("))

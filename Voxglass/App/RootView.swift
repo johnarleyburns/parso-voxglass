@@ -115,11 +115,6 @@ struct RootView: View {
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 
-    private var shouldShowMiniPlayer: Bool {
-        guard let session = playback.currentSession else { return false }
-        return miniPlayerRouter.shouldShowMiniPlayer(currentBookID: session.book.id)
-    }
-
     @MainActor
     private func handleWidgetCommand() async {
         guard WidgetPlaybackCommandStore.consume() == .resume else { return }
