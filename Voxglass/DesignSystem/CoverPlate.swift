@@ -56,7 +56,14 @@ struct CoverPlate: View {
             LinearGradient(colors: [pair.background, pair.background.opacity(0.62)], startPoint: .topLeading, endPoint: .bottomTrailing)
             if size >= 72 {
                 VStack(alignment: .leading, spacing: 6) {
-                    if let author, !author.isEmpty { Text(author.uppercased()).voxType(.eyebrow).tracking(1.4).foregroundStyle(pair.ink) }
+                    if let author, !author.isEmpty {
+                        Text(author.uppercased())
+                            .scaledFont(size: size * 0.16, weight: .medium, design: .serif)
+                            .foregroundStyle(pair.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.55)
+                            .allowsTightening(true)
+                    }
                     Spacer()
                     Text(title).scaledFont(size: size * 0.16, weight: .medium, design: .serif).foregroundStyle(pair.ink).lineLimit(4).minimumScaleFactor(0.55)
                     Rectangle().fill(pair.ink.opacity(0.75)).frame(width: width * 0.38, height: 1)

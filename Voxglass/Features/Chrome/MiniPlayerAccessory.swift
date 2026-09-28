@@ -15,25 +15,7 @@ struct MiniPlayerAccessory: View {
                 } label: {
                     HStack(spacing: 10) {
                         CoverPlate(title: session.book.title, author: session.book.authorLine, coverURL: session.book.coverURL, size: placement == .inline ? 28 : 32, shape: .circle)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(session.book.title)
-                                .voxType(.body)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.62)
-                                .allowsTightening(true)
-                            if placement == .expanded {
-                                Text(session.chapter.title)
-                                    .voxType(.eyebrow)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.62)
-                                    .allowsTightening(true)
-                                Text(remainingText(session))
-                                    .voxType(.timecode)
-                                    .foregroundStyle(Palette.ink2)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.62)
-                            }
-                        }
+                        titleText(session)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
@@ -58,15 +40,24 @@ struct MiniPlayerAccessory: View {
                 }
             }
             .padding(.horizontal, 10)
-            .frame(minHeight: placement == .inline ? 50 : 60)
+            .frame(height: placement == .inline ? 50 : 60)
             .glassEffect(.regular, in: .capsule)
             .accessibilityIdentifier("chrome.miniPlayer")
             .accessibilityElement(children: .contain)
+        } else {
+            // Keep the accessory structurally registered (which avoids the iOS
+            // launch loop) without leaving an empty capsule on non-player tabs.
+            Color.clear
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
         }
     }
 
-    private func remainingText(_ session: PlaybackSession) -> String {
-        guard let duration = session.duration else { return "" }
-        return "\(TimeFormatting.clock(max(duration - session.position, 0))) left"
+    private func titleText(_ session: PlaybackSession) -> some View {
+        Text(session.book.title)
+            .voxType(.body)
+            .lineLimit(1)
+            .minimumScaleFactor(0.62)
+            .allowsTightening(true)
     }
 }

@@ -6,6 +6,12 @@ Voxglass is fully on Swift 6 language mode with complete strict-concurrency chec
 
 Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md) for the full operating brief.
 
+## Physical iPhone first
+
+- Never start, boot, build for, or run tests on an iOS or watchOS simulator unless the user explicitly asks for a simulator run.
+- For device verification, use the user's connected physical iPhone or Apple Watch and the appropriate device destination.
+- If the physical device is unavailable, stop and report that limitation instead of falling back to a simulator.
+
 ## Git hook timeouts
 
 - Set the command timeout to at least **10 minutes (600 seconds)** for `git commit`; the pre-commit hook runs the host `swift test` suite only.
