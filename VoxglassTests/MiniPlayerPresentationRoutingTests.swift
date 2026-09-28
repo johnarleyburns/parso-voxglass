@@ -24,6 +24,19 @@ import Testing
         #expect(scope.contains("!isNowPlayingPresented"))  // shouldShowMiniPlayer must check isNowPlayingPresented
     }
 
+    @Test func todayHeroLifecycleDoesNotSuppressMiniPlayer() throws {
+        let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
+        let listen = try source("Voxglass/Features/Listen/ListenView.swift")
+        let scope = sourceSlice(router, from: "func shouldShowMiniPlayer", to: "func presentNowPlayingFromMiniPlayer")
+
+        // The Today/Listen hero and the tab accessory have independent
+        // visibility. A scroll callback must not turn an active accessory
+        // into the registered-but-empty placeholder.
+        #expect(!router.contains("listenHeroIsVisible"))
+        #expect(!listen.contains("listenHeroIsVisible"))
+        #expect(!scope.contains("onScrollVisibilityChange"))
+    }
+
     @Test func routerHasNoLifecycleRegistration() throws {
         let router = try source("Voxglass/Features/Player/MiniPlayerPresentationRouter.swift")
         #expect(!(router.contains("visiblePushedBookID")))  // Router must not use lifecycle-based visiblePushedBookID

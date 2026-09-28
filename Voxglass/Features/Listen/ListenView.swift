@@ -6,7 +6,6 @@ struct ListenView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
-    @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter
     @Binding var showingNowPlaying: Bool
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
@@ -155,11 +154,6 @@ struct ListenView: View {
                 .accessibilityIdentifier("listen.continueListening")
                 .accessibilityLabel("\(continueActionLabel(for: book)) \(book.book.title)")
                 .accessibilityHint("Opens the player")
-                .onAppear { miniPlayerRouter.listenHeroIsVisible = true }
-                .onDisappear { miniPlayerRouter.listenHeroIsVisible = false }
-                .onScrollVisibilityChange(threshold: 0.2) { visible in
-                    miniPlayerRouter.listenHeroIsVisible = visible
-                }
             }
         }
     }
