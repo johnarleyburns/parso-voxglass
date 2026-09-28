@@ -68,7 +68,7 @@ struct RootView: View {
 
     private var tabsWithPresentation: some View {
         tabShell
-            .modifier(MiniPlayerBottomAccessory(isVisible: shouldShowMiniPlayer))
+            .modifier(MiniPlayerBottomAccessory())
         .sheet(isPresented: miniPlayerRouter.bindNowPlaying()) {
             BookPageView(book: nil, showingNowPlaying: miniPlayerRouter.bindNowPlaying(), presentationContext: .nowPlayingSheet)
                 .environment(playback)
@@ -136,17 +136,12 @@ struct RootView: View {
 }
 
 private struct MiniPlayerBottomAccessory: ViewModifier {
-    let isVisible: Bool
     @Environment(PlaybackCoordinator.self) private var playback
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if isVisible {
-            content.tabViewBottomAccessory {
-                MiniPlayerAccessory().environment(playback)
-            }
-        } else {
-            content
+        content.tabViewBottomAccessory {
+            MiniPlayerAccessory().environment(playback)
         }
     }
 }
