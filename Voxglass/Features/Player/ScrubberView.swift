@@ -100,7 +100,7 @@ struct ScrubberView: View {
                 }
                 Text("-\(TimeFormatting.clock(max(chapterDuration - chapterPosition, 0)))")
             }
-            .scaledFont(size: 11)
+            .voxFont(.caption2)
             .monospacedDigit()
             .foregroundStyle(Color.white.opacity(0.55))
 

@@ -37,12 +37,12 @@ struct ImportAudioView: View {
                     if model.isImportingAudio {
                         HStack(spacing: 8) {
                             ProgressView().tint(Palette.brass)
-                            Text("Importing…").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                            Text("Importing…").voxFont(.caption).foregroundStyle(Palette.ink2)
                         }
                         .padding(.top, 6)
                     }
                     if let error = model.importError {
-                        Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger)
+                        Text(error).voxFont(.caption).foregroundStyle(Palette.danger)
                     }
                 }
                 .padding(18)
@@ -77,16 +77,16 @@ struct ImportAudioView: View {
 
     private var pickPrompt: some View {
         VStack(spacing: 12) {
-            Image(systemName: "music.note").scaledFont(size: 34)
+            Image(systemName: "music.note").scaledFont(size: 34) // type-exempt: import artwork icon
             Text("Choose a WAV, AIFF, CAF, M4A, MP3, or FLAC file")
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.center)
             Button {
                 showPicker = true
             } label: {
                 Text("Choose file ▸")
-                    .scaledFont(size: 14, weight: .heavy)
+                    .voxFont(.subheadline, weight: .heavy)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 13))
@@ -103,21 +103,21 @@ struct ImportAudioView: View {
     private func storageCard(_ selection: FlowImportedAudio) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                Image(systemName: "music.note").scaledFont(size: 22)
+                Image(systemName: "music.note").voxFont(.title2)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selection.fileName)
-                        .scaledFont(size: 14, weight: .heavy)
+                        .voxFont(.subheadline, weight: .heavy)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                     Text(formatCaption(selection))
-                        .scaledFont(size: 11)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
                 }
                 Spacer()
                 Button("Choose another") {
                     showPicker = true
                 }
-                .scaledFont(size: 11, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .foregroundStyle(Palette.brass)
                 .buttonStyle(.plain)
             }
@@ -128,7 +128,7 @@ struct ImportAudioView: View {
 
             Toggle(isOn: importTrashBinding) {
                 Text("Move the original to Trash after every slice is verified")
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ink2)
             }
             .tint(Palette.brass)
@@ -142,7 +142,7 @@ struct ImportAudioView: View {
     private var assignmentCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("HOW TO ASSIGN IT")
-                .scaledFont(size: 12, weight: .bold)
+                .voxFont(.caption, weight: .bold)
                 .foregroundStyle(Palette.ink3)
 
             VStack(spacing: 0) {
@@ -159,11 +159,11 @@ struct ImportAudioView: View {
             if let plan = model.importPlan, !plan.slices.isEmpty, plan.mode != .wholeParagraph {
                 HStack {
                     Text("Detected segments")
-                        .scaledFont(size: 13, weight: .bold)
+                        .voxFont(.footnote, weight: .bold)
                         .foregroundStyle(Palette.ink)
                     Spacer()
-                    Text(plan.isFullyAssigned ? "\(plan.slices.count) matched" : "\(plan.slices.count - plan.unmatchedSliceCount) matched · \(plan.unmatchedSliceCount) extra")
-                        .scaledFont(size: 11, weight: .bold)
+                    Text(plan.isFullyAssigned ? "\(plan.slices.count) matched" : "\(plan.slices.count - plan.unmatchedSliceCount) matched · \(plan.unmatchedSliceCount) extra") // l10n-exempt: state-dependent accessibility or status copy
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(plan.isFullyAssigned ? Palette.ok : Palette.brass)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background((plan.isFullyAssigned ? Palette.ok : Palette.brass).opacity(0.12), in: Capsule())
@@ -172,15 +172,15 @@ struct ImportAudioView: View {
                     ForEach(Array(plan.slices.enumerated()).prefix(5), id: \.element.id) { index, slice in
                         HStack(spacing: 8) {
                             Text("\(index + 1)")
-                                .scaledFont(size: 11, weight: .bold)
+                                .voxFont(.caption2, weight: .bold)
                                 .foregroundStyle(Palette.ink3)
                             Text(sliceCaption(slice: slice, rate: model.importSelection?.decodedSampleRate ?? 0))
-                                .scaledFont(size: 11.5)
+                                .voxFont(.caption2)
                                 .foregroundStyle(Palette.ink2)
                                 .lineLimit(1)
                             Spacer()
-                            Text(slice.paragraphID != nil ? "paragraphs matched" : "extra")
-                                .scaledFont(size: 10, weight: .bold)
+                            Text(slice.paragraphID != nil ? "paragraphs matched" : "extra") // l10n-exempt: state-dependent accessibility or status copy
+                                .voxFont(.caption2, weight: .bold)
                                 .foregroundStyle(slice.paragraphID != nil ? Palette.ok : Palette.brass)
                         }
                         .padding(.vertical, 8)
@@ -196,7 +196,7 @@ struct ImportAudioView: View {
     private var originCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("WHO OR WHAT MADE THIS RECORDING?")
-                .scaledFont(size: 12, weight: .bold)
+                .voxFont(.caption, weight: .bold)
                 .foregroundStyle(Palette.ink3)
 
             VStack(spacing: 0) {
@@ -213,7 +213,7 @@ struct ImportAudioView: View {
             .accessibilityIdentifier("importAudio.origin")
 
             Text(LegalStrings.librivoxHumanOnly)
-                .scaledFont(size: 11)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -224,7 +224,7 @@ struct ImportAudioView: View {
             Task { await model.runAudioImport() }
         } label: {
             Text("Import \(importActionLabel)")
-                .scaledFont(size: 15, weight: .heavy)
+                .voxFont(.subheadline, weight: .heavy)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
                 .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
@@ -244,8 +244,8 @@ struct ImportAudioView: View {
             HStack(spacing: 10) {
                 radio(on: model.importMode == mode)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
-                    Text(caption).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(caption).voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
                 Spacer()
             }
@@ -263,9 +263,9 @@ struct ImportAudioView: View {
             HStack(spacing: 10) {
                 radio(on: model.importOrigin == origin)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                     if let caption {
-                        Text(caption).scaledFont(size: 11).foregroundStyle(Palette.brass)
+                        Text(caption).voxFont(.caption2).foregroundStyle(Palette.brass)
                     }
                 }
                 Spacer()
@@ -359,10 +359,10 @@ struct ImportAudioView: View {
 
     private func kv(_ label: String, _ value: String, tint: Color? = nil) -> some View {
         HStack {
-            Text(label).scaledFont(size: 12.5).foregroundStyle(Palette.ink2)
+            Text(label).voxFont(.caption).foregroundStyle(Palette.ink2)
             Spacer()
             Text(value)
-                .scaledFont(size: 12.5, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .monospacedDigit()
                 .foregroundStyle(tint ?? Palette.ink)
         }

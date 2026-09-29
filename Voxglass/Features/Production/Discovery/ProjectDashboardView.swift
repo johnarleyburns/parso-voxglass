@@ -166,7 +166,7 @@ struct ProjectDashboardView: View {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .topLeading, endPoint: .bottomTrailing))
                         Text(initials)
-                            .scaledFont(size: 30, weight: .heavy)
+                            .voxFont(.title, weight: .heavy)
                             .foregroundStyle(NarrationPalette.creamWarm)
                     }
                     .accessibilityIdentifier("dashboard.artwork.fallback")
@@ -176,19 +176,19 @@ struct ProjectDashboardView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
             Button("Edit Artwork") { showArtworkSources = true }
-                .scaledFont(size: 12, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.brass)
                 .buttonStyle(NarrationPressStyle())
                 .padding(.top, 6)
                 .accessibilityIdentifier("dashboard.artwork.edit")
 
             Text(project.metadata.title)
-                .scaledFont(size: 21, weight: .heavy)
+                .voxFont(.title2, weight: .heavy)
                 .foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.center)
                 .padding(.top, 14)
             Text("\(project.metadata.author) · narrated by \(project.metadata.narrator.isEmpty ? "you" : project.metadata.narrator)")
-                .scaledFont(size: 13)
+                .voxFont(.footnote)
                 .foregroundStyle(Palette.ink2)
                 .padding(.top, 3)
 
@@ -247,9 +247,9 @@ struct ProjectDashboardView: View {
     private var progressCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Progress").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
+                Text("Progress").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
-                Text("\(Int(dashboard.percentRecorded * 100))%").scaledFont(size: 14, weight: .bold, design: .monospaced).foregroundStyle(Palette.ink) // mono-exempt: progress percentage
+                Text("\(Int(dashboard.percentRecorded * 100))%").voxFont(.subheadline, weight: .bold, design: .monospaced).foregroundStyle(Palette.ink) // mono-exempt: progress percentage
             }
             progressBar(value: dashboard.percentRecorded)
             kv("Recorded", "\(dashboard.recordedCount) of \(dashboard.paragraphCount) paragraphs")
@@ -264,12 +264,12 @@ struct ProjectDashboardView: View {
     private var detailsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Details").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
+                Text("Details").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
-                Button(isEditingDetails ? "Done" : "Edit") {
+                Button(isEditingDetails ? "Done" : "Edit") { // l10n-exempt: state-dependent accessibility or status copy
                     if isEditingDetails { commitDetailDrafts() } else { beginEditingDetails() }
                 }
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.brass)
                 .buttonStyle(NarrationPressStyle())
                 .accessibilityIdentifier("dashboard.details.edit")
@@ -291,7 +291,7 @@ struct ProjectDashboardView: View {
     @ViewBuilder
     private func detailField(_ label: String, field: MetadataField, isMultiline: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(label.uppercased()).scaledFont(size: 10.5, weight: .bold).foregroundStyle(Palette.ink3)
+            Text(label.uppercased()).voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
             if isEditingDetails {
                 let binding = Binding(
                     get: { detailDrafts[field] ?? storedDetail(field) },
@@ -309,14 +309,14 @@ struct ProjectDashboardView: View {
                             .background(NarrationPalette.panelInk, in: RoundedRectangle(cornerRadius: 11))
                     }
                 }
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.ink)
                 .textInputAutocapitalization(field == .sourceURL ? .never : .sentences)
                 .accessibilityIdentifier("dashboard.details.\(field.rawValue)")
             } else {
                 let value = storedDetail(field)
-                Text(value.isEmpty ? "—" : value)
-                    .scaledFont(size: 14)
+                Text(value.isEmpty ? "—" : value) // l10n-exempt: state-dependent accessibility or status copy
+                    .voxFont(.subheadline)
                     .foregroundStyle(value.isEmpty ? Palette.ink3 : Palette.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("dashboard.details.\(field.rawValue).value")
@@ -379,7 +379,7 @@ struct ProjectDashboardView: View {
     private var needsAttentionCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Needs your attention").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
+                Text("Needs your attention").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
                 attentionChip("\(dashboard.flaggedCount + dashboard.needsPickupCount + dashboard.driftCount)")
             }
@@ -402,13 +402,13 @@ struct ProjectDashboardView: View {
 
     private func attentionRow(_ title: String, _ detail: String, systemImage: String, tint: Color, id: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage).scaledFont(size: 15).foregroundStyle(tint).frame(width: 22)
+            Image(systemName: systemImage).voxFont(.subheadline).foregroundStyle(tint).frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).scaledFont(size: 14, weight: .semibold).foregroundStyle(Palette.ink)
-                Text(detail).scaledFont(size: 12).foregroundStyle(Palette.ink3)
+                Text(title).voxFont(.subheadline, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(detail).voxFont(.caption).foregroundStyle(Palette.ink3)
             }
             Spacer()
-            Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
+            Image(systemName: "chevron.right").voxFont(.caption).foregroundStyle(Palette.ink3)
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
@@ -418,7 +418,7 @@ struct ProjectDashboardView: View {
 
     private func attentionChip(_ text: String) -> some View {
         Text(text)
-            .scaledFont(size: 11, weight: .bold)
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .foregroundStyle(NarrationPalette.brassSoft)
             .background(NarrationPalette.brassSoft.opacity(0.14), in: Capsule())
@@ -430,18 +430,18 @@ struct ProjectDashboardView: View {
     private var storageCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Storage & iCloud").scaledFont(size: 16, weight: .bold).foregroundStyle(Palette.ink)
+                Text("Storage & iCloud").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
                 chip("Backed up", tint: Palette.ok)
             }
             Text("\(onDeviceBytes) on iPhone · chapters verified in iCloud can be offloaded. Local-only takes are never removed.")
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
             Button {
                 showStorage = true
             } label: {
                 Text("Manage storage")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(Palette.brass.opacity(0.14), in: RoundedRectangle(cornerRadius: 11))
@@ -493,13 +493,13 @@ struct ProjectDashboardView: View {
     private func workOnRow(_ title: String, _ detail: String, systemImage: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Image(systemName: systemImage).scaledFont(size: 15).foregroundStyle(Palette.brass).frame(width: 22)
+                Image(systemName: systemImage).voxFont(.subheadline).foregroundStyle(Palette.brass).frame(width: 22)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).scaledFont(size: 14, weight: .semibold).foregroundStyle(Palette.ink)
-                    Text(detail).scaledFont(size: 12).foregroundStyle(Palette.ink3)
+                    Text(title).voxFont(.subheadline, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(detail).voxFont(.caption).foregroundStyle(Palette.ink3)
                 }
                 Spacer()
-                Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
+                Image(systemName: "chevron.right").voxFont(.caption).foregroundStyle(Palette.ink3)
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 8)
@@ -527,11 +527,11 @@ struct ProjectDashboardView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(chapter.ordinal + 1). \(chapter.title)")
-                    .scaledFont(size: 14, weight: .semibold)
+                    .voxFont(.subheadline, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Text("\(chapter.paragraphCount) paragraphs")
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ink3)
             }
             Spacer()
@@ -561,7 +561,7 @@ struct ProjectDashboardView: View {
 
     private func chip(_ text: String, tint: Color) -> some View {
         Text(text)
-            .scaledFont(size: 11, weight: .bold)
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .foregroundStyle(tint)
             .background(tint.opacity(0.14), in: Capsule())
@@ -570,9 +570,9 @@ struct ProjectDashboardView: View {
 
     private func kv(_ label: String, _ value: String) -> some View {
         HStack {
-            Text(label).scaledFont(size: 13).foregroundStyle(Palette.ink3)
+            Text(label).voxFont(.footnote).foregroundStyle(Palette.ink3)
             Spacer()
-            Text(value).scaledFont(size: 13).foregroundStyle(Palette.ink)
+            Text(value).voxFont(.footnote).foregroundStyle(Palette.ink)
         }
     }
 }
@@ -583,9 +583,8 @@ private extension DestinationID {
     var label: String {
         switch self {
         case .librivox: return "LibriVox lane"
-        case .internetArchive: return "Internet Archive lane"
         case .personalMaster: return "Personal master"
-        case .acx, .appleBooksAggregator: return "Retail"
+        default: return "LibriVox lane"
         }
     }
 }

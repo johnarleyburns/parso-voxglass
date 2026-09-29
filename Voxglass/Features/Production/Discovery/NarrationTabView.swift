@@ -25,9 +25,14 @@ struct NarrationTabView: View {
 
     private var narrationContent: some View {
         NavigationStack {
-            VoxglassScreen(title: "Narrate", headerSecondaryActionTitle: "+", headerSecondaryAction: { showNewNarration = true }, headerSecondaryActionAccessibilityLabel: "Start a narration") {
+            VoxglassScreen(title: "Narrate", headerSecondaryActionSystemImage: "plus", headerSecondaryAction: { showNewNarration = true }, headerSecondaryActionAccessibilityLabel: "Start a narration") {
                 VStack(alignment: .leading, spacing: 26) {
-                    NarrationStudioHero(project: discovery.myNarrations.first(where: { !$0.isReady }), start: { showNewNarration = true })
+                    NarrationStudioHero(
+                        project: discovery.myNarrations.first(where: { !$0.isReady }),
+                        availableNeedCount: discovery.availableNeeds.count,
+                        start: { showNewNarration = true },
+                        findBook: { showAllNeeds = true }
+                    )
                     if discovery.myNarrations.contains(where: { $0.recordedCount > 0 }) {
                         MyNarrationsSection()
                     }
@@ -85,7 +90,9 @@ struct NarrationTabView: View {
 
 private struct NarrationStudioHero: View {
     let project: AudiobookProject?
+    let availableNeedCount: Int
     let start: () -> Void
+    let findBook: () -> Void
 
     var body: some View {
         if let project {
@@ -100,15 +107,49 @@ private struct NarrationStudioHero: View {
                     }
                 }
                 PipelineBar(phase: phase)
-                Button(phase.label == "Review" ? "Review \(project.recordedCount) takes" : "Record next paragraph", action: start)
-                    .buttonStyle(.glassProminent)
-                    .tint(Palette.brass)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("narration.studio.nextStep")
+                switch phase {
+                case .review:
+                    Button("Review \(project.recordedCount) takes", action: start)
+                        .buttonStyle(.glassProminent)
+                        .tint(Palette.brass)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("narration.studio.nextStep")
+                default:
+                    Button("Record next paragraph", action: start)
+                        .buttonStyle(.glassProminent)
+                        .tint(Palette.brass)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("narration.studio.nextStep")
+                }
             }
             .padding(16)
             .raisedSurface(tint: NarrationPalette.olive)
             .accessibilityIdentifier("narration.studio.hero")
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("LIBRIVOX VOLUNTEERS").voxType(.eyebrow).foregroundStyle(Palette.brass)
+                Text("Give a book its voice").voxType(.heroTitle).foregroundStyle(Palette.ink)
+                if availableNeedCount > 0 {
+                    Text("\(availableNeedCount) public-domain works are waiting for a reader. Record a chapter in 20 minutes and it joins the free LibriVox catalog, for anyone, forever.")
+                        .voxType(.body).foregroundStyle(Palette.ink2)
+                } else {
+                    Text("Choose a public-domain work to read, or preview your own narration privately before you submit it.")
+                        .voxType(.body).foregroundStyle(Palette.ink2)
+                }
+                Button("Find a book to read", action: findBook)
+                    .buttonStyle(.glassProminent)
+                    .tint(Palette.brass)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("narration.hero.findBook")
+                Button("Narrate your own text", action: start)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Palette.brass)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("narration.hero.ownText")
+            }
+            .padding(16)
+            .raisedSurface(tint: NarrationPalette.olive)
+            .accessibilityIdentifier("narration.hero.empty")
         }
     }
 }
@@ -128,7 +169,7 @@ private struct NeedsPreview: View {
                     CoverPlate(title: need.work.title, author: need.work.author, coverURL: nil, size: 40, shape: .portrait)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(need.work.title).voxType(.bookTitle).foregroundStyle(Palette.ink).lineLimit(1)
-                        Text("\(need.work.lengthClass == .short ? "Short work" : "Group project") · about \(max(1, need.work.estSeconds / 60)) min").voxType(.meta).foregroundStyle(Palette.ink2)
+                        Text("\(need.work.lengthClass == .short ? "Short work" : "Group project") · about \(max(1, need.work.estSeconds / 60)) min").voxType(.meta).foregroundStyle(Palette.ink2) // l10n-exempt: state-dependent accessibility or status copy
                     }
                     Spacer()
                     Button("Start") { startProject(need) }

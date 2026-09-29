@@ -13,7 +13,7 @@ struct ValidationReportView: View {
                 HStack(spacing: 9) {
                     ProgressView().controlSize(.small)
                     Text("Backing up recordings to iCloud…")
-                        .scaledFont(size: 12.5)
+                        .voxFont(.caption)
                 }
                 .tint(Palette.brass)
                 .foregroundStyle(Palette.ink2)
@@ -26,10 +26,10 @@ struct ValidationReportView: View {
             let warnings = model.validationIssues.filter { $0.severity == .warning }
             HStack {
                 Text(model.destinationName)
-                    .scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
+                    .voxFont(.subheadline, weight: .heavy).foregroundStyle(Palette.ink)
                 Spacer()
                 Text("\(blocking.count) blocking · \(warnings.count) warnings")
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(blocking.isEmpty ? Palette.ok : Palette.danger)
             }
             .accessibilityIdentifier("validate.report")
@@ -42,12 +42,12 @@ struct ValidationReportView: View {
                     if let progress = model.metricsProgress {
                         ProgressView(value: Double(progress.done), total: Double(max(1, progress.total))) {
                             Text("Analyzing your recording — \(progress.done) of \(progress.total)")
-                                .scaledFont(size: 12.5)
+                                .voxFont(.caption)
                         }
                     } else {
                         HStack(spacing: 9) {
                             ProgressView().controlSize(.small)
-                            Text("Checking your recording…").scaledFont(size: 12.5)
+                            Text("Checking your recording…").voxFont(.caption)
                         }
                     }
                 }
@@ -62,7 +62,7 @@ struct ValidationReportView: View {
             if !model.isValidating, !warnings.isEmpty { issueSection("WARNINGS", issues: warnings) }
             if !model.isValidating, blocking.isEmpty && warnings.isEmpty {
                 Label("Ready to export — every check passed for \(model.destinationName).", systemImage: "checkmark.seal.fill")
-                    .scaledFont(size: 12.5)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ok)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,19 +73,19 @@ struct ValidationReportView: View {
 
     private func issueSection(_ title: String, issues: [ValidationIssue]) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title).scaledFont(size: 12, weight: .bold).foregroundStyle(Palette.ink3)
+            Text(title).voxFont(.caption, weight: .bold).foregroundStyle(Palette.ink3)
             ForEach(Array(issues.enumerated()), id: \.element.id) { index, issue in
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: issue.severity == .blocking ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill")
                         .foregroundStyle(issue.severity == .blocking ? Palette.danger : Palette.brass)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(issue.title).scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
-                        Text(issue.message).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                        Text(issue.title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
+                        Text(issue.message).voxFont(.caption2).foregroundStyle(Palette.ink3)
                     }
                     Spacer()
                     if let fix = issue.fix {
                         Button(fixTitle(fix)) { onFix(fix) }
-                            .scaledFont(size: 11, weight: .bold)
+                            .voxFont(.caption2, weight: .bold)
                             .buttonStyle(.bordered)
                             .accessibilityIdentifier("validation.fix.\(issue.code.rawValue)")
                     }
@@ -175,7 +175,7 @@ struct ValidationReportSheet: View {
         case .regenerateDisclaimers:
             Task { await model.regenerateScript(for: .librivox) }
         case .regenerateCredits:
-            Task { await model.regenerateScript(for: .acx) }
+            Task { await model.regenerateScript(for: .librivox) }
         case .applyMastering:
             model.applyMasteringForExport = true
             Task { await model.runValidation() }

@@ -10,4 +10,15 @@ import Testing
         #expect(decoded == NowPlayingSnapshot(bookID: snapshot.bookID, title: snapshot.title, author: snapshot.author, chapterEyebrow: snapshot.chapterEyebrow, chapterTitle: snapshot.chapterTitle, fraction: 1, minutesLeftInChapter: 0, paletteIndex: 2))
         #expect(data.count < 64 * 1024)
     }
+
+    @Test func legacySnapshotDecodesWithoutNewWidgetFields() throws {
+        let json = """
+        {"bookID":"00000000-0000-0000-0000-000000000001","title":"Book","author":"Author","chapterEyebrow":null,"chapterTitle":"Chapter 1","fraction":0.25,"minutesLeftInChapter":4,"paletteIndex":0}
+        """.data(using: .utf8)!
+        let snapshot = try JSONDecoder().decode(NowPlayingSnapshot.self, from: json)
+        #expect(snapshot.bookRemaining == nil)
+        #expect(snapshot.isPlaying == false)
+        #expect(snapshot.backgroundHex == nil)
+        #expect(snapshot.updatedAt == Date(timeIntervalSince1970: 0))
+    }
 }

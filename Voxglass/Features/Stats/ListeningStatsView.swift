@@ -60,10 +60,10 @@ struct ListeningStatsView: View {
     private func statTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
-                .scaledFont(size: 24, weight: .heavy)
+                .voxFont(.title2, weight: .heavy)
                 .foregroundStyle(Palette.ink)
             Text(label)
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,7 +74,7 @@ struct ListeningStatsView: View {
     private var weeklyChart: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Last 7 days")
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink)
             let maxSeconds = max(dailyBars.map(\.seconds).max() ?? 1, 1)
             HStack(alignment: .bottom, spacing: 8) {
@@ -86,7 +86,7 @@ struct ListeningStatsView: View {
                                 startPoint: .top, endPoint: .bottom))
                             .frame(height: max(4, CGFloat(bar.seconds / maxSeconds) * 120))
                         Text(bar.label)
-                            .scaledFont(size: 9, weight: .semibold)
+                            .voxFont(.caption2, weight: .semibold)
                             .foregroundStyle(Palette.ink3)
                     }
                     .frame(maxWidth: .infinity)
@@ -101,17 +101,17 @@ struct ListeningStatsView: View {
     private func termsCard(title: String, terms: [(term: String, seconds: TimeInterval)]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink)
             ForEach(terms.indices, id: \.self) { index in
                 HStack {
                     Text(terms[index].term.capitalized)
-                        .scaledFont(size: 13)
+                        .voxFont(.footnote)
                         .foregroundStyle(Palette.ink2)
                         .lineLimit(1)
                     Spacer()
                     Text(durationString(terms[index].seconds))
-                        .scaledFont(size: 12, design: .monospaced) // mono-exempt: statistics value
+                        .voxFont(.caption, design: .monospaced) // mono-exempt: statistics value
                         .foregroundStyle(Palette.ink3)
                 }
             }

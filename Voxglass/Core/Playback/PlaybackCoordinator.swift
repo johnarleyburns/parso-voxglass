@@ -120,6 +120,7 @@ public final class PlaybackCoordinator {
     /// Fetches cover art as raw image bytes; injectable so tests can count fetches
     /// without network. The app injects a provider backed by `ArtworkService`.
     @ObservationIgnored public var artworkProvider: (@MainActor (URL) async -> Data?)?
+    @ObservationIgnored public var artworkConsumer: (@MainActor (UUID, Data) -> Void)?
 
     /// The platform boundary (Now Playing, remote commands, artwork, background
     /// tasks). Injected by the app; unit tests use `NoopPlaybackBridge`.
@@ -1052,6 +1053,7 @@ public final class PlaybackCoordinator {
         Task { [weak self] in
             let data = await provider(coverURL)
             guard let self, let data, self.currentArtworkBookID == book.id else { return }
+            self.artworkConsumer?(book.id, data)
             self.bridge.setArtwork(data)
             self.updateNowPlayingInfo()
         }
@@ -1870,17 +1872,22 @@ public final class PlaybackCoordinator {
     private func updateNowPlayingInfo() {
         guard let session = currentSession else {
             bridge.updateNowPlaying(nil)
+            bridge.updateLiveActivity(nil)
+            lastLiveActivityContent = nil
             return
         }
+        let currentTime = isEngineLoaded ? relativeEngineTime(for: session) : session.position
+        let isPlaying = isEngineLoaded && engine.isPlaying
         // While unloaded, the engine reports 0/paused; the session is the truth,
         // so the lock screen matches the miniplayer.
         bridge.updateNowPlaying(Self.nowPlayingInfo(
             session: session,
-            currentTime: isEngineLoaded ? relativeEngineTime(for: session) : session.position,
+            currentTime: currentTime,
             duration: session.duration,
             rate: engine.rate,
-            isPlaying: isEngineLoaded ? engine.isPlaying : false
+            isPlaying: isPlaying
         ))
+        updateLiveActivityIfNeeded(session: session, currentTime: currentTime, isPlaying: isPlaying)
     }
 
     /// Tick-side variant: avoids rebuilding when identity, rate, and rate-based
@@ -1890,10 +1897,13 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var lastNowPlayingChapterID: UUID?
     @ObservationIgnored private var lastNowPlayingIsPlaying: Bool?
     @ObservationIgnored private var lastNowPlayingRate: Float?
+    @ObservationIgnored private var lastLiveActivityContent: LiveActivityContent?
 
     private func updateNowPlayingInfoIfNeeded(force: Bool = false) {
         guard let session = currentSession else {
             bridge.updateNowPlaying(nil)
+            bridge.updateLiveActivity(nil)
+            lastLiveActivityContent = nil
             lastNowPlayingBookID = nil
             lastNowPlayingChapterID = nil
             lastNowPlayingIsPlaying = nil
@@ -1927,6 +1937,35 @@ public final class PlaybackCoordinator {
             rate: engine.rate,
             isPlaying: isPlaying
         ))
+        updateLiveActivityIfNeeded(session: session, currentTime: isEngineLoaded ? relativeEngineTime(for: session) : session.position, isPlaying: isPlaying)
+    }
+
+    private func updateLiveActivityIfNeeded(session: PlaybackSession, currentTime: TimeInterval, isPlaying: Bool) {
+        let sleep: SleepState
+        switch sleepTimer.mode {
+        case .off: sleep = .off
+        case .endOfChapter: sleep = .endOfChapter
+        case .duration: sleep = .until(Date().addingTimeInterval(sleepTimer.remaining ?? 0))
+        }
+        let content = LiveActivityContent(
+            bookID: session.book.id,
+            title: session.book.title,
+            author: session.book.authorLine,
+            narrator: session.book.narratorLine,
+            chapterTitle: session.chapter.title,
+            chapterIndex: session.chapterIndex + 1,
+            chapterCount: session.chapters.count,
+            isPlaying: isPlaying,
+            rate: engine.rate,
+            chapterElapsed: currentTime,
+            chapterDuration: session.duration,
+            bookRemaining: session.bookRemaining,
+            sleep: sleep,
+            capturedAt: Date()
+        )
+        guard LiveActivityUpdatePolicy.shouldPush(previous: lastLiveActivityContent, next: content) else { return }
+        lastLiveActivityContent = content
+        bridge.updateLiveActivity(content)
     }
 
     /// Pure builder for the Now Playing payload (Step 0b). Keeping it a plain

@@ -124,6 +124,26 @@ require((root / "Voxglass/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1
 require((root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024.png").is_file(), "watchOS app icon source is missing")
 require("guru.parso.voxglass.studio" not in project, "retired native Mac bundle identifier must not return")
 
+# Draft translations are useful during development but must never ship without
+# native-speaker review. This remains a release gate until reviewers promote
+# every entry to `translated`.
+for catalog in root.rglob("*.xcstrings"):
+    try:
+        payload = __import__("json").loads(catalog.read_text())
+    except Exception as error:
+        errors.append(f"{catalog}: invalid string catalog ({error})")
+        continue
+    def walk(value, path=()):
+        if isinstance(value, dict):
+            if value.get("state") == "needs_review":
+                errors.append(f"{catalog}: translation needs review at {'/'.join(path)}")
+            for key, child in value.items():
+                walk(child, path + (str(key),))
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, path + (str(index),))
+    walk(payload)
+
 bundle = pathlib.Path(sys.argv[1]) if sys.argv[1] else None
 if bundle:
     require(bundle.is_dir(), f"built app bundle does not exist: {bundle}")

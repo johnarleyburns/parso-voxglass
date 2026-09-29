@@ -270,7 +270,7 @@ public struct ProductionReviewPlayerView: View {
                         Image(systemName: model.autoAdvance ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle")
                     }
                     .help(model.autoAdvance ? "Auto-advance on" : "Auto-advance off")
-                    .accessibilityLabel(model.autoAdvance ? "Auto-advance on" : "Auto-advance off")
+                    .accessibilityLabel(model.autoAdvance ? "Auto-advance on" : "Auto-advance off") // l10n-exempt: state-dependent accessibility or status copy
                     .accessibilityValue(model.autoAdvance ? "On" : "Off")
                     .accessibilityIdentifier("player.autoAdvance")
                 }
@@ -319,10 +319,10 @@ public struct ProductionReviewPlayerView: View {
 
             Button { Task { if model.isPlaying { await model.pause() } else { await model.play() } } } label: {
                 Image(systemName: model.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .scaledFont(size: 56)
+                    .scaledFont(size: 56) // type-exempt: recording timer numeral
             }
             .accessibilityIdentifier("player.playPause")
-            .accessibilityLabel(model.isPlaying ? "Pause the review player" : "Play the review player")
+            .accessibilityLabel(model.isPlaying ? "Pause the review player" : "Play the review player") // l10n-exempt: state-dependent accessibility or status copy
 
             Button { Task { await model.skip(by: 30) } } label: {
                 Text("+30")

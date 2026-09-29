@@ -12,11 +12,11 @@ import Testing
         let teleprompter = String(screen[teleprompterStart.lowerBound..<teleprompterEnd.lowerBound])
 
         #expect(teleprompter.contains("VStack(alignment: .leading"))
-        #expect(teleprompter.contains(".scaledFont(size: 16)"))
+        #expect(teleprompter.contains(".voxFont(.callout)"))
         #expect(teleprompter.contains(".multilineTextAlignment(.leading)"))
         #expect(teleprompter.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
         #expect(teleprompter.contains(".accessibilityIdentifier(\"record.teleprompter.text\")"))
-        #expect(!(teleprompter.contains(".scaledFont(size: 22, weight: .semibold)")))
+        #expect(!(teleprompter.contains(".scaledFont(size:")))
         #expect(!(teleprompter.contains(".multilineTextAlignment(.center)")))
 
         // ParagraphReviewView pushes this same RecordView for re-recording, so

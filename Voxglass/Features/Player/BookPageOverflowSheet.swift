@@ -221,17 +221,17 @@ struct BookPageOverflowSheet: View {
     private func overflowRow(icon: String, title: String, detail: String? = nil) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 32, height: 32)
             Text(title)
-                .scaledFont(size: 14, weight: .medium)
+                .voxFont(.subheadline, weight: .medium)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
             Spacer(minLength: 8)
             if let detail {
                 Text(detail)
-                    .scaledFont(size: 11, weight: .semibold, design: .monospaced) // mono-exempt: storage estimate
+                    .voxFont(.caption2, weight: .semibold, design: .monospaced) // mono-exempt: storage estimate
                     .foregroundStyle(Palette.ink3)
                     .padding(.horizontal, 8)
                     .frame(height: 24)

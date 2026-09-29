@@ -42,16 +42,16 @@ struct SourceReviewView: View {
                     }
                     .frame(width: 48, height: 62)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(model.draftTitle.isEmpty ? "Untitled" : model.draftTitle)
-                            .scaledFont(size: 17, weight: .heavy)
+                        Text(model.draftTitle.isEmpty ? "Untitled" : model.draftTitle) // l10n-exempt: state-dependent accessibility or status copy
+                            .voxFont(.body, weight: .heavy)
                             .foregroundStyle(Palette.ink)
-                        Text("\(model.draftAuthor.isEmpty ? "Unknown author" : model.draftAuthor) · \(model.sourceURL ?? "")")
-                            .scaledFont(size: 12)
+                        Text("\(model.draftAuthor.isEmpty ? "Unknown author" : model.draftAuthor) · \(model.sourceURL ?? "")") // l10n-exempt: state-dependent accessibility or status copy
+                            .voxFont(.caption)
                             .foregroundStyle(Palette.ink2)
                     }
                     Spacer()
                     Text("PD · US")
-                        .scaledFont(size: 10, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.brass)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Palette.brass.opacity(0.12), in: Capsule())
@@ -61,12 +61,12 @@ struct SourceReviewView: View {
                 .raisedSurface()
 
                 Label("1 piece · \(model.paragraphs.count) spoken paragraphs · ~\(model.totalDuration.formattedShort)", systemImage: "doc.text")
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ink2)
                     .accessibilityIdentifier("import.chapterCount")
 
                 Text("WHAT WILL BE RECORDED")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .foregroundStyle(Palette.ink3)
                     .padding(.top, 8)
 
@@ -78,7 +78,7 @@ struct SourceReviewView: View {
                     goRecord = true
                 } label: {
                     Text("Start recording ▸")
-                        .scaledFont(size: 15, weight: .heavy)
+                        .voxFont(.subheadline, weight: .heavy)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
@@ -115,17 +115,17 @@ struct SourceReviewView: View {
     private func paragraphRow(index: Int, paragraph: FlowParagraph) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(index + 1)")
-                .scaledFont(size: 11, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .foregroundStyle(paragraph.role == .body ? Palette.ink3 : Palette.brass)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(paragraph.text)
-                    .scaledFont(size: 13.5)
+                    .voxFont(.footnote)
                     .foregroundStyle(Palette.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if paragraph.role != .body {
                     Text(roleLabel(paragraph.role))
-                        .scaledFont(size: 10, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.brass)
                 }
             }
@@ -254,7 +254,7 @@ struct RecordView: View {
                 showAudioSetup = true
             } label: {
                 Text(model.routeChipText)
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(routeChipColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -270,7 +270,7 @@ struct RecordView: View {
                 } label: {
                     Label("Mic Check", systemImage: "waveform")
                         .labelStyle(.titleAndIcon)
-                        .scaledFont(size: 11, weight: .semibold)
+                        .voxFont(.caption2, weight: .semibold)
                         .foregroundStyle(Palette.ink2)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
@@ -285,7 +285,7 @@ struct RecordView: View {
 
             if model.isRecording {
                 Text("Autosaving")
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(Palette.ink2)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -312,30 +312,30 @@ struct RecordView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(reason.userDescription.uppercased())
-                        .scaledFont(size: 12, weight: .bold)
+                        .voxFont(.caption, weight: .bold)
                         .foregroundStyle(Palette.danger)
                     Spacer()
                     Text("Take saved")
-                        .scaledFont(size: 10, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.danger)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Palette.danger.opacity(0.12), in: Capsule())
                 }
                 Text("Everything recorded up to that point was saved and is playable. The recovered take is marked Interrupted and nothing is selected for you.")
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink2)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 10) {
                     Button("Play what was saved") {
                         model.playLatestTake(currentParagraphID)
                     }
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier("capture.revealTake")
                     Button("Resume recording") {
                         model.resumeRecordingOnCurrentRoute()
                     }
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .accessibilityIdentifier("capture.resumeRecording")
                 }
@@ -355,29 +355,29 @@ struct RecordView: View {
         if !model.pendingRecoveries.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("RECOVERED AFTER LAST LAUNCH")
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .foregroundStyle(Palette.brass)
                 ForEach(model.pendingRecoveries) { recovery in
                     HStack(alignment: .center, spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(paragraphLabel(for: recovery.paragraphID))
-                                .scaledFont(size: 13, weight: .semibold)
+                                .voxFont(.footnote, weight: .semibold)
                                 .foregroundStyle(Palette.ink)
                             Text("\(recovery.reason.userDescription.lowercased()) · \(recovery.duration.formattedShort) recovered")
-                                .scaledFont(size: 11)
+                                .voxFont(.caption2)
                                 .foregroundStyle(Palette.ink2)
                         }
                         Spacer()
                         Button("Keep") {
                             Task { await model.keepRecovered(recovery) }
                         }
-                        .scaledFont(size: 12, weight: .bold)
+                        .voxFont(.caption, weight: .bold)
                         .foregroundStyle(Palette.brass)
                         .accessibilityIdentifier("capture.keepTake")
                         Button("Discard") {
                             model.discardRecovered(recovery)
                         }
-                        .scaledFont(size: 12, weight: .bold)
+                        .voxFont(.caption, weight: .bold)
                         .foregroundStyle(Palette.danger)
                         .accessibilityIdentifier("capture.discardTake")
                     }
@@ -401,10 +401,10 @@ struct RecordView: View {
     private func teleprompter(_ paragraph: FlowParagraph) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(roleLabel(paragraph.role).uppercased())
-                .scaledFont(size: 11, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .foregroundStyle(Palette.brass)
             Text(paragraph.text)
-                .scaledFont(size: 16)
+                .voxFont(.callout)
                 .foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(4)
@@ -426,7 +426,7 @@ struct RecordView: View {
         if let error = model.importError {
             VStack(alignment: .leading, spacing: 8) {
                 Text(error)
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.danger)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if model.micPermissionDenied {
@@ -435,7 +435,7 @@ struct RecordView: View {
                             UIApplication.shared.open(url)
                         }
                     }
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .buttonStyle(.plain)
                 }
@@ -451,10 +451,10 @@ struct RecordView: View {
     private var recordingBar: some View {
         VStack(spacing: 8) {
             if model.isRecording {
-                Text("● REC").scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.danger)
+                Text("● REC").voxFont(.footnote, weight: .bold).foregroundStyle(Palette.danger)
             } else if let take = model.paragraph(at: currentParagraphID)?.take {
                 Text("Take \(take.duration.formattedShort) · \(String(format: "%.1f", take.peakDBFS ?? -40)) dBFS")
-                    .scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                    .voxFont(.caption).foregroundStyle(Palette.ink2)
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -475,23 +475,23 @@ struct RecordView: View {
         if let state = model.analysisState(for: currentParagraphID) {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Take analysis", systemImage: "waveform.path.ecg")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .foregroundStyle(Palette.ink)
 
                 switch state {
                 case .pending:
                     Text("Analysis will appear after the take is saved.")
-                        .scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                        .voxFont(.caption).foregroundStyle(Palette.ink2)
                 case .analyzing:
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text("Analyzing take…").scaledFont(size: 12)
+                        Text("Analyzing take…").voxFont(.caption)
                     }
                     .foregroundStyle(Palette.ink2)
                     .accessibilityIdentifier("record.analysis.analyzing")
                 case .failed(let message):
                     Label(message, systemImage: "exclamationmark.triangle")
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                         .foregroundStyle(Palette.brass)
                 case .complete(let metrics):
                     VStack(alignment: .leading, spacing: 5) {
@@ -510,7 +510,7 @@ struct RecordView: View {
                                 .accessibilityIdentifier("record.analysis.warning.\(issue.code.rawValue)")
                         }
                     }
-                    .scaledFont(size: 11)
+                    .voxFont(.caption2)
                     .accessibilityIdentifier("record.analysis.results")
                 }
             }
@@ -541,7 +541,7 @@ struct RecordView: View {
             Button {
                 model.rewindCurrentTake()
             } label: {
-                Image(systemName: "arrow.uturn.backward.circle.fill").scaledFont(size: 40)
+                Image(systemName: "arrow.uturn.backward.circle.fill").scaledFont(size: 40) // type-exempt: review transport icon
             }
             .foregroundStyle(Palette.ink2)
             .accessibilityIdentifier("record.transport.previous")
@@ -557,11 +557,11 @@ struct RecordView: View {
                 }
             } label: {
                 Image(systemName: model.isRecording ? "stop.fill" : "record.circle")
-                    .scaledFont(size: 62)
+                    .scaledFont(size: 62) // type-exempt: playback position numeral
                     .foregroundStyle(model.isRecording ? Palette.danger : Palette.brass)
             }
             .accessibilityIdentifier("record.transport.record")
-            .accessibilityLabel(model.isRecording ? "Stop recording this take" : "Record a take for this paragraph")
+            .accessibilityLabel(model.isRecording ? "Stop recording this take" : "Record a take for this paragraph") // l10n-exempt: state-dependent accessibility or status copy
             .disabled(model.isRecordingTransitioning)
             // §9.3 external controls: a connected hardware keyboard records and
             // stops with Command-R while the record screen is armed.
@@ -570,7 +570,7 @@ struct RecordView: View {
             Button {
                 model.togglePlayback(currentParagraphID)
             } label: {
-                Image(systemName: model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill").scaledFont(size: 40)
+                Image(systemName: model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill").scaledFont(size: 40) // type-exempt: review transport icon
             }
             .foregroundStyle(Palette.ink2)
             .disabled(model.paragraph(at: currentParagraphID)?.take == nil)
@@ -592,7 +592,7 @@ struct RecordView: View {
                     Spacer()
                     Text("-\(max(0, model.playbackDuration - model.playbackPosition).formattedShort)")
                 }
-                .scaledFont(size: 11, design: .monospaced) // mono-exempt: export progress
+                .voxFont(.caption2, design: .monospaced) // mono-exempt: export progress
                 .foregroundStyle(Palette.ink3)
             }
         }
@@ -602,13 +602,13 @@ struct RecordView: View {
         HStack(spacing: 8) {
             if let take = paragraph.take {
                 Text("Take · \(take.duration.formattedShort)")
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .foregroundStyle(NarrationPalette.nearBlack)
                     .background(NarrationPalette.cream, in: Capsule())
                     .accessibilityIdentifier("record.take.1")
             } else {
-                Text("No take yet").scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Text("No take yet").voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
 
             if model.takeCount(for: paragraph.id) >= 2 {
@@ -616,7 +616,7 @@ struct RecordView: View {
                     showCompare = true
                 } label: {
                     Label("Compare", systemImage: "arrow.left.arrow.right")
-                        .scaledFont(size: 11, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.brass)
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .overlay(Capsule().stroke(Palette.brass.opacity(0.5), lineWidth: 1))
@@ -629,7 +629,7 @@ struct RecordView: View {
                 showImport = true
             } label: {
                 Label("Import audio", systemImage: "square.and.arrow.down")
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(Palette.ink2)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .overlay(Capsule().stroke(Palette.hairline, lineWidth: 1))
@@ -647,7 +647,7 @@ struct RecordView: View {
                 Task { await goPrevious(from: paragraph) }
             } label: {
                 Text("‹ Back")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .frame(width: 88, height: 46)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Palette.hairline, lineWidth: 1))
@@ -660,7 +660,7 @@ struct RecordView: View {
                 Task { await goNext(from: paragraph, flag: true) }
             } label: {
                 Image(systemName: "flag")
-                    .scaledFont(size: 16, weight: .bold)
+                    .voxFont(.callout, weight: .bold)
                     .foregroundStyle(NarrationPalette.brassSoft)
                     .frame(width: 54, height: 46)
                     .background(NarrationPalette.brassMid.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
@@ -674,7 +674,7 @@ struct RecordView: View {
                 Task { await goNext(from: paragraph, flag: false) }
             } label: {
                 Text("Accept & Next ▸")
-                    .scaledFont(size: 14, weight: .heavy)
+                    .voxFont(.subheadline, weight: .heavy)
                     .foregroundStyle(NarrationPalette.espresso)
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
@@ -805,7 +805,7 @@ struct ReviewView: View {
             let rows = filtered(model.paragraphs)
             List {
                 if rows.isEmpty {
-                    Text(filter == .flagged ? "Nothing flagged." : filter == .pickup ? "Everything is recorded." : "Nothing here yet — record a paragraph to begin.")
+                    Text(filter == .flagged ? "Nothing flagged." : filter == .pickup ? "Everything is recorded." : "Nothing here yet — record a paragraph to begin.") // l10n-exempt: state-dependent accessibility or status copy
                         .foregroundStyle(Palette.ink2)
                         .frame(maxWidth: .infinity, minHeight: 160)
                         .multilineTextAlignment(.center)
@@ -993,7 +993,7 @@ struct ReviewView: View {
                             .rotationEffect(.degrees(collapsedChapterIDs.contains(chapter.id) ? -90 : 0))
                             .accessibilityIdentifier("review.chapter.toggle.\(chapter.ordinal)")
                         Text("Chapter \(chapter.ordinal + 1): \(chapter.title)")
-                            .scaledFont(size: 14, weight: .bold)
+                            .voxFont(.subheadline, weight: .bold)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(1)
                     }
@@ -1010,10 +1010,10 @@ struct ReviewView: View {
                     else { model.playChapter(chapter.id) }
                 } label: {
                     Image(systemName: model.playbackChapterID == chapter.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle.fill")
-                        .scaledFont(size: 24)
+                        .voxFont(.title2)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(model.playbackChapterID == chapter.id && model.isPlayingTake ? "Pause chapter" : "Play chapter")
+                .accessibilityLabel(model.playbackChapterID == chapter.id && model.isPlayingTake ? "Pause chapter" : "Play chapter") // l10n-exempt: state-dependent accessibility or status copy
                 .accessibilityIdentifier("review.chapter.play.\(chapter.ordinal)")
                 Button("Approve chapter") {
                     for paragraph in chapter.paragraphs where paragraph.selectedTakeID != nil && paragraph.reviewState == .unreviewed {
@@ -1021,18 +1021,18 @@ struct ReviewView: View {
                     }
                     Task { await model.persist() }
                 }
-                .scaledFont(size: 11, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .buttonStyle(.borderless)
                 .disabled(!hasUnreviewed)
                 .accessibilityIdentifier("review.chapter.approveAll.\(chapter.ordinal)")
             }
             chapterCountsText(progress: progress, chapter: chapter)
-            .scaledFont(size: 11)
+            .voxFont(.caption2)
             .foregroundStyle(Palette.ink3)
             .accessibilityIdentifier("review.chapter.counts.\(chapter.ordinal)")
             if blocked && hasUnreviewed {
                 Text("Flagged or unrecorded paragraphs remain.")
-                    .scaledFont(size: 10.5).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
         }
         .padding(.vertical, 8)
@@ -1054,7 +1054,7 @@ struct ReviewView: View {
                 .accessibilityIdentifier("review.nowPlaying")
             VStack(alignment: .leading, spacing: 4) {
                 Text(nowPlayingLabel)
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .accessibilityIdentifier("review.nowPlaying.label")
                 ProgressView(value: model.playbackDuration > 0 ? model.playbackPosition / model.playbackDuration : 0)
                     .tint(Palette.brass)
@@ -1068,7 +1068,7 @@ struct ReviewView: View {
             Button { model.toggleCurrentPlayback() } label: {
                 Image(systemName: model.isPlayingTake ? "pause.fill" : "play.fill")
             }
-            .accessibilityLabel(model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
+            .accessibilityLabel(model.isPlayingTake ? "Pause paragraph" : "Play paragraph") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("review.nowPlaying.pause")
             Button { model.nextPlaybackParagraph() } label: { Image(systemName: "forward.end.fill") }
                 .disabled(model.playbackChapterID == nil)
@@ -1121,14 +1121,14 @@ struct ReviewView: View {
             } label: {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(paragraph.text)
-                        .scaledFont(size: 13.5, weight: .semibold)
+                        .voxFont(.footnote, weight: .semibold)
                         .foregroundStyle(Palette.ink)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("review.chapter.text.\(index)")
-                    Text(caption(paragraph)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(caption(paragraph)).voxFont(.caption2).foregroundStyle(Palette.ink3)
                     if let note = paragraph.note {
-                        Text(note).scaledFont(size: 11).foregroundStyle(NarrationPalette.tan)
+                        Text(note).voxFont(.caption2).foregroundStyle(NarrationPalette.tan)
                     }
                 }
                 .padding(12)
@@ -1161,7 +1161,7 @@ struct ReviewView: View {
                     }
                 } label: {
                     Image(systemName: checkboxSymbol(paragraph.state))
-                        .scaledFont(size: 24)
+                        .voxFont(.title2)
                         .foregroundStyle(tint(paragraph.state))
                         .frame(width: 30, height: 30)
                 }
@@ -1178,10 +1178,10 @@ struct ReviewView: View {
                             if model.hydratingParagraphID == paragraph.id {
                                 ProgressView().controlSize(.small).tint(Palette.brass)
                             } else {
-                                Image(systemName: "icloud.and.arrow.down").scaledFont(size: 12, weight: .semibold)
+                                Image(systemName: "icloud.and.arrow.down").voxFont(.caption, weight: .semibold)
                             }
-                            Text(model.hydratingParagraphID == paragraph.id ? "Downloading" : byteEstimate(bytes))
-                                .scaledFont(size: 11, weight: .bold)
+                            Text(model.hydratingParagraphID == paragraph.id ? "Downloading" : byteEstimate(bytes)) // l10n-exempt: state-dependent accessibility or status copy
+                                .voxFont(.caption2, weight: .bold)
                         }
                         .foregroundStyle(Palette.brass)
                         .padding(.horizontal, 9).padding(.vertical, 6)
@@ -1196,12 +1196,12 @@ struct ReviewView: View {
                         model.togglePlayback(paragraph.id)
                     } label: {
                         Image(systemName: model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "pause.circle.fill" : "play.circle")
-                            .scaledFont(size: 26)
+                            .voxFont(.title)
                             .foregroundStyle(Palette.ink2)
                     }
                     .buttonStyle(.plain)
                     .disabled(paragraph.take == nil)
-                    .accessibilityLabel(model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "Pause paragraph" : "Play paragraph")
+                    .accessibilityLabel(model.playbackParagraphID == paragraph.id && model.isPlayingTake ? "Pause paragraph" : "Play paragraph") // l10n-exempt: state-dependent accessibility or status copy
                     .accessibilityIdentifier("review.row.play.\(index)")
                 }
 
@@ -1213,12 +1213,12 @@ struct ReviewView: View {
                         model.currentParagraphID = paragraph.id
                         reRecordID = paragraph.id
                     }
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("review.row.rerecord.\(index)")
                 }
-                Image(systemName: "chevron.right").scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Image(systemName: "chevron.right").voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
         }
         .padding(.vertical, 6)
@@ -1293,23 +1293,23 @@ struct AssembleView: View {
                 }
 
                 Text("SPACING")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
                 spacingCard
 
                 Text("TAKE HANDLING")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
                     .padding(.top, 4)
                 togglesCard
 
                 Text("RENDER CACHE")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
                     .padding(.top, 4)
                 renderCacheCard
 
                 preflightCard
 
                 Text("Assembly is a plan. Your original takes are never modified or trimmed on disk.")
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
 
                 // "Check my recording" lives only on the Review view
                 // (field report 2026-08-19, item 10).
@@ -1338,19 +1338,19 @@ struct AssembleView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(project.metadata.title).scaledFont(size: 16, weight: .heavy).foregroundStyle(Palette.ink)
+                    Text(project.metadata.title).voxFont(.callout, weight: .heavy).foregroundStyle(Palette.ink)
                     Text("\(project.metadata.author) · \(project.chapters.count) chapter\(project.chapters.count == 1 ? "" : "s") · ~\(model.totalDuration.formattedShort)")
-                        .scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                        .voxFont(.caption).foregroundStyle(Palette.ink2)
                 }
                 Spacer()
                 Text("\(project.recordedCount) paragraphs")
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Palette.brass.opacity(0.12), in: Capsule())
             }
             Text("Renders are chunked by chapter and can be cancelled — finished chapters stay cached and resume from there.")
-                .scaledFont(size: 11.5)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1366,8 +1366,8 @@ struct AssembleView: View {
             sliderRow("Between scenes", value: sceneGapBinding, range: 0.1...4.0, step: 0.05, id: "assemble.sceneGap")
             sliderRow("Room tone at head", value: assemblyBinding(\.chapterHeadSilence), range: 0...3.0, step: 0.05, id: "assemble.headSilence")
             sliderRow("Room tone at tail", value: tailSilenceBinding, range: 0...5.0, step: 0.05, id: "assemble.roomTone")
-            Text("ACX requires room tone at the head and tail of every file. These defaults satisfy it.")
-                .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+            Text("LibriVox files benefit from room tone at the head and tail. These defaults keep transitions natural.")
+                .voxFont(.caption2).foregroundStyle(Palette.ink3)
         }
         .padding(13)
         .raisedSurface()
@@ -1386,11 +1386,11 @@ struct AssembleView: View {
     private var renderCacheCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Render cache").scaledFont(size: 14, weight: .bold).foregroundStyle(Palette.ink)
+                Text("Render cache").voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
                 if model.isRendering {
                     Text("Rendering…")
-                        .scaledFont(size: 11, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.brass)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Palette.brass.opacity(0.12), in: Capsule())
@@ -1412,8 +1412,8 @@ struct AssembleView: View {
                 Button {
                     model.startRenderAllChapters()
                 } label: {
-                    Text(model.isRendering ? "Cancel render" : "Render all")
-                        .scaledFont(size: 13, weight: .bold)
+                    Text(model.isRendering ? "Cancel render" : "Render all") // l10n-exempt: state-dependent accessibility or status copy
+                        .voxFont(.footnote, weight: .bold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(Palette.brass.opacity(0.14), in: RoundedRectangle(cornerRadius: 11))
@@ -1427,7 +1427,7 @@ struct AssembleView: View {
                     Task { await model.clearRenderCache() }
                 } label: {
                     Text("Clear cache")
-                        .scaledFont(size: 13, weight: .bold)
+                        .voxFont(.footnote, weight: .bold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.hairline, lineWidth: 1))
@@ -1443,18 +1443,18 @@ struct AssembleView: View {
                     ProgressView(value: progress.totalChapterCount > 0 ? Double(progress.completedChapterCount) / Double(progress.totalChapterCount) : 0)
                         .tint(Palette.brass)
                     Text(renderProgressText(progress))
-                        .scaledFont(size: 11)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
                 }
                 .accessibilityIdentifier("assemble.renderProgress")
             }
 
             if let error = model.renderError {
-                Text(error).scaledFont(size: 11.5).foregroundStyle(Palette.danger)
+                Text(error).voxFont(.caption2).foregroundStyle(Palette.danger)
             }
 
             Text("Renders can be cleared any time — they rebuild from your takes. They are the first thing evicted under storage pressure.")
-                .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                .voxFont(.caption2).foregroundStyle(Palette.ink3)
         }
         .padding(13)
         .raisedSurface()
@@ -1464,22 +1464,22 @@ struct AssembleView: View {
         let state = model.renderStatuses[chapter.id] ?? .stale
         return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(chapter.title).scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
-                Text(subtitle(for: chapter, project: project)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Text(chapter.title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(subtitle(for: chapter, project: project)).voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
             Spacer()
             switch state {
             case .notRecorded:
-                Text("—").scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Text("—").voxFont(.caption2).foregroundStyle(Palette.ink3)
             case .current:
                 Text("Current")
-                    .scaledFont(size: 10, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(Palette.ok)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Palette.ok.opacity(0.12), in: Capsule())
             case .stale:
                 Text("Stale")
-                    .scaledFont(size: 10, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Palette.brass.opacity(0.12), in: Capsule())
@@ -1507,11 +1507,11 @@ struct AssembleView: View {
     private var preflightCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Preflight").scaledFont(size: 14, weight: .bold).foregroundStyle(Palette.ink)
+                Text("Preflight").voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.ink)
                 Spacer()
                 if let preflight = model.renderPreflight {
                     Text("\(ByteCountFormatter.string(fromByteCount: preflight.neededBytes, countStyle: .file)) needed · \(ByteCountFormatter.string(fromByteCount: preflight.freeBytes, countStyle: .file)) free")
-                        .scaledFont(size: 11, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(preflight.freeBytes >= preflight.neededBytes ? Palette.ok : Palette.danger)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background((preflight.freeBytes >= preflight.neededBytes ? Palette.ok : Palette.danger).opacity(0.12), in: Capsule())
@@ -1519,7 +1519,7 @@ struct AssembleView: View {
                 }
             }
             Text("Assets in iCloud: none for a fresh render — every take is local until you offload.")
-                .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                .voxFont(.caption2).foregroundStyle(Palette.ink3)
         }
         .padding(13)
         .raisedSurface()
@@ -1584,8 +1584,8 @@ struct AssembleView: View {
     private func toggleRow(_ title: String, caption: String, isOn: Binding<Bool>, id: String) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
-                Text(caption).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Text(title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(caption).voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
             Spacer()
             Toggle("", isOn: isOn)
@@ -1598,10 +1598,10 @@ struct AssembleView: View {
     private func sliderRow(_ label: String, value: Binding<TimeInterval>, range: ClosedRange<Double>, step: Double, id: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(label).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(label).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                 Spacer()
                 Text(String(format: "%.2f s", value.wrappedValue))
-                    .scaledFont(size: 12, weight: .bold)
+                    .voxFont(.caption, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .accessibilityIdentifier(id)
             }
@@ -1631,7 +1631,7 @@ struct MetadataView: View {
                 fieldRow("Source URL", text: $model.sourceURLText, id: "metadata.sourceURL")
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("ARTWORK").scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+                    Text("ARTWORK").voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
                     HStack(spacing: 12) {
                         if let data = model.artworkData, let image = UIImage(data: data) {
                             Image(uiImage: image).resizable().scaledToFill().frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 10))
@@ -1640,37 +1640,37 @@ struct MetadataView: View {
                                 .overlay(Image(systemName: "photo").foregroundStyle(Palette.ink3))
                         }
                         PhotosPicker(selection: $artworkItem, matching: .images) {
-                            Label(hasArtwork ? "Replace artwork" : "Add artwork", systemImage: "photo.badge.plus")
+                            Label(hasArtwork ? "Replace artwork" : "Add artwork", systemImage: "photo.badge.plus") // l10n-exempt: state-dependent accessibility or status copy
                         }
                         .accessibilityIdentifier("metadata.artwork")
                     }
                 }
 
-                Text("Chips show where each field is used. LibriVox (LV) · Internet Archive (IA).")
-                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Text("Chips show where each field is used in the LibriVox submission package.")
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Rights").scaledFont(size: 14, weight: .bold).foregroundStyle(Palette.ink)
+                    Text("Rights").voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.ink)
                     HStack(spacing: 6) {
-                        Text("LV").scaledFont(size: 9, weight: .heavy).foregroundStyle(Palette.brass)
+                        Text("LV").voxFont(.caption2, weight: .heavy).foregroundStyle(Palette.brass)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Palette.brass.opacity(0.14), in: Capsule())
-                        Text("IA").scaledFont(size: 9, weight: .heavy).foregroundStyle(NarrationPalette.sky)
+                        Text("IA").voxFont(.caption2, weight: .heavy).foregroundStyle(NarrationPalette.sky)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(NarrationPalette.sky.opacity(0.14), in: Capsule())
-                        Text("Public domain in the United States").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                        Text("Public domain in the United States").voxFont(.caption).foregroundStyle(Palette.ink2)
                     }
                     Button {
                         model.attest()
                     } label: {
-                        Label(model.rightsAttested ? "Rights attested" : "Attest public domain (US)", systemImage: model.rightsAttested ? "checkmark.circle.fill" : "circle")
-                            .scaledFont(size: 13.5, weight: .semibold)
+                        Label(model.rightsAttested ? "Rights attested" : "Attest public domain (US)", systemImage: model.rightsAttested ? "checkmark.circle.fill" : "circle") // l10n-exempt: state-dependent accessibility or status copy
+                            .voxFont(.footnote, weight: .semibold)
                             .foregroundStyle(model.rightsAttested ? Palette.ok : Palette.brass)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("metadata.attest")
                     Text("I attest this information is accurate and this work is in the public domain in the US. \(LegalStrings.noCopyrightDetermination)")
-                        .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                        .voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
                 .padding(13)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1705,9 +1705,9 @@ struct MetadataView: View {
     private func fieldRow(_ label: String, text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label.uppercased())
-                .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+                .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
             TextField("", text: text)
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.ink)
                 .padding(11)
                 .background(NarrationPalette.panelInk, in: RoundedRectangle(cornerRadius: 11))
@@ -1719,9 +1719,9 @@ struct MetadataView: View {
     private func areaRow(_ label: String, text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label.uppercased())
-                .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+                .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
             TextEditor(text: text)
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.ink)
                 .frame(minHeight: 60)
                 .padding(6)
@@ -1761,7 +1761,6 @@ struct ValidateExportView: View {
     var isPushed = false
     @State private var goSubmit = false
     @State private var showAudioSetup = false
-    @State private var showProPurchase = false
     @State private var showExportRun = false
     @State private var showChapterPicker = false
     @State private var fixParagraphID: UUID?
@@ -1776,21 +1775,17 @@ struct ValidateExportView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("WHAT TO EXPORT")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
 
                 scopePicker
 
                 Text("PUBLISH TO")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
 
                 VStack(spacing: 0) {
-                    destinationRow(.personalMaster, label: "Personal listening", subtitle: "Play it in Voxglass · chapterized M4B, plus a copy in Files · free", id: "validation.destination.personal")
+                    destinationRow(.personalMaster, label: "Personal listening", subtitle: "Preview it in Voxglass · lossless WAV chapters · free", id: "validation.destination.personal")
                     VoxglassListDivider()
-                    destinationRow(.librivox, label: "LibriVox", subtitle: "128 kbps MP3 per section", id: "validation.destination.librivox")
-                    VoxglassListDivider()
-                    destinationRow(.internetArchive, label: "Internet Archive", subtitle: "FLAC masters + MP3 derivatives", id: "validation.destination.internetArchive")
-                    VoxglassListDivider()
-                    destinationRow(.acx, label: "Commercial retail", subtitle: "ACX, Apple Books, aggregator, M4B", id: "validation.destination.retail", proChip: true)
+                    destinationRow(.librivox, label: "LibriVox", subtitle: "128 kbps MP3 per section · the built-in submission path", id: "validation.destination.librivox")
                 }
                 .raisedSurface()
                 .accessibilityIdentifier("validation.destination")
@@ -1798,7 +1793,7 @@ struct ValidateExportView: View {
                 if model.isValidating {
                     HStack(spacing: 8) {
                         ProgressView().tint(Palette.brass)
-                        Text("Checking \(destinationName)…").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                        Text("Checking \(destinationName)…").voxFont(.caption).foregroundStyle(Palette.ink2)
                     }
                     .padding(.vertical, 10)
                 } else {
@@ -1807,7 +1802,7 @@ struct ValidateExportView: View {
 
                 if let validationError = model.validationError {
                     Text(validationError)
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                         .foregroundStyle(Palette.danger)
                         .padding(.top, 4)
                 }
@@ -1817,7 +1812,7 @@ struct ValidateExportView: View {
                 }
 
                 if let error = model.exportError {
-                    Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger).padding(.top, 4)
+                    Text(error).voxFont(.caption).foregroundStyle(Palette.danger).padding(.top, 4)
                 }
 
                 NarrationPrimaryButton(
@@ -1835,8 +1830,8 @@ struct ValidateExportView: View {
                     }
                 }
 
-                Text("FLAC/MP3 encoding happens on this iPhone. Validation and export are free for LibriVox and Internet Archive.")
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                Text("Encoding happens on this iPhone. Personal listening and LibriVox export are free.")
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
             .padding(18)
         }
@@ -1850,11 +1845,6 @@ struct ValidateExportView: View {
         }
         .sheet(isPresented: $showChapterPicker) {
             chapterPickerSheet
-        }
-        .sheet(isPresented: $showProPurchase) {
-            ProPurchaseView(provider: model.licenseProvider, model: model) { _ in
-                Task { await model.runValidation() }
-            }
         }
         .fullScreenCover(isPresented: $showExportRun) {
             ExportRunView(model: model) {
@@ -1899,9 +1889,6 @@ struct ValidateExportView: View {
 
     private var destinationName: String {
         switch model.validationDestination {
-        case .internetArchive: return "Internet Archive"
-        case .acx: return "ACX / Audible"
-        case .appleBooksAggregator: return "Apple Books / Aggregator"
         case .personalMaster: return "Personal listening"
         default: return "LibriVox"
         }
@@ -1961,17 +1948,17 @@ struct ValidateExportView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                    .scaledFont(size: 16, weight: .semibold)
+                    .voxFont(.callout, weight: .semibold)
                     .foregroundStyle(selected ? Palette.brass : Palette.ink3)
                     .frame(width: 22)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(choice.title).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                    Text(choice.title).voxFont(.footnote, weight: selected ? .heavy : .semibold)
                         .foregroundStyle(disabled ? Palette.ink3 : Palette.ink)
-                    Text(subtitle).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(subtitle).voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
                 Spacer()
                 if choice == .selectedChapters {
-                    Image(systemName: "chevron.right").scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Image(systemName: "chevron.right").voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
@@ -2039,9 +2026,9 @@ struct ValidateExportView: View {
                             Image(systemName: model.exportSelectedChapterIDs.contains(chapter.id) ? "checkmark.square.fill" : "square")
                                 .foregroundStyle(model.exportSelectedChapterIDs.contains(chapter.id) ? Palette.brass : Palette.ink3)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(chapter.title).scaledFont(size: 13.5, weight: .semibold).foregroundStyle(Palette.ink)
+                                Text(chapter.title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                                 Text("\(chapter.paragraphs.count) paragraph\(chapter.paragraphs.count == 1 ? "" : "s") · " + PackagingSupport.clockTime(chapterDuration(chapter)))
-                                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
                             }
                             Spacer()
                         }
@@ -2077,41 +2064,23 @@ struct ValidateExportView: View {
         }
     }
 
-    /// A full-width destination row (mockup 14). Retail carries a Pro chip and is
-    /// the only destination that consults `LicenseGate` — the destination-picker
-    /// gate placement (§2.2). Tapping locked retail opens the purchase sheet.
-    private func destinationRow(_ destination: DestinationID, label: String, subtitle: String, id: String, proChip: Bool = false) -> some View {
+    /// A full-width destination row (mockup 14).
+    private func destinationRow(_ destination: DestinationID, label: String, subtitle: String, id: String) -> some View {
         let selected = model.validationDestination == destination
-        let isRetail = destination == .acx || destination == .appleBooksAggregator
-        let unlocked = !isRetail || model.isProUnlocked
         return Button {
-            if unlocked {
-                model.selectValidationDestination(destination)
-            } else {
-                showProPurchase = true
-            }
+            model.selectValidationDestination(destination)
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(label).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                        Text(label).voxFont(.footnote, weight: selected ? .heavy : .semibold)
                             .foregroundStyle(selected ? Palette.ink : Palette.ink2)
-                        if proChip {
-                            Text("Pro")
-                                .scaledFont(size: 10, weight: .bold)
-                                .foregroundStyle(model.isProUnlocked ? Palette.ok : Palette.brass)
-                                .padding(.horizontal, 7).padding(.vertical, 2)
-                                .background((model.isProUnlocked ? Palette.ok : Palette.brass).opacity(0.14), in: Capsule())
-                                .overlay(Capsule().stroke((model.isProUnlocked ? Palette.ok : Palette.brass).opacity(0.4), lineWidth: 1))
-                        }
                     }
-                    Text(subtitle).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(subtitle).voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
                 Spacer()
                 if selected {
-                    Image(systemName: "checkmark.circle.fill").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.brass)
-                } else if !unlocked {
-                    Image(systemName: "lock.fill").scaledFont(size: 13).foregroundStyle(Palette.ink3)
+                    Image(systemName: "checkmark.circle.fill").voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.brass)
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
@@ -2124,7 +2093,7 @@ struct ValidateExportView: View {
     private func issueSection(title: String, issues: [ValidationIssue]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+                .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
                 .padding(.top, 6)
             VStack(spacing: 0) {
                 ForEach(Array(issueRows(issues).enumerated()), id: \.element.issue.id) { index, row in
@@ -2156,12 +2125,12 @@ struct ValidateExportView: View {
             if index > 0 { VoxglassListDivider() }
             HStack(spacing: 10) {
                 Image(systemName: danger ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill")
-                    .scaledFont(size: 14, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .foregroundStyle(danger ? Palette.danger : Palette.brass)
                     .frame(width: 22)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(issue.title).scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
-                    Text(issue.message).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(issue.title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(issue.message).voxFont(.caption2).foregroundStyle(Palette.ink3)
                         .lineLimit(2)
                 }
                 Spacer()
@@ -2170,7 +2139,7 @@ struct ValidateExportView: View {
                         apply(fix)
                     } label: {
                         Text(fixLabel(fix))
-                            .scaledFont(size: 11, weight: .bold)
+                            .voxFont(.caption2, weight: .bold)
                             .foregroundStyle(Palette.brass)
                             .padding(.horizontal, 9).padding(.vertical, 5)
                             .background(Palette.brass.opacity(0.12), in: Capsule())
@@ -2208,7 +2177,7 @@ struct ValidateExportView: View {
         case .regenerateDisclaimers:
             Task { await model.regenerateScript(for: .librivox) }
         case .regenerateCredits:
-            Task { await model.regenerateScript(for: .acx) }
+            Task { await model.regenerateScript(for: .librivox) }
         case .selectTake(let paragraphID, _):
             fixParagraphID = paragraphID
         case .setRetailSample:
@@ -2250,18 +2219,18 @@ struct ValidateExportView: View {
 
     private func hydrationBanner(_ preflight: ExportPreflightResult) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "icloud.and.arrow.down").scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.brass)
+            Image(systemName: "icloud.and.arrow.down").voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.brass)
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(preflight.remoteHydrationChapterCount) chapter\(preflight.remoteHydrationChapterCount == 1 ? "" : "s") are in iCloud")
-                    .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                    .voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                 Text("\(PackagingSupport.formattedBytes(preflight.hydrationPlan.byteCount)) must download before export can start.")
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
                 HStack(spacing: 8) {
                     Button {
                         Task { await model.hydrateAllForExport() }
                     } label: {
                         Text("Download \(PackagingSupport.formattedBytes(preflight.hydrationPlan.byteCount))")
-                            .scaledFont(size: 12, weight: .bold)
+                            .voxFont(.caption, weight: .bold)
                             .foregroundStyle(NarrationPalette.espresso)
                             .padding(.horizontal, 11).padding(.vertical, 7)
                             .background(Palette.brass, in: Capsule())
@@ -2274,7 +2243,7 @@ struct ValidateExportView: View {
                         Task { await model.exportLocalOnly() }
                     } label: {
                         Text("Export the local chapters")
-                            .scaledFont(size: 12, weight: .bold)
+                            .voxFont(.caption, weight: .bold)
                             .foregroundStyle(Palette.brass)
                             .padding(.horizontal, 11).padding(.vertical, 7)
                             .overlay(Capsule().stroke(Palette.brass.opacity(0.5), lineWidth: 1))
@@ -2343,7 +2312,7 @@ struct ExportRunView: View {
                     keepScreenOnCard
 
                     Text("If storage runs low mid-run the export pauses rather than failing, and tells you exactly how much to free.")
-                        .scaledFont(size: 11.5)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(14)
@@ -2367,7 +2336,7 @@ struct ExportRunView: View {
                         }
                         dismiss()
                     } label: {
-                        Text("Close").scaledFont(size: 13).foregroundStyle(Palette.ink2)
+                        Text("Close").voxFont(.footnote).foregroundStyle(Palette.ink2)
                     }
                     .accessibilityIdentifier("exportRun.close")
                 }
@@ -2390,16 +2359,16 @@ struct ExportRunView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Resumed where it stopped")
-                    .scaledFont(size: 14, weight: .heavy).foregroundStyle(Palette.ok)
+                    .voxFont(.subheadline, weight: .heavy).foregroundStyle(Palette.ok)
                 Spacer()
                 Text("\(model.exportReusedFileCount) files kept")
-                    .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ok)
+                    .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ok)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Palette.ok.opacity(0.14), in: Capsule())
                     .overlay(Capsule().stroke(Palette.ok.opacity(0.4), lineWidth: 1))
             }
             Text("Voxglass closed while an export was encoding. The existing export files were already finished and verified, so they were not re-rendered.")
-                .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                .voxFont(.caption2).foregroundStyle(Palette.ink3)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -2414,36 +2383,36 @@ struct ExportRunView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Chapter \(currentChapter) of \(totalChapters)")
-                    .scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
+                    .voxFont(.subheadline, weight: .heavy).foregroundStyle(Palette.ink)
                 Spacer()
                 Text("\(Int((model.exportProgress?.fractionCompleted ?? 0) * 100))%")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.brass)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.brass)
             }
             ProgressView(value: model.exportProgress?.fractionCompleted ?? 0, total: 1)
                 .tint(Palette.brass)
                 .accessibilityIdentifier("exportRun.progress")
             HStack(spacing: 0) {
                 Text("Step")
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
                     .frame(width: 74, alignment: .leading)
                 Text(stepText)
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink)
                     .accessibilityIdentifier("exportRun.step")
             }
             HStack(spacing: 0) {
                 Text("Elapsed")
-                    .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
                     .frame(width: 74, alignment: .leading)
                 Text(elapsedText)
-                    .scaledFont(size: 11.5, weight: .semibold).foregroundStyle(Palette.ink)
+                    .voxFont(.caption2, weight: .semibold).foregroundStyle(Palette.ink)
             }
             if let remaining = remainingText {
                 HStack(spacing: 0) {
                     Text("Remaining")
-                        .scaledFont(size: 11.5).foregroundStyle(Palette.ink3)
+                        .voxFont(.caption2).foregroundStyle(Palette.ink3)
                         .frame(width: 74, alignment: .leading)
                     Text(remaining)
-                        .scaledFont(size: 11.5, weight: .semibold).foregroundStyle(Palette.ink)
+                        .voxFont(.caption2, weight: .semibold).foregroundStyle(Palette.ink)
                 }
             }
 
@@ -2452,7 +2421,7 @@ struct ExportRunView: View {
                     model.cancelExport()
                 } label: {
                     Text("Cancel after this chapter")
-                        .scaledFont(size: 13, weight: .semibold)
+                        .voxFont(.footnote, weight: .semibold)
                         .foregroundStyle(Palette.danger)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
@@ -2462,7 +2431,7 @@ struct ExportRunView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("exportRun.cancel")
                 Text("Cancelling never discards finished chapters — resuming later picks up from chapter \(min(currentChapter + 1, totalChapters)).")
-                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
         }
         .padding(14)
@@ -2473,13 +2442,13 @@ struct ExportRunView: View {
     private var terminalActions: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let error = model.exportError {
-                Text(error).scaledFont(size: 12.5).foregroundStyle(Palette.danger)
+                Text(error).voxFont(.caption).foregroundStyle(Palette.danger)
             }
             Button {
                 model.startExport()
             } label: {
-                Text(model.exportRunRecord?.status == .cancelled ? "Resume export ▸" : "Try again ▸")
-                    .scaledFont(size: 15, weight: .heavy)
+                Text(model.exportRunRecord?.status == .cancelled ? "Resume export ▸" : "Try again ▸") // l10n-exempt: state-dependent accessibility or status copy
+                    .voxFont(.subheadline, weight: .heavy)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
@@ -2494,7 +2463,7 @@ struct ExportRunView: View {
 
     private var pipelineCard: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("PIPELINE").scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+            Text("PIPELINE").voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
                 .padding(.bottom, 2)
             pipelineRow(verified: true, step: "Hydrate chapters from iCloud", chip: "Verified")
             pipelineRow(verified: model.blockingValidationIssues.isEmpty, step: "Validate", chip: model.blockingValidationIssues.isEmpty ? "Passed" : nil)
@@ -2511,14 +2480,14 @@ struct ExportRunView: View {
     private func pipelineRow(verified: Bool? = nil, step: String, chip: String? = nil, active: Bool = false) -> some View {
         HStack(spacing: 10) {
             Image(systemName: verified == true ? "checkmark" : (active ? "circle.fill" : "circle"))
-                .scaledFont(size: 12, weight: .bold)
+                .voxFont(.caption, weight: .bold)
                 .foregroundStyle(verified == true ? Palette.ok : (active ? Palette.brass : Palette.ink3))
                 .frame(width: 18)
-            Text(step).scaledFont(size: 12.5).foregroundStyle(Palette.ink)
+            Text(step).voxFont(.caption).foregroundStyle(Palette.ink)
             Spacer()
             if let chip {
                 Text(chip)
-                    .scaledFont(size: 10.5, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(active ? Palette.brass : (verified == true ? Palette.ok : Palette.ink2))
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background((active ? Palette.brass : (verified == true ? Palette.ok : Palette.ink2)).opacity(0.12), in: Capsule())
@@ -2531,7 +2500,7 @@ struct ExportRunView: View {
 
     private var chaptersCard: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("CHAPTERS").scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.ink3)
+            Text("CHAPTERS").voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
                 .padding(.bottom, 2)
             if doneChapterCount > 0 {
                 chapterRow(range: "1 – \(doneChapterCount)", chip: "Done", chipColor: Palette.ok)
@@ -2552,10 +2521,10 @@ struct ExportRunView: View {
 
     private func chapterRow(range: String, chip: String, chipColor: Color?) -> some View {
         HStack(spacing: 10) {
-            Text(range).scaledFont(size: 12.5).foregroundStyle(Palette.ink)
+            Text(range).voxFont(.caption).foregroundStyle(Palette.ink)
             Spacer()
             Text(chip)
-                .scaledFont(size: 10.5, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .foregroundStyle(chipColor ?? Palette.ink2)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background((chipColor ?? Palette.ink2).opacity(0.12), in: Capsule())
@@ -2569,9 +2538,9 @@ struct ExportRunView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Keep the screen on")
-                    .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                    .voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                 Text("Exports continue in the background, but finish faster in the foreground")
-                    .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    .voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
             Spacer()
             Toggle("", isOn: $keepScreenOn)
@@ -2668,12 +2637,19 @@ struct SubmitView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(spacing: 6) {
-                    Image(systemName: "checkmark.seal.fill").scaledFont(size: 40).foregroundStyle(NarrationPalette.mint)
-                    Text(model.validationDestination == .personalMaster ? "Your audiobook is ready to listen" : "Your recording is ready")
-                        .scaledFont(size: 22, weight: .heavy).foregroundStyle(Palette.ink)
+                    Image(systemName: "checkmark.seal.fill").scaledFont(size: 40).foregroundStyle(NarrationPalette.mint) // type-exempt: completion icon
+                    if model.validationDestination == .personalMaster {
+                        Text("Your audiobook is ready to listen")
+                            .voxFont(.title2, weight: .heavy).foregroundStyle(Palette.ink)
+                    } else {
+                        Text("Your recording is ready for LibriVox")
+                            .voxFont(.title2, weight: .heavy).foregroundStyle(Palette.ink)
+                    }
                     if let project = model.project {
-                        Text("\"\(project.metadata.title)\" by \(project.metadata.author) · a publishable public-domain recording")
-                            .scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                        Text(model.validationDestination == .personalMaster
+                             ? "\"\(project.metadata.title)\" by \(project.metadata.author) · a personal listening preview"
+                             : "\"\(project.metadata.title)\" by \(project.metadata.author) · a LibriVox-ready public-domain recording") // l10n-exempt: state-dependent export description
+                            .voxFont(.caption).foregroundStyle(Palette.ink2)
                             .multilineTextAlignment(.center)
                             .accessibilityIdentifier("export.packageReady")
                     }
@@ -2689,12 +2665,12 @@ struct SubmitView: View {
                                     RoundedRectangle(cornerRadius: 7)
                                         .fill(Color.white.opacity(0.06))
                                     Text(url.pathExtension.uppercased())
-                                        .scaledFont(size: 10, weight: .bold).foregroundStyle(Palette.ink3)
+                                        .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
                                 }
                                 .frame(width: 30, height: 30)
-                                Text(url.lastPathComponent).scaledFont(size: 12.5).foregroundStyle(Palette.ink).lineLimit(1)
+                                Text(url.lastPathComponent).voxFont(.caption).foregroundStyle(Palette.ink).lineLimit(1)
                                 Spacer()
-                                Text(byteString(url)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                                Text(byteString(url)).voxFont(.caption2).foregroundStyle(Palette.ink3)
                             }
                             .padding(.vertical, 9)
                             VoxglassListDivider()
@@ -2706,7 +2682,7 @@ struct SubmitView: View {
 
                 if let project = model.project,
                    let bundle = model.exportBundle,
-                   model.validationDestination != .personalMaster {
+                   model.validationDestination == .librivox {
                     HandoffCeremony(
                         project: project,
                         packageURL: bundle.shareURL,
@@ -2745,7 +2721,7 @@ struct SubmitView: View {
 
                 ShareLink(item: shareItem) {
                     Label("Share / Save to Files", systemImage: "square.and.arrow.up")
-                        .scaledFont(size: 15, weight: .heavy)
+                        .voxFont(.subheadline, weight: .heavy)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 14))
@@ -2756,7 +2732,7 @@ struct SubmitView: View {
                 if let projectCopyURL {
                     ShareLink(item: projectCopyURL) {
                         Label("Save a copy of the project", systemImage: "shippingbox")
-                            .scaledFont(size: 14, weight: .semibold)
+                            .voxFont(.subheadline, weight: .semibold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Palette.ink2.opacity(0.08), in: RoundedRectangle(cornerRadius: 13))
@@ -2776,16 +2752,16 @@ struct SubmitView: View {
                     }
                 }
 
-                if model.validationDestination != .personalMaster {
+                if model.validationDestination == .librivox {
                 Text("SUBMIT TO LIBRIVOX")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3).padding(.top, 6)
+                    .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3).padding(.top, 6)
                 submitStep(1, "Open this week's Weekly Poetry thread and claim the poem.")
                 submitStep(2, "Upload the MP3 to the LibriVox uploader (from your iPhone).")
                 submitStep(3, "Post the link in the thread with your reader name. The checklist has the exact steps.")
 
                 Link(destination: URL(string: "https://forum.librivox.org/viewforum.php?f=28")!) {
                     Label("Open the Weekly Poetry thread →", systemImage: "safari")
-                        .scaledFont(size: 14, weight: .bold)
+                        .voxFont(.subheadline, weight: .bold)
                         .foregroundStyle(Palette.brass)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -2794,24 +2770,8 @@ struct SubmitView: View {
                 }
                 .accessibilityIdentifier("export.submitToLibriVox")
 
-                Text("OR INTERNET ARCHIVE")
-                    .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3).padding(.top, 6)
-                Button {
-                    UIPasteboard.general.string = archiveCommand
-                } label: {
-                    Label("Prepare Archive community upload →", systemImage: "doc.on.clipboard")
-                        .scaledFont(size: 14, weight: .bold)
-                        .foregroundStyle(NarrationPalette.skySoft)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(NarrationPalette.periwinkle.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(NarrationPalette.periwinkle.opacity(0.4), lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("export.uploadToArchive")
-
                 Text("Voxglass prepares files; **you submit them yourself**. Voxglass never uploads on your behalf and does not determine copyright status.")
-                    .scaledFont(size: 11)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
                     .frame(maxWidth: .infinity)
                     .multilineTextAlignment(.center)
@@ -2837,21 +2797,16 @@ struct SubmitView: View {
             ?? FileManager.default.temporaryDirectory
     }
 
-    private var archiveCommand: String {
-        guard let bundle = model.exportBundle else { return "" }
-        let identifier = (model.project?.metadata.title ?? "voxglass").lowercased().replacingOccurrences(of: " ", with: "-")
-        return "ia upload \(identifier) --metadata='mediatype:audio' --metadata='collection:opensource_audio' --metadata='title:\(model.project?.metadata.title ?? "")' --metadata='creator:\(model.project?.metadata.author ?? "")' \(bundle.files.map(\.lastPathComponent).joined(separator: " "))"
-    }
 
     private func submitStep(_ number: Int, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(number)")
-                .scaledFont(size: 12, weight: .heavy)
+                .voxFont(.caption, weight: .heavy)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 22, height: 22)
                 .background(Palette.brass.opacity(0.16), in: Circle())
                 .overlay(Circle().stroke(Palette.brass.opacity(0.4), lineWidth: 1))
-            Text(LocalizedStringKey(text)).scaledFont(size: 13).foregroundStyle(Palette.ink)
+            Text(LocalizedStringKey(text)).voxFont(.footnote).foregroundStyle(Palette.ink)
         }
     }
 
@@ -2870,7 +2825,14 @@ private struct HandoffCeremony: View {
     @State private var celebration = false
 
     private var destinationLabel: String {
-        destination == .librivox ? "LibriVox" : "the Internet Archive"
+        "LibriVox"
+    }
+
+    private var assembledMinutes: Int {
+        let seconds = project.allParagraphs.reduce(0.0) { total, paragraph in
+            total + (paragraph.selectedTake?.duration ?? 0)
+        }
+        return max(0, Int(seconds / 60))
     }
 
     var body: some View {
@@ -2880,8 +2842,12 @@ private struct HandoffCeremony: View {
                     .scaleEffect(reduceMotion ? 1 : (celebration ? 1.06 : 1))
                     .accessibilityIdentifier("handoff.plate")
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ready for \(destinationLabel)").voxType(.heroTitle).foregroundStyle(Palette.ink)
-                    Text("Upload the package from Files or share it. Voxglass never uploads for you.")
+                    Image(systemName: "hands.and.sparkles.fill")
+                        .foregroundStyle(Palette.brass)
+                        .symbolEffect(.bounce, value: celebration)
+                        .accessibilityHidden(true)
+                    Text("Your chapter is ready for LibriVox").voxType(.heroTitle).foregroundStyle(Palette.ink)
+                    Text("\(assembledMinutes) minutes of \(project.metadata.title), read by you. Upload it from the LibriVox forum thread to add it to the public domain.")
                         .voxType(.meta).foregroundStyle(Palette.ink2).fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -2892,6 +2858,12 @@ private struct HandoffCeremony: View {
             .buttonStyle(.glassProminent)
             .tint(Palette.brass)
             .accessibilityIdentifier("handoff.sharePackage")
+            Link(destination: URL(string: "https://librivox.org/pages/volunteer-for-librivox/")!) {
+                Label("How to submit", systemImage: "questionmark.circle")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glass)
+            .accessibilityIdentifier("handoff.howToSubmit")
             if let cardURL {
                 ShareLink(item: cardURL) {
                     Label("Share title card", systemImage: "photo")

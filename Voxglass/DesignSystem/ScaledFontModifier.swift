@@ -18,6 +18,11 @@ struct ScaledFontModifier: ViewModifier {
 }
 
 extension View {
+    /// A Dynamic Type font from a semantic system text style.
+    func voxFont(_ style: Font.TextStyle, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
+        font(.system(style, design: design, weight: weight))
+    }
+
     func scaledFont(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
         modifier(ScaledFontModifier(size: size, weight: weight, design: design))
     }

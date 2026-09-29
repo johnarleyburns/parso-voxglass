@@ -49,7 +49,7 @@ struct CatalogDiscoveryView: View {
                     HStack(spacing: 12) {
                         ProgressView()
                         Text("Searching LibriVox")
-                            .scaledFont(size: 14)
+                            .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,7 +72,7 @@ struct CatalogDiscoveryView: View {
                                     ? "line.3.horizontal.decrease.circle.fill"
                                     : "line.3.horizontal.decrease.circle"
                             )
-                            .scaledFont(size: 12, weight: .semibold)
+                            .voxFont(.caption, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 7)

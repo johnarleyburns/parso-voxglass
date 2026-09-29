@@ -34,7 +34,7 @@ struct ProgressRingButton: View {
                 Circle().stroke(Color.white.opacity(0.14), lineWidth: 2.4)
                 Circle().trim(from: 0, to: min(max(progress, 0), 1)).stroke(isFinished ? NarrationPalette.mint : Palette.brass, style: StrokeStyle(lineWidth: 2.4, lineCap: .round)).rotationEffect(.degrees(-90))
                 Image(systemName: isFinished ? "checkmark" : (isPlaying ? "pause.fill" : "play.fill"))
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
             }
             .frame(width: 32, height: 32)
         }

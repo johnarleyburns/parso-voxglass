@@ -36,7 +36,7 @@ struct StorageSettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             adaptiveHeader("Narration working cache") {
                 Text("\(ByteCountFormatter.string(fromByteCount: model.usedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: model.limitBytes, countStyle: .file))")
-                    .scaledFont(size: 12, weight: .semibold)
+                    .voxFont(.caption, weight: .semibold)
                     .foregroundStyle(Palette.ink2)
                     .accessibilityIdentifier("storage.workingCache.total")
             }
@@ -61,12 +61,12 @@ struct StorageSettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Limit")
-                        .scaledFont(size: 12, weight: .semibold)
+                        .voxFont(.caption, weight: .semibold)
                         .foregroundStyle(Palette.ink2)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer()
                     Text(ByteCountFormatter.string(fromByteCount: model.limitBytes, countStyle: .file))
-                        .scaledFont(size: 12, weight: .bold)
+                        .voxFont(.caption, weight: .bold)
                         .foregroundStyle(Palette.ink)
                         .multilineTextAlignment(.trailing)
                         .fixedSize(horizontal: false, vertical: true)
@@ -78,9 +78,9 @@ struct StorageSettingsView: View {
                 .tint(Palette.brass)
                 .accessibilityIdentifier("storage.workingCacheLimit")
                 HStack {
-                    Text("2 GB").scaledFont(size: 10).foregroundStyle(Palette.ink3)
+                    Text("2 GB").voxFont(.caption2).foregroundStyle(Palette.ink3)
                     Spacer()
-                    Text("100 GB").scaledFont(size: 10).foregroundStyle(Palette.ink3)
+                    Text("100 GB").voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
             }
         }
@@ -94,12 +94,12 @@ struct StorageSettingsView: View {
     private func usageRow(_ label: String, _ bytes: Int64) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(label)
-                .scaledFont(size: 12.5)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
-                .scaledFont(size: 12.5, weight: .medium)
+                .voxFont(.caption, weight: .medium)
                 .foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.trailing)
                 .fixedSize(horizontal: false, vertical: true)
@@ -112,11 +112,11 @@ struct StorageSettingsView: View {
     private var audiobookCacheCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Audiobook downloads")
-                .scaledFont(size: 16, weight: .bold)
+                .voxFont(.callout, weight: .bold)
                 .foregroundStyle(Palette.ink)
             usageRow("Your listening library", model.audiobookBytes)
             Text("A separate budget. Narration never evicts your downloaded audiobooks, and downloads never evict your takes.")
-                .scaledFont(size: 11.5)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("storage.audiobookCache.description")
@@ -144,7 +144,7 @@ struct StorageSettingsView: View {
             }
 
             Text("Nothing is removed until it is safe. A recording can only be offloaded after its iCloud copy is verified byte-for-byte by checksum and the reference is written to this project.")
-                .scaledFont(size: 11.5)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("storage.iCloudBackup.description")
@@ -161,14 +161,14 @@ struct StorageSettingsView: View {
     private var evictionOrderCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("What gets removed first")
-                .scaledFont(size: 16, weight: .bold)
+                .voxFont(.callout, weight: .bold)
                 .foregroundStyle(Palette.ink)
             numberedRow(1, "Chapter renders — rebuilt from your takes")
             numberedRow(2, "Staging from finished or cancelled exports")
             numberedRow(3, "Review proxies")
             numberedRow(4, "Verified originals, oldest chapter first")
             Text("Never: local-only takes, uploads in flight, the current chapter, anything you pinned.")
-                .scaledFont(size: 11.5)
+                .voxFont(.caption2)
                 .foregroundStyle(NarrationPalette.brassSoft)
                 .padding(.top, 4)
                 .fixedSize(horizontal: false, vertical: true)
@@ -184,12 +184,12 @@ struct StorageSettingsView: View {
     private func numberedRow(_ n: Int, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(n)")
-                .scaledFont(size: 11, weight: .heavy)
+                .voxFont(.caption2, weight: .heavy)
                 .foregroundStyle(NarrationPalette.espresso)
                 .frame(width: 20, height: 20)
                 .background(Palette.brass, in: Circle())
             Text(text)
-                .scaledFont(size: 12.5)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -220,14 +220,14 @@ struct StorageSettingsView: View {
 
     private func cardTitle(_ title: String) -> some View {
         Text(title)
-            .scaledFont(size: 16, weight: .bold)
+            .voxFont(.callout, weight: .bold)
             .foregroundStyle(Palette.ink)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func statusChip(_ label: String) -> some View {
         Text(label)
-            .scaledFont(size: 10, weight: .bold)
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 8).padding(.vertical, 4)
             .foregroundStyle(Palette.ok)
             .background(Palette.ok.opacity(0.14), in: Capsule())

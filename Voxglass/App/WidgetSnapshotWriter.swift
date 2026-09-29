@@ -22,6 +22,14 @@ enum WidgetSnapshotWriter {
         let chapter = ChapterDisplayTitles.make(for: session.chapters)[session.chapter.id]
         let duration = max(session.duration ?? 0, 0)
         let fraction = duration > 0 ? session.position / duration : 0
+        let paletteIndex = CoverPaletteIndex.index(title: session.book.title, author: session.book.authorLine)
+        let palette = PlatePaletteValues.pairs[paletteIndex]
+        func hex(_ rgb: PlateRGB) -> UInt32 {
+            let red = UInt32(max(0, min(255, Int(rgb.red * 255))))
+            let green = UInt32(max(0, min(255, Int(rgb.green * 255))))
+            let blue = UInt32(max(0, min(255, Int(rgb.blue * 255))))
+            return (red << 16) | (green << 8) | blue
+        }
         let snapshot = NowPlayingSnapshot(
             bookID: session.book.id,
             title: session.book.title,
@@ -30,7 +38,12 @@ enum WidgetSnapshotWriter {
             chapterTitle: chapter?.title ?? session.chapter.title,
             fraction: fraction,
             minutesLeftInChapter: Int(max(duration - session.position, 0) / 60),
-            paletteIndex: CoverPaletteIndex.index(title: session.book.title, author: session.book.authorLine)
+            paletteIndex: paletteIndex,
+            backgroundHex: hex(palette.background),
+            accentHex: hex(palette.ink),
+            bookRemaining: session.bookRemaining,
+            isPlaying: session.isPlaying,
+            updatedAt: .now
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         let url = container.appendingPathComponent("now-playing.json")

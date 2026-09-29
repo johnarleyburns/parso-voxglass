@@ -113,6 +113,9 @@ struct RootView: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .tabBarMinimizeBehavior(.onScrollDown)
+        .accessibilityAction(.magicTap) {
+            playback.togglePlayPause()
+        }
     }
 
     @MainActor

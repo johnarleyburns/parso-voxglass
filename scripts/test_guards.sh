@@ -111,7 +111,7 @@ expect_guard_passes "G-A4 hash probe"
 
 probe="Voxglass/Features/_probe_ga5.swift"
 plant "$probe" 'let brass = Palette.brass'
-for i in $(seq 1 8); do printf '%s\n' 'let moreBrass = Palette.brass' >> "$probe"; done
+for i in $(seq 1 20); do printf '%s\n' 'let moreBrass = Palette.brass' >> "$probe"; done
 expect_guard_fails "A5" "brass budget overflow"
 unplant "$probe"
 expect_guard_passes "G-A5 brass budget probe"
@@ -121,6 +121,38 @@ plant "$probe" 'Text("0").scaledFont(size: 11, design: .monospaced)'
 expect_guard_fails "A6" "unannotated monospaced font"
 unplant "$probe"
 expect_guard_passes "G-A6 monospaced probe"
+
+probe="Voxglass/Features/_probe_ga7.swift"
+plant "$probe" 'let paidCopy = "Upgrade"'
+expect_guard_fails "A7" "retired paid-tier UI copy"
+unplant "$probe"
+expect_guard_passes "G-A7 paid-tier copy probe"
+
+probe="Voxglass/Features/_probe_ga8.swift"
+plant "$probe" 'let fixedType = Text("Probe").scaledFont(size: 12)'
+expect_guard_fails "A8" "non-exempt fixed type scale"
+unplant "$probe"
+expect_guard_passes "G-A8 fixed type scale probe"
+
+probe="Voxglass/Features/_probe_ga9.swift"
+plant "$probe" 'let haptic = UIImpactFeedbackGenerator(style: .light)'
+expect_guard_fails "A9" "UIKit haptic generator"
+unplant "$probe"
+expect_guard_passes "G-A9 UIKit haptic probe"
+
+probe="Voxglass/Features/_probe_ga10.swift"
+plant "$probe" 'let ternary = Text(flag ? "One" : "Two")'
+expect_guard_fails "A10" "literal localization ternary"
+unplant "$probe"
+expect_guard_passes "G-A10 literal ternary probe"
+
+# G-A11 probe: retired ACX/Internet Archive narration paths cannot reappear in
+# shipping narration UI even though Core compatibility remains.
+probe="Voxglass/Features/Production/Discovery/ProbeGA11.swift"
+plant "$probe" 'struct X { let destination = "Internet Archive" }'
+expect_guard_fails "A11" "LibriVox-only narration publishing probe"
+unplant "$probe"
+expect_guard_passes "G-A11 LibriVox-only narration publishing probe"
 
 # ──────────────────────────────────────────────────────────────
 # G-1 probes: AVSpeechSynthesizer symbol and CoreML import.

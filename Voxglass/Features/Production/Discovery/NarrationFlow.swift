@@ -227,26 +227,22 @@ enum NarrationStep: Hashable {
 }
 
 /// The user-facing destination is deliberately more precise than the
-/// persisted `ProjectPurpose`: LibriVox and Internet Archive share the same
-/// broad purpose but are different output lanes.
+/// The two narration destinations offered on iPhone: a local listening copy or
+/// the built-in LibriVox submission package.
 enum NarrationDestinationChoice: String, CaseIterable, Identifiable {
     case personal
     case librivox
-    case internetArchive
-    case commercial
 
     var id: String { rawValue }
 
     var purpose: ProjectPurpose {
-        self == .personal ? .personal : (self == .commercial ? .commercial : .publicDomainCommunity)
+        self == .personal ? .personal : .publicDomainCommunity
     }
 
     var destination: DestinationID {
         switch self {
         case .personal: .personalMaster
         case .librivox: .librivox
-        case .internetArchive: .internetArchive
-        case .commercial: .acx
         }
     }
 }
@@ -410,8 +406,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         switch validationDestination {
         case .personalMaster: "Personal listening"
         case .librivox: "LibriVox"
-        case .internetArchive: "Internet Archive"
-        case .acx, .appleBooksAggregator: "Commercial retail"
+        default: "LibriVox"
         }
     }
     var validationIssues: [ValidationIssue] = []
@@ -693,9 +688,6 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         if DestinationProfile.requiresRightsAttestation(validationDestination), !project.rights.isAttested,
            !blockers.contains(where: { $0.id == "metadata-rightsAttestation" }) {
             blockers.append(NarrationBlocker(id: "rights", title: "Rights not attested", message: "Confirm the rights attestation before exporting."))
-        }
-        if (validationDestination == .acx || validationDestination == .appleBooksAggregator), !isProUnlocked {
-            blockers.append(NarrationBlocker(id: "license", title: "Narration Pro required", message: "Commercial retail export requires Voxglass Narration Pro."))
         }
         if !exportScopeIsValid {
             blockers.append(NarrationBlocker(id: "scope", title: "No chapters selected", message: "Choose at least one chapter to export."))
@@ -979,10 +971,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
 
     func regenerateScript(for destination: DestinationID) async {
         guard var project else { return }
-        let generator: any ScriptGenerating = destination == .librivox
-            ? LibriVoxScriptGenerator()
-            : RetailScriptGenerator()
-        _ = ScriptApplier().apply(generator.plan(for: project), to: &project, ids: repository.ids, clock: repository.clock)
+        _ = ScriptApplier().apply(LibriVoxScriptGenerator().plan(for: project), to: &project, ids: repository.ids, clock: repository.clock)
         self.project = project
         await persist()
         await runValidation()
@@ -1323,7 +1312,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         micPermissionDenied = false
         await checkForRecoveredSessions()
         if didBackfill { await persist() }
-        validationDestination = repairedProject.profile.intendedDestination
+        validationDestination = repairedProject.profile.intendedDestination == .personalMaster ? .personalMaster : .librivox
     }
 
     func load(_ project: AudiobookProject) async {
@@ -2761,38 +2750,14 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         Task { await runValidation() }
     }
 
-    /// ACX readiness preview for the Pro purchase sheet (mockup 14c). Validation
-    /// is never gated (§2.2): a free user sees their full retail report before
-    /// buying. Does not change the selected export destination.
-    func acxReadinessPreview() async -> [ValidationIssue] {
-        guard let project else { return [] }
-        let assets = (try? await SQLiteProductionAssetRepository(databaseURL: repository.layout(for: project.id).databaseURL).records()) ?? []
-        let preflight = ExportPreflight.compute(
-            project: project,
-            assets: assets,
-            scope: exportScope,
-            freeBytes: FreeSpaceProvider.availableBytes
-        )
-        return ValidationRuleEngine().evaluate(
-            project: project,
-            metrics: PackagingSupport.selectedTakeMetrics(project),
-            profile: DestinationProfile.profile(for: .acx),
-            eligibility: EligibilityProfile.evaluate(project),
-            assembly: project.profile.assembly,
-            context: ValidationContext(exportPreflight: preflight.exportPreflightContext)
-        )
-    }
-
     /// Blocking issues that gate *starting* an export — the four preflight
     /// codes plus the destination's other blocking rules.
     var blockingValidationIssues: [ValidationIssue] {
         validationIssues.filter { $0.severity == .blocking }
     }
 
-    /// P7/P8 (§13): produces the real package for `validationDestination` through
-    /// the free builders or the Pro retail builder, via `ResumableExportRunner`,
-    /// zips it for Save to Files, and hands it to the Submit screen. Free lanes
-    /// never touch a license gate; retail consults it in the runner (§2.2).
+    /// Produces the real package for `validationDestination` through the
+    /// destination builders, then zips it for Save to Files.
     func runExport() async {
         guard let project, !isExporting else { return }
         let blockers = blockers(for: .export)
@@ -2807,15 +2772,6 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         guard blockingValidationIssues.isEmpty else {
             exportError = "Resolve the blocking validation issues before exporting."
             return
-        }
-        let isRetail = validationDestination == .acx || validationDestination == .appleBooksAggregator
-        if isRetail {
-            do {
-                try await licenseGate.require(.retailPresets)
-            } catch {
-                exportError = "Commercial retail export is a Voxglass Narration Pro feature."
-                return
-            }
         }
         isExporting = true
         exportError = nil
@@ -2834,18 +2790,15 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         switch validationDestination {
         case .librivox:
             builder = LibriVoxPackageBuilder()
-        case .internetArchive:
-            builder = InternetArchivePackageBuilder()
-            options.includeMP3Derivatives = true
-        case .acx, .appleBooksAggregator:
-            builder = RetailMasterPackageBuilder(destination: validationDestination)
-            options.applyMastering = applyMasteringForExport
-            options.writeValidationReport = true
-            options.retailSample = retailSampleOverride ?? defaultRetailSample()
         case .personalMaster:
             builder = RetailMasterPackageBuilder(destination: .personalMaster)
             options.applyMastering = false
             options.writeValidationReport = true
+        default:
+            // Existing projects may contain a retired destination. They remain
+            // readable, but a new export is always routed to LibriVox.
+            validationDestination = .librivox
+            builder = LibriVoxPackageBuilder()
         }
         let layout = repository.layout(for: project.id)
         let renderer = AVChapterRenderer(assetsRoot: layout.root)
@@ -3082,7 +3035,7 @@ struct NarrationFlowRoot: View {
                                 confirmDelete = true
                             } label: {
                                 Image(systemName: "trash")
-                                    .scaledFont(size: 16, weight: .semibold)
+                                    .voxFont(.callout, weight: .semibold)
                             }
                             .accessibilityLabel("Delete narration")
                             .accessibilityIdentifier("narration.delete")
@@ -3091,7 +3044,7 @@ struct NarrationFlowRoot: View {
                             showHelp = true
                         } label: {
                             Image(systemName: "questionmark.circle")
-                                .scaledFont(size: 17, weight: .semibold)
+                                .voxFont(.body, weight: .semibold)
                         }
                         .accessibilityLabel("Narration help")
                         .accessibilityIdentifier("narration.help")
@@ -3131,6 +3084,8 @@ struct NarrationFlowRoot: View {
                 isResuming = false
             }
             if let startNeed {
+                model.draftDestinationChoice = .librivox
+                model.draftPurpose = .publicDomainCommunity
                 model.importNeed(startNeed)
                 if let existing = await model.existingProject(for: startNeed) {
                     await model.resume(existing)
@@ -3162,7 +3117,6 @@ struct NarrationFlowRoot: View {
 /// flow. Shown once automatically, and again any time from the help button.
 struct NarrationHelpSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var showProDetails = false
 
     var body: some View {
         NavigationStack {
@@ -3170,10 +3124,10 @@ struct NarrationHelpSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Recording your narration")
-                            .scaledFont(size: 22, weight: .heavy)
+                            .voxFont(.title2, weight: .heavy)
                             .foregroundStyle(Palette.ink)
-                        Text("Contribute a free recording to LibriVox or the Internet Archive — completely free, forever. Or bring your own book — import an EPUB, DOCX, or paste text — and record it. Recording, LibriVox, and Internet Archive stay free forever.")
-                            .scaledFont(size: 13)
+                        Text("Contribute a free recording to LibriVox — or bring your own book — import an EPUB, DOCX, or paste text — and record it. Recording and LibriVox submission stay free forever.")
+                            .voxFont(.footnote)
                             .foregroundStyle(Palette.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -3185,15 +3139,8 @@ struct NarrationHelpSheet: View {
                     step(5, "Encoding to MP3/FLAC happens on your iPhone. Save the finished package to Files and submit it yourself.", icon: "iphone")
 
                     Text("If a recording doesn't start, check that the microphone is allowed in Settings → Privacy → Microphone.")
-                        .scaledFont(size: 11.5)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
-
-                    Button("See what Pro includes") {
-                        showProDetails = true
-                    }
-                    .scaledFont(size: 13, weight: .bold)
-                    .foregroundStyle(Palette.brass)
-                    .accessibilityIdentifier("help.proDetails")
 
                     NarrationPrimaryButton(title: "Got it", identifier: "narration.helpSheet.dismiss") {
                         dismiss()
@@ -3211,9 +3158,6 @@ struct NarrationHelpSheet: View {
             .accessibilityIdentifier("narration.helpSheet")
         }
         .presentationDetents([.medium, .large])
-        .sheet(isPresented: $showProDetails) {
-            ProPurchaseView(provider: NarrationProStore.shared.provider, model: nil) { _ in }
-        }
     }
 
     private func step(_ number: Int, _ text: String, icon: String) -> some View {
@@ -3222,12 +3166,12 @@ struct NarrationHelpSheet: View {
                 Circle()
                     .fill(Palette.brass.opacity(0.14))
                 Image(systemName: icon)
-                    .scaledFont(size: 14, weight: .semibold)
+                    .voxFont(.subheadline, weight: .semibold)
                     .foregroundStyle(Palette.brass)
             }
             .frame(width: 32, height: 32)
             Text(LocalizedStringKey(text))
-                .scaledFont(size: 13.5)
+                .voxFont(.footnote)
                 .foregroundStyle(Palette.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 4)
@@ -3282,14 +3226,14 @@ struct WorkImportView: View {
     @State private var showNeedsPicker = false
     @State private var showPaste = false
     @State private var showGutenberg = false
-    @State private var showProDetails = false
+    @State private var showExportFormats = false
     @State private var pickedFileURL: URL?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("New Narration")
-                    .scaledFont(size: 26, weight: .heavy)
+                    .voxFont(.title, weight: .heavy)
                     .foregroundStyle(Palette.ink)
 
                 importOption(systemImage: "text.book.closed", title: "Find a book that needs a reader", id: "import.fromNeed") {
@@ -3309,11 +3253,11 @@ struct WorkImportView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(spacing: 8) {
                             ProgressView().tint(Palette.brass)
-                            Text("Parsing…").scaledFont(size: 12).foregroundStyle(Palette.ink2)
+                            Text("Parsing…").voxFont(.caption).foregroundStyle(Palette.ink2)
                             Spacer()
                             if let preview = model.importPreview {
                                 Text("\(preview.chapterCount) chapter\(preview.chapterCount == 1 ? "" : "s") so far")
-                                    .scaledFont(size: 11, weight: .bold).foregroundStyle(Palette.brass)
+                                    .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.brass)
                             }
                         }
                         // §8.2: the import must be cancellable — a 400-page EPUB
@@ -3321,7 +3265,7 @@ struct WorkImportView: View {
                         Button("Cancel import") {
                             model.cancelImport()
                         }
-                        .scaledFont(size: 12, weight: .semibold)
+                        .voxFont(.caption, weight: .semibold)
                         .foregroundStyle(Palette.danger)
                         .accessibilityIdentifier("import.cancel")
                     }
@@ -3331,22 +3275,22 @@ struct WorkImportView: View {
                     .padding(.top, 8)
                 }
                 if let error = model.importError {
-                    Text(error).scaledFont(size: 12).foregroundStyle(Palette.danger)
+                    Text(error).voxFont(.caption).foregroundStyle(Palette.danger)
                 }
 
                 purposePicker
 
                 Button("Learn about export formats") {
-                    showProDetails = true
+                    showExportFormats = true
                 }
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.brass)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 2)
-                .accessibilityIdentifier("import.proDetails")
+                .accessibilityIdentifier("import.exportFormats")
 
                 Text(LegalStrings.noCopyrightDetermination)
-                    .scaledFont(size: 11)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 8)
@@ -3363,8 +3307,8 @@ struct WorkImportView: View {
         .sheet(isPresented: $showGutenberg) {
             GutenbergSheet(model: model)
         }
-        .sheet(isPresented: $showProDetails) {
-            ProPurchaseView(provider: model.licenseProvider, model: model) { _ in }
+        .sheet(isPresented: $showExportFormats) {
+            ExportFormatsView()
         }
         .fileImporter(isPresented: Binding(get: { pickedFileURL != nil }, set: { if !$0 { pickedFileURL = nil } }), allowedContentTypes: importContentTypes) { result in
             if case .success(let url) = result {
@@ -3396,10 +3340,10 @@ struct WorkImportView: View {
                 }
                 .frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).scaledFont(size: 15, weight: .bold).foregroundStyle(Palette.ink)
+                    Text(title).voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.ink)
                 }
                 Spacer()
-                Image(systemName: "chevron.right").scaledFont(size: 12).foregroundStyle(Palette.ink3)
+                Image(systemName: "chevron.right").voxFont(.caption).foregroundStyle(Palette.ink3)
             }
             .padding(14)
             .raisedSurface()
@@ -3418,26 +3362,15 @@ struct WorkImportView: View {
     /// though they share the same broad persisted purpose.
     private var purposePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("WHERE THIS IS GOING")
-                .scaledFont(size: 13, weight: .bold).foregroundStyle(Palette.ink3)
+            Text("Where will this be heard?")
+                .voxType(.eyebrow).foregroundStyle(Palette.ink3)
                 .padding(.top, 6)
             VStack(spacing: 0) {
-                    destinationRow(title: "Just for me", caption: "Lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
-                VoxglassListDivider()
                     destinationRow(title: "LibriVox", caption: "128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", choice: .librivox)
                 VoxglassListDivider()
-                    destinationRow(title: "Internet Archive", caption: "FLAC masters + MP3 copies", id: "wizard.purpose.internetArchive", choice: .internetArchive)
-                VoxglassListDivider()
-                destinationRow(title: "Commercial release", caption: "ACX, Apple Books, aggregators", id: "wizard.purpose.commercial", choice: .commercial, proChip: true)
-                if model.draftDestinationChoice == .commercial {
-                    Text("Delivered with Voxglass Narration Pro — a one-time purchase. Everything else here is free.")
-                        .scaledFont(size: 11)
-                        .foregroundStyle(Palette.ink2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, 12)
-                        .accessibilityIdentifier("wizard.purpose.commercial.hint")
-                }
+                    destinationRow(title: "Just for me", caption: "Lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
             }
             .raisedSurface()
         }
@@ -3445,7 +3378,7 @@ struct WorkImportView: View {
         .accessibilityIdentifier("wizard.purpose")
     }
 
-    private func destinationRow(title: String, caption: String, id: String, choice: NarrationDestinationChoice, proChip: Bool = false) -> some View {
+    private func destinationRow(title: String, caption: String, id: String, choice: NarrationDestinationChoice) -> some View {
         let selected = model.draftDestinationChoice == choice
         return Button {
             model.draftDestinationChoice = choice
@@ -3453,22 +3386,15 @@ struct WorkImportView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                    .scaledFont(size: 16, weight: .semibold)
+                    .voxFont(.callout, weight: .semibold)
                     .foregroundStyle(selected ? Palette.brass : Palette.ink3)
                     .frame(width: 22)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(title).scaledFont(size: 13.5, weight: selected ? .heavy : .semibold)
+                        Text(title).voxFont(.footnote, weight: selected ? .heavy : .semibold)
                             .foregroundStyle(Palette.ink)
-                        if proChip {
-                            Text("Pro")
-                                .scaledFont(size: 10, weight: .bold)
-                                .foregroundStyle(Palette.brass)
-                                .padding(.horizontal, 7).padding(.vertical, 2)
-                                .background(Palette.brass.opacity(0.14), in: Capsule())
-                        }
                     }
-                    Text(caption).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(caption).voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
                 Spacer()
             }
@@ -3734,11 +3660,11 @@ private struct GutenbergSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     searchField
-                    Button(showManual ? "Hide manual Gutenberg link" : "Use an ebook number or link instead") {
+                    Button(showManual ? "Hide manual Gutenberg link" : "Use an ebook number or link instead") { // l10n-exempt: state-dependent accessibility or status copy
                         withAnimation { showManual.toggle() }
                     }
                     .buttonStyle(.plain)
-                    .scaledFont(size: 12, weight: .medium)
+                    .voxFont(.caption, weight: .medium)
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("gutenberg.manualToggle")
                     if showManual {
@@ -3752,7 +3678,7 @@ private struct GutenbergSheet: View {
                                 dismiss()
                                 Task { await model.fetchGutenberg(identifier: identifier) }
                             }
-                            .scaledFont(size: 12, weight: .semibold)
+                            .voxFont(.caption, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                             .disabled(manualIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
@@ -3810,12 +3736,12 @@ private struct GutenbergSheet: View {
                 .accessibilityLabel("Clear Gutenberg search")
             }
             Button("Search") { Task { await searchState.search(reset: true) } }
-                .scaledFont(size: 12, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.brass)
                 .disabled(searchState.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || searchState.isSearching)
                 .accessibilityIdentifier("gutenberg.searchButton")
         }
-        .scaledFont(size: 14)
+        .voxFont(.subheadline)
         .padding(.horizontal, 14)
         .frame(minHeight: 46)
         .raisedSurface()
@@ -3828,14 +3754,14 @@ private struct GutenbergSheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else if searchState.results.isEmpty {
             Text("Search for a title, author, or subject to choose a public-domain work.")
-                .scaledFont(size: 13)
+                .voxFont(.footnote)
                 .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("gutenberg.emptyState")
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Project Gutenberg results")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .foregroundStyle(Palette.ink3)
                     .padding(.bottom, 6)
                 ForEach(searchState.results, id: \.id) { book in
@@ -3848,17 +3774,17 @@ private struct GutenbergSheet: View {
                                 .frame(width: 22)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(book.title)
-                                    .scaledFont(size: 14, weight: .semibold)
+                                    .voxFont(.subheadline, weight: .semibold)
                                     .foregroundStyle(Palette.ink)
                                     .multilineTextAlignment(.leading)
                                 Text(book.authorLine)
-                                    .scaledFont(size: 12)
+                                    .voxFont(.caption)
                                     .foregroundStyle(Palette.ink2)
                                 Text("\(book.languages.map { $0.uppercased() }.joined(separator: ", ")) · \(book.isPublicDomain ? "Public domain" : "Rights status unavailable")")
-                                    .scaledFont(size: 10)
+                                    .voxFont(.caption2)
                                     .foregroundStyle(Palette.ink3)
                                 Text("Gutenberg ebook \(book.id)")
-                                    .scaledFont(size: 10)
+                                    .voxFont(.caption2)
                                     .foregroundStyle(Palette.ink3)
                             }
                             Spacer(minLength: 0)
@@ -3876,8 +3802,8 @@ private struct GutenbergSheet: View {
                         HStack {
                             Spacer()
                             if searchState.isLoadingMore { ProgressView() }
-                            Text(searchState.isLoadingMore ? "Loading…" : "Load more")
-                                .scaledFont(size: 13, weight: .semibold)
+                            Text(searchState.isLoadingMore ? "Loading…" : "Load more") // l10n-exempt: state-dependent accessibility or status copy
+                                .voxFont(.footnote, weight: .semibold)
                             Spacer()
                         }
                         .foregroundStyle(Palette.brass)
@@ -3897,13 +3823,13 @@ private struct GutenbergSheet: View {
         if let selectedBook = searchState.selectedBook {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Selected book")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .foregroundStyle(Palette.ink3)
                 Text(selectedBook.title)
-                    .scaledFont(size: 18, weight: .heavy)
+                    .voxFont(.body, weight: .heavy)
                     .foregroundStyle(Palette.ink)
                 Text(selectedBook.authorLine)
-                    .scaledFont(size: 13)
+                    .voxFont(.footnote)
                     .foregroundStyle(Palette.ink2)
 
                 Button("Pick this book") {
@@ -3923,7 +3849,7 @@ private struct GutenbergSheet: View {
                 .accessibilityIdentifier("gutenberg.pickBook")
                 if isPickingBook {
                     ProgressView("Fetching selected book…")
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                 }
 
                 Button("Search for existing LibriVox audiobook?") {
@@ -3938,12 +3864,12 @@ private struct GutenbergSheet: View {
                     ProgressView("Checking LibriVox…")
                 } else if let matchError = searchState.matchError {
                     Text(matchError)
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                         .foregroundStyle(Palette.danger)
                         .accessibilityIdentifier("gutenberg.librivoxError")
                 } else if !searchState.matchCandidates.isEmpty {
                     Text("Already found on LibriVox")
-                        .scaledFont(size: 13, weight: .bold)
+                        .voxFont(.footnote, weight: .bold)
                         .foregroundStyle(Palette.ok)
                         .accessibilityIdentifier("gutenberg.librivoxFound")
                     ForEach(searchState.matchCandidates, id: \.result.identifier) { candidate in
@@ -3953,13 +3879,13 @@ private struct GutenbergSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(candidate.result.title)
-                                        .scaledFont(size: 13, weight: .semibold)
+                                        .voxFont(.footnote, weight: .semibold)
                                         .foregroundStyle(Palette.ink)
                                     Text(candidate.result.authorLine)
-                                        .scaledFont(size: 11)
+                                        .voxFont(.caption2)
                                         .foregroundStyle(Palette.ink2)
                                     Link(candidate.result.detailsURL.absoluteString, destination: candidate.result.detailsURL)
-                                        .scaledFont(size: 10)
+                                        .voxFont(.caption2)
                                         .foregroundStyle(Palette.ink3)
                                 }
                                 Spacer()
@@ -3974,7 +3900,7 @@ private struct GutenbergSheet: View {
                     }
                 } else if searchState.didCheckLibriVox {
                     Text("No existing LibriVox audiobook found. This book is a candidate for a LibriVox recording.")
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                         .foregroundStyle(Palette.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("gutenberg.librivoxNoMatch")

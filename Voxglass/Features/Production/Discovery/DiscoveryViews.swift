@@ -7,7 +7,7 @@ struct SignalBadge: View {
     let signal: NeedSignal
     var body: some View {
         Text(label)
-            .scaledFont(size: 10, weight: .bold)
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(tint.opacity(0.14), in: Capsule())
@@ -39,8 +39,8 @@ struct SignalBadge: View {
 struct GradeBadge: View {
     let grade: WorkGrade
     var body: some View {
-        Text(grade == .submittable ? "Submittable" : "Practice")
-            .scaledFont(size: 10, weight: .bold)
+        Text(grade == .submittable ? "Submittable" : "Practice") // l10n-exempt: state-dependent accessibility or status copy
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .foregroundStyle(grade == .submittable ? Palette.brass : Palette.ink3)
@@ -83,7 +83,7 @@ private let narrationRailTopSpacing: CGFloat = 20
 /// the card, it never gates the record action.
 struct NarrationHomeShelf: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
-    @AppStorage(AppPreferencesStore.Keys.narrationCommercialIntroSeen) private var commercialIntroSeen = false
+    @AppStorage(AppPreferencesStore.Keys.narrationIntroSeen) private var narrationIntroSeen = false
     let startProject: (NarrationNeed) -> Void
     let startNew: () -> Void
     let showRails: Bool
@@ -100,60 +100,60 @@ struct NarrationHomeShelf: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Start a Narration")
-                    .scaledFont(size: 18, weight: .bold)
+                    .voxFont(.body, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier("home.startNarrationShelf")
                 Spacer()
-                Button(showAbout ? "Less" : "About") {
+                Button(showAbout ? "Less" : "About") { // l10n-exempt: state-dependent accessibility or status copy
                     withAnimation(.easeInOut(duration: 0.2)) { showAbout.toggle() }
                 }
                 .buttonStyle(.plain)
-                .scaledFont(size: 12, weight: .medium)
+                .voxFont(.caption, weight: .medium)
                 .foregroundStyle(Palette.ink3)
                 .accessibilityIdentifier("narration.startAbout")
             }
 
             if showAbout {
-                Text("Record public-domain books. Contribute free to LibriVox and the Internet Archive — or bring your own book. Recording, LibriVox, and Internet Archive stay free forever.")
-                    .scaledFont(size: 12.5)
+                Text("Record public-domain books. Contribute your voice to LibriVox — or bring your own book. Recording and LibriVox submission stay free forever.")
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ink2)
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            if !commercialIntroSeen {
+            if !narrationIntroSeen {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("Bring your own book")
-                                .scaledFont(size: 13.5, weight: .bold)
+                                .voxFont(.footnote, weight: .bold)
                                 .foregroundStyle(Palette.ink)
-                            Text("Import or paste text for free. Record it in your voice. Recording, LibriVox, and Internet Archive stay free forever.")
-                                .scaledFont(size: 11.5)
+                            Text("Import or paste text for free. Record it in your voice. Recording and LibriVox submission stay free forever.")
+                                .voxFont(.caption2)
                                 .foregroundStyle(Palette.ink2)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         Spacer(minLength: 0)
                         Button {
-                            commercialIntroSeen = true
+                            narrationIntroSeen = true
                         } label: {
                             Image(systemName: "xmark")
-                                .scaledFont(size: 11, weight: .bold)
+                                .voxFont(.caption2, weight: .bold)
                                 .foregroundStyle(Palette.ink3)
                                 .frame(width: 28, height: 28)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Dismiss commercial narration introduction")
-                        .accessibilityIdentifier("narration.commercialIntro.dismiss")
+                        .accessibilityLabel("Dismiss narration introduction")
+                        .accessibilityIdentifier("narration.intro.dismiss")
                     }
                     Button("Start a narration", action: startNew)
-                        .scaledFont(size: 12.5, weight: .bold)
+                        .voxFont(.caption, weight: .bold)
                         .foregroundStyle(Palette.brass)
                 }
                 .padding(13)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .raisedSurface()
-                .accessibilityIdentifier("narration.commercialIntro")
+                .accessibilityIdentifier("narration.intro")
             }
 
             Button(action: startNew) {
@@ -161,7 +161,7 @@ struct NarrationHomeShelf: View {
                     Image(systemName: "plus")
                     Text("Start a Narration")
                 }
-                .scaledFont(size: 14, weight: .heavy)
+                .voxFont(.subheadline, weight: .heavy)
                 .foregroundStyle(Palette.brass)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
@@ -227,19 +227,19 @@ struct ShortNeedCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(need.work.title)
-                .scaledFont(size: 14, weight: .bold)
+                .voxFont(.subheadline, weight: .bold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))")
-                .scaledFont(size: 11)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink2)
                 .padding(.top, 2)
             GradeBadge(grade: need.work.grade)
                 .padding(.top, 8)
             Button(action: start) {
                 Text("Start narrating")
-                    .scaledFont(size: 12, weight: .heavy)
+                    .voxFont(.caption, weight: .heavy)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 10))
@@ -269,22 +269,22 @@ struct LongNeedCard: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(LinearGradient(colors: [NarrationPalette.forestDeep, NarrationPalette.forest], startPoint: .top, endPoint: .bottom))
                 Text(initials(need.work.title))
-                    .scaledFont(size: 14, weight: .heavy)
+                    .voxFont(.subheadline, weight: .heavy)
                     .foregroundStyle(NarrationPalette.creamWarm)
             }
             .frame(width: 88, height: 118)
             Text(need.work.title)
-                .scaledFont(size: 11.5, weight: .semibold)
+                .voxFont(.caption2, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
             Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))")
-                .scaledFont(size: 10)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
             Button(action: start) {
                 Text("Start recording")
-                    .scaledFont(size: 10, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .foregroundStyle(NarrationPalette.espresso)
@@ -335,7 +335,7 @@ struct NarrationNeedsView: View {
                                 filter = item
                             } label: {
                                 Text(item.rawValue.capitalized)
-                                    .scaledFont(size: 11, weight: item == filter ? .heavy : .semibold)
+                                    .voxFont(.caption2, weight: item == filter ? .heavy : .semibold)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .foregroundStyle(item == filter ? NarrationPalette.nearBlack : Palette.ink2)
@@ -374,11 +374,11 @@ struct NarrationNeedsView: View {
     private var freshnessCaption: some View {
         if discovery.freshness == .seedOnly {
             Text("Offline · showing saved works")
-                .scaledFont(size: 11)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
         } else {
             Text(liveCaption)
-                .scaledFont(size: 11)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
         }
     }
@@ -402,17 +402,17 @@ struct NeedRow: View {
                 RoundedRectangle(cornerRadius: 9)
                     .fill(LinearGradient(colors: [NarrationPalette.tanDeep, NarrationPalette.olive], startPoint: .top, endPoint: .bottom))
                 Image(systemName: need.work.lengthClass == .short ? "scroll" : "book.closed")
-                    .scaledFont(size: 18)
+                    .voxFont(.body)
             }
             .frame(width: 44, height: 58)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(need.work.title)
-                    .scaledFont(size: 14.5, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))")
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink2)
                     .lineLimit(1)
                 HStack(spacing: 6) {
@@ -427,7 +427,7 @@ struct NeedRow: View {
                 startProject(need)
             } label: {
                 Text("Start")
-                    .scaledFont(size: 12, weight: .heavy)
+                    .voxFont(.caption, weight: .heavy)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .foregroundStyle(NarrationPalette.espresso)
@@ -587,11 +587,11 @@ struct MyNarrationsSection: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(project.metadata.title)
-                    .scaledFont(size: 14.5, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Text("\(project.metadata.author) · \(project.totalCount) paragraphs · ~\(projectTotalDuration(project).formattedShort)")
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink2)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -607,7 +607,7 @@ struct MyNarrationsSection: View {
                 .frame(height: 6)
 
         Text(project.phase.caption)
-                    .scaledFont(size: 11)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
             }
             Spacer(minLength: 4)
@@ -621,7 +621,7 @@ struct MyNarrationsSection: View {
     private func statusPill(_ project: AudiobookProject) -> some View {
         let phase = project.phase
         Text(phase.label)
-            .scaledFont(size: 11, weight: .bold)
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .foregroundStyle(project.isReady ? NarrationPalette.mint : (project.isDraft ? Palette.ink3 : Palette.brass))

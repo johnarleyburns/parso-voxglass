@@ -94,15 +94,15 @@ struct HistoryView: View {
             BookArtworkView(title: entry.book.book.title, size: 48, coverURL: entry.book.book.coverURL, cornerRadius: 10)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.book.book.title)
-                    .scaledFont(size: 15, weight: .medium)
+                    .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Text(entry.book.book.authorLine)
-                    .scaledFont(size: 12.5)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ink3)
                     .lineLimit(1)
                 Text(relativeDate(entry.lastPlayedAt))
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
             }
             Spacer(minLength: 8)

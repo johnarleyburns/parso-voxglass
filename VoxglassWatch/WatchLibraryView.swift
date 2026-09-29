@@ -43,7 +43,7 @@ struct WatchLibraryView: View {
     private var connectionToast: some View {
         HStack {
             Circle().fill(services.isConnected ? .green : .orange).frame(width: 7, height: 7)
-            Text(services.isConnected ? "iPhone connected" : "On This Watch").font(.caption2)
+            Text(services.isConnected ? "iPhone connected" : "On This Watch").font(.caption2) // l10n-exempt: state-dependent accessibility or status copy
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)

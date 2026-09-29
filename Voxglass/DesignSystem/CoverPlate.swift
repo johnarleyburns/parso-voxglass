@@ -58,19 +58,19 @@ struct CoverPlate: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if let author, !author.isEmpty {
                         Text(author.uppercased())
-                            .scaledFont(size: size * 0.16, weight: .medium, design: .serif)
+                            .scaledFont(size: size * 0.16, weight: .medium, design: .serif) // type-exempt: cover artwork scales with plate size
                             .foregroundStyle(pair.ink)
                             .lineLimit(1)
                             .minimumScaleFactor(0.55)
                             .allowsTightening(true)
                     }
                     Spacer()
-                    Text(title).scaledFont(size: size * 0.16, weight: .medium, design: .serif).foregroundStyle(pair.ink).lineLimit(4).minimumScaleFactor(0.55)
+                    Text(title).scaledFont(size: size * 0.16, weight: .medium, design: .serif).foregroundStyle(pair.ink).lineLimit(4).minimumScaleFactor(0.55) // type-exempt: cover artwork scales with plate size
                     Rectangle().fill(pair.ink.opacity(0.75)).frame(width: width * 0.38, height: 1)
                 }
                 .padding(size * 0.10)
             } else if size >= 40 {
-                Text(title).scaledFont(size: size * 0.20, weight: .medium, design: .serif).foregroundStyle(pair.ink).lineLimit(3).minimumScaleFactor(0.55).padding(size * 0.12)
+                Text(title).scaledFont(size: size * 0.20, weight: .medium, design: .serif).foregroundStyle(pair.ink).lineLimit(3).minimumScaleFactor(0.55).padding(size * 0.12) // type-exempt: cover artwork scales with plate size
             } else {
                 Rectangle().fill(pair.ink.opacity(0.5)).frame(width: width * 0.5, height: 1).padding(.leading, width * 0.25).padding(.bottom, width * 0.3)
             }

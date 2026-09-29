@@ -30,7 +30,7 @@ struct AnimatedSplashView: View {
                 .scaleEffect(tileScale)
 
                 Text("Public-domain audiobooks, private by default.")
-                    .scaledFont(size: 15)
+                    .voxFont(.subheadline)
                     .foregroundStyle(.white.opacity(0.85))
                     .scaleEffect(scale)
             }
@@ -63,7 +63,7 @@ struct PeriodicTileView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(atomicNumber)
-                    .scaledFont(size: 14, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .foregroundStyle(.white)
                 Spacer()
             }
@@ -71,17 +71,17 @@ struct PeriodicTileView: View {
             Spacer(minLength: 0)
 
             Text(symbol)
-                .scaledFont(size: 42, weight: .bold)
+                .scaledFont(size: 42, weight: .bold) // type-exempt: splash wordmark
                 .foregroundStyle(.white)
 
             Spacer(minLength: 0)
 
             Text(name)
-                .scaledFont(size: 11, weight: .semibold)
+                .voxFont(.caption2, weight: .semibold)
                 .foregroundStyle(.white)
 
             Text(atomicWeight)
-                .scaledFont(size: 10, weight: .medium)
+                .voxFont(.caption2, weight: .medium)
                 .foregroundStyle(.white.opacity(0.82))
                 .padding(.top, 2)
         }

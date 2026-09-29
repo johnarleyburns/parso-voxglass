@@ -44,6 +44,24 @@ import Foundation
         #expect(violations.isEmpty)  // Negative letter spacing undermines Dynamic Type; prefer platform font metrics
     }
 
+    @Test func noTypeExemptBelowDisplaySize() throws {
+        let pattern = try NSRegularExpression(pattern: #"scaledFont\(size:\s*([0-9]+(?:\.[0-9]+)?)"#)
+        var violations: [String] = []
+        for line in try swiftSourceLines() {
+            guard line.text.contains("type-exempt:") else { continue }
+            let source = line.text as NSString
+            let range = NSRange(location: 0, length: source.length)
+            for match in pattern.matches(in: line.text, range: range) {
+                guard let size = Double(source.substring(with: match.range(at: 1))) else { continue }
+                if size < 34 {
+                    violations.append("\(line.file):\(line.number)")
+                }
+            }
+        }
+
+        #expect(violations.isEmpty)
+    }
+
     private func swiftSourceLines() throws -> [(file: String, number: Int, text: String)] {
         let testFile = URL(fileURLWithPath: #filePath)
         let sourcesDir = testFile.deletingLastPathComponent().deletingLastPathComponent()

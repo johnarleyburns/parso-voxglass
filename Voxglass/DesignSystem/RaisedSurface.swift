@@ -4,14 +4,15 @@ import SwiftUI
 struct RaisedSurface: ViewModifier {
     let tint: Color?
     let radius: CGFloat
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
         content
             .background {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(Palette.surface)
+                    .fill(reduceTransparency ? VoxglassTheme.paperRaised : Palette.surface)
                     .overlay {
-                        if let tint {
+                        if !reduceTransparency, let tint {
                             RadialGradient(colors: [tint.opacity(0.38), .clear], center: .topLeading, startRadius: 0, endRadius: 260)
                         }
                     }

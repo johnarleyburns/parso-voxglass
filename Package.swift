@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "VoxglassCore",
+    defaultLocalization: "en",
     platforms: [.iOS("27.0"), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
@@ -47,6 +48,7 @@ let package = Package(
             exclude: ["Encoders"],
             resources: [
                 .process("Resources/CuratedLists"),
+                .process("Resources/Localizable.xcstrings"),
                 .copy("Production/Discovery/Resources/needs-seed.json")
             ],
             swiftSettings: [

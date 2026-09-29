@@ -13,19 +13,20 @@ struct SectionTitle: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .scaledFont(size: 18, weight: .bold)
+                    .voxFont(.body, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier(titleIdentifier ?? "")
+                    .accessibilityAddTraits(.isHeader)
                 if let subtitle {
                     Text(subtitle)
-                        .scaledFont(size: 13)
+                        .voxFont(.footnote)
                         .foregroundStyle(Palette.ink3)
                 }
             }
             Spacer()
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .scaledFont(size: 13)
+                    .voxFont(.footnote)
                     .foregroundStyle(Palette.brass)
                     .accessibilityIdentifier(actionIdentifier ?? "")
             }
@@ -45,10 +46,10 @@ struct FilterChip: View {
             HStack(spacing: 6) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .scaledFont(size: 11, weight: .semibold)
+                        .voxFont(.caption2, weight: .semibold)
                 }
                 Text(title)
-                    .scaledFont(size: 12.5, weight: .semibold)
+                    .voxFont(.caption, weight: .semibold)
                     .lineLimit(1)
             }
             .padding(.horizontal, 14)
@@ -218,7 +219,7 @@ struct BookListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .scaledFont(size: 14.5, weight: .medium)
+                    .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.86)
@@ -232,19 +233,19 @@ struct BookListRow: View {
                 }
                 if let tertiary, !tertiary.isEmpty {
                     Text(tertiary)
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
                 if let metadata, !metadata.isEmpty {
                     Text(metadata)
-                        .scaledFont(size: 11.5)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
                 if let watchStatus, !watchStatus.isEmpty {
                     Label(watchStatus, systemImage: "applewatch")
-                        .scaledFont(size: 11)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
@@ -284,12 +285,12 @@ struct BookListRow: View {
         switch accessory {
         case .navigation:
             Image(systemName: "chevron.right")
-                .scaledFont(size: 11, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .foregroundStyle(Palette.ink3.opacity(0.7))
                 .frame(width: 24, height: 44)
         case .play:
             Image(systemName: "play.circle.fill")
-                .scaledFont(size: 27, weight: .semibold)
+                .voxFont(.title, weight: .semibold)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 44, height: 44)
         case .loading:
@@ -309,7 +310,7 @@ struct BookListRow: View {
                     downloadAccessory(for: state)
                     if showsNavigation {
                         Image(systemName: "chevron.right")
-                            .scaledFont(size: 11, weight: .bold)
+                            .voxFont(.caption2, weight: .bold)
                             .foregroundStyle(Palette.ink3.opacity(0.7))
                             .frame(width: 16, height: 44)
                     }
@@ -320,10 +321,10 @@ struct BookListRow: View {
                 // render identically (outline), not disappear entirely.
                 Image(systemName: "applewatch")
                     .symbolVariant(watchAvailable ? .fill : .none)
-                    .scaledFont(size: 12, weight: .semibold)
+                    .voxFont(.caption, weight: .semibold)
                     .foregroundStyle(watchAvailable ? Palette.brass : Palette.ink3.opacity(0.4))
                     .frame(width: 28)
-                    .accessibilityLabel(watchAvailable ? "Downloaded to Apple Watch" : "Not downloaded to Apple Watch")
+                    .accessibilityLabel(watchAvailable ? "Downloaded to Apple Watch" : "Not downloaded to Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
             }
         case .none:
             EmptyView()
@@ -335,7 +336,7 @@ struct BookListRow: View {
         switch state {
         case .cached:
             Image(systemName: "checkmark.circle.fill")
-                .scaledFont(size: 17, weight: .semibold)
+                .voxFont(.body, weight: .semibold)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 28, height: 44)
         case .downloading(let progress):
@@ -347,19 +348,19 @@ struct BookListRow: View {
                     .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Image(systemName: "arrow.down")
-                    .scaledFont(size: 7)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.brass)
             }
             .frame(width: 20, height: 20)
             .frame(width: 28, height: 44)
         case .notCached:
             Image(systemName: "arrow.down.circle")
-                .scaledFont(size: 17)
+                .voxFont(.body)
                 .foregroundStyle(Palette.ink3)
                 .frame(width: 28, height: 44)
         case .failed:
             Image(systemName: "exclamationmark.circle")
-                .scaledFont(size: 17)
+                .voxFont(.body)
                 .foregroundStyle(Palette.danger)
                 .frame(width: 28, height: 44)
         }
@@ -377,7 +378,7 @@ struct DisclosureListRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(isEnabled ? Palette.brass : Palette.ink3.opacity(0.55))
                 .frame(width: 32, height: 32)
                 .background {
@@ -387,13 +388,13 @@ struct DisclosureListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .scaledFont(size: 14, weight: .medium)
+                    .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(isEnabled ? Palette.ink : Palette.ink2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                 if let detail {
                     Text(detail)
-                        .scaledFont(size: 11.5)
+                        .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
@@ -403,7 +404,7 @@ struct DisclosureListRow: View {
 
             if let count {
                 Text("\(count)")
-                    .scaledFont(size: 11, weight: .semibold, design: .monospaced)
+                    .voxFont(.caption2, weight: .semibold, design: .monospaced)
                     .foregroundStyle(Palette.ink3)
                     .padding(.horizontal, 8)
                     .frame(height: 24)
@@ -415,7 +416,7 @@ struct DisclosureListRow: View {
 
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(Palette.ink3.opacity(isEnabled ? 0.7 : 0.25))
             }
         }
@@ -434,7 +435,7 @@ struct PrimaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .scaledFont(size: 15.5, weight: .bold)
+                .voxFont(.subheadline, weight: .bold)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .foregroundStyle(Palette.onBrass)
@@ -459,7 +460,7 @@ struct SecondaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .scaledFont(size: 14, weight: .semibold)
+                .voxFont(.subheadline, weight: .semibold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
                 .frame(maxWidth: .infinity)
@@ -522,12 +523,12 @@ struct HorizontalBookCard: View {
         VStack(alignment: .leading, spacing: 0) {
             BookArtworkView(title: book.book.title, size: 132, coverURL: book.book.coverURL, cornerRadius: 14)
             Text(book.book.title)
-                .scaledFont(size: 12.5, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 7)
             Text(book.book.authorLine)
-                .scaledFont(size: 11)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)
@@ -547,10 +548,10 @@ struct EmptyStatePanel: View {
                 .font(.title2)
                 .foregroundStyle(Palette.brass)
             Text(title)
-                .scaledFont(size: 16, weight: .semibold)
+                .voxFont(.callout, weight: .semibold)
                 .foregroundStyle(Palette.ink)
             Text(message)
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.ink2)
                 .multilineTextAlignment(.center)
         }
@@ -565,10 +566,10 @@ struct ProvenanceChip: View {
     var body: some View {
         let (icon, text) = badge
         HStack(spacing: 4) {
-            Image(systemName: icon).scaledFont(size: 8)
+            Image(systemName: icon).voxFont(.caption2)
             Text(text)
         }
-        .scaledFont(size: 8.5, weight: .bold)
+        .voxFont(.caption2, weight: .bold)
         .kerning(0.5)
         .foregroundStyle(.white)
         .padding(.horizontal, 7).padding(.vertical, 3)

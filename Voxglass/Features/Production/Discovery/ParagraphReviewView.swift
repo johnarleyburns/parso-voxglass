@@ -30,7 +30,7 @@ struct ParagraphReviewView: View {
                 if let paragraph {
                     header(paragraph)
                     Text(paragraph.text)
-                        .scaledFont(size: 16, weight: .medium)
+                        .voxFont(.callout, weight: .medium)
                         .foregroundStyle(Palette.ink)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,7 +75,7 @@ struct ParagraphReviewView: View {
     private func header(_ paragraph: FlowParagraph) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(context.map { "Chapter \($0.chapterOrdinal + 1) · ¶ \($0.number) of \($0.count)" } ?? "Paragraph review")
-                .scaledFont(size: 16, weight: .heavy)
+                .voxFont(.callout, weight: .heavy)
                 .foregroundStyle(Palette.ink)
                 .accessibilityIdentifier("paragraphReview.title")
             HStack(spacing: 8) {
@@ -92,7 +92,7 @@ struct ParagraphReviewView: View {
     private var driftBanner: some View {
         VStack(alignment: .leading, spacing: 9) {
             Label("The text changed after this was recorded", systemImage: "exclamationmark.triangle.fill")
-                .scaledFont(size: 13, weight: .semibold)
+                .voxFont(.footnote, weight: .semibold)
             HStack {
                 Button("Re-record") { openRecorder() }
                 Button("Keep this take") { Task { await model.acceptDrift(paragraphID: currentID) } }
@@ -110,7 +110,7 @@ struct ParagraphReviewView: View {
             Button {
                 Task { await model.hydrateForPlayback(currentID) }
             } label: {
-                Label(model.hydratingParagraphID == currentID ? "Downloading…" : "Download \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))", systemImage: "icloud.and.arrow.down")
+                Label(model.hydratingParagraphID == currentID ? "Downloading…" : "Download \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))", systemImage: "icloud.and.arrow.down") // l10n-exempt: state-dependent accessibility or status copy
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
@@ -121,8 +121,8 @@ struct ParagraphReviewView: View {
                 Button {
                     model.togglePlayback(currentID)
                 } label: {
-                    Label(isCurrentPlaying ? "Pause" : "Play take", systemImage: isCurrentPlaying ? "pause.fill" : "play.fill")
-                        .scaledFont(size: 14, weight: .bold)
+                    Label(isCurrentPlaying ? "Pause" : "Play take", systemImage: isCurrentPlaying ? "pause.fill" : "play.fill") // l10n-exempt: state-dependent accessibility or status copy
+                        .voxFont(.subheadline, weight: .bold)
                         .frame(maxWidth: .infinity, minHeight: 48)
                 }
                 .buttonStyle(.borderedProminent)
@@ -140,7 +140,7 @@ struct ParagraphReviewView: View {
                         Spacer()
                         Text("-\(max(0, model.playbackDuration - model.playbackPosition).formattedShort)")
                     }
-                    .scaledFont(size: 11, design: .monospaced) // mono-exempt: paragraph index
+                    .voxFont(.caption2, design: .monospaced) // mono-exempt: paragraph index
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("paragraphReview.progress")
                 }
@@ -152,16 +152,16 @@ struct ParagraphReviewView: View {
         let takes = model.takes(for: currentID)
         return VStack(alignment: .leading, spacing: 9) {
             HStack {
-                Text("TAKES").scaledFont(size: 12, weight: .bold).foregroundStyle(Palette.ink3)
+                Text("TAKES").voxFont(.caption, weight: .bold).foregroundStyle(Palette.ink3)
                 Spacer()
                 if takes.count >= 2 {
                     Button("Compare") { showCompare = true }
-                        .scaledFont(size: 12, weight: .bold)
+                        .voxFont(.caption, weight: .bold)
                         .accessibilityIdentifier("paragraphReview.compare")
                 }
             }
             if takes.isEmpty {
-                Text("No take yet").scaledFont(size: 13).foregroundStyle(Palette.ink3)
+                Text("No take yet").voxFont(.footnote).foregroundStyle(Palette.ink3)
             }
             ForEach(Array(takes.enumerated()), id: \.element.id) { index, take in
                 Button {
@@ -172,9 +172,9 @@ struct ParagraphReviewView: View {
                             .foregroundStyle(Palette.brass)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Take \(index + 1) · \(take.duration.formattedShort)")
-                                .scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
+                                .voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                             Text(takeSubtitle(take))
-                                .scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                                .voxFont(.caption2).foregroundStyle(Palette.ink3)
                         }
                         Spacer()
                     }
@@ -198,9 +198,9 @@ struct ParagraphReviewView: View {
                 model.toggleApproval(for: currentID)
                 Task { await model.persist() }
             } label: {
-                Label(isApproved ? "Approved" : "Approve",
+                Label(isApproved ? "Approved" : "Approve", // l10n-exempt: state-dependent accessibility or status copy
                       systemImage: isApproved ? "checkmark.circle.fill" : "checkmark.circle")
-                    .scaledFont(size: 14, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
@@ -211,7 +211,7 @@ struct ParagraphReviewView: View {
                 showFlagSheet = true
             } label: {
                 Label("Flag", systemImage: "flag")
-                    .scaledFont(size: 14, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
@@ -221,7 +221,7 @@ struct ParagraphReviewView: View {
                 openRecorder()
             } label: {
                 Label("Re-record", systemImage: "mic")
-                    .scaledFont(size: 14, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
@@ -231,7 +231,7 @@ struct ParagraphReviewView: View {
                 showImport = true
             } label: {
                 Label("Import audio", systemImage: "square.and.arrow.down")
-                    .scaledFont(size: 14, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.bordered)
@@ -253,7 +253,7 @@ struct ParagraphReviewView: View {
             .disabled(model.nextParagraph(after: currentID) == nil)
             .accessibilityIdentifier("paragraphReview.next")
         }
-        .scaledFont(size: 13, weight: .bold)
+        .voxFont(.footnote, weight: .bold)
     }
 
     private var flagSheet: some View {
@@ -291,7 +291,7 @@ struct ParagraphReviewView: View {
     }
 
     private func chip(_ text: String, tint: Color) -> some View {
-        Text(text).scaledFont(size: 11, weight: .bold)
+        Text(text).voxFont(.caption2, weight: .bold)
             .foregroundStyle(tint)
             .padding(.horizontal, 9).padding(.vertical, 5)
             .background(tint.opacity(0.12), in: Capsule())

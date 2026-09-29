@@ -146,11 +146,11 @@ struct BrowseView: View {
                 }
             } label: {
                 Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                    .scaledFont(size: 18, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
-            .accessibilityLabel(showSearch ? "Close search" : "Search Discover")
+            .accessibilityLabel(showSearch ? "Close search" : "Search Discover") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("discover.searchButton")
 
             Menu {
@@ -169,13 +169,13 @@ struct BrowseView: View {
                     }
                     if selectedCollection?.isCurated == true, !catalogStore.activeCuratedManifest.isEmpty {
                         Text("Download all is available in collection details")
-                            .scaledFont(size: 12)
+                            .voxFont(.caption)
                             .foregroundStyle(Palette.ink3)
                     }
                 }
             } label: {
                 Image(systemName: "line.3.horizontal.decrease.circle")
-                    .scaledFont(size: 18, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -186,7 +186,7 @@ struct BrowseView: View {
                 showingHistory = true
             } label: {
                 Image(systemName: "clock.arrow.circlepath")
-                    .scaledFont(size: 18, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -240,7 +240,7 @@ struct BrowseView: View {
                         .frame(width: 20, height: 20)
                 }
             }
-            .scaledFont(size: 15)
+            .voxFont(.subheadline)
             .padding(.horizontal, 14)
             .frame(height: 46)
             .raisedSurface()
@@ -260,9 +260,9 @@ struct BrowseView: View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "square.grid.2x2.fill")
-                    .scaledFont(size: 12, weight: .semibold)
+                    .voxFont(.caption, weight: .semibold)
                 Text(collection.title)
-                    .scaledFont(size: 12, weight: .semibold)
+                    .voxFont(.caption, weight: .semibold)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Button {
@@ -277,7 +277,7 @@ struct BrowseView: View {
                     }
                 } label: {
                     Image(systemName: "xmark")
-                        .scaledFont(size: 11, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .frame(width: 28, height: 28)
                 }
                 .accessibilityLabel("Clear selected collection")
@@ -294,7 +294,7 @@ struct BrowseView: View {
             } label: {
                 Label("About", systemImage: "info.circle")
                     .labelStyle(.titleAndIcon)
-                    .scaledFont(size: 13, weight: .semibold)
+                    .voxFont(.footnote, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 12)
                     .frame(height: 34)
@@ -348,7 +348,7 @@ struct BrowseView: View {
                         HStack(spacing: 12) {
                             ProgressView()
                             Text("Searching LibriVox")
-                                .scaledFont(size: 14)
+                                .voxFont(.subheadline)
                                 .foregroundStyle(Palette.ink2)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -426,7 +426,7 @@ struct BrowseView: View {
 
     private var curatedStatusBanner: some View {
         Text(curatedStatusMessage)
-            .scaledFont(size: 11, weight: .medium)
+            .voxFont(.caption2, weight: .medium)
             .foregroundStyle(Palette.brass)
             .padding(.bottom, 2)
             .accessibilityLabel(curatedStatusMessage)
@@ -454,13 +454,13 @@ struct BrowseView: View {
                     ProgressView(value: Double(progress.completed), total: Double(progress.total)) {
                         HStack {
                             Text("Downloading \(progress.completed) of \(progress.total)")
-                                .scaledFont(size: 12, weight: .medium)
+                                .voxFont(.caption, weight: .medium)
                                 .foregroundStyle(Palette.ink2)
                             Spacer()
                             Button("Cancel") {
                                 catalogStore.cancelBatchDownload()
                             }
-                            .scaledFont(size: 12, weight: .semibold)
+                            .voxFont(.caption, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                         }
                     }
@@ -477,9 +477,9 @@ struct BrowseView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "arrow.down.circle.fill")
-                                .scaledFont(size: 14)
+                                .voxFont(.subheadline)
                             Text("Download All (\(manifestCount) items)")
-                                .scaledFont(size: 13, weight: .semibold)
+                                .voxFont(.footnote, weight: .semibold)
                         }
                         .foregroundStyle(Palette.brass)
                         .padding(.vertical, 6)
@@ -520,10 +520,10 @@ struct BrowseView: View {
                 } else {
                     Text("See More")
                     Image(systemName: "chevron.down")
-                        .scaledFont(size: 11, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                 }
             }
-            .scaledFont(size: 14, weight: .semibold)
+            .voxFont(.subheadline, weight: .semibold)
             .foregroundStyle(Palette.ink2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -717,9 +717,9 @@ private struct ExploreCollectionCard: View {
     private var curatedBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "rosette")
-                .scaledFont(size: 9, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
             Text("CURATED")
-                .scaledFont(size: 9, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
         }
         .foregroundStyle(.black)
         .padding(.horizontal, 6)
@@ -778,20 +778,20 @@ private struct CollectionInfoSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                     Text(collection.title)
-                        .scaledFont(size: 24, weight: .heavy)
+                        .voxFont(.title2, weight: .heavy)
                         .foregroundStyle(Palette.ink)
                     if let approximateCount, approximateCount > 0 {
                         Text("Approximately \(approximateCount.formatted()) books")
-                            .scaledFont(size: 13, weight: .semibold)
+                            .voxFont(.footnote, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                     }
                     if !collection.summaryLine.isEmpty {
                         Text(collection.summaryLine)
-                            .scaledFont(size: 14, weight: .semibold)
+                            .voxFont(.subheadline, weight: .semibold)
                             .foregroundStyle(Palette.ink2)
                     }
                     Text(collection.description)
-                        .scaledFont(size: 14)
+                        .voxFont(.subheadline)
                         .foregroundStyle(Palette.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                 }

@@ -22,6 +22,9 @@ struct BookPageView: View {
     @State private var showingPlaylistPicker = false
     @State private var genre: LibriVoxBrowseCategory?
     @State private var bookmarkCount: Int?
+    @State private var userToggleCount = 0
+    @State private var skipBackCount = 0
+    @State private var skipForwardCount = 0
     @State private var isDescriptionExpanded = false
     @State private var ambientPalette = ArtworkPalette(
         dominant: PlateRGB(red: 0.16, green: 0.12, blue: 0.08),
@@ -273,7 +276,7 @@ struct BookPageView: View {
                     showAddToLibraryConfirm = true
                 } label: {
                     Label("Add to My Books", systemImage: "plus")
-                        .scaledFont(size: 14, weight: .semibold)
+                        .voxFont(.subheadline, weight: .semibold)
                         .foregroundStyle(Palette.ink)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
@@ -294,7 +297,7 @@ struct BookPageView: View {
             isPending ? "Previewing" : "In My Books",
             systemImage: isPending ? "eye" : "checkmark.circle.fill"
         )
-            .scaledFont(size: 12, weight: .semibold)
+            .voxFont(.caption, weight: .semibold)
             .foregroundStyle(Palette.brass)
             .accessibilityIdentifier(isPending ? "bookpage.previewing" : "bookpage.inMyBooks")
     }
@@ -330,7 +333,7 @@ struct BookPageView: View {
                     Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
+                .accessibilityLabel(session.isPlaying ? "Pause" : "Play") // l10n-exempt: state-dependent accessibility or status copy
             }
         }
         .padding(.horizontal, 12)
@@ -385,7 +388,7 @@ struct BookPageView: View {
     private func metadataSection(_ resolved: BookWithChapters) -> some View {
         VStack(spacing: 6) {
             Text(resolved.book.title)
-                .scaledFont(size: 17, weight: .bold)
+                .voxFont(.body, weight: .bold)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.72)
@@ -399,7 +402,7 @@ struct BookPageView: View {
 
             if resolved.narrationKind == .solo {
                 Text("Single narrator")
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .kerning(0.7)
                     .foregroundStyle(Palette.brass)
                     .padding(.top, 2)
@@ -421,7 +424,7 @@ struct BookPageView: View {
             ForEach(resolved.book.authors.isEmpty ? ["Unknown author"] : resolved.book.authors, id: \.self) { author in
                 if author == "Unknown author" {
                     Text(author)
-                        .scaledFont(size: 14)
+                        .voxFont(.subheadline)
                         .foregroundStyle(Color.white.opacity(0.62))
                         .lineLimit(1)
                 } else {
@@ -429,7 +432,7 @@ struct BookPageView: View {
                         AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
                     } label: {
                         Text(author)
-                            .scaledFont(size: 14)
+                            .voxFont(.subheadline)
                             .foregroundStyle(Palette.brass)
                             .lineLimit(1)
                     }
@@ -448,14 +451,14 @@ struct BookPageView: View {
                     NarratorDetailView(narratorName: narrator, showingNowPlaying: $showingNowPlaying)
                 } label: {
                     Text(narratorLine)
-                        .scaledFont(size: 13)
+                        .voxFont(.footnote)
                         .foregroundStyle(Palette.brass)
                         .lineLimit(1)
                 }
                 .buttonStyle(.plain)
             } else {
                 Text(narratorLine)
-                    .scaledFont(size: 13)
+                    .voxFont(.footnote)
                     .foregroundStyle(Color.white.opacity(0.55))
                     .lineLimit(1)
             }
@@ -468,24 +471,24 @@ struct BookPageView: View {
             let display = ChapterDisplayTitles.make(for: resolved.chapters)[session.chapter.id]
             VStack(spacing: 2) {
                 Text(display?.eyebrow.map { "\($0) · \(display?.title ?? session.chapter.title)" } ?? (display?.title ?? session.chapter.title))
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Color.white.opacity(0.50))
                     .lineLimit(1)
                 if let narratorLine = NarratorDisplay.chapterLine(chapter: session.chapter, bookNarrators: resolved.book.narrators) {
                     Text(narratorLine)
-                        .scaledFont(size: 11)
+                        .voxFont(.caption2)
                         .foregroundStyle(Color.white.opacity(0.38))
                         .lineLimit(1)
                 }
             }
         } else if let resumeChapter = resumeChapterTitle(for: resolved) {
             Text("Resume · \(resumeChapter)")
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Color.white.opacity(0.50))
                 .lineLimit(1)
         } else {
             Text("\(resolved.chapters.count) chapters")
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Color.white.opacity(0.50))
                 .lineLimit(1)
         }
@@ -495,7 +498,7 @@ struct BookPageView: View {
         HStack(spacing: 6) {
             if let genre {
                 Text(genre.title)
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 3)
@@ -504,7 +507,7 @@ struct BookPageView: View {
             }
 
             Text("\(resolved.chapters.count) chapters")
-                .scaledFont(size: 11, weight: .semibold)
+                .voxFont(.caption2, weight: .semibold)
                 .foregroundStyle(Color.white.opacity(0.62))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 3)
@@ -512,14 +515,14 @@ struct BookPageView: View {
 
             if offlineState == .cached {
                 Text("Available offline")
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 3)
                     .background(Capsule().fill(Color.white.opacity(0.07)))
             } else {
                 Text("Public domain")
-                    .scaledFont(size: 11, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(Color.white.opacity(0.62))
                     .padding(.horizontal, 9)
                     .padding(.vertical, 3)
@@ -581,7 +584,7 @@ struct BookPageView: View {
                 Task { await playback.skipToPreviousChapter() }
             } label: {
                 Image(systemName: "backward.end.fill")
-                    .scaledFont(size: 20)
+                    .voxFont(.title3)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .raisedSurface()
@@ -594,6 +597,7 @@ struct BookPageView: View {
             Spacer(minLength: 0)
 
             Button {
+                skipBackCount += 1
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
                     ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15
                 Task { await playback.skip(by: -TimeInterval(configured)) }
@@ -601,7 +605,7 @@ struct BookPageView: View {
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil
                     ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15
                 Image(systemName: SkipSymbol.back(configured))
-                    .scaledFont(size: 20)
+                    .voxFont(.title3)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .raisedSurface()
@@ -610,11 +614,13 @@ struct BookPageView: View {
             .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Back \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipBackInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval) : 15) seconds")
             .accessibilityIdentifier("nowplaying.skipBack")
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: skipBackCount)
 
             Spacer(minLength: 0)
 
             if isActiveSession, let session = playback.currentSession {
                 Button {
+                    userToggleCount += 1
                     playback.togglePlayPause()
                 } label: {
                     Group {
@@ -630,16 +636,18 @@ struct BookPageView: View {
                                 .tint(.white)
                         } else {
                             Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
-                                .scaledFont(size: 26, weight: .bold)
+                                .voxFont(.title, weight: .bold)
                                 .foregroundStyle(.white)
+                                .contentTransition(.symbolEffect(.replace.downUp))
                         }
                     }
                     .frame(width: 66, height: 66)
                     .background(Circle().fill(Color.white.opacity(0.16)))
                 }
                 .disabled(playback.playbackPhase == .preparing)
-                .accessibilityLabel(playback.playbackPhase == .preparing ? "Loading" : (session.isPlaying ? "Pause" : "Play"))
+                .accessibilityLabel(playback.playbackPhase == .preparing ? "Loading" : (session.isPlaying ? "Pause" : "Play")) // l10n-exempt: state-dependent accessibility or status copy
                 .accessibilityIdentifier("bookpage.togglePlayback")
+                .sensoryFeedback(.impact(weight: .light), trigger: userToggleCount)
             } else {
                 Button {
                     Task {
@@ -647,7 +655,7 @@ struct BookPageView: View {
                     }
                 } label: {
                     Image(systemName: "play.fill")
-                        .scaledFont(size: 26, weight: .bold)
+                        .voxFont(.title, weight: .bold)
                         .foregroundStyle(Palette.onBrass)
                         .frame(width: 66, height: 66)
                         .background(
@@ -664,6 +672,7 @@ struct BookPageView: View {
             Spacer(minLength: 0)
 
             Button {
+                skipForwardCount += 1
                 let configured = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
                     ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30
                 Task { await playback.skip(by: TimeInterval(configured)) }
@@ -672,7 +681,7 @@ struct BookPageView: View {
                     UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil
                         ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30)
                 )
-                    .scaledFont(size: 20)
+                    .voxFont(.title3)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .raisedSurface()
@@ -681,6 +690,7 @@ struct BookPageView: View {
             .allowsHitTesting(isActiveSession)
             .accessibilityLabel("Forward \(UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.skipForwardInterval) != nil ? UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval) : 30) seconds")
             .accessibilityIdentifier("nowplaying.skipForward")
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: skipForwardCount)
 
             Spacer(minLength: 0)
 
@@ -688,7 +698,7 @@ struct BookPageView: View {
                 Task { await playback.skipToNextChapter() }
             } label: {
                 Image(systemName: "forward.end.fill")
-                    .scaledFont(size: 20)
+                    .voxFont(.title3)
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .raisedSurface()
@@ -729,7 +739,7 @@ struct BookPageView: View {
                 SectionTitle(title: "About")
                 VStack(alignment: .leading, spacing: 6) {
                     Text(summary)
-                        .scaledFont(size: 14)
+                        .voxFont(.subheadline)
                         .foregroundStyle(Palette.ink2)
                         .lineLimit(isDescriptionExpanded ? nil : 1)
                         .fixedSize(horizontal: false, vertical: true)
@@ -739,8 +749,8 @@ struct BookPageView: View {
                             isDescriptionExpanded.toggle()
                         }
                     } label: {
-                        Text(isDescriptionExpanded ? "Show less" : "Show more")
-                            .scaledFont(size: 12, weight: .semibold)
+                        Text(isDescriptionExpanded ? "Show less" : "Show more") // l10n-exempt: state-dependent accessibility or status copy
+                            .voxFont(.caption, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                     }
                 }
@@ -806,20 +816,20 @@ struct BookPageView: View {
                                 .lineLimit(1)
                             Spacer()
                             Text(TimeFormatting.clock(chapter.duration))
-                                .scaledFont(size: 11.5, design: .monospaced) // mono-exempt: chapter duration
+                                .voxFont(.caption2, design: .monospaced) // mono-exempt: chapter duration
                                 .foregroundStyle(Color.white.opacity(0.58))
                         }
                         if let narrator = NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: resolved.book.narrators) {
                             HStack {
                                 Text(narrator)
-                                    .scaledFont(size: 11)
+                                    .voxFont(.caption2)
                                     .foregroundStyle(Color.white.opacity(0.45))
                                     .lineLimit(1)
                                 Spacer()
                             }
                         }
                     }
-                    .scaledFont(size: 14)
+                    .voxFont(.subheadline)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 9)
                     .foregroundStyle(isCurrent ? Palette.brass : Color.white.opacity(0.82))
@@ -934,16 +944,16 @@ struct BookPageView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
-                    .scaledFont(size: 14)
+                    .voxFont(.subheadline)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 32, height: 32)
                 Text(label)
-                    .scaledFont(size: 14, weight: .medium)
+                    .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Color.white.opacity(0.9))
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .foregroundStyle(Color.white.opacity(0.5))
             }
             .padding(.horizontal, 14)
@@ -1020,7 +1030,7 @@ private struct ProgressRing: View {
                 .stroke(Palette.brass, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int((progress * 100).rounded()))%")
-                .scaledFont(size: 10, weight: .semibold)
+                .voxFont(.caption2, weight: .semibold)
                 .foregroundStyle(Palette.brass)
         }
         .frame(width: 44, height: 44)

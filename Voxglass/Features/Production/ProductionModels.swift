@@ -167,12 +167,10 @@ public final class ProductionPlayerModel: NSObject, AVAudioPlayerDelegate {
     }
 
     private func haptic(for type: ReviewEventType) {
-        let generator = UINotificationFeedbackGenerator()
-        switch type {
-        case .approve: generator.notificationOccurred(.success)
-        case .needsPickup: generator.notificationOccurred(.warning)
-        default: generator.notificationOccurred(.error)
-        }
+        // Review events are model mutations. UI surfaces own tactile feedback
+        // through SwiftUI sensoryFeedback so VoiceOver and Reduce Motion stay
+        // in the same interaction path.
+        _ = type
     }
 
     public nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {

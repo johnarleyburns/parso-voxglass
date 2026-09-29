@@ -18,7 +18,7 @@ final class VoxglassUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    func testAppBootsVisitsAllTabsEQAndProductions() {
+    func testAppBootsVisitsAllTabsEQAndProductions() throws {
         let app = XCUIApplication()
 
         // The app writes exports into this shared host path (via the
@@ -84,9 +84,11 @@ final class VoxglassUITests: XCTestCase {
                 app.staticTexts[tabSpec.anchor].waitForExistence(timeout: 10),
                 "Tab \(tabSpec.button) did not render its content"
             )
+            XCTAssertNoThrow(try auditAccessibility(app, tabSpec.button))
         }
 
         assertSettingsOpensFromHomeWithoutCrashing(app: app)
+        XCTAssertNoThrow(try auditAccessibility(app, "Settings"))
         assertEQTogglesFromSettingsWithoutCrashing(app: app)
         assertStorageCardsFitCompactWidth(app: app)
         assertHistoryOpensFromExploreWithoutCrashing(app: app)
@@ -113,8 +115,9 @@ final class VoxglassUITests: XCTestCase {
         for identifier in ["import.fromNeed", "import.paste", "import.files", "import.gutenberg"] {
             XCTAssertTrue(app.buttons[identifier].waitForExistence(timeout: 10), "Missing import option \(identifier).")
         }
-        app.buttons["import.proDetails"].tap()
-        XCTAssertTrue(app.buttons["pro.purchase"].waitForExistence(timeout: 10), "Pro details sheet was not reachable.")
+        app.buttons["import.exportFormats"].tap()
+        XCTAssertTrue(app.otherElements["formats.sheet"].waitForExistence(timeout: 10), "Export formats sheet was not reachable.")
+        XCTAssertTrue(app.staticTexts["Every format is free. Voxglass never charges for export."].exists)
         app.buttons["Done"].tap()
 
         // Community needs remain available from the New Narration flow.
@@ -359,7 +362,28 @@ final class VoxglassUITests: XCTestCase {
         let start = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = band9.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
         start.press(forDuration: 0.1, thenDragTo: end)
+
+        // One accessibility-size leg catches clipping in the two most important
+        // listening surfaces without multiplying the single smoke test.
+        app.terminate()
+        app.launchArguments.append(contentsOf: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"])
+        app.launch()
+        tab("Listen", in: app).tap()
+        XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 15))
+        XCTAssertNoThrow(try auditAccessibility(app, "Listen accessibility XL"))
     }
+
+    /// Runs Xcode's accessibility audit on the current screen. Only system
+    /// chrome may be allowlisted; Voxglass views remain actionable failures.
+    private func auditAccessibility(_ app: XCUIApplication, _ screen: String) throws {
+        try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
+                                                 .sufficientElementDescription, .textClipped, .trait]) { issue in
+            guard let identifier = issue.element?.identifier else { return false }
+            return Self.auditAllowlist.contains(identifier)
+        }
+    }
+
+    private static let auditAllowlist: Set<String> = []
 
     private func assertNarrationRailSpacing(app: XCUIApplication) {
         let shelf = app.descendants(matching: .any)["home.startNarrationShelf"]
@@ -1094,16 +1118,6 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.buttons["import.paste"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["import.files"].exists)
         XCTAssertTrue(app.buttons["import.gutenberg"].exists)
-    }
-
-    func testNarrationProDetailsAreVisibleFromImport() {
-        let app = launchNarrationEntry()
-        app.buttons["narration.startNew"].tap()
-        app.buttons["import.proDetails"].tap()
-
-        XCTAssertTrue(app.buttons["pro.purchase"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["pro.restore"].exists)
-        XCTAssertTrue(app.staticTexts["Free stays free"].exists)
     }
 
     private func tab(_ label: String, in app: XCUIApplication) -> XCUIElement {

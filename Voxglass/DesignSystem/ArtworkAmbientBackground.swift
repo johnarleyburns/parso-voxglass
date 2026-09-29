@@ -11,7 +11,7 @@ struct ArtworkAmbientBackground: View {
     var body: some View {
         Group {
             if reduceTransparency {
-                color(for: palette.deep)
+                VoxglassTheme.paperRaised
             } else {
                 MeshGradient(
                     width: 3,

@@ -73,7 +73,7 @@ struct SearchView: View {
                     .frame(width: 20, height: 20)
             }
         }
-        .scaledFont(size: 15)
+        .voxFont(.subheadline)
         .padding(.horizontal, 14)
         .frame(height: 44)
         .contentShape(Rectangle())
@@ -111,7 +111,7 @@ struct SearchView: View {
                 HStack(spacing: 12) {
                     ProgressView()
                     Text("Searching LibriVox")
-                        .scaledFont(size: 14)
+                        .voxFont(.subheadline)
                         .foregroundStyle(Palette.ink2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

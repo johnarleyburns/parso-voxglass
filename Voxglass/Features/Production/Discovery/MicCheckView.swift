@@ -35,7 +35,7 @@ struct MicCheckView: View {
                     bandsCard
                     if let errorText {
                         Text(errorText)
-                            .scaledFont(size: 12)
+                            .voxFont(.caption)
                             .foregroundStyle(Palette.danger)
                     }
                     actionButton
@@ -68,10 +68,10 @@ struct MicCheckView: View {
     private var instructionCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Mic check")
-                .scaledFont(size: 15, weight: .bold)
+                .voxFont(.subheadline, weight: .bold)
                 .foregroundStyle(Palette.ink)
             Text(statusText)
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
         }
         .padding(14)
@@ -87,7 +87,7 @@ struct MicCheckView: View {
     private var waveformCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Loudness")
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink3)
             MicCheckWaveform(history: waveformHistory)
                 .frame(height: 64)
@@ -99,7 +99,7 @@ struct MicCheckView: View {
     private var bandsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Frequency response")
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink3)
             MicCheckBands(bands: currentBands)
                 .frame(height: 64)
@@ -116,8 +116,8 @@ struct MicCheckView: View {
                 start()
             }
         } label: {
-            Text(isRecording ? "Stop & Play Back" : "Start Mic Check")
-                .scaledFont(size: 13, weight: .bold)
+            Text(isRecording ? "Stop & Play Back" : "Start Mic Check") // l10n-exempt: state-dependent accessibility or status copy
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.brass)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)

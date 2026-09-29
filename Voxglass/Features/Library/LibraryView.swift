@@ -296,7 +296,7 @@ struct LibraryView: View {
                     )
                 }
             }
-            Button(isFinished ? "Mark unfinished" : "Mark finished") {
+            Button(isFinished ? "Mark unfinished" : "Mark finished") { // l10n-exempt: state-dependent accessibility or status copy
                 Task {
                     await playback.setBookFinished(book, finished: !isFinished)
                     await libraryStore.refresh()
@@ -327,19 +327,19 @@ struct LibraryView: View {
                 }
             } label: {
                 Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                    .scaledFont(size: 18, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
             .contentShape(Rectangle())
-            .accessibilityLabel(showSearch ? "Close search" : "Search my books")
+            .accessibilityLabel(showSearch ? "Close search" : "Search my books") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("library.searchButton")
 
             Button {
                 showingAddArchiveURL = true
             } label: {
                 Text("+")
-                    .scaledFont(size: 22, weight: .semibold)
+                    .voxFont(.title2, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -363,12 +363,12 @@ struct LibraryView: View {
                     Button { libraryStore.sort = .progress } label: { sortLabel("Progress", active: libraryStore.sort == .progress) }
                 }
                 Divider()
-                Button(isEditing ? "Done editing" : "Edit order") {
+                Button(isEditing ? "Done editing" : "Edit order") { // l10n-exempt: state-dependent accessibility or status copy
                     withAnimation { isEditing.toggle() }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .scaledFont(size: 18, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
@@ -410,7 +410,7 @@ struct LibraryView: View {
                     .accessibilityLabel("Clear search")
                 }
             }
-            .scaledFont(size: 14)
+            .voxFont(.subheadline)
             .padding(.horizontal, 14)
             .frame(height: 40)
             .contentShape(Rectangle())
@@ -586,10 +586,10 @@ private struct AddArchiveURLSheet: View {
                     // MARK: Internet Archive
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Add from Internet Archive", systemImage: "globe")
-                            .scaledFont(size: 15, weight: .semibold)
+                            .voxFont(.subheadline, weight: .semibold)
                             .foregroundStyle(Palette.ink)
                         Text("Paste an Internet Archive item URL to add its audiobook to My Books.")
-                            .scaledFont(size: 13)
+                            .voxFont(.footnote)
                             .foregroundStyle(Palette.ink2)
 
                         TextField("archive.org/details/...", text: $archiveURL)
@@ -607,7 +607,7 @@ private struct AddArchiveURLSheet: View {
                                 if catalogStore.isResolvingURL {
                                     ProgressView()
                                 }
-                                Text(catalogStore.isResolvingURL ? "Adding…" : "Add Audiobook")
+                                Text(catalogStore.isResolvingURL ? "Adding…" : "Add Audiobook") // l10n-exempt: state-dependent accessibility or status copy
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -621,12 +621,12 @@ private struct AddArchiveURLSheet: View {
                     // MARK: Local folder
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Add from a Local Folder", systemImage: "folder")
-                            .scaledFont(size: 15, weight: .semibold)
+                            .voxFont(.subheadline, weight: .semibold)
                             .foregroundStyle(Palette.ink)
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("The folder should contain:")
-                                .scaledFont(size: 13)
+                                .voxFont(.footnote)
                                 .foregroundStyle(Palette.ink2)
                             localFolderRequirement(
                                 icon: "waveform",
@@ -646,7 +646,7 @@ private struct AddArchiveURLSheet: View {
                             showingChapterFileExample = true
                         } label: {
                             Label("See an example chapter file", systemImage: "questionmark.circle")
-                                .scaledFont(size: 12.5, weight: .medium)
+                                .voxFont(.caption, weight: .medium)
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(Palette.brass)
@@ -658,7 +658,7 @@ private struct AddArchiveURLSheet: View {
                                 if isImportingLocalFolder {
                                     ProgressView()
                                 }
-                                Text(isImportingLocalFolder ? "Importing…" : "Choose Folder")
+                                Text(isImportingLocalFolder ? "Importing…" : "Choose Folder") // l10n-exempt: state-dependent accessibility or status copy
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -666,7 +666,7 @@ private struct AddArchiveURLSheet: View {
                         .disabled(isImportingLocalFolder)
 
                         Text("The audio file is never copied — it stays exactly where it is on disk.")
-                            .scaledFont(size: 11.5)
+                            .voxFont(.caption2)
                             .foregroundStyle(Palette.ink3)
                     }
                     .padding(14)
@@ -705,11 +705,11 @@ private struct AddArchiveURLSheet: View {
     private func localFolderRequirement(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: icon)
-                .scaledFont(size: 12, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 16)
             Text(text)
-                .scaledFont(size: 12.5)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
         }
     }
@@ -902,11 +902,11 @@ private struct ChapterFileExampleView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Each line names one chapter and the timestamp — from the start of the audio file — where it begins. One chapter per line, in order.")
-                            .scaledFont(size: 13.5)
+                            .voxFont(.footnote)
                             .foregroundStyle(Palette.ink2)
 
                         Text(Self.example)
-                            .scaledFont(size: 13, design: .monospaced) // mono-exempt: progress percentage
+                            .voxFont(.footnote, design: .monospaced) // mono-exempt: progress percentage
                             .foregroundStyle(Palette.ink)
                             .padding(14)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -914,10 +914,10 @@ private struct ChapterFileExampleView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Format: Chapter <number>: <title> <timestamp>")
-                                .scaledFont(size: 12.5, weight: .semibold)
+                                .voxFont(.caption, weight: .semibold)
                                 .foregroundStyle(Palette.ink)
                             Text("Timestamps can be h:mm:ss (1:02:30) or mm:ss (20:50) — use whichever fits. Chapters must be listed in order, each starting later than the one before.")
-                                .scaledFont(size: 12)
+                                .voxFont(.caption)
                                 .foregroundStyle(Palette.ink3)
                         }
                     }

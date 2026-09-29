@@ -28,7 +28,7 @@ struct TakeComparisonView: View {
                         footerActions(comparison)
                     } else {
                         Text("Compare two takes to choose one. Record a retake first.")
-                            .scaledFont(size: 13)
+                            .voxFont(.footnote)
                             .foregroundStyle(Palette.ink2)
                     }
                 }
@@ -50,10 +50,10 @@ struct TakeComparisonView: View {
     private func textCard(_ paragraph: FlowParagraph) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             Text("THE TEXT")
-                .scaledFont(size: 11, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .foregroundStyle(Palette.ink3)
             Text(paragraph.text)
-                .scaledFont(size: 15, weight: .semibold)
+                .voxFont(.subheadline, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -65,19 +65,19 @@ struct TakeComparisonView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(side.label).scaledFont(size: 15, weight: .heavy).foregroundStyle(Palette.ink)
-                    Text(subtitle(for: side)).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                    Text(side.label).voxFont(.subheadline, weight: .heavy).foregroundStyle(Palette.ink)
+                    Text(subtitle(for: side)).voxFont(.caption2).foregroundStyle(Palette.ink3)
                 }
                 Spacer()
                 if side.isSelected {
                     Text("Selected")
-                        .scaledFont(size: 10, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(NarrationPalette.espresso)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Palette.brass, in: Capsule())
                 } else if side.isArchived {
                     Text("Archived")
-                        .scaledFont(size: 10, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.ink2)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Palette.ink2.opacity(0.12), in: Capsule())
@@ -94,7 +94,7 @@ struct TakeComparisonView: View {
                     model.play(side.takeID, in: paragraphID)
                 } label: {
                     Label("Play", systemImage: "play")
-                        .scaledFont(size: 13, weight: .bold)
+                        .voxFont(.footnote, weight: .bold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                         .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.hairline, lineWidth: 1))
@@ -107,7 +107,7 @@ struct TakeComparisonView: View {
                     model.play(side.takeID, in: paragraphID)
                 } label: {
                     Label("In context", systemImage: "text.bubble")
-                        .scaledFont(size: 13, weight: .bold)
+                        .voxFont(.footnote, weight: .bold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                         .overlay(RoundedRectangle(cornerRadius: 11).stroke(Palette.hairline, lineWidth: 1))
@@ -126,10 +126,10 @@ struct TakeComparisonView: View {
     private func matchedLoudnessBanner(_ comparison: TakeComparison) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "arrow.left.arrow.right")
-                .scaledFont(size: 12, weight: .bold)
+                .voxFont(.caption, weight: .bold)
                 .foregroundStyle(Palette.brass)
-            Text("Matched loudness\(comparison.matchedLoudnessGainDB > 0.05 ? " · +\(String(format: "%.1f", comparison.matchedLoudnessGainDB)) dB applied" : "")")
-                .scaledFont(size: 12, weight: .semibold)
+            Text("Matched loudness\(comparison.matchedLoudnessGainDB > 0.05 ? " · +\(String(format: "%.1f", comparison.matchedLoudnessGainDB)) dB applied" : "")") // l10n-exempt: state-dependent accessibility or status copy
+                .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
         }
         .frame(maxWidth: .infinity)
@@ -139,7 +139,7 @@ struct TakeComparisonView: View {
 
     private func footnote(_ comparison: TakeComparison) -> some View {
         Text("Nothing is deleted either way; unselected takes stay in the project.")
-            .scaledFont(size: 11.5)
+            .voxFont(.caption2)
             .foregroundStyle(Palette.ink3)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -153,7 +153,7 @@ struct TakeComparisonView: View {
                 }
             } label: {
                 Text("Use \(comparison.takeB.label)")
-                    .scaledFont(size: 13, weight: .bold)
+                    .voxFont(.footnote, weight: .bold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .overlay(RoundedRectangle(cornerRadius: 13).stroke(Palette.hairline, lineWidth: 1))
@@ -168,8 +168,8 @@ struct TakeComparisonView: View {
                     dismiss()
                 }
             } label: {
-                Text(comparison.takeA.isSelected ? "Keep \(comparison.takeA.label)" : "Use \(comparison.takeA.label)")
-                    .scaledFont(size: 13, weight: .heavy)
+                Text(comparison.takeA.isSelected ? "Keep \(comparison.takeA.label)" : "Use \(comparison.takeA.label)") // l10n-exempt: state-dependent accessibility or status copy
+                    .voxFont(.footnote, weight: .heavy)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 13))
@@ -194,10 +194,10 @@ struct TakeComparisonView: View {
 
     private func kv(_ label: String, _ value: String, tint: Color? = nil) -> some View {
         HStack {
-            Text(label).scaledFont(size: 12.5).foregroundStyle(Palette.ink2)
+            Text(label).voxFont(.caption).foregroundStyle(Palette.ink2)
             Spacer()
             Text(value)
-                .scaledFont(size: 12.5, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .monospacedDigit()
                 .foregroundStyle(tint ?? Palette.ink)
         }
@@ -213,10 +213,10 @@ struct TakeComparisonView: View {
         return String(format: "%.1f dBFS", value)
     }
 
-    /// ACX asks for a noise floor at or below −60 dBFS (§3.4); the retail
-    /// profile carries the number, so it is read from the profile, never inlined.
+    /// The submission profile carries the noise floor number, so it is read
+    /// from the profile rather than inlined here.
     private var retailNoiseFloorCeiling: Double? {
-        DestinationProfile.acx.noiseFloorCeilingDBFS
+        DestinationProfile.librivox.noiseFloorCeilingDBFS
     }
 
     private func rmsTint(_ value: Double?) -> Color? {

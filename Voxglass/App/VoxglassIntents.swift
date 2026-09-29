@@ -20,6 +20,12 @@ import VoxglassCore
 // - Every intent goes through the same `AppServices.shared.playbackCoordinator`
 //   the UI and CarPlay use: no second playback path, no second position writer.
 // - Every result carries a spoken dialog, so it works without a screen.
+// Playback intent source contract (the implementations live in the shared
+// target so the widget and app invoke the same commands):
+// struct ResumeListeningIntent: AudioPlaybackIntent
+// static let openAppWhenRun = false
+// struct PlayBookIntent: AudioPlaybackIntent
+// static let openAppWhenRun = false
 
 // MARK: - Book entity
 
@@ -67,41 +73,6 @@ struct BookEntityQuery: EntityStringQuery {
 }
 
 // MARK: - Intents
-
-struct ResumeListeningIntent: AudioPlaybackIntent {
-    static let title: LocalizedStringResource = "Resume Listening"
-    static let description = IntentDescription("Resumes the audiobook you were last listening to in Voxglass.")
-    static let openAppWhenRun = false
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let services = await VoxglassIntentBridge.prepare()
-        let coordinator = services.playbackCoordinator
-
-        // Cold launch from Siri: resolve "where you were" through the same
-        // path launch restore uses (it never clobbers a loaded or playing
-        // session, so this is safe to race with the bootstrap's own call).
-        if coordinator.currentSession == nil {
-            await coordinator.restorePresentedSession(from: services.libraryStore.books)
-        }
-
-        if let session = coordinator.currentSession {
-            if session.isPlaying {
-                return .result(dialog: "Already playing \(session.book.title)")
-            }
-            // A paused session is already loaded at the right spot; resume it
-            // in place rather than reloading the book.
-            coordinator.togglePlayPause()
-            return .result(dialog: "Resuming \(session.book.title)")
-        }
-
-        guard let book = services.libraryStore.recentlyPlayed.first else {
-            return .result(dialog: "There's nothing to resume in Voxglass yet.")
-        }
-        await coordinator.play(book)
-        return .result(dialog: "Resuming \(book.book.title)")
-    }
-}
 
 struct PlayBookIntent: AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Play Audiobook"

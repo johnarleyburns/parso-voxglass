@@ -143,7 +143,7 @@ struct ListenView: View {
 
                         Spacer(minLength: 4)
                         Image(systemName: "play.circle.fill")
-                            .scaledFont(size: 30, weight: .semibold)
+                            .voxFont(.title, weight: .semibold)
                             .foregroundStyle(Palette.brass)
                     }
                     .padding(14)
@@ -189,9 +189,9 @@ struct ListenView: View {
     private var supporterBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "heart.fill")
-                .scaledFont(size: 10, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
             Text("Supporter")
-                .scaledFont(size: 11, weight: .semibold)
+                .voxFont(.caption2, weight: .semibold)
         }
         .foregroundStyle(Palette.brass)
         .padding(.horizontal, 10)
@@ -204,7 +204,7 @@ struct ListenView: View {
             showSettings = true
         } label: {
             Image(systemName: "gearshape.fill")
-                .scaledFont(size: 19, weight: .semibold)
+                .voxFont(.title3, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
                 .frame(width: 40, height: 40)
         }
@@ -256,10 +256,10 @@ struct ListenView: View {
     private func statTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
-                .scaledFont(size: 22, weight: .heavy)
+                .voxFont(.title2, weight: .heavy)
                 .foregroundStyle(Palette.ink)
             Text(label)
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -278,7 +278,7 @@ struct ListenView: View {
                             startPoint: .top, endPoint: .bottom))
                         .frame(height: max(3, CGFloat(bar.seconds / maxSeconds) * 44))
                     Text(bar.label)
-                        .scaledFont(size: 8.5, weight: .semibold)
+                        .voxFont(.caption2, weight: .semibold)
                         .foregroundStyle(Palette.ink3)
                 }
                 .frame(maxWidth: .infinity)
@@ -461,12 +461,12 @@ struct ListenBookCard: View {
         VStack(alignment: .leading, spacing: 0) {
             CoverPlate(title: book.book.title, author: book.book.authorLine, coverURL: book.book.coverURL, size: 132)
             Text(book.book.title)
-                .scaledFont(size: 12.5, weight: .semibold)
+                .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 7)
             Text(book.book.authorLine)
-                .scaledFont(size: 11)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
                 .padding(.top, 1)

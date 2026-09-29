@@ -1,0 +1,14 @@
+{
+  "sourceLanguage" : "en",
+  "version" : "1.0",
+  "strings" : {
+    "Resume \\(.applicationName)" : {
+      "comment" : "Siri phrase for resuming the last audiobook.",
+      "localizations" : {}
+    },
+    "Play \\(.applicationName)" : {
+      "comment" : "Siri phrase for starting audiobook playback.",
+      "localizations" : {}
+    }
+  }
+}

@@ -681,6 +681,64 @@ check_ada_monospaced_digits() {
   fi
 }
 
+# G-A7: retired paid-tier copy must not appear in shipping UI strings.
+check_ada_no_paid_tier_copy() {
+  local matches
+  matches=$(grep -rn --include='*.swift' -E '"[^"]*\b(Pro|Upgrade|Unlock|one-time purchase|Restore purchase)\b[^"]*"' \
+    Voxglass/Features Voxglass/DesignSystem Voxglass/App VoxglassWidgets VoxglassWatch 2>/dev/null \
+    | grep -v 'paid-copy-exempt:' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A7: paid-tier copy in UI string: $line"; done <<< "$matches"
+  fi
+}
+
+# G-A8: feature/design text must use semantic Dynamic Type styles. Fixed fonts
+# remain only for documented display numerals and artwork at 34 pt or larger.
+check_ada_type_scale() {
+  local matches
+  matches=$(grep -rn --include='*.swift' 'scaledFont(size:' Voxglass/Features Voxglass/DesignSystem 2>/dev/null \
+    | grep -v 'type-exempt:' \
+    | grep -v 'ScaledFontModifier.swift' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A8: non-exempt fixed type scale: $line"; done <<< "$matches"
+  fi
+}
+
+# G-A9: user haptics are SwiftUI sensory feedback, not UIKit generators.
+check_ada_swiftui_haptics() {
+  local matches
+  matches=$(grep -rn --include='*.swift' -E 'UI(Impact|Notification|Selection)FeedbackGenerator' \
+    Voxglass/Features Voxglass/DesignSystem Voxglass/App 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A9: UIKit haptic generator: $line"; done <<< "$matches"
+  fi
+}
+
+# G-A10: user-facing SwiftUI literals cannot hide behind a string ternary.
+check_ada_no_literal_ternary() {
+  local matches
+  # Match the whitespace-delimited `condition ? "…"` form, while excluding
+  # nil-coalescing (`??`) and question marks inside a user-facing sentence.
+  matches=$(find Voxglass/Features Voxglass/DesignSystem Voxglass/App VoxglassWidgets VoxglassWatch -name '*.swift' -print0 2>/dev/null \
+    | xargs -0 perl -ne 'if (/(Text|Button|Label)\([^)]*(?<!\?)\?\s+"/) { print "$ARGV:$.:$_" }' \
+    | grep -v 'l10n-exempt:' || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A10: literal ternary in localized view: $line"; done <<< "$matches"
+  fi
+}
+
+# G-A11: narration UI exposes only Personal Listening and LibriVox. Core keeps
+# legacy destination profiles solely for decoding persisted projects; shipping
+# views must never offer their retired publishing paths again.
+check_ada_librivox_only_narration() {
+  local matches
+  matches=$(grep -Rni --include='*.swift' -E 'Internet Archive|archive\.org|\bACX\b|Commercial (retail|release)|validation\.destination\.(internetArchive|retail)|wizard\.purpose\.(internetArchive|commercial)|ProPurchase' \
+    Voxglass/Features/Production/Discovery Voxglass/Features/Production/ExportFormatsView.swift 2>/dev/null || true)
+  if [ -n "$matches" ]; then
+    while read -r line; do violate "G-A11: retired narration publishing path in UI: $line"; done <<< "$matches"
+  fi
+}
+
 # ──────────────────────────────────────────────────────────────
 # ──────────────────────────────────────────────────────────────
 # Run all checks.
@@ -717,6 +775,11 @@ check_ada_no_custom_chrome
 check_ada_stable_visual_hashing
 check_ada_brass_budget
 check_ada_monospaced_digits
+check_ada_no_paid_tier_copy
+check_ada_type_scale
+check_ada_swiftui_haptics
+check_ada_no_literal_ternary
+check_ada_librivox_only_narration
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "guard_production: $VIOLATIONS violation(s) found" >&2

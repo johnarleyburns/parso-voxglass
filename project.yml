@@ -42,9 +42,11 @@ targets:
         type: folder
       - path: Voxglass/Resources/CarPlayCues
         type: folder
+      - path: VoxglassShared
     resources:
       - path: Voxglass/Resources/PrivacyInfo.xcprivacy
       - path: Voxglass/Resources/Localizable.xcstrings
+      - path: Voxglass/Resources/AppShortcuts.xcstrings
     dependencies:
       - package: VoxglassCore
         product: VoxglassCore
@@ -82,6 +84,7 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
+        NSSupportsLiveActivities: true
         NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them."
         UTImportedTypeDeclarations:
           - UTTypeConformsTo:
@@ -138,6 +141,7 @@ targets:
     platform: iOS
     sources:
       - VoxglassWidgets
+      - path: VoxglassShared
     dependencies:
       - package: VoxglassCore
         product: VoxglassCore
@@ -148,7 +152,7 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+            NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.widgets

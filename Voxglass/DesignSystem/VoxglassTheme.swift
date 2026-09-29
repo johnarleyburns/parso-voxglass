@@ -1,13 +1,14 @@
 import SwiftUI
+import UIKit
 import VoxglassCore
 
 enum VoxglassTheme {
-    static let paper = Color(hex: 0x0A0B0D)
-    static let paperRaised = Color(hex: 0x1B1D22)
-    static let ink = Color(hex: 0xF2F4F6)
+    static let paper = Palette.bg
+    static let paperRaised = Palette.raised
+    static let ink = Palette.ink
     static let secondaryInk = Palette.ink2
     static let accent = Palette.brass
-    static let deepGlass = Color(hex: 0x1B1D22)
+    static let deepGlass = Palette.raised
     static let softLine = Palette.hairline
     static let warmLine = Palette.brass.opacity(0.30)
 
@@ -40,20 +41,34 @@ enum ChromeMetrics {
 }
 
 enum Palette {
-    static let bg = Color(hex: 0x0A0B0D)
-    static let ink = Color(hex: 0xF2F4F6)
-    static let ink2 = Color(white: 0.92).opacity(0.58)
-    // Keep tertiary text readable on both the dark background and raised
-    // material surfaces. The previous translucent value fell below AA for
-    // the small metadata labels used throughout the app.
-    static let ink3 = Color(hex: 0xAEB2B8)
-    static let brass = Color(hex: 0xE3A44B)
+    private static func dynamic(_ pair: PaletteSpec.Pair) -> Color {
+        Color(uiColor: UIColor { traits in
+            let hex = traits.accessibilityContrast == .high ? pair.highContrast : pair.standard
+            return UIColor(
+                red: CGFloat((hex >> 16) & 0xFF) / 255,
+                green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255,
+                alpha: 1
+            )
+        })
+    }
+
+    static let bg = dynamic(PaletteSpec.bg)
+    static let ink = dynamic(PaletteSpec.ink)
+    static let ink2 = dynamic(PaletteSpec.ink2)
+    static let ink3 = dynamic(PaletteSpec.ink3)
+    static let brass = dynamic(PaletteSpec.brass)
     static let brassDeep = Color(hex: 0xB97F2E)
     static let ok = Color(hex: 0x4CD471)
     static let danger = Color(hex: 0xFF6B5E)
-    static let hairline = Color.white.opacity(0.10)
-    static let surface = Color(hex: 0x17191D)
-    static let surfaceLine = Color.white.opacity(0.08)
+    static let hairline = Color(uiColor: UIColor { traits in
+        UIColor.white.withAlphaComponent(traits.accessibilityContrast == .high ? PaletteSpec.hairlineAlpha.highContrast : PaletteSpec.hairlineAlpha.standard)
+    })
+    static let surface = dynamic(PaletteSpec.surface)
+    static let raised = dynamic(PaletteSpec.raised)
+    static let surfaceLine = Color(uiColor: UIColor { traits in
+        UIColor.white.withAlphaComponent(traits.accessibilityContrast == .high ? PaletteSpec.surfaceLineAlpha.highContrast : PaletteSpec.surfaceLineAlpha.standard)
+    })
     static let scrim = Color(hex: 0x0A0B0D).opacity(0.92)
     static let onBrass = Color(hex: 0x21170B)
 }
@@ -167,8 +182,8 @@ extension View {
 
 public enum TactileFeedback {
     @MainActor public static func tap() {
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
+        // Haptics are attached to user-initiated SwiftUI actions with
+        // `.sensoryFeedback`, so remote commands and automatic transitions do
+        // not accidentally vibrate the device.
     }
 }

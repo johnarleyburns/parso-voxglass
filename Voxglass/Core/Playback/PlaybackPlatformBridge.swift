@@ -65,6 +65,9 @@ public protocol PlaybackPlatformBridge: AnyObject {
     /// app's bundled fallback artwork.
     func setArtwork(_ imageData: Data?)
 
+    /// Publishes the platform-free Live Activity payload, or clears it.
+    func updateLiveActivity(_ content: LiveActivityContent?)
+
     /// Updates the preferred skip intervals surfaced on the remote command center.
     func setSkipIntervals(backward: Int, forward: Int)
 
@@ -74,6 +77,8 @@ public protocol PlaybackPlatformBridge: AnyObject {
 }
 
 public extension PlaybackPlatformBridge {
+    func updateLiveActivity(_ content: LiveActivityContent?) {}
+
     func runWithBackgroundTask(_ work: @escaping @MainActor () async -> Void) {
         Task { @MainActor in await work() }
     }
@@ -87,11 +92,13 @@ public final class NoopPlaybackBridge: PlaybackPlatformBridge {
     public private(set) var lastNowPlaying: NowPlayingInfo?
     /// `.none` = never set; `.some(nil)` = fallback requested; `.some(data)` = real art.
     public private(set) var lastArtworkData: Data??
+    public private(set) var lastLiveActivity: LiveActivityContent?
     public private(set) var skipBackward: Int?
     public private(set) var skipForward: Int?
     public init() {}
     public func updateNowPlaying(_ info: NowPlayingInfo?) { lastNowPlaying = info }
     public func setArtwork(_ imageData: Data?) { lastArtworkData = .some(imageData) }
+    public func updateLiveActivity(_ content: LiveActivityContent?) { lastLiveActivity = content }
     public func setSkipIntervals(backward: Int, forward: Int) {
         skipBackward = backward; skipForward = forward
     }

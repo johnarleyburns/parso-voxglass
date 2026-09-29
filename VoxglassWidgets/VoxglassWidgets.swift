@@ -34,7 +34,7 @@ struct VoxglassContinueWidget: Widget {
         }
         .configurationDisplayName("Continue Voxglass")
         .description("Resume the audiobook you were last listening to.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline])
     }
 }
 
@@ -49,34 +49,69 @@ struct VoxglassWidgetView: View {
             }
             .containerBackground(.fill.tertiary, for: .widget)
         } else if let snapshot = entry.snapshot {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(snapshot.title).font(.headline).lineLimit(2)
-                Text(snapshot.chapterTitle).font(.caption).lineLimit(1)
-                ProgressView(value: snapshot.fraction)
-                Button(intent: ResumeListeningIntent()) {
-                    Label("Resume", systemImage: "play.fill")
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 10) {
+                    cover(for: snapshot)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("CONTINUE").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(snapshot.title).font(.headline).lineLimit(2).widgetAccentable()
+                        Text("\(snapshot.chapterTitle) · \(snapshot.minutesLeftInChapter) min left")
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        ProgressView(value: snapshot.fraction)
+                        transport(for: snapshot)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(snapshot.title).font(.headline).lineLimit(2).widgetAccentable()
+                    Text(snapshot.chapterTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    ProgressView(value: snapshot.fraction)
+                    if snapshot.isPlaying {
+                        Button(intent: TogglePlaybackIntent()) { Label("Pause", systemImage: "pause.fill") }
+                            .buttonStyle(.borderedProminent)
+                    } else {
+                        Button(intent: ResumeListeningIntent()) { Label("Resume", systemImage: "play.fill") }
+                            .buttonStyle(.borderedProminent)
+                    }
+                }
             }
-            .containerBackground(.fill.tertiary, for: .widget)
+            .containerBackground(for: .widget) {
+                LinearGradient(colors: [color(snapshot.backgroundHex ?? 0x17191D), .black], startPoint: .top, endPoint: .bottom)
+            }
         } else {
             VStack(spacing: 6) {
-                Image(systemName: "headphones")
-                Text("Nothing to resume").font(.caption)
+                Image(systemName: "waveform").foregroundStyle(.orange).widgetAccentable()
+                Text("Nothing playing yet").font(.caption)
+                Link("Find a book", destination: URL(string: "voxglass://discover")!)
             }
             .containerBackground(.fill.tertiary, for: .widget)
         }
     }
-}
 
-struct ResumeListeningIntent: AudioPlaybackIntent {
-    static let title: LocalizedStringResource = "Resume Voxglass"
-    static let description = IntentDescription("Resume the last audiobook in Voxglass.")
-    static let openAppWhenRun = false
+    @ViewBuilder
+    private func cover(for snapshot: NowPlayingSnapshot) -> some View {
+        if let url = CoverThumbnailStore.url(for: snapshot.bookID), let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image).resizable().scaledToFill().frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 10))
+        } else {
+            RoundedRectangle(cornerRadius: 10).fill(color(snapshot.backgroundHex ?? 0x17191D)).frame(width: 56, height: 56)
+                .overlay(Image(systemName: "waveform").foregroundStyle(color(snapshot.accentHex ?? 0xE3A44B)))
+        }
+    }
 
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        WidgetPlaybackCommandStore.requestResume()
-        return .result(dialog: "Resuming Voxglass")
+    private func transport(for snapshot: NowPlayingSnapshot) -> some View {
+        HStack(spacing: 12) {
+            Button(intent: SkipBackwardIntent()) { Image(systemName: "gobackward.15") }.accessibilityLabel("Skip back 15 seconds")
+            if snapshot.isPlaying {
+                Button(intent: TogglePlaybackIntent()) { Image(systemName: "pause.fill") }.accessibilityLabel("Pause")
+            } else {
+                Button(intent: ResumeListeningIntent()) { Image(systemName: "play.fill") }.accessibilityLabel("Resume")
+            }
+            Button(intent: SkipForwardIntent()) { Image(systemName: "goforward.30") }.accessibilityLabel("Skip forward 30 seconds")
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func color(_ hex: UInt32) -> Color {
+        Color(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
     }
 }
 
@@ -89,6 +124,30 @@ struct ResumeVoxglassControl: ControlWidget {
         }
         .displayName("Resume Voxglass")
         .description("Resume the last audiobook in Voxglass.")
+    }
+}
+
+struct SleepTimerControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "guru.parso.voxglass.sleep") {
+            ControlWidgetButton("Sleep Timer", action: CycleSleepTimerIntent()) { _ in
+                Label("Sleep Timer", systemImage: "moon.zzz")
+            }
+        }
+        .displayName("Sleep Timer")
+        .description("Change the current audiobook sleep timer.")
+    }
+}
+
+struct SkipBackControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "guru.parso.voxglass.skipBack") {
+            ControlWidgetButton("Skip Back", action: SkipBackwardIntent()) { _ in
+                Label("Skip Back", systemImage: SkipSymbols.back(15))
+            }
+        }
+        .displayName("Skip Back")
+        .description("Skip back 15 seconds in Voxglass.")
     }
 }
 
@@ -111,6 +170,9 @@ enum WidgetSnapshotStore {
 struct VoxglassWidgetBundle: WidgetBundle {
     var body: some Widget {
         VoxglassContinueWidget()
+        BookLiveActivity()
         ResumeVoxglassControl()
+        SleepTimerControl()
+        SkipBackControl()
     }
 }

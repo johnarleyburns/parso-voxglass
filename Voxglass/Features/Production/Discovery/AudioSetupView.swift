@@ -45,7 +45,7 @@ struct AudioSetupView: View {
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(isSelectingInput ? "Selecting…" : "Use this input") {
+                Button(isSelectingInput ? "Selecting…" : "Use this input") { // l10n-exempt: state-dependent accessibility or status copy
                     Task { await selectInputAndDismiss() }
                 }
                 .disabled(isSelectingInput)
@@ -61,11 +61,11 @@ struct AudioSetupView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Current input")
-                    .scaledFont(size: 15, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Text(classificationLabel)
-                    .scaledFont(size: 11, weight: .bold)
+                    .voxFont(.caption2, weight: .bold)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(classificationColor.opacity(0.15), in: Capsule())
@@ -86,7 +86,7 @@ struct AudioSetupView: View {
             kv("Format", formatLabel)
             kv("Monitoring", "Direct (hardware)")
             Text("Voxglass records at the hardware's own format and resamples only at export.")
-                .scaledFont(size: 11.5)
+                .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
         }
         .padding(14)
@@ -96,10 +96,10 @@ struct AudioSetupView: View {
     private var roomTestCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("10-second room test")
-                .scaledFont(size: 15, weight: .bold)
+                .voxFont(.subheadline, weight: .bold)
                 .foregroundStyle(Palette.ink)
             Text("Stay quiet. We measure your room, not your voice.")
-                .scaledFont(size: 12)
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
 
             if let result {
@@ -110,26 +110,26 @@ struct AudioSetupView: View {
                 HStack(spacing: 8) {
                     ProgressView().tint(Palette.brass)
                     Text("Measuring… stay quiet")
-                        .scaledFont(size: 12)
+                        .voxFont(.caption)
                         .foregroundStyle(Palette.ink2)
                 }
             } else {
                 Text("Run the test to check your room against the retail band.")
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.ink3)
             }
 
             if let errorText {
                 Text(errorText)
-                    .scaledFont(size: 12)
+                    .voxFont(.caption)
                     .foregroundStyle(Palette.danger)
             }
 
             Button {
                 Task { await runTest() }
             } label: {
-                Text(isTesting ? "Measuring…" : "Run the test again")
-                    .scaledFont(size: 13, weight: .bold)
+                Text(isTesting ? "Measuring…" : "Run the test again") // l10n-exempt: state-dependent accessibility or status copy
+                    .voxFont(.footnote, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -146,22 +146,22 @@ struct AudioSetupView: View {
     private var inputGuidance: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("IF YOU CHANGE INPUT")
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink3)
-            guidanceRow("USB-C interface or USB mic", "Recommended for commercial release", Palette.ok, "Retail")
-            guidanceRow("Wired headset mic", "Fine for LibriVox and Internet Archive", Palette.brass, "Community")
+            guidanceRow("USB-C interface or USB mic", "Recommended for LibriVox submission", Palette.ok, "LibriVox")
+            guidanceRow("Wired headset mic", "Fine for LibriVox", Palette.brass, "LibriVox")
             guidanceRow("Built-in iPhone mic", "Usable in a quiet, soft-furnished room", Palette.brass, "Community")
-            guidanceRow("Bluetooth / AirPods", "Allowed, but retail export will warn", Palette.danger, "Draft")
+            guidanceRow("Bluetooth / AirPods", "Allowed, but LibriVox quality checks will warn", Palette.danger, "Draft")
         }
     }
 
     private var banner: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("What this can and can't fix")
-                .scaledFont(size: 15, weight: .bold)
+                .voxFont(.subheadline, weight: .bold)
                 .foregroundStyle(Palette.ink)
-            Text("Voxglass can level, trim, and master your recording. It cannot make a noisy room or a compressed Bluetooth signal meet ACX. If your room test fails, the honest fix is the room or the microphone.")
-                .scaledFont(size: 12)
+            Text("Voxglass can level, trim, and master your recording. It cannot make a noisy room or a compressed Bluetooth signal meet LibriVox quality checks. If your room test fails, the honest fix is the room or the microphone.")
+                .voxFont(.caption)
                 .foregroundStyle(Palette.ink2)
         }
         .padding(14)
@@ -173,12 +173,12 @@ struct AudioSetupView: View {
         HStack(spacing: 10) {
             Circle().fill(color.opacity(0.9)).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).scaledFont(size: 13, weight: .semibold).foregroundStyle(Palette.ink)
-                Text(caption).scaledFont(size: 11).foregroundStyle(Palette.ink3)
+                Text(title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
+                Text(caption).voxFont(.caption2).foregroundStyle(Palette.ink3)
             }
             Spacer()
             Text(chip)
-                .scaledFont(size: 10, weight: .bold)
+                .voxFont(.caption2, weight: .bold)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(color.opacity(0.15), in: Capsule())
                 .foregroundStyle(color)
@@ -188,10 +188,10 @@ struct AudioSetupView: View {
 
     private func kv(_ label: String, _ value: String, ok: Bool? = nil) -> some View {
         HStack {
-            Text(label).scaledFont(size: 12.5).foregroundStyle(Palette.ink2)
+            Text(label).voxFont(.caption).foregroundStyle(Palette.ink2)
             Spacer()
             Text(value)
-                .scaledFont(size: 12.5, weight: .medium)
+                .voxFont(.caption, weight: .medium)
                 .foregroundStyle(ok == false ? Palette.danger : Palette.ink)
         }
     }
@@ -225,14 +225,14 @@ struct AudioSetupView: View {
         return "\(rate) · mono"
     }
 
-    /// The retail thresholds, imported from the ACX profile (§3): never
+    /// The submission thresholds, imported from the LibriVox profile: never
     /// restated here.
     private var audioSetupNoiseFloorCeiling: Double {
-        DestinationProfile.acx.noiseFloorCeilingDBFS ?? -60
+        DestinationProfile.librivox.noiseFloorCeilingDBFS ?? -60
     }
 
     private var audioSetupPeakCeiling: Double {
-        DestinationProfile.acx.peakCeilingDBFS ?? -3
+        DestinationProfile.librivox.peakCeilingDBFS ?? -0.3
     }
 
     // MARK: - Room test

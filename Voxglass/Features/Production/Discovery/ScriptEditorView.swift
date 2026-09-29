@@ -88,7 +88,7 @@ struct ScriptEditorView: View {
                     filter = item
                 } label: {
                     Text("\(item.label) \(count(for: item))")
-                        .scaledFont(size: 11.5, weight: item == filter ? .heavy : .semibold)
+                        .voxFont(.caption2, weight: item == filter ? .heavy : .semibold)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .foregroundStyle(item == filter ? NarrationPalette.nearBlack : Palette.ink2)
@@ -136,13 +136,13 @@ struct ScriptEditorView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Text("¶ \(number(of: paragraph.id))")
-                        .scaledFont(size: 11, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                         .foregroundStyle(Palette.ink3)
                     Spacer()
                     stateChip(paragraph)
                 }
                 Text(paragraph.text)
-                    .scaledFont(size: 13.5)
+                    .voxFont(.footnote)
                     .foregroundStyle(Palette.ink)
                     .multilineTextAlignment(.leading)
                     .lineLimit(3)
@@ -183,7 +183,7 @@ struct ScriptEditorView: View {
 
     private func chip(_ text: String, tint: Color) -> some View {
         Text(text)
-            .scaledFont(size: 10, weight: .bold)
+            .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 7).padding(.vertical, 3)
             .foregroundStyle(tint)
             .background(tint.opacity(0.14), in: Capsule())

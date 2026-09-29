@@ -65,10 +65,10 @@ struct EQView: View {
         )) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Equalizer")
-                    .scaledFont(size: 15, weight: .semibold)
+                    .voxFont(.subheadline, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                 Text("Apply the 10-band equalizer to playback.")
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
             }
         }
@@ -120,7 +120,7 @@ struct EQView: View {
     private func bandSlider(_ band: Int) -> some View {
         VStack(spacing: 6) {
             Text(gainLabel(gains[band]))
-                .scaledFont(size: 9, design: .monospaced) // mono-exempt: EQ frequency labels
+                .voxFont(.caption2, design: .monospaced) // mono-exempt: EQ frequency labels
                 .foregroundStyle(Palette.ink3)
             Slider(
                 value: Binding(
@@ -139,7 +139,7 @@ struct EQView: View {
             .frame(width: 28, height: 150)
             .accessibilityIdentifier("eq.band.\(band)")
             Text(bandLabels[band])
-                .scaledFont(size: 9, weight: .semibold)
+                .voxFont(.caption2, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
         }
         .frame(maxWidth: .infinity)
@@ -151,7 +151,7 @@ struct EQView: View {
             showSavePrompt = true
         } label: {
             Label("Save as Preset", systemImage: "plus.circle.fill")
-                .scaledFont(size: 13, weight: .semibold)
+                .voxFont(.footnote, weight: .semibold)
                 .foregroundStyle(Palette.brass)
         }
         .buttonStyle(.plain)

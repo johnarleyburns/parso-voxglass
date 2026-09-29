@@ -140,11 +140,23 @@ struct BookPageActionRow: View {
             }
         } label: {
             Text(PlaybackRate.label(playback.playbackRate))
-                .scaledFont(size: 13, weight: .bold, design: .monospaced) // mono-exempt: playback rate
+                .voxFont(.footnote, weight: .bold, design: .monospaced) // mono-exempt: playback rate
                 .frame(minWidth: 44, minHeight: 44)
         }
         .accessibilityLabel("Playback speed")
         .accessibilityValue(PlaybackRate.label(playback.playbackRate))
+        .accessibilityAdjustableAction { direction in
+            let ladder = PlaybackRate.menuLadder
+            guard let index = ladder.firstIndex(of: playback.playbackRate) else { return }
+            let next: Int
+            switch direction {
+            case .increment: next = min(index + 1, ladder.count - 1)
+            case .decrement: next = max(index - 1, 0)
+            @unknown default: return
+            }
+            guard next != index else { return }
+            playback.setPlaybackRate(ladder[next])
+        }
         .accessibilityIdentifier("nowplaying.speed")
     }
 
@@ -207,17 +219,17 @@ struct BookPageActionRow: View {
         switch playback.sleepMode {
         case .off:
             Image(systemName: "moon.zzz")
-                .scaledFont(size: 16)
+                .voxFont(.callout)
         case .endOfChapter:
             Image(systemName: "moon.zzz.fill")
-                .scaledFont(size: 16)
+                .voxFont(.callout)
                 .foregroundStyle(Palette.brass)
         case .duration:
             HStack(spacing: 3) {
                 Image(systemName: "moon.zzz.fill")
                 if let remaining = playback.sleepRemaining {
                     Text(sleepCountdown(remaining))
-                        .scaledFont(size: 12, weight: .semibold, design: .monospaced) // mono-exempt: sleep countdown
+                        .voxFont(.caption, weight: .semibold, design: .monospaced) // mono-exempt: sleep countdown
                 }
             }
             .foregroundStyle(Palette.brass)
@@ -236,7 +248,7 @@ struct BookPageActionRow: View {
             showingBookmarks = true
         } label: {
             Image(systemName: "bookmark")
-                .scaledFont(size: 16)
+                .voxFont(.callout)
                 .frame(width: 44, height: 44)
         }
         .accessibilityLabel("Bookmark")
@@ -252,7 +264,7 @@ struct BookPageActionRow: View {
                 showCacheSizeWarning = true
             } label: {
                 Image(systemName: "arrow.down.circle")
-                    .scaledFont(size: 17)
+                    .voxFont(.body)
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Make available offline")
@@ -266,7 +278,7 @@ struct BookPageActionRow: View {
                     .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Image(systemName: "arrow.down")
-                    .scaledFont(size: 9, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(Palette.brass)
             }
             .frame(width: 22, height: 22)
@@ -282,14 +294,14 @@ struct BookPageActionRow: View {
             // it's present.
             if isLocalFilesBook {
                 Image(systemName: "checkmark.circle.fill")
-                    .scaledFont(size: 17, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
                     .accessibilityLabel("On this iPhone")
                     .accessibilityIdentifier("nowplaying.download")
             } else {
                 Image(systemName: "checkmark.circle.fill")
-                    .scaledFont(size: 17, weight: .semibold)
+                    .voxFont(.body, weight: .semibold)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
                     .accessibilityLabel("Cached for offline use")
@@ -301,7 +313,7 @@ struct BookPageActionRow: View {
                 showCacheSizeWarning = true
             } label: {
                 Image(systemName: "exclamationmark.arrow.circlepath")
-                    .scaledFont(size: 17)
+                    .voxFont(.body)
                     .foregroundStyle(Palette.danger)
                     .frame(width: 44, height: 44)
             }
@@ -319,11 +331,11 @@ struct BookPageActionRow: View {
                 showWatchSizeWarning = true
             } label: {
                 Image(systemName: "applewatch")
-                    .scaledFont(size: 16)
+                    .voxFont(.callout)
                     .foregroundStyle(watchState == .failed ? Palette.danger : Color.white.opacity(0.6))
                     .frame(width: 44, height: 44)
             }
-            .accessibilityLabel(watchState == .failed ? "Retry send to Apple Watch" : "Send to Apple Watch")
+            .accessibilityLabel(watchState == .failed ? "Retry send to Apple Watch" : "Send to Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("nowplaying.watchDownload")
         case .queued, .waitingForPhone:
             ProgressView()
@@ -339,7 +351,7 @@ struct BookPageActionRow: View {
                     .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Image(systemName: "applewatch")
-                    .scaledFont(size: 9, weight: .semibold)
+                    .voxFont(.caption2, weight: .semibold)
                     .foregroundStyle(Palette.brass)
             }
             .frame(width: 22, height: 22)
@@ -355,7 +367,7 @@ struct BookPageActionRow: View {
             } label: {
                 Image(systemName: "applewatch")
                     .symbolVariant(.fill)
-                    .scaledFont(size: 16)
+                    .voxFont(.callout)
                     .foregroundStyle(Palette.brass)
                     .frame(width: 44, height: 44)
             }
@@ -402,7 +414,7 @@ struct BookPageActionRow: View {
             showingOverflow = true
         } label: {
             Image(systemName: "ellipsis")
-                .scaledFont(size: 16)
+                .voxFont(.callout)
                 .frame(width: 44, height: 44)
         }
         .accessibilityLabel("More options")

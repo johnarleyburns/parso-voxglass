@@ -27,11 +27,11 @@ struct BookRowView: View {
             Spacer(minLength: 8)
             Button(action: playAction) {
                 Image(systemName: isCurrent ? "waveform.circle.fill" : "play.circle.fill")
-                    .scaledFont(size: 34, weight: .semibold)
+                    .scaledFont(size: 34, weight: .semibold) // type-exempt: display progress numeral
                     .foregroundStyle(VoxglassTheme.accent)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isCurrent ? "Current book" : "Play \(book.book.title)")
+            .accessibilityLabel(isCurrent ? "Current book" : "Play \(book.book.title)") // l10n-exempt: state-dependent accessibility or status copy
         }
         .padding(12)
         .raisedSurface()

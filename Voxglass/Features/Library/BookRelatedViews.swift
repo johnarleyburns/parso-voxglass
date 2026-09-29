@@ -17,7 +17,7 @@ struct ChaptersView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(currentBook.book.title)
-                        .scaledFont(size: 20, weight: .heavy)
+                        .voxFont(.title3, weight: .heavy)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
 
@@ -64,12 +64,12 @@ struct AuthorDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(authorName)
-                            .scaledFont(size: 31, weight: .heavy)
+                            .voxFont(.title, weight: .heavy)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
                         Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
-                            .scaledFont(size: 14)
+                            .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink2)
                     }
 
@@ -123,12 +123,12 @@ struct NarratorDetailView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(narratorName)
-                            .scaledFont(size: 31, weight: .heavy)
+                            .voxFont(.title, weight: .heavy)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
                         Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
-                            .scaledFont(size: 14)
+                            .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink2)
                     }
 
@@ -176,24 +176,24 @@ struct ChapterRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: isCurrent ? "waveform.circle.fill" : "play.circle")
-                    .scaledFont(size: 18)
+                    .voxFont(.body)
                     .foregroundStyle(isCurrent ? Palette.brass : Palette.ink3)
                     .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(chapter.title)
-                        .scaledFont(size: 14, weight: .medium)
+                        .voxFont(.subheadline, weight: .medium)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(2)
                     HStack(spacing: 6) {
                         Text(TimeFormatting.clock(chapter.duration))
-                            .scaledFont(size: 11.5, design: .monospaced) // mono-exempt: chapter duration
+                            .voxFont(.caption2, design: .monospaced) // mono-exempt: chapter duration
                             .foregroundStyle(Palette.ink3)
                         if let narrator = NarratorDisplay.chapterLine(chapter: chapter, bookNarrators: bookNarrators) {
                             Text("·")
                                 .foregroundStyle(Palette.ink3)
                             Text(narrator)
-                                .scaledFont(size: 11.5)
+                                .voxFont(.caption2)
                                 .foregroundStyle(Palette.ink3)
                                 .lineLimit(1)
                         }

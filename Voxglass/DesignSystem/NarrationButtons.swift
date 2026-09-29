@@ -38,7 +38,7 @@ struct NarrationPrimaryButton: View {
                     if let systemImage { Image(systemName: systemImage) }
                     Text(title)
                 }
-                .scaledFont(size: 15, weight: .heavy)
+                .voxFont(.subheadline, weight: .heavy)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(NarrationPalette.espresso)
                 .background(
@@ -52,7 +52,7 @@ struct NarrationPrimaryButton: View {
 
             if let disabledReason {
                 Text(disabledReason)
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("\(identifier).reason")
             }
@@ -76,7 +76,7 @@ struct NarrationSecondaryButton: View {
                     if let systemImage { Image(systemName: systemImage) }
                     Text(title)
                 }
-                .scaledFont(size: 15, weight: .heavy)
+                .voxFont(.subheadline, weight: .heavy)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(Palette.brass)
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.brass.opacity(0.55), lineWidth: 1))
@@ -87,7 +87,7 @@ struct NarrationSecondaryButton: View {
 
             if let disabledReason {
                 Text(disabledReason)
-                    .scaledFont(size: 11.5)
+                    .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("\(identifier).reason")
             }

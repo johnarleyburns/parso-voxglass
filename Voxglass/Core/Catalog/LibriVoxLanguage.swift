@@ -9,32 +9,72 @@ import Foundation
 /// `fre`/`fra`, `grc`).
 public struct LibriVoxLanguage: Identifiable, Equatable, Sendable {
     public var id: String
-    public var displayName: String
+    private var englishName: String
     public var tokens: [String]
+
+    public var displayName: String {
+        if englishName == "German" {
+            return String(localized: "German", bundle: .module)
+        }
+        return Locale.current.localizedString(forLanguageCode: id) ?? englishName
+    }
 
     public var clause: String {
         tokens.map { "language:\($0)" }.joined(separator: " OR ")
     }
 
     public static let all: [LibriVoxLanguage] = [
-        LibriVoxLanguage(id: "eng", displayName: "English", tokens: ["eng", "English"]),
-        LibriVoxLanguage(id: "deu", displayName: "German", tokens: ["deu", "ger", "German"]),
-        LibriVoxLanguage(id: "fre", displayName: "French", tokens: ["fre", "fra", "French"]),
-        LibriVoxLanguage(id: "nld", displayName: "Dutch", tokens: ["nld", "dut", "Dutch"]),
-        LibriVoxLanguage(id: "spa", displayName: "Spanish", tokens: ["spa", "Spanish"]),
-        LibriVoxLanguage(id: "ita", displayName: "Italian", tokens: ["ita", "Italian"]),
-        LibriVoxLanguage(id: "por", displayName: "Portuguese", tokens: ["por", "Portuguese"]),
-        LibriVoxLanguage(id: "rus", displayName: "Russian", tokens: ["rus", "Russian"]),
-        LibriVoxLanguage(id: "zho", displayName: "Chinese", tokens: ["zho", "chi", "Chinese"]),
-        LibriVoxLanguage(id: "jpn", displayName: "Japanese", tokens: ["jpn", "Japanese"]),
-        LibriVoxLanguage(id: "lat", displayName: "Latin", tokens: ["lat", "Latin"]),
-        LibriVoxLanguage(id: "grc", displayName: "Greek", tokens: ["grc", "gre", "Greek"]),
-        LibriVoxLanguage(id: "pol", displayName: "Polish", tokens: ["pol", "Polish"]),
-        LibriVoxLanguage(id: "fin", displayName: "Finnish", tokens: ["fin", "Finnish"]),
-        LibriVoxLanguage(id: "heb", displayName: "Hebrew", tokens: ["heb", "Hebrew"])
+        LibriVoxLanguage(id: "eng", englishName: "English", tokens: ["eng", "English"]),
+        LibriVoxLanguage(id: "deu", englishName: "German", tokens: ["deu", "ger", "German"]),
+        LibriVoxLanguage(id: "fre", englishName: "French", tokens: ["fre", "fra", "French"]),
+        LibriVoxLanguage(id: "nld", englishName: "Dutch", tokens: ["nld", "dut", "Dutch"]),
+        LibriVoxLanguage(id: "spa", englishName: "Spanish", tokens: ["spa", "Spanish"]),
+        LibriVoxLanguage(id: "ita", englishName: "Italian", tokens: ["ita", "Italian"]),
+        LibriVoxLanguage(id: "por", englishName: "Portuguese", tokens: ["por", "Portuguese"]),
+        LibriVoxLanguage(id: "rus", englishName: "Russian", tokens: ["rus", "Russian"]),
+        LibriVoxLanguage(id: "zho", englishName: "Chinese", tokens: ["zho", "chi", "Chinese"]),
+        LibriVoxLanguage(id: "jpn", englishName: "Japanese", tokens: ["jpn", "Japanese"]),
+        LibriVoxLanguage(id: "lat", englishName: "Latin", tokens: ["lat", "Latin"]),
+        LibriVoxLanguage(id: "grc", englishName: "Greek", tokens: ["grc", "gre", "Greek"]),
+        LibriVoxLanguage(id: "pol", englishName: "Polish", tokens: ["pol", "Polish"]),
+        LibriVoxLanguage(id: "fin", englishName: "Finnish", tokens: ["fin", "Finnish"]),
+        LibriVoxLanguage(id: "heb", englishName: "Hebrew", tokens: ["heb", "Hebrew"])
     ]
 
-    public static let defaultSelection: Set<String> = ["eng"]
+    public static var defaultSelection: Set<String> { deviceDefaultSelection() }
+
+    /// Default language selection for a new install, retaining English while
+    /// adding the device's supported primary language when available.
+    public static func deviceDefaultSelection(preferredLanguages: [String] = Locale.preferredLanguages) -> Set<String> {
+        var result: Set<String> = ["eng"]
+        for tag in preferredLanguages {
+            let primary = tag.lowercased().split(separator: "-").first.map(String.init) ?? ""
+            let code: String?
+            switch primary {
+            case "de": code = "deu"
+            case "fr": code = "fre"
+            case "es": code = "spa"
+            case "it": code = "ita"
+            case "pt": code = "por"
+            case "nl": code = "nld"
+            case "ja": code = "jpn"
+            case "zh": code = "zho"
+            case "ru": code = "rus"
+            case "pl": code = "pol"
+            case "he", "iw": code = "heb"
+            case "fi": code = "fin"
+            case "el": code = "grc"
+            case "la": code = "lat"
+            case "en": code = "eng"
+            default: code = nil
+            }
+            if let code, all.contains(where: { $0.id == code }) {
+                result.insert(code)
+                break
+            }
+        }
+        return result
+    }
 
     public static func language(withID id: String) -> LibriVoxLanguage? {
         all.first { $0.id == id }

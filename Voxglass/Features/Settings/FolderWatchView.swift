@@ -43,7 +43,7 @@ struct FolderWatchView: View {
 
     private var intro: some View {
         Text("Voxglass watches the folders you add and imports the audio files inside them as local books. New files added to a watched folder appear automatically.")
-            .scaledFont(size: 13)
+            .voxFont(.footnote)
             .foregroundStyle(Palette.ink2)
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,7 +58,7 @@ struct FolderWatchView: View {
                 Image(systemName: "folder.fill.badge.plus")
                     .foregroundStyle(Palette.brass)
                 Text("Watch a Folder")
-                    .scaledFont(size: 14, weight: .semibold)
+                    .voxFont(.subheadline, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                 Spacer()
                 Image(systemName: "plus.circle.fill")
@@ -81,7 +81,7 @@ struct FolderWatchView: View {
                             .foregroundStyle(Palette.brass)
                             .frame(width: 28)
                         Text(folder.name)
-                            .scaledFont(size: 14)
+                            .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(1)
                         Spacer()
@@ -108,7 +108,7 @@ struct FolderWatchView: View {
                 ProgressView(value: progress.fractionComplete)
                     .tint(Palette.brass)
                 Text("Indexing \(progress.remainingTracks) tracks…")
-                    .scaledFont(size: 13, weight: .semibold)
+                    .voxFont(.footnote, weight: .semibold)
                     .foregroundStyle(Palette.ink)
             }
 
@@ -121,7 +121,7 @@ struct FolderWatchView: View {
                     Text("Calculating time remaining…")
                 }
             }
-            .scaledFont(size: 11.5)
+            .voxFont(.caption2)
             .foregroundStyle(Palette.ink3)
         }
         .padding(14)

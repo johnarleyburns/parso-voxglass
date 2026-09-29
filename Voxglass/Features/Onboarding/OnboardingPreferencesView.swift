@@ -7,7 +7,7 @@ struct OnboardingPreferencesView: View {
     var skipAction: () -> Void
 
     @State private var selectedCollectionIDs: Set<String>
-    @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
+    @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = AppPreferencesStore.encodeLanguages(LibriVoxLanguage.deviceDefaultSelection())
 
     init(
         initialSelection: Set<String>,
@@ -54,18 +54,18 @@ struct OnboardingPreferencesView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: "sparkles")
-                .scaledFont(size: 20)
+                .voxFont(.title3)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 44, height: 44)
                 .raisedSurface()
 
             Text("Choose a few interests")
-                .scaledFont(size: 31, weight: .heavy)
+                .voxFont(.title, weight: .heavy)
                 .foregroundStyle(Palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("Voxglass will start with popular LibriVox picks and refresh the shelf around your selections.")
-                .scaledFont(size: 14)
+                .voxFont(.subheadline)
                 .foregroundStyle(Palette.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -74,7 +74,7 @@ struct OnboardingPreferencesView: View {
     private var languagesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Languages")
-                .scaledFont(size: 14, weight: .semibold)
+                .voxFont(.subheadline, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
 
             LazyVGrid(columns: languageColumns, spacing: 8) {
@@ -96,10 +96,10 @@ struct OnboardingPreferencesView: View {
                     .minimumScaleFactor(0.8)
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .scaledFont(size: 10, weight: .bold)
+                        .voxFont(.caption2, weight: .bold)
                 }
             }
-            .scaledFont(size: 12.5, weight: .semibold)
+            .voxFont(.caption, weight: .semibold)
             .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 44)
@@ -139,7 +139,7 @@ struct OnboardingPreferencesView: View {
     private var featuredCollections: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Or browse our collections")
-                .scaledFont(size: 14, weight: .semibold)
+                .voxFont(.subheadline, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -167,7 +167,7 @@ struct OnboardingPreferencesView: View {
                 finishAction(selectedCollectionIDs)
             } label: {
                 Label("Continue", systemImage: "arrow.right")
-                    .scaledFont(size: 15.5, weight: .bold)
+                    .voxFont(.subheadline, weight: .bold)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .foregroundStyle(Color(hex: 0x221503))
@@ -183,7 +183,7 @@ struct OnboardingPreferencesView: View {
             Button("Skip") {
                 skipAction()
             }
-            .scaledFont(size: 12.5)
+            .voxFont(.caption)
             .foregroundStyle(Palette.ink3)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
@@ -214,7 +214,7 @@ private struct OnboardingCollectionCard: View {
             .frame(width: 170, height: 170)
 
             Text(collection.title)
-                .scaledFont(size: 13, weight: .bold)
+                .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .frame(width: 170, alignment: .leading)
@@ -229,7 +229,7 @@ private struct OnboardingCollectionCard: View {
         .overlay(alignment: .topTrailing) {
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .scaledFont(size: 20, weight: .bold)
+                    .voxFont(.title3, weight: .bold)
                     .foregroundStyle(Palette.brass)
                     .background(Circle().fill(Color(hex: 0x221503)))
                     .padding(6)
@@ -247,16 +247,16 @@ private struct CollectionSelectionChip: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: collection.systemImage)
-                    .scaledFont(size: 14, weight: .semibold)
+                    .voxFont(.subheadline, weight: .semibold)
                     .frame(width: 28, height: 28)
                 Text(collection.title)
-                    .scaledFont(size: 14, weight: .semibold)
+                    .voxFont(.subheadline, weight: .semibold)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 Spacer(minLength: 0)
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .scaledFont(size: 14, weight: .bold)
+                        .voxFont(.subheadline, weight: .bold)
                 }
             }
             .frame(maxWidth: .infinity)

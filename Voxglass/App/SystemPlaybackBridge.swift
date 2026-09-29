@@ -17,6 +17,7 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     /// Weakly held so the bridge can forward app-lifecycle and audio-interruption
     /// notifications back into playback. Set by `AppServices` after construction.
     weak var coordinator: PlaybackCoordinator?
+    var liveActivityController: LiveActivityController?
 
     private var latestInfo: NowPlayingInfo?
     private var currentArtwork: MPMediaItemArtwork?
@@ -56,6 +57,10 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         if let info = latestInfo {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = mpInfo(from: info)
         }
+    }
+
+    func updateLiveActivity(_ content: LiveActivityContent?) {
+        liveActivityController?.update(content)
     }
 
     func setSkipIntervals(backward: Int, forward: Int) {

@@ -111,7 +111,7 @@ struct WatchBookDetailView: View {
             }
             .frame(width: 44, height: 44)
             .disabled(isCurrentBook && transportBusy)
-            .accessibilityLabel(isCurrentBook && playback.isActuallyPlaying ? "Pause" : "Play")
+            .accessibilityLabel(isCurrentBook && playback.isActuallyPlaying ? "Pause" : "Play") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("watch.book.play")
             Button { services.nextChapter() } label: { Image(systemName: "forward.end.fill") }
                 .frame(width: 44, height: 44)
