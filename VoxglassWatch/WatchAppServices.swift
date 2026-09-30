@@ -96,6 +96,7 @@ final class WatchAppServices: ObservableObject {
     func nextChapter() { playbackEngine.nextChapter() }
     func previousChapter() { playbackEngine.previousChapter() }
     func retryPlayback() { playbackEngine.retry() }
+    func seek(to position: TimeInterval) { playbackEngine.seek(to: position) }
     func persistPlaybackPosition() { playbackEngine.persistPlaybackPosition() }
 
     private func downloadApprovedChapters(for book: WatchBookDTO) async {

@@ -1,17 +1,15 @@
 #!/bin/bash
 # test_logic.sh — The ONLY sanctioned way to run the Swift Testing logic suites.
 #
-# ALL suites run serially (`--no-parallel`): `swift test` runs test targets in
-# parallel by default, and load-sensitive suites (playback seek timing,
-# performance budgets, audio metrics) produce false failures when the runner
-# saturates the CPU. Timing-budget tests (VoxglassPerformanceTests) are
-# additionally gated behind the VOXGLASS_TIMING_TESTS environment variable (see
+# The regular logic suites use Swift Testing's default parallel runner. Timing-
+# budget tests (VoxglassPerformanceTests) are additionally gated behind the
+# VOXGLASS_TIMING_TESTS environment variable (see
 # VoxglassTests/Performance/PerformanceBudgetTests.swift) and run here in a
-# second serial invocation.
+# second invocation.
 #
 # Usage: scripts/test_logic.sh
-#   phase 1 — all logic suites, serial:  swift test --no-parallel --skip VoxglassPerformanceTests
-#   phase 2 — timing budgets, serial:    VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests
+#   phase 1 — all logic suites, parallel: swift test --skip VoxglassPerformanceTests
+#   phase 2 — timing budgets:             VOXGLASS_TIMING_TESTS=1 swift test --filter VoxglassPerformanceTests
 #
 # This script is an optional expanded local verification path. The pre-commit
 # hook intentionally runs the plain host `swift test` command only. GitHub Actions runs
@@ -32,12 +30,12 @@ echo "=== reaping orphaned test helpers from prior runs ==="
 bash "$SCRIPT_DIR/kill_zombie_test_helpers.sh"
 
 echo ""
-echo "=== swift test (all logic suites, serial) ==="
-swift test --no-parallel --skip VoxglassPerformanceTests
+echo "=== swift test (all logic suites, parallel) ==="
+swift test --skip VoxglassPerformanceTests
 
 echo ""
-echo "=== swift test (timing budgets, serial) ==="
-VOXGLASS_TIMING_TESTS=1 swift test --no-parallel --filter VoxglassPerformanceTests
+echo "=== swift test (timing budgets) ==="
+VOXGLASS_TIMING_TESTS=1 swift test --filter VoxglassPerformanceTests
 
 echo ""
 echo "test_logic: all logic suites passed"

@@ -37,5 +37,21 @@ struct BookRowView: View {
         }
         .padding(12)
         .raisedSurface()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(rowAccessibilityLabel)
+        .accessibilityAction(named: isCurrent ? "Pause" : "Play") {
+            playAction()
+        }
+    }
+
+    private var rowAccessibilityLabel: String {
+        var parts: [String] = [book.book.title]
+        if let author = book.book.displayAuthorLine, !author.isEmpty {
+            parts.append("by \(author)")
+        }
+        if let narrator = book.book.narrator, !narrator.isEmpty {
+            parts.append("read by \(narrator)")
+        }
+        return parts.joined(separator: ", ")
     }
 }

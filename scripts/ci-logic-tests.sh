@@ -16,12 +16,13 @@
 #
 # Performance/timing tests stay local-only: hosted runners have insufficiently
 # stable CPU performance for those budgets, and the pre-commit hook runs them
-# on the developer's machine.
+# on the developer's machine. Regular host suites use Swift Testing's default
+# parallel runner for reasonable CI turnaround.
 set -uo pipefail
 
 watchdog_seconds="${WATCHDOG_SECONDS:-1200}"
 
-script -q /dev/null swift test --no-parallel --skip VoxglassPerformanceTests &
+script -q /dev/null swift test --skip VoxglassPerformanceTests &
 test_pid=$!
 
 (

@@ -6,6 +6,8 @@ struct MiniPlayerAccessory: View {
     @Environment(MiniPlayerPresentationRouter.self) private var router
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
     @State private var userToggleCount = 0
+    @State private var skipBackCount = 0
+    @State private var skipForwardCount = 0
 
     var body: some View {
         if let session = playback.currentSession,
@@ -46,11 +48,13 @@ struct MiniPlayerAccessory: View {
             .accessibilityAction(named: session.isPlaying ? "Pause" : "Play") {
                 playback.togglePlayPause()
             }
-            .accessibilityAction(named: "Skip forward") {
-                Task { await playback.skipToNextChapter() }
+            .accessibilityAction(named: "Skip forward \(forwardInterval) seconds") {
+                skipForwardCount += 1
+                Task { await playback.skip(by: TimeInterval(forwardInterval)) }
             }
-            .accessibilityAction(named: "Skip back 15 seconds") {
-                Task { await playback.skip(by: -15) }
+            .accessibilityAction(named: "Skip back \(backInterval) seconds") {
+                skipBackCount += 1
+                Task { await playback.skip(by: -TimeInterval(backInterval)) }
             }
             .accessibilityAction(named: "Open player") {
                 router.presentNowPlayingFromMiniPlayer(currentBookID: session.book.id)
@@ -72,6 +76,16 @@ struct MiniPlayerAccessory: View {
             .allowsTightening(true)
     }
 
+    private var backInterval: Int {
+        let value = UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
+        return value > 0 ? value : 15
+    }
+
+    private var forwardInterval: Int {
+        let value = UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
+        return value > 0 ? value : 30
+    }
+
     private func playPauseSymbol(isPlaying: Bool) -> some View {
         Image(systemName: isPlaying ? "pause.fill" : "play.fill")
             .frame(minWidth: 44, minHeight: 44)
@@ -80,19 +94,29 @@ struct MiniPlayerAccessory: View {
 
     @ViewBuilder
     private var expandedControls: some View {
-        Button { Task { await playback.skip(by: -15) } } label: {
-            Image(systemName: SkipSymbol.back(15))
+        Button {
+            skipBackCount += 1
+            Task { await playback.skip(by: -TimeInterval(backInterval)) }
+        } label: {
+            Image(systemName: SkipSymbol.back(backInterval))
                 .frame(minWidth: 44, minHeight: 44)
+                .symbolEffect(.bounce.byLayer, value: skipBackCount)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Skip back 15 seconds")
+        .accessibilityLabel("Skip back \(backInterval) seconds")
         .accessibilityIdentifier("chrome.miniPlayer.skipBackward")
-        Button { Task { await playback.skipToNextChapter() } } label: {
-            Image(systemName: SkipSymbol.forward(30))
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: skipBackCount)
+        Button {
+            skipForwardCount += 1
+            Task { await playback.skip(by: TimeInterval(forwardInterval)) }
+        } label: {
+            Image(systemName: SkipSymbol.forward(forwardInterval))
                 .frame(minWidth: 44, minHeight: 44)
+                .symbolEffect(.bounce.byLayer, value: skipForwardCount)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Skip forward")
+        .accessibilityLabel("Skip forward \(forwardInterval) seconds")
         .accessibilityIdentifier("chrome.miniPlayer.skipForward")
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: skipForwardCount)
     }
 }

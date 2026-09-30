@@ -231,7 +231,7 @@ import VoxglassCoreTestSupport
 
         h.engine.reset()
         h.coordinator.togglePlayPause()
-        await drainMainQueue()
+        _ = await waitUntil { h.engine.calls.contains(.play) }
 
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.engine.loadCalls.first?.url == second.chapters[0].localURL)

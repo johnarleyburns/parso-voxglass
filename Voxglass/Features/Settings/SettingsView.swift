@@ -780,6 +780,7 @@ struct AboutView: View {
             .foregroundStyle(Palette.ink3)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 4)
+            .accessibilityIdentifier("settings.about.mission")
     }
 
     private var appVersion: String {

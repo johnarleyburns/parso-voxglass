@@ -402,6 +402,12 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// (§12). Driven by the real rule engine with the export preflight context,
     /// so a free user sees the exact issues the export pipeline will enforce.
     var validationDestination: DestinationID = .librivox
+    /// Legacy projects may contain retired destinations. They remain
+    /// decodable, but new validation and export UI is restricted to the two
+    /// supported destinations.
+    func selectableDestination(_ destination: DestinationID) -> DestinationID {
+        destination == .personalMaster ? .personalMaster : .librivox
+    }
     var destinationName: String {
         switch validationDestination {
         case .personalMaster: "Personal listening"
@@ -2700,6 +2706,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     /// the export pipeline agree about what blocks the run.
     func runValidation() async {
         guard project != nil else { return }
+        validationDestination = selectableDestination(validationDestination)
         isValidating = true
         validationError = nil
         defer { isValidating = false }
@@ -2745,6 +2752,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     }
 
     func selectValidationDestination(_ destination: DestinationID) {
+        let destination = selectableDestination(destination)
         guard destination != validationDestination else { return }
         validationDestination = destination
         Task { await runValidation() }
@@ -3368,7 +3376,7 @@ struct WorkImportView: View {
             VStack(spacing: 0) {
                     destinationRow(title: "LibriVox", caption: "128 kbps mono MP3 · human narration only", id: "wizard.purpose.librivox", choice: .librivox)
                 VoxglassListDivider()
-                    destinationRow(title: "Just for me", caption: "Lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
+                    destinationRow(title: "Personal Listening", caption: "Lossless WAV chapters", id: "wizard.purpose.personal", choice: .personal)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
             }

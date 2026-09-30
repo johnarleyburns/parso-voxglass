@@ -31,6 +31,11 @@ final class LiveActivityController {
             activity = nil
             return
         }
+        // A paused session may update an existing activity, but it must not
+        // create a new one when the app restores a paused book.
+        if activity == nil && !content.isPlaying {
+            return
+        }
         if !content.isPlaying {
             if pausedEndTask == nil {
                 pausedEndTask = Task { @MainActor [weak self] in
@@ -56,8 +61,8 @@ final class LiveActivityController {
             bookRemaining: content.bookRemaining,
             sleepUntil: { if case let .until(date) = content.sleep { return date }; return nil }(),
             sleepEndOfChapter: content.sleep == .endOfChapter,
-            skipBack: 15,
-            skipForward: 30
+            skipBack: configuredSkipBack,
+            skipForward: configuredSkipForward
         )
         let activityContent = ActivityContent(state: state, staleDate: LiveActivityUpdatePolicy.staleDate(for: content))
         if activity == nil {
@@ -80,6 +85,16 @@ final class LiveActivityController {
     }
 
     #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
+    private var configuredSkipBack: Int {
+        let value = UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipBackInterval)
+        return value > 0 ? value : 15
+    }
+
+    private var configuredSkipForward: Int {
+        let value = UserDefaults.standard.integer(forKey: AppPreferencesStore.Keys.skipForwardInterval)
+        return value > 0 ? value : 30
+    }
+
     private func endCurrentActivity() async {
         await activity?.end(nil, dismissalPolicy: .default)
         activity = nil

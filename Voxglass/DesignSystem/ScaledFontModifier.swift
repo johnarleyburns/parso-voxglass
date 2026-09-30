@@ -7,7 +7,7 @@ struct ScaledFontModifier: ViewModifier {
     private let design: Font.Design
 
     init(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) {
-        _scaledSize = ScaledMetric(wrappedValue: size, relativeTo: .body)
+        _scaledSize = ScaledMetric(wrappedValue: size, relativeTo: .largeTitle)
         self.weight = weight
         self.design = design
     }

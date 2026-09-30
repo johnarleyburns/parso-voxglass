@@ -3,6 +3,7 @@ import VoxglassCore
 
 struct BookPageActionRow: View {
     @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
@@ -16,6 +17,7 @@ struct BookPageActionRow: View {
     @State private var showWatchSizeWarning = false
     @State private var showWatchCellularPrompt = false
     @State private var showRemoveWatchConfirm = false
+    @State private var bookmarkCount = 0
 
     private var offlineState: OfflineState {
         // A local-files book (a folder import, or a personal-listening
@@ -128,7 +130,6 @@ struct BookPageActionRow: View {
         Menu {
             ForEach(PlaybackRate.menuLadder, id: \.self) { rate in
                 Button {
-                    TactileFeedback.tap()
                     playback.setPlaybackRate(rate)
                 } label: {
                     if playback.playbackRate == rate {
@@ -141,6 +142,8 @@ struct BookPageActionRow: View {
         } label: {
             Text(PlaybackRate.label(playback.playbackRate))
                 .voxFont(.footnote, weight: .bold, design: .monospaced) // mono-exempt: playback rate
+                .contentTransition(.numericText(value: Double(playback.playbackRate)))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: playback.playbackRate)
                 .frame(minWidth: 44, minHeight: 44)
         }
         .accessibilityLabel("Playback speed")
@@ -158,26 +161,24 @@ struct BookPageActionRow: View {
             playback.setPlaybackRate(ladder[next])
         }
         .accessibilityIdentifier("nowplaying.speed")
+        .sensoryFeedback(.selection, trigger: playback.playbackRate)
     }
 
     private var sleepTimerButton: some View {
         Menu {
             Button {
-                TactileFeedback.tap()
                 playback.setSleepTimer(.off)
             } label: {
                 sleepMenuLabel("Off", active: playback.sleepMode == .off)
             }
             ForEach([5, 10, 15, 30, 45, 60], id: \.self) { minutes in
                 Button {
-                    TactileFeedback.tap()
                     playback.setSleepTimer(.duration(TimeInterval(minutes * 60)))
                 } label: {
                     sleepMenuLabel("\(minutes) minutes", active: playback.sleepMode == .duration(TimeInterval(minutes * 60)))
                 }
             }
             Button {
-                TactileFeedback.tap()
                 playback.setSleepTimer(.endOfChapter)
             } label: {
                 sleepMenuLabel("End of chapter", active: playback.sleepMode == .endOfChapter)
@@ -189,6 +190,7 @@ struct BookPageActionRow: View {
         .accessibilityLabel("Sleep timer")
         .accessibilityValue(sleepTimerAccessibilityValue)
         .accessibilityIdentifier("nowplaying.sleepTimer")
+        .sensoryFeedback(.selection, trigger: playback.sleepMode)
     }
 
     private var sleepTimerAccessibilityValue: String {
@@ -230,6 +232,7 @@ struct BookPageActionRow: View {
                 if let remaining = playback.sleepRemaining {
                     Text(sleepCountdown(remaining))
                         .voxFont(.caption, weight: .semibold, design: .monospaced) // mono-exempt: sleep countdown
+                        .contentTransition(.numericText(countsDown: true))
                 }
             }
             .foregroundStyle(Palette.brass)
@@ -243,16 +246,18 @@ struct BookPageActionRow: View {
 
     private var bookmarkButton: some View {
         Button {
-            TactileFeedback.tap()
+            bookmarkCount += 1
             playback.addBookmark()
             showingBookmarks = true
         } label: {
-            Image(systemName: "bookmark")
+            Image(systemName: bookmarkCount > 0 ? "bookmark.fill" : "bookmark")
                 .voxFont(.callout)
+                .symbolEffect(.bounce, value: bookmarkCount)
                 .frame(width: 44, height: 44)
         }
         .accessibilityLabel("Bookmark")
         .accessibilityIdentifier("nowplaying.bookmark")
+        .sensoryFeedback(.success, trigger: bookmarkCount)
     }
 
     @ViewBuilder

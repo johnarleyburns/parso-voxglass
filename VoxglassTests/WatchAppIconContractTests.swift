@@ -9,10 +9,10 @@ import Testing
 /// If this test fails, restore the `universal` and `watch-marketing` entries and
 /// their 1024x1024 opaque PNG files in
 /// `VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset`, then run:
-/// `bash scripts/check_watch_app_icon.sh && swift test --no-parallel --filter WatchAppIconContractTests`.
+/// `bash scripts/check_watch_app_icon.sh && swift test --filter WatchAppIconContractTests`.
 @Suite struct WatchAppIconContractTests {
     private static let remediation = """
-    WHAT TO DO: Restore the universal watchOS runtime icon and the watch-marketing icon as 1024x1024 opaque PNGs in VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset, then run `bash scripts/check_watch_app_icon.sh` and `swift test --no-parallel --filter WatchAppIconContractTests`.
+    WHAT TO DO: Restore the universal watchOS runtime icon and the watch-marketing icon as 1024x1024 opaque PNGs in VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset, then run `bash scripts/check_watch_app_icon.sh` and `swift test --filter WatchAppIconContractTests`.
     """
 
     @Test func manifestContainsUploadSafeRuntimeAndMarketingIcons() throws {

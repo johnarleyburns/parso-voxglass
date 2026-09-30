@@ -467,6 +467,7 @@ struct BookPageView: View {
                     .voxFont(.caption)
                     .foregroundStyle(Color.white.opacity(0.50))
                     .lineLimit(1)
+                    .contentTransition(.opacity)
                 if let narratorLine = NarratorDisplay.chapterLine(chapter: session.chapter, bookNarrators: resolved.book.narrators) {
                     Text(narratorLine)
                         .voxFont(.caption2)
@@ -602,6 +603,7 @@ struct BookPageView: View {
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .raisedSurface()
+                    .symbolEffect(.bounce.byLayer, value: skipBackCount)
             }
             .opacity(isActiveSession ? 1 : 0.42)
             .allowsHitTesting(isActiveSession)
@@ -678,6 +680,7 @@ struct BookPageView: View {
                     .foregroundStyle(.white)
                     .frame(width: 52, height: 52)
                     .raisedSurface()
+                    .symbolEffect(.bounce.byLayer, value: skipForwardCount)
             }
             .opacity(isActiveSession ? 1 : 0.42)
             .allowsHitTesting(isActiveSession)

@@ -60,6 +60,7 @@ struct HistoryView: View {
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }
+                        .accessibilityLabel("History menu")
                         .accessibilityIdentifier("history.menu")
                     }
                 }

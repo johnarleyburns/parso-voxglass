@@ -40,6 +40,7 @@ struct VoxglassContinueWidget: Widget {
 
 struct VoxglassWidgetView: View {
     let entry: WidgetSnapshotEntry
+    @Environment(\.widgetFamily) private var family
 
     var body: some View {
         if !entry.widgetsAreEnabled {
@@ -49,7 +50,100 @@ struct VoxglassWidgetView: View {
             }
             .containerBackground(.fill.tertiary, for: .widget)
         } else if let snapshot = entry.snapshot {
-            ViewThatFits(in: .horizontal) {
+            switch family {
+            case .accessoryCircular:
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Gauge(value: snapshot.fraction) {
+                        Text(String(snapshot.title.prefix(1)))
+                            .font(.system(.title3, design: .serif, weight: .bold))
+                    }
+                    .gaugeStyle(.accessoryCircularCapacity)
+                }
+                .widgetAccentable()
+                .containerBackground(.clear, for: .widget)
+
+            case .accessoryRectangular:
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(snapshot.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                        .widgetAccentable()
+                    Text("\(snapshot.minutesLeftInChapter) min left in chapter")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Gauge(value: snapshot.fraction) {}
+                        .gaugeStyle(.accessoryLinearCapacity)
+                }
+                .containerBackground(.clear, for: .widget)
+
+            case .accessoryInline:
+                let left: String
+                if let remaining = snapshot.bookRemaining {
+                    left = "\(Int(remaining / 3600)) h \(Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)) m left"
+                } else {
+                    left = "\(snapshot.minutesLeftInChapter) min left"
+                }
+                Text("\(left) · \(snapshot.title)")
+                    .containerBackground(.clear, for: .widget)
+
+            case .systemSmall:
+                ZStack(alignment: .bottomLeading) {
+                    if let url = CoverThumbnailStore.url(for: snapshot.bookID), let image = UIImage(contentsOfFile: url.path) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .widgetAccentedRenderingMode(.desaturated)
+                    } else {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(color(snapshot.backgroundHex ?? 0x17191D))
+                            .overlay(Image(systemName: "waveform").foregroundStyle(color(snapshot.accentHex ?? 0xE3A44B)))
+                    }
+                    LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 72)
+                        .frame(maxWidth: .infinity, alignment: .bottom)
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(snapshot.title)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(.white)
+                                .lineLimit(2)
+                                .widgetAccentable()
+                            Text("\(snapshot.minutesLeftInChapter) min left")
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        Spacer()
+                        if snapshot.isPlaying {
+                            Button(intent: TogglePlaybackIntent()) {
+                                Image(systemName: "pause.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(color(snapshot.accentHex ?? 0xE3A44B))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Pause")
+                        } else {
+                            Button(intent: ResumeListeningIntent()) {
+                                Image(systemName: "play.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(color(snapshot.accentHex ?? 0xE3A44B))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Resume")
+                        }
+                    }
+                    .padding(10)
+                }
+                .containerBackground(for: .widget) {
+                    LinearGradient(
+                        colors: [color(snapshot.backgroundHex ?? 0x17191D), color(0x0A0B0D)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+
+            default:
                 HStack(alignment: .top, spacing: 10) {
                     cover(for: snapshot)
                     VStack(alignment: .leading, spacing: 5) {
@@ -61,21 +155,9 @@ struct VoxglassWidgetView: View {
                         transport(for: snapshot)
                     }
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(snapshot.title).font(.headline).lineLimit(2).widgetAccentable()
-                    Text(snapshot.chapterTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    ProgressView(value: snapshot.fraction)
-                    if snapshot.isPlaying {
-                        Button(intent: TogglePlaybackIntent()) { Label("Pause", systemImage: "pause.fill") }
-                            .buttonStyle(.borderedProminent)
-                    } else {
-                        Button(intent: ResumeListeningIntent()) { Label("Resume", systemImage: "play.fill") }
-                            .buttonStyle(.borderedProminent)
-                    }
+                .containerBackground(for: .widget) {
+                    LinearGradient(colors: [color(snapshot.backgroundHex ?? 0x17191D), .black], startPoint: .top, endPoint: .bottom)
                 }
-            }
-            .containerBackground(for: .widget) {
-                LinearGradient(colors: [color(snapshot.backgroundHex ?? 0x17191D), .black], startPoint: .top, endPoint: .bottom)
             }
         } else {
             VStack(spacing: 6) {
@@ -91,6 +173,7 @@ struct VoxglassWidgetView: View {
     private func cover(for snapshot: NowPlayingSnapshot) -> some View {
         if let url = CoverThumbnailStore.url(for: snapshot.bookID), let image = UIImage(contentsOfFile: url.path) {
             Image(uiImage: image).resizable().scaledToFill().frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 10))
+                .widgetAccentedRenderingMode(.desaturated)
         } else {
             RoundedRectangle(cornerRadius: 10).fill(color(snapshot.backgroundHex ?? 0x17191D)).frame(width: 56, height: 56)
                 .overlay(Image(systemName: "waveform").foregroundStyle(color(snapshot.accentHex ?? 0xE3A44B)))
@@ -98,14 +181,20 @@ struct VoxglassWidgetView: View {
     }
 
     private func transport(for snapshot: NowPlayingSnapshot) -> some View {
-        HStack(spacing: 12) {
-            Button(intent: SkipBackwardIntent()) { Image(systemName: "gobackward.15") }.accessibilityLabel("Skip back 15 seconds")
+        let interval = UserDefaults(suiteName: "group.guru.parso.voxglass")?.integer(forKey: "voxglass.skipBackInterval") ?? 15
+        let skipBackSeconds = interval > 0 ? interval : 15
+        let forwardInterval = UserDefaults(suiteName: "group.guru.parso.voxglass")?.integer(forKey: "voxglass.skipForwardInterval") ?? 30
+        let skipForwardSeconds = forwardInterval > 0 ? forwardInterval : 30
+        return HStack(spacing: 12) {
+            Button(intent: SkipBackwardIntent()) { Image(systemName: SkipSymbols.back(skipBackSeconds)) }
+                .accessibilityLabel("Skip back \(skipBackSeconds) seconds")
             if snapshot.isPlaying {
                 Button(intent: TogglePlaybackIntent()) { Image(systemName: "pause.fill") }.accessibilityLabel("Pause")
             } else {
                 Button(intent: ResumeListeningIntent()) { Image(systemName: "play.fill") }.accessibilityLabel("Resume")
             }
-            Button(intent: SkipForwardIntent()) { Image(systemName: "goforward.30") }.accessibilityLabel("Skip forward 30 seconds")
+            Button(intent: SkipForwardIntent()) { Image(systemName: SkipSymbols.forward(skipForwardSeconds)) }
+                .accessibilityLabel("Skip forward \(skipForwardSeconds) seconds")
         }
         .buttonStyle(.plain)
     }
@@ -142,12 +231,14 @@ struct SleepTimerControl: ControlWidget {
 struct SkipBackControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "guru.parso.voxglass.skipBack") {
+            let interval = UserDefaults(suiteName: "group.guru.parso.voxglass")?.integer(forKey: "voxglass.skipBackInterval") ?? 15
+            let effective = interval > 0 ? interval : 15
             ControlWidgetButton("Skip Back", action: SkipBackwardIntent()) { _ in
-                Label("Skip Back", systemImage: SkipSymbols.back(15))
+                Label("Skip Back", systemImage: SkipSymbols.back(effective))
             }
         }
         .displayName("Skip Back")
-        .description("Skip back 15 seconds in Voxglass.")
+        .description("Skip back in Voxglass.")
     }
 }
 

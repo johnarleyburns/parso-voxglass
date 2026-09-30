@@ -839,7 +839,7 @@ struct ReviewView: View {
                     showValidationReport = true
                     Task {
                         await Task.yield()
-                        model.validationDestination = model.project?.profile.intendedDestination ?? .personalMaster
+                        model.validationDestination = model.selectableDestination(model.project?.profile.intendedDestination ?? .personalMaster)
                         await model.runValidation()
                     }
                 }
@@ -1783,7 +1783,7 @@ struct ValidateExportView: View {
                     .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
 
                 VStack(spacing: 0) {
-                    destinationRow(.personalMaster, label: "Personal listening", subtitle: "Preview it in Voxglass · lossless WAV chapters · free", id: "validation.destination.personal")
+                    destinationRow(.personalMaster, label: "Personal Listening", subtitle: "Preview it in Voxglass · lossless WAV chapters · free", id: "validation.destination.personal")
                     VoxglassListDivider()
                     destinationRow(.librivox, label: "LibriVox", subtitle: "128 kbps MP3 per section · the built-in submission path", id: "validation.destination.librivox")
                 }
@@ -2873,6 +2873,7 @@ private struct HandoffCeremony: View {
                 .accessibilityIdentifier("handoff.shareCard")
             }
         }
+        .accessibilityIdentifier("contribution.done")
         .padding(16)
         .raisedSurface(tint: Palette.brass.opacity(0.12))
         .sensoryFeedback(.success, trigger: celebration)

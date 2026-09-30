@@ -86,8 +86,9 @@ jobs:
 
       # The driver streams swift-testing output through a pty (it otherwise
       # block-buffers and a hung suite logs nothing) and samples the test
-      # process if it outlives the watchdog, so a hang names itself.
-      - name: Run logic tests (serial; performance tests local-only)
+      # process if it outlives the watchdog, so a hang names itself. Regular
+      # suites run in parallel; performance tests stay local.
+      - name: Run logic tests (parallel; performance tests local-only)
         run: bash scripts/ci-logic-tests.sh
 
   guarded-tests:

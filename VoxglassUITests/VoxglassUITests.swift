@@ -93,6 +93,7 @@ final class VoxglassUITests: XCTestCase {
         assertStorageCardsFitCompactWidth(app: app)
         assertHistoryOpensFromExploreWithoutCrashing(app: app)
         assertFeaturedCollectionsRespectSelectedLanguage(app: app)
+        auditBookPageIfPresent(app: app)
 
         // ──────────────────────────────────────────────────────────────────
         // §16.3 test 1: Narration → create a project from a need → record
@@ -371,6 +372,7 @@ final class VoxglassUITests: XCTestCase {
         tab("Listen", in: app).tap()
         XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 15))
         XCTAssertNoThrow(try auditAccessibility(app, "Listen accessibility XL"))
+        auditBookPageIfPresent(app: app)
     }
 
     /// Runs Xcode's accessibility audit on the current screen. Only system
@@ -384,6 +386,19 @@ final class VoxglassUITests: XCTestCase {
     }
 
     private static let auditAllowlist: Set<String> = []
+
+    private func auditBookPageIfPresent(app: XCUIApplication) {
+        tab("Listen", in: app).tap()
+        let continueListening = app.descendants(matching: .any)["listen.continueListening"]
+        guard continueListening.waitForExistence(timeout: 4) else { return }
+        continueListening.tap()
+        let player = app.buttons["bookpage.play"].exists
+            ? app.buttons["bookpage.play"]
+            : app.buttons["bookpage.togglePlayback"]
+        guard player.waitForExistence(timeout: 10) else { return }
+        XCTAssertNoThrow(try auditAccessibility(app, "Book page"))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+    }
 
     private func assertNarrationRailSpacing(app: XCUIApplication) {
         let shelf = app.descendants(matching: .any)["home.startNarrationShelf"]

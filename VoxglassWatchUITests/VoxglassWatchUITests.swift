@@ -58,6 +58,8 @@ final class VoxglassWatchUITests: XCTestCase {
 
         XCTAssertTrue(app.navigationBars["My Books"].waitForExistence(timeout: 20),
                       "Watch My Books did not render.\n\(app.debugDescription)")
+        XCTAssertNoThrow(try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
+                                                                  .sufficientElementDescription, .textClipped, .trait]))
         let alice = app.staticTexts["Alice's Adventures in Wonderland"]
         XCTAssertTrue(alice.waitForExistence(timeout: 10),
                       "Injected My Books fixture did not render.\n\(app.debugDescription)")
@@ -75,6 +77,8 @@ final class VoxglassWatchUITests: XCTestCase {
         ensureVisible(app.staticTexts["watch.book.output"], app: app)
         XCTAssertTrue(app.staticTexts["watch.book.output"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["watch.book.phase"].waitForExistence(timeout: 10))
+        XCTAssertNoThrow(try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
+                                                                  .sufficientElementDescription, .textClipped, .trait]))
         waitForPhase("Playing", app: app)
         // The simulator's built-in output reports as "Speaker"; real
         // hardware reports "Apple Watch" — either is a legitimate resolved

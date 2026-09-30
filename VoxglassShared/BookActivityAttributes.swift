@@ -1,3 +1,4 @@
+#if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
 import ActivityKit
 import Foundation
 
@@ -23,3 +24,4 @@ struct BookActivityAttributes: ActivityAttributes {
     let author: String
     let narrator: String?
 }
+#endif

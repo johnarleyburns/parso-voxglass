@@ -70,7 +70,10 @@ import VoxglassCore
         let capacity = total + 1
         let ring = CaptureRingBuffer(capacity: capacity)
         let chunkSize = 64
-        let deadline = ContinuousClock.now + .seconds(30)
+        // The host test runner is intentionally parallel; under a fully
+        // loaded runner a detached task can wait for a scheduler slot longer
+        // than the short functional timeout used by this test.
+        let deadline = ContinuousClock.now + .seconds(120)
 
         final class Box: @unchecked Sendable {
             var received = 0

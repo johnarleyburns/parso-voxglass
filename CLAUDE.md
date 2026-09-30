@@ -17,13 +17,16 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 - Set the command timeout to at least **10 minutes (600 seconds)** for `git commit`; the pre-commit hook runs the host `swift test` suite only.
 - Set the command timeout to about **2 minutes (120 seconds)** for `git push`; the pre-push hook runs no tests or guards (CI verifies pushed commits).
 
+## Fast codebase search (`rg`)
+
+- Use `rg` (ripgrep) instead of `grep` for codebase search and exploration for higher speed.
+- `rg` automatically skips ignored paths, build artifacts, and binary files, avoiding long search timeouts.
+
 ## CI/CD shell portability
 
 - CI/CD scripts must use standard Unix tools available on the selected runner image.
-- Do not use `rg`, or any other non-standard command, in CI/CD scripts unless the workflow
-  explicitly installs that command before the script runs.
 - Prefer portable `grep`, `find`, `sed`, and `awk` constructs for guards that run on both
-  macOS and Linux.
+  macOS and Linux unless `rg` is explicitly installed in the runner workflow.
 
 ## Long-running command handling
 
@@ -43,9 +46,13 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 - The local UI runner (`scripts/test.sh`) must acquire its checkout-wide lock before starting the
   iPhone smoke test and hold it until the Watch smoke test and cleanup finish. Separate local
   invocations must wait for that lock rather than overlap.
-- Local logic tests use `swift test --no-parallel` (or the repository wrapper that supplies it).
-  Keep serial execution explicit even when a test suite appears independent; cache, audio, and
-  platform-target tests share process and derived-data state.
+- Local logic tests use the default parallel `swift test` runner (or the repository wrapper that
+  supplies it). Parallelize independent host suites for reasonable turnaround. Keep Apple-platform
+  builds and UI smoke tests sequential: iPhone and Watch targets share project/build state and may
+  not overlap.
+- After CI is green for a pushed commit, delete only the disposable Voxglass build caches (`.build`,
+  Voxglass Xcode DerivedData, and temporary Voxglass audit/export directories). Do not delete source
+  files or caches belonging to other projects.
 
 ## Xcode simulator build commands (iPhone + Watch)
 

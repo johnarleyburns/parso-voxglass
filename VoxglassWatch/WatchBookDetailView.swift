@@ -156,6 +156,11 @@ struct WatchBookDetailView: View {
             } else {
                 ProgressView(value: playback.progress)
                     .accessibilityValue("\(Int(playback.progress * 100)) percent")
+                    .accessibilityAdjustableAction { direction in
+                        let delta: TimeInterval = 15
+                        let newPos = direction == .increment ? playback.position + delta : playback.position - delta
+                        services.seek(to: max(0, min(playback.duration, newPos)))
+                    }
                     .accessibilityIdentifier("watch.book.progress")
             }
             HStack {
