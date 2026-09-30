@@ -18,7 +18,11 @@ struct WatchLibraryView: View {
                     .accessibilityIdentifier("watch.empty.downloads")
             } else {
                 ForEach(services.visibleBooks, id: \.id) { book in
-                    NavigationLink { WatchBookDetailView(book: book) } label: { WatchBookRow(book: book) }.accessibilityIdentifier("watch.book.\(book.id.rawValue)")
+                    NavigationLink { WatchBookDetailView(book: book) } label: { WatchBookRow(book: book) }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(watchBookAccessibilityLabel(book))
+                        .accessibilityHint("Double-tap to open")
+                        .accessibilityIdentifier("watch.book.\(book.id.rawValue)")
                 }
             }
             aboutRow
@@ -58,6 +62,15 @@ struct WatchLibraryView: View {
         toastDismissWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: work)
     }
+
+    private func watchBookAccessibilityLabel(_ book: WatchBookDTO) -> String {
+        var parts = [book.title]
+        if let author = book.author, !author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            parts.append("by \(author)")
+        }
+        parts.append(services.downloaded.contains(book.id) ? "downloaded" : "on iPhone")
+        return parts.joined(separator: ", ")
+    }
 }
 
 private struct WatchBookRow: View {
@@ -71,11 +84,13 @@ private struct WatchBookRow: View {
             }
             Spacer()
             if services.downloading.contains(book.id) {
-                ProgressView().controlSize(.small)
+                ProgressView().controlSize(.small).accessibilityLabel("Downloading")
             } else {
                 Image(systemName: services.downloaded.contains(book.id) ? "checkmark.circle.fill" : "arrow.down.circle")
                     .foregroundStyle(services.downloaded.contains(book.id) ? .green : .secondary)
+                    .accessibilityHidden(true)
             }
         }
+        .accessibilityHidden(true)
     }
 }

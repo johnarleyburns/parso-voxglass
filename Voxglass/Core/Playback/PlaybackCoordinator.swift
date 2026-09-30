@@ -4,6 +4,11 @@ import Observation
 import ParsoAudioStreaming
 import SwiftUI
 
+public extension Notification.Name {
+    static let playbackAccessibilityAnnouncement = Notification.Name("VoxglassPlaybackAccessibilityAnnouncement")
+    static let offlineBookDownloadCompleted = Notification.Name("VoxglassOfflineBookDownloadCompleted")
+}
+
 @MainActor
 @Observable
 public final class PlaybackCoordinator {
@@ -1070,6 +1075,16 @@ public final class PlaybackCoordinator {
         sleepMode = mode
         sleepRemaining = sleepTimer.remaining
         updateSleepDisplayMinute()
+        let announcement: String
+        switch mode {
+        case .off:
+            announcement = "Sleep timer off"
+        case .endOfChapter:
+            announcement = "Sleep timer set to end of chapter"
+        case .duration(let interval):
+            announcement = "Sleep timer set for \(Int(interval / 60)) minutes"
+        }
+        NotificationCenter.default.post(name: .playbackAccessibilityAnnouncement, object: announcement)
 
         switch mode {
         case .endOfChapter:
@@ -1110,6 +1125,10 @@ public final class PlaybackCoordinator {
         sleepRemaining = nil
         sleepDisplayMinute = nil
         stopSleepTask()
+        NotificationCenter.default.post(
+            name: .playbackAccessibilityAnnouncement,
+            object: "Sleep timer ended. Playback paused."
+        )
         Task { @MainActor in await fadeOutAndPause() }
     }
 

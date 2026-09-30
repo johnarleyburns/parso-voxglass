@@ -34,7 +34,6 @@ struct VoxglassApp: App {
                 .environmentObject(services.playlistStore)
                 .environmentObject(services.libraryBackupService)
                 .environmentObject(services.phoneAudioRelay)
-                .preferredColorScheme(.dark)
                 .task {
                     discovery.phoneProduction = services.productionEnvironment
                     discovery.library = NarrationLibraryImporter(services: services)

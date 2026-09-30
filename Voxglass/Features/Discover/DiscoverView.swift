@@ -737,7 +737,14 @@ private struct ExploreCollectionCard: View {
         return (0..<3).map { index in
             guard books.indices.contains(index) else { return (collection.title, nil) }
             let book = books[index]
-            return (book.title, book.author.isEmpty ? nil : book.author)
+            let author = book.author.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalized = author.lowercased().replacingOccurrences(of: "  ", with: " ")
+            let isPlaceholder = normalized.isEmpty
+                || normalized == "unknown"
+                || normalized == "unknown author"
+                || normalized == "uknown"
+                || normalized == "uknown author"
+            return (book.title, isPlaceholder ? nil : author)
         }
     }
 

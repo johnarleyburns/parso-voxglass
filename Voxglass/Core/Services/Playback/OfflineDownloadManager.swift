@@ -39,6 +39,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private var chapterFractions: [UUID: [UUID: Double]] = [:]  // bookID -> chapterID -> 0...1
     private var plannedCount: [UUID: Int] = [:]                 // bookID -> chapters in job
     private var failedBooks: Set<UUID> = []
+    private var announcedCachedBooks: Set<UUID> = []
     private var cancelledTaskIdentifiers: Set<Int> = []
     private var taskRegistry: [Int: TaskInfo]
     private var backgroundCompletionHandler: (() -> Void)?
@@ -347,8 +348,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         let fractions = chapterFractions[bookID] ?? [:]
         let done = fractions.values.filter { $0 >= 1.0 }.count
         if done >= total {
+            let wasCached = state[bookID] == .cached
             state[bookID] = .cached
             failedBooks.remove(bookID)
+            if !wasCached, announcedCachedBooks.insert(bookID).inserted {
+                NotificationCenter.default.post(name: .offlineBookDownloadCompleted, object: bookID)
+            }
         } else {
             let sum = fractions.values.reduce(0, +)
             state[bookID] = .downloading(progress: min(sum / Double(total), 0.999))

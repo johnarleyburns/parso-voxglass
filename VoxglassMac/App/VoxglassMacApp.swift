@@ -11,7 +11,6 @@ struct VoxglassMacApp: App {
                 .environmentObject(services.catalogStore)
                 .environmentObject(services.offlineDownloads)
                 .environment(services.playback)
-                .preferredColorScheme(.dark)
                 .task { await services.bootstrap() }
         }
         .commands { VoxglassMacCommands() }
@@ -19,7 +18,6 @@ struct VoxglassMacApp: App {
         Settings {
             MacSettingsView(services: services)
                 .frame(minWidth: 620, minHeight: 480)
-                .preferredColorScheme(.dark)
         }
     }
 }

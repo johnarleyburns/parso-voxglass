@@ -27,22 +27,14 @@ struct MiniPlayerAccessory: View {
                     userToggleCount += 1
                     playback.togglePlayPause()
                 } label: {
-                    Image(systemName: session.isPlaying ? "pause.fill" : "play.fill")
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentTransition(.symbolEffect(.replace.downUp))
+                    playPauseSymbol(isPlaying: session.isPlaying)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(session.isPlaying ? "Pause" : "Play") // l10n-exempt: state-dependent accessibility or status copy
                 .accessibilityIdentifier("chrome.miniPlayer.playPause")
                 .sensoryFeedback(.impact(weight: .light), trigger: userToggleCount)
                 if placement == .expanded {
-                    Button { Task { await playback.skipToNextChapter() } } label: {
-                        Image(systemName: SkipSymbol.forward(30))
-                            .frame(minWidth: 44, minHeight: 44)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Skip forward")
-                    .accessibilityIdentifier("chrome.miniPlayer.skipForward")
+                    expandedControls
                 }
             }
             .padding(.horizontal, 10)
@@ -50,12 +42,15 @@ struct MiniPlayerAccessory: View {
             .glassEffect(.regular, in: .capsule)
             .accessibilityIdentifier("chrome.miniPlayer")
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Now playing, \(session.book.title), \(session.isPlaying ? "playing" : "paused")")
+            .accessibilityLabel("Now playing, \(session.book.title), \(session.chapter.title), \(session.isPlaying ? "playing" : "paused")")
             .accessibilityAction(named: session.isPlaying ? "Pause" : "Play") {
                 playback.togglePlayPause()
             }
             .accessibilityAction(named: "Skip forward") {
                 Task { await playback.skipToNextChapter() }
+            }
+            .accessibilityAction(named: "Skip back 15 seconds") {
+                Task { await playback.skip(by: -15) }
             }
             .accessibilityAction(named: "Open player") {
                 router.presentNowPlayingFromMiniPlayer(currentBookID: session.book.id)
@@ -75,5 +70,29 @@ struct MiniPlayerAccessory: View {
             .lineLimit(1)
             .minimumScaleFactor(0.62)
             .allowsTightening(true)
+    }
+
+    private func playPauseSymbol(isPlaying: Bool) -> some View {
+        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+            .frame(minWidth: 44, minHeight: 44)
+            .contentTransition(.symbolEffect(.replace.downUp))
+    }
+
+    @ViewBuilder
+    private var expandedControls: some View {
+        Button { Task { await playback.skip(by: -15) } } label: {
+            Image(systemName: SkipSymbol.back(15))
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Skip back 15 seconds")
+        .accessibilityIdentifier("chrome.miniPlayer.skipBackward")
+        Button { Task { await playback.skipToNextChapter() } } label: {
+            Image(systemName: SkipSymbol.forward(30))
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Skip forward")
+        .accessibilityIdentifier("chrome.miniPlayer.skipForward")
     }
 }

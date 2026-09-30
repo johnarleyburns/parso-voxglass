@@ -58,6 +58,18 @@ struct RootView: View {
         .onChange(of: playback.currentSession?.isPlaying) { _, _ in
             WidgetSnapshotWriter.write(playback: playback)
         }
+        .onChange(of: playback.sleepMode) { _, _ in
+            WidgetSnapshotWriter.write(playback: playback)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .playbackAccessibilityAnnouncement)) { notification in
+            guard let message = notification.object as? String else { return }
+            AccessibilityNotification.Announcement(message).post()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .offlineBookDownloadCompleted)) { notification in
+            guard let bookID = notification.object as? UUID,
+                  let title = libraryStore.book(withID: bookID)?.book.title else { return }
+            AccessibilityNotification.Announcement("\(title) downloaded").post()
+        }
         .onChange(of: phoneAudioRelay.connectionToast) { _, value in
             guard value != nil else { return }
             Task {

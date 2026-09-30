@@ -29,7 +29,7 @@ struct WatchBookDetailView: View {
                 // beside it).
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title).font(.headline).lineLimit(2).accessibilityIdentifier("watch.book.title")
-                    artwork
+                    artwork.accessibilityHidden(true)
                     if let author = book.author, !author.isEmpty {
                         Text(author).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                     }
@@ -53,6 +53,7 @@ struct WatchBookDetailView: View {
                         Text(chapter.title).lineLimit(1)
                     }
                     .accessibilityIdentifier("watch.chapter.\(chapter.id.rawValue)")
+                    .accessibilityLabel("Chapter \(chapter.index + 1), \(chapter.title)")
                 }
             }
             if services.isConnected {
@@ -120,6 +121,8 @@ struct WatchBookDetailView: View {
                 .accessibilityIdentifier("watch.book.nextChapter")
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Playback controls for \(book.title)")
     }
 
     /// Status/progress detail — only meaningful once this book is actually
@@ -151,7 +154,9 @@ struct WatchBookDetailView: View {
             if indeterminateProgress {
                 ProgressView().accessibilityIdentifier("watch.book.progress")
             } else {
-                ProgressView(value: playback.progress).accessibilityIdentifier("watch.book.progress")
+                ProgressView(value: playback.progress)
+                    .accessibilityValue("\(Int(playback.progress * 100)) percent")
+                    .accessibilityIdentifier("watch.book.progress")
             }
             HStack {
                 Text(format(playback.position)).accessibilityIdentifier("watch.book.elapsed")

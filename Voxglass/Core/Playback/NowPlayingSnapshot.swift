@@ -9,7 +9,6 @@ public struct NowPlayingSnapshot: Codable, Equatable, Sendable {
     public let chapterTitle: String
     public let fraction: Double
     public let minutesLeftInChapter: Int
-    public let coverThumbnailPNG: Data?
     public let paletteIndex: Int
     public let backgroundHex: UInt32?
     public let accentHex: UInt32?
@@ -17,13 +16,13 @@ public struct NowPlayingSnapshot: Codable, Equatable, Sendable {
     public let isPlaying: Bool
     public let updatedAt: Date
 
-    public init(bookID: UUID, title: String, author: String, chapterEyebrow: String?, chapterTitle: String, fraction: Double, minutesLeftInChapter: Int, coverThumbnailPNG: Data? = nil, paletteIndex: Int, backgroundHex: UInt32? = nil, accentHex: UInt32? = nil, bookRemaining: TimeInterval? = nil, isPlaying: Bool = false, updatedAt: Date = Date(timeIntervalSince1970: 0)) {
+    public init(bookID: UUID, title: String, author: String, chapterEyebrow: String?, chapterTitle: String, fraction: Double, minutesLeftInChapter: Int, paletteIndex: Int, backgroundHex: UInt32? = nil, accentHex: UInt32? = nil, bookRemaining: TimeInterval? = nil, isPlaying: Bool = false, updatedAt: Date = Date(timeIntervalSince1970: 0)) {
         self.bookID = bookID; self.title = title; self.author = author; self.chapterEyebrow = chapterEyebrow; self.chapterTitle = chapterTitle
-        self.fraction = min(max(fraction, 0), 1); self.minutesLeftInChapter = max(minutesLeftInChapter, 0); self.coverThumbnailPNG = coverThumbnailPNG; self.paletteIndex = paletteIndex
+        self.fraction = min(max(fraction, 0), 1); self.minutesLeftInChapter = max(minutesLeftInChapter, 0); self.paletteIndex = paletteIndex
         self.backgroundHex = backgroundHex; self.accentHex = accentHex; self.bookRemaining = bookRemaining; self.isPlaying = isPlaying; self.updatedAt = updatedAt
     }
 
-    private enum CodingKeys: String, CodingKey { case bookID, title, author, chapterEyebrow, chapterTitle, fraction, minutesLeftInChapter, coverThumbnailPNG, paletteIndex, backgroundHex, accentHex, bookRemaining, isPlaying, updatedAt }
+    private enum CodingKeys: String, CodingKey { case bookID, title, author, chapterEyebrow, chapterTitle, fraction, minutesLeftInChapter, paletteIndex, backgroundHex, accentHex, bookRemaining, isPlaying, updatedAt }
 
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -35,7 +34,6 @@ public struct NowPlayingSnapshot: Codable, Equatable, Sendable {
             chapterTitle: try values.decode(String.self, forKey: .chapterTitle),
             fraction: try values.decode(Double.self, forKey: .fraction),
             minutesLeftInChapter: try values.decode(Int.self, forKey: .minutesLeftInChapter),
-            coverThumbnailPNG: try values.decodeIfPresent(Data.self, forKey: .coverThumbnailPNG),
             paletteIndex: try values.decode(Int.self, forKey: .paletteIndex),
             backgroundHex: try values.decodeIfPresent(UInt32.self, forKey: .backgroundHex),
             accentHex: try values.decodeIfPresent(UInt32.self, forKey: .accentHex),

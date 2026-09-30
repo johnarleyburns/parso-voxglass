@@ -6,25 +6,31 @@ import Testing
 /// hands-free in CarPlay: playback intents are `AudioPlaybackIntent`s, and
 /// none of them asks to foreground the app — Siri refuses those while driving.
 @Suite struct VoxglassIntentsContractTests {
-    private static let path = "Voxglass/App/VoxglassIntents.swift"
+    private static let appPath = "Voxglass/App/VoxglassIntents.swift"
+    private static let sharedPath = "VoxglassShared/PlaybackControlIntents.swift"
 
     @Test func playbackIntentsAreAudioPlaybackIntents() throws {
-        let text = try source(Self.path)
-        #expect(text.contains("struct ResumeListeningIntent: AudioPlaybackIntent"))
-        #expect(text.contains("struct PlayBookIntent: AudioPlaybackIntent"))
+        let appText = try source(Self.appPath)
+        let sharedText = try source(Self.sharedPath)
+        #expect(sharedText.contains("struct ResumeListeningIntent: AudioPlaybackIntent"))
+        #expect(!withoutLineComments(appText).contains("struct ResumeListeningIntent"))
+        #expect(appText.contains("struct PlayBookIntent: AudioPlaybackIntent"))
     }
 
     @Test func noIntentForegroundsTheApp() throws {
-        let text = try source(Self.path)
-        #expect(!text.contains("openAppWhenRun = true"))
-        let intents = text.components(separatedBy: ": AudioPlaybackIntent").count - 1
-        let backgroundOnly = text.components(separatedBy: "static let openAppWhenRun = false").count - 1
-        #expect(intents >= 2)
-        #expect(backgroundOnly == intents)
+        let appText = try source(Self.appPath)
+        let sharedText = try source(Self.sharedPath)
+        #expect(!appText.contains("openAppWhenRun = true"))
+        #expect(!sharedText.contains("openAppWhenRun = true"))
+        let appIntents = declarationCount(appText, marker: ": AudioPlaybackIntent")
+        let sharedIntents = declarationCount(sharedText, marker: "static let openAppWhenRun = false")
+        #expect(appIntents == 1)
+        #expect(sharedIntents == 5)
+        #expect(declarationCount(appText, marker: "static let openAppWhenRun = false") == appIntents)
     }
 
     @Test func everyShortcutPhraseNamesTheApp() throws {
-        let text = try source(Self.path)
+        let text = try source(Self.appPath)
         let phrases = text
             .split(separator: "\n")
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -36,7 +42,7 @@ import Testing
     }
 
     @Test func siriBookLookupSharesTheCarPlaySearchMatcher() throws {
-        let intents = try source(Self.path)
+        let intents = try source(Self.appPath)
         let carPlay = try source("Voxglass/Core/CarPlay/CarPlayMenuBuilder.swift")
         #expect(intents.contains("LibraryVoiceSearch.rank("))
         #expect(carPlay.contains("LibraryVoiceSearch.rank("))
@@ -47,6 +53,30 @@ import Testing
         #expect(services.contains("VoxglassIntentBridge.observeLibrary(libraryStore)"))
     }
 
+    @Test func sharedAndWidgetTargetsHaveNoSecondPlaybackStore() throws {
+        let paths = [
+            "VoxglassShared/PlaybackControlIntents.swift",
+            "VoxglassShared/PlaybackCommand.swift",
+            "VoxglassShared/BookActivityAttributes.swift",
+            "VoxglassWidgets/VoxglassWidgets.swift",
+            "VoxglassWidgets/PlaybackCommandRouter.swift"
+        ]
+        for path in paths {
+            let text = try source(path)
+            for forbidden in ["PositionStore", "SQLitePositionStore", "AppDatabase(", "LibraryRepository"] {
+                #expect(!text.contains(forbidden), "Second playback store leaked into \(path): \(forbidden)")
+            }
+        }
+    }
+
+    @Test func skipCommandsUseStoredIntervals() throws {
+        let router = try source("Voxglass/App/PlaybackCommandRouter.swift")
+        #expect(router.contains("Keys.skipBackInterval"))
+        #expect(router.contains("Keys.skipForwardInterval"))
+        #expect(!router.contains("skip(by: -15"))
+        #expect(!router.contains("skip(by: 30"))
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -55,5 +85,18 @@ import Testing
 
     private func source(_ relativePath: String) throws -> String {
         try String(contentsOf: repoRoot.appendingPathComponent(relativePath), encoding: .utf8)
+    }
+
+    private func declarationCount(_ text: String, marker: String) -> Int {
+        text.split(separator: "\n").count { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            return !trimmed.hasPrefix("//") && trimmed.contains(marker)
+        }
+    }
+
+    private func withoutLineComments(_ text: String) -> String {
+        text.split(separator: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
     }
 }

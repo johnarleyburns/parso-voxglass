@@ -19,16 +19,12 @@ enum VoxglassTheme {
     static let danger = Palette.danger
 
     static var libraryBackground: LinearGradient {
-        LinearGradient(colors: [Color(hex: 0x101216), Color(hex: 0x0B0C0F)],
+        LinearGradient(colors: [Palette.surface, Palette.bg],
                        startPoint: .top, endPoint: .bottom)
     }
 
     static var warmBackground: LinearGradient {
-        LinearGradient(stops: [
-            .init(color: Color(hex: 0x241A10), location: 0),
-            .init(color: Color(hex: 0x12100C), location: 0.34),
-            .init(color: Color(hex: 0x0B0C0F), location: 0.70)
-        ], startPoint: .top, endPoint: .bottom)
+        LinearGradient(colors: [Palette.raised, Palette.bg], startPoint: .top, endPoint: .bottom)
     }
 }
 
@@ -43,7 +39,13 @@ enum ChromeMetrics {
 enum Palette {
     private static func dynamic(_ pair: PaletteSpec.Pair) -> Color {
         Color(uiColor: UIColor { traits in
-            let hex = traits.accessibilityContrast == .high ? pair.highContrast : pair.standard
+            let isLight = traits.userInterfaceStyle == .light
+            let hex: UInt32
+            if isLight {
+                hex = traits.accessibilityContrast == .high ? pair.lightHighContrast : pair.light
+            } else {
+                hex = traits.accessibilityContrast == .high ? pair.highContrast : pair.standard
+            }
             return UIColor(
                 red: CGFloat((hex >> 16) & 0xFF) / 255,
                 green: CGFloat((hex >> 8) & 0xFF) / 255,
@@ -58,19 +60,43 @@ enum Palette {
     static let ink2 = dynamic(PaletteSpec.ink2)
     static let ink3 = dynamic(PaletteSpec.ink3)
     static let brass = dynamic(PaletteSpec.brass)
-    static let brassDeep = Color(hex: 0xB97F2E)
-    static let ok = Color(hex: 0x4CD471)
-    static let danger = Color(hex: 0xFF6B5E)
+    static let brassDeep = dynamic(PaletteSpec.Pair(
+        standard: 0xB97F2E,
+        highContrast: 0xD99A3C,
+        light: 0x704600,
+        lightHighContrast: 0x553300
+    ))
+    static let ok = dynamic(PaletteSpec.Pair(
+        standard: 0x4CD471,
+        highContrast: 0x7AE99A,
+        light: 0x16733A,
+        lightHighContrast: 0x0B5428
+    ))
+    static let danger = dynamic(PaletteSpec.Pair(
+        standard: 0xFF6B5E,
+        highContrast: 0xFFAAA2,
+        light: 0xB42318,
+        lightHighContrast: 0x8E1710
+    ))
     static let hairline = Color(uiColor: UIColor { traits in
-        UIColor.white.withAlphaComponent(traits.accessibilityContrast == .high ? PaletteSpec.hairlineAlpha.highContrast : PaletteSpec.hairlineAlpha.standard)
+        let alpha = traits.accessibilityContrast == .high ? PaletteSpec.hairlineAlpha.highContrast : PaletteSpec.hairlineAlpha.standard
+        let base = traits.userInterfaceStyle == .light ? UIColor.black : UIColor.white
+        return base.withAlphaComponent(alpha)
     })
     static let surface = dynamic(PaletteSpec.surface)
     static let raised = dynamic(PaletteSpec.raised)
     static let surfaceLine = Color(uiColor: UIColor { traits in
-        UIColor.white.withAlphaComponent(traits.accessibilityContrast == .high ? PaletteSpec.surfaceLineAlpha.highContrast : PaletteSpec.surfaceLineAlpha.standard)
+        let alpha = traits.accessibilityContrast == .high ? PaletteSpec.surfaceLineAlpha.highContrast : PaletteSpec.surfaceLineAlpha.standard
+        let base = traits.userInterfaceStyle == .light ? UIColor.black : UIColor.white
+        return base.withAlphaComponent(alpha)
     })
     static let scrim = Color(hex: 0x0A0B0D).opacity(0.92)
-    static let onBrass = Color(hex: 0x21170B)
+    static let onBrass = dynamic(PaletteSpec.Pair(
+        standard: 0x21170B,
+        highContrast: 0x120B03,
+        light: 0xFFFFFF,
+        lightHighContrast: 0xFFFFFF
+    ))
 }
 
 extension Color {
