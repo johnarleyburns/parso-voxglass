@@ -49,8 +49,8 @@ struct BookRowView: View {
         if let author = book.book.displayAuthorLine, !author.isEmpty {
             parts.append("by \(author)")
         }
-        if let narrator = book.book.narrator, !narrator.isEmpty {
-            parts.append("read by \(narrator)")
+        if !book.book.narrators.isEmpty {
+            parts.append("read by \(book.book.narrators.joined(separator: ", "))")
         }
         return parts.joined(separator: ", ")
     }
