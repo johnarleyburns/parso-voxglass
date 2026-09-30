@@ -108,7 +108,6 @@ struct ListeningStatsView: View {
                     Text(terms[index].term.capitalized)
                         .voxFont(.footnote)
                         .foregroundStyle(Palette.ink2)
-                        .lineLimit(1)
                     Spacer()
                     Text(durationString(terms[index].seconds))
                         .voxFont(.caption, design: .monospaced) // mono-exempt: statistics value

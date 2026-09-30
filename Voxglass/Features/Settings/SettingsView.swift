@@ -239,7 +239,6 @@ private struct LanguagesCard: View {
         } label: {
             HStack(spacing: 6) {
                 Text(language.displayName)
-                    .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 if isSelected {
                     Image(systemName: "checkmark")

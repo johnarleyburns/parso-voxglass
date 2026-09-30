@@ -12,13 +12,13 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .voxFont(.body, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier(titleIdentifier ?? "")
                     .accessibilityAddTraits(.isHeader)
                 if let subtitle {
-                    Text(subtitle)
+                    Text(LocalizedStringKey(subtitle))
                         .voxFont(.footnote)
                         .foregroundStyle(Palette.ink3)
                 }
@@ -48,9 +48,9 @@ struct FilterChip: View {
                     Image(systemName: systemImage)
                         .voxFont(.caption2, weight: .semibold)
                 }
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .voxFont(.caption, weight: .semibold)
-                    .lineLimit(1)
+                    .lineLimit(1) // lineLimit-exempt: compact filter control remains one tap target
             }
             .padding(.horizontal, 14)
             .frame(height: height)
@@ -222,7 +222,6 @@ struct BookListRow: View {
                 Text(title)
                     .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
                     .minimumScaleFactor(0.86)
                 if isImported {
                     ImportedTag()
@@ -230,25 +229,21 @@ struct BookListRow: View {
                     Text(subtitle)
                         .voxType(.meta)
                         .foregroundStyle(Palette.ink3)
-                        .lineLimit(1)
                 }
                 if let tertiary, !tertiary.isEmpty {
                     Text(tertiary)
                         .voxFont(.caption)
                         .foregroundStyle(Palette.brass)
-                        .lineLimit(1)
                 }
                 if let metadata, !metadata.isEmpty {
                     Text(metadata)
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
-                        .lineLimit(1)
                 }
                 if let watchStatus, !watchStatus.isEmpty {
                     Label(watchStatus, systemImage: "applewatch")
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.brass)
-                        .lineLimit(1)
                 }
                 if let progress, progress > 0, progress < 1 {
                     GeometryReader { geometry in
@@ -340,6 +335,7 @@ struct BookListRow: View {
                 .voxFont(.body, weight: .semibold)
                 .foregroundStyle(Palette.brass)
                 .frame(width: 28, height: 44)
+                .symbolEffect(.bounce, value: state)
         case .downloading(let progress):
             ZStack {
                 Circle()
@@ -391,13 +387,11 @@ struct DisclosureListRow: View {
                 Text(title)
                     .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(isEnabled ? Palette.ink : Palette.ink2)
-                    .lineLimit(1)
                     .minimumScaleFactor(0.82)
                 if let detail {
                     Text(detail)
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
-                        .lineLimit(1)
                 }
             }
 
@@ -462,7 +456,7 @@ struct SecondaryActionButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .voxFont(.subheadline, weight: .semibold)
-                .lineLimit(1)
+                .lineLimit(1) // lineLimit-exempt: compact full-width action control
                 .minimumScaleFactor(0.76)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
@@ -529,13 +523,11 @@ struct HorizontalBookCard: View {
             Text(book.book.title)
                 .voxFont(.caption, weight: .semibold)
                 .foregroundStyle(Palette.ink)
-                .lineLimit(1)
                 .padding(.top, 7)
             if let author = book.book.displayAuthorLine {
                 Text(author)
                     .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
                     .padding(.top, 1)
             }
         }

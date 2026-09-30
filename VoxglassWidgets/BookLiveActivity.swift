@@ -19,11 +19,11 @@ struct BookLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(context.attributes.title).lineLimit(1).widgetAccentable()
+                        Text(context.attributes.title).widgetAccentable()
                         Text("Chapter \(context.state.chapterIndex) of \(context.state.chapterCount)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text(context.state.chapterTitle).font(.caption).lineLimit(1)
+                        Text(context.state.chapterTitle).font(.caption)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -73,7 +73,7 @@ struct BookLiveActivity: Widget {
                             .monospacedDigit()
                             .frame(width: 38)
                     } else {
-                        Text(context.state.chapterTitle).lineLimit(1)
+                        Text(context.state.chapterTitle)
                     }
                 } else {
                     Image(systemName: "pause.fill")
@@ -107,12 +107,10 @@ struct BookLiveActivity: Widget {
                         .foregroundStyle(Color(red: 0.89, green: 0.64, blue: 0.29))
                     Text(context.attributes.title)
                         .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
                         .foregroundStyle(.white)
                     Text(detailLine(context: context))
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
-                        .lineLimit(1)
                 }
                 Spacer(minLength: 4)
                 if let sleepText = sleepCapsuleText(context.state) {

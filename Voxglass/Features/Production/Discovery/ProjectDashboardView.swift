@@ -9,6 +9,7 @@ import VoxglassCore
 /// storage card is prominent because that is where offload matters (§8.3).
 struct ProjectDashboardView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @State private var dashboard: ProjectDashboard
     /// The id of the project to open in the flow. Presenting by id — not by
     /// value — is what stops the flow resuming a snapshot this screen froze
@@ -529,7 +530,6 @@ struct ProjectDashboardView: View {
                 Text("\(chapter.ordinal + 1). \(chapter.title)")
                     .voxFont(.subheadline, weight: .semibold)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
                 Text("\(chapter.paragraphCount) paragraphs")
                     .voxFont(.caption)
                     .foregroundStyle(Palette.ink3)
@@ -560,12 +560,23 @@ struct ProjectDashboardView: View {
     }
 
     private func chip(_ text: String, tint: Color) -> some View {
-        Text(text)
-            .voxFont(.caption2, weight: .bold)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .foregroundStyle(tint)
-            .background(tint.opacity(0.14), in: Capsule())
-            .overlay(Capsule().stroke(tint.opacity(0.4), lineWidth: 1))
+        HStack(spacing: 4) {
+            if differentiateWithoutColor {
+                Image(systemName: chipSymbol(for: text))
+            }
+            Text(text)
+        }
+        .voxFont(.caption2, weight: .bold)
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .foregroundStyle(tint)
+        .background(tint.opacity(0.14), in: Capsule())
+        .overlay(Capsule().stroke(tint.opacity(0.4), lineWidth: 1))
+    }
+
+    private func chipSymbol(for text: String) -> String {
+        text.localizedCaseInsensitiveContains("complete") || text.localizedCaseInsensitiveContains("backed")
+            ? "checkmark.circle.fill"
+            : "circle.dashed"
     }
 
     private func kv(_ label: String, _ value: String) -> some View {

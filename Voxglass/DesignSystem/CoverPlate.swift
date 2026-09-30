@@ -60,7 +60,7 @@ struct CoverPlate: View {
                         Text(author.uppercased())
                             .scaledFont(size: size * 0.16, weight: .medium, design: .serif) // type-exempt: cover artwork scales with plate size
                             .foregroundStyle(pair.ink)
-                            .lineLimit(1)
+                            .lineLimit(1) // lineLimit-exempt: cover artwork preserves the designed plate composition
                             .minimumScaleFactor(0.55)
                             .allowsTightening(true)
                     }

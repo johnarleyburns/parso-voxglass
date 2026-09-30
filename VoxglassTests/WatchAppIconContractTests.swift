@@ -6,66 +6,87 @@ import Testing
 /// the runtime icon is absent, which later produces the opaque “Missing
 /// CFBundleIconName”/“Missing Icons” TestFlight failure we have already hit.
 ///
-/// If this test fails, restore the `universal` and `watch-marketing` entries and
-/// their 1024x1024 opaque PNG files in
-/// `VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset`, then run:
+/// The Watch icon is the watchOS circle (Icon Composer's 1088 canvas) of the shared
+/// `Voxglass/Resources/AppIcon.icon`. If this test fails, restore that file with
+/// watchOS enabled in Icon Composer, keep it in the VoxglassWatch target, and run:
 /// `bash scripts/check_watch_app_icon.sh && swift test --filter WatchAppIconContractTests`.
 @Suite struct WatchAppIconContractTests {
     private static let remediation = """
-    WHAT TO DO: Restore the universal watchOS runtime icon and the watch-marketing icon as 1024x1024 opaque PNGs in VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset, then run `bash scripts/check_watch_app_icon.sh` and `swift test --filter WatchAppIconContractTests`.
+    WHAT TO DO: Restore Voxglass/Resources/AppIcon.icon with watchOS enabled under Icon Composer's platforms, keep it in the VoxglassWatch target's sources in project.yml, do not re-add a Watch AppIcon.appiconset (two icons named AppIcon clash), then run `bash scripts/check_watch_app_icon.sh` and `swift test --filter WatchAppIconContractTests`.
     """
 
-    @Test func manifestContainsUploadSafeRuntimeAndMarketingIcons() throws {
-        let manifestURL = repoRoot
-            .appendingPathComponent("VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json")
+    @Test func sharedIconDeclaresWatchCircleAndCompilesRuntimeIcon() throws {
+        let iconURL = repoRoot.appendingPathComponent("Voxglass/Resources/AppIcon.icon")
+        let manifestURL = iconURL.appendingPathComponent("icon.json")
         guard let data = try? Data(contentsOf: manifestURL) else {
-            return fail("WHY THIS TEST FAILS: The watch app icon Contents.json is missing or unreadable at \(manifestURL.path).")
+            return fail("WHY THIS TEST FAILS: The shared app icon manifest is missing or unreadable at \(manifestURL.path).")
         }
-
         guard
             let object = try? JSONSerialization.jsonObject(with: data),
-            let manifest = object as? [String: Any],
-            let images = manifest["images"] as? [[String: Any]]
+            let manifest = object as? [String: Any]
         else {
-            return fail("WHY THIS TEST FAILS: The watch app icon Contents.json is not a valid manifest with an images array.")
+            return fail("WHY THIS TEST FAILS: AppIcon.icon/icon.json is not a valid JSON object.")
         }
 
-        let runtime = images.filter {
-            $0["idiom"] as? String == "universal"
-                && $0["platform"] as? String == "watchos"
-                && $0["size"] as? String == "1024x1024"
-        }
-        #expect(runtime.count == 1, Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The watchOS 10+ universal runtime icon entry is missing or duplicated; without exactly one entry, archive export can produce an iconless watch app.")))
+        let platforms = manifest["supported-platforms"] as? [String: Any]
+        let circles = platforms?["circles"] as? [String] ?? []
+        #expect(circles.contains("watchOS"), Comment(rawValue: failureMessage("WHY THIS TEST FAILS: AppIcon.icon does not declare the watchOS circle, so the Watch app would ship without a runtime icon.")))
 
-        let marketing = images.filter {
-            $0["idiom"] as? String == "watch-marketing"
-                && $0["scale"] as? String == "1x"
-                && $0["size"] as? String == "1024x1024"
-        }
-        #expect(marketing.count == 1, Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The watch-marketing 1024x1024 icon entry is missing or duplicated; App Store Connect requires it for the watch app listing.")))
+        let legacyWatchIconSet = repoRoot.appendingPathComponent("VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset")
+        #expect(!FileManager.default.fileExists(atPath: legacyWatchIconSet.path), Comment(rawValue: failureMessage("WHY THIS TEST FAILS: A Watch AppIcon.appiconset exists alongside AppIcon.icon; two icons named AppIcon clash in the asset compile.")))
 
-        for (label, entry) in [("universal runtime", runtime.first), ("watch-marketing", marketing.first)] {
-            guard let entry else { continue }
-            guard let filename = entry["filename"] as? String, !filename.isEmpty else {
-                return fail("WHY THIS TEST FAILS: The \(label) icon entry has no filename.")
-            }
-            let iconURL = manifestURL.deletingLastPathComponent().appendingPathComponent(filename)
-            guard let iconData = try? Data(contentsOf: iconURL) else {
-                return fail("WHY THIS TEST FAILS: The \(label) icon file is missing: \(iconURL.path).")
-            }
-            guard let png = PNGHeader(data: iconData) else {
-                return fail("WHY THIS TEST FAILS: The \(label) icon is not a readable PNG: \(iconURL.path).")
-            }
-            #expect(
-                png.width == 1024 && png.height == 1024,
-                Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The \(label) icon must be exactly 1024x1024, but is \(png.width)x\(png.height)."))
-            )
-            #expect(
-                !png.hasAlpha,
-                Comment(rawValue: failureMessage("WHY THIS TEST FAILS: The \(label) icon has an alpha channel, which App Store Connect rejects during upload."))
-            )
+        let project = (try? String(contentsOf: repoRoot.appendingPathComponent("project.yml"), encoding: .utf8)) ?? ""
+        let watchTarget = project.components(separatedBy: "\n  VoxglassWatch:\n").dropFirst().first?
+            .components(separatedBy: "\n  Voxglass").first ?? ""
+        #expect(watchTarget.contains("path: Voxglass/Resources/AppIcon.icon"), Comment(rawValue: failureMessage("WHY THIS TEST FAILS: project.yml no longer lists AppIcon.icon in the VoxglassWatch target's sources.")))
+
+        #if os(macOS)
+        if let infoPlist = try compileForWatchOS(iconURL) {
+            let icons = infoPlist["CFBundleIcons"] as? [String: Any]
+            let primary = icons?["CFBundlePrimaryIcon"] as? [String: Any]
+            #expect(primary?["CFBundleIconName"] as? String == "AppIcon", Comment(rawValue: failureMessage("WHY THIS TEST FAILS: watchOS actool did not produce CFBundleIconName=AppIcon from AppIcon.icon; archive export would fail with a missing watch icon.")))
         }
+        #endif
     }
+
+    #if os(macOS)
+    /// Returns the partial Info.plist actool writes, or nil when Xcode is unavailable
+    /// (the manifest checks above still ran) or actool failed (recorded as a failure).
+    private func compileForWatchOS(_ iconURL: URL) throws -> [String: Any]? {
+        let output = FileManager.default.temporaryDirectory
+            .appendingPathComponent("voxglass-watch-icon-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: output) }
+        let partialPlist = output.appendingPathComponent("info.plist")
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        process.arguments = [
+            "actool", iconURL.path,
+            "--compile", output.path,
+            "--output-format", "human-readable-text",
+            "--errors", "--warnings",
+            "--output-partial-info-plist", partialPlist.path,
+            "--app-icon", "AppIcon",
+            "--target-device", "watch",
+            "--minimum-deployment-target", "10.0",
+            "--platform", "watchos",
+        ]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+        process.waitUntilExit()
+        guard process.terminationStatus == 0, let data = try? Data(contentsOf: partialPlist) else {
+            fail("WHY THIS TEST FAILS: watchOS actool rejected AppIcon.icon (exit \(process.terminationStatus)).")
+            return nil
+        }
+        return try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] ?? [:]
+    }
+    #endif
 
     @Test func widgetExtensionPlistHasAppStoreRequiredMetadata() throws {
         let plistURL = repoRoot.appendingPathComponent("VoxglassWidgets/Info.plist")
@@ -111,23 +132,5 @@ import Testing
 
     private func fail(_ why: String) {
         Issue.record(Comment(rawValue: failureMessage(why)))
-    }
-
-    private struct PNGHeader {
-        let width: UInt32
-        let height: UInt32
-        let colorType: UInt8
-
-        var hasAlpha: Bool { colorType == 4 || colorType == 6 }
-
-        init?(data: Data) {
-            let signature = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
-            guard data.count >= 26, data.prefix(8) == signature, data.subdata(in: 12..<16) == Data("IHDR".utf8) else {
-                return nil
-            }
-            width = data[16..<20].reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
-            height = data[20..<24].reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
-            colorType = data[25]
-        }
     }
 }

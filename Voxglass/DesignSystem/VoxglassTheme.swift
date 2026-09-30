@@ -154,12 +154,12 @@ struct VoxglassScreen<Content: View>: View {
                 .background(VoxglassBackground())
                 .scrollEdgeEffectStyle(.soft, for: .bottom)
                 .scrollDismissesKeyboard(.interactively)
-                .navigationTitle(title)
+                .navigationTitle(LocalizedStringKey(title))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     if let headerActionTitle, let headerAction {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button(headerActionTitle, action: headerAction)
+                            Button(LocalizedStringKey(headerActionTitle), action: headerAction)
                                 .accessibilityIdentifier(headerActionTitle)
                         }
                     }
@@ -172,7 +172,7 @@ struct VoxglassScreen<Content: View>: View {
                         }
                     } else if let headerSecondaryActionTitle, let headerSecondaryAction {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button(headerSecondaryActionTitle, action: headerSecondaryAction)
+                            Button(LocalizedStringKey(headerSecondaryActionTitle), action: headerSecondaryAction)
                                 .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
                         }
                     }

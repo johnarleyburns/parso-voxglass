@@ -16,16 +16,7 @@ enum TimeFormatting {
 
     static func compactDuration(_ interval: TimeInterval?) -> String {
         guard let interval, interval.isFinite else { return "Unknown length" }
-        let totalMinutes = max(1, Int((interval / 60).rounded()))
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-        if hours > 0, minutes > 0 {
-            return "\(hours)h \(minutes)m"
-        }
-        if hours > 0 {
-            return "\(hours)h"
-        }
-        return "\(minutes)m"
+        return DurationFormatting.hoursAndMinutes(interval, minimumMinute: true)
     }
 }
 

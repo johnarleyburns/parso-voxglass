@@ -39,7 +39,7 @@ import Foundation
         #expect(progress.remainingTracks == 8)
         #expect(progress.fractionComplete == 0.2)
         #expect(progress.estimatedSecondsRemaining == 80)
-        #expect(progress.estimatedTimeRemainingText == "~1m 20s remaining")
+        #expect(progress.estimatedTimeRemainingText == "~1 min, 20 sec remaining")
     }
 
     @Test func soundIndexProgressWaitsForObservedRateAndHandlesCompletion() {

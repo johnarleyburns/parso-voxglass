@@ -202,11 +202,11 @@ import ParsoAudioStreaming
     }
 
     @Test func durationFormat_hours() {
-        #expect(WatchTimeFormat.duration(5400) == "1h 30m")
+        #expect(WatchTimeFormat.duration(5400) == "1 hr, 30 min")
     }
 
     @Test func durationFormat_minutes() {
-        #expect(WatchTimeFormat.duration(1800) == "30m")
+        #expect(WatchTimeFormat.duration(1800) == "30 min")
     }
 
     @Test func timeFormat_withHours() {

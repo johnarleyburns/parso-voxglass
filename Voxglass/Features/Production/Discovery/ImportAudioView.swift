@@ -108,7 +108,6 @@ struct ImportAudioView: View {
                     Text(selection.fileName)
                         .voxFont(.subheadline, weight: .heavy)
                         .foregroundStyle(Palette.ink)
-                        .lineLimit(1)
                     Text(formatCaption(selection))
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
@@ -177,7 +176,6 @@ struct ImportAudioView: View {
                             Text(sliceCaption(slice: slice, rate: model.importSelection?.decodedSampleRate ?? 0))
                                 .voxFont(.caption2)
                                 .foregroundStyle(Palette.ink2)
-                                .lineLimit(1)
                             Spacer()
                             Text(slice.paragraphID != nil ? "paragraphs matched" : "extra") // l10n-exempt: state-dependent accessibility or status copy
                                 .voxFont(.caption2, weight: .bold)

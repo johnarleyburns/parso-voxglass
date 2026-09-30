@@ -61,11 +61,10 @@ public struct MyProductionsShelf: View {
             .frame(width: 48, height: 64)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(summary.title).font(.headline).lineLimit(1)
+                Text(summary.title).font(.headline)
                 Text("\(summary.author) · \(summary.narrator)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
                 HStack(spacing: 10) {
                     Text("\(Int((summary.percentRecorded * 100).rounded()))% recorded")
                     if summary.flaggedCount > 0 {
@@ -145,7 +144,7 @@ public struct ProductionBookDetailView: View {
             Section("Chapters") {
                 ForEach(model.chapterRows()) { chapter in
                     HStack {
-                        Text(chapter.title).lineLimit(1)
+                        Text(chapter.title)
                         Spacer()
                         Text("\(chapter.recordedCount)/\(chapter.paragraphCount)")
                             .font(.caption)
@@ -419,7 +418,7 @@ public struct ProductionParagraphListView: View {
                                 Text(paragraph.text ?? "")
                                     .lineLimit(2)
                                 if let note = paragraph.latestNoteText {
-                                    Text(note).font(.caption).foregroundStyle(.orange).lineLimit(1)
+                                    Text(note).font(.caption).foregroundStyle(.orange)
                                 }
                             }
                         }

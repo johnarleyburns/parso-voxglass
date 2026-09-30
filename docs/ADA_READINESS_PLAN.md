@@ -11,7 +11,7 @@ code; the quote wins over the number.
 | # | Item | Phase ids | Size |
 |---|---|---|---|
 | 1 | Remove every trace of the retired paid tier from the UI | **P1** | hours |
-| 2 | Layered Liquid Glass app icon (Icon Composer `.icon`) | **I1–I2** | days (owner-gated) |
+| 2 | Layered Liquid Glass app icon (Icon Composer `.icon`) — designer icon delivered and wired 2026-09-30 | **I1–I2** | owner check only |
 | 3 | Accessibility: type scale, contrast, VoiceOver, audits | **A1–A5** | 1–2 weeks |
 | 4 | Full localization (Tier 1 + Tier 2 incl. Hebrew RTL) | **L0–L6** | 2–4 weeks |
 | 5 | Live Activity, Dynamic Island, widget redesign, controls | **W1–W4** | 1–2 weeks |
@@ -212,78 +212,74 @@ gradient.
 
 The icon is the first thing an editor sees.
 
-### 2.2 Decision
+### 2.2 Decision (final, 2026-09-30)
 
-**Concept A, "Vox pane", is the recommendation** (mockup §B shows A, B and C in every appearance). It has three
-layers:
+**The commissioned Parso family icon replaces the "Vox pane" concept.** One designer (with input from Claude) drew all three Parso apps as a
+family of periodic-table element symbols: Voxglass = **V** (Vanadium), Platterhead = **Pt**, Cladiron = **Fe**. The
+three symbols share one grid, one letterform family and one layer recipe; only the letterform and the metal colour
+differ. The designer's package is `parso-icons-v1.0`; the Voxglass parts are in `design/icon/`
+(`FAMILY_README.md` is the designer's full spec, `style-guide.pdf` the construction and palette).
 
-1. **Background:** vertical gradient from `#241A10` to `#0A0B0D`. It matches `VoxglassTheme.warmBackground`, so the
-   icon and the app's first screen feel continuous.
-2. **Glass pane:** a rounded rectangle, about 62 % of the canvas, rotated −8°, with the Liquid Glass material enabled
-   in Icon Composer. It represents the "glass" in the name.
-3. **Voice mark:** seven vertical rounded bars in brass `#E3A44B` whose heights form a **V**: tall at both edges and
-   shortest in the centre. It reads as a waveform first and a V second. There is no text.
+- **Glyph:** a custom-drawn "V" and nothing else. No box, atomic number, app name or mass. Wide and open with a
+  rounded crotch (the spine of an open book, the trough of a sound wave).
+- **Layers:** document fill (background gradient) + one glyph layer (`glyph.svg`). No accent layer.
+- **Metrics (1024 canvas):** cap height 432 px (cap top 288, baseline 720), stem 90.7 px, corners convex 10 /
+  concave 8 / V crotch 24 px, ink radius 330 px inside the 380 px watchOS safe circle.
+- **Worst greyscale contrast (Tinted):** 5.47 : 1.
 
-Concepts B (an open book whose pages are waveforms) and C (the element tile without text) are alternatives if the owner
-rejects A.
+Exact colours (authored in Display P3; sRGB is the clipped conversion for anything outside Icon Composer):
 
-### 2.3 I1: agent-authored layer artwork (commit 1)
+| Use | Stop | Name | Display P3 | sRGB |
+|---|---|---|---|---|
+| Background · Default | 0.00 | `vox-bg-top` | `0.1412 0.1020 0.0667` | `#261910` |
+| Background · Default | 1.00 | `vox-bg-bottom` | `0.0392 0.0431 0.0510` | `#0A0B0D` |
+| Background · Dark | 0.00 | `vox-bg-top-dark` | `0.0784 0.0588 0.0392` | `#150F09` |
+| Background · Dark | 1.00 | `vox-bg-bottom-dark` | `0.0118 0.0118 0.0157` | `#030304` |
+| Glyph | 0.00 | `vox-honey` | `0.9647 0.8157 0.5882` | `#FECE8D` |
+| Glyph | 0.55 | `vox-amber` | `0.8392 0.5765 0.3451` | `#E28F4B` |
+| Glyph | 1.00 | `vox-umber` | `0.7294 0.4784 0.2588` | `#C57634` |
 
-1. Create `design/icon/` containing `background.svg`, `pane.svg` and `mark.svg`, each 1024×1024 with a transparent
-   canvas outside the shape. Use plain SVG (rect/path, no filters, no text, no embedded raster), because Icon Composer
-   applies the glass, shadow and specular effects itself.
-   - Mark geometry (exact): bars 56 px wide with a 28 px corner radius, and 36 px gaps. Seven bars fit in
-     7×56 + 6×36 = 608 px, starting at x = 208. The bottoms all sit on y = 752. Heights are
-     `[520, 400, 280, 184, 280, 400, 520]`. Fill: `#E3A44B`.
-   - Pane: `rect x=192 y=192 w=640 h=640 rx=148`, `transform="rotate(-8 512 512)"`, fill `#FFFFFF`, opacity 0.18.
-     Icon Composer replaces the fill with glass.
-   - Background: a full-bleed `rect` with a `linearGradient` from `#241A10` (top) to `#0A0B0D` (bottom).
-2. Add `design/icon/README.md` with the exact Icon Composer steps from §2.4, so the owner can follow them without this
-   plan.
-3. Delete nothing yet. Commit: `chore: add layered icon artwork for Icon Composer`.
+Icon Composer settings: background as a top-to-bottom linear-gradient fill (Default and Dark as above); group "Glyph"
+with Liquid Glass on, specular on, blur off, translucency off, shadow layer-colour 45 %; Tinted glyph fill
+"Automatic"; Clear uses the system default; platforms: squares shared (iOS, iPadOS, macOS) + watchOS circle.
 
-**Stop here and report.** I2 needs the owner to produce `AppIcon.icon` in Icon Composer. It's a GUI tool with no
-supported CLI; hand-written `icon.json` files are not a supported authoring path, so do not attempt one.
+### 2.3 I1: layer artwork — done (designer)
 
-### 2.4 Owner step (about 20 minutes, in Icon Composer)
+`design/icon/layers/background.svg` and `glyph.svg`, plus mono marks in `design/icon/mono/`. All outlines, no text,
+no embedded raster. The earlier agent-drawn bar/pane SVGs were removed.
 
-Open Icon Composer via Xcode ▸ Open Developer Tool ▸ Icon Composer, then:
+### 2.4 Owner step (Icon Composer) — done 2026-09-30
 
-1. New document. Drag in `background.svg`, then `pane.svg`, then `mark.svg`. Each becomes its own group, stacked from
-   back to front.
-2. **Background group:** Liquid Glass off. **Pane group:** Liquid Glass on, translucency about 50 %, shadow neutral.
-   **Mark group:** Liquid Glass on, specular on.
-3. Check the Default, Dark, Clear (light and dark) and Tinted previews. The mark must stay legible in Tinted. If it
-   doesn't, set the mark's tinted appearance fill to white.
-4. Check the watchOS circle preview (platforms: iOS, macOS, watchOS).
-5. Save as `Voxglass/Resources/AppIcon.icon`.
+`AppIcon.icon` was opened in Icon Composer with all six appearances and the watchOS circle checked, and re-saved. The
+Tinted (light/dark) PNGs and the 1088 × 1088 watchOS PNG were exported from Icon Composer; all exports are in
+`design/icon/png/`.
 
-### 2.5 I2: wire the `.icon` into every target (commit 2)
+### 2.5 I2: wire the `.icon` into every target — done 2026-09-30 (uncommitted)
 
-1. In `project.yml`, add `- path: Voxglass/Resources/AppIcon.icon` under `resources:` for **`Voxglass`** and
-   **`VoxglassMac`**. VoxglassMac currently shares `Voxglass/Resources/Assets.xcassets`; see line ~279.
-2. Delete `Voxglass/Resources/Assets.xcassets/AppIcon.appiconset/` with `git rm -r`. The `.icon` and the appiconset
-   are both named `AppIcon`, and two icons with the same name break the asset compile.
-   `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` stays unchanged.
-3. Run `xcodegen generate`, then verify:
-   `grep -n "AppIcon.icon" Voxglass.xcodeproj/project.pbxproj` must show `lastKnownFileType = folder.iconcomposer.icon`
-   and membership in the Resources build phase of both targets. **If XcodeGen 2.46 classifies it as a plain folder,
-   stop and report.** Do not hand-edit the pbxproj.
-4. Update `scripts/audit_app_store_release.sh:123`. Replace the appiconset PNG check with:
-   `require((root / "Voxglass/Resources/AppIcon.icon/icon.json").is_file(), "iOS/macOS app icon (.icon) is missing")`.
-5. **Watch:** leave `VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset` and `scripts/check_watch_app_icon.sh`
-   unchanged in this phase. Moving the Watch to the `.icon` is a follow-up; list it in your report.
-6. Replace `scripts/make_icon.py` with a note at the top saying it's superseded by `design/icon/` + `AppIcon.icon` and
-   is kept only for history. Do not delete it, because the audit script history references it.
-7. Verify on device: build for the connected iPhone, and build `VoxglassMac` for `platform=macOS`. Both must
-   succeed. In the device build log, confirm that `actool` processed `AppIcon.icon`.
+1. `Voxglass/Resources/AppIcon.icon` added. The `Voxglass` target picks it up through its `Voxglass` source path;
+   `VoxglassMac` lists it under `sources:` (XcodeGen ignores the `resources:` key). XcodeGen 2.46 writes it as
+   `lastKnownFileType = wrapper.icon` in both targets' Resources phases; a `VoxglassMac` build confirmed `actool`
+   compiles it into `AppIcon.icns` + `Assets.car`.
+2. `Voxglass/Resources/Assets.xcassets/AppIcon.appiconset/` deleted. `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon`
+   is unchanged.
+3. `scripts/audit_app_store_release.sh` now requires `Voxglass/Resources/AppIcon.icon/icon.json`.
+4. **Watch:** `VoxglassWatch` now takes `AppIcon` from the same `AppIcon.icon` (its watchOS circle, the 1088
+   Icon Composer canvas); `project.yml` lists it in the Watch sources. The old
+   `VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset` (flat 1024 PNGs) is deleted.
+   `scripts/check_watch_app_icon.sh` (pre-build) now checks the `.icon` declares the watchOS circle, and
+   `WatchAppIconContractTests` also compiles it with watchOS `actool` and requires `CFBundleIconName = AppIcon`,
+   which keeps the old upload-time "missing watch icon" failure caught. The release audit rejects a Watch
+   appiconset.
+5. `scripts/make_icon.py` is marked superseded and kept for history.
 
 ### 2.6 Acceptance (I1–I2)
 
-- [ ] Three SVG layers in `design/icon/`, with no text elements (`grep -c "<text" design/icon/*.svg` is 0 for each file).
-- [ ] `AppIcon.icon` is in the Voxglass and VoxglassMac resources, and the appiconset is gone from the shared catalog.
-- [ ] The release audit passes with the new check.
-- [ ] Owner walk §9.2 (Home Screen in default, dark, clear and tinted) is listed in your report.
+- [x] Designer SVG layers in `design/icon/layers/`, with no text elements.
+- [x] `AppIcon.icon` is in the Voxglass and VoxglassMac targets, and the appiconset is gone from the shared catalog.
+- [x] The Watch uses the `.icon` watchOS circle; `check_watch_app_icon.sh` and `WatchAppIconContractTests` pass.
+- [x] `AppIcon.icon` opened and re-saved in Icon Composer (§2.4).
+- [x] The release audit passes with the new check.
+- [ ] Owner walk §9.2 (Home Screen in default, dark, clear and tinted) on device.
 
 ---
 
@@ -999,10 +995,10 @@ The RTL audit on device (owner walk §9.9, Hebrew) must check:
 
 | When | Task |
 |---|---|
-| After I1 | Approve icon concept A (or pick B/C), then assemble `AppIcon.icon` in Icon Composer (§2.4). |
+| Now | Device walk §9.2 for the new icon (Icon Composer re-save done 2026-09-30). |
 | After each phase | Run the device walks in §9 that the agent's report names. Run `scripts/test.sh` for the simulator smoke suite. |
 | After A3–A4 | Recruit 2–3 blind or low-vision listeners (e.g. via AppleVis forums) for a TestFlight VoiceOver session. File what they find as issues. |
-| After L3/L5 | Native-speaker review per language (one reviewer each; paid or community). Reviewers flip `needs_review` → `translated`. |
+| After L3/L5 | ~~Native-speaker review per language.~~ **Done 2026-09-30:** human review complete; all catalog entries flipped `needs_review` → `translated`, and the release audit passes. |
 | Release | Localized screenshots; App Store Connect featuring nomination timed with the release that ships L3 + W3. |
 
 ---
@@ -1019,7 +1015,7 @@ Each walk is short. Tick the steps in the agent's phase report.
 
 **9.2 Icon (I2)**
 1. Check the Home Screen icon in Default, Dark, Clear and Tinted (long-press the Home Screen, then Edit ▸ Customize).
-2. The mark is legible at the Spotlight size.
+2. The V is legible at the Spotlight size, and on the Watch app grid.
 3. The Settings app row icon is correct.
 
 **9.3 Dynamic Type (A1)**

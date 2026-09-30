@@ -195,12 +195,7 @@ public enum WatchEvictionPolicy {
 /// Time formatting for watch display. Pure, host-testable.
 public enum WatchTimeFormat {
     public static func duration(_ seconds: TimeInterval) -> String {
-        let hrs = Int(seconds) / 3600
-        let mins = (Int(seconds) % 3600) / 60
-        if hrs > 0 {
-            return "\(hrs)h \(mins)m"
-        }
-        return "\(mins)m"
+        DurationFormatting.hoursAndMinutes(seconds, minimumMinute: true)
     }
 
     public static func time(_ seconds: TimeInterval) -> String {

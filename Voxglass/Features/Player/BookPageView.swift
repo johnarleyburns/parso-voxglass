@@ -313,7 +313,7 @@ struct BookPageView: View {
         HStack(spacing: 10) {
             CoverPlate(title: resolved.book.title, author: resolved.book.displayAuthorLine, coverURL: resolved.book.coverURL, size: 44)
             VStack(alignment: .leading, spacing: 1) {
-                Text(resolved.book.title).voxType(.body).lineLimit(1)
+                Text(resolved.book.title).voxType(.body)
                 Text("\(Int((progressFor(resolved) * 100).rounded()))% · \(TimeFormatting.compactDuration(playback.currentSession?.bookRemaining ?? 0)) left")
                     .voxType(.timecode)
                     .foregroundStyle(Palette.ink2)
@@ -419,7 +419,6 @@ struct BookPageView: View {
                     Text(author)
                         .voxFont(.subheadline)
                         .foregroundStyle(Palette.brass)
-                        .lineLimit(1)
                 }
                 .buttonStyle(.plain)
             }
@@ -446,14 +445,12 @@ struct BookPageView: View {
                     Text(narratorLine)
                         .voxFont(.footnote)
                         .foregroundStyle(Palette.brass)
-                        .lineLimit(1)
                 }
                 .buttonStyle(.plain)
             } else {
                 Text(narratorLine)
                     .voxFont(.footnote)
                     .foregroundStyle(Color.white.opacity(0.55))
-                    .lineLimit(1)
             }
         }
     }
@@ -466,25 +463,21 @@ struct BookPageView: View {
                 Text(display?.eyebrow.map { "\($0) · \(display?.title ?? session.chapter.title)" } ?? (display?.title ?? session.chapter.title))
                     .voxFont(.caption)
                     .foregroundStyle(Color.white.opacity(0.50))
-                    .lineLimit(1)
                     .contentTransition(.opacity)
                 if let narratorLine = NarratorDisplay.chapterLine(chapter: session.chapter, bookNarrators: resolved.book.narrators) {
                     Text(narratorLine)
                         .voxFont(.caption2)
                         .foregroundStyle(Color.white.opacity(0.38))
-                        .lineLimit(1)
                 }
             }
         } else if let resumeChapter = resumeChapterTitle(for: resolved) {
             Text("Resume · \(resumeChapter)")
                 .voxFont(.caption)
                 .foregroundStyle(Color.white.opacity(0.50))
-                .lineLimit(1)
         } else {
             Text("\(resolved.chapters.count) chapters")
                 .voxFont(.caption)
                 .foregroundStyle(Color.white.opacity(0.50))
-                .lineLimit(1)
         }
     }
 
@@ -809,7 +802,6 @@ struct BookPageView: View {
                         HStack {
                             let display = displayTitles[chapter.id]
                             Text(display?.eyebrow.map { "\($0) · \(display?.title ?? chapter.title)" } ?? (display?.title ?? chapter.title))
-                                .lineLimit(1)
                             Spacer()
                             Text(TimeFormatting.clock(chapter.duration))
                                 .voxFont(.caption2, design: .monospaced) // mono-exempt: chapter duration
@@ -820,7 +812,6 @@ struct BookPageView: View {
                                 Text(narrator)
                                     .voxFont(.caption2)
                                     .foregroundStyle(Color.white.opacity(0.45))
-                                    .lineLimit(1)
                                 Spacer()
                             }
                         }
@@ -881,9 +872,9 @@ struct BookPageView: View {
 
     @ViewBuilder
     private func discoveryLinks(_ resolved: BookWithChapters) -> some View {
-        let author = resolved.book.authors.first?.trimmingCharacters(in: .whitespaces) ?? ""
+        let author = resolved.book.displayAuthorLine ?? ""
         let narrator = resolved.book.narrators.first?.trimmingCharacters(in: .whitespaces) ?? ""
-        let hasAuthor = !author.isEmpty && author.localizedCaseInsensitiveCompare("Unknown author") != .orderedSame
+        let hasAuthor = !author.isEmpty
         let hasNarrator = !narrator.isEmpty
 
         if hasAuthor || hasNarrator || genre != nil {
@@ -946,7 +937,6 @@ struct BookPageView: View {
                 Text(label)
                     .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Color.white.opacity(0.9))
-                    .lineLimit(1)
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
                     .voxFont(.caption2, weight: .bold)

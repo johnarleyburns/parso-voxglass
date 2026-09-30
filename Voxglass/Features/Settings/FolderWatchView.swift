@@ -83,7 +83,6 @@ struct FolderWatchView: View {
                         Text(folder.name)
                             .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink)
-                            .lineLimit(1)
                         Spacer()
                         Button {
                             folderWatch.removeFolder(folder.id)

@@ -1,6 +1,20 @@
 name: Voxglass
 options:
   bundleIdPrefix: guru.parso
+  developmentRegion: en
+  knownRegions:
+    - en
+    - de
+    - fr
+    - es
+    - it
+    - pt-BR
+    - nl
+    - ja
+    - zh-Hans
+    - ru
+    - pl
+    - he
   deploymentTarget:
     iOS: "27.0"
     macOS: "14.0"
@@ -172,15 +186,15 @@ targets:
         script: "bash \"${SRCROOT}/scripts/check_watch_app_icon.sh\""
         inputFiles:
           - "$(SRCROOT)/scripts/check_watch_app_icon.sh"
-          - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json"
-          - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024.png"
-          - "$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024-runtime.png"
+          - "$(SRCROOT)/Voxglass/Resources/AppIcon.icon/icon.json"
         basedOnDependencyAnalysis: false
     sources:
       - path: VoxglassWatch
         excludes:
           - Resources/Info.plist
           - Resources/VoxglassWatch.entitlements
+      # The Watch icon is the shared Icon Composer file's watchOS circle (1088 canvas).
+      - path: Voxglass/Resources/AppIcon.icon
     resources:
       - path: VoxglassWatch/Resources/PrivacyInfo.xcprivacy
     dependencies:
@@ -279,6 +293,7 @@ targets:
           - Resources/VoxglassMac-release.entitlements
       - path: Voxglass/Features/Production/Discovery/NarrationProjectRepository.swift
       - path: Voxglass/Features/Production/AVChapterRenderer.swift
+      - path: Voxglass/Resources/AppIcon.icon
     resources:
       - path: Voxglass/Resources/Assets.xcassets
       - path: VoxglassMac/Resources/PrivacyInfo.xcprivacy

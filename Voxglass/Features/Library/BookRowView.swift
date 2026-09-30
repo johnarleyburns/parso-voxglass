@@ -19,12 +19,10 @@ struct BookRowView: View {
                     Text(author)
                         .font(.subheadline)
                         .foregroundStyle(VoxglassTheme.secondaryInk)
-                        .lineLimit(1)
                 }
                 Text("\(book.chapters.count) chapter\(book.chapters.count == 1 ? "" : "s") · \(TimeFormatting.compactDuration(book.totalDuration))")
                     .font(.caption)
                     .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.78))
-                    .lineLimit(1)
             }
             Spacer(minLength: 8)
             Button(action: playAction) {

@@ -60,7 +60,7 @@ import Foundation
     // MARK: - CarPlayTimeFormat (used by progressDetail)
 
     @Test func timeFormatHours() {
-        #expect(CarPlayTimeFormat.compact(8040) == "2h 14m")
+        #expect(CarPlayTimeFormat.compact(8040) == "2 hr, 14 min")
     }
 
     @Test func timeFormatMinutes() {
@@ -68,10 +68,10 @@ import Foundation
     }
 
     @Test func timeFormatSeconds() {
-        #expect(CarPlayTimeFormat.compact(48) == "48s")
+        #expect(CarPlayTimeFormat.compact(48) == "48 sec")
     }
 
     @Test func timeFormatZero() {
-        #expect(CarPlayTimeFormat.compact(0) == "0s")
+        #expect(CarPlayTimeFormat.compact(0) == "0 sec")
     }
 }

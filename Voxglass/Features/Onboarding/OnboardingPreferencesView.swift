@@ -92,7 +92,6 @@ struct OnboardingPreferencesView: View {
         } label: {
             HStack(spacing: 6) {
                 Text(language.displayName)
-                    .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 if isSelected {
                     Image(systemName: "checkmark")
@@ -216,7 +215,6 @@ private struct OnboardingCollectionCard: View {
             Text(collection.title)
                 .voxFont(.footnote, weight: .bold)
                 .foregroundStyle(Palette.ink)
-                .lineLimit(1)
                 .frame(width: 170, alignment: .leading)
         }
         .frame(width: 170, alignment: .topLeading)
@@ -251,7 +249,6 @@ private struct CollectionSelectionChip: View {
                     .frame(width: 28, height: 28)
                 Text(collection.title)
                     .voxFont(.subheadline, weight: .semibold)
-                    .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 Spacer(minLength: 0)
                 if isSelected {

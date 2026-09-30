@@ -277,7 +277,6 @@ struct BrowseView: View {
                     .voxFont(.caption, weight: .semibold)
                 Text(collection.title)
                     .voxFont(.caption, weight: .semibold)
-                    .lineLimit(1)
                 Spacer(minLength: 0)
                 Button {
                     withAnimation(.easeInOut(duration: 0.25)) {
@@ -709,7 +708,7 @@ private struct ExploreCollectionCard: View {
                     Spacer()
                 }
                 HStack(alignment: .firstTextBaseline) {
-                    Text(collection.title).voxType(.collectionTitle).foregroundStyle(Palette.ink).lineLimit(1)
+                    Text(collection.title).voxType(.collectionTitle).foregroundStyle(Palette.ink)
                     Spacer(minLength: 4)
                     if collection.isCurated { curatedBadge }
                 }

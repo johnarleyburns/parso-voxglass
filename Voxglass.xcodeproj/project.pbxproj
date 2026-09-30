@@ -141,6 +141,7 @@
 		7D35F4197BFC9B94C3D658E6 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = CC47B0A42E6FF588D7780691 /* ZIPFoundation */; };
 		7EDA8C0947120EFD4B3F116B /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8ACE29C6DA4A589D92AFF3 /* TimeFormatting.swift */; };
 		7F6CC048FE6AC0EFCCC6D39E /* MacViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3672644BB8FBEB437A8442B5 /* MacViews.swift */; };
+		7FE142E6F2EAADB2CD74A186 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 784AF074311E56EDF86E4DBD /* AppIcon.icon */; };
 		804F43C374A56FDF2AD78E52 /* NarrationProjectRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24ECA47D9BA8631CB67F385 /* NarrationProjectRepository.swift */; };
 		8081D5896F8561DDA17DD65A /* CoverPlate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F642462854BCCD9A42A0E5 /* CoverPlate.swift */; };
 		80A80266C5F84B32A0F214B2 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CD3C1E4D608137C5EB95024 /* VoxglassCore */; };
@@ -168,6 +169,7 @@
 		95593DEA589E20BFC4BD27CC /* city_worlds_end_1203_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BD0F6CE7B0C3D96D9976A73F /* city_worlds_end_1203_librivox.jpg */; };
 		98806F3F21F08D77BCBF6FB9 /* tale_two_cities_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 34808794F915DD9ECCB1F970 /* tale_two_cities_librivox.jpg */; };
 		988150492DE1CEFDC5EF50CD /* StorageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3420F92FBD012D819BABA640 /* StorageSettingsView.swift */; };
+		98BBBA774891D97BACD86AD2 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 784AF074311E56EDF86E4DBD /* AppIcon.icon */; };
 		992D6E0AD8E875B135D7C2B2 /* 0_sense_and_sensibility_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2761AA70F89396E53EE93D01 /* 0_sense_and_sensibility_librivox.jpg */; };
 		9A64C2D2E69FD9609615B505 /* VoxglassUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */; };
 		9D601DFE827F77828EF805BB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 3FF9BA4E3F475FC96642625A /* ZIPFoundation */; };
@@ -221,6 +223,7 @@
 		CC2598452C9D23E8D3A636BE /* ProjectDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8256968CBF2960299BAEAF24 /* ProjectDashboardView.swift */; };
 		CD5F9F386CBBD79CE6BB523B /* alice_wonderland_0711_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CC9FC90F429E3A6FF0763EF3 /* alice_wonderland_0711_librivox.jpg */; };
 		CDCF23FE34277F53ADA5646C /* MiniPlayerAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5924E6DAEBA18381A91E8D3 /* MiniPlayerAccessory.swift */; };
+		CE382D8FED77807AA9AECCAC /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 784AF074311E56EDF86E4DBD /* AppIcon.icon */; };
 		CE87BA5D7DD6DF70AF379DE4 /* PlatePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C62BECE471D6EB6CFB2370 /* PlatePalette.swift */; };
 		CF5B708D0222E8900BB02D3D /* memoirs_holmes_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A863A5C2B74DE190C0ED26CB /* memoirs_holmes_0709_librivox.jpg */; };
 		CFFA9AD88269992EB457F35D /* gods_of_mars_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7CB5032639CF00041C20C04D /* gods_of_mars_librivox.jpg */; };
@@ -520,6 +523,7 @@
 		739CF70CFD45FD09DC69EB64 /* ListenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenView.swift; sourceTree = "<group>"; };
 		75844DA19EB93CF266B991E9 /* pride_and_prejudice_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = pride_and_prejudice_librivox.jpg; sourceTree = "<group>"; };
 		76F77E862DBA8E6F6449833B /* aliceinwonderland_1102_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = aliceinwonderland_1102_librivox.jpg; sourceTree = "<group>"; };
+		784AF074311E56EDF86E4DBD /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		784B723EEBDD956370DAC471 /* NarrationE2EFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationE2EFixture.swift; sourceTree = "<group>"; };
 		78FC81862BCB58FA50870112 /* PlaylistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistsView.swift; sourceTree = "<group>"; };
 		7AEB9CCDB3E70DB0915C1CAA /* bequest_jg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bequest_jg_librivox.jpg; sourceTree = "<group>"; };
@@ -1216,6 +1220,7 @@
 		D76B64495A1ADA48FF3A1394 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				784AF074311E56EDF86E4DBD /* AppIcon.icon */,
 				BD8146A6C59A5388BAF01B11 /* AppShortcuts.xcstrings */,
 				1AAEC7E4D58E0CABD44AE90F /* Artwork */,
 				1BBA5A2E92771EE1379D897D /* Assets.xcassets */,
@@ -1564,9 +1569,13 @@
 				en,
 				es,
 				fr,
+				he,
 				it,
 				ja,
+				nl,
+				pl,
 				"pt-BR",
+				ru,
 				"zh-Hans",
 			);
 			mainGroup = A8CDFF63283253FCE1DB2B33;
@@ -1606,6 +1615,7 @@
 				00FFA880CAA14A1624EC1369 /* 1891_collection_bt_librivox.jpg in Resources */,
 				B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */,
 				E3992AD6F8D76143C3113AC4 /* 8thanniversary_1308_librivox.jpg in Resources */,
+				98BBBA774891D97BACD86AD2 /* AppIcon.icon in Resources */,
 				C0B3FED622B651A2EFA5A2BB /* AppShortcuts.xcstrings in Resources */,
 				6E1AF6876C0B03D2CD4E4D3F /* Artwork in Resources */,
 				3D1FDC4720D46F3585E91D38 /* Assets.xcassets in Resources */,
@@ -1717,6 +1727,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE382D8FED77807AA9AECCAC /* AppIcon.icon in Resources */,
 				A0DCC732CB708DA6F9C578B6 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1725,6 +1736,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7FE142E6F2EAADB2CD74A186 /* AppIcon.icon in Resources */,
 				FB44359C1D3A5ACF596A3A2B /* Assets.xcassets in Resources */,
 				0F8B4A100A1D416032C806F0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -1743,9 +1755,7 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/scripts/check_watch_app_icon.sh",
-				"$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json",
-				"$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024.png",
-				"$(SRCROOT)/VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024-runtime.png",
+				"$(SRCROOT)/Voxglass/Resources/AppIcon.icon/icon.json",
 			);
 			name = "Validate Watch app icon";
 			outputFileListPaths = (

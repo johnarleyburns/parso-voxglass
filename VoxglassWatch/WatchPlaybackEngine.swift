@@ -27,6 +27,7 @@ final class WatchPlaybackEngine {
     private var didBecomeReadyToken: Int?
     private var assetOffset: TimeInterval = 0
     private var lastPersistedSecond = -1
+    private(set) var volume: Double = 1
 
     init(root: URL? = nil, smokeMode: Bool = false, smokeFailure: Bool = false) {
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -151,6 +152,11 @@ final class WatchPlaybackEngine {
         publish()
     }
 
+    func setVolume(_ value: Double) {
+        volume = min(max(value, 0), 1)
+        player?.volume = Float(volume)
+    }
+
     func persistPlaybackPosition() { persistPosition() }
 
     private func moveChapter(by amount: Int) {
@@ -171,6 +177,7 @@ final class WatchPlaybackEngine {
         removePlayerObservers()
         let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
+        player.volume = Float(volume)
         self.player = player
         didBecomeReadyToken = nil
 

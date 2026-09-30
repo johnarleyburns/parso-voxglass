@@ -161,6 +161,8 @@ struct RecordView: View {
     @State private var showMicCheck = false
     @State private var showCompare = false
     @State private var showImport = false
+    @State private var scrubberHapticTick = 0
+    @State private var lastScrubberSecond = -1
     /// The media-button claim for this armed session (spec §9.3), removed on
     /// disappear so the consumer player's claim is untouched outside recording.
     @State private var mediaButtonToken: Any?
@@ -561,7 +563,8 @@ struct RecordView: View {
                     .foregroundStyle(model.isRecording ? Palette.danger : Palette.brass)
             }
             .accessibilityIdentifier("record.transport.record")
-            .accessibilityLabel(model.isRecording ? "Stop recording this take" : "Record a take for this paragraph") // l10n-exempt: state-dependent accessibility or status copy
+            .accessibilityLabel(model.isRecording ? "Stop recording" : "Record paragraph \(paragraphNumber) of \(model.paragraphs.count)") // l10n-exempt: state-dependent accessibility or status copy
+            .accessibilityHint(model.isRecording ? "Recording stops automatically at the end of the paragraph." : "Double-tap to start. Recording stops automatically at the end of the paragraph.")
             .disabled(model.isRecordingTransitioning)
             // §9.3 external controls: a connected hardware keyboard records and
             // stops with Command-R while the record screen is armed.
@@ -584,6 +587,11 @@ struct RecordView: View {
                 Slider(value: Binding(get: { model.playbackPosition }, set: { value in
                     model.playbackPosition = value
                     model.playbackPlayer?.currentTime = value
+                    let second = Int(value.rounded())
+                    if second != lastScrubberSecond {
+                        lastScrubberSecond = second
+                        scrubberHapticTick += 1
+                    }
                 }), in: 0...model.playbackDuration)
                 .accessibilityIdentifier("record.playbackProgress")
                 .accessibilityValue(model.playbackPosition.formattedShort)
@@ -594,6 +602,7 @@ struct RecordView: View {
                 }
                 .voxFont(.caption2, design: .monospaced) // mono-exempt: export progress
                 .foregroundStyle(Palette.ink3)
+                .sensoryFeedback(.selection, trigger: scrubberHapticTick)
             }
         }
     }
@@ -995,7 +1004,6 @@ struct ReviewView: View {
                         Text("Chapter \(chapter.ordinal + 1): \(chapter.title)")
                             .voxFont(.subheadline, weight: .bold)
                             .foregroundStyle(Palette.ink)
-                            .lineLimit(1)
                     }
                     .contentShape(Rectangle())
                 }
@@ -1222,6 +1230,26 @@ struct ReviewView: View {
             }
         }
         .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(paragraphAccessibilityLabel(paragraph))
+        .accessibilityAction(named: "Play take") {
+            guard paragraph.take != nil else { return }
+            model.togglePlayback(paragraph.id)
+        }
+        .accessibilityAction(named: paragraph.state == .approved ? "Unapprove" : "Approve") {
+            guard paragraph.state == .recorded || paragraph.state == .approved else { return }
+            model.toggleApproval(for: paragraph.id)
+            Task { await model.persist() }
+        }
+        .accessibilityAction(named: "Re-record") {
+            model.currentParagraphID = paragraph.id
+            reRecordID = paragraph.id
+        }
+    }
+
+    private func paragraphAccessibilityLabel(_ paragraph: FlowParagraph) -> String {
+        let number = (model.paragraphs.firstIndex(where: { $0.id == paragraph.id }) ?? 0) + 1
+        return "Paragraph \(number), \(stateText(paragraph.state))"
     }
 
     private func checkboxSymbol(_ state: FlowParagraphState) -> String {
@@ -2668,7 +2696,7 @@ struct SubmitView: View {
                                         .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
                                 }
                                 .frame(width: 30, height: 30)
-                                Text(url.lastPathComponent).voxFont(.caption).foregroundStyle(Palette.ink).lineLimit(1)
+                                Text(url.lastPathComponent).voxFont(.caption).foregroundStyle(Palette.ink)
                                 Spacer()
                                 Text(byteString(url)).voxFont(.caption2).foregroundStyle(Palette.ink3)
                             }

@@ -97,12 +97,10 @@ struct HistoryView: View {
                 Text(entry.book.book.title)
                     .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
                 if let author = entry.book.book.displayAuthorLine {
                     Text(author)
                         .voxFont(.caption)
                         .foregroundStyle(Palette.ink3)
-                        .lineLimit(1)
                 }
                 Text(relativeDate(entry.lastPlayedAt))
                     .voxFont(.caption2)

@@ -195,7 +195,6 @@ struct ChapterRow: View {
                             Text(narrator)
                                 .voxFont(.caption2)
                                 .foregroundStyle(Palette.ink3)
-                                .lineLimit(1)
                         }
                     }
                 }

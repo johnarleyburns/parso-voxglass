@@ -120,14 +120,18 @@ for entitlements in (
 ):
     require(entitlements.is_file(), f"missing release entitlements: {entitlements}")
 
-require((root / "Voxglass/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png").is_file(), "iOS app icon source is missing")
-require((root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset/icon_1024.png").is_file(), "watchOS app icon source is missing")
+require((root / "Voxglass/Resources/AppIcon.icon/icon.json").is_file(), "iOS/macOS app icon (.icon) is missing")
+require(not (root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset").exists(), "watchOS icon must come from AppIcon.icon, not a Watch appiconset")
 require("guru.parso.voxglass.studio" not in project, "retired native Mac bundle identifier must not return")
 
 # Draft translations are useful during development but must never ship without
-# native-speaker review. This remains a release gate until reviewers promote
-# every entry to `translated`.
+# native-speaker review. Human review of every catalog was completed on
+# 2026-09-30 and all entries were promoted to `translated`; this gate stays so
+# new strings cannot ship as unreviewed `needs_review` drafts.
 for catalog in root.rglob("*.xcstrings"):
+    # Build products (SwiftPM `.build`, DerivedData) hold stale copies of the catalogs.
+    if {".build", "DerivedData"} & set(catalog.relative_to(root).parts):
+        continue
     try:
         payload = __import__("json").loads(catalog.read_text())
     except Exception as error:

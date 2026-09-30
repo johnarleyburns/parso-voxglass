@@ -83,8 +83,8 @@ struct VisualSummaryRow: View {
             else { Image(systemName: systemImage).foregroundStyle(Palette.brass).frame(width: 44, height: 44).background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 9)) }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).voxType(.bookTitle).foregroundStyle(Palette.ink).lineLimit(2).minimumScaleFactor(0.82)
-                Text(subtitle).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(1)
-                if let metadata { Text(metadata).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(1) }
+                Text(subtitle).voxType(.meta).foregroundStyle(Palette.ink3)
+                if let metadata { Text(metadata).voxType(.meta).foregroundStyle(Palette.ink3) }
             }
             Spacer(minLength: 8)
             if let trailingSystemImage { Image(systemName: trailingSystemImage).foregroundStyle(Palette.ink3.opacity(0.7)) }
@@ -99,9 +99,9 @@ struct HorizontalCatalogCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             CoverPlate(title: result.title, author: result.displayAuthorLine, coverURL: result.coverURL, size: 132)
-            Text(result.title).voxType(.bookTitle).foregroundStyle(Palette.ink).lineLimit(1).padding(.top, 7)
+            Text(result.title).voxType(.bookTitle).foregroundStyle(Palette.ink).padding(.top, 7)
             if let author = result.displayAuthorLine {
-                Text(author).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(1).padding(.top, 1)
+                Text(author).voxType(.meta).foregroundStyle(Palette.ink3).padding(.top, 1)
             }
         }
         .frame(width: 132)

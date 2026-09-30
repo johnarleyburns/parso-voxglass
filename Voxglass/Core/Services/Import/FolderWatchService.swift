@@ -25,21 +25,9 @@ public struct SoundIndexProgress: Sendable, Equatable {
     public var estimatedTimeRemainingText: String? {
         guard let seconds = estimatedSecondsRemaining else { return nil }
         let rounded = max(1, Int(seconds.rounded(.up)))
-        if rounded < 60 { return String(format: "~%ds remaining", rounded) }
-
-        let minutes = rounded / 60
-        let secondsRemainder = rounded % 60
-        if minutes < 60 {
-            return secondsRemainder == 0
-                ? String(format: "~%dm remaining", minutes)
-                : String(format: "~%dm %ds remaining", minutes, secondsRemainder)
-        }
-
-        let hours = minutes / 60
-        let minutesRemainder = minutes % 60
-        return minutesRemainder == 0
-            ? String(format: "~%dh remaining", hours)
-            : String(format: "~%dh %dm remaining", hours, minutesRemainder)
+        let formatted = Duration.seconds(Int64(rounded))
+            .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated))
+        return String(localized: "~\(formatted) remaining", bundle: .module, comment: "Estimated folder indexing time remaining")
     }
 
     public init(totalTracks: Int, indexedTracks: Int, startedAt: Date, now: Date) {

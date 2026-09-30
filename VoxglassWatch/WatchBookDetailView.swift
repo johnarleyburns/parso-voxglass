@@ -14,6 +14,7 @@ import VoxglassWatchProtocol
 struct WatchBookDetailView: View {
     let book: WatchBookDTO
     @EnvironmentObject private var services: WatchAppServices
+    @State private var crownVolume = 1.0
 
     private var isCurrentBook: Bool { services.playbackBook?.id == book.id }
     private var playback: WatchPlaybackSnapshot { services.playback }
@@ -31,10 +32,10 @@ struct WatchBookDetailView: View {
                     Text(book.title).font(.headline).lineLimit(2).accessibilityIdentifier("watch.book.title")
                     artwork.accessibilityHidden(true)
                     if let author = book.author, !author.isEmpty {
-                        Text(author).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                        Text(author).font(.caption2).foregroundStyle(.secondary)
                     }
                     if let narrator = book.narrator, !narrator.isEmpty {
-                        Text("Read by \(narrator)").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                        Text("Read by \(narrator)").font(.caption2).foregroundStyle(.secondary)
                     }
                     if !formattedDuration(book.duration).isEmpty {
                         Text(formattedDuration(book.duration)).font(.caption2).foregroundStyle(.secondary)
@@ -50,7 +51,7 @@ struct WatchBookDetailView: View {
                     Button {
                         services.play(book, chapterIndex: chapter.index)
                     } label: {
-                        Text(chapter.title).lineLimit(1)
+                        Text(chapter.title)
                     }
                     .accessibilityIdentifier("watch.chapter.\(chapter.id.rawValue)")
                     .accessibilityLabel("Chapter \(chapter.index + 1), \(chapter.title)")
@@ -132,7 +133,7 @@ struct WatchBookDetailView: View {
             Text(book.title).font(.caption).lineLimit(2)
                 .accessibilityIdentifier("watch.nowPlaying.bookTitle")
             if let currentChapterTitle {
-                Text(currentChapterTitle).font(.caption).lineLimit(1)
+                Text(currentChapterTitle).font(.caption)
                     .accessibilityIdentifier("watch.book.currentChapter")
             }
             if playback.chapterIndex >= 0 {
@@ -173,10 +174,46 @@ struct WatchBookDetailView: View {
                 Text("\(formattedDuration(bookRemainingSeconds)) left in book").font(.caption2).foregroundStyle(.secondary)
                     .accessibilityIdentifier("watch.book.remainingInBook")
             }
+            volumeControl
             if case .failed = playback.phase {
                 Button("Retry") { services.retryPlayback() }.accessibilityIdentifier("watch.book.retry")
             }
         }
+    }
+
+    private var volumeControl: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "speaker.wave.1.fill")
+                .accessibilityHidden(true)
+            Text("Volume")
+            Spacer()
+            Text("\(Int((crownVolume * 100).rounded()))%")
+                .monospacedDigit()
+        }
+        .focusable(true)
+        .digitalCrownRotation(
+            $crownVolume,
+            from: 0,
+            through: 1,
+            by: 0.05,
+            sensitivity: .medium,
+            isContinuous: false,
+            isHapticFeedbackEnabled: true
+        )
+        .onChange(of: crownVolume) { _, value in services.setVolume(value) }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Volume")
+        .accessibilityValue("\(Int((crownVolume * 100).rounded())) percent")
+        .accessibilityAdjustableAction { direction in
+            let step = 0.05
+            switch direction {
+            case .increment: crownVolume = min(1, crownVolume + step)
+            case .decrement: crownVolume = max(0, crownVolume - step)
+            @unknown default: break
+            }
+            services.setVolume(crownVolume)
+        }
+        .accessibilityIdentifier("watch.book.volume")
     }
 
     private var sourceLabel: String? {
@@ -232,9 +269,7 @@ struct WatchBookDetailView: View {
 
     private func formattedDuration(_ seconds: Double) -> String {
         guard seconds.isFinite, seconds > 0 else { return "" }
-        let totalMinutes = Int(seconds / 60)
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-        return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+        return Duration.seconds(Int64(seconds.rounded()))
+            .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
     }
 }

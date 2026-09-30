@@ -13,6 +13,7 @@ final class WatchAppServices: ObservableObject {
     @Published private(set) var downloading = Set<WatchBookID>()
     @Published private(set) var playbackBook: WatchBookDTO?
     @Published private(set) var playback = WatchPlaybackSnapshot()
+    @Published private(set) var volume: Double = 1
     @Published var error: String?
     private let playbackEngine: WatchPlaybackEngine
     private var cancellables = Set<AnyCancellable>()
@@ -97,6 +98,10 @@ final class WatchAppServices: ObservableObject {
     func previousChapter() { playbackEngine.previousChapter() }
     func retryPlayback() { playbackEngine.retry() }
     func seek(to position: TimeInterval) { playbackEngine.seek(to: position) }
+    func setVolume(_ value: Double) {
+        playbackEngine.setVolume(value)
+        volume = playbackEngine.volume
+    }
     func persistPlaybackPosition() { playbackEngine.persistPlaybackPosition() }
 
     private func downloadApprovedChapters(for book: WatchBookDTO) async {

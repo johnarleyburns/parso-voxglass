@@ -71,7 +71,7 @@ struct MiniPlayerAccessory: View {
     private func titleText(_ session: PlaybackSession) -> some View {
         Text(session.book.title)
             .voxType(.body)
-            .lineLimit(1)
+            .lineLimit(2)
             .minimumScaleFactor(0.62)
             .allowsTightening(true)
     }

@@ -103,7 +103,7 @@ private struct NarrationStudioHero: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Next: \(phase.label)").voxType(.eyebrow).foregroundStyle(Palette.brass)
                         Text(project.metadata.title).voxType(.bookTitle).foregroundStyle(Palette.ink).lineLimit(2)
-                        Text("\(project.metadata.author) · \(project.totalCount) paragraphs").voxType(.meta).foregroundStyle(Palette.ink2).lineLimit(1)
+                        Text("\(project.metadata.author) · \(project.totalCount) paragraphs").voxType(.meta).foregroundStyle(Palette.ink2)
                     }
                 }
                 PipelineBar(phase: phase)
@@ -168,7 +168,7 @@ private struct NeedsPreview: View {
                 HStack(spacing: 10) {
                     CoverPlate(title: need.work.title, author: need.work.author, coverURL: nil, size: 40, shape: .portrait)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(need.work.title).voxType(.bookTitle).foregroundStyle(Palette.ink).lineLimit(1)
+                        Text(need.work.title).voxType(.bookTitle).foregroundStyle(Palette.ink)
                         Text("\(need.work.lengthClass == .short ? "Short work" : "Group project") · about \(max(1, need.work.estSeconds / 60)) min").voxType(.meta).foregroundStyle(Palette.ink2) // l10n-exempt: state-dependent accessibility or status copy
                     }
                     Spacer()

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate the Voxglass app icon: periodic-table tile for V (Vanadium).
+"""SUPERSEDED 2026-09-30: the shipping icon is the designer's Icon Composer file at
+`Voxglass/Resources/AppIcon.icon` (sources in `design/icon/`). Kept only for history;
+do not run it to regenerate the icon.
+
+Generate the Voxglass app icon: periodic-table tile for V (Vanadium).
 Brass (#E3A44B) on a dark radial-gradient field, matching the design system.
 Layout and font sizes mirror the Tonearm icon exactly.
 """

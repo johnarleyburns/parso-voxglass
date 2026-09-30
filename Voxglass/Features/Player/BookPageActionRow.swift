@@ -18,6 +18,8 @@ struct BookPageActionRow: View {
     @State private var showWatchCellularPrompt = false
     @State private var showRemoveWatchConfirm = false
     @State private var bookmarkCount = 0
+    @State private var userPlaybackRateChangeCount = 0
+    @State private var userSleepTimerChangeCount = 0
 
     private var offlineState: OfflineState {
         // A local-files book (a folder import, or a personal-listening
@@ -130,6 +132,7 @@ struct BookPageActionRow: View {
         Menu {
             ForEach(PlaybackRate.menuLadder, id: \.self) { rate in
                 Button {
+                    userPlaybackRateChangeCount += 1
                     playback.setPlaybackRate(rate)
                 } label: {
                     if playback.playbackRate == rate {
@@ -161,25 +164,25 @@ struct BookPageActionRow: View {
             playback.setPlaybackRate(ladder[next])
         }
         .accessibilityIdentifier("nowplaying.speed")
-        .sensoryFeedback(.selection, trigger: playback.playbackRate)
+        .sensoryFeedback(.selection, trigger: userPlaybackRateChangeCount)
     }
 
     private var sleepTimerButton: some View {
         Menu {
             Button {
-                playback.setSleepTimer(.off)
+                setSleepTimerFromUser(.off)
             } label: {
                 sleepMenuLabel("Off", active: playback.sleepMode == .off)
             }
             ForEach([5, 10, 15, 30, 45, 60], id: \.self) { minutes in
                 Button {
-                    playback.setSleepTimer(.duration(TimeInterval(minutes * 60)))
+                    setSleepTimerFromUser(.duration(TimeInterval(minutes * 60)))
                 } label: {
                     sleepMenuLabel("\(minutes) minutes", active: playback.sleepMode == .duration(TimeInterval(minutes * 60)))
                 }
             }
             Button {
-                playback.setSleepTimer(.endOfChapter)
+                setSleepTimerFromUser(.endOfChapter)
             } label: {
                 sleepMenuLabel("End of chapter", active: playback.sleepMode == .endOfChapter)
             }
@@ -190,7 +193,12 @@ struct BookPageActionRow: View {
         .accessibilityLabel("Sleep timer")
         .accessibilityValue(sleepTimerAccessibilityValue)
         .accessibilityIdentifier("nowplaying.sleepTimer")
-        .sensoryFeedback(.selection, trigger: playback.sleepMode)
+        .sensoryFeedback(.selection, trigger: userSleepTimerChangeCount)
+    }
+
+    private func setSleepTimerFromUser(_ mode: SleepTimer.Mode) {
+        userSleepTimerChangeCount += 1
+        playback.setSleepTimer(mode)
     }
 
     private var sleepTimerAccessibilityValue: String {

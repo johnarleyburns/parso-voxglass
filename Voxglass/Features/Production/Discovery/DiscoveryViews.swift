@@ -281,7 +281,6 @@ struct LongNeedCard: View {
             Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))")
                 .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
-                .lineLimit(1)
             Button(action: start) {
                 Text("Start recording")
                     .voxFont(.caption2, weight: .bold)
@@ -410,11 +409,9 @@ struct NeedRow: View {
                 Text(need.work.title)
                     .voxFont(.subheadline, weight: .bold)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
                 Text("\(need.work.author) · \(shortDuration(need.work.estSeconds))")
                     .voxFont(.caption2)
                     .foregroundStyle(Palette.ink2)
-                    .lineLimit(1)
                 HStack(spacing: 6) {
                     SignalBadge(signal: need.signal)
                     GradeBadge(grade: need.work.grade)
@@ -586,15 +583,13 @@ struct MyNarrationsSection: View {
             .frame(width: 46, height: 60)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(project.metadata.title)
-                    .voxFont(.subheadline, weight: .bold)
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
-                Text("\(project.metadata.author) · \(project.totalCount) paragraphs · ~\(projectTotalDuration(project).formattedShort)")
-                    .voxFont(.caption2)
-                    .foregroundStyle(Palette.ink2)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+            Text(project.metadata.title)
+                .voxFont(.subheadline, weight: .bold)
+                .foregroundStyle(Palette.ink)
+            Text("\(project.metadata.author) · \(project.totalCount) paragraphs · ~\(projectTotalDuration(project).formattedShort)")
+                .voxFont(.caption2)
+                .foregroundStyle(Palette.ink2)
+                .lineLimit(1) // lineLimit-exempt: fixed-height project row metadata
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {

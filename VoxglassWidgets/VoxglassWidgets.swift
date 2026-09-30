@@ -67,7 +67,6 @@ struct VoxglassWidgetView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(snapshot.title)
                         .font(.headline)
-                        .lineLimit(1)
                         .widgetAccentable()
                     Text("\(snapshot.minutesLeftInChapter) min left in chapter")
                         .font(.caption2)
@@ -141,9 +140,9 @@ struct VoxglassWidgetView: View {
                     cover(for: snapshot)
                     VStack(alignment: .leading, spacing: 5) {
                         Text("CONTINUE").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                        Text(snapshot.title).font(.headline).lineLimit(2).widgetAccentable()
+                        Text(snapshot.title).font(.headline).widgetAccentable()
                         Text("\(snapshot.chapterTitle) · \(snapshot.minutesLeftInChapter) min left")
-                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            .font(.caption).foregroundStyle(.secondary)
                         ProgressView(value: snapshot.fraction)
                         transport(for: snapshot)
                     }
@@ -154,7 +153,7 @@ struct VoxglassWidgetView: View {
             }
         } else {
             VStack(spacing: 6) {
-                Image(systemName: "waveform").foregroundStyle(.orange).widgetAccentable()
+                Image(systemName: "waveform").foregroundStyle(color(0xE3A44B)).widgetAccentable()
                 Text("Nothing playing yet").font(.caption)
                 Link("Find a book", destination: URL(string: "voxglass://discover")!)
             }
@@ -193,11 +192,9 @@ struct VoxglassWidgetView: View {
 
     private func inlineRemainingText(for snapshot: NowPlayingSnapshot) -> String {
         guard let remaining = snapshot.bookRemaining else {
-            return "\(snapshot.minutesLeftInChapter) min left"
+            return DurationFormatting.remaining(TimeInterval(snapshot.minutesLeftInChapter * 60))
         }
-        let hours = Int(remaining / 3600)
-        let minutes = Int(remaining.truncatingRemainder(dividingBy: 3600) / 60)
-        return "\(hours) h \(minutes) m left"
+        return DurationFormatting.remaining(remaining)
     }
 
     private func color(_ hex: UInt32) -> Color {

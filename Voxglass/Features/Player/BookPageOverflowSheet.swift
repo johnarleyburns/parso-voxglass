@@ -122,9 +122,9 @@ struct BookPageOverflowSheet: View {
 
     @ViewBuilder
     private var discoverSection: some View {
-        let author = book.book.authors.first?.trimmingCharacters(in: .whitespaces) ?? ""
+        let author = book.book.displayAuthorLine ?? ""
         let narrator = book.book.narrators.first?.trimmingCharacters(in: .whitespaces) ?? ""
-        let hasAuthor = !author.isEmpty && author.localizedCaseInsensitiveCompare("Unknown author") != .orderedSame
+        let hasAuthor = !author.isEmpty
         let hasNarrator = !narrator.isEmpty
 
         if hasAuthor || hasNarrator || genre != nil {
@@ -227,7 +227,6 @@ struct BookPageOverflowSheet: View {
             Text(title)
                 .voxFont(.subheadline, weight: .medium)
                 .foregroundStyle(Palette.ink)
-                .lineLimit(1)
             Spacer(minLength: 8)
             if let detail {
                 Text(detail)

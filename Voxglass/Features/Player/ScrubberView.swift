@@ -13,6 +13,8 @@ struct ScrubberView: View {
 
     @State private var isScrubbing = false
     @State private var scrubPosition: TimeInterval = 0
+    @State private var scrubHapticTick = 0
+    @State private var lastScrubSecond = -1
 
     private var liveChapterPosition: TimeInterval {
         if isActiveBook {
@@ -70,6 +72,11 @@ struct ScrubberView: View {
                             isScrubbing = true
                             let ratio = val.location.x / geometry.size.width
                             scrubPosition = max(0, min(chapterDuration, Double(ratio) * chapterDuration))
+                            let second = Int(scrubPosition.rounded())
+                            if second != lastScrubSecond {
+                                lastScrubSecond = second
+                                scrubHapticTick += 1
+                            }
                         }
                         .onEnded { _ in
                             guard isActiveBook else { return }
@@ -90,6 +97,7 @@ struct ScrubberView: View {
                 scrubPosition = target
                 onSeekChapterPosition(target)
             }
+            .sensoryFeedback(.selection, trigger: scrubHapticTick)
 
             HStack {
                 Text(TimeFormatting.clock(chapterPosition))

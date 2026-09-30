@@ -1,14 +1,174 @@
 {
-  "sourceLanguage" : "en",
-  "version" : "1.0",
-  "strings" : {
-    "German" : {
-      "comment" : "The English display name of the German LibriVox catalog language.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deutsch"
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "%@ left": {
+      "comment": "Remaining playback duration shown in a widget or playback detail.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ left"
+          }
+        }
+      }
+    },
+    "~%@ remaining": {
+      "comment": "Estimated folder indexing time remaining.",
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "en": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "es": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "he": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "it": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "nl": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "pl": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "~%@ remaining" } }
+      }
+    },
+    "German": {
+      "comment": "The English display name of the German LibriVox catalog language.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deutsch"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "German"
           }
         }
       }

@@ -121,7 +121,6 @@ struct BookmarksView: View {
                 Text(chapter?.title ?? "Chapter")
                     .voxFont(.footnote, weight: .semibold)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
                 Text(TimeFormatting.clock(bookmark.position))
                     .voxFont(.caption2, design: .monospaced) // mono-exempt: bookmark timecode
                     .foregroundStyle(Palette.ink3)
