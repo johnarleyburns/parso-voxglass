@@ -78,13 +78,7 @@ struct VoxglassWidgetView: View {
                 .containerBackground(.clear, for: .widget)
 
             case .accessoryInline:
-                let left: String
-                if let remaining = snapshot.bookRemaining {
-                    left = "\(Int(remaining / 3600)) h \(Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)) m left"
-                } else {
-                    left = "\(snapshot.minutesLeftInChapter) min left"
-                }
-                Text("\(left) · \(snapshot.title)")
+                Text("\(inlineRemainingText(for: snapshot)) · \(snapshot.title)")
                     .containerBackground(.clear, for: .widget)
 
             case .systemSmall:
@@ -94,7 +88,6 @@ struct VoxglassWidgetView: View {
                             .resizable()
                             .scaledToFill()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .widgetAccentedRenderingMode(.desaturated)
                     } else {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(color(snapshot.backgroundHex ?? 0x17191D))
@@ -173,7 +166,6 @@ struct VoxglassWidgetView: View {
     private func cover(for snapshot: NowPlayingSnapshot) -> some View {
         if let url = CoverThumbnailStore.url(for: snapshot.bookID), let image = UIImage(contentsOfFile: url.path) {
             Image(uiImage: image).resizable().scaledToFill().frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 10))
-                .widgetAccentedRenderingMode(.desaturated)
         } else {
             RoundedRectangle(cornerRadius: 10).fill(color(snapshot.backgroundHex ?? 0x17191D)).frame(width: 56, height: 56)
                 .overlay(Image(systemName: "waveform").foregroundStyle(color(snapshot.accentHex ?? 0xE3A44B)))
@@ -197,6 +189,15 @@ struct VoxglassWidgetView: View {
                 .accessibilityLabel("Skip forward \(skipForwardSeconds) seconds")
         }
         .buttonStyle(.plain)
+    }
+
+    private func inlineRemainingText(for snapshot: NowPlayingSnapshot) -> String {
+        guard let remaining = snapshot.bookRemaining else {
+            return "\(snapshot.minutesLeftInChapter) min left"
+        }
+        let hours = Int(remaining / 3600)
+        let minutes = Int(remaining.truncatingRemainder(dividingBy: 3600) / 60)
+        return "\(hours) h \(minutes) m left"
     }
 
     private func color(_ hex: UInt32) -> Color {
