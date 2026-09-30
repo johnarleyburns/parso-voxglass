@@ -15,10 +15,12 @@ struct BookRowView: View {
                     .foregroundStyle(VoxglassTheme.ink)
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
-                Text(book.book.authorLine)
-                    .font(.subheadline)
-                    .foregroundStyle(VoxglassTheme.secondaryInk)
-                    .lineLimit(1)
+                if let author = book.book.displayAuthorLine {
+                    Text(author)
+                        .font(.subheadline)
+                        .foregroundStyle(VoxglassTheme.secondaryInk)
+                        .lineLimit(1)
+                }
                 Text("\(book.chapters.count) chapter\(book.chapters.count == 1 ? "" : "s") · \(TimeFormatting.compactDuration(book.totalDuration))")
                     .font(.caption)
                     .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.78))

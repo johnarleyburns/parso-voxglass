@@ -8,6 +8,7 @@ struct RootView: View {
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @State private var selectedTab: VoxglassTab = .launchDefault
     @State private var miniPlayerRouter = MiniPlayerPresentationRouter()
+    @State private var deepLinkedBook: DeepLinkedBook?
     @Namespace private var zoomNamespace
     @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-VoxglassDisableAnimatedSplash")
     @AppStorage(AppPreferencesStore.Keys.hasCompletedSplash) private var hasCompletedSplash = false
@@ -94,6 +95,23 @@ struct RootView: View {
                 try? await Task.sleep(for: .seconds(1))
             }
         }
+        .sheet(item: $deepLinkedBook) { destination in
+            BookPageView(
+                book: libraryStore.book(withID: destination.id),
+                showingNowPlaying: .constant(false),
+                presentationContext: .nowPlayingSheet
+            )
+            .environment(playback)
+            .environmentObject(libraryStore)
+            .environmentObject(offlineDownloadManager)
+            .environmentObject(phoneAudioRelay)
+            .presentationDragIndicator(.visible)
+        }
+        .onOpenURL { url in
+            guard url.scheme == "voxglass", url.host == "book",
+                  let bookID = UUID(uuidString: url.pathComponents.dropFirst().joined(separator: "/")) else { return }
+            deepLinkedBook = DeepLinkedBook(id: bookID)
+        }
     }
 
     private var tabShell: some View {
@@ -120,17 +138,30 @@ struct RootView: View {
 
     @MainActor
     private func handleWidgetCommand() async {
-        guard WidgetPlaybackCommandStore.consume() == .resume else { return }
-        if playback.currentSession == nil {
-            await playback.restorePresentedSession(from: libraryStore.books)
-        }
-        if let session = playback.currentSession {
-            if !session.isPlaying { playback.togglePlayPause() }
-        } else if let book = libraryStore.recentlyPlayed.first {
-            await playback.play(book)
+        guard let command = WidgetPlaybackCommandStore.consume() else { return }
+        switch command {
+        case .resume:
+            if playback.currentSession == nil {
+                await playback.restorePresentedSession(from: libraryStore.books)
+            }
+            if let session = playback.currentSession {
+                if !session.isPlaying { playback.togglePlayPause() }
+            } else if let book = libraryStore.recentlyPlayed.first {
+                await playback.play(book)
+            }
+        case .togglePlayPause:
+            playback.togglePlayPause()
+        case .skipBackward:
+            await playback.skip(by: -15)
+        case .skipForward:
+            await playback.skip(by: 30)
         }
         WidgetSnapshotWriter.write(playback: playback)
     }
+}
+
+private struct DeepLinkedBook: Identifiable {
+    let id: UUID
 }
 
 private struct MiniPlayerBottomAccessory: ViewModifier {

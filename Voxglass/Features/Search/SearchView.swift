@@ -247,13 +247,15 @@ struct InternetArchiveResultRow: View {
     var body: some View {
         BookListRow(
             title: result.title,
-            subtitle: result.authorLine,
+            subtitle: result.displayAuthorLine ?? "",
             tertiary: result.narratorLine,
             metadata: result.recordingDetailsLine,
             coverURL: result.coverURL,
             accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: "\(result.title) by \(result.authorLine), \(result.recordingDetailsLine)"
+            accessibilityLabel: [result.title, result.displayAuthorLine.map { "by \($0)" }, result.recordingDetailsLine]
+                .compactMap { $0 }
+                .joined(separator: ", ")
         )
     }
 }

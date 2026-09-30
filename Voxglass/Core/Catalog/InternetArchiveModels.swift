@@ -39,6 +39,25 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
         creators.isEmpty ? "Unknown author" : creators.joined(separator: ", ")
     }
 
+    /// User-facing author text. Archive records sometimes contain a
+    /// placeholder rather than a real creator; don't render that placeholder
+    /// in catalog rows or artwork.
+    public var displayAuthorLine: String? {
+        let names = creators
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && !Self.isUnknownAuthor($0) }
+        let value = names.joined(separator: ", ")
+        return value.isEmpty ? nil : value
+    }
+
+    private static func isUnknownAuthor(_ value: String) -> Bool {
+        let normalized = value.lowercased().replacingOccurrences(of: "  ", with: " ")
+        return normalized == "unknown"
+            || normalized == "unknown author"
+            || normalized == "uknown author"
+            || normalized == "uknown"
+    }
+
     /// Best-effort narrator names parsed from the item description and title.
     /// LibriVox descriptions commonly use "Read in English by …", while some
     /// records put the credit in the title instead.

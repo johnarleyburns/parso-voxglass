@@ -232,6 +232,7 @@
 		D4B0153F00DDC12926F54F68 /* anthem_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 532142CAFAA3305FE98E66A2 /* anthem_librivox.jpg */; };
 		D4B07A4F03C59659A00D9FBB /* BundledCarPlayCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C1D4B2582FA10BB7AE1E88C /* BundledCarPlayCuePlayer.swift */; };
 		D566E80E47CD7CA3EB0C284A /* CarPlayTemplateValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B309922E7F9EA263E5DDF7 /* CarPlayTemplateValidation.swift */; };
+		D58BE5AC30AC0E565994A34C /* CatalogBookDestinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A55A606A8A286E8C139315E /* CatalogBookDestinationView.swift */; };
 		D6EBA1E5E52AAFBE5FA87BD7 /* treasure_island_ap_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 07B47F8B73E93AF8A2A3E0ED /* treasure_island_ap_librivox.jpg */; };
 		D7CFA5E82C5553B238AC6C14 /* letters_brides_0709_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 305628B60168BDF452A13A74 /* letters_brides_0709_librivox.jpg */; };
 		D80826DBF8008B6999D5B5B4 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 385DE7B6080DA38D4B429672 /* HistoryView.swift */; };
@@ -539,6 +540,7 @@
 		854A3A693E60EED9A9637983 /* MacAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAudioCapture.swift; sourceTree = "<group>"; };
 		85B1181A1D8983DA914206C2 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		8929BD61B2DF375F3BBF9376 /* gulliver_ld_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = gulliver_ld_librivox.jpg; sourceTree = "<group>"; };
+		8A55A606A8A286E8C139315E /* CatalogBookDestinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogBookDestinationView.swift; sourceTree = "<group>"; };
 		8B92C41C9007B71F7A4BB38C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassMacApp.swift; sourceTree = "<group>"; };
 		8C88D9C118AD2CD981FDADED /* NarrationTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationTabView.swift; sourceTree = "<group>"; };
@@ -1007,6 +1009,7 @@
 				1F8DFE7B33D0A5AB70593632 /* BookPageActionRow.swift */,
 				480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */,
 				0F48A6F704ECEB52D975C945 /* BookPageView.swift */,
+				8A55A606A8A286E8C139315E /* CatalogBookDestinationView.swift */,
 				CE26F9079A1C12E2BAD8E865 /* CatalogDiscoveryView.swift */,
 				40F8ACEE07BAD813F34C6DBE /* EQView.swift */,
 				EC3989C8BA86F0E54C896CBD /* MiniPlayerPresentationRouter.swift */,
@@ -1860,6 +1863,7 @@
 				E247E58BE027FE4382C4B453 /* CarPlaySearchAvailability.swift in Sources */,
 				F14C7CF0EA99F6CF748CF52A /* CarPlayTemplateRenderer.swift in Sources */,
 				D566E80E47CD7CA3EB0C284A /* CarPlayTemplateValidation.swift in Sources */,
+				D58BE5AC30AC0E565994A34C /* CatalogBookDestinationView.swift in Sources */,
 				917FC5B3C23CF26B23C9B79F /* CatalogDiscoveryView.swift in Sources */,
 				DF395B81F02E7E856BB211D3 /* CollectionFan.swift in Sources */,
 				8081D5896F8561DDA17DD65A /* CoverPlate.swift in Sources */,

@@ -35,6 +35,18 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
   smoke tests. If an accidental duplicate was started, stop only the duplicate process and leave
   the original required verification running.
 
+## Serialized Apple-platform builds and local tests
+
+- Always run iPhone and Watch `xcodebuild` commands sequentially. Never background them, run them
+  through `&`, or launch them from parallel tool calls: both targets share project/build state and
+  concurrent builds can race on generated resources and the build database.
+- The local UI runner (`scripts/test.sh`) must acquire its checkout-wide lock before starting the
+  iPhone smoke test and hold it until the Watch smoke test and cleanup finish. Separate local
+  invocations must wait for that lock rather than overlap.
+- Local logic tests use `swift test --no-parallel` (or the repository wrapper that supplies it).
+  Keep serial execution explicit even when a test suite appears independent; cache, audio, and
+  platform-target tests share process and derived-data state.
+
 ## Xcode simulator build commands (iPhone + Watch)
 
 The `Voxglass` iPhone scheme embeds the `VoxglassWatch` app. Never pass a global

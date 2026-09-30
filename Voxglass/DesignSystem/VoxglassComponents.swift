@@ -195,6 +195,7 @@ struct BookListRow: View {
                 .raisedSurface()
         case .grouped:
             rowContent
+                .padding(.vertical, 8)
         }
     }
 
@@ -225,7 +226,7 @@ struct BookListRow: View {
                     .minimumScaleFactor(0.86)
                 if isImported {
                     ImportedTag()
-                } else {
+                } else if !subtitle.isEmpty {
                     Text(subtitle)
                         .voxType(.meta)
                         .foregroundStyle(Palette.ink3)
@@ -487,7 +488,7 @@ struct CompactBookRowView: View {
     var body: some View {
         BookListRow(
             title: book.book.title,
-            subtitle: book.book.authorLine,
+            subtitle: book.book.displayAuthorLine ?? "",
             tertiary: book.book.narratorLine,
             metadata: metadata,
             watchStatus: watchStorageText,
@@ -501,7 +502,10 @@ struct CompactBookRowView: View {
     }
 
     private var accessibilityText: String {
-        var parts = ["\(book.book.title) by \(book.book.authorLine)"]
+        var parts = [book.book.title]
+        if let author = book.book.displayAuthorLine {
+            parts.append("by \(author)")
+        }
         if let metadata, !metadata.isEmpty {
             parts.append(metadata)
         }
@@ -527,11 +531,13 @@ struct HorizontalBookCard: View {
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .padding(.top, 7)
-            Text(book.book.authorLine)
-                .voxFont(.caption2)
-                .foregroundStyle(Palette.ink3)
-                .lineLimit(1)
-                .padding(.top, 1)
+            if let author = book.book.displayAuthorLine {
+                Text(author)
+                    .voxFont(.caption2)
+                    .foregroundStyle(Palette.ink3)
+                    .lineLimit(1)
+                    .padding(.top, 1)
+            }
         }
         .frame(width: 132, alignment: .leading)
     }

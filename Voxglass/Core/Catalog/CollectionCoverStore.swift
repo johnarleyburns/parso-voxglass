@@ -180,7 +180,7 @@ public final class CollectionCoverStore: ObservableObject {
             let query = collection.archiveQuery + LibriVoxLanguage.clause(for: languages)
             let results = try await client.searchAdvanced(query: query, rows: 12, sort: .popularity)
             resolvedPreviews[collection.id] = results.prefix(3).map {
-                CollectionBookPreview(title: $0.title, author: $0.authorLine)
+                CollectionBookPreview(title: $0.title, author: $0.displayAuthorLine ?? "")
             }
             persistPreviews()
             for result in results {

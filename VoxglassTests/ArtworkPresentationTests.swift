@@ -94,6 +94,11 @@ import Testing
 
         for path in paths {
             let text = try source(path)
+            if path == "Voxglass/Features/Discover/DiscoverView.swift" {
+                #expect(text.contains("CatalogBookDestinationView"))
+                #expect(text.contains("selectedCatalogResult = result"))
+                continue
+            }
             #expect(text.contains("private func presentResult"))  // \(path)
             #expect(text.contains("await libraryStore.markBookPending(imported.book.id)"))  // \(path)
             #expect(text.contains("selectedCatalogBookID = imported.book.id"))  // \(path)

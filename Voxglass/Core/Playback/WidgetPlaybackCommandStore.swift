@@ -9,14 +9,19 @@ public enum WidgetPlaybackCommandStore {
 
     public enum Command: String, Codable, Sendable {
         case resume
+        case togglePlayPause
+        case skipBackward
+        case skipForward
     }
 
-    public static func requestResume() {
+    public static func request(_ command: Command) {
         guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else { return }
         let url = container.appendingPathComponent(fileName)
-        guard let data = try? JSONEncoder().encode(Command.resume) else { return }
+        guard let data = try? JSONEncoder().encode(command) else { return }
         try? data.write(to: url, options: .atomic)
     }
+
+    public static func requestResume() { request(.resume) }
 
     public static func consume() -> Command? {
         guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else { return nil }

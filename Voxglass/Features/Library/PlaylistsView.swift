@@ -82,7 +82,9 @@ struct PlaylistDetailView: View {
                         } label: {
                             VStack(alignment: .leading) {
                                 Text(book.book.title).foregroundStyle(Palette.ink)
-                                Text(book.book.authorLine).font(.caption).foregroundStyle(Palette.ink3)
+                                if let author = book.book.displayAuthorLine {
+                                    Text(author).font(.caption).foregroundStyle(Palette.ink3)
+                                }
                             }
                         }
                         .accessibilityLabel("Play \(book.book.title)")

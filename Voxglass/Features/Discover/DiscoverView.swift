@@ -12,13 +12,13 @@ struct BrowseView: View {
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
     @State private var showDownloadAllAlert = false
-    @State private var importingIdentifier: String?
     // Advanced catalog filters belong to this discovery surface only. Do not
     // persist them as app-wide preferences or a choice here can silently
     // narrow another catalog surface later.
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
-    @State private var selectedCatalogBookID: UUID?
+    @State private var selectedCatalogResult: InternetArchiveSearchResult?
+    @State private var selectedCatalogResultID: String?
     @State private var showingHistory = false
     @State private var showSearch = false
     @State private var discoverScope: DiscoverBrowseScope = .collection
@@ -29,54 +29,25 @@ struct BrowseView: View {
         VoxglassScreen(
             title: "Discover",
             scrollToTopTrigger: AnyHashable(selectedCollection?.id ?? "discover.featured"),
-            headerTrailingContent: AnyView(discoverHeaderActions)
-        ) {
-            VStack(alignment: .leading, spacing: 18) {
-                scopeBar
-                if let selectedCollection {
-                    selectedCollectionPill(selectedCollection)
-                }
-                if showSearch {
-                    searchPanel
-                }
-                if shouldShowFeaturedCollections {
-                    collectionShelves
-                }
-                catalogResults
-            }
-            .padding(.top, 12)
-            .navigationDestination(item: $selectedCatalogBookID) { bookID in
-                BookPageView(book: libraryStore.book(withID: bookID), showingNowPlaying: $showingNowPlaying)
-            }
+            headerTrailingContent: AnyView(discoverHeaderActions),
+            content: { discoverContent }
+        )
+        .navigationDestination(item: $selectedCatalogResultID) { _ in
+            selectedCatalogDestination
         }
         .sheet(isPresented: $showingHistory) {
             HistoryView(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
         }
-        .sheet(item: $showingCollectionInfo) { collection in
-            CollectionInfoSheet(
-                collection: collection,
-                resolvedCoverURL: coverStore.coverURL(for: collection),
-                approximateCount: coverStore.count(for: collection)
+        .sheet(item: $showingCollectionInfo, content: collectionInfoSheet)
+        .alert(isPresented: errorBinding) {
+            Alert(
+                title: Text("Discover Failed"),
+                message: Text(verbatim: discoverErrorMessage),
+                dismissButton: .cancel(Text("OK"), action: clearDiscoverErrors)
             )
         }
-        .alert("Discover Failed", isPresented: errorBinding) {
-            Button("OK", role: .cancel) {
-                catalogStore.catalogError = nil
-                libraryStore.importError = nil
-            }
-        } message: {
-            Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    searchFocused = false
-                }
-                .accessibilityIdentifier("discover.dismissKeyboard")
-            }
-        }
+        .toolbar { discoverKeyboardToolbar }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
             let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
@@ -105,6 +76,50 @@ struct BrowseView: View {
             Task { await runSearch() }
         }
         .onChange(of: discoverScope) { _, scope in
+            handleDiscoverScopeChange(scope)
+        }
+    }
+
+    private var discoverContent: some View {
+            VStack(alignment: .leading, spacing: 18) {
+                scopeBar
+                if let selectedCollection {
+                    selectedCollectionPill(selectedCollection)
+                }
+                if showSearch {
+                    searchPanel
+                }
+                if shouldShowFeaturedCollections {
+                    collectionShelves
+                }
+                catalogResults
+            }
+            .padding(.top, 12)
+    }
+
+    @ViewBuilder
+    private var selectedCatalogDestination: some View {
+        if let selectedCatalogResult {
+            CatalogBookDestinationView(result: selectedCatalogResult, showingNowPlaying: $showingNowPlaying)
+        } else {
+            EmptyView()
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var discoverKeyboardToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .keyboard) {
+            Spacer()
+            Button {
+                searchFocused = false
+            } label: {
+                Text("Done")
+            }
+            .accessibilityIdentifier("discover.dismissKeyboard")
+        }
+    }
+
+    private func handleDiscoverScopeChange(_ scope: DiscoverBrowseScope) {
             let hasQuery = !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             if scope == .all {
                 guard selectedCollection != nil || hasQuery else { return }
@@ -125,7 +140,6 @@ struct BrowseView: View {
                 }
                 catalogStore.resetResultsForNavigation()
             }
-        }
     }
 
     private var discoverHeaderActions: some View {
@@ -382,13 +396,13 @@ struct BrowseView: View {
                                     InternetArchiveResultRow(
                                         result: result,
                                         style: .grouped,
-                                        isLoading: importingIdentifier == result.identifier
+                                        isLoading: false
                                     )
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityIdentifier("discover.result.\(result.identifier)")
                                 .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
-                                .disabled(catalogStore.isSearching || importingIdentifier == result.identifier)
+                                .disabled(catalogStore.isSearching)
 
                                 if index < results.count - 1 {
                                     VoxglassListDivider()
@@ -622,20 +636,10 @@ struct BrowseView: View {
     }
 
     private func presentResult(_ result: InternetArchiveSearchResult) async {
-        importingIdentifier = result.identifier
-        defer { importingIdentifier = nil }
-        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
-
-        if let imported = await catalogStore.importResult(result, into: libraryStore) {
-            // Browsing/previewing a catalog result must never silently land
-            // it in My Books — only the book page's explicit "+" does that.
-            // Existing saved books must retain their library state when opened
-            // again from Discover (or a fallback catalog result).
-            if !existingBookIDs.contains(imported.book.id) {
-                await libraryStore.markBookPending(imported.book.id)
-            }
-            selectedCatalogBookID = imported.book.id
-        }
+        // Push immediately; CatalogBookDestinationView performs the metadata
+        // import after navigation so the tap has instant visual feedback.
+        selectedCatalogResult = result
+        selectedCatalogResultID = result.identifier
     }
 
     private var selectedCollectionIDs: Set<String> {
@@ -644,6 +648,23 @@ struct BrowseView: View {
 
     private var selectedLanguages: Set<String> {
         AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
+    }
+
+    private var discoverErrorMessage: String {
+        catalogStore.catalogError ?? libraryStore.importError ?? ""
+    }
+
+    private func clearDiscoverErrors() {
+        catalogStore.catalogError = nil
+        libraryStore.importError = nil
+    }
+
+    private func collectionInfoSheet(_ collection: IACollection) -> some View {
+        CollectionInfoSheet(
+            collection: collection,
+            resolvedCoverURL: coverStore.coverURL(for: collection),
+            approximateCount: coverStore.count(for: collection)
+        )
     }
 }
 
@@ -684,13 +705,7 @@ private struct ExploreCollectionCard: View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    CollectionFan(books: [
-                        previews.isEmpty
-                            ? (collection.title, nil)
-                            : (previews[0].title, previews[0].author),
-                        previews.dropFirst().first.map { ($0.title, $0.author) } ?? (collection.title, nil),
-                        previews.dropFirst(2).first.map { ($0.title, $0.author) } ?? (collection.title, nil)
-                    ])
+                    CollectionFan(books: fanBooks)
                     Spacer()
                 }
                 HStack(alignment: .firstTextBaseline) {
@@ -711,6 +726,18 @@ private struct ExploreCollectionCard: View {
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
+        }
+    }
+
+    /// The resolver returns the most popular books first. CollectionFan draws
+    /// its plates back-to-front, so reverse the three previews before drawing
+    /// them to put the most popular title on the front/top plate.
+    private var fanBooks: [(title: String, author: String?)] {
+        let books = Array(previews.prefix(3).reversed())
+        return (0..<3).map { index in
+            guard books.indices.contains(index) else { return (collection.title, nil) }
+            let book = books[index]
+            return (book.title, book.author.isEmpty ? nil : book.author)
         }
     }
 

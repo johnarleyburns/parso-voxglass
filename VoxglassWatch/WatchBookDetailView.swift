@@ -126,6 +126,8 @@ struct WatchBookDetailView: View {
     /// the one loaded into the engine.
     private var nowPlayingDetail: some View {
         VStack(alignment: .leading, spacing: 4) {
+            Text(book.title).font(.caption).lineLimit(2)
+                .accessibilityIdentifier("watch.nowPlaying.bookTitle")
             if let currentChapterTitle {
                 Text(currentChapterTitle).font(.caption).lineLimit(1)
                     .accessibilityIdentifier("watch.book.currentChapter")

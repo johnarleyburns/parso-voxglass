@@ -170,7 +170,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     /// Persists the iPhone-owned desired root before any bytes are sent. Local
     /// imports and already-cached files are transferred directly; remote sources
     /// remain resumable until the existing phone cache has materialized them.
-    func requestTypedWatchDownload(bookID: UUID) async {
+    func requestTypedWatchDownload(bookID: UUID, transferAssets: Bool = true) async {
         guard let libraryStore, let watchProjectionStore, let book = libraryStore.books.first(where: { $0.book.id == bookID }) else { return }
         let revision = (try? await watchProjectionStore.nextRevision()) ?? 0
         let plan = PhoneWatchDownloadPlanner.plan(for: book, revision: revision)
@@ -178,10 +178,19 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             try await watchProjectionStore.setDesiredRoot(plan.manifest)
             let manifest = try WatchProtocolEnvelope.encode(kind: .bookManifest, payload: plan.manifest, libraryID: watchLibraryID, revision: revision)
             session.transferUserInfo(WatchProtocolEnvelope.dictionary(for: manifest))
+            guard transferAssets else { return }
             for asset in plan.assets {
                 guard let source = asset.sourceURL, source.isFileURL, FileManager.default.fileExists(atPath: source.path) else { continue }
                 let envelope = try WatchProtocolEnvelope.encode(kind: .assetFile, payload: asset, libraryID: watchLibraryID, revision: revision)
-                let metadata = WatchProtocolEnvelope.dictionary(for: envelope).merging(["watchAsset": true], uniquingKeysWith: { _, new in new })
+                let metadata = WatchProtocolEnvelope.dictionary(for: envelope).merging([
+                    "watchAsset": true,
+                    // File transfers are not ordered relative to the
+                    // manifest message, so each asset carries enough context
+                    // for the Watch to install it immediately.
+                    "bookID": plan.bookID.rawValue,
+                    "chapterFilename": asset.filename,
+                    "totalChapterCount": plan.assets.count
+                ], uniquingKeysWith: { _, new in new })
                 session.transferFile(source, metadata: metadata)
             }
         } catch {
@@ -596,7 +605,10 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 totalChapterCount: book.chapters.count
             )
         }
-        await requestTypedWatchDownload(bookID: book.book.id)
+        // The legacy transfer queue above already carries the complete,
+        // self-describing chapter set. Publish the typed manifest without
+        // enqueueing a duplicate copy of every audio file.
+        await requestTypedWatchDownload(bookID: book.book.id, transferAssets: false)
         watchSyncStatus = "\(book.book.title) queued for Apple Watch."
         watchTransferSupervisor(for: book.book.id, fileTransfers: fileTransfers)
         return .started

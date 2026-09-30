@@ -33,7 +33,29 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-trap 'bash "$SCRIPT_DIR/kill_zombie_test_helpers.sh"' EXIT
+# iPhone and Watch builds share the Xcode project and derived-data state. Keep
+# the lock across the entire runner, including cleanup, so separate local
+# invocations cannot overlap either platform's build/test work.
+LOCK_DIR="${TMPDIR:-/tmp}/voxglass-local-test.lock"
+while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+  if [ -f "$LOCK_DIR/pid" ]; then
+    read -r lock_pid < "$LOCK_DIR/pid" || lock_pid=""
+    if [ -n "$lock_pid" ] && ! kill -0 "$lock_pid" 2>/dev/null; then
+      rmdir "$LOCK_DIR" 2>/dev/null || true
+      continue
+    fi
+  fi
+  echo "Waiting for another local Voxglass test run to finish..."
+  sleep 1
+done
+printf '%s\n' "$$" > "$LOCK_DIR/pid"
+
+cleanup() {
+  bash "$SCRIPT_DIR/kill_zombie_test_helpers.sh"
+  rm -f "$LOCK_DIR/pid"
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 echo ""
 echo "=== reaping orphaned test helpers from prior runs ==="

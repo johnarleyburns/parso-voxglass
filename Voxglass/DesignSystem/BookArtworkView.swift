@@ -98,19 +98,34 @@ struct HorizontalCatalogCard: View {
     var result: InternetArchiveSearchResult
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            CoverPlate(title: result.title, author: result.authorLine, coverURL: result.coverURL, size: 132)
+            CoverPlate(title: result.title, author: result.displayAuthorLine, coverURL: result.coverURL, size: 132)
             Text(result.title).voxType(.bookTitle).foregroundStyle(Palette.ink).lineLimit(1).padding(.top, 7)
-            Text(result.authorLine).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(1).padding(.top, 1)
+            if let author = result.displayAuthorLine {
+                Text(author).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(1).padding(.top, 1)
+            }
         }
         .frame(width: 132)
     }
 }
 
 extension Book {
-    /// A display-only author fallback for imported books.
+    /// A display-only author fallback for imported books and a filter for
+    /// archive placeholder credits that should not appear in the UI.
     var displayAuthorLine: String? {
-        guard authors.isEmpty || authors == ["Local Files"] else { return authorLine }
+        let names = authors
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && !Self.isUnknownAuthor($0) }
+        if !names.isEmpty { return names.joined(separator: ", ") }
+        guard authors.isEmpty || authors == ["Local Files"] else { return nil }
         return ImportedTitles.parse(title).author
+    }
+
+    private static func isUnknownAuthor(_ value: String) -> Bool {
+        let normalized = value.lowercased().replacingOccurrences(of: "  ", with: " ")
+        return normalized == "unknown"
+            || normalized == "unknown author"
+            || normalized == "uknown author"
+            || normalized == "uknown"
     }
 }
 

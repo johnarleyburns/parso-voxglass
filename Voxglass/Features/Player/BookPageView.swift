@@ -6,7 +6,6 @@ struct BookPageView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
-    @Environment(MiniPlayerPresentationRouter.self) private var miniPlayerRouter
     @Environment(\.voxglassZoomNamespace) private var zoomNamespace
     @Environment(\.dismiss) private var dismiss
     var book: BookWithChapters?
@@ -121,14 +120,6 @@ struct BookPageView: View {
                         bookID: resolved.book.id,
                         in: recentlyViewedRaw
                     )
-                    if presentationContext == .pushedDetail {
-                        miniPlayerRouter.playerPushed()
-                    }
-                }
-                .onDisappear {
-                    if presentationContext == .pushedDetail {
-                        miniPlayerRouter.playerPopped()
-                    }
                 }
                 .onChange(of: playback.bookmarkCount) { _, newValue in
                     bookmarkCount = newValue
@@ -320,7 +311,7 @@ struct BookPageView: View {
 
     private func compactHeader(_ resolved: BookWithChapters) -> some View {
         HStack(spacing: 10) {
-            CoverPlate(title: resolved.book.title, author: resolved.book.authorLine, coverURL: resolved.book.coverURL, size: 44)
+            CoverPlate(title: resolved.book.title, author: resolved.book.displayAuthorLine, coverURL: resolved.book.coverURL, size: 44)
             VStack(alignment: .leading, spacing: 1) {
                 Text(resolved.book.title).voxType(.body).lineLimit(1)
                 Text("\(Int((progressFor(resolved) * 100).rounded()))% · \(TimeFormatting.compactDuration(playback.currentSession?.bookRemaining ?? 0)) left")
@@ -357,7 +348,7 @@ struct BookPageView: View {
 
     @ViewBuilder
     private func coverArtwork(_ resolved: BookWithChapters, size: CGFloat) -> some View {
-        let plate = CoverPlate(title: resolved.book.title, author: resolved.book.authorLine, coverURL: resolved.book.coverURL, size: size)
+        let plate = CoverPlate(title: resolved.book.title, author: resolved.book.displayAuthorLine, coverURL: resolved.book.coverURL, size: size)
         if let zoomNamespace {
             plate.matchedGeometryEffect(id: "book.cover.\(resolved.book.id.uuidString)", in: zoomNamespace)
         } else {
@@ -421,25 +412,27 @@ struct BookPageView: View {
 
     private func authorLinks(_ resolved: BookWithChapters) -> some View {
         VStack(alignment: .center, spacing: 2) {
-            ForEach(resolved.book.authors.isEmpty ? ["Unknown author"] : resolved.book.authors, id: \.self) { author in
-                if author == "Unknown author" {
+            ForEach(resolved.book.authors.filter { !isPlaceholderAuthor($0) }, id: \.self) { author in
+                NavigationLink {
+                    AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
+                } label: {
                     Text(author)
                         .voxFont(.subheadline)
-                        .foregroundStyle(Color.white.opacity(0.62))
+                        .foregroundStyle(Palette.brass)
                         .lineLimit(1)
-                } else {
-                    NavigationLink {
-                        AuthorDetailView(authorName: author, showingNowPlaying: $showingNowPlaying)
-                    } label: {
-                        Text(author)
-                            .voxFont(.subheadline)
-                            .foregroundStyle(Palette.brass)
-                            .lineLimit(1)
-                    }
-                    .buttonStyle(.plain)
                 }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    private func isPlaceholderAuthor(_ value: String) -> Bool {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return normalized.isEmpty
+            || normalized == "unknown"
+            || normalized == "unknown author"
+            || normalized == "uknown author"
+            || normalized == "uknown"
     }
 
     private func narratorsLink(_ resolved: BookWithChapters, narratorLine: String) -> some View {

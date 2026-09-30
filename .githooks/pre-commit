@@ -11,6 +11,9 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 echo ""
-echo "=== pre-commit host tests (swift test) ==="
+echo "=== pre-commit host tests (swift test --no-parallel) ==="
 echo ""
-swift test
+# Keep the commit gate deterministic. Cache/audio suites share process and
+# filesystem state, and a parallel host run can race even when each suite is
+# individually marked serialized.
+swift test --no-parallel
