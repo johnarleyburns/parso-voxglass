@@ -514,27 +514,6 @@ struct CompactBookRowView: View {
     }
 }
 
-struct HorizontalBookCard: View {
-    var book: BookWithChapters
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            BookArtworkView(title: book.book.title, size: 132, coverURL: book.book.coverURL, cornerRadius: 14)
-            Text(book.book.title)
-                .voxFont(.caption, weight: .semibold)
-                .foregroundStyle(Palette.ink)
-                .padding(.top, 7)
-            if let author = book.book.displayAuthorLine {
-                Text(author)
-                    .voxFont(.caption2)
-                    .foregroundStyle(Palette.ink3)
-                    .padding(.top, 1)
-            }
-        }
-        .frame(width: 132, alignment: .leading)
-    }
-}
-
 struct EmptyStatePanel: View {
     var title: String
     var message: String
