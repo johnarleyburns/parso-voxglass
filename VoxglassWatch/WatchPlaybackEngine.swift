@@ -1,19 +1,28 @@
 import AVFoundation
 import Foundation
 import MediaPlayer
+import WatchKit
 import VoxglassWatchCore
 import VoxglassWatchProtocol
 
+/// The watch's spoken-audio engine (watch redesign §5–§6). One `AVPlayer` per chapter, with:
+/// 15/30 s skips, per-book speed with pitch correction, a sleep timer with a 10 s fade, resume
+/// rewind, classified failures with diagnostic codes (Problem Cards S1–S3), and AirPods presses
+/// mapped to time skips instead of chapter jumps.
 @MainActor
 final class WatchPlaybackEngine {
     var onSnapshot: ((WatchPlaybackSnapshot) -> Void)?
     var onBookChanged: ((WatchBookDTO?) -> Void)?
+    /// Fired when the sleep timer arms, ticks or ends (`nil`), so the UI can show its chip.
+    var onSleepChange: ((WatchSleepTimer?, TimeInterval?) -> Void)?
     var streamingAllowed: () -> Bool = { false }
 
     private(set) var snapshot = WatchPlaybackSnapshot()
     private(set) var book: WatchBookDTO?
+    private(set) var sleepTimer: WatchSleepTimer?
     private let downloadsRoot: URL
     private let positionStore: WatchPlaybackPositionStore
+    private let speedStore: WatchSpeedStore
     private let smokeMode: Bool
     private let smokeFailure: Bool
     private var player: AVPlayer?
@@ -27,12 +36,15 @@ final class WatchPlaybackEngine {
     private var didBecomeReadyToken: Int?
     private var assetOffset: TimeInterval = 0
     private var lastPersistedSecond = -1
+    private var pausedAt: Date?
+    private var sleepTask: Task<Void, Never>?
     private(set) var volume: Double = 1
 
     init(root: URL? = nil, smokeMode: Bool = false, smokeFailure: Bool = false) {
         let support = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         downloadsRoot = support.appendingPathComponent("DownloadedBooks", isDirectory: true)
         positionStore = WatchPlaybackPositionStore(url: support.appendingPathComponent("watch-playback-positions.json"))
+        speedStore = WatchSpeedStore(url: support.appendingPathComponent("watch-playback-speeds.json"))
         self.smokeMode = smokeMode
         self.smokeFailure = smokeFailure
         if !smokeMode {
@@ -46,7 +58,10 @@ final class WatchPlaybackEngine {
         for observer in notificationObservers { NotificationCenter.default.removeObserver(observer) }
         for observer in playerNotificationObservers { NotificationCenter.default.removeObserver(observer) }
         for (command, target) in commandTargets { command.removeTarget(target) }
+        sleepTask?.cancel()
     }
+
+    // MARK: - Transport
 
     func play(_ book: WatchBookDTO, chapterIndex: Int, allowsStreaming: Bool) {
         guard book.chapters.indices.contains(chapterIndex) else {
@@ -70,15 +85,21 @@ final class WatchPlaybackEngine {
         Task { [weak self] in
             guard let self else { return }
             let localPosition = await positionStore.position(bookID: book.id, chapterID: chapter.id)
+            let rate = await speedStore.rate(for: book.id)
             // The first time a book is opened on the watch, its local store is
             // empty. Use the phone's savepoint in that case; later watch-local
             // progress remains authoritative for a reopened book.
-            let savedPosition = localPosition > 0 ? localPosition : max(0, chapter.resumePosition ?? 0)
+            let saved = localPosition > 0 ? localPosition : max(0, chapter.resumePosition ?? 0)
+            let savedPosition = WatchResumeRewind.position(saved, pausedAt: pausedAt, now: Date())
+            pausedAt = nil
             guard currentToken == token else { return }
             snapshot.position = savedPosition
+            publish(.rate(rate), token: currentToken)
             if smokeMode {
                 if smokeFailure {
-                    publish(.failed(String(localized: "Download this chapter or reconnect to stream it.")), token: currentToken)
+                    publish(.problem(.chapterUnavailable,
+                                     message: String(localized: "Download this chapter or reconnect to stream it."),
+                                     code: "chapterUnavailable"), token: currentToken)
                     return
                 }
                 snapshot.sourceKind = .downloaded
@@ -98,11 +119,13 @@ final class WatchPlaybackEngine {
                 publish(.waitingForOutput, token: currentToken)
                 try await activateAudioSession()
                 guard currentToken == token else { return }
-                installPlayer(url: source.url, resumePosition: savedPosition, token: currentToken)
+                installPlayer(url: source.url, kind: source.kind, resumePosition: savedPosition, token: currentToken)
             } catch WatchPlaybackResolutionError.chapterUnavailable {
-                publish(.failed(String(localized: "Download this chapter or reconnect to stream it.")), token: currentToken)
+                publish(.problem(.chapterUnavailable,
+                                 message: String(localized: "Download this chapter or reconnect to stream it."),
+                                 code: "chapterUnavailable"), token: currentToken)
             } catch {
-                publish(.failed(audioErrorMessage(error)), token: currentToken)
+                publishActivationFailure(error, token: currentToken)
             }
         }
     }
@@ -111,19 +134,23 @@ final class WatchPlaybackEngine {
         switch snapshot.phase {
         case .playing, .buffering:
             player?.pause()
+            pausedAt = Date()
             publish(.paused, token: token)
             persistPosition()
         case .paused, .ended, .failed:
             if smokeMode {
                 publish(.playing, token: token)
-            } else if player != nil {
+            } else if let player {
+                let rewound = WatchResumeRewind.position(snapshot.position, pausedAt: pausedAt, now: Date())
+                pausedAt = nil
                 Task { [weak self] in
                     guard let self else { return }
                     do {
                         try await activateAudioSession()
-                        player?.play()
+                        if rewound < snapshot.position { seek(to: rewound) }
+                        player.playImmediately(atRate: Float(snapshot.rate))
                     } catch {
-                        publish(.failed(audioErrorMessage(error)), token: token)
+                        publishActivationFailure(error, token: token)
                     }
                 }
             } else {
@@ -142,6 +169,17 @@ final class WatchPlaybackEngine {
     func nextChapter() { moveChapter(by: 1) }
     func previousChapter() { moveChapter(by: -1) }
 
+    func jump(toChapter index: Int) {
+        guard let book, book.chapters.indices.contains(index) else { return }
+        persistPosition()
+        play(book, chapterIndex: index, allowsStreaming: streamingAllowed())
+    }
+
+    /// §5 P1 — skip back 15 s / forward 30 s within the chapter.
+    func skip(by delta: TimeInterval) {
+        seek(to: WatchSkip.position(from: snapshot.position, by: delta, duration: snapshot.duration))
+    }
+
     func seek(to position: TimeInterval) {
         let value = position.isFinite ? min(max(0, position), snapshot.duration) : 0
         snapshot.position = value
@@ -152,12 +190,71 @@ final class WatchPlaybackEngine {
         publish()
     }
 
+    /// §5 C2 — apply a speed now, remember it for this book, keep pitch natural.
+    func setRate(_ rate: Double) {
+        let normalized = WatchSpeed.normalized(rate)
+        if let player {
+            player.defaultRate = Float(normalized)
+            if player.timeControlStatus != .paused { player.rate = Float(normalized) }
+        }
+        publish(.rate(normalized), token: token)
+        if let bookID = snapshot.bookID {
+            Task { try? await speedStore.setRate(normalized, for: bookID) }
+        }
+    }
+
     func setVolume(_ value: Double) {
         volume = min(max(value, 0), 1)
-        player?.volume = Float(volume)
+        applyVolume()
     }
 
     func persistPlaybackPosition() { persistPosition() }
+
+    // MARK: - Sleep timer (§5 C3)
+
+    func setSleepTimer(_ mode: WatchSleepTimer.Mode?) {
+        sleepTask?.cancel()
+        sleepTask = nil
+        guard let mode else {
+            sleepTimer = nil
+            applyVolume()
+            onSleepChange?(nil, nil)
+            return
+        }
+        let timer = WatchSleepTimer(mode: mode, armedAt: Date())
+        sleepTimer = timer
+        sleepTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self, let timer = self.sleepTimer else { return }
+                let remaining = timer.remaining(at: Date(),
+                                                chapterRemaining: max(0, self.snapshot.duration - self.snapshot.position),
+                                                rate: self.snapshot.rate)
+                self.onSleepChange?(timer, remaining)
+                self.applyVolume(fade: WatchSleepTimer.fadeMultiplier(remaining: remaining))
+                if remaining <= 0 {
+                    self.sleepFired()
+                    return
+                }
+                try? await Task.sleep(for: .seconds(remaining < WatchSleepTimer.fadeSeconds + 1 ? 0.5 : 1))
+            }
+        }
+    }
+
+    private func sleepFired() {
+        sleepTask = nil
+        sleepTimer = nil
+        if snapshot.isActuallyPlaying || snapshot.phase == .buffering { togglePlayPause() }
+        applyVolume()
+        persistPosition()
+        WKInterfaceDevice.current().play(.stop)
+        onSleepChange?(nil, nil)
+    }
+
+    private func applyVolume(fade: Double = 1) {
+        player?.volume = Float(volume * fade)
+    }
+
+    // MARK: - Internals
 
     private func moveChapter(by amount: Int) {
         guard let book else { return }
@@ -173,12 +270,20 @@ final class WatchPlaybackEngine {
         try await session.activate(options: [])
     }
 
-    private func installPlayer(url: URL, resumePosition: TimeInterval, token currentToken: Int) {
+    private func installPlayer(url: URL, kind: WatchPlaybackSourceKind, resumePosition: TimeInterval,
+                               token currentToken: Int) {
         removePlayerObservers()
         let item = AVPlayerItem(url: url)
+        // Natural-sounding speech at any speed (§5 C2).
+        item.audioTimePitchAlgorithm = .spectral
         let player = AVPlayer(playerItem: item)
-        player.volume = Float(volume)
+        // A downloaded chapter is a complete local file: there is no network buffer to protect, and
+        // the default waiting behaviour left playback parked in `.waitingToPlayAtSpecifiedRate`
+        // ("Playback stalled") on device. Streams keep the default.
+        player.automaticallyWaitsToMinimizeStalling = kind == .stream
+        player.defaultRate = Float(snapshot.rate)
         self.player = player
+        applyVolume()
         didBecomeReadyToken = nil
 
         playerItemObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
@@ -189,54 +294,33 @@ final class WatchPlaybackEngine {
                     self.didBecomeReadyToken = currentToken
                     let target = self.assetOffset + resumePosition
                     if target > 0 { await player.seek(to: CMTime(seconds: target, preferredTimescale: 600)) }
-                    // A watchOS third-party app can only route long-form
-                    // audio through a connected accessory (Bluetooth
-                    // headphones, etc.) — never the Watch's own speaker —
-                    // which is exactly why the system shows its own
-                    // "Connect a device" prompt beforehand. If that hasn't
-                    // actually resolved to a real output by the time this
-                    // chapter is ready, `player.play()` looks like it
-                    // succeeds (AVPlayer has no reason to error) but nothing
-                    // audible ever comes out — a second, distinct silent
-                    // failure from the item simply never loading.
-                    if AVAudioSession.sharedInstance().currentRoute.outputs.isEmpty {
-                        self.publish(.failed(String(localized: "No audio output is connected — connect Bluetooth headphones, then try again.")), token: currentToken)
-                        return
-                    }
-                    player.play()
+                    // `activate()` succeeding is watchOS's statement that a long-form route was
+                    // chosen; an empty `currentRoute.outputs` snapshot at this instant is not a
+                    // failure (gating on it refused playback with AirPods connected).
+                    player.playImmediately(atRate: Float(self.snapshot.rate))
                 case .failed:
-                    // `.localizedDescription` alone (e.g. a bare "Cannot
-                    // Open") isn't enough to tell a missing/empty file apart
-                    // from a format AVFoundation genuinely can't decode —
-                    // both look identical from the outside. Fold in the
-                    // underlying NSError's domain/code and the file's actual
-                    // size on disk so the next report says which it is.
+                    // Fold in the underlying NSError's domain/code and the file's actual size so
+                    // a report can tell a missing/empty file from an undecodable one.
                     let nsError = (item.error ?? player.error) as NSError?
                     let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
                     let size = (attrs?[.size] as? NSNumber)?.int64Value
                     let detail = "\(nsError?.localizedDescription ?? "unknown error")"
                         + " [\(nsError?.domain ?? "?"):\(nsError?.code ?? 0)]"
                         + ", file size: \(size.map(String.init) ?? "missing")"
-                    self.publish(.failed(String(localized: "This chapter could not be played (\(detail)).")), token: currentToken)
+                    self.publish(.problem(.other,
+                                          message: String(localized: "This chapter could not be played (\(detail))."),
+                                          code: "item-\(nsError?.domain ?? "unknown")-\(nsError?.code ?? 0)"),
+                                 token: currentToken)
                 case .unknown:
                     self.publish(.buffering, token: currentToken)
                 @unknown default:
-                    self.publish(.failed(String(localized: "This chapter could not be played.")), token: currentToken)
+                    self.publish(.problem(.other, message: String(localized: "This chapter could not be played."),
+                                          code: "item-unknownStatus"), token: currentToken)
                 }
             }
         }
-        // Two distinct ways this can silently hang forever with nothing but
-        // an indeterminate "buffering" spinner and no visible error —
-        // reproduced live, a full minute with no change:
-        // 1. `.status` sits at `.unknown` and never fires another KVO
-        //    callback at all (never becomes playable in the first place).
-        // 2. `.status` DOES reach `.readyToPlay` and `play()` IS called, but
-        //    `timeControlStatus` gets stuck at `.waitingToPlayAtSpecifiedRate`
-        //    indefinitely and reported playback position never advances —
-        //    the item loaded but decoding/rendering never actually starts.
-        // Poll for both, using whatever diagnostic AVFoundation is willing
-        // to give (including the specific `reasonForWaitingToPlay`) instead
-        // of leaving the screen looking permanently inert.
+        // Watchdog for the two silent hangs: an item that never becomes ready, and a ready item
+        // whose position never advances. Both become a Problem Card with a code.
         Task { [weak self] in
             var lastPosition: TimeInterval = -1
             var lastProgressAt = Date()
@@ -249,17 +333,19 @@ final class WatchPlaybackEngine {
                         let detail = item.error?.localizedDescription
                             ?? player.error?.localizedDescription
                             ?? "status: \(item.status.rawValue), reachable via file: \(FileManager.default.fileExists(atPath: url.path))"
-                        self.publish(.failed(String(localized: "This chapter never became playable (\(detail)).")), token: currentToken)
+                        self.publish(.problem(.stalled,
+                                              message: String(localized: "This chapter never became playable (\(detail))."),
+                                              code: "neverReady-\(item.status.rawValue)"),
+                                     token: currentToken)
                         return
                     }
                     continue
                 }
-                // Ready and (nominally) playing — but is it actually
-                // producing audio? A genuinely advancing position is the
-                // only trustworthy signal; `timeControlStatus == .playing`
-                // on its own isn't (this reproduced with the item stuck at
-                // `.waitingToPlayAtSpecifiedRate` — the position check below
-                // is what would still catch it).
+                // Paused by the user is not a stall.
+                if player.timeControlStatus == .paused {
+                    lastProgressAt = Date()
+                    continue
+                }
                 let position = player.currentTime().seconds
                 if position.isFinite, position > lastPosition + 0.05 {
                     lastPosition = position
@@ -267,20 +353,19 @@ final class WatchPlaybackEngine {
                     continue
                 }
                 guard Date().timeIntervalSince(lastProgressAt) > stallTimeout else { continue }
-                // Trim the AVFoundation constant to its distinguishing words so the whole reason
-                // fits on the watch face, e.g. "ToMinimizeStalls".
-                let reason = player.reasonForWaitingToPlay?.rawValue
-                    .replacingOccurrences(of: "AVPlayerWaiting", with: "")
-                    .replacingOccurrences(of: "Reason", with: "") ?? "none"
-                self.publish(.failed(
-                    "Playback stalled (timeControlStatus: \(player.timeControlStatus.rawValue), waiting: \(reason))."
-                ), token: currentToken)
+                let code = WatchStallCode.make(timeControlStatus: player.timeControlStatus.rawValue,
+                                               reason: player.reasonForWaitingToPlay?.rawValue)
+                self.publish(.problem(.stalled,
+                                      message: String(localized: "The audio loaded but never started playing."),
+                                      code: code),
+                             token: currentToken)
                 return
             }
         }
         playerStatusObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
             Task { @MainActor in
                 guard let self, currentToken == self.token else { return }
+                if case .failed = self.snapshot.phase { return }
                 switch player.timeControlStatus {
                 case .playing: self.publish(.playing, token: currentToken)
                 case .paused: self.publish(.paused, token: currentToken)
@@ -312,9 +397,10 @@ final class WatchPlaybackEngine {
         let failed = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main
         ) { [weak self] note in
-            let message = (note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error)?.localizedDescription
-                ?? String(localized: "This chapter stopped unexpectedly.")
-            Task { @MainActor in self?.publish(.failed(message), token: currentToken) }
+            let error = note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? NSError
+            let message = error?.localizedDescription ?? String(localized: "This chapter stopped unexpectedly.")
+            let code = "itemStopped-\(error?.domain ?? "unknown")-\(error?.code ?? 0)"
+            Task { @MainActor in self?.publish(.problem(.other, message: message, code: code), token: currentToken) }
         }
         playerNotificationObservers.append(contentsOf: [end, failed])
     }
@@ -322,7 +408,30 @@ final class WatchPlaybackEngine {
     private func itemEnded(token currentToken: Int) {
         guard currentToken == token else { return }
         persistPosition()
-        if snapshot.canGoNext { nextChapter() } else { publish(.ended, token: currentToken) }
+        // §5 C3: "End of Chapter" sleep stops here instead of advancing.
+        if sleepTimer?.mode == .endOfChapter {
+            publish(.paused, token: currentToken)
+            sleepFired()
+            return
+        }
+        guard snapshot.canGoNext, let book else {
+            publish(.ended, token: currentToken)
+            return
+        }
+        // §5 S3: at a boundary with no file and no way to stream, stop cleanly and say why —
+        // never a silent "Buffering…".
+        let next = book.chapters[snapshot.chapterIndex + 1]
+        let canStream = streamingAllowed() && next.approvedStreamURL != nil
+        let resolvable = (try? WatchPlaybackSourceResolver.resolve(
+            bookID: book.id, chapter: next, downloadsRoot: downloadsRoot, allowsStreaming: canStream)) != nil
+        if resolvable {
+            nextChapter()
+        } else {
+            publish(.problem(.chapterUnavailable,
+                             message: String(localized: "Chapter \(next.index + 1) isn't on this watch, and your iPhone isn't nearby to stream it."),
+                             code: "nextChapterUnavailable"),
+                    token: currentToken)
+        }
     }
 
     private func startSmokeClock(token currentToken: Int) {
@@ -361,14 +470,15 @@ final class WatchPlaybackEngine {
               let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
         if type == .began {
             player?.pause()
+            pausedAt = Date()
             publish(.interruption, token: token)
             persistPosition()
         } else if let rawOptions,
                   AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume) {
             Task { [weak self] in
                 guard let self else { return }
-                do { try await activateAudioSession(); player?.play() }
-                catch { publish(.failed(audioErrorMessage(error)), token: token) }
+                do { try await activateAudioSession(); player?.playImmediately(atRate: Float(snapshot.rate)) }
+                catch { publishActivationFailure(error, token: token) }
             }
         }
     }
@@ -377,17 +487,30 @@ final class WatchPlaybackEngine {
         guard let raw,
               AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
         player?.pause()
+        pausedAt = Date()
         publish(.routeLost, token: token)
         persistPosition()
     }
 
+    /// AirPods double-press = forward 30 s, triple-press = back 15 s (§5 remote commands); the
+    /// chapter-skip commands are disabled so a press never jumps a whole chapter.
     private func installRemoteCommands() {
         let center = MPRemoteCommandCenter.shared()
         add(center.playCommand) { [weak self] _ in self?.togglePlayPause(); return .success }
         add(center.pauseCommand) { [weak self] _ in self?.togglePlayPause(); return .success }
         add(center.togglePlayPauseCommand) { [weak self] _ in self?.togglePlayPause(); return .success }
-        add(center.nextTrackCommand) { [weak self] _ in self?.nextChapter(); return .success }
-        add(center.previousTrackCommand) { [weak self] _ in self?.previousChapter(); return .success }
+        center.skipForwardCommand.preferredIntervals = [NSNumber(value: WatchSkip.forward)]
+        center.skipBackwardCommand.preferredIntervals = [NSNumber(value: WatchSkip.backward)]
+        add(center.skipForwardCommand) { [weak self] _ in self?.skip(by: WatchSkip.forward); return .success }
+        add(center.skipBackwardCommand) { [weak self] _ in self?.skip(by: -WatchSkip.backward); return .success }
+        center.nextTrackCommand.isEnabled = false
+        center.previousTrackCommand.isEnabled = false
+        center.changePlaybackRateCommand.supportedPlaybackRates = [0.75, 1, 1.25, 1.5, 1.75, 2].map { NSNumber(value: $0) }
+        add(center.changePlaybackRateCommand) { [weak self] event in
+            guard let event = event as? MPChangePlaybackRateCommandEvent else { return .commandFailed }
+            self?.setRate(Double(event.playbackRate))
+            return .success
+        }
         add(center.changePlaybackPositionCommand) { [weak self] event in
             guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
             self?.seek(to: event.positionTime)
@@ -396,6 +519,7 @@ final class WatchPlaybackEngine {
     }
 
     private func add(_ command: MPRemoteCommand, handler: @escaping (MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus) {
+        command.isEnabled = true
         let target = command.addTarget(handler: handler)
         commandTargets.append((command, target))
     }
@@ -412,8 +536,24 @@ final class WatchPlaybackEngine {
 
     private func publishFailure(_ message: String) {
         token += 1
-        snapshot = WatchPlaybackSnapshot(phase: .failed(message), eventToken: token)
+        snapshot = WatchPlaybackSnapshot(phase: .failed(message), eventToken: token,
+                                         failureKind: .other, failureCode: "noPlayableChapter")
         publish()
+    }
+
+    /// §5 S2: only a real activation failure becomes "Connect headphones". Anything else from
+    /// AVFoundation is a playback failure with its own code (S1), never collapsed into a
+    /// headphones message.
+    private func publishActivationFailure(_ error: Error, token currentToken: Int) {
+        let nsError = error as NSError
+        let code = "activation-\(nsError.domain)-\(nsError.code)"
+        if nsError.domain == AVFoundationErrorDomain || nsError.domain == NSOSStatusErrorDomain {
+            publish(.problem(.noOutput, message: String(localized: "Connect Bluetooth headphones, then try again."),
+                             code: code), token: currentToken)
+        } else {
+            publish(.problem(.other, message: String(localized: "Playback failed: \(error.localizedDescription)"),
+                             code: code), token: currentToken)
+        }
     }
 
     private func updateNowPlaying() {
@@ -455,13 +595,5 @@ final class WatchPlaybackEngine {
         playerNotificationObservers.removeAll()
         player?.pause()
         player = nil
-    }
-
-    private func audioErrorMessage(_ error: Error) -> String {
-        let nsError = error as NSError
-        if nsError.domain == AVFoundationErrorDomain || nsError.domain == NSOSStatusErrorDomain {
-            return String(localized: "Connect Bluetooth headphones, then try again.")
-        }
-        return String(localized: "Playback failed: \(error.localizedDescription)")
     }
 }

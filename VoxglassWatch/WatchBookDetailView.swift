@@ -1,283 +1,143 @@
-import AVFoundation
 import SwiftUI
 import VoxglassWatchCore
 import VoxglassWatchProtocol
 
-/// One combined book + now-playing view. This used to be two separate
-/// screens (book detail, then a second "Now Playing" screen reached only
-/// after pressing Play) — reported as confusing on its own ("why are there
-/// two separate views"), and the second screen required pressing Play a
-/// second time to do anything. Everything — artwork, transport, progress,
-/// and the chapter list — now lives in one place, matching the shape of the
-/// iPhone app's own book page more closely than two disjoint watch screens
-/// did.
-struct WatchBookDetailView: View {
+/// Watch redesign §5 B1/B2 — the page for a book that isn't playing. Cover, title, author,
+/// narrator; one big button that says exactly what happens ("Resume · Ch 3 · 0:51", "Start", or
+/// "Download · 412 MB"); then Chapters and the download state. Starting playback pushes the Player
+/// in the same tap — never a second screen that needs a second tap.
+struct WatchBookPageView: View {
     let book: WatchBookDTO
+    @Binding var path: [WatchRoute]
     @EnvironmentObject private var services: WatchAppServices
-    @State private var crownVolume = 1.0
+    @State private var confirmRemove = false
 
-    private var isCurrentBook: Bool { services.playbackBook?.id == book.id }
-    private var playback: WatchPlaybackSnapshot { services.playback }
-    private var currentChapterIndex: Int? { isCurrentBook ? playback.chapterIndex : nil }
+    private var isDownloaded: Bool { services.downloaded.contains(book.id) }
 
     var body: some View {
         List {
+            header.listRowBackground(Color.clear)
             Section {
-                // Left-justified, single column, top to bottom: title,
-                // artwork, then author/narrator/duration — no side-by-side
-                // HStack (that put the artwork's frame directly over the
-                // title on watchOS's narrow width instead of leaving room
-                // beside it).
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(book.title).font(.headline).lineLimit(2).accessibilityIdentifier("watch.book.title")
-                    artwork.accessibilityHidden(true)
-                    if let author = book.author, !author.isEmpty {
-                        Text(author).font(.caption2).foregroundStyle(.secondary)
+                primaryButton
+                HStack(spacing: 6) {
+                    Button { path.append(.chapters(book.id)) } label: {
+                        Label("Chapters", systemImage: "list.bullet")
                     }
-                    if let narrator = book.narrator, !narrator.isEmpty {
-                        Text("Read by \(narrator)").font(.caption2).foregroundStyle(.secondary)
-                    }
-                    if !formattedDuration(book.duration).isEmpty {
-                        Text(formattedDuration(book.duration)).font(.caption2).foregroundStyle(.secondary)
-                    }
+                    .buttonStyle(.watchSecondarySmall)
+                    .disabled(!canPlay)
+                    .accessibilityIdentifier("watch.book.chaptersButton")
+                    downloadStateButton
                 }
-                transportRow
-                if isCurrentBook {
-                    nowPlayingDetail
+                if !isDownloaded, services.isConnected, canStream {
+                    Button { start(at: 0) } label: { Label("Stream Chapter 1", systemImage: "play.fill") }
+                        .buttonStyle(.watchSecondarySmall)
+                        .accessibilityIdentifier("watch.book.stream")
+                }
+                if !isDownloaded && !services.isConnected {
+                    Text("Not on this watch. Bring your iPhone nearby to stream or download it.")
+                        .font(.caption2).foregroundStyle(.secondary)
                 }
             }
-            Section("Chapters") {
-                ForEach(book.chapters, id: \.id) { chapter in
-                    Button {
-                        services.play(book, chapterIndex: chapter.index)
-                    } label: {
-                        Text(chapter.title)
-                    }
-                    .accessibilityIdentifier("watch.chapter.\(chapter.id.rawValue)")
-                    .accessibilityLabel("Chapter \(chapter.index + 1), \(chapter.title)")
+            .listRowBackground(Color.clear)
+        }
+        .listStyle(.plain)
+        .navigationTitle("")
+        .confirmationDialog("Remove from Apple Watch?", isPresented: $confirmRemove, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) { services.stopDownload(book) }
+                .accessibilityIdentifier("watch.book.remove")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your place is kept. You can download it again from your iPhone.")
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 9) {
+            WatchCoverTile(artworkKey: book.artworkKey, width: 40)
+                .accessibilityIdentifier("watch.book.artwork")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(book.title).font(.headline).lineLimit(3)
+                    .accessibilityIdentifier("watch.book.title")
+                if let author = book.author, !author.isEmpty {
+                    Text(author).font(.caption2).foregroundStyle(.secondary)
                 }
-            }
-            if services.isConnected {
-                Section {
-                    if services.downloaded.contains(book.id) {
-                        Button("Remove from Apple Watch", role: .destructive) { services.remove(book) }
-                            .accessibilityIdentifier("watch.book.remove")
-                    } else {
-                        Button("Download to Apple Watch") { services.download(book) }
-                            .accessibilityIdentifier("watch.book.download")
-                    }
+                if let narrator = book.narrator, !narrator.isEmpty {
+                    Text("Read by \(narrator)").font(.caption2).foregroundStyle(.secondary)
+                } else if book.duration > 0 {
+                    Text(WatchTimeFormat.short(book.duration)).font(.caption2).foregroundStyle(.secondary)
                 }
             }
         }
-        .navigationTitle("")
+    }
+
+    private var canStream: Bool { book.chapters.first?.approvedStreamURL != nil }
+    private var canPlay: Bool { isDownloaded || (services.isConnected && canStream) }
+
+    @ViewBuilder
+    private var primaryButton: some View {
+        if isDownloaded || (services.isConnected && canStream && services.resumePosition(for: book) != nil) {
+            Button { start(at: services.resumeChapterIndex(for: book)) } label: {
+                Label(resumeTitle, systemImage: "play.fill")
+            }
+            .buttonStyle(.watchPrimary)
+            .accessibilityIdentifier("watch.book.start")
+        } else if services.isConnected {
+            if let download = services.downloads[book.id] {
+                HStack(spacing: 8) {
+                    WatchTransferRing(fraction: download.total > 0 ? download.fraction : nil)
+                    Text("Downloading \(download.done) of \(download.total)").font(.footnote)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("watch.book.downloading")
+            } else {
+                Button { services.download(book) } label: {
+                    Label(downloadTitle, systemImage: "arrow.down.circle")
+                }
+                .buttonStyle(.watchPrimary)
+                .accessibilityIdentifier("watch.book.download")
+            }
+        } else {
+            Button {} label: { Text("Not on This Watch") }
+                .buttonStyle(.watchSecondary)
+                .disabled(true)
+        }
     }
 
     @ViewBuilder
-    private var artwork: some View {
-        Group {
-            if let url = book.artworkKey.flatMap(URL.init(string:)), url.scheme?.hasPrefix("http") == true {
-                AsyncImage(url: url) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    RoundedRectangle(cornerRadius: 8).fill(.blue.gradient)
-                        .overlay { Image(systemName: "book.closed") }
-                }
-            } else {
-                RoundedRectangle(cornerRadius: 8).fill(.blue.gradient)
-                    .overlay { Image(systemName: "book.closed") }
+    private var downloadStateButton: some View {
+        if isDownloaded {
+            Button { confirmRemove = true } label: {
+                Label("On Watch", systemImage: "checkmark.circle.fill")
             }
-        }
-        .frame(width: 56, height: 56)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .accessibilityIdentifier("watch.book.artwork")
-    }
-
-    /// The single play control: starts this book if nothing's loaded (or a
-    /// different book is), toggles play/pause in place if this book is
-    /// already the one loaded — never a second screen or a second tap.
-    private var transportRow: some View {
-        HStack(spacing: 2) {
-            Button { services.previousChapter() } label: { Image(systemName: "backward.end.fill") }
-                .frame(width: 44, height: 44)
-                .disabled(!isCurrentBook || !playback.canGoPrevious)
-                .accessibilityLabel("Previous chapter")
-                .accessibilityIdentifier("watch.book.previousChapter")
-            Button {
-                if isCurrentBook {
-                    services.togglePlayPause()
-                } else {
-                    services.play(book, chapterIndex: currentChapterIndex ?? 0)
-                }
-            } label: {
-                Image(systemName: isCurrentBook && playback.isActuallyPlaying ? "pause.fill" : "play.fill")
+            .buttonStyle(.watchSecondarySmall)
+            .foregroundStyle(WatchPalette.success)
+            .accessibilityIdentifier("watch.book.onWatch")
+        } else if services.isConnected, services.downloads[book.id] == nil,
+                  services.resumePosition(for: book) != nil {
+            Button { services.download(book) } label: {
+                Label("Download", systemImage: "arrow.down.circle")
             }
-            .frame(width: 44, height: 44)
-            .disabled(isCurrentBook && transportBusy)
-            .accessibilityLabel(isCurrentBook && playback.isActuallyPlaying ? "Pause" : "Play") // l10n-exempt: state-dependent accessibility or status copy
-            .accessibilityIdentifier("watch.book.play")
-            Button { services.nextChapter() } label: { Image(systemName: "forward.end.fill") }
-                .frame(width: 44, height: 44)
-                .disabled(!isCurrentBook || !playback.canGoNext)
-                .accessibilityLabel("Next chapter")
-                .accessibilityIdentifier("watch.book.nextChapter")
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Playback controls for \(book.title)")
-    }
-
-    /// Status/progress detail — only meaningful once this book is actually
-    /// the one loaded into the engine.
-    private var nowPlayingDetail: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(book.title).font(.caption).lineLimit(2)
-                .accessibilityIdentifier("watch.nowPlaying.bookTitle")
-            if let currentChapterTitle {
-                Text(currentChapterTitle).font(.caption)
-                    .accessibilityIdentifier("watch.book.currentChapter")
-            }
-            if playback.chapterIndex >= 0 {
-                Text("Chapter \(playback.chapterIndex + 1)").font(.caption2).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("watch.book.chapterNumber")
-            }
-            if let sourceLabel {
-                Text(sourceLabel).font(.caption2).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("watch.book.source")
-            }
-            // Which output the audio is actually routed to — a diagnostic
-            // for the "Cannot Open"/silent-hang class of playback failures,
-            // where the app appeared to work but nothing was audible because
-            // no output route was connected.
-            Text(outputRouteName).font(.caption2).foregroundStyle(.secondary)
-                .accessibilityIdentifier("watch.book.output")
-            Text(playback.statusText).font(.caption2).foregroundStyle(statusColor)
-                // A failure carries the diagnostic that says which step broke; never truncate it.
-                .lineLimit(isFailed ? nil : 2)
-                .fixedSize(horizontal: false, vertical: isFailed)
-                .accessibilityIdentifier("watch.book.phase")
-            if indeterminateProgress {
-                ProgressView().accessibilityIdentifier("watch.book.progress")
-            } else {
-                ProgressView(value: playback.progress)
-                    .accessibilityValue("\(Int(playback.progress * 100)) percent")
-                    .accessibilityAdjustableAction { direction in
-                        let delta: TimeInterval = 15
-                        let newPos = direction == .increment ? playback.position + delta : playback.position - delta
-                        services.seek(to: max(0, min(playback.duration, newPos)))
-                    }
-                    .accessibilityIdentifier("watch.book.progress")
-            }
-            HStack {
-                Text(format(playback.position)).accessibilityIdentifier("watch.book.elapsed")
-                Spacer()
-                Text("−\(format(max(0, playback.duration - playback.position))) in chapter").accessibilityIdentifier("watch.book.remaining")
-            }
-            .font(.caption2).monospacedDigit()
-            if book.duration > 0 {
-                Text("\(formattedDuration(bookRemainingSeconds)) left in book").font(.caption2).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("watch.book.remainingInBook")
-            }
-            volumeControl
-            if case .failed = playback.phase {
-                Button("Retry") { services.retryPlayback() }.accessibilityIdentifier("watch.book.retry")
-            }
+            .buttonStyle(.watchSecondarySmall)
+            .accessibilityIdentifier("watch.book.download")
         }
     }
 
-    private var volumeControl: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "speaker.wave.1.fill")
-                .accessibilityHidden(true)
-            Text("Volume")
-            Spacer()
-            Text("\(Int((crownVolume * 100).rounded()))%")
-                .monospacedDigit()
+    private var resumeTitle: String {
+        guard let position = services.resumePosition(for: book), position > 1 || services.resumeChapterIndex(for: book) > 0 else {
+            return String(localized: "Start")
         }
-        .focusable(true)
-        .digitalCrownRotation(
-            $crownVolume,
-            from: 0,
-            through: 1,
-            by: 0.05,
-            sensitivity: .medium,
-            isContinuous: false,
-            isHapticFeedbackEnabled: true
-        )
-        .onChange(of: crownVolume) { _, value in services.setVolume(value) }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Volume")
-        .accessibilityValue("\(Int((crownVolume * 100).rounded())) percent")
-        .accessibilityAdjustableAction { direction in
-            let step = 0.05
-            switch direction {
-            case .increment: crownVolume = min(1, crownVolume + step)
-            case .decrement: crownVolume = max(0, crownVolume - step)
-            @unknown default: break
-            }
-            services.setVolume(crownVolume)
-        }
-        .accessibilityIdentifier("watch.book.volume")
+        let chapter = services.resumeChapterIndex(for: book) + 1
+        return String(localized: "Resume · Ch \(chapter) · \(WatchTimeFormat.clock(position))")
     }
 
-    private var sourceLabel: String? {
-        switch playback.sourceKind {
-        case .downloaded: String(localized: "Downloaded")
-        case .stream: String(localized: "Streaming")
-        case nil: nil
-        }
+    private var downloadTitle: String {
+        let bytes = book.chapters.compactMap(\.expectedBytes).reduce(0, +)
+        guard bytes > 0 else { return String(localized: "Download") }
+        return String(localized: "Download · \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))")
     }
 
-    private var outputRouteName: String {
-        AVAudioSession.sharedInstance().currentRoute.outputs.first?.portName ?? String(localized: "No audio output")
-    }
-
-    private var currentChapterTitle: String? {
-        guard playback.chapterIndex >= 0, book.chapters.indices.contains(playback.chapterIndex) else { return nil }
-        let chapter = book.chapters[playback.chapterIndex]
-        return String(localized: "Chapter \(playback.chapterIndex + 1) of \(book.chapters.count): \(chapter.title)")
-    }
-
-    /// Time left in the WHOLE book, not just the current chapter — the sum
-    /// of every chapter still to come, plus what's left of this one.
-    private var bookRemainingSeconds: TimeInterval {
-        guard book.duration > 0, playback.chapterIndex >= 0 else { return 0 }
-        let elapsedBeforeCurrentChapter = book.chapters.prefix(playback.chapterIndex).reduce(0) { $0 + $1.duration }
-        let elapsedInBook = elapsedBeforeCurrentChapter + playback.position
-        return max(0, book.duration - elapsedInBook)
-    }
-
-    private var transportBusy: Bool {
-        switch playback.phase {
-        case .idle, .preparing, .waitingForOutput: true
-        default: false
-        }
-    }
-
-    private var indeterminateProgress: Bool {
-        switch playback.phase {
-        case .idle, .preparing, .waitingForOutput, .buffering: true
-        default: false
-        }
-    }
-
-    private var isFailed: Bool {
-        if case .failed = playback.phase { return true }
-        return false
-    }
-
-    private var statusColor: Color {
-        if case .failed = playback.phase { return .red }
-        return .secondary
-    }
-
-    private func format(_ seconds: TimeInterval) -> String {
-        let value = max(0, Int(seconds.isFinite ? seconds : 0))
-        return String(format: "%d:%02d", value / 60, value % 60)
-    }
-
-    private func formattedDuration(_ seconds: Double) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "" }
-        return Duration.seconds(Int64(seconds.rounded()))
-            .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+    private func start(at chapterIndex: Int) {
+        services.play(book, chapterIndex: chapterIndex)
+        path.append(.player)
     }
 }

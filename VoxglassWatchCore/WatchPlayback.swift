@@ -28,6 +28,10 @@ public struct WatchPlaybackSnapshot: Codable, Equatable, Sendable {
     public var phase: WatchPlaybackPhase
     public var sourceKind: WatchPlaybackSourceKind?
     public var eventToken: Int
+    /// Set while `phase` is `.failed`: what kind of failure (picks the Problem Card) and the
+    /// diagnostic code shown under it. Cleared when playback moves on.
+    public var failureKind: WatchPlaybackFailureKind?
+    public var failureCode: String?
 
     public init(
         bookID: WatchBookID? = nil,
@@ -39,7 +43,9 @@ public struct WatchPlaybackSnapshot: Codable, Equatable, Sendable {
         rate: Double = 1,
         phase: WatchPlaybackPhase = .idle,
         sourceKind: WatchPlaybackSourceKind? = nil,
-        eventToken: Int = 0
+        eventToken: Int = 0,
+        failureKind: WatchPlaybackFailureKind? = nil,
+        failureCode: String? = nil
     ) {
         self.bookID = bookID
         self.chapterID = chapterID
@@ -51,6 +57,8 @@ public struct WatchPlaybackSnapshot: Codable, Equatable, Sendable {
         self.phase = phase
         self.sourceKind = sourceKind
         self.eventToken = eventToken
+        self.failureKind = failureKind
+        self.failureCode = failureCode
     }
 
     public var progress: Double {
@@ -140,6 +148,10 @@ public enum WatchPlaybackEvent: Equatable, Sendable {
     case interruption
     case routeLost
     case failed(String)
+    /// A classified failure: kind (which Problem Card), human message, diagnostic code.
+    case problem(WatchPlaybackFailureKind, message: String, code: String?)
+    /// The playback speed changed (§5 C2).
+    case rate(Double)
     case ended
 }
 
@@ -170,6 +182,10 @@ public enum WatchPlaybackReducer {
     ) -> WatchPlaybackSnapshot {
         guard token == current.eventToken else { return current }
         var next = current
+        if case .rate = event {} else if case .time = event {} else {
+            next.failureKind = nil
+            next.failureCode = nil
+        }
         switch event {
         case .waitingForOutput:
             next.phase = .waitingForOutput
@@ -181,8 +197,17 @@ public enum WatchPlaybackReducer {
             next.phase = .paused
         case .routeLost:
             next.phase = .failed("Connect Bluetooth headphones, then try again.")
+            next.failureKind = .noOutput
+            next.failureCode = "routeLost"
         case .failed(let message):
             next.phase = .failed(message)
+            next.failureKind = .other
+        case .problem(let kind, let message, let code):
+            next.phase = .failed(message)
+            next.failureKind = kind
+            next.failureCode = code
+        case .rate(let rate):
+            next.rate = WatchSpeed.normalized(rate)
         case .ended:
             next.position = next.duration
             next.phase = .ended

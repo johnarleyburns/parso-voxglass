@@ -1,6 +1,6 @@
 # Voxglass Watch — redesign spec
 
-Status: design, not implemented. Mockups: [`mockups/index.html`](mockups/index.html), which are normative for
+Status: implemented 2026-10-01 (see §8 for notes and the one blocked item). Mockups: [`mockups/index.html`](mockups/index.html), which are normative for
 hierarchy, sizes, copy and states (not pixel-exact). This replaces the watch UI described in
 [`docs/WATCH_APP_PLAN.md`](../../WATCH_APP_PLAN.md) and `docs/mockups/watch-app.html`. The sync, download and protocol
 design stays as it is.
@@ -128,7 +128,29 @@ Each commit: the pre-commit hook (`swift test`); build `VoxglassWatch` for `gene
 `CODE_SIGNING_ALLOWED=NO`. Engine logic (speed, sleep, skip, resume rewind) goes in `VoxglassWatchCore`,
 reducer-style like `WatchPlaybackReducer`, so it's host-tested.
 
-## 7. Acceptance (owner checks on the physical watch)
+## 8. Implementation notes (2026-10-01)
+
+- **H3 "Show Me on iPhone" uses Handoff.** watchOS can't open an iPhone app directly, so the button
+  advertises `guru.parso.voxglass.watch.library`; the iPhone app declares it in `NSUserActivityTypes`
+  and `RootView` opens My Books from the App Switcher (`onContinueUserActivity`).
+- **Output opens the system `NowPlayingView`** (watchOS has no route-picker view); its AirPlay button
+  switches output.
+- **Stall candidate fix.** Downloaded chapters play with `automaticallyWaitsToMinimizeStalling =
+  false` (streams keep the default), the empty-route gate at ready is gone, and every failure carries
+  a code (`stalled-<status>-<reason>`, `activation-…`, `item-…`, `chapterUnavailable`,
+  `nextChapterUnavailable`) on the Problem Card.
+- **Sleep timer choices** are End of Chapter / 15 / 30 / 45 / 60 / Off. The optional wrist-shake
+  extension (owner's call in the mockup) is not built.
+- **Double Tap** uses `handGestureShortcut` behind `#available(watchOS 11)` (target is watchOS 10).
+- **A2 Smart Stack widget is blocked on signing.** It needs a new App ID, an App Store profile (e.g.
+  "Parso Voxglass Watch Widgets App Store") and a CI secret before a widget target can ship. Until
+  then the system Smart Stack's Now Playing widget, fed by `MPNowPlayingInfoCenter`, gives wrist-down
+  control.
+- **UI test ids.** `watch.book.previousChapter`/`nextChapter` moved to Chapters; the Book page's
+  primary is `watch.book.start`; the output chip (`watch.book.output`) carries the source as its value.
+  `VoxglassWatchUITests` is updated with equivalent assertions (compiles; run on device per CLAUDE.md).
+
+## 9. Acceptance (owner checks on the physical watch)
 
 - From a wrist raise, the current book resumes through AirPods in one tap, and you hear it.
 - AirPods double-press skips 30 s forward; triple-press skips 15 s back.

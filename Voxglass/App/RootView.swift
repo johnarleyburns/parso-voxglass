@@ -119,6 +119,11 @@ struct RootView: View {
             .environmentObject(phoneAudioRelay)
             .presentationDragIndicator(.visible)
         }
+        // Watch redesign H3: "Show Me on iPhone" on the watch's empty state hands off here and
+        // opens My Books, where "Download to Apple Watch" lives.
+        .onContinueUserActivity("guru.parso.voxglass.watch.library") { _ in
+            selectedTab = .library
+        }
         .onOpenURL { url in
             guard url.scheme == "voxglass", url.host == "book",
                   let bookID = UUID(uuidString: url.pathComponents.dropFirst().joined(separator: "/")) else { return }

@@ -28,6 +28,10 @@
 	<string>Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>guru.parso.voxglass.watch.library</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

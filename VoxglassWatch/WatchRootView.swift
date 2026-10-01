@@ -1,26 +1,50 @@
 import SwiftUI
+import VoxglassWatchProtocol
 
+/// Watch redesign §4 — one navigation stack: Home → Player / Book page → Chapters / Speed / Sleep,
+/// plus Downloads and About from Home's footer.
 struct WatchRootView: View {
     @EnvironmentObject private var services: WatchAppServices
+    @State private var path: [WatchRoute] = []
+
     var body: some View {
-        NavigationStack {
-            WatchLibraryView()
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        // A shortcut back to whatever's currently loaded —
-                        // there's no separate "Now Playing" screen any more,
-                        // just this same combined book view for the book
-                        // that's actually playing.
-                        if let book = services.playbackBook {
-                            NavigationLink { WatchBookDetailView(book: book) } label: { Image(systemName: "waveform") }
-                                .accessibilityIdentifier("watch.nowPlaying")
-                                .accessibilityLabel("Now Playing")
+        NavigationStack(path: $path) {
+            WatchHomeView(path: $path)
+                .navigationDestination(for: WatchRoute.self) { route in
+                    switch route {
+                    case .player:
+                        WatchPlayerView(path: $path)
+                    case .book(let id):
+                        if let book = services.books.first(where: { $0.id == id }) {
+                            WatchBookPageView(book: book, path: $path)
                         }
+                    case .chapters(let id):
+                        if let book = services.books.first(where: { $0.id == id }) ?? services.playbackBook {
+                            WatchChaptersView(book: book, path: $path)
+                        }
+                    case .speed:
+                        WatchSpeedView()
+                    case .sleep:
+                        WatchSleepView()
+                    case .downloads:
+                        WatchDownloadsView()
+                    case .about:
+                        WatchAboutView()
                     }
                 }
         }
         .task { services.bootstrap() }
     }
+}
+
+enum WatchRoute: Hashable {
+    case player
+    case book(WatchBookID)
+    case chapters(WatchBookID)
+    case speed
+    case sleep
+    case downloads
+    case about
 }
 
 enum WatchAccessibilityID {

@@ -14,6 +14,9 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
     /// file-transfer. `WatchAppServices` observes this the same way it already
     /// observes `requestedDownloadBookID`.
     @Published private(set) var completedFileTransfer: (bookID: WatchBookID, bytes: Int64)?
+    /// Chapters received so far for books the iPhone is pushing (watch redesign D1), so
+    /// "Downloads" shows "Sending from iPhone · 3 of 12" instead of a bare spinner.
+    @Published private(set) var phoneTransferProgress: [WatchBookID: (done: Int, total: Int)] = [:]
     /// Per-book count of chapter files received so far via `didReceive file:`,
     /// keyed against the `totalChapterCount` each file's metadata carries.
     /// In-memory only: if the app is killed mid-transfer, re-tapping "Send to
@@ -164,10 +167,12 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         entry.bytes += bytes
         guard entry.count < totalChapterCount else {
             receivedChapterFiles.removeValue(forKey: bookID)
+            phoneTransferProgress.removeValue(forKey: bookID)
             completedFileTransfer = (bookID, entry.bytes)
             return
         }
         receivedChapterFiles[bookID] = entry
+        phoneTransferProgress[bookID] = (entry.count, totalChapterCount)
     }
 
     private func debounceReachabilityChange() {

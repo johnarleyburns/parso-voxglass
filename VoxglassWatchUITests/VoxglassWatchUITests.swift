@@ -56,56 +56,38 @@ final class VoxglassWatchUITests: XCTestCase {
         ]
         app.launch()
 
-        XCTAssertTrue(app.navigationBars["My Books"].waitForExistence(timeout: 20),
-                      "Watch My Books did not render.\n\(app.debugDescription)")
+        XCTAssertTrue(app.navigationBars["Voxglass"].waitForExistence(timeout: 20),
+                      "Watch Home did not render.\n\(app.debugDescription)")
         XCTAssertNoThrow(try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
                                                                   .sufficientElementDescription, .textClipped, .trait]))
-        let alice = app.staticTexts["Alice's Adventures in Wonderland"]
+        let alice = bookRow(app, titled: "Alice's Adventures in Wonderland")
         XCTAssertTrue(alice.waitForExistence(timeout: 10),
-                      "Injected My Books fixture did not render.\n\(app.debugDescription)")
+                      "Injected library fixture did not render.\n\(app.debugDescription)")
         alice.tap()
 
-        let play = app.buttons["watch.book.play"]
-        XCTAssertTrue(play.waitForExistence(timeout: 10))
-        play.tap()
+        // Watch redesign B1: the Book page's one big button starts playback and opens the Player.
+        let start = app.buttons["watch.book.start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        start.tap()
 
         let artwork = app.descendants(matching: .any)["watch.book.artwork"]
-        XCTAssertTrue(artwork.waitForExistence(timeout: 20), "Now Playing artwork did not render")
-        XCTAssertTrue(app.buttons["watch.book.previousChapter"].waitForExistence(timeout: 10))
+        XCTAssertTrue(artwork.waitForExistence(timeout: 20), "Player artwork did not render")
+        XCTAssertTrue(app.buttons["watch.book.skipBack"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["watch.book.play"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["watch.book.nextChapter"].waitForExistence(timeout: 10))
-        ensureVisible(app.staticTexts["watch.book.output"], app: app)
-        XCTAssertTrue(app.staticTexts["watch.book.output"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.buttons["watch.book.skipForward"].waitForExistence(timeout: 10))
+        let output = app.descendants(matching: .any)["watch.book.output"]
+        XCTAssertTrue(output.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["watch.book.phase"].waitForExistence(timeout: 10))
         XCTAssertNoThrow(try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
                                                                   .sufficientElementDescription, .textClipped, .trait]))
         waitForPhase("Playing", app: app)
-        // The simulator's built-in output reports as "Speaker"; real
-        // hardware reports "Apple Watch" — either is a legitimate resolved
-        // output route, which is what this is actually checking for.
-        XCTAssertTrue(
-            ["Apple Watch", "Speaker"].contains(app.staticTexts["watch.book.output"].label),
-            "Unexpected output route: \(app.staticTexts["watch.book.output"].label)"
-        )
-        XCTAssertEqual(app.staticTexts["watch.book.source"].label, "Downloaded")
-
-        ensureVisible(app.buttons["watch.book.previousChapter"], app: app)
-        let previous = app.buttons["watch.book.previousChapter"]
-        let toggle = app.buttons["watch.book.play"]
-        let next = app.buttons["watch.book.nextChapter"]
-        XCTAssertFalse(previous.isEnabled)
-        // Not checked: exact tap-target frame size. watchOS List-embedded
-        // buttons report an accessibility frame sized to the icon glyph's
-        // rendered bounds, not the `.frame(width:height:)` modifier applied
-        // in WatchBookDetailView — true for enabled and disabled controls
-        // alike, so it isn't a signal this test can use for a real
-        // clipping/sizing regression.
-        for control in [previous, toggle, next] {
-            XCTAssertTrue(control.exists)
-        }
+        // The simulator's built-in output reports as "Speaker"; real hardware reports "Apple Watch"
+        // — either is a resolved output route. The chip carries the source as its value.
+        XCTAssertTrue(["Apple Watch", "Speaker"].contains(output.label), "Unexpected output route: \(output.label)")
+        XCTAssertEqual(output.value as? String, "Downloaded")
 
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        screenshot.name = "watch-now-playing-transport"
+        screenshot.name = "watch-player-transport"
         screenshot.lifetime = .keepAlways
         add(screenshot)
 
@@ -115,12 +97,18 @@ final class VoxglassWatchUITests: XCTestCase {
         expectation(for: elapsedChanged, evaluatedWith: app.staticTexts["watch.book.elapsed"])
         waitForExpectations(timeout: 4)
 
-        ensureVisible(next, app: app)
+        // Watch redesign C1: previous/next chapter live on the Chapters list (the face skips time).
+        app.buttons["watch.book.chapters"].tap()
+        let previous = app.buttons["watch.book.previousChapter"]
+        let next = app.buttons["watch.book.nextChapter"]
+        XCTAssertTrue(next.waitForExistence(timeout: 10))
+        XCTAssertFalse(previous.isEnabled)
         next.tap()
         ensureVisible(app.staticTexts["watch.book.chapterNumber"], app: app)
         XCTAssertEqual(app.staticTexts["watch.book.chapterNumber"].label, "Chapter 2")
-        ensureVisible(previous, app: app)
-        XCTAssertTrue(previous.isEnabled)
+        app.buttons["watch.book.chapters"].tap()
+        XCTAssertTrue(app.buttons["watch.book.previousChapter"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["watch.book.previousChapter"].isEnabled)
     }
 
     func testWatchPlaybackFailureIsActionable() {
@@ -130,24 +118,32 @@ final class VoxglassWatchUITests: XCTestCase {
         app.launchEnvironment["VOXGLASS_WATCH_SMOKE_PLAYBACK_FAILURE"] = "1"
         app.launch()
 
-        XCTAssertTrue(app.staticTexts["Alice's Adventures in Wonderland"].waitForExistence(timeout: 20))
-        app.staticTexts["Alice's Adventures in Wonderland"].tap()
-        XCTAssertTrue(app.buttons["watch.book.play"].waitForExistence(timeout: 10))
-        app.buttons["watch.book.play"].tap()
-        // The button never left the "Play" state (the phase never reached
-        // .playing) — check its label now, before scrolling down for the
-        // Retry button pushes it off this tiny screen.
-        XCTAssertEqual(app.buttons["watch.book.play"].label, "Play")
+        let alice = bookRow(app, titled: "Alice's Adventures in Wonderland")
+        XCTAssertTrue(alice.waitForExistence(timeout: 20))
+        alice.tap()
+        XCTAssertTrue(app.buttons["watch.book.start"].waitForExistence(timeout: 10))
+        app.buttons["watch.book.start"].tap()
+        // Watch redesign S3: the Problem Card replaces the transport in place, with its action and
+        // diagnostic code — never a Play button that silently does nothing.
+        XCTAssertTrue(app.descendants(matching: .any)["watch.book.problem"].waitForExistence(timeout: 10),
+                      app.debugDescription)
+        XCTAssertFalse(app.buttons["watch.book.play"].exists)
         if !app.buttons["watch.book.retry"].waitForExistence(timeout: 2) {
             scrollDownSlightly(app: app)
         }
         XCTAssertTrue(app.buttons["watch.book.retry"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(app.staticTexts["watch.book.phase"].label, "Download this chapter or reconnect to stream it.")
+        XCTAssertEqual(app.staticTexts["watch.book.errorCode"].label, "chapterUnavailable")
+    }
+
+    /// Library rows combine their children into one button labelled with the title.
+    private func bookRow(_ app: XCUIApplication, titled title: String) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
     }
 
     private func waitForPhase(_ phase: String, app: XCUIApplication) {
         ensureVisible(app.staticTexts["watch.book.phase"], app: app)
-        let reached = NSPredicate(format: "label == %@", phase)
+        let reached = NSPredicate(format: "label BEGINSWITH %@", phase)
         expectation(for: reached, evaluatedWith: app.staticTexts["watch.book.phase"])
         waitForExpectations(timeout: 20)
     }

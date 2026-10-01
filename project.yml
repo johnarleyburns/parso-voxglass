@@ -100,6 +100,9 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true
+        # Watch redesign H3: the watch's "Show Me on iPhone" hands off to My Books.
+        NSUserActivityTypes:
+          - guru.parso.voxglass.watch.library
         NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them."
         UTImportedTypeDeclarations:
           - UTTypeConformsTo:
