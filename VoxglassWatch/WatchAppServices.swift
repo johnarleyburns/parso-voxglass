@@ -124,6 +124,10 @@ final class WatchAppServices: ObservableObject {
 
     func bootstrap() {
         downloaded = Set(UserDefaults.standard.stringArray(forKey: "watch.downloaded")?.map(WatchBookID.init) ?? [])
+        // A seeded UI-test launch starts with no listening history, so every run sees the same Home.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestSeed") {
+            UserDefaults.standard.removeObject(forKey: Self.listenedKey)
+        }
         if let data = UserDefaults.standard.data(forKey: Self.listenedKey),
            let decoded = try? JSONDecoder().decode([String: WatchListenedRecord].self, from: data) {
             listened = decoded

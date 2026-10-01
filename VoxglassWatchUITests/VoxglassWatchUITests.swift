@@ -63,12 +63,17 @@ final class VoxglassWatchUITests: XCTestCase {
         let alice = bookRow(app, titled: "Alice's Adventures in Wonderland")
         XCTAssertTrue(alice.waitForExistence(timeout: 10),
                       "Injected library fixture did not render.\n\(app.debugDescription)")
+        snapshot("H1-home")
         alice.tap()
 
         // Watch redesign B1: the Book page's one big button starts playback and opens the Player.
-        let start = app.buttons["watch.book.start"]
-        XCTAssertTrue(start.waitForExistence(timeout: 10))
-        start.tap()
+        // The fixture isn't on the watch and the iPhone is nearby (B2): Download is primary and
+        // Stream Chapter 1 sits right under it.
+        XCTAssertTrue(app.buttons["watch.book.download"].waitForExistence(timeout: 10))
+        let start = app.buttons["watch.book.stream"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10), app.debugDescription)
+        snapshot("B2-book")
+        tapFullyVisible(start, app: app)
 
         let artwork = app.descendants(matching: .any)["watch.book.artwork"]
         XCTAssertTrue(artwork.waitForExistence(timeout: 20), "Player artwork did not render")
@@ -77,7 +82,6 @@ final class VoxglassWatchUITests: XCTestCase {
         XCTAssertTrue(app.buttons["watch.book.skipForward"].waitForExistence(timeout: 10))
         let output = app.descendants(matching: .any)["watch.book.output"]
         XCTAssertTrue(output.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["watch.book.phase"].waitForExistence(timeout: 10))
         XCTAssertNoThrow(try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
                                                                   .sufficientElementDescription, .textClipped, .trait]))
         waitForPhase("Playing", app: app)
@@ -102,10 +106,11 @@ final class VoxglassWatchUITests: XCTestCase {
         let previous = app.buttons["watch.book.previousChapter"]
         let next = app.buttons["watch.book.nextChapter"]
         XCTAssertTrue(next.waitForExistence(timeout: 10))
+        snapshot("C1-chapters")
         XCTAssertFalse(previous.isEnabled)
         next.tap()
-        ensureVisible(app.staticTexts["watch.book.chapterNumber"], app: app)
-        XCTAssertEqual(app.staticTexts["watch.book.chapterNumber"].label, "Chapter 2")
+        ensureVisible(app.staticTexts["watch.book.currentChapter"], app: app)
+        XCTAssertEqual(app.staticTexts["watch.book.currentChapter"].label, "Chapter 2")
         app.buttons["watch.book.chapters"].tap()
         XCTAssertTrue(app.buttons["watch.book.previousChapter"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["watch.book.previousChapter"].isEnabled)
@@ -121,8 +126,8 @@ final class VoxglassWatchUITests: XCTestCase {
         let alice = bookRow(app, titled: "Alice's Adventures in Wonderland")
         XCTAssertTrue(alice.waitForExistence(timeout: 20))
         alice.tap()
-        XCTAssertTrue(app.buttons["watch.book.start"].waitForExistence(timeout: 10))
-        app.buttons["watch.book.start"].tap()
+        XCTAssertTrue(app.buttons["watch.book.stream"].waitForExistence(timeout: 10))
+        tapFullyVisible(app.buttons["watch.book.stream"], app: app)
         // Watch redesign S3: the Problem Card replaces the transport in place, with its action and
         // diagnostic code — never a Play button that silently does nothing.
         XCTAssertTrue(app.descendants(matching: .any)["watch.book.problem"].waitForExistence(timeout: 10),
@@ -132,8 +137,29 @@ final class VoxglassWatchUITests: XCTestCase {
             scrollDownSlightly(app: app)
         }
         XCTAssertTrue(app.buttons["watch.book.retry"].waitForExistence(timeout: 10), app.debugDescription)
+        snapshot("S3-problem")
         XCTAssertEqual(app.staticTexts["watch.book.phase"].label, "Download this chapter or reconnect to stream it.")
-        XCTAssertEqual(app.staticTexts["watch.book.errorCode"].label, "chapterUnavailable")
+        XCTAssertTrue(app.staticTexts["watch.book.errorCode"].label.hasSuffix("chapterUnavailable"),
+                      app.staticTexts["watch.book.errorCode"].label)
+    }
+
+    /// Scrolls with the Digital Crown until the element is wholly on screen, then taps it. A row
+    /// under the bottom edge reports hittable but its centre is off the display.
+    private func tapFullyVisible(_ element: XCUIElement, app: XCUIApplication) {
+        let window = app.windows.firstMatch.frame
+        for _ in 0..<6 where !(element.isHittable && element.frame.maxY <= window.maxY) {
+            XCUIDevice.shared.rotateDigitalCrown(delta: 0.2)
+            _ = element.waitForExistence(timeout: 1)
+        }
+        element.tap()
+    }
+
+    /// Screenshot per mockup state, for the watch-redesign fidelity audit.
+    private func snapshot(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     /// Library rows combine their children into one button labelled with the title.
@@ -141,10 +167,11 @@ final class VoxglassWatchUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
     }
 
+    /// The play button carries the playback status as its value (P1 shows no status line while
+    /// playing).
     private func waitForPhase(_ phase: String, app: XCUIApplication) {
-        ensureVisible(app.staticTexts["watch.book.phase"], app: app)
-        let reached = NSPredicate(format: "label BEGINSWITH %@", phase)
-        expectation(for: reached, evaluatedWith: app.staticTexts["watch.book.phase"])
+        let reached = NSPredicate(format: "value BEGINSWITH %@", phase)
+        expectation(for: reached, evaluatedWith: app.buttons["watch.book.play"])
         waitForExpectations(timeout: 20)
     }
 }

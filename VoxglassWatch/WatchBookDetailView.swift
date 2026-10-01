@@ -19,6 +19,12 @@ struct WatchBookPageView: View {
             header.listRowBackground(Color.clear)
             Section {
                 primaryButton
+                // B2: streaming is offered honestly, right under Download.
+                if !isDownloaded, services.isConnected, canStream {
+                    Button { start(at: 0) } label: { Label("Stream Chapter 1", systemImage: "play.fill") }
+                        .buttonStyle(.watchSecondarySmall)
+                        .accessibilityIdentifier("watch.book.stream")
+                }
                 HStack(spacing: 6) {
                     Button { path.append(.chapters(book.id)) } label: {
                         Label("Chapters", systemImage: "list.bullet")
@@ -27,11 +33,6 @@ struct WatchBookPageView: View {
                     .disabled(!canPlay)
                     .accessibilityIdentifier("watch.book.chaptersButton")
                     downloadStateButton
-                }
-                if !isDownloaded, services.isConnected, canStream {
-                    Button { start(at: 0) } label: { Label("Stream Chapter 1", systemImage: "play.fill") }
-                        .buttonStyle(.watchSecondarySmall)
-                        .accessibilityIdentifier("watch.book.stream")
                 }
                 if !isDownloaded && !services.isConnected {
                     Text("Not on this watch. Bring your iPhone nearby to stream or download it.")

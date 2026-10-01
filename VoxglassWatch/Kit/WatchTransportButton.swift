@@ -13,6 +13,8 @@ struct WatchTransportButton: View {
     var role: Role = .side
     var isBusy = false
     var isEnabled = true
+    /// The Player shares the screen with its bottom toolbar, so it can ask for a smaller button.
+    var diameterOverride: CGFloat?
     let action: () -> Void
 
     var body: some View {
@@ -41,7 +43,8 @@ struct WatchTransportButton: View {
     }
 
     private var diameter: CGFloat {
-        role == .primary ? WatchMetrics.playButton : WatchMetrics.sideButton
+        if let diameterOverride { return diameterOverride }
+        return role == .primary ? WatchMetrics.playButton : WatchMetrics.sideButton
     }
 }
 

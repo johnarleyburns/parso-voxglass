@@ -14,7 +14,6 @@ struct WatchPlayerView: View {
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var crownVolume = 1.0
-    @State private var showsBookRemaining = false
     @State private var showingOutput = false
     @State private var outputName: String?
 
@@ -25,9 +24,10 @@ struct WatchPlayerView: View {
         ZStack {
             background
             VStack(spacing: 4) {
-                chips
+                // S3: a Problem Card replaces the whole face — no chip or titles around it.
+                if !isFailed { chips }
                 if let book {
-                    titles(book)
+                    if !isFailed { titles(book) }
                     content(book)
                 } else {
                     Text("Nothing playing").font(.headline).foregroundStyle(.secondary).padding(.top, 20)
@@ -35,6 +35,9 @@ struct WatchPlayerView: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 4)
+            // The back button and the clock share the top row; the output chip gets its own row
+            // below them (mockup P1).
+            .padding(.top, 8)
         }
         .focusable(!isLuminanceReduced)
         .digitalCrownRotation($crownVolume, from: 0, through: 1, by: 0.05, sensitivity: .medium,
@@ -108,9 +111,13 @@ struct WatchPlayerView: View {
 
     private func titles(_ book: WatchBookDTO) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text("Chapter \(playback.chapterIndex + 1)")
-                .font(.caption2).foregroundStyle(.white.opacity(0.7))
-                .accessibilityIdentifier("watch.book.chapterNumber")
+            // P1: the chapter title leads. The "Chapter N" caption appears only when the title
+            // doesn't already say it.
+            if !currentChapterTitle(book).localizedCaseInsensitiveContains("\(playback.chapterIndex + 1)") {
+                Text("Chapter \(playback.chapterIndex + 1)")
+                    .font(.caption2).foregroundStyle(.white.opacity(0.7))
+                    .accessibilityIdentifier("watch.book.chapterNumber")
+            }
             Text(currentChapterTitle(book))
                 .font(.headline)
                 .lineLimit(dynamicTypeSize >= .accessibility1 ? 2 : 1)
@@ -145,50 +152,48 @@ struct WatchPlayerView: View {
                 .padding(.horizontal, 4)
             if dynamicTypeSize < .accessibility1 { times(book) }
             transport
-            Text(statusLine)
-                .font(.caption2).foregroundStyle(.secondary)
-                .accessibilityIdentifier("watch.book.phase")
+            // While audio plays the face is P1 (the rate is on the toolbar); any other state —
+            // connecting, buffering, paused, waiting for output — is said in words here.
+            if !playback.isActuallyPlaying {
+                Text(statusLine)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("watch.book.phase")
+            }
         }
     }
 
+    /// P1: chapter times. (Book time left lives on Home and in the Smart Stack card; a tap target
+    /// this small failed the hit-region audit.)
     private func times(_ book: WatchBookDTO) -> some View {
-        Button { showsBookRemaining.toggle() } label: {
-            HStack {
-                Text(WatchTimeFormat.clock(playback.position)).accessibilityIdentifier("watch.book.elapsed")
-                Spacer()
-                if showsBookRemaining {
-                    Text("\(WatchTimeFormat.short(services.remainingInBook(for: book))) left in book")
-                        .accessibilityIdentifier("watch.book.remainingInBook")
-                } else {
-                    Text(verbatim: "−\(WatchTimeFormat.clock(max(0, playback.duration - playback.position)))")
-                        .accessibilityIdentifier("watch.book.remaining")
-                }
-            }
-            .font(.caption2).monospacedDigit().foregroundStyle(.secondary)
-            .padding(.horizontal, 4)
+        HStack {
+            Text(WatchTimeFormat.clock(playback.position)).accessibilityIdentifier("watch.book.elapsed")
+            Spacer()
+            Text(verbatim: "−\(WatchTimeFormat.clock(max(0, playback.duration - playback.position)))")
+                .accessibilityIdentifier("watch.book.remaining")
         }
-        .buttonStyle(.plain)
-        .accessibilityHint(Text("Switches between chapter and book time left"))
+        .font(.caption2).monospacedDigit().foregroundStyle(.secondary)
+        .padding(.horizontal, 4)
     }
 
     private var transport: some View {
         HStack {
             WatchTransportButton(systemImage: "gobackward.15", label: Text("Back 15 seconds"),
-                                 isEnabled: canTransport) {
+                                 isEnabled: canTransport, diameterOverride: 40) {
                 services.skip(by: -WatchSkip.backward)
             }
             .accessibilityIdentifier("watch.book.skipBack")
             Spacer(minLength: 4)
             WatchTransportButton(systemImage: playPauseSymbol,
                                  label: playback.isActuallyPlaying ? Text("Pause") : Text("Play"),
-                                 role: .primary, isBusy: isBusy) {
+                                 role: .primary, isBusy: isBusy, diameterOverride: 50) {
                 services.togglePlayPause()
             }
             .accessibilityIdentifier("watch.book.play")
+            .accessibilityValue(Text(statusLine))
             .watchPrimaryActionShortcut()
             Spacer(minLength: 4)
             WatchTransportButton(systemImage: "goforward.30", label: Text("Forward 30 seconds"),
-                                 isEnabled: canTransport) {
+                                 isEnabled: canTransport, diameterOverride: 40) {
                 services.skip(by: WatchSkip.forward)
             }
             .accessibilityIdentifier("watch.book.skipForward")
@@ -273,11 +278,17 @@ struct WatchPlayerView: View {
         return actions
     }
 
+    private var isFailed: Bool {
+        if case .failed = playback.phase { return true }
+        return false
+    }
+
     // MARK: Toolbar
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        if !isLuminanceReduced {
+        // A Problem Card owns the screen's actions (S3); the tool row would cover them.
+        if !isLuminanceReduced && !isFailed {
             ToolbarItemGroup(placement: .bottomBar) {
                 tool(systemImage: "list.bullet", label: "Chapters", identifier: "watch.book.chapters") {
                     if let id = book?.id { path.append(.chapters(id)) }
