@@ -111,6 +111,11 @@ let package = Package(
             path: "Tools/CollectionCounts"
         ),
         .executableTarget(
+            name: "librivox-languages",
+            dependencies: ["VoxglassCore"],
+            path: "Tools/LibriVoxLanguages"
+        ),
+        .executableTarget(
             name: "curated-lists",
             dependencies: ["VoxglassCore"],
             path: "Tools/CuratedLists",

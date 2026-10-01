@@ -75,6 +75,30 @@
             "state" : "needs_review",
             "value" : "第 %1$lld 章 · 剩余 %2$@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku %lld · %@ jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κεφ. %lld · απομένουν %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第 %1$lld 章 · 剩餘 %2$@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ch %lld · %@ left"
+          }
         }
       }
     },
@@ -145,6 +169,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "继续"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continue"
           }
         }
       }
@@ -217,6 +265,30 @@
             "state" : "needs_review",
             "value" : "继续收听"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka kuuntelua"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια ακρόασης"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續收聽"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continue Listening"
+          }
         }
       }
     },
@@ -287,6 +359,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "继续播放你正在听的书，或将其暂停。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatkaa kuuntelemaasi kirjaa tai keskeyttää sen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνεχίζει το βιβλίο που ακούγατε ή το θέτει σε παύση."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續播放你正在聽的書，或將其暫停。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continues the book you were listening to, or pauses it."
           }
         }
       }
@@ -359,6 +455,30 @@
             "state" : "needs_review",
             "value" : "正在收听"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kuunnellaan"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ακρόαση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在收聽"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Listening"
+          }
         }
       }
     },
@@ -429,6 +549,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "没有正在听的书"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei kesken olevaa kirjaa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κανένα βιβλίο σε εξέλιξη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "沒有正在聽的書"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No book in progress"
           }
         }
       }
@@ -501,6 +645,30 @@
             "state" : "needs_review",
             "value" : "暂停"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tauko"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Παύση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "暫停"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause"
+          }
         }
       }
     },
@@ -571,6 +739,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "继续"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume"
           }
         }
       }
@@ -643,6 +835,30 @@
             "state" : "needs_review",
             "value" : "继续或暂停 Voxglass"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka tai keskeytä Voxglass"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια ή παύση Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續或暫停 Voxglass"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume or Pause Voxglass"
+          }
         }
       }
     },
@@ -713,6 +929,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "你正在听的有声书，显示剩余时间并可继续播放。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kuuntelemasi äänikirja, jäljellä oleva aika ja jatkaminen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Το ηχοβιβλίο που ακούτε, με τον χρόνο που απομένει και συνέχιση."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "你正在聽的有聲書，顯示剩餘時間並可繼續播放。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "The audiobook you're in, with time left and resume."
           }
         }
       }

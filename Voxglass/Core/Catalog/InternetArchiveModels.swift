@@ -129,11 +129,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
     private static func displayLanguage(for value: String) -> String? {
         let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalized.isEmpty else { return nil }
-        let lowercased = normalized.lowercased()
-        if let language = LibriVoxLanguage.all.first(where: { language in
-            language.id.lowercased() == lowercased
-                || language.tokens.contains { $0.lowercased() == lowercased }
-        }) {
+        if let language = LibriVoxLanguage.language(forToken: normalized) {
             return language.displayName
         }
         return normalized

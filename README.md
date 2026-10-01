@@ -35,16 +35,34 @@ only in Git history.
 
 ## Languages
 
-Voxglass ships in **12 languages**: English, German (Deutsch), French (Français), Spanish (Español),
-Italian (Italiano), Brazilian Portuguese (Português do Brasil), Dutch (Nederlands), Japanese (日本語),
-Simplified Chinese (简体中文), Russian (Русский), Polish (Polski), and Hebrew (עברית, right-to-left).
+Voxglass ships in **16 languages**: English, English (UK), German (Deutsch), French (Français),
+Spanish (Español), Italian (Italiano), Brazilian Portuguese (Português do Brasil), Dutch (Nederlands),
+Finnish (Suomi), Greek (Ελληνικά), Japanese (日本語), Simplified Chinese (简体中文), Traditional Chinese
+(繁體中文), Russian (Русский), Polish (Polski), and Hebrew (עברית, right-to-left).
 
 The app follows the iPhone's language. To use a different language for Voxglass only, open
 **Settings › Voxglass › Language** on the iPhone (the About screen has a shortcut). The iPhone app,
 Apple Watch app, widgets, Live Activity, CarPlay screens, Siri phrases and the microphone permission
 prompt are all localized, with plural forms for every language (including Russian and Polish
 few/many forms and the Hebrew dual). Book titles, authors and narrators are catalog data and are
-never translated.
+never translated. Siri doesn't support Greek, so the Greek App Shortcut phrases are localized but
+can't be spoken; Greek users get the shortcuts in the Shortcuts app and Spotlight.
+
+### Book languages
+
+The library filter (Settings › Languages, and the first-run setup) covers **every language in the
+LibriVox collection** — 48 languages plus books tagged as multilingual and books with no language tag
+at all — independently of the interface language. Language names are shown in the interface language,
+the picker lists the largest languages first with an **All Languages** sheet (searchable, with book
+counts) for the rest, and leaving every language off includes all of them. Latin and Ancient Greek
+audiobooks are fully searchable even though there is no Latin or Ancient Greek interface; Ancient
+Greek (`grc`) and Modern Greek (`ell`) are separate choices.
+
+The list lives in `Voxglass/Core/Catalog/LibriVoxLanguage.swift`, with every spelling archive.org uses
+for each language (`deu`/`ger`/`German`, …). `swift run librivox-languages` re-scans the whole
+collection, regenerates the per-language book counts in `LibriVoxLanguageCounts.swift`, and fails if
+archive.org has started using a language value that no entry claims — add it to the right entry (or a
+new one) and run it again.
 
 **Translation status:** every string has a first-pass translation marked `needs_review` in the
 String Catalogs. A native speaker should review each language in Xcode's catalog editor and flip
@@ -97,7 +115,6 @@ The opening is: *the same catalog in a player that respects you*.
 - **Apple Watch polish** — the companion is shipped; additional complications and richer controls
   remain future work.
 - **Widgets, Siri & App Shortcuts** — needs an app-group entitlement and relocated SQLite database.
-- **Localization** — the UI is English-only today (catalog already supports 15 languages).
 - **Narrator-centric discovery, Project Gutenberg read-along** — longer-term differentiators unique to
   public-domain content.
 

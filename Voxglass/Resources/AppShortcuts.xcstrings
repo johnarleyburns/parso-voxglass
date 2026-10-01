@@ -135,6 +135,50 @@
               "在${applicationName}中播放一本书"
             ]
           }
+        },
+        "fi" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toista ${book} sovelluksessa ${applicationName}",
+              "Soita ${book} sovelluksella ${applicationName}",
+              "Kuuntele ${book} sovelluksessa ${applicationName}",
+              "Toista kirja sovelluksessa ${applicationName}"
+            ]
+          }
+        },
+        "el" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Αναπαραγωγή ${book} στο ${applicationName}",
+              "Παίξε ${book} στο ${applicationName}",
+              "Άκουσε ${book} στο ${applicationName}",
+              "Αναπαραγωγή βιβλίου στο ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "在${applicationName}中播放${book}",
+              "用${applicationName}播放${book}",
+              "在${applicationName}中收聽${book}",
+              "在${applicationName}中播放一本書"
+            ]
+          }
+        },
+        "en-GB" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Play ${book} in ${applicationName}",
+              "Play ${book} on ${applicationName}",
+              "Listen to ${book} in ${applicationName}",
+              "Play a book in ${applicationName}"
+            ]
+          }
         }
       }
     },
@@ -258,6 +302,46 @@
               "继续播放${applicationName}",
               "在${applicationName}中继续我的有声书",
               "在${applicationName}中继续我的书"
+            ]
+          }
+        },
+        "fi" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Jatka ${applicationName}",
+              "Jatka äänikirjaani sovelluksessa ${applicationName}",
+              "Jatka kirjaani sovelluksessa ${applicationName}"
+            ]
+          }
+        },
+        "el" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Συνέχεια ${applicationName}",
+              "Συνέχισε το ηχοβιβλίο μου στο ${applicationName}",
+              "Συνέχισε το βιβλίο μου στο ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "繼續播放${applicationName}",
+              "在${applicationName}中繼續我的有聲書",
+              "在${applicationName}中繼續我的書"
+            ]
+          }
+        },
+        "en-GB" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Resume ${applicationName}",
+              "Resume my audiobook in ${applicationName}",
+              "Continue my book in ${applicationName}"
             ]
           }
         }

@@ -73,6 +73,30 @@
             "state" : "needs_review",
             "value" : "剩余 %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Απομένουν %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "剩餘 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ left"
+          }
         }
       }
     },
@@ -143,6 +167,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "本章剩余 %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luvussa %@ jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Απομένουν %@ στο κεφάλαιο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "本章剩餘 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ left in chapter"
           }
         }
       }
@@ -215,6 +263,30 @@
             "state" : "needs_review",
             "value" : "%@ · 流式播放"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · suoratoisto"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · ροή"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · 流式播放"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · streaming"
+          }
         }
       }
     },
@@ -285,6 +357,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld 分钟"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld minuuttia"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld λεπτά"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld 分鐘"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld minutes"
           }
         }
       }
@@ -363,6 +459,30 @@
             "state" : "needs_review",
             "value" : "%lld / %lld 章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld/%lld lukua"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld από %lld κεφάλαια"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld / %lld 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld of %lld chapters"
+          }
         }
       }
     },
@@ -433,6 +553,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "百分之 %lld"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld prosenttia"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld τοις εκατό"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "百分之 %lld"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld percent"
           }
         }
       }
@@ -511,6 +655,30 @@
             "state" : "needs_review",
             "value" : "%lld%% · %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %% · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %% · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %% · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %% · %@"
+          }
         }
       }
     },
@@ -588,6 +756,30 @@
             "state" : "needs_review",
             "value" : "%lld 小时 %lld 分钟"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld h %lld min"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld ώ. %lld λ."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld 小時 %lld 分鐘"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lldh %lldm"
+          }
         }
       }
     },
@@ -658,6 +850,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld 分钟"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld min"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld λ."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld 分鐘"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lldm"
           }
         }
       }
@@ -730,6 +946,30 @@
             "state" : "needs_review",
             "value" : "%lld 秒"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld s"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld δ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld 秒"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%llds"
+          }
         }
       }
     },
@@ -800,6 +1040,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "关于"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tietoja"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Πληροφορίες"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "關於"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "About"
           }
         }
       }
@@ -872,6 +1136,30 @@
             "state" : "needs_review",
             "value" : "音频未开始播放"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ääni ei käynnistynyt"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ο ήχος δεν ξεκίνησε"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "音訊未開始播放"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Audio Didn't Start"
+          }
         }
       }
     },
@@ -942,6 +1230,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "后退 15 秒"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "15 sekuntia taaksepäin"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "15 δευτερόλεπτα πίσω"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "後退 15 秒"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Back 15 seconds"
           }
         }
       }
@@ -1014,6 +1326,30 @@
             "state" : "needs_review",
             "value" : "返回第 %lld 章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Takaisin lukuun %lld"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Επιστροφή στο κεφάλαιο %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "返回第 %lld 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Back to Chapter %lld"
+          }
         }
       }
     },
@@ -1084,6 +1420,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "手表上的图书：%lld · %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kirjoja kellossa: %lld · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Βιβλία στο ρολόι: %lld · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "手錶上的圖書：%lld · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Books on watch: %lld · %@"
           }
         }
       }
@@ -1156,6 +1516,30 @@
             "state" : "needs_review",
             "value" : "图书通过连接到此手表的蓝牙耳机或扬声器播放。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kirjat toistetaan tähän kelloon yhdistetyillä Bluetooth-kuulokkeilla tai -kaiuttimilla."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Τα βιβλία παίζουν μέσω ακουστικών ή ηχείων Bluetooth που είναι συνδεδεμένα σε αυτό το ρολόι."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "圖書通過連線到此手錶的藍牙耳機或揚聲器播放。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Books play through Bluetooth headphones or speakers connected to this watch."
+          }
         }
       }
     },
@@ -1227,6 +1611,30 @@
             "state" : "needs_review",
             "value" : "正在缓冲…"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Puskuroidaan…"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Φόρτωση…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在緩衝…"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Buffering…"
+          }
         }
       }
     },
@@ -1297,6 +1705,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "取消"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kumoa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ακύρωση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "取消"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cancel"
           }
         }
       }
@@ -1375,6 +1807,30 @@
             "state" : "needs_review",
             "value" : "第 %lld 章 · 剩余 %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku %lld · %@ jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κεφ. %lld · απομένουν %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第 %lld 章 · 剩餘 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ch %lld · %@ left"
+          }
         }
       }
     },
@@ -1446,6 +1902,30 @@
             "state" : "needs_review",
             "value" : "第 %lld 章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku %lld"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κεφάλαιο %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第 %lld 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapter %lld"
+          }
         }
       }
     },
@@ -1516,6 +1996,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "第 %lld 章不在此手表上，且你的 iPhone 不在附近，无法流式播放。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku %lld ei ole tässä kellossa, eikä iPhonesi ole lähellä suoratoistoa varten."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Το κεφάλαιο %lld δεν βρίσκεται σε αυτό το ρολόι και το iPhone σας δεν είναι κοντά για ροή."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第 %lld 章不在此手錶上，且你的 iPhone 不在附近，無法流式播放。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapter %lld isn't on this watch, and your iPhone isn't nearby to stream it."
           }
         }
       }
@@ -1594,6 +2098,30 @@
             "state" : "needs_review",
             "value" : "第 %lld 章，%@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku %lld, %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κεφάλαιο %lld, %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第 %lld 章，%@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapter %lld, %@"
+          }
         }
       }
     },
@@ -1664,6 +2192,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "本章不在此手表上"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku ei ole tässä kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Το κεφάλαιο δεν είναι σε αυτό το ρολόι"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "本章不在此手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapter Not on This Watch"
           }
         }
       }
@@ -1736,6 +2288,30 @@
             "state" : "needs_review",
             "value" : "章节"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luvut"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κεφάλαια"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "章節"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapters"
+          }
         }
       }
     },
@@ -1806,6 +2382,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "选择输出"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valitse äänilähtö"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Επιλογή εξόδου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "選擇輸出"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Choose Output"
           }
         }
       }
@@ -1878,6 +2478,30 @@
             "state" : "needs_review",
             "value" : "请连接蓝牙耳机后重试。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Yhdistä Bluetooth-kuulokkeet ja yritä uudelleen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνδέστε ακουστικά Bluetooth και δοκιμάστε ξανά."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "請連線藍牙耳機後重試。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Connect Bluetooth headphones, then try again."
+          }
         }
       }
     },
@@ -1949,6 +2573,30 @@
             "state" : "needs_review",
             "value" : "连接耳机"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Yhdistä kuulokkeet"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Σύνδεση ακουστικών"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "連線耳機"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Connect Headphones"
+          }
         }
       }
     },
@@ -2019,6 +2667,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "正在连接耳机…"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Yhdistetään kuulokkeisiin…"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Σύνδεση με ακουστικά…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在連線耳機…"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Connecting to headphones…"
           }
         }
       }
@@ -2097,6 +2769,30 @@
             "state" : "needs_review",
             "value" : "继续《%@》，第 %lld 章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka: %@, luku %lld"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια %@, κεφάλαιο %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續《%@》，第 %lld 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continue %@, chapter %lld"
+          }
         }
       }
     },
@@ -2167,6 +2863,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "继续播放你正在听的书，或将其暂停。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatkaa kuuntelemaasi kirjaa tai keskeyttää sen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνεχίζει το βιβλίο που ακούγατε ή το θέτει σε παύση."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續播放你正在聽的書，或將其暫停。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continues the book you were listening to, or pauses it."
           }
         }
       }
@@ -2239,6 +2959,30 @@
             "state" : "needs_review",
             "value" : "封面"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kansi"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Εξώφυλλο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "封面"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cover"
+          }
         }
       }
     },
@@ -2309,6 +3053,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "当前章节"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nykyinen luku"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Τρέχον κεφάλαιο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "目前章節"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Current chapter"
           }
         }
       }
@@ -2381,6 +3149,30 @@
             "state" : "needs_review",
             "value" : "诊断代码 %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diagnostiikkakoodi %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κωδικός διάγνωσης %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "診斷程式碼 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diagnostic code %@"
+          }
         }
       }
     },
@@ -2451,6 +3243,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "连按两次以打开"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avaa kaksoisnapauttamalla"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Πατήστε δύο φορές για άνοιγμα"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "連按兩次以開啟"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Double-tap to open"
           }
         }
       }
@@ -2523,6 +3339,30 @@
             "state" : "needs_review",
             "value" : "下载"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lataa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下載"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download"
+          }
         }
       }
     },
@@ -2593,6 +3433,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "下载失败：%@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lataus epäonnistui: %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Η λήψη απέτυχε: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下載失敗：%@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download failed: %@"
           }
         }
       }
@@ -2665,6 +3529,30 @@
             "state" : "needs_review",
             "value" : "请下载此章节，或重新连接后串流播放。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lataa tämä luku tai muodosta yhteys uudelleen suoratoistaaksesi sen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κάντε λήψη αυτού του κεφαλαίου ή επανασυνδεθείτε για ροή."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "請下載此章節，或重新連線後串流播放。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download this chapter or reconnect to stream it."
+          }
         }
       }
     },
@@ -2735,6 +3623,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "下载 · %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lataa · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψη · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下載 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download · %@"
           }
         }
       }
@@ -2807,6 +3719,30 @@
             "state" : "needs_review",
             "value" : "已下载"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ladattu"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ελήφθη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已下載"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Downloaded"
+          }
         }
       }
     },
@@ -2877,6 +3813,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "正在下载"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ladataan"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在下載"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Downloading"
           }
         }
       }
@@ -2955,6 +3915,30 @@
             "state" : "needs_review",
             "value" : "正在下载 %lld / %lld"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ladataan %lld/%lld"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψη %lld από %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在下載 %lld / %lld"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Downloading %lld of %lld"
+          }
         }
       }
     },
@@ -3025,6 +4009,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "正在下载 %lld%%"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ladataan %lld %%"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψη %lld%%"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在下載 %lld%%"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Downloading %lld%%"
           }
         }
       }
@@ -3097,6 +4105,30 @@
             "state" : "needs_review",
             "value" : "正在下载 · %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ladataan · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψη · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在下載 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Downloading · %@"
+          }
         }
       }
     },
@@ -3167,6 +4199,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "下载"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lataukset"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Λήψεις"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下載"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Downloads"
           }
         }
       }
@@ -3239,6 +4295,30 @@
             "state" : "needs_review",
             "value" : "本章结束时"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luvun loppu"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Τέλος κεφαλαίου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "本章結束時"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "End of Chapter"
+          }
         }
       }
     },
@@ -3309,6 +4389,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "已完成"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kuunneltu"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ολοκληρώθηκε"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已完成"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Finished"
           }
         }
       }
@@ -3381,6 +4485,30 @@
             "state" : "needs_review",
             "value" : "前进 30 秒"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "30 sekuntia eteenpäin"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "30 δευτερόλεπτα μπροστά"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "前進 30 秒"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Forward 30 seconds"
+          }
         }
       }
     },
@@ -3451,6 +4579,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "自由软件，GNU GPLv3+。完整源代码公开。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vapaa ohjelmisto, GNU GPLv3+. Koko lähdekoodi on julkinen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ελεύθερο λογισμικό, GNU GPLv3+. Ο πλήρης πηγαίος κώδικας είναι δημόσιος."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "自由軟體，GNU GPLv3+。完整原始碼公開。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Free software, GNU GPLv3+. Full source is public."
           }
         }
       }
@@ -3523,6 +4675,30 @@
             "state" : "needs_review",
             "value" : "资料库"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kirjasto"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Βιβλιοθήκη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "資料庫"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Library"
+          }
         }
       }
     },
@@ -3593,6 +4769,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "许可"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lisenssi"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Άδεια χρήσης"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "許可"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Licence"
           }
         }
       }
@@ -3665,6 +4865,30 @@
             "state" : "needs_review",
             "value" : "我的书"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Omat kirjat"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Τα Βιβλία μου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "我的書"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "My Books"
+          }
         }
       }
     },
@@ -3735,6 +4959,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "下一个"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Seuraava"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Επόμενο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下一個"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Next"
           }
         }
       }
@@ -3807,6 +5055,30 @@
             "state" : "needs_review",
             "value" : "下一章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Seuraava luku"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Επόμενο κεφάλαιο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下一章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Next chapter"
+          }
         }
       }
     },
@@ -3877,6 +5149,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "无音频输出"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei äänilähtöä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Καμία έξοδος ήχου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "無音訊輸出"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No audio output"
           }
         }
       }
@@ -3949,6 +5245,30 @@
             "state" : "needs_review",
             "value" : "此手表上没有图书"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tässä kellossa ei ole kirjoja"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν υπάρχουν βιβλία σε αυτό το ρολόι"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此手錶上沒有圖書"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No books on this watch"
+          }
         }
       }
     },
@@ -4019,6 +5339,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "无输出"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei äänilähtöä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Καμία έξοδος"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "無輸出"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No output"
           }
         }
       }
@@ -4091,6 +5435,30 @@
             "state" : "needs_review",
             "value" : "没有可播放的章节。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toistettavaa lukua ei ole saatavilla."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν υπάρχει διαθέσιμο κεφάλαιο για αναπαραγωγή."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "沒有可播放的章節。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No playable chapter is available."
+          }
         }
       }
     },
@@ -4161,6 +5529,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "没有可播放的章节。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei toistettavia lukuja."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κανένα κεφάλαιο για αναπαραγωγή."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "沒有可播放的章節。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No playable chapters."
           }
         }
       }
@@ -4233,6 +5625,30 @@
             "state" : "needs_review",
             "value" : "不在此手表上"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei tässä kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Όχι σε αυτό το ρολόι"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "不在此手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Not on This Watch"
+          }
         }
       }
     },
@@ -4303,6 +5719,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "不在此手表上"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei tässä kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Όχι σε αυτό το ρολόι"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "不在此手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Not on this watch"
           }
         }
       }
@@ -4375,6 +5815,30 @@
             "state" : "needs_review",
             "value" : "不在此手表上。请将 iPhone 靠近以流式播放或下载。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei tässä kellossa. Tuo iPhone lähelle suoratoistaaksesi tai ladataksesi sen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Όχι σε αυτό το ρολόι. Φέρτε το iPhone σας κοντά για ροή ή λήψη."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "不在此手錶上。請將 iPhone 靠近以流式播放或下載。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Not on this watch. Bring your iPhone nearby to stream or download it."
+          }
         }
       }
     },
@@ -4445,6 +5909,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "未开始 · %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ei aloitettu · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν ξεκίνησε · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "未開始 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Not started · %@"
           }
         }
       }
@@ -4517,6 +6005,30 @@
             "state" : "needs_review",
             "value" : "未在播放"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mitään ei toisteta"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν αναπαράγεται τίποτα"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "未在播放"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nothing playing"
+          }
         }
       }
     },
@@ -4587,6 +6099,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "当前：%@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nyt: %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Τώρα: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "目前：%@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Now: %@"
           }
         }
       }
@@ -4659,6 +6195,30 @@
             "state" : "needs_review",
             "value" : "关闭"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pois"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ανενεργό"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "關閉"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Off"
+          }
         }
       }
     },
@@ -4729,6 +6289,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "在此手表上"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tässä kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Σε αυτό το Watch"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在此手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "On This Watch"
           }
         }
       }
@@ -4801,6 +6385,30 @@
             "state" : "needs_review",
             "value" : "已在手表上"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Στο Watch"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已在手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "On Watch"
+          }
         }
       }
     },
@@ -4871,6 +6479,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "在 iPhone 上打开一本图书，然后轻点“下载到 Apple Watch”。你的进度会保留。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avaa kirja iPhonessa ja napauta Lataa Apple Watchiin. Kohtasi säilyy."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Στο iPhone, ανοίξτε ένα βιβλίο και πατήστε Λήψη στο Apple Watch. Η θέση σας διατηρείται."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 iPhone 上開啟一本圖書，然後點一下“下載到 Apple Watch”。你的進度會保留。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "On iPhone, open a book and tap Download to Apple Watch. It keeps your place."
           }
         }
       }
@@ -4943,6 +6575,30 @@
             "state" : "needs_review",
             "value" : "此手表上"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tässä kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Σε αυτό το ρολόι"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "On this watch"
+          }
         }
       }
     },
@@ -5013,6 +6669,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "输出"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Äänilähtö"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Έξοδος"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "輸出"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Output"
           }
         }
       }
@@ -5085,6 +6765,30 @@
             "state" : "needs_review",
             "value" : "暂停"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tauko"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Παύση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "暫停"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause"
+          }
         }
       }
     },
@@ -5155,6 +6859,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "请在 iPhone 上的 Voxglass 中暂停。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keskeytä tämä iPhonen Voxglassista."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Θέστε το σε παύση από το Voxglass στο iPhone σας."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "請在 iPhone 上的 Voxglass 中暫停。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause this from Voxglass on your iPhone."
           }
         }
       }
@@ -5227,6 +6955,30 @@
             "state" : "needs_review",
             "value" : "已暂停 · %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keskeytetty · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Σε παύση · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已暫停 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Paused · %@"
+          }
         }
       }
     },
@@ -5297,6 +7049,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "播放"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toista"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αναπαραγωγή"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Play"
           }
         }
       }
@@ -5369,6 +7145,30 @@
             "state" : "needs_review",
             "value" : "播放失败：%@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toisto epäonnistui: %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Η αναπαραγωγή απέτυχε: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放失敗：%@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Playback failed: %@"
+          }
         }
       }
     },
@@ -5439,6 +7239,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "正在播放 · %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toistetaan · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αναπαράγεται · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在播放 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Playing · %@"
           }
         }
       }
@@ -5511,6 +7335,30 @@
             "state" : "needs_review",
             "value" : "正在准备…"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valmistellaan…"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Προετοιμασία…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在準備…"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Preparing…"
+          }
         }
       }
     },
@@ -5581,6 +7429,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "上一个"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Edellinen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Προηγούμενο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "上一個"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Previous"
           }
         }
       }
@@ -5653,6 +7525,30 @@
             "state" : "needs_review",
             "value" : "上一章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Edellinen luku"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Προηγούμενο κεφάλαιο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "上一章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Previous chapter"
+          }
         }
       }
     },
@@ -5723,6 +7619,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "进度"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Edistyminen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Πρόοδος"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "進度"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Progress"
           }
         }
       }
@@ -5795,6 +7715,30 @@
             "state" : "needs_review",
             "value" : "朗读：%@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lukijana %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ανάγνωση: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "朗讀：%@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Read by %@"
+          }
         }
       }
     },
@@ -5865,6 +7809,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "就绪"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valmis"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Έτοιμο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "就緒"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ready"
           }
         }
       }
@@ -5937,6 +7905,30 @@
             "state" : "needs_review",
             "value" : "已在 iPhone 上准备好——打开 App 切换器并轻点 Voxglass。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valmiina iPhonessasi – avaa apinvaihtaja ja napauta Voxglassia."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Έτοιμο στο iPhone σας — ανοίξτε την εναλλαγή εφαρμογών και πατήστε Voxglass."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已在 iPhone 上準備好——開啟 App 切換器並點一下 Voxglass。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ready on your iPhone — open the App Switcher and tap Voxglass."
+          }
         }
       }
     },
@@ -6007,6 +7999,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "移除"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Poista"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αφαίρεση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "移除"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Remove"
           }
         }
       }
@@ -6079,6 +8095,30 @@
             "state" : "needs_review",
             "value" : "要从 Apple Watch 移除吗？"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Poistetaanko Apple Watchista?"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αφαίρεση από το Apple Watch;"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "要從 Apple Watch 移除嗎？"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Remove from Apple Watch?"
+          }
         }
       }
     },
@@ -6150,6 +8190,30 @@
             "state" : "needs_review",
             "value" : "继续"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume"
+          }
         }
       }
     },
@@ -6220,6 +8284,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "继续或暂停 Voxglass"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka tai keskeytä Voxglass"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια ή παύση Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續或暫停 Voxglass"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume or Pause Voxglass"
           }
         }
       }
@@ -6298,6 +8386,30 @@
             "state" : "needs_review",
             "value" : "继续 · 第 %lld 章 · %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka · Luku %lld · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια · Κεφ. %lld · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續 · 第 %lld 章 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume · Ch %lld · %@"
+          }
         }
       }
     },
@@ -6368,6 +8480,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "重试"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Yritä uudelleen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Επανάληψη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "重試"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retry"
           }
         }
       }
@@ -6440,6 +8576,30 @@
             "state" : "needs_review",
             "value" : "正在从 iPhone 发送 · %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lähetetään iPhonesta · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αποστολή από το iPhone · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在從 iPhone 傳送 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sending from iPhone · %@"
+          }
         }
       }
     },
@@ -6510,6 +8670,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "在 iPhone 上显示"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Näytä iPhonessa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Εμφάνιση στο iPhone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 iPhone 上顯示"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Show Me on iPhone"
           }
         }
       }
@@ -6582,6 +8766,30 @@
             "state" : "needs_review",
             "value" : "睡眠定时器"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Uniajastin"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Χρονοδιακόπτης ύπνου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "睡眠定時器"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sleep Timer"
+          }
         }
       }
     },
@@ -6652,6 +8860,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "睡眠定时器，剩余 %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Uniajastin, %@ jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Χρονοδιακόπτης ύπνου, απομένουν %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "睡眠定時器，剩餘 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sleep timer, %@ left"
           }
         }
       }
@@ -6724,6 +8956,30 @@
             "state" : "needs_review",
             "value" : "速度"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nopeus"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ταχύτητα"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "速度"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Speed"
+          }
         }
       }
     },
@@ -6794,6 +9050,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "速度 %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nopeus %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ταχύτητα %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "速度 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Speed %@"
           }
         }
       }
@@ -6866,6 +9146,30 @@
             "state" : "needs_review",
             "value" : "开始"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aloita"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Έναρξη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "開始"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start"
+          }
         }
       }
     },
@@ -6936,6 +9240,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "正在开始"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Käynnistyy"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Έναρξη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在開始"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Starting"
           }
         }
       }
@@ -7008,6 +9336,30 @@
             "state" : "needs_review",
             "value" : "停止"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pysäytä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Διακοπή"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stop"
+          }
         }
       }
     },
@@ -7078,6 +9430,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "停止并移除"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pysäytä ja poista"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Διακοπή και αφαίρεση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止並移除"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stop and Remove"
           }
         }
       }
@@ -7150,6 +9526,30 @@
             "state" : "needs_review",
             "value" : "要停止《%@》吗？"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pysäytetäänkö ”%@”?"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Διακοπή του «%@»;"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "要停止《%@》嗎？"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stop “%@”?"
+          }
         }
       }
     },
@@ -7220,6 +9620,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "存储空间"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tallennustila"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αποθήκευση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "儲存空間"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Storage"
           }
         }
       }
@@ -7292,6 +9716,30 @@
             "state" : "needs_review",
             "value" : "流式播放第 1 章"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Suoratoista luku 1"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ροή κεφαλαίου 1"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "流式播放第 1 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stream Chapter 1"
+          }
         }
       }
     },
@@ -7362,6 +9810,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "流式播放 · %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Suoratoista · %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ροή · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "流式播放 · %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stream · %@"
           }
         }
       }
@@ -7434,6 +9906,30 @@
             "state" : "needs_review",
             "value" : "流播放"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Suoratoisto"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ροή"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "流播放"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Streaming"
+          }
         }
       }
     },
@@ -7504,6 +10000,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "音频已载入，但始终未开始播放。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ääni latautui mutta ei alkanut soida."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ο ήχος φορτώθηκε αλλά δεν ξεκίνησε ποτέ η αναπαραγωγή."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "音訊已載入，但始終未開始播放。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "The audio loaded but never started playing."
           }
         }
       }
@@ -7576,6 +10096,30 @@
             "state" : "needs_review",
             "value" : "与 iPhone 的连接未激活。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone-yhteys ei ole aktiivinen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Η σύνδεση με το iPhone δεν είναι ενεργή."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "與 iPhone 的連線未啟用。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "The iPhone connection is not active."
+          }
         }
       }
     },
@@ -7646,6 +10190,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "此图书的音频将从手表中移除。你的进度会保留。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tämän kirjan ääni poistetaan kellosta. Kohtasi säilyy."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ο ήχος αυτού του βιβλίου αφαιρείται από το ρολόι. Η θέση σας διατηρείται."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此圖書的音訊將從手錶中移除。你的進度會保留。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "This book's audio is removed from the watch. Your place is kept."
           }
         }
       }
@@ -7718,6 +10286,30 @@
             "state" : "needs_review",
             "value" : "无法播放此章节（%@）。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tätä lukua ei voitu toistaa (%@)."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν ήταν δυνατή η αναπαραγωγή αυτού του κεφαλαίου (%@)."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "無法播放此章節（%@）。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "This chapter could not be played (%@)."
+          }
         }
       }
     },
@@ -7788,6 +10380,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "无法播放此章节。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tätä lukua ei voitu toistaa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν ήταν δυνατή η αναπαραγωγή αυτού του κεφαλαίου."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "無法播放此章節。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "This chapter could not be played."
           }
         }
       }
@@ -7860,6 +10476,30 @@
             "state" : "needs_review",
             "value" : "此章节始终无法播放（%@）。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tästä luvusta ei tullut toistettavaa (%@)."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αυτό το κεφάλαιο δεν έγινε ποτέ διαθέσιμο για αναπαραγωγή (%@)."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此章節始終無法播放（%@）。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "This chapter never became playable (%@)."
+          }
         }
       }
     },
@@ -7930,6 +10570,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "此章节意外停止。"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tämä luku pysähtyi odottamatta."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αυτό το κεφάλαιο σταμάτησε απροσδόκητα."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此章節意外停止。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "This chapter stopped unexpectedly."
           }
         }
       }
@@ -8002,6 +10666,30 @@
             "state" : "needs_review",
             "value" : "重试"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Yritä uudelleen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δοκιμάστε ξανά"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "重試"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Try Again"
+          }
         }
       }
     },
@@ -8073,6 +10761,30 @@
             "state" : "needs_review",
             "value" : "转动表冠 · 0.5×–3×"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Käännä Digital Crownia · 0,5× – 3×"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Περιστρέψτε την Κορώνα · 0,5× – 3×"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "轉動錶冠 · 0.5×–3×"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Turn the Crown · 0.5× – 3×"
+          }
         }
       }
     },
@@ -8143,6 +10855,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "版本"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Versio"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Έκδοση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "版本"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Version"
           }
         }
       }
@@ -8219,6 +10955,30 @@
             "state" : "needs_review",
             "value" : "Voxglass 可直接在手腕上播放从 iPhone 下载的有声书——书一旦传到手表，就无需 iPhone 在身边。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass toistaa iPhonesta ladattuja äänikirjoja suoraan ranteessasi – puhelinta ei tarvita lähellä, kun kirja on kellossa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Το Voxglass αναπαράγει ηχοβιβλία που κατεβάσατε από το iPhone απευθείας στον καρπό σας — δεν χρειάζεται τηλέφωνο κοντά μόλις το βιβλίο είναι στο ρολόι."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass 可直接在手腕上播放從 iPhone 下載的有聲書——書一旦傳到手錶，就無需 iPhone 在身邊。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass plays audiobooks downloaded from your iPhone directly on your wrist — no phone nearby required once a book is on the watch."
+          }
         }
       }
     },
@@ -8289,6 +11049,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "正在等待 iPhone 发送"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Odotetaan, että iPhonesi lähettää sen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αναμονή για αποστολή από το iPhone σας"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在等待 iPhone 傳送"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Waiting for your iPhone to send it"
           }
         }
       }
@@ -8361,6 +11145,30 @@
             "state" : "needs_review",
             "value" : "你的进度会保留。你可以从 iPhone 重新下载。"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kohtasi säilyy. Voit ladata sen uudelleen iPhonestasi."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Η θέση σας διατηρείται. Μπορείτε να το κατεβάσετε ξανά από το iPhone σας."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "你的進度會保留。你可以從 iPhone 重新下載。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Your place is kept. You can download it again from your iPhone."
+          }
         }
       }
     },
@@ -8431,6 +11239,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "作者：%@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kirjoittaja: %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συγγραφέας: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "作者：%@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "by %@"
           }
         }
       }
@@ -8503,6 +11335,30 @@
             "state" : "needs_review",
             "value" : "已下载"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ladattu"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ελήφθη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已下載"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "downloaded"
+          }
         }
       }
     },
@@ -8570,6 +11426,30 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone"
+          }
+        },
+        "en-GB" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "iPhone"
@@ -8645,6 +11525,30 @@
             "state" : "needs_review",
             "value" : "iPhone 已连接"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone yhdistetty"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Το iPhone συνδέθηκε"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone 已連線"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone connected"
+          }
         }
       }
     },
@@ -8715,6 +11619,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ 后"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "kohteessa %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "στο %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ 後"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "in %@"
           }
         }
       }
@@ -8787,6 +11715,30 @@
             "state" : "needs_review",
             "value" : "在 iPhone 上"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhonessa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "στο iPhone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 iPhone 上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "on iPhone"
+          }
         }
       }
     },
@@ -8857,6 +11809,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "在手表上"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "kellossa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "στο ρολόι"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在手錶上"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "on watch"
           }
         }
       }

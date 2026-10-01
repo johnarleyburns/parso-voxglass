@@ -66,11 +66,16 @@ public struct AppPreferencesStore: DynamicProperty {
         return migrated
     }
 
+    /// Stored for an empty selection, which means "every language". An empty
+    /// string is the never-set default and decodes to the device default instead.
+    public static var allLanguagesValue: String { "all" }
+
     public static func encodeLanguages(_ codes: Set<String>) -> String {
-        codes.sorted().joined(separator: ",")
+        codes.isEmpty ? allLanguagesValue : codes.sorted().joined(separator: ",")
     }
 
     public static func decodeLanguages(_ rawValue: String) -> Set<String> {
+        if rawValue == allLanguagesValue { return [] }
         let decoded = Set(
             rawValue
                 .split(separator: ",")

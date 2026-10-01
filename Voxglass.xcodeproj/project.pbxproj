@@ -48,6 +48,7 @@
 		24F190DC1DB3CC2AE20BD330 /* NarrationButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7768800DF20C5E1108C2165 /* NarrationButtons.swift */; };
 		256E7C55F8DC198BDA19F19A /* railway_children_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9C9E2D966DCE8E13DEC2C112 /* railway_children_librivox.jpg */; };
 		259322F2BCD0BB6A3D6CC0EB /* ProductionCacheSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620A4DFD040B6B638E274BA2 /* ProductionCacheSettings.swift */; };
+		25BBCB32AF5A5A1EB54EED55 /* LanguageFilterPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6211D10CF8263660577E980B /* LanguageFilterPicker.swift */; };
 		268DF6E92D1B683B9DADBACB /* anne_of_green_gables_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A78625CC8B97CB25ACD9C251 /* anne_of_green_gables_librivox.jpg */; };
 		26C9EE1831A340B02F72CD5C /* ProductionCarPlayPhoneSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00206E2895F3BD8366845490 /* ProductionCarPlayPhoneSupport.swift */; };
 		27807277577DFEC0FE17EAB4 /* odyssey_butler_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DC328A20FBE79B2C9ABFF3A1 /* odyssey_butler_librivox.jpg */; };
@@ -546,6 +547,7 @@
 		61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = don_quijote_vol1_0706_librivox.jpg; sourceTree = "<group>"; };
 		61E847AE08C9D96DEA828D08 /* ProductionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionViews.swift; sourceTree = "<group>"; };
 		620A4DFD040B6B638E274BA2 /* ProductionCacheSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionCacheSettings.swift; sourceTree = "<group>"; };
+		6211D10CF8263660577E980B /* LanguageFilterPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageFilterPicker.swift; sourceTree = "<group>"; };
 		62C62BECE471D6EB6CFB2370 /* PlatePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatePalette.swift; sourceTree = "<group>"; };
 		6456ADE77DB02236C72B4539 /* WatchProgressViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProgressViews.swift; sourceTree = "<group>"; };
 		651043E3C279BA705B4D4256 /* as_a_man_thinketh_mc_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = as_a_man_thinketh_mc_librivox.jpg; sourceTree = "<group>"; };
@@ -1361,6 +1363,7 @@
 			isa = PBXGroup;
 			children = (
 				5FE9C1DD357179B18F33DD7C /* FolderWatchView.swift */,
+				6211D10CF8263660577E980B /* LanguageFilterPicker.swift */,
 				F701EDCDE2BB625656606A03 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -1686,8 +1689,11 @@
 			knownRegions = (
 				Base,
 				de,
+				el,
 				en,
+				"en-GB",
 				es,
+				fi,
 				fr,
 				he,
 				it,
@@ -1697,6 +1703,7 @@
 				"pt-BR",
 				ru,
 				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = A8CDFF63283253FCE1DB2B33;
 			minimizedProjectReferenceProxies = 1;
@@ -2043,6 +2050,7 @@
 				754A7A41F77C785EFA367369 /* FolderWatchView.swift in Sources */,
 				D80826DBF8008B6999D5B5B4 /* HistoryView.swift in Sources */,
 				67626E8072FA87A36903DC64 /* ImportAudioView.swift in Sources */,
+				25BBCB32AF5A5A1EB54EED55 /* LanguageFilterPicker.swift in Sources */,
 				F4EB3C305249C34FE7D0EE3F /* LibraryView.swift in Sources */,
 				A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */,
 				4E85D43B3AC0834F16B06791 /* ListeningStatsView.swift in Sources */,

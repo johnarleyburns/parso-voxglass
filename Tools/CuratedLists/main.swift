@@ -1,4 +1,5 @@
 import Foundation
+import VoxglassCore
 
 // ── Phase 1: Great Books manifest generator ────────────────────────────
 //
@@ -192,32 +193,17 @@ struct Report: Codable {
     }
 }
 
-// MARK: - Language tokens (mirrored from LibriVoxLanguage.swift)
+// MARK: - Language tokens (from LibriVoxLanguage.swift)
 
 struct LanguageDef {
     let id: String
     let tokens: [String]
 }
 
-// Mirrored from Voxglass/Core/Catalog/LibriVoxLanguage.swift:19-35
-// Do NOT retype these — they are copied verbatim from the source of truth.
-let languageDefs: [LanguageDef] = [
-    LanguageDef(id: "eng", tokens: ["eng", "English"]),
-    LanguageDef(id: "deu", tokens: ["deu", "ger", "German"]),
-    LanguageDef(id: "fre", tokens: ["fre", "fra", "French"]),
-    LanguageDef(id: "nld", tokens: ["nld", "dut", "Dutch"]),
-    LanguageDef(id: "spa", tokens: ["spa", "Spanish"]),
-    LanguageDef(id: "ita", tokens: ["ita", "Italian"]),
-    LanguageDef(id: "por", tokens: ["por", "Portuguese"]),
-    LanguageDef(id: "rus", tokens: ["rus", "Russian"]),
-    LanguageDef(id: "zho", tokens: ["zho", "chi", "Chinese"]),
-    LanguageDef(id: "jpn", tokens: ["jpn", "Japanese"]),
-    LanguageDef(id: "lat", tokens: ["lat", "Latin"]),
-    LanguageDef(id: "grc", tokens: ["grc", "gre", "Greek"]),
-    LanguageDef(id: "pol", tokens: ["pol", "Polish"]),
-    LanguageDef(id: "fin", tokens: ["fin", "Finnish"]),
-    LanguageDef(id: "heb", tokens: ["heb", "Hebrew"]),
-]
+// Read straight from the app's language list so the two can never drift.
+let languageDefs: [LanguageDef] = LibriVoxLanguage.all
+    .filter { !$0.isUnspecified }
+    .map { LanguageDef(id: $0.id, tokens: $0.tokens) }
 
 // Ship threshold: ≥ 10 items after alias resolution
 let shipThreshold = 10

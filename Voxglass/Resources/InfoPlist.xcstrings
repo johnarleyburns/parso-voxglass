@@ -76,6 +76,30 @@
             "state" : "needs_review",
             "value" : "Voxglass מקליט את ההקראה שלך עבור ספר השמע שמפיקים. ההקלטות נשארות במכשיר הזה, אלא אם בוחרים לשתף אותן או להאזין לתצוגה מקדימה."
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass äänittää lukemisesi tuottamaasi äänikirjaa varten. Äänitteesi pysyvät tällä laitteella, ellet päätä jakaa tai esikuunnella niitä."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Το Voxglass ηχογραφεί την αφήγησή σας για το ηχοβιβλίο που παράγετε. Οι ηχογραφήσεις σας παραμένουν σε αυτήν τη συσκευή, εκτός αν επιλέξετε να τις μοιραστείτε ή να κάνετε προεπισκόπηση."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass 會錄製你為有聲書所做的朗讀。除非你選擇分享或預覽，否則錄音只保留在此裝置上。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them."
+          }
         }
       }
     }

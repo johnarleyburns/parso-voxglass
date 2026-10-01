@@ -24,10 +24,6 @@ struct OnboardingPreferencesView: View {
         GridItem(.adaptive(minimum: 142), spacing: 10)
     ]
 
-    private let languageColumns = [
-        GridItem(.adaptive(minimum: 104), spacing: 8)
-    ]
-
     private var selectedLanguages: Set<String> {
         AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
     }
@@ -77,49 +73,15 @@ struct OnboardingPreferencesView: View {
                 .voxFont(.subheadline, weight: .semibold)
                 .foregroundStyle(Palette.ink2)
 
-            LazyVGrid(columns: languageColumns, spacing: 8) {
-                ForEach(LibriVoxLanguage.all) { language in
-                    languageChip(language)
-                }
-            }
+            LanguageFilterPicker(selection: languageSelection)
         }
     }
 
-    private func languageChip(_ language: LibriVoxLanguage) -> some View {
-        let isSelected = selectedLanguages.contains(language.id)
-        return Button {
-            toggleLanguage(language.id)
-        } label: {
-            HStack(spacing: 6) {
-                Text(language.displayName)
-                    .minimumScaleFactor(0.8)
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .voxFont(.caption2, weight: .bold)
-                }
-            }
-            .voxFont(.caption, weight: .semibold)
-            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
-            .background(
-                isSelected ? Palette.brass : Color.white.opacity(0.07),
-                in: RoundedRectangle(cornerRadius: 11)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(language.displayName)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private func toggleLanguage(_ id: String) {
-        var codes = selectedLanguages
-        if codes.contains(id) {
-            codes.remove(id)
-        } else {
-            codes.insert(id)
-        }
-        selectedLanguagesRaw = AppPreferencesStore.encodeLanguages(codes)
+    private var languageSelection: Binding<Set<String>> {
+        Binding(
+            get: { selectedLanguages },
+            set: { selectedLanguagesRaw = AppPreferencesStore.encodeLanguages($0) }
+        )
     }
 
     private var tasteGrid: some View {

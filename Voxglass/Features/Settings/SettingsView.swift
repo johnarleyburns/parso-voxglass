@@ -209,10 +209,11 @@ private struct SupportDevelopmentCard: View {
 private struct LanguagesCard: View {
     @AppStorage(AppPreferencesStore.Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
 
-    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 8)]
-
-    private var selected: Set<String> {
-        AppPreferencesStore.decodeLanguages(selectedLanguagesRaw)
+    private var selection: Binding<Set<String>> {
+        Binding(
+            get: { AppPreferencesStore.decodeLanguages(selectedLanguagesRaw) },
+            set: { selectedLanguagesRaw = AppPreferencesStore.encodeLanguages($0) }
+        )
     }
 
     var body: some View {
@@ -222,51 +223,10 @@ private struct LanguagesCard: View {
                 .foregroundStyle(Palette.ink3)
                 .fixedSize(horizontal: false, vertical: true)
 
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(LibriVoxLanguage.all) { language in
-                    languageChip(language)
-                }
-            }
+            LanguageFilterPicker(selection: selection)
         }
         .padding(15)
         .raisedSurface()
-    }
-
-    private func languageChip(_ language: LibriVoxLanguage) -> some View {
-        let isSelected = selected.contains(language.id)
-        return Button {
-            toggle(language.id)
-        } label: {
-            HStack(spacing: 6) {
-                Text(language.displayName)
-                    .minimumScaleFactor(0.8)
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .voxFont(.caption2, weight: .bold)
-                }
-            }
-            .voxFont(.caption, weight: .semibold)
-            .foregroundStyle(isSelected ? Color(hex: 0x221503) : Palette.ink2)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
-            .background(
-                isSelected ? Palette.brass : Color.white.opacity(0.07),
-                in: RoundedRectangle(cornerRadius: 11)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(language.displayName)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private func toggle(_ id: String) {
-        var codes = selected
-        if codes.contains(id) {
-            codes.remove(id)
-        } else {
-            codes.insert(id)
-        }
-        selectedLanguagesRaw = AppPreferencesStore.encodeLanguages(codes)
     }
 }
 

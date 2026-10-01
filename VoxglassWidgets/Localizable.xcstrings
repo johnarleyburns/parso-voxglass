@@ -68,6 +68,30 @@
             "state" : "needs_review",
             "value" : "נותרו %@ בספר"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kirjaa jäljellä %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Απομένουν %@ στο βιβλίο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "全書剩餘 %@"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ left in book"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift)"
@@ -157,6 +181,30 @@
             "state" : "needs_review",
             "value" : "%@ · נותרו %lld דק׳"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · %lld min jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · απομένουν %lld λεπ."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · 剩餘 %lld 分鐘"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · %lld min left"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -232,6 +280,30 @@
             "state" : "needs_review",
             "value" : "נותרו %lld דק׳"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld min jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Απομένουν %lld λεπ."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "剩餘 %lld 分鐘"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld min left"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -302,6 +374,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "נותרו %lld דק׳ בפרק"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luvussa %lld min jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Απομένουν %lld λεπ. στο κεφάλαιο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "本章剩餘 %lld 分鐘"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld min left in chapter"
           }
         }
       },
@@ -374,6 +470,30 @@
             "state" : "needs_review",
             "value" : "%lld%% חלפו"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %% kulunut"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld%% έχει παρέλθει"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已播放 %lld%%"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld%% elapsed"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift)"
@@ -445,6 +565,30 @@
             "state" : "needs_review",
             "value" : "נותרו %lld%%"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %% jäljellä"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Απομένει %lld%%"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "剩餘 %lld%%"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld%% left"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift)"
@@ -515,6 +659,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "שינוי טיימר השינה של ספר השמע הנוכחי."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Muuta nykyisen äänikirjan uniajastinta."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αλλαγή του χρονοδιακόπτη ύπνου του τρέχοντος ηχοβιβλίου."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "更改目前有聲書的睡眠定時器。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Change the current audiobook sleep timer."
           }
         }
       },
@@ -593,6 +761,30 @@
             "state" : "needs_review",
             "value" : "פרק %lld מתוך %lld"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luku %lld/%lld"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Κεφάλαιο %lld από %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "第 %lld 章，共 %lld 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapter %lld of %lld"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift)"
@@ -663,6 +855,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "המשך"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continue"
           }
         }
       },
@@ -735,6 +951,30 @@
             "state" : "needs_review",
             "value" : "המשך ב-Voxglass"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka Voxglassia"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχεια στο Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 Voxglass 中繼續"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continue Voxglass"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -805,6 +1045,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "החלפת טיימר השינה של Voxglass"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vaihda Voxglassin uniajastinta"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Εναλλαγή χρονοδιακόπτη ύπνου Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "切換 Voxglass 睡眠定時器"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cycle Voxglass Sleep Timer"
           }
         }
       },
@@ -877,6 +1141,30 @@
             "state" : "needs_review",
             "value" : "חיפוש ספר"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etsi kirja"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Βρείτε ένα βιβλίο"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "查詢書籍"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Find a book"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -947,6 +1235,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "עדיין שום דבר לא מתנגן"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mitään ei vielä toisteta"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Δεν αναπαράγεται τίποτα ακόμη"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "還沒有播放內容"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nothing playing yet"
           }
         }
       },
@@ -1019,6 +1331,30 @@
             "state" : "needs_review",
             "value" : "השהיה"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tauko"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Παύση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "暫停"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift); Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -1089,6 +1425,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "הפעלה"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toista"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αναπαραγωγή"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Play"
           }
         }
       },
@@ -1161,6 +1521,30 @@
             "state" : "needs_review",
             "value" : "הפעלה או השהיה של Voxglass"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toista tai keskeytä Voxglass"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αναπαραγωγή ή παύση Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放或暫停 Voxglass"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Play or Pause Voxglass"
+          }
         }
       },
       "comment" : "UI text shown in: Playback Control Intents (VoxglassShared/PlaybackControlIntents.swift)"
@@ -1231,6 +1615,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "הפעלה או השהיה של ספר השמע הנוכחי ב-Voxglass."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toista tai keskeytä nykyinen äänikirja Voxglassissa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Αναπαραγωγή ή παύση του τρέχοντος ηχοβιβλίου στο Voxglass."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 Voxglass 中播放或暫停目前有聲書。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Play or pause the current audiobook in Voxglass."
           }
         }
       },
@@ -1303,6 +1711,30 @@
             "state" : "needs_review",
             "value" : "מהירות השמעה פי %@"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Toistonopeus %@-kertainen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ταχύτητα αναπαραγωγής %@ φορές"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放速度 %@ 倍"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Playback speed %@ times"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift)"
@@ -1373,6 +1805,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "המשך"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume"
           }
         }
       },
@@ -1445,6 +1901,30 @@
             "state" : "needs_review",
             "value" : "המשך האזנה"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka kuuntelua"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση ακρόασης"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續收聽"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume Listening"
+          }
         }
       },
       "comment" : "UI text shown in: Playback Control Intents (VoxglassShared/PlaybackControlIntents.swift)"
@@ -1515,6 +1995,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "המשך Voxglass"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka Voxglassia"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續播放 Voxglass"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume Voxglass"
           }
         }
       },
@@ -1587,6 +2091,30 @@
             "state" : "needs_review",
             "value" : "המשך ספר השמע שהאזנת לו לאחרונה."
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka viimeksi kuuntelemaasi äänikirjaa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνεχίστε το ηχοβιβλίο που ακούγατε τελευταία."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續播放你上次收聽的有聲書。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume the audiobook you were last listening to."
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -1657,6 +2185,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "המשך ספר השמע האחרון ב-Voxglass."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatka viimeisintä äänikirjaa Voxglassissa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση του τελευταίου ηχοβιβλίου στο Voxglass."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 Voxglass 中繼續播放上一本有聲書。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resume the last audiobook in Voxglass."
           }
         }
       },
@@ -1729,6 +2281,30 @@
             "state" : "needs_review",
             "value" : "ממשיך את ספר השמע שהאזנת לו לאחרונה ב-Voxglass."
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatkaa Voxglassissa viimeksi kuuntelemaasi äänikirjaa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνεχίζει το ηχοβιβλίο που ακούγατε τελευταία στο Voxglass."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "繼續播放你上次在 Voxglass 中收聽的有聲書。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resumes the audiobook you were last listening to in Voxglass."
+          }
         }
       },
       "comment" : "UI text shown in: Playback Control Intents (VoxglassShared/PlaybackControlIntents.swift)"
@@ -1799,6 +2375,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ממשיך את Voxglass"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jatketaan Voxglassia"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Συνέχιση Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在繼續播放 Voxglass"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Resuming Voxglass"
           }
         }
       },
@@ -1871,6 +2471,30 @@
             "state" : "needs_review",
             "value" : "דילוג אחורה"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Taaksepäin"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Πίσω"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "後退"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skip Back"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -1942,6 +2566,30 @@
             "state" : "needs_review",
             "value" : "דילוג אחורה ב-Voxglass"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siirry taaksepäin Voxglassissa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Μετάβαση πίσω στο Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 Voxglass 中後退"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skip Back in Voxglass"
+          }
         }
       },
       "comment" : "UI text shown in: Playback Control Intents (VoxglassShared/PlaybackControlIntents.swift)"
@@ -2012,6 +2660,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "דילוג קדימה ב-Voxglass"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siirry eteenpäin Voxglassissa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Μετάβαση μπροστά στο Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 Voxglass 中前進"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skip Forward in Voxglass"
           }
         }
       },
@@ -2252,6 +2924,72 @@
               }
             }
           }
+        },
+        "fi" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Siirry %lld sekunti taaksepäin"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Siirry %lld sekuntia taaksepäin"
+                }
+              }
+            }
+          }
+        },
+        "el" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Μετάβαση %lld δευτερόλεπτο πίσω"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Μετάβαση %lld δευτερόλεπτα πίσω"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "後退 %lld 秒"
+                }
+              }
+            }
+          }
+        },
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Skip back %lld second"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Skip back %lld seconds"
+                }
+              }
+            }
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift); Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -2323,6 +3061,30 @@
             "state" : "needs_review",
             "value" : "דילוג אחורה ב-Voxglass."
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siirry taaksepäin Voxglassissa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Μετάβαση πίσω στο Voxglass."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 Voxglass 中後退。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skip back in Voxglass."
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -2393,6 +3155,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "דילוג אחורה בספר השמע הנוכחי."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siirry taaksepäin nykyisessä äänikirjassa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Μετάβαση πίσω στο τρέχον ηχοβιβλίο."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在目前有聲書中後退。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skip backward in the current audiobook."
           }
         }
       },
@@ -2633,6 +3419,72 @@
               }
             }
           }
+        },
+        "fi" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Siirry %lld sekunti eteenpäin"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Siirry %lld sekuntia eteenpäin"
+                }
+              }
+            }
+          }
+        },
+        "el" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Μετάβαση %lld δευτερόλεπτο μπροστά"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Μετάβαση %lld δευτερόλεπτα μπροστά"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "前進 %lld 秒"
+                }
+              }
+            }
+          }
+        },
+        "en-GB" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Skip forward %lld second"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "Skip forward %lld seconds"
+                }
+              }
+            }
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift); Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -2703,6 +3555,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "דילוג קדימה בספר השמע הנוכחי."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siirry eteenpäin nykyisessä äänikirjassa."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Μετάβαση μπροστά στο τρέχον ηχοβιβλίο."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在目前有聲書中前進。"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skip forward in the current audiobook."
           }
         }
       },
@@ -2775,6 +3651,30 @@
             "state" : "needs_review",
             "value" : "טיימר שינה"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Uniajastin"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Χρονοδιακόπτης ύπνου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "睡眠定時器"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sleep Timer"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -2845,6 +3745,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "טיימר שינה"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Uniajastin"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Χρονοδιακόπτης ύπνου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "睡眠定時器"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sleep timer"
           }
         }
       },
@@ -2923,6 +3847,30 @@
             "state" : "needs_review",
             "value" : "Voxglass · פרק %lld מתוך %lld"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass · Luku %lld/%lld"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass · Κεφάλαιο %lld από %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass · 第 %lld 章，共 %lld 章"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass · Chapter %lld of %lld"
+          }
         }
       },
       "comment" : "UI text shown in: Book Live Activity (VoxglassWidgets/BookLiveActivity.swift)"
@@ -2994,6 +3942,30 @@
             "state" : "needs_review",
             "value" : "הווידג׳טים כבויים בהגדרות של Voxglass"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Widgetit ovat pois päältä Voxglassin asetuksissa"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Τα widget είναι απενεργοποιημένα στις ρυθμίσεις του Voxglass"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass 設定中已關閉小元件"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Widgets are off in Voxglass settings"
+          }
         }
       },
       "comment" : "UI text shown in: Voxglass Widgets (VoxglassWidgets/VoxglassWidgets.swift)"
@@ -3064,6 +4036,30 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "☾ סוף הפרק"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "☾ Luvun loppu"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "☾ Τέλος κεφαλαίου"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "☾ 本章結束"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "☾ End of chapter"
           }
         }
       },

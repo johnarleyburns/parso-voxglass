@@ -2,7 +2,7 @@ import Foundation
 import Testing
 
 @Suite struct LocalizationCatalogTests {
-    private let supportedLanguages = ["de", "fr", "es", "it", "pt-BR", "nl", "ja", "zh-Hans", "ru", "pl", "he"]
+    private let supportedLanguages = ["de", "fr", "es", "it", "pt-BR", "nl", "ja", "zh-Hans", "zh-Hant", "ru", "pl", "he", "fi", "el", "en-GB"]
 
     @Test func catalogsHaveContextAndNoStaleEntries() throws {
         let root = URL(fileURLWithPath: #filePath)
@@ -10,7 +10,7 @@ import Testing
             .deletingLastPathComponent()
         let files = try FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?
             .compactMap { $0 as? URL }
-            .filter { $0.pathExtension == "xcstrings" } ?? []
+            .filter { $0.pathExtension == "xcstrings" && !$0.path.contains("/.build/") } ?? []
         #expect(!files.isEmpty)
         for file in files {
             let data = try Data(contentsOf: file)
