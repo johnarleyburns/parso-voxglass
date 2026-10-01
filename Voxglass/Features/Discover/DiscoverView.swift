@@ -7,6 +7,7 @@ struct BrowseView: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
     @State private var selectedCollection: IACollection?
+    @State private var rememberedCollection: IACollection?
     @State private var collectionSort: CatalogSort = .popularity
     @StateObject private var coverStore = CollectionCoverStore(artwork: ArtworkService.shared)
     @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
@@ -23,6 +24,8 @@ struct BrowseView: View {
     @State private var showSearch = false
     @State private var discoverScope: DiscoverBrowseScope = .collection
     @State private var showingCollectionInfo: IACollection?
+    @State private var loadingCollectionID: String?
+    @State private var lastCollectionLoadKey: String?
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -69,7 +72,8 @@ struct BrowseView: View {
         }
         .onChange(of: collectionSort) { _, _ in
             guard selectedCollection != nil else { return }
-            Task { await runSearch() }
+            guard let collection = selectedCollection else { return }
+            startCollectionLoad(collection, sort: collectionSort)
         }
         .onChange(of: searchScope) { _, _ in
             guard !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -120,26 +124,40 @@ struct BrowseView: View {
     }
 
     private func handleDiscoverScopeChange(_ scope: DiscoverBrowseScope) {
-            let hasQuery = !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            if scope == .all {
-                guard selectedCollection != nil || hasQuery else { return }
-                selectedCollection = nil
-                if hasQuery {
-                    Task { await runSearch() }
-                } else {
-                    catalogStore.resetResultsForNavigation()
-                }
+        let hasQuery = !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if scope == .all {
+            if let selectedCollection {
+                rememberedCollection = selectedCollection
+                self.selectedCollection = nil
+            }
+            if hasQuery {
+                Task { await runSearch() }
             } else {
-                guard selectedCollection == nil || hasQuery else {
-                    Task { await loadSelectedCollection() }
-                    return
-                }
-                if hasQuery {
-                    catalogStore.query = ""
-                    searchScope = .all
-                }
                 catalogStore.resetResultsForNavigation()
             }
+            return
+        }
+
+        if let rememberedCollection, selectedCollection == nil {
+            let sort = CatalogSort.defaultSort(for: rememberedCollection)
+            selectedCollection = rememberedCollection
+            collectionSort = sort
+            catalogStore.query = ""
+            searchScope = .all
+            catalogStore.resetResultsForNavigation()
+            startCollectionLoad(rememberedCollection, sort: sort)
+            return
+        }
+
+        if hasQuery {
+            catalogStore.query = ""
+            searchScope = .all
+        }
+        if let selectedCollection {
+            startCollectionLoad(selectedCollection, sort: collectionSort)
+        } else {
+            catalogStore.resetResultsForNavigation()
+        }
     }
 
     private var discoverHeaderActions: some View {
@@ -331,6 +349,7 @@ struct BrowseView: View {
                         resolvedCoverURL: coverStore.coverURL(for: collection),
                         approximateCount: coverStore.count(for: collection),
                         isSelected: false,
+                        isLoading: loadingCollectionID == collection.id,
                         onSelect: { search(collection) }
                     )
                 }
@@ -561,24 +580,42 @@ struct BrowseView: View {
     }
 
     private func search(_ collection: IACollection) {
+        let defaultSort = CatalogSort.defaultSort(for: collection)
         withAnimation(.easeInOut(duration: 0.25)) {
             selectedCollection = collection
-            discoverScope = .collection
+            rememberedCollection = collection
             showSearch = false
             searchFocused = false
             catalogStore.query = ""
+            collectionSort = defaultSort
         }
-        let defaultSort = CatalogSort.defaultSort(for: collection)
-        collectionSort = defaultSort
-        Task { await loadSelectedCollection() }
+        startCollectionLoad(collection, sort: defaultSort)
     }
 
-    private func loadSelectedCollection() async {
-        guard let selectedCollection else { return }
+    private func startCollectionLoad(_ collection: IACollection, sort: CatalogSort) {
+        // The selection is immediate, while the request runs independently of
+        // SwiftUI's state-commit timing. This prevents a tap from launching a
+        // request with the previous (or nil) collection and gives the card a
+        // visible loading state on the first tap.
+        let loadKey = "\(collection.id)|\(String(describing: sort))"
+        if loadingCollectionID == collection.id, lastCollectionLoadKey == loadKey {
+            return
+        }
+        lastCollectionLoadKey = loadKey
+        loadingCollectionID = collection.id
+        Task {
+            await loadSelectedCollection(collection: collection, sort: sort)
+            guard selectedCollection?.id == collection.id else { return }
+            loadingCollectionID = nil
+        }
+    }
+
+    private func loadSelectedCollection(collection: IACollection? = nil, sort: CatalogSort? = nil) async {
+        guard let collection = collection ?? selectedCollection else { return }
         await catalogStore.searchAdvanced(
-            selectedCollection.archiveQuery,
-            sort: collectionSort,
-            collectionID: selectedCollection.id
+            collection.archiveQuery,
+            sort: sort ?? collectionSort,
+            collectionID: collection.id
         )
     }
 
@@ -698,6 +735,7 @@ private struct ExploreCollectionCard: View {
     var resolvedCoverURL: URL?
     var approximateCount: Int?
     var isSelected: Bool
+    var isLoading: Bool
     var onSelect: () -> Void
 
     var body: some View {
@@ -710,7 +748,6 @@ private struct ExploreCollectionCard: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text(collection.title).voxType(.collectionTitle).foregroundStyle(Palette.ink)
                     Spacer(minLength: 4)
-                    if collection.isCurated { curatedBadge }
                 }
                 Text(collection.description).voxType(.meta).foregroundStyle(Palette.ink3).lineLimit(2)
                 if let caption = approximateCountCaption { Text(caption).voxType(.eyebrow).foregroundStyle(Palette.ink2) }
@@ -722,9 +759,22 @@ private struct ExploreCollectionCard: View {
         .frame(maxWidth: .infinity)
         .frame(height: 196)
         .raisedSurface()
+        .overlay(alignment: .topTrailing) {
+            if collection.isCurated { curatedBadge }
+        }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(isSelected ? Palette.brass : .clear, lineWidth: 2)
+        }
+        .overlay {
+            if isLoading {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Palette.bg.opacity(0.72))
+                ProgressView()
+                    .tint(Palette.brass)
+                    .scaleEffect(1.15)
+                    .accessibilityLabel("Loading collection")
+            }
         }
     }
 

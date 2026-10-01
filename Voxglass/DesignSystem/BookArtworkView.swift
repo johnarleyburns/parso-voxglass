@@ -97,14 +97,46 @@ struct VisualSummaryRow: View {
 struct HorizontalCatalogCard: View {
     var result: InternetArchiveSearchResult
     var body: some View {
+        HorizontalBookCard(
+            title: result.title,
+            author: result.displayAuthorLine,
+            coverURL: result.coverURL
+        )
+    }
+}
+
+/// Shared shelf card layout keeps Listen and Discover shelves aligned even
+/// when titles or author credits wrap to different numbers of lines.
+struct HorizontalBookCard: View {
+    var title: String
+    var author: String?
+    var coverURL: URL?
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            CoverPlate(title: result.title, author: result.displayAuthorLine, coverURL: result.coverURL, size: 132)
-            Text(result.title).voxType(.bookTitle).foregroundStyle(Palette.ink).padding(.top, 7)
-            if let author = result.displayAuthorLine {
-                Text(author).voxType(.meta).foregroundStyle(Palette.ink3).padding(.top, 1)
+            CoverPlate(title: title, author: author, coverURL: coverURL, size: 132)
+            Text(title)
+                .voxType(.bookTitle)
+                .foregroundStyle(Palette.ink)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity, minHeight: 42, maxHeight: 42, alignment: .topLeading)
+                .padding(.top, 7)
+            if let author, !author.isEmpty {
+                Text(author)
+                    .voxType(.meta)
+                    .foregroundStyle(Palette.ink3)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+                    .frame(maxWidth: .infinity, minHeight: 32, maxHeight: 32, alignment: .topLeading)
+                    .padding(.top, 1)
+            } else {
+                Color.clear
+                    .frame(height: 33)
+                    .accessibilityHidden(true)
             }
         }
-        .frame(width: 132)
+        .frame(width: 132, height: 216, alignment: .topLeading)
     }
 }
 

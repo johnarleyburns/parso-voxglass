@@ -79080,79 +79080,79 @@
         }
       }
     },
-    "Waiting for a reader": {
+    "Waiting for a narrator": {
       "comment": "UI copy extracted from Voxglass/Features/Production/Discovery/NarrationTabView.swift; preserve Voxglass brand names and placeholders.",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         },
         "he": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for a reader"
+            "value": "Waiting for a narrator"
           }
         }
       }

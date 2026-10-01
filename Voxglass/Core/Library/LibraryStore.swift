@@ -13,7 +13,7 @@ public final class LibraryStore: ObservableObject {
     /// `visibleBooks` with zero DB round-trips. Advanced My Books refinements
     /// remain independent so the segmented progress control always has a
     /// selected value.
-    @Published public var progressFilter: LibraryProgressFilter = .all
+    @Published public var progressFilter: LibraryProgressFilter = .inProgress
     @Published public var favoriteOnly = false
     @Published public var downloadedOnly = false
     /// Legacy mixed filter retained for non-UI callers. New UI code should use

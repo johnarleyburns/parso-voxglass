@@ -457,17 +457,10 @@ struct ListenBookCard: View {
     let sourceTitle: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            CoverPlate(title: book.book.title, author: book.book.authorLine, coverURL: book.book.coverURL, size: 132)
-            Text(book.book.title)
-                .voxFont(.caption, weight: .semibold)
-                .foregroundStyle(Palette.ink)
-                .padding(.top, 7)
-            Text(book.book.authorLine)
-                .voxFont(.caption2)
-                .foregroundStyle(Palette.ink3)
-                .padding(.top, 1)
-        }
-        .frame(width: 132)
+        HorizontalBookCard(
+            title: book.book.title,
+            author: book.book.displayAuthorLine,
+            coverURL: book.book.coverURL
+        )
     }
 }

@@ -163,7 +163,7 @@ private struct NeedsPreview: View {
     var body: some View {
         let needs = Array(NarrationHomeShelfPlan(needs: discovery.availableNeeds, featured: discovery.availableFeatured).short.prefix(limit))
         VStack(alignment: .leading, spacing: 10) {
-            SectionTitle(title: "Waiting for a reader", actionTitle: "See all", action: seeAll, actionIdentifier: "narration.needsSeeAll")
+            SectionTitle(title: "Waiting for a narrator", actionTitle: "See all", action: seeAll, actionIdentifier: "narration.needsSeeAll")
             ForEach(needs) { need in
                 HStack(spacing: 10) {
                     CoverPlate(title: need.work.title, author: need.work.author, coverURL: nil, size: 40, shape: .portrait)
