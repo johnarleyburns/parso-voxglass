@@ -7,6 +7,12 @@
 
 set -euo pipefail
 
+# git exports GIT_INDEX_FILE to hooks; for a path-limited commit (`git commit -- <paths>`) it is
+# an absolute temporary index. SwiftPM's git operations on dependency checkouts inherit it and
+# write the dependencies' files into this commit's index, failing the commit with
+# "invalid object ... Error building trees". The tests need no git index, so drop it.
+unset GIT_INDEX_FILE
+
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
