@@ -2,21 +2,16 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
-      "shouldTranslate" : false,
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
+      "shouldTranslate" : false
     },
     "%@ left in book" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Noch %@ im Buch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ restantes dans le livre"
           }
         },
         "es" : {
@@ -25,22 +20,22 @@
             "value" : "Quedan %@ del libro"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ restantes dans le livre"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "נותרו %@ בספר"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ rimanenti nel libro"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Faltam %@ do livro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nog %@ in het boek"
           }
         },
         "ja" : {
@@ -49,16 +44,10 @@
             "value" : "本の残り %@"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "全书剩余 %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "До конца книги %@"
+            "value" : "Nog %@ in het boek"
           }
         },
         "pl" : {
@@ -67,27 +56,33 @@
             "value" : "Do końca książki %@"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "נותרו %@ בספר"
+            "value" : "Faltam %@ do livro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "До конца книги %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "全书剩余 %@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "%lld percent" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld Prozent"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%lld pour cent"
           }
         },
         "es" : {
@@ -96,22 +91,22 @@
             "value" : "%lld por ciento"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld pour cent"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld אחוז"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld percento"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%lld por cento"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%lld procent"
           }
         },
         "ja" : {
@@ -120,16 +115,10 @@
             "value" : "%lld パーセント"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "百分之 %lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%lld процентов"
+            "value" : "%lld procent"
           }
         },
         "pl" : {
@@ -138,31 +127,37 @@
             "value" : "%lld procent"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%lld אחוז"
+            "value" : "%lld por cento"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld процентов"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "百分之 %lld"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "%lld%%" : {
-      "shouldTranslate" : false,
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
+      "shouldTranslate" : false
     },
     "About" : {
+      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift); Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Info"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "À propos"
           }
         },
         "es" : {
@@ -171,19 +166,19 @@
             "value" : "Información"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "À propos"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "אודות"
+          }
+        },
         "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Info"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Sobre"
-          }
-        },
-        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Info"
@@ -195,16 +190,10 @@
             "value" : "情報"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "关于"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "О приложении"
+            "value" : "Info"
           }
         },
         "pl" : {
@@ -213,21 +202,39 @@
             "value" : "Informacje"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "אודות"
+            "value" : "Sobre"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "О приложении"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "关于"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift); Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
     "Chapter %lld" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Kapitel %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Capítulo %lld"
           }
         },
         "fr" : {
@@ -236,10 +243,10 @@
             "value" : "Chapitre %lld"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo %lld"
+            "value" : "פרק %lld"
           }
         },
         "it" : {
@@ -248,10 +255,10 @@
             "value" : "Capitolo %lld"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo %lld"
+            "value" : "チャプター %lld"
           }
         },
         "nl" : {
@@ -260,16 +267,16 @@
             "value" : "Hoofdstuk %lld"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "チャプター %lld"
+            "value" : "Rozdział %lld"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "第 %lld 章"
+            "value" : "Capítulo %lld"
           }
         },
         "ru" : {
@@ -278,33 +285,33 @@
             "value" : "Глава %lld"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Rozdział %lld"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "פרק %lld"
+            "value" : "第 %lld 章"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Chapter %lld of %lld: %@" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kapitel %lld von %lld: %@"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Chapter %1$lld of %2$lld: %3$@"
           }
         },
-        "de" : {
+        "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Kapitel %lld von %lld: %@"
+            "value" : "Capítulo %lld de %lld: %@"
           }
         },
         "fr" : {
@@ -313,10 +320,10 @@
             "value" : "Chapitre %lld sur %lld : %@"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo %lld de %lld: %@"
+            "value" : "פרק %lld מתוך %lld: %@"
           }
         },
         "it" : {
@@ -325,10 +332,10 @@
             "value" : "Capitolo %lld di %lld: %@"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo %lld de %lld: %@"
+            "value" : "チャプター %lld / %lld：%@"
           }
         },
         "nl" : {
@@ -337,16 +344,16 @@
             "value" : "Hoofdstuk %lld van %lld: %@"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "チャプター %lld / %lld：%@"
+            "value" : "Rozdział %lld z %lld: %@"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "第 %lld 章，共 %lld 章：%@"
+            "value" : "Capítulo %lld de %lld: %@"
           }
         },
         "ru" : {
@@ -355,33 +362,33 @@
             "value" : "Глава %lld из %lld: %@"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Rozdział %lld z %lld: %@"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "פרק %lld מתוך %lld: %@"
+            "value" : "第 %lld 章，共 %lld 章：%@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Chapter %lld, %@" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kapitel %lld, %@"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Chapter %1$lld, %2$@"
           }
         },
-        "de" : {
+        "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Kapitel %lld, %@"
+            "value" : "Capítulo %lld, %@"
           }
         },
         "fr" : {
@@ -390,10 +397,10 @@
             "value" : "Chapitre %lld, %@"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo %lld, %@"
+            "value" : "פרק %lld, %@"
           }
         },
         "it" : {
@@ -402,10 +409,10 @@
             "value" : "Capitolo %lld, %@"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo %lld, %@"
+            "value" : "チャプター %lld、%@"
           }
         },
         "nl" : {
@@ -414,16 +421,16 @@
             "value" : "Hoofdstuk %lld, %@"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "チャプター %lld、%@"
+            "value" : "Rozdział %lld, %@"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "第 %lld 章，%@"
+            "value" : "Capítulo %lld, %@"
           }
         },
         "ru" : {
@@ -432,27 +439,27 @@
             "value" : "Глава %lld, %@"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Rozdział %lld, %@"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "פרק %lld, %@"
+            "value" : "第 %lld 章，%@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Chapters" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Kapitel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Capítulos"
           }
         },
         "fr" : {
@@ -461,10 +468,10 @@
             "value" : "Chapitres"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulos"
+            "value" : "פרקים"
           }
         },
         "it" : {
@@ -473,10 +480,10 @@
             "value" : "Capitoli"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulos"
+            "value" : "チャプター"
           }
         },
         "nl" : {
@@ -485,16 +492,16 @@
             "value" : "Hoofdstukken"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "チャプター"
+            "value" : "Rozdziały"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "章节"
+            "value" : "Capítulos"
           }
         },
         "ru" : {
@@ -503,33 +510,21 @@
             "value" : "Главы"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Rozdziały"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "פרקים"
+            "value" : "章节"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Connect Bluetooth headphones, then try again." : {
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Verbinden Sie Bluetooth-Kopfhörer und versuchen Sie es erneut."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Connectez des écouteurs Bluetooth, puis réessayez."
           }
         },
         "es" : {
@@ -538,22 +533,22 @@
             "value" : "Conecta unos auriculares Bluetooth y vuelve a intentarlo."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Connectez des écouteurs Bluetooth, puis réessayez."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "יש לחבר אוזניות Bluetooth ולנסות שוב."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Collega delle cuffie Bluetooth e riprova."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Conecte fones de ouvido Bluetooth e tente novamente."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Verbind een Bluetooth-koptelefoon en probeer het opnieuw."
           }
         },
         "ja" : {
@@ -562,16 +557,10 @@
             "value" : "Bluetooth ヘッドフォンを接続して、もう一度お試しください。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "请连接蓝牙耳机后重试。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Подключите Bluetooth-наушники и повторите попытку."
+            "value" : "Verbind een Bluetooth-koptelefoon en probeer het opnieuw."
           }
         },
         "pl" : {
@@ -580,27 +569,33 @@
             "value" : "Podłącz słuchawki Bluetooth i spróbuj ponownie."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "יש לחבר אוזניות Bluetooth ולנסות שוב."
+            "value" : "Conecte fones de ouvido Bluetooth e tente novamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Подключите Bluetooth-наушники и повторите попытку."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "请连接蓝牙耳机后重试。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+      }
     },
     "Double-tap to open" : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Zum Öffnen doppeltippen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Touchez deux fois pour ouvrir"
           }
         },
         "es" : {
@@ -609,22 +604,22 @@
             "value" : "Toca dos veces para abrir"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Touchez deux fois pour ouvrir"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הקשה כפולה לפתיחה"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tocca due volte per aprire"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Toque duas vezes para abrir"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tik dubbel om te openen"
           }
         },
         "ja" : {
@@ -633,16 +628,10 @@
             "value" : "ダブルタップで開く"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "连按两次以打开"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Коснитесь дважды, чтобы открыть"
+            "value" : "Tik dubbel om te openen"
           }
         },
         "pl" : {
@@ -651,27 +640,33 @@
             "value" : "Stuknij dwukrotnie, aby otworzyć"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הקשה כפולה לפתיחה"
+            "value" : "Toque duas vezes para abrir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Коснитесь дважды, чтобы открыть"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "连按两次以打开"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
     "Download failed: %@" : {
+      "comment" : "UI text shown in: Watch App Services (VoxglassWatch/WatchAppServices.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Download fehlgeschlagen: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Échec du téléchargement : %@"
           }
         },
         "es" : {
@@ -680,22 +675,22 @@
             "value" : "Error de descarga: %@"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Échec du téléchargement : %@"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ההורדה נכשלה: %@"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Download non riuscito: %@"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Falha no download: %@"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download mislukt: %@"
           }
         },
         "ja" : {
@@ -704,16 +699,10 @@
             "value" : "ダウンロードに失敗しました：%@"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "下载失败：%@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ошибка загрузки: %@"
+            "value" : "Download mislukt: %@"
           }
         },
         "pl" : {
@@ -722,27 +711,104 @@
             "value" : "Pobieranie nie powiodło się: %@"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ההורדה נכשלה: %@"
+            "value" : "Falha no download: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ошибка загрузки: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下载失败：%@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch App Services (VoxglassWatch/WatchAppServices.swift)"
+      }
     },
-    "Download to Apple Watch" : {
+    "Download this chapter or reconnect to stream it." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Auf Apple Watch laden"
+            "value" : "Laden Sie dieses Kapitel herunter oder stellen Sie die Verbindung wieder her, um es zu streamen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Descarga este capítulo o vuelve a conectarte para reproducirlo en streaming."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Télécharger sur l’Apple Watch"
+            "value" : "Téléchargez ce chapitre ou reconnectez-vous pour le diffuser."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "יש להוריד את הפרק הזה או להתחבר מחדש כדי להזרים אותו."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Scarica questo capitolo o riconnettiti per riprodurlo in streaming."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャプターをダウンロードするか、再接続してストリーミングしてください。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download dit hoofdstuk of maak opnieuw verbinding om het te streamen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pobierz ten rozdział lub połącz się ponownie, aby go odtworzyć strumieniowo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Baixe este capítulo ou reconecte-se para ouvir por streaming."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Загрузите эту главу или подключитесь снова, чтобы слушать её онлайн."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "请下载此章节，或重新连接后串流播放。"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+    },
+    "Download to Apple Watch" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Auf Apple Watch laden"
           }
         },
         "es" : {
@@ -751,22 +817,22 @@
             "value" : "Descargar en el Apple Watch"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Télécharger sur l’Apple Watch"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הורדה ל-Apple Watch"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Scarica su Apple Watch"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Baixar no Apple Watch"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download naar Apple Watch"
           }
         },
         "ja" : {
@@ -775,16 +841,10 @@
             "value" : "Apple Watch にダウンロード"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "下载到 Apple Watch"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Загрузить на Apple Watch"
+            "value" : "Download naar Apple Watch"
           }
         },
         "pl" : {
@@ -793,27 +853,33 @@
             "value" : "Pobierz na Apple Watch"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הורדה ל-Apple Watch"
+            "value" : "Baixar no Apple Watch"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Загрузить на Apple Watch"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下载到 Apple Watch"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Downloaded" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Geladen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Téléchargé"
           }
         },
         "es" : {
@@ -822,22 +888,22 @@
             "value" : "Descargado"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargé"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הורד"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Scaricato"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Baixado"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Gedownload"
           }
         },
         "ja" : {
@@ -846,16 +912,10 @@
             "value" : "ダウンロード済み"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "已下载"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Загружено"
+            "value" : "Gedownload"
           }
         },
         "pl" : {
@@ -864,27 +924,33 @@
             "value" : "Pobrane"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הורד"
+            "value" : "Baixado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Загружено"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "已下载"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Downloading" : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Wird geladen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Téléchargement"
           }
         },
         "es" : {
@@ -893,22 +959,22 @@
             "value" : "Descargando"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargement"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "מוריד"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Download in corso"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Baixando"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Downloaden"
           }
         },
         "ja" : {
@@ -917,16 +983,10 @@
             "value" : "ダウンロード中"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "正在下载"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Загрузка"
+            "value" : "Downloaden"
           }
         },
         "pl" : {
@@ -935,27 +995,33 @@
             "value" : "Pobieranie"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "מוריד"
+            "value" : "Baixando"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Загрузка"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在下载"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
     "Free software, GNU GPLv3+. Full source is public." : {
+      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Freie Software, GNU GPLv3+. Der vollständige Quellcode ist öffentlich."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Logiciel libre, GNU GPLv3+. L’intégralité du code source est publique."
           }
         },
         "es" : {
@@ -964,22 +1030,22 @@
             "value" : "Software libre, GNU GPLv3+. Todo el código fuente es público."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Logiciel libre, GNU GPLv3+. L’intégralité du code source est publique."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "תוכנה חופשית, GNU GPLv3+‎. קוד המקור המלא פתוח לציבור."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Software libero, GNU GPLv3+. Il codice sorgente completo è pubblico."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Software livre, GNU GPLv3+. Todo o código-fonte é público."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vrije software, GNU GPLv3+. De volledige broncode is openbaar."
           }
         },
         "ja" : {
@@ -988,16 +1054,10 @@
             "value" : "フリーソフトウェア（GNU GPLv3+）。ソースコードはすべて公開されています。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "自由软件，GNU GPLv3+。完整源代码公开。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Свободное ПО, GNU GPLv3+. Весь исходный код открыт."
+            "value" : "Vrije software, GNU GPLv3+. De volledige broncode is openbaar."
           }
         },
         "pl" : {
@@ -1006,27 +1066,33 @@
             "value" : "Wolne oprogramowanie, GNU GPLv3+. Pełny kod źródłowy jest publiczny."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "תוכנה חופשית, GNU GPLv3+‎. קוד המקור המלא פתוח לציבור."
+            "value" : "Software livre, GNU GPLv3+. Todo o código-fonte é público."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Свободное ПО, GNU GPLv3+. Весь исходный код открыт."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "自由软件，GNU GPLv3+。完整源代码公开。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)"
+      }
     },
     "In My Books on iPhone, choose Download to Apple Watch." : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Wählen Sie auf dem iPhone unter „Meine Bücher“ die Option „Auf Apple Watch laden“."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dans Mes livres sur l’iPhone, choisissez Télécharger sur l’Apple Watch."
           }
         },
         "es" : {
@@ -1035,22 +1101,22 @@
             "value" : "En Mis libros del iPhone, elige Descargar en el Apple Watch."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dans Mes livres sur l’iPhone, choisissez Télécharger sur l’Apple Watch."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "בספרים שלי ב-iPhone יש לבחור „הורדה ל-Apple Watch”."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "In I miei libri su iPhone, scegli Scarica su Apple Watch."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Em Meus livros no iPhone, escolha Baixar no Apple Watch."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Kies in Mijn boeken op iPhone ‘Download naar Apple Watch’."
           }
         },
         "ja" : {
@@ -1059,16 +1125,10 @@
             "value" : "iPhone のマイブックで「Apple Watch にダウンロード」を選択してください。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "在 iPhone 的“我的书”中选择“下载到 Apple Watch”。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "В «Моих книгах» на iPhone выберите «Загрузить на Apple Watch»."
+            "value" : "Kies in Mijn boeken op iPhone ‘Download naar Apple Watch’."
           }
         },
         "pl" : {
@@ -1077,27 +1137,33 @@
             "value" : "W Moich książkach na iPhonie wybierz Pobierz na Apple Watch."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "בספרים שלי ב-iPhone יש לבחור „הורדה ל-Apple Watch”."
+            "value" : "Em Meus livros no iPhone, escolha Baixar no Apple Watch."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "В «Моих книгах» на iPhone выберите «Загрузить на Apple Watch»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在 iPhone 的“我的书”中选择“下载到 Apple Watch”。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
     "License" : {
+      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lizenz"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Licence"
           }
         },
         "es" : {
@@ -1106,22 +1172,22 @@
             "value" : "Licencia"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Licence"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "רישיון"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Licenza"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Licença"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Licentie"
           }
         },
         "ja" : {
@@ -1130,16 +1196,10 @@
             "value" : "ライセンス"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "许可"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Лицензия"
+            "value" : "Licentie"
           }
         },
         "pl" : {
@@ -1148,27 +1208,33 @@
             "value" : "Licencja"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "רישיון"
+            "value" : "Licença"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Лицензия"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "许可"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)"
+      }
     },
     "My Books" : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Meine Bücher"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Mes livres"
           }
         },
         "es" : {
@@ -1177,22 +1243,22 @@
             "value" : "Mis libros"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mes livres"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הספרים שלי"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "I miei libri"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Meus livros"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Mijn boeken"
           }
         },
         "ja" : {
@@ -1201,16 +1267,10 @@
             "value" : "マイブック"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "我的书"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Мои книги"
+            "value" : "Mijn boeken"
           }
         },
         "pl" : {
@@ -1219,27 +1279,33 @@
             "value" : "Moje książki"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הספרים שלי"
+            "value" : "Meus livros"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Мои книги"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "我的书"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
     "Next chapter" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nächstes Kapitel"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Chapitre suivant"
           }
         },
         "es" : {
@@ -1248,22 +1314,22 @@
             "value" : "Capítulo siguiente"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chapitre suivant"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הפרק הבא"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Capitolo successivo"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Próximo capítulo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Volgend hoofdstuk"
           }
         },
         "ja" : {
@@ -1272,16 +1338,10 @@
             "value" : "次のチャプター"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "下一章"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Следующая глава"
+            "value" : "Volgend hoofdstuk"
           }
         },
         "pl" : {
@@ -1290,27 +1350,33 @@
             "value" : "Następny rozdział"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הפרק הבא"
+            "value" : "Próximo capítulo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Следующая глава"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "下一章"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "No audio output" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Keine Audioausgabe"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aucune sortie audio"
           }
         },
         "es" : {
@@ -1319,22 +1385,22 @@
             "value" : "Sin salida de audio"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucune sortie audio"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "אין פלט שמע"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nessuna uscita audio"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Sem saída de áudio"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Geen audio-uitvoer"
           }
         },
         "ja" : {
@@ -1343,16 +1409,10 @@
             "value" : "オーディオ出力なし"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "无音频输出"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Нет аудиовыхода"
+            "value" : "Geen audio-uitvoer"
           }
         },
         "pl" : {
@@ -1361,27 +1421,104 @@
             "value" : "Brak wyjścia audio"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "אין פלט שמע"
+            "value" : "Sem saída de áudio"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Нет аудиовыхода"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "无音频输出"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
-    "No downloaded books" : {
+    "No audio output is connected — connect Bluetooth headphones, then try again." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Keine geladenen Bücher"
+            "value" : "Keine Audioausgabe verbunden – verbinden Sie Bluetooth-Kopfhörer und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No hay ninguna salida de audio conectada: conecta unos auriculares Bluetooth e inténtalo de nuevo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Aucun livre téléchargé"
+            "value" : "Aucune sortie audio connectée – connectez un casque Bluetooth, puis réessayez."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "לא מחובר פלט שמע — יש לחבר אוזניות Bluetooth ולנסות שוב."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nessuna uscita audio collegata: collega delle cuffie Bluetooth e riprova."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "オーディオ出力が接続されていません。Bluetoothヘッドフォンを接続してもう一度お試しください。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Geen audio-uitvoer verbonden – verbind een Bluetooth-koptelefoon en probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nie podłączono wyjścia audio — podłącz słuchawki Bluetooth i spróbuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nenhuma saída de áudio conectada — conecte fones Bluetooth e tente novamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Аудиовыход не подключён — подключите Bluetooth-наушники и повторите попытку."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "未连接音频输出——请连接蓝牙耳机后重试。"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+    },
+    "No downloaded books" : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keine geladenen Bücher"
           }
         },
         "es" : {
@@ -1390,22 +1527,22 @@
             "value" : "No hay libros descargados"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun livre téléchargé"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "אין ספרים שהורדו"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nessun libro scaricato"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nenhum livro baixado"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Geen gedownloade boeken"
           }
         },
         "ja" : {
@@ -1414,16 +1551,10 @@
             "value" : "ダウンロード済みの本はありません"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "没有已下载的书"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Нет загруженных книг"
+            "value" : "Geen gedownloade boeken"
           }
         },
         "pl" : {
@@ -1432,27 +1563,104 @@
             "value" : "Brak pobranych książek"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "אין ספרים שהורדו"
+            "value" : "Nenhum livro baixado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Нет загруженных книг"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "没有已下载的书"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
-    "No playable chapters." : {
+    "No playable chapter is available." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Keine abspielbaren Kapitel."
+            "value" : "Kein abspielbares Kapitel verfügbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No hay ningún capítulo reproducible."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Aucun chapitre lisible."
+            "value" : "Aucun chapitre lisible n’est disponible."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "אין פרק זמין להשמעה."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nessun capitolo riproducibile disponibile."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "再生できるチャプターがありません。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Geen afspeelbaar hoofdstuk beschikbaar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Brak rozdziału do odtworzenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nenhum capítulo reproduzível disponível."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Нет доступных для воспроизведения глав."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "没有可播放的章节。"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+    },
+    "No playable chapters." : {
+      "comment" : "UI text shown in: Watch App Services (VoxglassWatch/WatchAppServices.swift)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keine abspielbaren Kapitel."
           }
         },
         "es" : {
@@ -1461,22 +1669,22 @@
             "value" : "No hay capítulos reproducibles."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun chapitre lisible."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "אין פרקים שניתן להשמיע."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nessun capitolo riproducibile."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nenhum capítulo reproduzível."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Geen afspeelbare hoofdstukken."
           }
         },
         "ja" : {
@@ -1485,16 +1693,10 @@
             "value" : "再生可能なチャプターがありません。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "没有可播放的章节。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Нет воспроизводимых глав."
+            "value" : "Geen afspeelbare hoofdstukken."
           }
         },
         "pl" : {
@@ -1503,27 +1705,33 @@
             "value" : "Brak odtwarzalnych rozdziałów."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "אין פרקים שניתן להשמיע."
+            "value" : "Nenhum capítulo reproduzível."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Нет воспроизводимых глав."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "没有可播放的章节。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch App Services (VoxglassWatch/WatchAppServices.swift)"
+      }
     },
     "Now Playing" : {
+      "comment" : "UI text shown in: Watch Root (VoxglassWatch/WatchRootView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Aktuelle Wiedergabe"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "À l’écoute"
           }
         },
         "es" : {
@@ -1532,22 +1740,22 @@
             "value" : "Reproduciendo"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "À l’écoute"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "מתנגן כעת"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "In riproduzione"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tocando"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nu aan het spelen"
           }
         },
         "ja" : {
@@ -1556,16 +1764,10 @@
             "value" : "再生中"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "正在播放"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Сейчас играет"
+            "value" : "Nu aan het spelen"
           }
         },
         "pl" : {
@@ -1574,27 +1776,33 @@
             "value" : "Teraz odtwarzane"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "מתנגן כעת"
+            "value" : "Tocando"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Сейчас играет"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在播放"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Root (VoxglassWatch/WatchRootView.swift)"
+      }
     },
     "On This Watch" : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Auf dieser Watch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Sur cette montre"
           }
         },
         "es" : {
@@ -1603,22 +1811,22 @@
             "value" : "En este reloj"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sur cette montre"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "בשעון הזה"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Su questo Watch"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Neste relógio"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Op deze Watch"
           }
         },
         "ja" : {
@@ -1627,16 +1835,10 @@
             "value" : "この Watch 上"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "在此手表上"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "На этих часах"
+            "value" : "Op deze Watch"
           }
         },
         "pl" : {
@@ -1645,24 +1847,30 @@
             "value" : "Na tym zegarku"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "בשעון הזה"
-          }
-        }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
-    },
-    "Pause" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pause"
+            "value" : "Neste relógio"
           }
         },
-        "fr" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "На этих часах"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "在此手表上"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
+      "localizations" : {
+        "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Pause"
@@ -1674,22 +1882,22 @@
             "value" : "Pausa"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "השהיה"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Pausa"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pausar"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pauzeer"
           }
         },
         "ja" : {
@@ -1698,16 +1906,10 @@
             "value" : "一時停止"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "暂停"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пауза"
+            "value" : "Pauzeer"
           }
         },
         "pl" : {
@@ -1716,27 +1918,33 @@
             "value" : "Wstrzymaj"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "השהיה"
+            "value" : "Pausar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Пауза"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "暂停"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Play" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Abspielen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Lire"
           }
         },
         "es" : {
@@ -1745,22 +1953,22 @@
             "value" : "Reproducir"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lire"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הפעלה"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Riproduci"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tocar"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Speel af"
           }
         },
         "ja" : {
@@ -1769,16 +1977,10 @@
             "value" : "再生"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "播放"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Воспроизвести"
+            "value" : "Speel af"
           }
         },
         "pl" : {
@@ -1787,27 +1989,33 @@
             "value" : "Odtwórz"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הפעלה"
+            "value" : "Tocar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Воспроизвести"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Playback controls for %@" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Wiedergabesteuerung für %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Commandes de lecture pour %@"
           }
         },
         "es" : {
@@ -1816,22 +2024,22 @@
             "value" : "Controles de reproducción de %@"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Commandes de lecture pour %@"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "פקדי השמעה עבור %@"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Controlli di riproduzione per %@"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Controles de reprodução de %@"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Afspeelregelaars voor %@"
           }
         },
         "ja" : {
@@ -1840,16 +2048,10 @@
             "value" : "%@ の再生コントロール"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%@ 的播放控制"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Управление воспроизведением: %@"
+            "value" : "Afspeelregelaars voor %@"
           }
         },
         "pl" : {
@@ -1858,27 +2060,33 @@
             "value" : "Sterowanie odtwarzaniem: %@"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "פקדי השמעה עבור %@"
+            "value" : "Controles de reprodução de %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Управление воспроизведением: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ 的播放控制"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Playback failed: %@" : {
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Wiedergabe fehlgeschlagen: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Échec de la lecture : %@"
           }
         },
         "es" : {
@@ -1887,22 +2095,22 @@
             "value" : "Error de reproducción: %@"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Échec de la lecture : %@"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ההשמעה נכשלה: %@"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Riproduzione non riuscita: %@"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Falha na reprodução: %@"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Afspelen mislukt: %@"
           }
         },
         "ja" : {
@@ -1911,16 +2119,10 @@
             "value" : "再生に失敗しました：%@"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "播放失败：%@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ошибка воспроизведения: %@"
+            "value" : "Afspelen mislukt: %@"
           }
         },
         "pl" : {
@@ -1929,21 +2131,39 @@
             "value" : "Odtwarzanie nie powiodło się: %@"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ההשמעה נכשלה: %@"
+            "value" : "Falha na reprodução: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ошибка воспроизведения: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "播放失败：%@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+      }
     },
     "Previous chapter" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Vorheriges Kapitel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Capítulo anterior"
           }
         },
         "fr" : {
@@ -1952,10 +2172,10 @@
             "value" : "Chapitre précédent"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo anterior"
+            "value" : "הפרק הקודם"
           }
         },
         "it" : {
@@ -1964,10 +2184,10 @@
             "value" : "Capitolo precedente"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Capítulo anterior"
+            "value" : "前のチャプター"
           }
         },
         "nl" : {
@@ -1976,16 +2196,16 @@
             "value" : "Vorig hoofdstuk"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "前のチャプター"
+            "value" : "Poprzedni rozdział"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "上一章"
+            "value" : "Capítulo anterior"
           }
         },
         "ru" : {
@@ -1994,27 +2214,27 @@
             "value" : "Предыдущая глава"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Poprzedni rozdział"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "הפרק הקודם"
+            "value" : "上一章"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Read by %@" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Gelesen von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Narrado por %@"
           }
         },
         "fr" : {
@@ -2023,10 +2243,10 @@
             "value" : "Lu par %@"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Narrado por %@"
+            "value" : "בקריאת %@"
           }
         },
         "it" : {
@@ -2035,10 +2255,10 @@
             "value" : "Letto da %@"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Narrado por %@"
+            "value" : "朗読：%@"
           }
         },
         "nl" : {
@@ -2047,16 +2267,16 @@
             "value" : "Voorgelezen door %@"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "朗読：%@"
+            "value" : "Czyta %@"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "朗读：%@"
+            "value" : "Narrado por %@"
           }
         },
         "ru" : {
@@ -2065,33 +2285,21 @@
             "value" : "Читает %@"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Czyta %@"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "בקריאת %@"
+            "value" : "朗读：%@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Remove from Apple Watch" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Von Apple Watch entfernen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer de l’Apple Watch"
           }
         },
         "es" : {
@@ -2100,22 +2308,22 @@
             "value" : "Eliminar del Apple Watch"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer de l’Apple Watch"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הסרה מ-Apple Watch"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Rimuovi da Apple Watch"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Remover do Apple Watch"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Verwijder van Apple Watch"
           }
         },
         "ja" : {
@@ -2124,16 +2332,10 @@
             "value" : "Apple Watch から削除"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "从 Apple Watch 移除"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Удалить с Apple Watch"
+            "value" : "Verwijder van Apple Watch"
           }
         },
         "pl" : {
@@ -2142,27 +2344,33 @@
             "value" : "Usuń z Apple Watch"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הסרה מ-Apple Watch"
+            "value" : "Remover do Apple Watch"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Удалить с Apple Watch"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "从 Apple Watch 移除"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Retry" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Erneut versuchen"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Réessayer"
           }
         },
         "es" : {
@@ -2171,22 +2379,22 @@
             "value" : "Reintentar"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Réessayer"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ניסיון חוזר"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Riprova"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tentar novamente"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Probeer opnieuw"
           }
         },
         "ja" : {
@@ -2195,16 +2403,10 @@
             "value" : "再試行"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "重试"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Повторить"
+            "value" : "Probeer opnieuw"
           }
         },
         "pl" : {
@@ -2213,24 +2415,30 @@
             "value" : "Spróbuj ponownie"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ניסיון חוזר"
-          }
-        }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
-    },
-    "Streaming" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Streaming"
+            "value" : "Tentar novamente"
           }
         },
-        "fr" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Повторить"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "重试"
+          }
+        }
+      }
+    },
+    "Streaming" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
+      "localizations" : {
+        "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Streaming"
@@ -2242,19 +2450,19 @@
             "value" : "Streaming"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Streaming"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הזרמה"
+          }
+        },
         "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Streaming"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Streaming"
-          }
-        },
-        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Streaming"
@@ -2266,16 +2474,10 @@
             "value" : "ストリーミング"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "流播放"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Потоковое"
+            "value" : "Streaming"
           }
         },
         "pl" : {
@@ -2284,27 +2486,33 @@
             "value" : "Strumieniowanie"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הזרמה"
+            "value" : "Streaming"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Потоковое"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "流播放"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "The iPhone connection is not active." : {
+      "comment" : "UI text shown in: Watch Session Adapter (VoxglassWatch/WatchSessionAdapter.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Die iPhone-Verbindung ist nicht aktiv."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La connexion à l’iPhone n’est pas active."
           }
         },
         "es" : {
@@ -2313,22 +2521,22 @@
             "value" : "La conexión con el iPhone no está activa."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La connexion à l’iPhone n’est pas active."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "החיבור ל-iPhone אינו פעיל."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "La connessione con iPhone non è attiva."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "A conexão com o iPhone não está ativa."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "De verbinding met iPhone is niet actief."
           }
         },
         "ja" : {
@@ -2337,16 +2545,10 @@
             "value" : "iPhone との接続が有効ではありません。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "与 iPhone 的连接未激活。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Нет активного подключения к iPhone."
+            "value" : "De verbinding met iPhone is niet actief."
           }
         },
         "pl" : {
@@ -2355,27 +2557,246 @@
             "value" : "Połączenie z iPhone’em nie jest aktywne."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "החיבור ל-iPhone אינו פעיל."
+            "value" : "A conexão com o iPhone não está ativa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Нет активного подключения к iPhone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "与 iPhone 的连接未激活。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Session Adapter (VoxglassWatch/WatchSessionAdapter.swift)"
+      }
     },
-    "This chapter stopped unexpectedly." : {
+    "This chapter could not be played (%@)." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Dieses Kapitel wurde unerwartet gestoppt."
+            "value" : "Dieses Kapitel konnte nicht abgespielt werden (%@)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se pudo reproducir este capítulo (%@)."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Ce chapitre s’est arrêté de façon inattendue."
+            "value" : "Impossible de lire ce chapitre (%@)."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "לא ניתן היה להשמיע את הפרק הזה (%@)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossibile riprodurre questo capitolo (%@)."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャプターを再生できませんでした（%@）。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dit hoofdstuk kon niet worden afgespeeld (%@)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nie udało się odtworzyć tego rozdziału (%@)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Não foi possível reproduzir este capítulo (%@)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Не удалось воспроизвести эту главу (%@)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "无法播放此章节（%@）。"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+    },
+    "This chapter could not be played." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieses Kapitel konnte nicht abgespielt werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se pudo reproducir este capítulo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de lire ce chapitre."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "לא ניתן היה להשמיע את הפרק הזה."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossibile riprodurre questo capitolo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャプターを再生できませんでした。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dit hoofdstuk kon niet worden afgespeeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nie udało się odtworzyć tego rozdziału."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Não foi possível reproduzir este capítulo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Не удалось воспроизвести эту главу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "无法播放此章节。"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+    },
+    "This chapter never became playable (%@)." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieses Kapitel wurde nie abspielbereit (%@)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este capítulo nunca llegó a estar listo para reproducirse (%@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce chapitre n’a jamais pu être lu (%@)."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הפרק הזה לא הפך מעולם לזמין להשמעה (%@)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Questo capitolo non è mai diventato riproducibile (%@)."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャプターは再生可能になりませんでした（%@）。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dit hoofdstuk werd nooit afspeelbaar (%@)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ten rozdział nigdy nie był gotowy do odtworzenia (%@)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este capítulo nunca ficou pronto para reprodução (%@)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Эта глава так и не стала доступна для воспроизведения (%@)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此章节始终无法播放（%@）。"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
+    },
+    "This chapter stopped unexpectedly." : {
+      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieses Kapitel wurde unerwartet gestoppt."
           }
         },
         "es" : {
@@ -2384,22 +2805,22 @@
             "value" : "Este capítulo se detuvo inesperadamente."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce chapitre s’est arrêté de façon inattendue."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "הפרק הזה נעצר באופן בלתי צפוי."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Questo capitolo si è interrotto inaspettatamente."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Este capítulo parou inesperadamente."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dit hoofdstuk stopte onverwacht."
           }
         },
         "ja" : {
@@ -2408,16 +2829,10 @@
             "value" : "このチャプターが予期せず停止しました。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "此章节意外停止。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Воспроизведение главы неожиданно прервалось."
+            "value" : "Dit hoofdstuk stopte onverwacht."
           }
         },
         "pl" : {
@@ -2426,24 +2841,30 @@
             "value" : "Ten rozdział nieoczekiwanie się zatrzymał."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "הפרק הזה נעצר באופן בלתי צפוי."
-          }
-        }
-      },
-      "comment" : "UI text shown in: Watch Playback Engine (VoxglassWatch/WatchPlaybackEngine.swift)"
-    },
-    "Version" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Version"
+            "value" : "Este capítulo parou inesperadamente."
           }
         },
-        "fr" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Воспроизведение главы неожиданно прервалось."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "此章节意外停止。"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)",
+      "localizations" : {
+        "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Version"
@@ -2455,22 +2876,22 @@
             "value" : "Versión"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Version"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "גרסה"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Versione"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Versão"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Versie"
           }
         },
         "ja" : {
@@ -2479,16 +2900,10 @@
             "value" : "バージョン"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "版本"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Версия"
+            "value" : "Versie"
           }
         },
         "pl" : {
@@ -2497,27 +2912,33 @@
             "value" : "Wersja"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "גרסה"
+            "value" : "Versão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Версия"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "版本"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)"
+      }
     },
     "Volume" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lautstärke"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Volume"
           }
         },
         "es" : {
@@ -2526,19 +2947,19 @@
             "value" : "Volumen"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Volume"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "עוצמת קול"
+          }
+        },
         "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Volume"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Volume"
-          }
-        },
-        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Volume"
@@ -2550,16 +2971,10 @@
             "value" : "音量"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "音量"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Громкость"
+            "value" : "Volume"
           }
         },
         "pl" : {
@@ -2568,27 +2983,33 @@
             "value" : "Głośność"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "עוצמת קול"
+            "value" : "Volume"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Громкость"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "音量"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     },
     "Voxglass plays audiobooks downloaded from your iPhone directly on your wrist — no phone nearby required once a book is on the watch." : {
+      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Voxglass spielt vom iPhone geladene Hörbücher direkt am Handgelenk ab – ist ein Buch einmal auf der Watch, brauchen Sie das iPhone nicht in der Nähe."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Voxglass lit directement au poignet les livres audio téléchargés depuis l’iPhone : une fois un livre sur la montre, plus besoin d’avoir l’iPhone à proximité."
           }
         },
         "es" : {
@@ -2597,22 +3018,22 @@
             "value" : "Voxglass reproduce en tu muñeca los audiolibros descargados desde el iPhone: una vez que el libro está en el reloj, no necesitas el iPhone cerca."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass lit directement au poignet les livres audio téléchargés depuis l’iPhone : une fois un livre sur la montre, plus besoin d’avoir l’iPhone à proximité."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass מנגן ספרי שמע שהורדו מה-iPhone ישירות על פרק היד — אחרי שהספר נמצא בשעון, אין צורך בטלפון בקרבת מקום."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Voxglass riproduce direttamente al polso gli audiolibri scaricati da iPhone: una volta che il libro è su Watch, non serve avere l’iPhone vicino."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "O Voxglass toca no seu pulso os audiolivros baixados do iPhone — depois que o livro está no relógio, não é preciso ter o iPhone por perto."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Voxglass speelt luisterboeken die vanaf je iPhone zijn gedownload direct op je pols af — zodra een boek op de Watch staat, hoeft je iPhone niet in de buurt te zijn."
           }
         },
         "ja" : {
@@ -2621,16 +3042,10 @@
             "value" : "Voxglass は iPhone からダウンロードしたオーディオブックを手首で直接再生します。本を Watch に入れれば、iPhone が近くになくても聴けます。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Voxglass 可直接在手腕上播放从 iPhone 下载的有声书——书一旦传到手表，就无需 iPhone 在身边。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Voxglass воспроизводит аудиокниги, загруженные с iPhone, прямо на запястье — когда книга на часах, телефон рядом не нужен."
+            "value" : "Voxglass speelt luisterboeken die vanaf je iPhone zijn gedownload direct op je pols af — zodra een boek op de Watch staat, hoeft je iPhone niet in de buurt te zijn."
           }
         },
         "pl" : {
@@ -2639,27 +3054,33 @@
             "value" : "Voxglass odtwarza audiobooki pobrane z iPhone’a bezpośrednio na nadgarstku — gdy książka jest już na zegarku, iPhone nie musi być w pobliżu."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Voxglass מנגן ספרי שמע שהורדו מה-iPhone ישירות על פרק היד — אחרי שהספר נמצא בשעון, אין צורך בטלפון בקרבת מקום."
+            "value" : "O Voxglass toca no seu pulso os audiolivros baixados do iPhone — depois que o livro está no relógio, não é preciso ter o iPhone por perto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass воспроизводит аудиокниги, загруженные с iPhone, прямо на запястье — когда книга на часах, телефон рядом не нужен."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass 可直接在手腕上播放从 iPhone 下载的有声书——书一旦传到手表，就无需 iPhone 在身边。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch About (VoxglassWatch/WatchAboutView.swift)"
+      }
     },
     "Waiting for the iPhone to transfer this book." : {
+      "comment" : "UI text shown in: Watch App Services (VoxglassWatch/WatchAppServices.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Warten, bis das iPhone dieses Buch überträgt."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "En attente du transfert de ce livre par l’iPhone."
           }
         },
         "es" : {
@@ -2668,22 +3089,22 @@
             "value" : "Esperando a que el iPhone transfiera este libro."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En attente du transfert de ce livre par l’iPhone."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ממתין שה-iPhone יעביר את הספר."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "In attesa che iPhone trasferisca questo libro."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aguardando o iPhone transferir este livro."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachten tot de iPhone dit boek overzet."
           }
         },
         "ja" : {
@@ -2692,16 +3113,10 @@
             "value" : "iPhone からこの本が転送されるのを待っています。"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "正在等待 iPhone 传输这本书。"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ожидание передачи книги с iPhone."
+            "value" : "Wachten tot de iPhone dit boek overzet."
           }
         },
         "pl" : {
@@ -2710,21 +3125,39 @@
             "value" : "Oczekiwanie na przesłanie tej książki z iPhone’a."
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ממתין שה-iPhone יעביר את הספר."
+            "value" : "Aguardando o iPhone transferir este livro."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ожидание передачи книги с iPhone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在等待 iPhone 传输这本书。"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch App Services (VoxglassWatch/WatchAppServices.swift)"
+      }
     },
     "iPhone connected" : {
+      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "iPhone verbunden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone conectado"
           }
         },
         "fr" : {
@@ -2733,10 +3166,10 @@
             "value" : "iPhone connecté"
           }
         },
-        "es" : {
+        "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "iPhone conectado"
+            "value" : "iPhone מחובר"
           }
         },
         "it" : {
@@ -2745,10 +3178,10 @@
             "value" : "iPhone connesso"
           }
         },
-        "pt-BR" : {
+        "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "iPhone conectado"
+            "value" : "iPhone に接続済み"
           }
         },
         "nl" : {
@@ -2757,16 +3190,16 @@
             "value" : "iPhone verbonden"
           }
         },
-        "ja" : {
+        "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "iPhone に接続済み"
+            "value" : "iPhone połączony"
           }
         },
-        "zh-Hans" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "iPhone 已连接"
+            "value" : "iPhone conectado"
           }
         },
         "ru" : {
@@ -2775,33 +3208,21 @@
             "value" : "iPhone подключён"
           }
         },
-        "pl" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "iPhone połączony"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "iPhone מחובר"
+            "value" : "iPhone 已连接"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Library (VoxglassWatch/WatchLibraryView.swift)"
+      }
     },
     "−%@ in chapter" : {
+      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "−%@ im Kapitel"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "−%@ dans le chapitre"
           }
         },
         "es" : {
@@ -2810,22 +3231,22 @@
             "value" : "−%@ en el capítulo"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "−%@ dans le chapitre"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "‎−%@ בפרק"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "−%@ nel capitolo"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "−%@ no capítulo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "−%@ in hoofdstuk"
           }
         },
         "ja" : {
@@ -2834,16 +3255,10 @@
             "value" : "チャプター残り %@"
           }
         },
-        "zh-Hans" : {
+        "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "本章剩余 %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "−%@ в главе"
+            "value" : "−%@ in hoofdstuk"
           }
         },
         "pl" : {
@@ -2852,14 +3267,25 @@
             "value" : "−%@ w rozdziale"
           }
         },
-        "he" : {
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "‎−%@ בפרק"
+            "value" : "−%@ no capítulo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "−%@ в главе"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "本章剩余 %@"
           }
         }
-      },
-      "comment" : "UI text shown in: Watch Book Detail (VoxglassWatch/WatchBookDetailView.swift)"
+      }
     }
   },
   "version" : "1.0"

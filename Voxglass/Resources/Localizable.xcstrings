@@ -18342,6 +18342,7 @@
       }
     },
     "Change Language" : {
+      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -18409,8 +18410,7 @@
             "value" : "更改语言"
           }
         }
-      },
-      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)"
+      }
     },
     "Change the current audiobook sleep timer." : {
       "comment" : "UI text shown in: Playback Control Intents (VoxglassShared/PlaybackControlIntents.swift)",
@@ -18561,6 +18561,7 @@
       }
     },
     "Chapter" : {
+      "comment" : "UI text shown in: Bookmarks (Voxglass/Features/Player/BookmarksView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -18628,8 +18629,7 @@
             "value" : "章节"
           }
         }
-      },
-      "comment" : "UI text shown in: Bookmarks (Voxglass/Features/Player/BookmarksView.swift)"
+      }
     },
     "Chapter %lld" : {
       "comment" : "UI text shown in: Narration Flow Screens (Voxglass/Features/Production/Discovery/NarrationFlowScreens.swift)",
@@ -23969,6 +23969,7 @@
       }
     },
     "Could not write the backup file." : {
+      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -24036,8 +24037,7 @@
             "value" : "无法写入备份文件。"
           }
         }
-      },
-      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)"
+      }
     },
     "Couldn't Add Audiobook" : {
       "comment" : "UI text shown in: Library (Voxglass/Features/Library/LibraryView.swift)",
@@ -36734,6 +36734,77 @@
         }
       }
     },
+    "Hand-picked list · shown in curation order" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kuratierte Liste · in der gewählten Reihenfolge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lista seleccionada · en el orden de la selección"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Liste sélectionnée · dans l’ordre choisi"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "רשימה נבחרת · בסדר שנקבע"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elenco selezionato · nell’ordine della selezione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "厳選リスト · 選定順に表示"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Samengestelde lijst · in volgorde van selectie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wybrana lista · w kolejności wyboru"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lista selecionada · na ordem da curadoria"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Подборка · в порядке составителя"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "精选列表 · 按精选顺序显示"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Discover (Voxglass/Features/Discover/DiscoverView.swift)"
+    },
     "Hashing" : {
       "comment" : "UI text shown in: Narration Flow Screens (Voxglass/Features/Production/Discovery/NarrationFlowScreens.swift)",
       "localizations" : {
@@ -42759,6 +42830,77 @@
           }
         }
       }
+    },
+    "Loading collection" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sammlung wird geladen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cargando colección"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chargement de la collection"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "האוסף נטען"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Caricamento raccolta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "コレクションを読み込み中"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Collectie laden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wczytywanie kolekcji"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Carregando coleção"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Загрузка коллекции"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "正在载入合集"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Discover (Voxglass/Features/Discover/DiscoverView.swift)"
     },
     "Loading your library…" : {
       "comment" : "UI text shown in: Car Play Scene Delegate (Voxglass/App/CarPlay/CarPlaySceneDelegate.swift)",
@@ -50109,6 +50251,7 @@
       }
     },
     "No note for this paragraph" : {
+      "comment" : "UI text shown in: Production Car Play Renderer (Voxglass/App/CarPlay/ProductionCarPlayRenderer.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -50176,8 +50319,7 @@
             "value" : "此段落没有备注"
           }
         }
-      },
-      "comment" : "UI text shown in: Production Car Play Renderer (Voxglass/App/CarPlay/ProductionCarPlayRenderer.swift)"
+      }
     },
     "No paragraphs" : {
       "comment" : "UI text shown in: Narration Flow (Voxglass/Features/Production/Discovery/NarrationFlow.swift)",
@@ -50257,6 +50399,7 @@
       }
     },
     "No paragraphs in this queue." : {
+      "comment" : "UI text shown in: Productions (Voxglass/Features/Production/ProductionViews.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -50324,8 +50467,7 @@
             "value" : "此队列中没有段落。"
           }
         }
-      },
-      "comment" : "UI text shown in: Productions (Voxglass/Features/Production/ProductionViews.swift)"
+      }
     },
     "No paragraphs match this filter." : {
       "comment" : "UI text shown in: Script Editor (Voxglass/Features/Production/Discovery/ScriptEditorView.swift)",
@@ -56409,6 +56551,7 @@
       }
     },
     "Play Next" : {
+      "comment" : "UI text shown in: Production Car Play Renderer (Voxglass/App/CarPlay/ProductionCarPlayRenderer.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -56476,8 +56619,7 @@
             "value" : "接下来播放"
           }
         }
-      },
-      "comment" : "UI text shown in: Production Car Play Renderer (Voxglass/App/CarPlay/ProductionCarPlayRenderer.swift)"
+      }
     },
     "Play Selected Range" : {
       "comment" : "UI text shown in: Productions (Voxglass/Features/Production/ProductionViews.swift)",
@@ -58381,6 +58523,7 @@
       }
     },
     "Please choose another image." : {
+      "comment" : "UI text shown in: Project Dashboard (Voxglass/Features/Production/Discovery/ProjectDashboardView.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58448,8 +58591,7 @@
             "value" : "请选择其他图片。"
           }
         }
-      },
-      "comment" : "UI text shown in: Project Dashboard (Voxglass/Features/Production/Discovery/ProjectDashboardView.swift)"
+      }
     },
     "Popular public-domain audiobooks will appear here." : {
       "comment" : "UI text shown in: Listen (Voxglass/Features/Listen/ListenView.swift)",
@@ -64902,6 +65044,7 @@
       }
     },
     "Results" : {
+      "comment" : "UI text shown in: Car Play Action Dispatcher (Voxglass/App/CarPlay/CarPlayActionDispatcher.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64969,8 +65112,7 @@
             "value" : "结果"
           }
         }
-      },
-      "comment" : "UI text shown in: Car Play Action Dispatcher (Voxglass/App/CarPlay/CarPlayActionDispatcher.swift)"
+      }
     },
     "Resume" : {
       "comment" : "UI text shown in: Library (Voxglass/Features/Library/LibraryView.swift); Listen (Voxglass/Features/Listen/ListenView.swift)",
@@ -66659,6 +66801,7 @@
       }
     },
     "Review Settings" : {
+      "comment" : "UI text shown in: Car Play Review Controller (Voxglass/App/CarPlay/CarPlayReviewController.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -66726,8 +66869,7 @@
             "value" : "审核设置"
           }
         }
-      },
-      "comment" : "UI text shown in: Car Play Review Controller (Voxglass/App/CarPlay/CarPlayReviewController.swift)"
+      }
     },
     "Review and clear %lld flagged paragraphs before continuing." : {
       "comment" : "UI text shown in: Narration Flow (Voxglass/Features/Production/Discovery/NarrationFlow.swift)",
@@ -74593,6 +74735,290 @@
           }
         }
       }
+    },
+    "Sorted by author" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach Autor sortiert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por autor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trié par auteur"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ממוין לפי מחבר"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordinato per autore"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "著者順"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gesorteerd op auteur"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sortowane według autora"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por autor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "По автору"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "按作者排序"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Discover (Voxglass/Features/Discover/DiscoverView.swift)"
+    },
+    "Sorted by date" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach Datum sortiert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por fecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trié par date"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ממוין לפי תאריך"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordinato per data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "日付順"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gesorteerd op datum"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sortowane według daty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por data"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "По дате"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "按日期排序"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Discover (Voxglass/Features/Discover/DiscoverView.swift)"
+    },
+    "Sorted by popularity" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach Beliebtheit sortiert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por popularidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trié par popularité"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ממוין לפי פופולריות"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordinato per popolarità"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "人気順"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gesorteerd op populariteit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sortowane według popularności"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por popularidade"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "По популярности"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "按热度排序"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Discover (Voxglass/Features/Discover/DiscoverView.swift)"
+    },
+    "Sorted by title" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach Titel sortiert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por título"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trié par titre"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ממוין לפי כותרת"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordinato per titolo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "タイトル順"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gesorteerd op titel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sortowane według tytułu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ordenado por título"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "По названию"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "按书名排序"
+          }
+        }
+      },
+      "comment" : "UI text shown in: Discover (Voxglass/Features/Discover/DiscoverView.swift)"
     },
     "Source Failed" : {
       "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)",
@@ -83781,6 +84207,7 @@
       }
     },
     "Undo" : {
+      "comment" : "UI text shown in: Production Car Play Renderer (Voxglass/App/CarPlay/ProductionCarPlayRenderer.swift)",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -83848,8 +84275,7 @@
             "value" : "撤销"
           }
         }
-      },
-      "comment" : "UI text shown in: Production Car Play Renderer (Voxglass/App/CarPlay/ProductionCarPlayRenderer.swift)"
+      }
     },
     "Unknown length" : {
       "comment" : "UI text shown in: Time Formatting (Voxglass/DesignSystem/TimeFormatting.swift)",
@@ -85912,25 +86338,8 @@
       }
     },
     "Voxglass is available in %lld languages. It follows your iPhone’s language, or you can choose a language just for Voxglass in Settings." : {
+      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)",
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Voxglass is available in %lld language. It follows your iPhone’s language, or you can choose a language just for Voxglass in Settings."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Voxglass is available in %lld languages. It follows your iPhone’s language, or you can choose a language just for Voxglass in Settings."
-                }
-              }
-            }
-          }
-        },
         "de" : {
           "variations" : {
             "plural" : {
@@ -85944,6 +86353,24 @@
                 "stringUnit" : {
                   "state" : "needs_review",
                   "value" : "Voxglass ist in %lld Sprachen verfügbar. Die App folgt der Sprache Ihres iPhone, oder Sie wählen in den Einstellungen eine Sprache nur für Voxglass."
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voxglass is available in %lld language. It follows your iPhone’s language, or you can choose a language just for Voxglass in Settings."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Voxglass is available in %lld languages. It follows your iPhone’s language, or you can choose a language just for Voxglass in Settings."
                 }
               }
             }
@@ -86147,8 +86574,7 @@
             }
           }
         }
-      },
-      "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)"
+      }
     },
     "Voxglass is free software, licensed under the GNU General Public License v3.0 or later (GPLv3+). The complete source code is public. Because the GPL's own terms conflict with the App Store's distribution terms, an additional permission under GPLv3 §7 specifically allows distributing Voxglass through the App Store, provided the source of the exact version distributed stays publicly available under this License — which it does, at the link below." : {
       "comment" : "UI text shown in: Settings (Voxglass/Features/Settings/SettingsView.swift)",
@@ -87210,73 +87636,66 @@
         }
       }
     },
-    "Waiting for a reader" : {
-      "comment" : "UI text shown in: Narration Tab (Voxglass/Features/Production/Discovery/NarrationTabView.swift)",
+    "Waiting for a narrator" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Wartet auf eine Stimme"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for a reader"
+            "value" : "Warten auf eine Sprecherin oder einen Sprecher"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Esperando lector"
+            "value" : "Esperando a un narrador"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "En attente d’un lecteur"
+            "value" : "En attente d’un narrateur"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ממתין לקורא"
+            "value" : "ממתינים לקריין"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "In attesa di un lettore"
+            "value" : "In attesa di un narratore"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "読み手を待っています"
+            "value" : "ナレーターを待っています"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Wacht op een voorlezer"
+            "value" : "Wachten op een voorlezer"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Czeka na lektora"
+            "value" : "Oczekiwanie na lektora"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Aguardando leitor"
+            "value" : "Aguardando um narrador"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Ждёт чтеца"
+            "value" : "Ожидание чтеца"
           }
         },
         "zh-Hans" : {
@@ -87285,7 +87704,8 @@
             "value" : "等待朗读者"
           }
         }
-      }
+      },
+      "comment" : "UI text shown in: Narration Tab (Voxglass/Features/Production/Discovery/NarrationTabView.swift)"
     },
     "Waiting to send to Apple Watch" : {
       "comment" : "UI text shown in: Book Page Action Row (Voxglass/Features/Player/BookPageActionRow.swift)",

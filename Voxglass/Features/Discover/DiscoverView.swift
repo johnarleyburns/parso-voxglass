@@ -467,15 +467,15 @@ struct BrowseView: View {
     private var curatedStatusMessage: String {
         switch collectionSort {
         case .curation:
-            "Hand-picked list · shown in curation order"
+            String(localized: "Hand-picked list · shown in curation order")
         case .popularity:
-            "Sorted by popularity"
+            String(localized: "Sorted by popularity")
         case .title:
-            "Sorted by title"
+            String(localized: "Sorted by title")
         case .author:
-            "Sorted by author"
+            String(localized: "Sorted by author")
         case .recordedDate:
-            "Sorted by date"
+            String(localized: "Sorted by date")
         }
     }
 

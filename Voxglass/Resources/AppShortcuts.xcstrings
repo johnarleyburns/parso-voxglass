@@ -1,147 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Resume ${applicationName}" : {
-      "comment" : "Siri / Shortcuts phrases (VoxglassIntents.swift). One entry per shortcut; keep ${applicationName} and ${book} tokens.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringSet" : {
-            "state" : "translated",
-            "values" : [
-              "Resume ${applicationName}",
-              "Resume my audiobook in ${applicationName}",
-              "Continue my book in ${applicationName}"
-            ]
-          }
-        },
-        "de" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "${applicationName} fortsetzen",
-              "Mein Hörbuch in ${applicationName} fortsetzen",
-              "Mein Buch in ${applicationName} fortsetzen"
-            ]
-          }
-        },
-        "es" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Reanudar ${applicationName}",
-              "Reanudar mi audiolibro en ${applicationName}",
-              "Continuar mi libro en ${applicationName}"
-            ]
-          }
-        },
-        "fr" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Reprendre ${applicationName}",
-              "Reprendre mon livre audio dans ${applicationName}",
-              "Reprendre mon livre dans ${applicationName}"
-            ]
-          }
-        },
-        "he" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "להמשיך את ${applicationName}",
-              "להמשיך את ספר השמע שלי ב-${applicationName}",
-              "להמשיך את הספר שלי ב-${applicationName}"
-            ]
-          }
-        },
-        "it" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Riprendi ${applicationName}",
-              "Riprendi il mio audiolibro in ${applicationName}",
-              "Continua il mio libro in ${applicationName}"
-            ]
-          }
-        },
-        "ja" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "${applicationName}を再開",
-              "${applicationName}でオーディオブックを再開",
-              "${applicationName}で本の続きを再生"
-            ]
-          }
-        },
-        "nl" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Hervat ${applicationName}",
-              "Hervat mijn luisterboek in ${applicationName}",
-              "Ga verder met mijn boek in ${applicationName}"
-            ]
-          }
-        },
-        "pl" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Wznów ${applicationName}",
-              "Wznów mój audiobook w ${applicationName}",
-              "Kontynuuj moją książkę w ${applicationName}"
-            ]
-          }
-        },
-        "pt-BR" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Retomar o ${applicationName}",
-              "Retomar meu audiolivro no ${applicationName}",
-              "Continuar meu livro no ${applicationName}"
-            ]
-          }
-        },
-        "ru" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "Продолжить ${applicationName}",
-              "Продолжить мою аудиокнигу в ${applicationName}",
-              "Продолжить мою книгу в ${applicationName}"
-            ]
-          }
-        },
-        "zh-Hans" : {
-          "stringSet" : {
-            "state" : "needs_review",
-            "values" : [
-              "继续播放${applicationName}",
-              "在${applicationName}中继续我的有声书",
-              "在${applicationName}中继续我的书"
-            ]
-          }
-        }
-      }
-    },
     "Play ${book} in ${applicationName}" : {
       "comment" : "Siri / Shortcuts phrases (VoxglassIntents.swift). One entry per shortcut; keep ${applicationName} and ${book} tokens.",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
-        "en" : {
-          "stringSet" : {
-            "state" : "translated",
-            "values" : [
-              "Play ${book} in ${applicationName}",
-              "Play ${book} on ${applicationName}",
-              "Listen to ${book} in ${applicationName}",
-              "Play a book in ${applicationName}"
-            ]
-          }
-        },
         "de" : {
           "stringSet" : {
             "state" : "needs_review",
@@ -150,6 +12,17 @@
               "${book} mit ${applicationName} abspielen",
               "${book} in ${applicationName} anhören",
               "Ein Buch in ${applicationName} abspielen"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play ${book} in ${applicationName}",
+              "Play ${book} on ${applicationName}",
+              "Listen to ${book} in ${applicationName}",
+              "Play a book in ${applicationName}"
             ]
           }
         },
@@ -260,6 +133,131 @@
               "用${applicationName}播放${book}",
               "在${applicationName}中收听${book}",
               "在${applicationName}中播放一本书"
+            ]
+          }
+        }
+      }
+    },
+    "Resume ${applicationName}" : {
+      "comment" : "Siri / Shortcuts phrases (VoxglassIntents.swift). One entry per shortcut; keep ${applicationName} and ${book} tokens.",
+      "localizations" : {
+        "de" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "${applicationName} fortsetzen",
+              "Mein Hörbuch in ${applicationName} fortsetzen",
+              "Mein Buch in ${applicationName} fortsetzen"
+            ]
+          }
+        },
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Resume ${applicationName}",
+              "Resume my audiobook in ${applicationName}",
+              "Continue my book in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Reanudar ${applicationName}",
+              "Reanudar mi audiolibro en ${applicationName}",
+              "Continuar mi libro en ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Reprendre ${applicationName}",
+              "Reprendre mon livre audio dans ${applicationName}",
+              "Reprendre mon livre dans ${applicationName}"
+            ]
+          }
+        },
+        "he" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "להמשיך את ${applicationName}",
+              "להמשיך את ספר השמע שלי ב-${applicationName}",
+              "להמשיך את הספר שלי ב-${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Riprendi ${applicationName}",
+              "Riprendi il mio audiolibro in ${applicationName}",
+              "Continua il mio libro in ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "${applicationName}を再開",
+              "${applicationName}でオーディオブックを再開",
+              "${applicationName}で本の続きを再生"
+            ]
+          }
+        },
+        "nl" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Hervat ${applicationName}",
+              "Hervat mijn luisterboek in ${applicationName}",
+              "Ga verder met mijn boek in ${applicationName}"
+            ]
+          }
+        },
+        "pl" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Wznów ${applicationName}",
+              "Wznów mój audiobook w ${applicationName}",
+              "Kontynuuj moją książkę w ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Retomar o ${applicationName}",
+              "Retomar meu audiolivro no ${applicationName}",
+              "Continuar meu livro no ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Продолжить ${applicationName}",
+              "Продолжить мою аудиокнигу в ${applicationName}",
+              "Продолжить мою книгу в ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "继续播放${applicationName}",
+              "在${applicationName}中继续我的有声书",
+              "在${applicationName}中继续我的书"
             ]
           }
         }

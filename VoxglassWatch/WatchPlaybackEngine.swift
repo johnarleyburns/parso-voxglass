@@ -50,7 +50,7 @@ final class WatchPlaybackEngine {
 
     func play(_ book: WatchBookDTO, chapterIndex: Int, allowsStreaming: Bool) {
         guard book.chapters.indices.contains(chapterIndex) else {
-            publishFailure("No playable chapter is available.")
+            publishFailure(String(localized: "No playable chapter is available."))
             return
         }
         token += 1
@@ -78,7 +78,7 @@ final class WatchPlaybackEngine {
             snapshot.position = savedPosition
             if smokeMode {
                 if smokeFailure {
-                    publish(.failed("Download this chapter or reconnect to stream it."), token: currentToken)
+                    publish(.failed(String(localized: "Download this chapter or reconnect to stream it.")), token: currentToken)
                     return
                 }
                 snapshot.sourceKind = .downloaded
@@ -100,7 +100,7 @@ final class WatchPlaybackEngine {
                 guard currentToken == token else { return }
                 installPlayer(url: source.url, resumePosition: savedPosition, token: currentToken)
             } catch WatchPlaybackResolutionError.chapterUnavailable {
-                publish(.failed("Download this chapter or reconnect to stream it."), token: currentToken)
+                publish(.failed(String(localized: "Download this chapter or reconnect to stream it.")), token: currentToken)
             } catch {
                 publish(.failed(audioErrorMessage(error)), token: currentToken)
             }
@@ -200,7 +200,7 @@ final class WatchPlaybackEngine {
                     // audible ever comes out — a second, distinct silent
                     // failure from the item simply never loading.
                     if AVAudioSession.sharedInstance().currentRoute.outputs.isEmpty {
-                        self.publish(.failed("No audio output is connected — connect Bluetooth headphones, then try again."), token: currentToken)
+                        self.publish(.failed(String(localized: "No audio output is connected — connect Bluetooth headphones, then try again.")), token: currentToken)
                         return
                     }
                     player.play()
@@ -217,11 +217,11 @@ final class WatchPlaybackEngine {
                     let detail = "\(nsError?.localizedDescription ?? "unknown error")"
                         + " [\(nsError?.domain ?? "?"):\(nsError?.code ?? 0)]"
                         + ", file size: \(size.map(String.init) ?? "missing")"
-                    self.publish(.failed("This chapter could not be played (\(detail))."), token: currentToken)
+                    self.publish(.failed(String(localized: "This chapter could not be played (\(detail)).")), token: currentToken)
                 case .unknown:
                     self.publish(.buffering, token: currentToken)
                 @unknown default:
-                    self.publish(.failed("This chapter could not be played."), token: currentToken)
+                    self.publish(.failed(String(localized: "This chapter could not be played.")), token: currentToken)
                 }
             }
         }
@@ -249,7 +249,7 @@ final class WatchPlaybackEngine {
                         let detail = item.error?.localizedDescription
                             ?? player.error?.localizedDescription
                             ?? "status: \(item.status.rawValue), reachable via file: \(FileManager.default.fileExists(atPath: url.path))"
-                        self.publish(.failed("This chapter never became playable (\(detail))."), token: currentToken)
+                        self.publish(.failed(String(localized: "This chapter never became playable (\(detail)).")), token: currentToken)
                         return
                     }
                     continue
