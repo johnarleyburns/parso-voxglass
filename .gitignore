@@ -72,6 +72,8 @@ docs/plans/*
 !docs/plans/watch-rearchitecture/**
 !docs/plans/watch-local-playback/
 !docs/plans/watch-local-playback/**
+!docs/plans/watch-redesign/
+!docs/plans/watch-redesign/**
 !docs/mac-ipad-universal-mvp/
 !docs/mac-ipad-universal-mvp/**
 !docs/native-mac/

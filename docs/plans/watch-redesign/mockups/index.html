@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass Watch Redesign</title>
+<style>
+/* Watch Listening Kit — shared with Platterhead (parso-tonearm docs/plans/watch-redesign/mockups). Only the --accent/--bg tokens differ between the two apps. 1 CSS px = 1 pt on a 45 mm watch
+   (198 × 242 pt). Normative for hierarchy, sizes, copy and states — not pixel-exact. */
+:root {
+  color-scheme: dark;
+  --page: #0b0f12;
+  --accent: #d8ad67;        /* Voxglass gold */
+  --accent-ink: #1a1108;
+  --accent-soft: #352a19;
+  --text: #f7f0e6;
+  --muted: #b9afa4;
+  --faint: #5d636c;
+  --surface: #1c1f24;
+  --surface2: #2a2e35;
+  --good: #4cd471;
+  --warn: #ffcc5c;
+  --bad: #ff6b5e;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(circle at 18% 0%, #283034, var(--page) 44%); color: var(--text);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+.page { max-width: 1180px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -.4px; }
+h2 { font-size: 20px; margin: 48px 0 6px; padding-top: 18px; border-top: 1px solid #23262b; }
+.lead, .note { color: var(--muted); max-width: 860px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 8px; }
+.toc a { color: #f0ce8a; text-decoration: none; border: 1px solid #343a43; border-radius: 999px; padding: 5px 11px; font-size: 13px; }
+.frames { display: flex; flex-wrap: wrap; gap: 28px 26px; align-items: flex-start; margin-top: 18px; }
+.spec { width: 220px; }
+.cap { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.45; }
+.cap b { color: var(--text); font-weight: 650; }
+.cap code { overflow-wrap: anywhere; }
+.id { font: 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: #7f8791; }
+
+/* ---------- watch shell ---------- */
+.watch { position: relative; width: 220px; height: 264px; border-radius: 54px; padding: 11px;
+  background: linear-gradient(145deg, #3a3d43, #16181b); box-shadow: 0 24px 60px #000c, inset 0 0 0 1px #4a4e55; }
+.watch::after { content: ""; position: absolute; right: -7px; top: 62px; width: 8px; height: 30px; border-radius: 4px;
+  background: linear-gradient(90deg, #2a2c30, #55585e); } /* Digital Crown */
+.screen { position: relative; width: 198px; height: 242px; border-radius: 44px; background: #000; overflow: hidden;
+  padding: 26px 12px 10px; font-size: 13px; }
+.clock { position: absolute; top: 9px; right: 18px; font-size: 12px; font-weight: 600; }
+.navt { position: absolute; top: 9px; left: 18px; font-size: 12px; font-weight: 650; color: var(--accent); }
+.navt.plain { color: var(--text); }
+
+/* tinted now-playing background */
+.tint { position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, var(--art1) 0%, var(--art2) 46%, #000 92%); opacity: .9; }
+.tint + * { position: relative; }
+.np { position: relative; height: 100%; display: flex; flex-direction: column; }
+
+/* ---------- components ---------- */
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: 10px;
+  background: #ffffff1f; font-size: 10.5px; font-weight: 650; color: var(--text); white-space: nowrap; }
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.chip.good { background: #12301c; color: var(--good); }
+.chip.warn { background: #3a2c0b; color: var(--warn); }
+.chip.bad { background: #3a1512; color: var(--bad); }
+.dot { width: 6px; height: 6px; border-radius: 3px; background: currentColor; }
+.t1 { font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: -.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t2 { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t3 { font-size: 10.5px; color: var(--muted); }
+.mono { font: 9.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--faint); }
+.hair { height: 3px; border-radius: 2px; background: #ffffff2e; overflow: hidden; margin: 7px 0 3px; }
+.hair > i { display: block; height: 100%; background: var(--text); border-radius: 2px; }
+.times { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.transport { display: flex; align-items: center; justify-content: space-between; margin: 8px 2px 0; }
+.tb { width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; font-size: 17px; background: #ffffff14; }
+.tb.play { width: 58px; height: 58px; border-radius: 29px; background: var(--text); color: #000; font-size: 22px; }
+.tb.skip { font-size: 11px; font-weight: 750; }
+.tb.dim { opacity: .35; }
+.toolbar { margin-top: auto; display: flex; justify-content: space-between; padding: 0 6px; }
+.tool { width: 30px; height: 30px; border-radius: 15px; display: grid; place-items: center; font-size: 13px; background: #ffffff14; color: var(--text); }
+.tool.on { background: var(--accent-soft); color: var(--accent); }
+.vol { position: absolute; right: -9px; top: 4px; width: 4px; height: 60px; border-radius: 2px; background: #ffffff26; }
+.vol > i { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 2px; background: var(--good); }
+.art { border-radius: 10px; background: linear-gradient(140deg, var(--art1), var(--art2)); flex: none; display: grid; place-items: center; font-size: 14px; }
+.row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 8px; margin-bottom: 4px; border-radius: 12px; background: var(--surface); }
+.row .grow { flex: 1; min-width: 0; }
+.row .r { font-size: 11px; color: var(--muted); }
+.row.cur { background: var(--accent-soft); }
+.sect { font-size: 11px; font-weight: 650; color: var(--muted); margin: 8px 4px 4px; text-transform: none; }
+.pill { height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 650; background: var(--surface2); }
+.pill.primary { background: var(--accent); color: var(--accent-ink); }
+.pill.small { height: 34px; font-size: 12px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hero { border-radius: 16px; padding: 9px; background: linear-gradient(150deg, var(--art1), var(--art2) 70%); margin-bottom: 6px; }
+.hero .t1 { font-size: 14px; }
+.card { border-radius: 14px; background: var(--surface); padding: 10px; }
+.center { text-align: center; }
+.icon-big { font-size: 26px; margin-bottom: 4px; }
+.ring { width: 22px; height: 22px; border-radius: 11px; background: conic-gradient(var(--accent) var(--p), #ffffff26 0); display: grid; place-items: center; }
+.ring::after { content: ""; width: 16px; height: 16px; border-radius: 8px; background: var(--surface); }
+.aod { filter: brightness(.55) saturate(.6); }
+.big-type .t1 { font-size: 19px; white-space: normal; }
+.big-type .t2 { font-size: 15px; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px 22px; margin-top: 14px; }
+.legend div { font-size: 12.5px; color: var(--muted); }
+.legend b { color: var(--text); }
+.cover { border-radius: 6px; background: linear-gradient(160deg, var(--art1), var(--art2)); flex: none; display: grid; place-items: center; font-size: 13px; box-shadow: 0 2px 6px #0008; }
+.check { color: var(--good); }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Voxglass on Apple Watch — redesign</h1>
+<p class="lead">Built around one rule: <b>raise your wrist, keep listening.</b> The watch is for continuing a book on a walk or run, or in bed, not for browsing a library.
+The player is one fixed screen made for spoken audio: skip back 15 s and forward 30 s, chapters, speed, a sleep timer, and the Crown for volume.
+The written spec is <code>../DESIGN.md</code>. It uses the same Watch Listening Kit as Platterhead; only the accent colour (gold) and the audiobook controls differ. Frames are a 45&nbsp;mm watch (198&nbsp;×&nbsp;242&nbsp;pt).</p>
+<div class="toc">
+  <a href="#home">1 · Continue Listening</a><a href="#player">2 · Player</a><a href="#chapters">3 · Chapters, speed, sleep</a>
+  <a href="#book">4 · Book page</a><a href="#states">5 · Honest states</a><a href="#downloads">6 · Downloads</a><a href="#ambient">7 · Wrist-down, widgets, a11y</a>
+</div>
+
+<!-- ============================ 1 HOME ============================ -->
+<h2 id="home">1 · Continue Listening — the book you're in comes first</h2>
+<p class="note">Replaces the plain "My Books" text list, the small waveform toolbar shortcut and the connection toast that pops in and disappears. The hero card is the current book: cover, chapter, time left, and one play button. Below it is the rest of the library, each with a progress ring and its download state.</p>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt plain">Voxglass</div><div class="clock">22:41</div>
+    <div class="hero" style="--art1:#7b5a2e;--art2:#2a1f17">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="cover" style="width:34px;height:46px;--art1:#e2c48a;--art2:#6b4a22">❦</div>
+        <div style="flex:1;min-width:0"><div class="t1">Pride and Prejudice</div><div class="t3" style="color:#fffb">Ch 14 · 6h 12m left</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <div class="hair" style="flex:1;margin:0;background:#ffffff40"><i style="width:47%"></i></div>
+        <div class="tb" style="width:34px;height:34px;background:var(--text);color:#000;font-size:13px">▶</div>
+      </div>
+    </div>
+    <div class="sect">Library</div>
+    <div class="row"><div class="cover" style="width:24px;height:32px;--art1:#9ab;--art2:#234">✦</div><div class="grow">Moby Dick<div class="t3">12% · on watch</div></div><span class="check">⌄</span></div>
+  </div></div>
+  <div class="cap"><b>H1 · Home.</b> Hero → Player. ▶ resumes in place (no second tap, no second screen). Double Tap resumes too.<br><span class="id">watch.library · watch.nowPlaying</span></div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt plain">Voxglass</div><div class="clock">22:41</div>
+    <div class="row"><div class="cover" style="width:24px;height:32px;--art1:#9ab;--art2:#234">✦</div><div class="grow">Moby Dick<div class="t3">12% · on watch</div></div><span class="check">⌄</span></div>
+    <div class="row"><div class="cover" style="width:24px;height:32px;--art1:#c98;--art2:#523">❧</div><div class="grow">Jane Eyre<div class="t3">Not started · iPhone</div></div><span style="color:var(--muted)">📱</span></div>
+    <div class="row"><div class="cover" style="width:24px;height:32px;--art1:#ac8;--art2:#352">❀</div><div class="grow">Walden<div class="t3">Downloading 64%</div></div><div class="ring" style="--p:64%"></div></div>
+    <div style="display:flex;justify-content:center;margin-top:6px"><span class="chip good"><span class="dot"></span>iPhone connected</span></div>
+  </div></div>
+  <div class="cap"><b>H2 · Library.</b> Sorted by last listened. Row = cover, title, one status line (progress · where it lives). Status chip replaces the 2.5-second toast. "About" moves into a footer link.</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt plain">Voxglass</div><div class="clock">22:41</div>
+    <div class="card center" style="margin-top:8px">
+      <div class="icon-big">📖</div>
+      <div class="t1" style="white-space:normal">No books on this watch</div>
+      <div class="t3" style="margin:4px 0 9px">On iPhone, open a book and tap <b>Download to Apple Watch</b>. It keeps your place.</div>
+      <div class="pill primary small">Show Me on iPhone</div>
+    </div>
+  </div></div>
+  <div class="cap"><b>H3 · Empty.</b> The button opens the book list on the iPhone (Handoff / <code>WKApplication.openSystemURL</code> to the app's universal link) rather than leaving instructions only.</div></div>
+</div>
+
+<!-- ============================ 2 PLAYER ============================ -->
+<h2 id="player">2 · Player — made for spoken audio</h2>
+<p class="note">Replaces the "combined book + now playing" list, where the transport sat between metadata and chapters and scrolled away. The face is fixed and doesn't scroll, the Crown is volume, and the cover colours tint the background. The side buttons skip <b>15 s back / 30 s forward</b>, which is what audiobook listeners use; chapter jumps move to the chapter list. The toolbar holds Chapters, Speed, Sleep and Output.</p>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="tint" style="--art1:#7b5a2e;--art2:#2a1f17"></div>
+    <div class="np">
+      <div style="display:flex;justify-content:center"><span class="chip" style="background:#00000055">🎧 AirPods Pro</span></div>
+      <div style="margin-top:8px" class="t1">Chapter 14</div>
+      <div class="t2" style="color:#ffffffb3">Pride and Prejudice</div>
+      <div class="hair"><i style="width:47%"></i></div>
+      <div class="times"><span>11:02</span><span>−12:30</span></div>
+      <div class="transport"><div class="tb skip">↺15</div><div class="tb play">❚❚</div><div class="tb skip">30↻</div></div>
+      <div class="toolbar" style="margin-top:8px"><div class="tool">☰</div><div class="tool" style="font-size:10px;font-weight:750">1.2×</div><div class="tool">☾</div><div class="tool">⇄</div></div>
+      <div class="vol"><i style="height:55%"></i></div>
+    </div>
+  </div></div>
+  <div class="cap"><b>P1 · Playing.</b> Times are <i>chapter</i> times. Toolbar: <b>☰</b> Chapters · <b>1.2×</b> Speed (label is the current rate) · <b>☾</b> Sleep · <b>⇄</b> Output.<br><span class="id">watch.book.play · watch.book.elapsed · watch.book.remaining</span></div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="tint" style="--art1:#7b5a2e;--art2:#2a1f17"></div>
+    <div class="np">
+      <div style="display:flex;justify-content:center;gap:4px"><span class="chip" style="background:#00000055">🎧 AirPods Pro</span><span class="chip accent">☾ 18m</span></div>
+      <div style="margin-top:8px" class="t1">Chapter 14</div>
+      <div class="t2" style="color:#ffffffb3">Pride and Prejudice</div>
+      <div class="hair"><i style="width:49%"></i></div>
+      <div class="times"><span>11:40</span><span>6h 11m left in book</span></div>
+      <div class="transport"><div class="tb skip">↺15</div><div class="tb play">▶</div><div class="tb skip">30↻</div></div>
+      <div class="toolbar" style="margin-top:8px"><div class="tool">☰</div><div class="tool" style="font-size:10px;font-weight:750">1.2×</div><div class="tool on">☾</div><div class="tool">⇄</div></div>
+    </div>
+  </div></div>
+  <div class="cap"><b>P2 · Paused, sleep timer set.</b> Tapping the times toggles chapter-remaining ↔ book-remaining (at the current speed). Sleep timer shows as a chip while armed.</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="tint" style="--art1:#2c4a6b;--art2:#121b26"></div>
+    <div class="np">
+      <div style="display:flex;justify-content:center"><span class="chip" style="background:#00000055">🎧 AirPods · streaming</span></div>
+      <div style="margin-top:8px" class="t1">Chapter 3: Loomings</div>
+      <div class="t2" style="color:#ffffffb3">Moby Dick</div>
+      <div class="hair"><i style="width:8%"></i></div>
+      <div class="times"><span>0:51</span><span>−9:40</span></div>
+      <div class="transport"><div class="tb skip">↺15</div><div class="tb play">❚❚</div><div class="tb skip">30↻</div></div>
+      <div class="toolbar" style="margin-top:8px"><div class="tool">☰</div><div class="tool" style="font-size:10px;font-weight:750">1×</div><div class="tool">☾</div><div class="tool">⇄</div></div>
+    </div>
+  </div></div>
+  <div class="cap"><b>P3 · Streaming.</b> When a chapter isn't downloaded and the engine streams it, the chip says so — streaming drains battery and needs the phone/Wi-Fi, so it's never invisible.</div></div>
+</div>
+
+<!-- ============================ 3 CHAPTERS / SPEED / SLEEP ============================ -->
+<h2 id="chapters">3 · Chapters, speed, sleep</h2>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt">‹ Player</div><div class="clock">22:41</div>
+    <div class="row"><span class="check">✓</span><div class="grow">Chapter 12<div class="t3">18:20</div></div></div>
+    <div class="row"><span class="check">✓</span><div class="grow">Chapter 13<div class="t3">21:05</div></div></div>
+    <div class="row cur"><div class="ring" style="--p:47%"></div><div class="grow">Chapter 14<div class="t3">12:30 left</div></div></div>
+    <div class="row"><span style="color:var(--muted)">·</span><div class="grow">Chapter 15<div class="t3">19:48</div></div></div>
+  </div></div>
+  <div class="cap"><b>C1 · Chapters.</b> Opens scrolled to the current chapter. Finished ✓, current ring, upcoming dot. iPhone-only chapters dim with "Stream" / "Not on watch". Tap → jumps and returns to the Player.<br><span class="id">watch.chapter.&lt;id&gt;</span></div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt">‹ Player</div><div class="clock">22:41</div>
+    <div class="center" style="margin-top:22px"><div class="t3">Speed</div>
+      <div style="font-size:44px;font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums">1.2×</div>
+      <div class="t3">Turn the Crown · 0.5× – 3×</div></div>
+    <div class="split" style="margin-top:14px"><div class="pill small">1×</div><div class="pill small">1.5×</div></div>
+  </div></div>
+  <div class="cap"><b>C2 · Speed.</b> Crown in 0.05 steps with a detent haptic at each 0.25. Two quick presets. Applies instantly with pitch correction (<code>AVPlayerItem.audioTimePitchAlgorithm = .spectral</code>). Remembered per book.</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt">‹ Player</div><div class="clock">22:41</div>
+    <div class="row cur"><div class="grow">End of Chapter<div class="t3">in 12:30</div></div><span style="color:var(--accent)">✓</span></div>
+    <div class="row"><div class="grow">15 minutes</div></div>
+    <div class="row"><div class="grow">30 minutes</div></div>
+    <div class="row"><div class="grow">Off</div></div>
+  </div></div>
+  <div class="cap"><b>C3 · Sleep timer.</b> The last 10 s fade out; position saved; a soft haptic on fire. Shaking the wrist in the last minute extends 5 min (optional, owner call).</div></div>
+</div>
+
+<!-- ============================ 4 BOOK PAGE ============================ -->
+<h2 id="book">4 · Book page — for a book that isn't playing</h2>
+<p class="note">Tapping a library row that isn't the current book opens a short page. The one big button says exactly what will happen.</p>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt">‹ Library</div><div class="clock">22:41</div>
+    <div style="display:flex;gap:9px;align-items:center;margin:2px 0 8px">
+      <div class="cover" style="width:40px;height:54px;--art1:#9ab;--art2:#234">✦</div>
+      <div style="min-width:0"><div class="t1" style="white-space:normal;font-size:14px">Moby Dick</div><div class="t3">Herman Melville<br>Read by Stewart Wills</div></div>
+    </div>
+    <div class="pill primary">▶︎ Resume · Ch 3 · 0:51</div>
+    <div class="split" style="margin-top:6px"><div class="pill small">☰ Chapters</div><div class="pill small" style="color:var(--good)">⌄ On watch</div></div>
+  </div></div>
+  <div class="cap"><b>B1 · Downloaded book.</b> Primary names chapter + position. "On watch" opens Remove / storage size.<br><span class="id">watch.book.title · watch.book.play</span></div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt">‹ Library</div><div class="clock">22:41</div>
+    <div style="display:flex;gap:9px;align-items:center;margin:2px 0 8px">
+      <div class="cover" style="width:40px;height:54px;--art1:#c98;--art2:#523">❧</div>
+      <div style="min-width:0"><div class="t1" style="white-space:normal;font-size:14px">Jane Eyre</div><div class="t3">Charlotte Brontë<br>18h 40m</div></div>
+    </div>
+    <div class="pill primary">⌄ Download · 412 MB</div>
+    <div class="pill small" style="margin-top:6px">▶︎ Stream Chapter 1</div>
+  </div></div>
+  <div class="cap"><b>B2 · Not on watch, phone nearby.</b> Download is primary (it's what works on a run). Stream is offered honestly as secondary. With the phone away, only a disabled "Not on this watch" note shows.<br><span class="id">watch.book.download</span></div></div>
+</div>
+
+<!-- ============================ 5 STATES ============================ -->
+<h2 id="states">5 · Honest states — the same Problem Card as Platterhead</h2>
+<p class="note">Replaces the red caption line and the "Retry" text button. The card takes the transport's place, so you keep the title and chapter, and it shows the diagnostic code. "Playback stalled (timeControlStatu…)" truncated to two lines is the failure you hit on device; this is its replacement.</p>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="np">
+      <span class="chip" style="align-self:center">🎧 AirPods Pro</span>
+      <div style="margin-top:8px" class="t1">Chapter 14</div><div class="t2">Pride and Prejudice</div>
+      <div class="hair"><i style="width:47%"></i></div><div class="times"><span>11:02</span><span>−12:30</span></div>
+      <div class="card center" style="margin-top:7px;padding:8px"><div class="t1" style="font-size:13px">Audio didn't start</div>
+        <div class="pill small primary" style="margin-top:6px">Try Again</div>
+        <div class="mono" style="margin-top:5px">stalled-1-ToMinimizeStalls</div></div>
+    </div>
+  </div></div>
+  <div class="cap"><b>S1 · Stalled.</b> Same code format as Platterhead (<code>stalled-&lt;status&gt;-&lt;reason&gt;</code>) so one support table covers both apps.</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="np center">
+      <div class="icon-big" style="margin-top:14px">🎧</div>
+      <div class="t1">Connect headphones</div>
+      <div class="t3" style="margin:4px 4px 10px">Books play through Bluetooth headphones or speakers connected to this watch.</div>
+      <div class="pill primary">Choose Output</div>
+    </div>
+  </div></div>
+  <div class="cap"><b>S2 · No output.</b> Only on a real activation failure. Today any AVFoundation/OSStatus error collapses to "Connect Bluetooth headphones" (<code>audioErrorMessage</code>) — split that: only activation errors land here; others go to S1 with their code.</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="np center">
+      <div class="icon-big" style="margin-top:14px">📵</div>
+      <div class="t1">Chapter 15 isn't on this watch</div>
+      <div class="t3" style="margin:4px 4px 10px">Your iPhone isn't nearby to stream it. Chapters 1–14 are downloaded.</div>
+      <div class="pill small primary">Back to Chapter 14</div>
+    </div>
+  </div></div>
+  <div class="cap"><b>S3 · Next chapter missing.</b> At a chapter boundary with no file and no phone: stop cleanly with this, never a silent "Buffering…".</div></div>
+</div>
+
+<!-- ============================ 6 DOWNLOADS ============================ -->
+<h2 id="downloads">6 · Downloads — visible and stoppable</h2>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="navt">‹ Library</div><div class="clock">22:41</div>
+    <div class="sect">Downloading</div>
+    <div class="row"><div class="ring" style="--p:64%"></div><div class="grow">Walden<div class="t3">14 of 22 chapters · waiting for charger</div></div></div>
+    <div class="split"><div class="pill small">Pause</div><div class="pill small" style="color:var(--bad)">Stop</div></div>
+    <div class="card" style="margin-top:8px"><div class="t3">Storage · 1.4 GB books · 0.7 GB free</div><div class="hair" style="height:6px"><i style="width:66%;background:var(--accent)"></i></div></div>
+  </div></div>
+  <div class="cap"><b>D1 · Downloads.</b> Reached from the library footer and from any downloading row. Waiting reasons are specific (charger, Wi-Fi, phone locked, storage full).</div></div>
+</div>
+
+<!-- ============================ 7 AMBIENT ============================ -->
+<h2 id="ambient">7 · Wrist-down, Smart Stack, accessibility</h2>
+<div class="frames">
+  <div class="spec"><div class="watch"><div class="screen aod">
+    <div class="tint" style="--art1:#4a3519;--art2:#160f0a"></div>
+    <div class="np">
+      <span class="chip accent" style="align-self:center">☾ 18m</span>
+      <div style="margin-top:10px" class="t1">Chapter 14</div><div class="t2">Pride and Prejudice</div>
+      <div class="times" style="margin-top:12px"><span>12 min left in chapter</span><span></span></div>
+    </div>
+  </div></div>
+  <div class="cap"><b>A1 · Always On.</b> Minute-granularity remaining time; sleep chip stays (people check it in bed).</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen">
+    <div class="clock" style="left:0;right:0;text-align:center;font-size:26px;top:16px">22:41</div>
+    <div class="hero" style="margin-top:46px;--art1:#7b5a2e;--art2:#2a1f17">
+      <div style="display:flex;gap:8px;align-items:center"><div class="cover" style="width:28px;height:38px;--art1:#e2c48a;--art2:#6b4a22">❦</div>
+      <div style="flex:1;min-width:0"><div class="t1" style="font-size:13px">Pride and Prejudice</div><div class="t3" style="color:#fffb">Ch 14 · 6h 12m left</div></div><div class="tb" style="width:30px;height:30px;background:#fff3;font-size:12px">▶</div></div>
+    </div>
+    <div class="card" style="opacity:.5;height:46px"></div>
+  </div></div>
+  <div class="cap"><b>A2 · Smart Stack.</b> "Continue listening" widget with an interactive resume (App Intent). Relevance: evenings and when headphones connect.</div></div>
+
+  <div class="spec"><div class="watch"><div class="screen big-type">
+    <div class="np">
+      <div style="margin-top:4px" class="t1">Chapter 14</div>
+      <div class="transport" style="margin-top:auto;justify-content:center;gap:10px"><div class="tb skip">↺15</div><div class="tb play">❚❚</div><div class="tb skip">30↻</div></div>
+      <div class="toolbar" style="margin-top:8px"><div class="tool">☰</div><div class="tool" style="font-size:10px">1.2×</div><div class="tool">☾</div><div class="tool">⇄</div></div>
+    </div>
+  </div></div>
+  <div class="cap"><b>A3 · AX text size.</b> Book title and times drop first; transport and toolbar keep their sizes. VoiceOver: "Chapter 14, Pride and Prejudice, 11 minutes 2 seconds of 23 minutes 32".</div></div>
+</div>
+
+<div class="legend">
+  <div><b>Double Tap:</b> <code>.handGestureShortcut(.primaryAction)</code> on play/pause (Player and Home hero).</div>
+  <div><b>Remote commands:</b> map <code>skipBackwardCommand</code>/<code>skipForwardCommand</code> (15/30) so AirPods double/triple-press skip time, not chapters.</div>
+  <div><b>Haptics:</b> <code>.click</code> transport; detents on speed; <code>.success</code> download done; <code>.failure</code> once per Problem Card.</div>
+  <div><b>Resume rewind:</b> resuming after &gt; 5 min paused starts 5 s earlier (audiobook norm).</div>
+</div>
+</div>
+</body>
+</html>
