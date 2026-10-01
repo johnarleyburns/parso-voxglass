@@ -95,19 +95,19 @@ public enum CaptureError: Error, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "Microphone access is denied."
+            return String(localized: "Microphone access is denied.", bundle: .module)
         case .invalidState:
-            return "The audio recorder is not ready."
+            return String(localized: "The audio recorder is not ready.", bundle: .module)
         case .formatNotSupported:
-            return "The current microphone format is not supported."
+            return String(localized: "The current microphone format is not supported.", bundle: .module)
         case .deviceUnavailable:
-            return "No usable microphone is available."
+            return String(localized: "No usable microphone is available.", bundle: .module)
         case .punchInNotSupported:
-            return "Punch-in recording is not supported."
+            return String(localized: "Punch-in recording is not supported.", bundle: .module)
         case .deviceChanged(let name):
-            return "The recording device changed to \(name)."
+            return String(localized: "The recording device changed to \(name).", bundle: .module)
         case .diskFull:
-            return "There is not enough storage space to save the recording."
+            return String(localized: "There is not enough storage space to save the recording.", bundle: .module)
         }
     }
 }

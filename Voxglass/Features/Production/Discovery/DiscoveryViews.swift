@@ -17,11 +17,11 @@ struct SignalBadge: View {
 
     private var label: String {
         switch signal {
-        case .openProjectNeedsReader: return "Open project · needs a reader"
-        case .proofListenerNeeded: return "Proof-listener needed"
-        case .weeklyFeatured: return "This Week's Poem"
-        case .catalogGap: return "Needs a narrator"
-        case .evergreen: return "Classic"
+        case .openProjectNeedsReader: return String(localized: "Open project · needs a reader")
+        case .proofListenerNeeded: return String(localized: "Proof-listener needed")
+        case .weeklyFeatured: return String(localized: "This Week's Poem")
+        case .catalogGap: return String(localized: "Needs a narrator")
+        case .evergreen: return String(localized: "Classic")
         }
     }
 
@@ -384,9 +384,9 @@ struct NarrationNeedsView: View {
 
     private var liveCaption: String {
         switch discovery.freshness {
-        case .liveEnriched: return "Updated just now · live sources"
-        case .cached: return "Showing saved works"
-        case .seedOnly: return "Offline · showing saved works"
+        case .liveEnriched: return String(localized: "Updated just now · live sources")
+        case .cached: return String(localized: "Showing saved works")
+        case .seedOnly: return String(localized: "Offline · showing saved works")
         }
     }
 }

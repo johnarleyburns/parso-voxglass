@@ -134,11 +134,11 @@ public struct ProductionBookDetailView: View {
             }
 
             Section("Listen") {
-                row("Whole Book", count: allRecorded.count)
-                row("Selected Chapters", count: model.chapterRows().count)
-                row("Flagged", count: model.flaggedCount)
-                row("Needs Pickup", count: model.needsPickupCount)
-                row("Unapproved", count: model.unapprovedCount)
+                row("Whole Book", identifier: "wholebook", count: allRecorded.count)
+                row("Selected Chapters", identifier: "selectedchapters", count: model.chapterRows().count)
+                row("Flagged", identifier: "flagged", count: model.flaggedCount)
+                row("Needs Pickup", identifier: "needspickup", count: model.needsPickupCount)
+                row("Unapproved", identifier: "unapproved", count: model.unapprovedCount)
             }
 
             Section("Chapters") {
@@ -194,13 +194,13 @@ public struct ProductionBookDetailView: View {
         }
     }
 
-    private func row(_ title: String, count: Int) -> some View {
+    private func row(_ title: LocalizedStringKey, identifier: String, count: Int) -> some View {
         HStack {
             Text(title)
             Spacer()
             Text("\(count)").foregroundStyle(.secondary)
         }
-        .accessibilityIdentifier("detail.mode.\(title.lowercased().replacingOccurrences(of: " ", with: ""))")
+        .accessibilityIdentifier("detail.mode.\(identifier)")
     }
 
     private var allRecorded: [ParagraphProjection] {
@@ -234,7 +234,7 @@ public struct ProductionReviewPlayerView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                Text(model.current?.text ?? "No paragraphs in this queue.")
+                Text(model.current?.text ?? String(localized: "No paragraphs in this queue."))
                     .font(.title3)
                     .multilineTextAlignment(.center)
                     .lineLimit(8)
@@ -268,9 +268,9 @@ public struct ProductionReviewPlayerView: View {
                     } label: {
                         Image(systemName: model.autoAdvance ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle")
                     }
-                    .help(model.autoAdvance ? "Auto-advance on" : "Auto-advance off")
+                    .help(model.autoAdvance ? String(localized: "Auto-advance on") : String(localized: "Auto-advance off"))
                     .accessibilityLabel(model.autoAdvance ? "Auto-advance on" : "Auto-advance off") // l10n-exempt: state-dependent accessibility or status copy
-                    .accessibilityValue(model.autoAdvance ? "On" : "Off")
+                    .accessibilityValue(model.autoAdvance ? String(localized: "On") : String(localized: "Off"))
                     .accessibilityIdentifier("player.autoAdvance")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -299,7 +299,7 @@ public struct ProductionReviewPlayerView: View {
 
     private var chapterLabel: String {
         guard let current = model.current else { return "" }
-        return "Chapter · paragraphs \(current.globalOrdinal + 1)"
+        return String(localized: "Chapter · paragraphs \(current.globalOrdinal + 1)")
     }
 
     private var transport: some View {
@@ -532,7 +532,7 @@ public struct ReviewQueueBuilderView: View {
         }
     }
 
-    private func predicateRow(_ title: String, _ predicate: ReviewPredicate) -> some View {
+    private func predicateRow(_ title: LocalizedStringKey, _ predicate: ReviewPredicate) -> some View {
         Button {
             model.predicate = predicate
         } label: {
@@ -670,8 +670,8 @@ public struct ProductionSyncStorageView: View {
 
     private var statusText: String {
         switch model.accountStatus {
-        case .available: return "Current with iPhone"
-        case .notAuthenticated: return "Sign in to iCloud to preview on your devices"
+        case .available: return String(localized: "Current with iPhone")
+        case .notAuthenticated: return String(localized: "Sign in to iCloud to preview on your devices")
         case .quotaExceeded: return "iCloud storage full"
         case .unavailable: return "iCloud unavailable"
         }

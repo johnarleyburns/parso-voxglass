@@ -20,7 +20,7 @@ public enum ProductionCarPlayBuilder {
         [
             ProductionCarPlayTab(
                 id: "carplay.tab.continue",
-                title: "Continue",
+                title: String(localized: "Continue", bundle: .module),
                 systemImage: "arrow.clockwise.circle.fill",
                 sections: continueSections.map {
                     ProductionCarPlaySection(header: $0.header, items: $0.items.map {
@@ -47,23 +47,23 @@ public enum ProductionCarPlayBuilder {
             sections.append(ProductionCarPlaySection(items: [
                 ProductionCarPlayItem(
                     id: "empty-productions",
-                    title: "No productions yet",
-                    subtitle: "Productions you start in Voxglass on iPhone appear here.",
+                    title: String(localized: "No productions yet", bundle: .module),
+                    subtitle: String(localized: "Productions you start in Voxglass on iPhone appear here.", bundle: .module),
                     isEnabled: false,
                     action: .none
                 )
             ]))
         } else {
             sections.append(ProductionCarPlaySection(
-                header: "My Productions",
+                header: String(localized: "My Productions", bundle: .module),
                 items: Array(summaries.prefix(drivingItemCap)).map { summary in
                     ProductionCarPlayItem(
                         id: "carplay.production.\(summary.id.uuidString)",
                         title: summary.title,
                         subtitle: summary.flaggedCount > 0
-                            ? "\(summary.flaggedCount) flagged · \(Int(summary.percentRecorded))% recorded"
-                            : "\(Int(summary.percentRecorded))% recorded",
-                        detailText: summary.readyToExport ? "Ready to export" : nil,
+                            ? String(localized: "\(summary.flaggedCount) flagged · \(Int(summary.percentRecorded))% recorded", bundle: .module)
+                            : String(localized: "\(Int(summary.percentRecorded))% recorded", bundle: .module),
+                        detailText: summary.readyToExport ? String(localized: "Ready to export", bundle: .module) : nil,
                         symbol: "book.closed.fill",
                         action: .openProduction(summary.id)
                     )
@@ -72,7 +72,7 @@ public enum ProductionCarPlayBuilder {
         }
         return ProductionCarPlayTab(
             id: "carplay.tab.productions",
-            title: "Productions",
+            title: String(localized: "Productions", bundle: .module),
             systemImage: "rectangle.stack.fill",
             sections: sections
         )
@@ -82,7 +82,7 @@ public enum ProductionCarPlayBuilder {
         let flagged = summaries.reduce(0) { $0 + $1.flaggedCount }
         return ProductionCarPlayTab(
             id: "carplay.tab.review",
-            title: "Review",
+            title: String(localized: "Review", bundle: .module),
             systemImage: "checkmark.circle.fill",
             badge: flagged,
             sections: queueListSections(
@@ -98,28 +98,28 @@ public enum ProductionCarPlayBuilder {
 
     public static func productionDetail(_ summary: ProjectSummary) -> [ProductionCarPlaySection] {
         [
-            ProductionCarPlaySection(header: "Overview", items: [
+            ProductionCarPlaySection(header: String(localized: "Overview", bundle: .module), items: [
                 ProductionCarPlayItem(
                     id: "play-whole-book",
-                    title: "Play Whole Book",
-                    subtitle: "\(summary.recordedCount) of \(summary.totalCount) paragraphs recorded",
+                    title: String(localized: "Play Whole Book", bundle: .module),
+                    subtitle: String(localized: "\(summary.recordedCount) of \(summary.totalCount) paragraphs recorded", bundle: .module),
                     symbol: "play.circle.fill",
                     action: .playWholeBook
                 ),
                 ProductionCarPlayItem(
                     id: "review-flagged",
-                    title: "Review \(summary.flaggedCount) Flagged",
-                    subtitle: summary.flaggedCount > 0 ? "Start the flagged queue hands-free" : "Nothing flagged — everything reviewed is approved",
+                    title: String(localized: "Review \(summary.flaggedCount) Flagged", bundle: .module),
+                    subtitle: summary.flaggedCount > 0 ? String(localized: "Start the flagged queue hands-free", bundle: .module) : String(localized: "Nothing flagged — everything reviewed is approved", bundle: .module),
                     symbol: "flag.fill",
                     isEnabled: summary.flaggedCount > 0,
                     action: .startQueue(.flagged)
                 )
             ]),
-            ProductionCarPlaySection(header: "Chapters", items: [
+            ProductionCarPlaySection(header: String(localized: "Chapters", bundle: .module), items: [
                 ProductionCarPlayItem(
                     id: "choose-chapter",
-                    title: "Choose Chapter",
-                    subtitle: "Jump to any chapter of the production",
+                    title: String(localized: "Choose Chapter", bundle: .module),
+                    subtitle: String(localized: "Jump to any chapter of the production", bundle: .module),
                     symbol: "list.bullet",
                     action: .none
                 )
@@ -139,24 +139,24 @@ public enum ProductionCarPlayBuilder {
         var items: [ProductionCarPlayItem] = [
             ProductionCarPlayItem(
                 id: "carplay.queue.flagged",
-                title: "Flagged",
-                subtitle: "\(flaggedCount) paragraphs · \(WatchTimeFormat.duration(flaggedDuration))",
+                title: String(localized: "Flagged", bundle: .module),
+                subtitle: String(localized: "\(flaggedCount) paragraphs · \(WatchTimeFormat.duration(flaggedDuration))", bundle: .module),
                 symbol: "flag.fill",
                 isEnabled: flaggedCount > 0,
                 action: .startQueue(.flagged)
             ),
             ProductionCarPlayItem(
                 id: "carplay.queue.pickup",
-                title: "Needs Pickup",
-                subtitle: "\(pickupCount) paragraphs",
+                title: String(localized: "Needs Pickup", bundle: .module),
+                subtitle: String(localized: "\(pickupCount) paragraphs", bundle: .module),
                 symbol: "arrow.triangle.2.circlepath",
                 isEnabled: pickupCount > 0,
                 action: .startQueue(.needsPickup)
             ),
             ProductionCarPlayItem(
                 id: "carplay.queue.unapproved",
-                title: "Unapproved",
-                subtitle: "\(unapprovedCount) paragraphs",
+                title: String(localized: "Unapproved", bundle: .module),
+                subtitle: String(localized: "\(unapprovedCount) paragraphs", bundle: .module),
                 symbol: "circle",
                 isEnabled: unapprovedCount > 0,
                 action: .startQueue(.unapproved)
@@ -164,8 +164,8 @@ public enum ProductionCarPlayBuilder {
         ]
         items.append(ProductionCarPlayItem(
             id: "queue-settings",
-            title: "Review Settings",
-            subtitle: "Auto-advance, context, audio confirmations",
+            title: String(localized: "Review Settings", bundle: .module),
+            subtitle: String(localized: "Auto-advance, context, audio confirmations", bundle: .module),
             symbol: "gearshape.fill",
             action: .openSettings
         ))
@@ -182,26 +182,26 @@ public enum ProductionCarPlayBuilder {
             let isCurrent = index == currentIndex
             return ProductionCarPlayItem(
                 id: paragraphID.uuidString,
-                title: payload.chapterLabels[paragraphID] ?? "Paragraph",
+                title: payload.chapterLabels[paragraphID] ?? String(localized: "Paragraph", bundle: .module),
                 subtitle: [payload.tags[paragraphID].map(\.rawValue), payload.durations[paragraphID].map { CarPlayTimeFormat.compact($0) }]
                     .compactMap { $0 }.joined(separator: " · "),
-                detailText: isCurrent ? "Playing" : payload.notes[paragraphID],
+                detailText: isCurrent ? String(localized: "Playing", bundle: .module) : payload.notes[paragraphID],
                 symbol: isCurrent ? "play.circle.fill" : "chevron.right",
                 action: isCurrent ? .none : .none
             )
         }
-        return [ProductionCarPlaySection(header: "Queue \(payload.paragraphIDs.count)", items: Array(items))]
+        return [ProductionCarPlaySection(header: String(localized: "Queue \(payload.paragraphIDs.count)", bundle: .module), items: Array(items))]
     }
 
     // MARK: - Note summary (mockup 05)
 
     public static func noteSummary(payload: ResolvedQueuePayload, index: Int) -> ProductionCarPlayNoteSummary {
         guard payload.paragraphIDs.indices.contains(index) else {
-            return ProductionCarPlayNoteSummary(chapterLabel: "Paragraph")
+            return ProductionCarPlayNoteSummary(chapterLabel: String(localized: "Paragraph", bundle: .module))
         }
         let paragraphID = payload.paragraphIDs[index]
         return ProductionCarPlayNoteSummary(
-            chapterLabel: payload.chapterLabels[paragraphID] ?? "Paragraph",
+            chapterLabel: payload.chapterLabels[paragraphID] ?? String(localized: "Paragraph", bundle: .module),
             paragraphText: payload.texts[paragraphID],
             noteText: payload.notes[paragraphID],
             tag: payload.tags[paragraphID],
@@ -218,36 +218,36 @@ public enum ProductionCarPlayBuilder {
         voiceConfirmations: Bool
     ) -> [ProductionCarPlaySection] {
         [
-            ProductionCarPlaySection(header: "Playback", items: [
+            ProductionCarPlaySection(header: String(localized: "Playback", bundle: .module), items: [
                 ProductionCarPlayItem(
                     id: "carplay.settings.autoAdvance",
-                    title: "Auto-advance after review action",
-                    subtitle: "Move directly to the next queued paragraph.",
-                    detailText: autoAdvance ? "On" : "Off",
+                    title: String(localized: "Auto-advance after review action", bundle: .module),
+                    subtitle: String(localized: "Move directly to the next queued paragraph.", bundle: .module),
+                    detailText: autoAdvance ? String(localized: "On", bundle: .module) : String(localized: "Off", bundle: .module),
                     symbol: autoAdvance ? "checkmark.circle.fill" : "circle",
                     action: .toggleAutoAdvance
                 ),
                 ProductionCarPlayItem(
                     id: "carplay.settings.playContext",
-                    title: "Play one second of context",
-                    subtitle: "Include nearby audio before and after the paragraph.",
-                    detailText: context ? "On" : "Off",
+                    title: String(localized: "Play one second of context", bundle: .module),
+                    subtitle: String(localized: "Include nearby audio before and after the paragraph.", bundle: .module),
+                    detailText: context ? String(localized: "On", bundle: .module) : String(localized: "Off", bundle: .module),
                     symbol: context ? "checkmark.circle.fill" : "circle",
                     action: .toggleContext
                 ),
                 ProductionCarPlayItem(
                     id: "carplay.settings.audioConfirmations",
-                    title: "Audio confirmations",
-                    subtitle: "Play a short cue after each review action.",
-                    detailText: voiceConfirmations ? "On" : "Off",
+                    title: String(localized: "Audio confirmations", bundle: .module),
+                    subtitle: String(localized: "Play a short cue after each review action.", bundle: .module),
+                    detailText: voiceConfirmations ? String(localized: "On", bundle: .module) : String(localized: "Off", bundle: .module),
                     symbol: voiceConfirmations ? "checkmark.circle.fill" : "circle",
                     action: .toggleVoiceConfirmations
                 )
             ]),
-            ProductionCarPlaySection(header: "Driving Safety", items: [
+            ProductionCarPlaySection(header: String(localized: "Driving Safety", bundle: .module), items: [
                 ProductionCarPlayItem(
                     id: "setting-safety-note",
-                    title: "Typing and free-form note entry are unavailable in CarPlay. Detailed notes can be added later on iPhone or Watch.",
+                    title: String(localized: "Typing and free-form note entry are unavailable in CarPlay. Detailed notes can be added later on iPhone or Watch.", bundle: .module),
                     isEnabled: false,
                     action: .none
                 )
@@ -263,13 +263,13 @@ public enum ProductionCarPlayBuilder {
     ) -> ProductionCarPlayConfirmation {
         let title: String
         switch command {
-        case .approveAndNext: title = "Paragraph Approved"
-        case .needsPickupAndNext: title = "Paragraph Needs Pickup"
-        case .keepFlaggedAndNext, .playNext, .undo: title = "Review Action"
+        case .approveAndNext: title = String(localized: "Paragraph Approved", bundle: .module)
+        case .needsPickupAndNext: title = String(localized: "Paragraph Needs Pickup", bundle: .module)
+        case .keepFlaggedAndNext, .playNext, .undo: title = String(localized: "Review Action", bundle: .module)
         }
         return ProductionCarPlayConfirmation(
             title: title,
-            message: "\(session.currentChapterLabel ?? "Paragraph") was updated.",
+            message: String(localized: "\(session.currentChapterLabel ?? "Paragraph") was updated.", bundle: .module),
             nextParagraphLabel: session.nextParagraphLabel
         )
     }

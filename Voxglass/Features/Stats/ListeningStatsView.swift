@@ -53,11 +53,11 @@ struct ListeningStatsView: View {
     private var headline: some View {
         HStack(spacing: 12) {
             statTile(value: durationString(totalTime), label: "Total time")
-            statTile(value: "\(streak)", label: streak == 1 ? "day streak" : "days streak")
+            statTile(value: "\(streak)", label: "Day streak")
         }
     }
 
-    private func statTile(value: String, label: String) -> some View {
+    private func statTile(value: String, label: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
                 .voxFont(.title2, weight: .heavy)
@@ -98,7 +98,7 @@ struct ListeningStatsView: View {
         .raisedSurface()
     }
 
-    private func termsCard(title: String, terms: [(term: String, seconds: TimeInterval)]) -> some View {
+    private func termsCard(title: LocalizedStringKey, terms: [(term: String, seconds: TimeInterval)]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .voxFont(.footnote, weight: .bold)

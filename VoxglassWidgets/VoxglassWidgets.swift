@@ -139,7 +139,7 @@ struct VoxglassWidgetView: View {
                 HStack(alignment: .top, spacing: 10) {
                     cover(for: snapshot)
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("CONTINUE").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Text("Continue").textCase(.uppercase).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                         Text(snapshot.title).font(.headline).widgetAccentable()
                         Text("\(snapshot.chapterTitle) · \(snapshot.minutesLeftInChapter) min left")
                             .font(.caption).foregroundStyle(.secondary)

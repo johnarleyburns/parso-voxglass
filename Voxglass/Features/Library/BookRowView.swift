@@ -20,7 +20,7 @@ struct BookRowView: View {
                         .font(.subheadline)
                         .foregroundStyle(VoxglassTheme.secondaryInk)
                 }
-                Text("\(book.chapters.count) chapter\(book.chapters.count == 1 ? "" : "s") · \(TimeFormatting.compactDuration(book.totalDuration))")
+                Text("\(book.chapters.count) chapters · \(TimeFormatting.compactDuration(book.totalDuration))")
                     .font(.caption)
                     .foregroundStyle(VoxglassTheme.secondaryInk.opacity(0.78))
             }
@@ -37,7 +37,7 @@ struct BookRowView: View {
         .raisedSurface()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(rowAccessibilityLabel)
-        .accessibilityAction(named: isCurrent ? "Pause" : "Play") {
+        .accessibilityAction(named: isCurrent ? String(localized: "Pause") : String(localized: "Play")) {
             playAction()
         }
     }

@@ -139,7 +139,7 @@ import VoxglassCoreTestSupport
 ///
 /// The permitted set is the three surfaces (§2.2), the StoreKit concrete that
 /// supplies the entitlement (added by §13.5/P8: `StoreKitLicenseProvider`,
-/// `NarrationProStore`), and the two Core files that
+/// `NarrationLicenseStore`), and the two Core files that
 /// *define* the types (`LicenseTypes`, `EntitlementCache`) — definitions are
 /// not consultations. The list is explicit so a new file cannot silently join
 /// it; the gate-consulting surfaces are the destination picker, the export
@@ -159,7 +159,7 @@ import VoxglassCoreTestSupport
         "Features/Settings/SettingsView.swift",
         // The StoreKit concrete (entitlement mechanism, §13.5 P8).
         "Features/Production/StoreKitLicenseProvider.swift",
-        "Features/Production/NarrationProStore.swift",
+        "Features/Production/NarrationLicenseStore.swift",
     ]
 
     @Test func gateReferencesOnlyInPermittedFiles() throws {

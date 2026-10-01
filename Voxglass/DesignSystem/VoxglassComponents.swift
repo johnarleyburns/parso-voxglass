@@ -2,9 +2,9 @@ import SwiftUI
 import VoxglassCore
 
 struct SectionTitle: View {
-    var title: String
-    var subtitle: String?
-    var actionTitle: String?
+    var title: LocalizedStringKey
+    var subtitle: LocalizedStringKey?
+    var actionTitle: LocalizedStringKey?
     var action: (() -> Void)?
     var actionIdentifier: String?
     var titleIdentifier: String?
@@ -12,13 +12,13 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(LocalizedStringKey(title))
+                Text(title)
                     .voxFont(.body, weight: .bold)
                     .foregroundStyle(Palette.ink)
                     .accessibilityIdentifier(titleIdentifier ?? "")
                     .accessibilityAddTraits(.isHeader)
                 if let subtitle {
-                    Text(LocalizedStringKey(subtitle))
+                    Text(subtitle)
                         .voxFont(.footnote)
                         .foregroundStyle(Palette.ink3)
                 }
@@ -35,7 +35,7 @@ struct SectionTitle: View {
 }
 
 struct FilterChip: View {
-    var title: String
+    var title: LocalizedStringKey
     var systemImage: String?
     var isSelected: Bool
     var height: CGFloat = 44
@@ -48,7 +48,7 @@ struct FilterChip: View {
                     Image(systemName: systemImage)
                         .voxFont(.caption2, weight: .semibold)
                 }
-                Text(LocalizedStringKey(title))
+                Text(title)
                     .voxFont(.caption, weight: .semibold)
                     .lineLimit(1) // lineLimit-exempt: compact filter control remains one tap target
             }
@@ -114,13 +114,13 @@ struct SwipeToRemoveRow<Content: View>: View {
 }
 
 struct VoxglassGroupedSection<Content: View>: View {
-    let title: String
-    let subtitle: String?
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey?
     let content: Content
 
     init(
-        title: String,
-        subtitle: String? = nil,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -366,8 +366,8 @@ struct BookListRow: View {
 
 struct DisclosureListRow: View {
     var icon: String
-    var title: String
-    var detail: String?
+    var title: LocalizedStringKey
+    var detail: LocalizedStringKey?
     var count: Int?
     var isEnabled: Bool = true
     var showsChevron: Bool = true
@@ -423,7 +423,7 @@ struct DisclosureListRow: View {
 }
 
 struct PrimaryActionButton: View {
-    var title: String
+    var title: LocalizedStringKey
     var systemImage: String
     var action: () -> Void
 
@@ -447,7 +447,7 @@ struct PrimaryActionButton: View {
 }
 
 struct SecondaryActionButton: View {
-    var title: String
+    var title: LocalizedStringKey
     var systemImage: String
     var isEnabled: Bool = true
     var action: () -> Void
@@ -515,8 +515,8 @@ struct CompactBookRowView: View {
 }
 
 struct EmptyStatePanel: View {
-    var title: String
-    var message: String
+    var title: LocalizedStringKey
+    var message: LocalizedStringKey
     var systemImage: String
 
     var body: some View {
@@ -568,7 +568,7 @@ struct ProvenanceChip: View {
 extension BookWithChapters {
     func libraryDetailLine(sourceTitle: String? = nil) -> String {
         var parts = [
-            "\(chapters.count) chapter\(chapters.count == 1 ? "" : "s")",
+            String(localized: "\(chapters.count) chapters"),
             TimeFormatting.compactDuration(totalDuration)
         ]
         if let sourceTitle, !sourceTitle.isEmpty {
@@ -587,9 +587,9 @@ extension SourceKind {
         case .internetArchive:
             return "Internet Archive"
         case .internetArchiveURL:
-            return "Archive URL"
+            return String(localized: "Archive URL")
         case .localFiles:
-            return "Imported"
+            return String(localized: "Imported")
         }
     }
 }

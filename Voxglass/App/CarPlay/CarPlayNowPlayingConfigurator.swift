@@ -77,7 +77,7 @@ final class CarPlayNowPlayingConfigurator: NSObject {
 
         template.updateNowPlayingButtons(buttons)
         template.isUpNextButtonEnabled = config.isUpNextChapters
-        template.upNextTitle = "Chapters"
+        template.upNextTitle = String(localized: "Chapters")
     }
 
     private func sleepButton(config: CarPlayNowPlayingConfig) -> CPNowPlayingButton {

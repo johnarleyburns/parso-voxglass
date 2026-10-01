@@ -28,12 +28,12 @@ public enum PackageError: VoxglassError {
 
     public var userMessage: String {
         switch self {
-        case .notAPackage(let url): "The file \"\(url.lastPathComponent)\" is not a Voxglass project package."
-        case .schemaTooNew(let schema): "This project was created by a newer version of Voxglass (schema version \(schema)). Please update the app."
-        case .missingAsset(let ref): "The audio asset referenced at \"\(ref.sha256)\" is missing from the project."
-        case .corruptManifest: "The project manifest is corrupted and cannot be read."
-        case .autosaveConflict: "An autosave session is in conflict with the current project state."
-        case .diskFull(let need): "Not enough disk space. Need \(ByteCountFormatter.string(fromByteCount: need, countStyle: .file)) more."
+        case .notAPackage(let url): String(localized: "The file \"\(url.lastPathComponent)\" is not a Voxglass project package.", bundle: .module)
+        case .schemaTooNew(let schema): String(localized: "This project was created by a newer version of Voxglass (schema version \(schema)). Please update the app.", bundle: .module)
+        case .missingAsset(let ref): String(localized: "The audio asset referenced at \"\(ref.sha256)\" is missing from the project.", bundle: .module)
+        case .corruptManifest: String(localized: "The project manifest is corrupted and cannot be read.", bundle: .module)
+        case .autosaveConflict: String(localized: "An autosave session is in conflict with the current project state.", bundle: .module)
+        case .diskFull(let need): String(localized: "Not enough disk space. Need \(ByteCountFormatter.string(fromByteCount: need, countStyle: .file)) more.", bundle: .module)
         }
     }
 

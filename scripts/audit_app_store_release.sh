@@ -125,9 +125,9 @@ require(not (root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset"
 require("guru.parso.voxglass.studio" not in project, "retired native Mac bundle identifier must not return")
 
 # Draft translations are useful during development but must never ship without
-# native-speaker review. Human review of every catalog was completed on
-# 2026-09-30 and all entries were promoted to `translated`; this gate stays so
-# new strings cannot ship as unreviewed `needs_review` drafts.
+# native-speaker review. The current catalogs are machine-drafted first passes
+# (state `needs_review`); a native speaker flips each entry to `translated` in
+# Xcode's catalog editor. This gate blocks a release until that is done.
 for catalog in root.rglob("*.xcstrings"):
     # Build products (SwiftPM `.build`, DerivedData) hold stale copies of the catalogs.
     if {".build", "DerivedData"} & set(catalog.relative_to(root).parts):

@@ -33,7 +33,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             guard self.connectionState.owns(generation) else { return }
             let placeholder = CPListTemplate(
                 title: "Voxglass",
-                sections: [CPListSection(items: [CPListItem(text: "Loading your library…", detailText: nil)])]
+                sections: [CPListSection(items: [CPListItem(text: String(localized: "Loading your library…"), detailText: nil)])]
             )
             interfaceController.setRootTemplate(placeholder, animated: false, completion: nil)
             self.logger.info("placeholderInstalled generation=\(generation, privacy: .public)")

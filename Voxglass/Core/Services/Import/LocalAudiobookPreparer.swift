@@ -81,9 +81,9 @@ public enum LocalAudiobookImportError: LocalizedError, Sendable, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .missingAudio: return "No supported audio file was found in that folder."
-        case .missingChapterText: return "No chapter text file was found in that folder."
-        case .invalidChapterTiming: return "The chapter timestamps do not fit within the selected audio file."
+        case .missingAudio: return String(localized: "No supported audio file was found in that folder.", bundle: .module)
+        case .missingChapterText: return String(localized: "No chapter text file was found in that folder.", bundle: .module)
+        case .invalidChapterTiming: return String(localized: "The chapter timestamps do not fit within the selected audio file.", bundle: .module)
         }
     }
 }

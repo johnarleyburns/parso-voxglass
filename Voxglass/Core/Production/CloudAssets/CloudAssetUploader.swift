@@ -38,13 +38,13 @@ public enum CloudAssetUploadError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .alreadyRemote:
-            return "The asset is already backed up and verified."
+            return String(localized: "The asset is already backed up and verified.", bundle: .module)
         case .noOriginalFile(let sha):
-            return "No local file exists for asset \(sha)."
+            return String(localized: "No local file exists for asset \(sha).", bundle: .module)
         case .hashMismatch:
-            return "The iCloud copy did not match the local recording and was not accepted."
+            return String(localized: "The iCloud copy did not match the local recording and was not accepted.", bundle: .module)
         case .serverRecordMissing(let name):
-            return "The uploaded asset record \(name) could not be re-read for verification."
+            return String(localized: "The uploaded asset record \(name) could not be re-read for verification.", bundle: .module)
         }
     }
 }

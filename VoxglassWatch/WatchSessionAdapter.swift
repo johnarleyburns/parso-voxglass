@@ -66,7 +66,7 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
 
     func requestDownload(for book: WatchBookDTO) {
         guard WCSession.isSupported(), WCSession.default.activationState == .activated else {
-            connectionError = "The iPhone connection is not active."
+            connectionError = String(localized: "The iPhone connection is not active.")
             return
         }
         let manifest = WatchManifest(

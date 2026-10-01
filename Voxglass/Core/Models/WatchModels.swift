@@ -129,16 +129,16 @@ public struct WatchBookStorageInfo: Equatable, Sendable, Codable {
         let total = max(totalChapterCount, chapters.count, completeChapterCount)
         switch state {
         case .available:
-            return "Downloaded on Watch"
+            return String(localized: "Downloaded on Watch", bundle: .module)
         case .transferring(let progress):
-            return "Downloading to Watch \(Int(progress * 100))%"
+            return String(localized: "Downloading to Watch \(Int(progress * 100))%", bundle: .module)
         case .queued:
-            guard completeChapterCount > 0 else { return "Queued for Watch" }
-            return "\(completeChapterCount)/\(max(total, 1)) chapters on Watch"
+            guard completeChapterCount > 0 else { return String(localized: "Queued for Watch", bundle: .module) }
+            return String(localized: "\(completeChapterCount)/\(max(total, 1)) chapters on Watch", bundle: .module)
         case .waitingForPhone:
-            return "Watch download waiting"
+            return String(localized: "Watch download waiting", bundle: .module)
         case .failed:
-            return "Watch download failed"
+            return String(localized: "Watch download failed", bundle: .module)
         case .notAvailable:
             return nil
         }
@@ -210,7 +210,7 @@ public enum WatchTimeFormat {
 
     /// Formats bytes for display on small screens.
     public static func bytes(_ count: Int64) -> String {
-        if count < 1024 { return "\(count) B" }
+        if count < 1024 { return String(localized: "\(count) B", bundle: .module) }
         let kb = Double(count) / 1024
         if kb < 1024 { return String(format: "%.0f KB", kb) }
         let mb = kb / 1024

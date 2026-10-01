@@ -14,7 +14,7 @@ final class SupportDevelopmentStore {
     static let shared = SupportDevelopmentStore()
 
     static let productID = "guru.parso.voxglass.support.dev"
-    static let displayName = "Contribute to Development"
+    static let displayName = String(localized: "Contribute to Development")
 
     private(set) var product: Product?
     private var updatesTask: Task<Void, Never>?

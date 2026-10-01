@@ -118,7 +118,7 @@ struct BookmarksView: View {
     private func bookmarkRow(_ bookmark: Bookmark, chapter: Chapter?) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(chapter?.title ?? "Chapter")
+                Text(chapter?.title ?? String(localized: "Chapter"))
                     .voxFont(.footnote, weight: .semibold)
                     .foregroundStyle(Palette.ink)
                 Text(TimeFormatting.clock(bookmark.position))

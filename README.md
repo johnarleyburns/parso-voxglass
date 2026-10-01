@@ -33,6 +33,30 @@ only in Git history.
 - Future monetization will come from audiobook sales and library partnership integrations —
   the app itself remains free, private, and ad-free.
 
+## Languages
+
+Voxglass ships in **12 languages**: English, German (Deutsch), French (Français), Spanish (Español),
+Italian (Italiano), Brazilian Portuguese (Português do Brasil), Dutch (Nederlands), Japanese (日本語),
+Simplified Chinese (简体中文), Russian (Русский), Polish (Polski), and Hebrew (עברית, right-to-left).
+
+The app follows the iPhone's language. To use a different language for Voxglass only, open
+**Settings › Voxglass › Language** on the iPhone (the About screen has a shortcut). The iPhone app,
+Apple Watch app, widgets, Live Activity, CarPlay screens, Siri phrases and the microphone permission
+prompt are all localized, with plural forms for every language (including Russian and Polish
+few/many forms and the Hebrew dual). Book titles, authors and narrators are catalog data and are
+never translated.
+
+**Translation status:** every string has a first-pass translation marked `needs_review` in the
+String Catalogs. A native speaker should review each language in Xcode's catalog editor and flip
+reviewed entries to `translated`; `scripts/audit_app_store_release.sh` blocks a release while any
+entry still needs review. Term choices are recorded in the localization glossary.
+
+**Adding or changing UI text:** write it as a SwiftUI literal, `LocalizedStringKey`, or
+`String(localized:)` (with `bundle: .module` in `Voxglass/Core`) — never pass UI text through a plain
+`String` parameter, and never build sentences from English fragments or hand-made plurals. Then run
+`scripts/sync_localization_catalogs.sh`, which extracts strings with the Swift compiler and syncs the
+catalogs the same way Xcode does, and add the new keys in every language as `needs_review`.
+
 ## Competitive position
 
 The LibriVox catalog on iOS is effectively owned by one competitor: **LibriVox Audiobooks** (BookDesign

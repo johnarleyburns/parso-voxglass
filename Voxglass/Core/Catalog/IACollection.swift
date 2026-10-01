@@ -59,22 +59,22 @@ public struct IACollection: Identifiable, Equatable, Sendable {
 public enum IACollectionStore {
     public static let popular = IACollection(
         id: "popular-librivox",
-        title: "Popular LibriVox",
-        subtitle: "Frequently downloaded public-domain audio",
+        title: String(localized: "Popular LibriVox", bundle: .module),
+        subtitle: String(localized: "Frequently downloaded public-domain audio", bundle: .module),
         archiveIdentifier: "librivoxaudio",
         listURL: URL(string: "https://archive.org/details/librivoxaudio"),
         archiveQuery: LibriVoxBrowseCategory.popular.archiveQuery,
         systemImage: "waveform",
         assetName: "collection-popular-librivox",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "librivoxaudio"),
-        summaryLine: "The most-downloaded public-domain audiobooks from LibriVox, refreshed with every release.",
-        description: """
+        summaryLine: String(localized: "The most-downloaded public-domain audiobooks from LibriVox, refreshed with every release.", bundle: .module),
+        description: String(localized: """
             Popular LibriVox surfaces the most frequently downloaded audiobooks across the entire LibriVox catalog — thousands of hours of public-domain literature, science, philosophy, and more, all read by volunteers.
 
             LibriVox was founded in 2005 by Hugh McGuire as a volunteer-driven project to make public-domain books freely available as audiobooks. Today the catalog spans over 18,000 completed works in more than 30 languages, all contributed by a global community of volunteer readers and proof-listeners. Every recording is released into the public domain and hosted permanently by the non-profit Internet Archive at [archive.org/details/librivoxaudio](https://archive.org/details/librivoxaudio).
 
             This Popular collection is the best entry point for new listeners. It mixes perennial favorites like \u{201c}Pride and Prejudice,\u{201d} \u{201c}Moby-Dick,\u{201d} and \u{201c}The Adventures of Sherlock Holmes\u{201d} with community-shared gems discovered through the LibriVox forum and catalog. The ranking reflects organic listener demand and changes as new recordings are released.
-            """
+            """, bundle: .module)
     )
 
     public static let featured: [IACollection] = [popular] + browseCollections
@@ -93,15 +93,15 @@ public enum IACollectionStore {
     /// a single language to keep browsing results predictable.
     public static let greatBooks = IACollection(
         id: "great-books",
-        title: "Great Books",
-        subtitle: "The canonical authors of the Western tradition, read by LibriVox volunteers",
+        title: String(localized: "Great Books", bundle: .module),
+        subtitle: String(localized: "The canonical authors of the Western tradition, read by LibriVox volunteers", bundle: .module),
         archiveQuery: CuratedQueries.greatBooks,
         systemImage: "books.vertical",
         assetName: "collection-great-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "iliad_popetranslation_1506_librivox"),
         curatedListName: "great-books",
-        summaryLine: "405 LibriVox recordings spanning 102 works from the Great Books of the Western World, in English.",
-        description: """
+        summaryLine: String(localized: "405 LibriVox recordings spanning 102 works from the Great Books of the Western World, in English.", bundle: .module),
+        description: String(localized: """
             This curated collection traces the intellectual and literary foundations of the Western tradition through a selection of works drawn from the [Great Books of the Western World](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (second edition, 1990), the 60-volume canon assembled by Mortimer Adler and a team of scholars at the University of Chicago.
 
             The Great Books set spans nearly three millennia of thought: from Homer\u{2019}s epic poems and the tragedies of Aeschylus, Sophocles, and Euripides, through the philosophy of Plato and Aristotle, the histories of Herodotus and Thucydides, the natural science of Hippocrates, Galen, and Archimedes, and on into the medieval and Renaissance syntheses of Augustine, Aquinas, Dante, and Chaucer. It continues through the scientific revolution with Copernicus, Kepler, Galileo, Bacon, Descartes, and Newton; the Enlightenment with Locke, Hume, Montesquieu, Rousseau, Smith, and Kant; the American founding documents and \u{201c}The Federalist Papers\u{201d}; and the 19th and early 20th centuries with Goethe, Austen, Darwin, Marx, Tolstoy, Dostoevsky, Nietzsche, William James, Freud, and Einstein, among others.
@@ -109,7 +109,7 @@ public enum IACollectionStore {
             Each entry in this collection links to a specific LibriVox recording of the work. Where no LibriVox recording yet exists for a required Great Books work (e.g. the mathematical treatises of Euclid, Archimedes, and Apollonius, or certain scientific works of Ptolemy, Copernicus, and Kepler), that work is noted but omitted from the listening list.
 
             The LibriVox volunteer community has recorded many of these works multiple times, in different translations and by different readers. This English-language collection is the most comprehensive, but companion collections for Spanish, German, Italian, and Ancient Greek are also available.
-            """,
+            """, bundle: .module),
         language: "eng"
     )
 
@@ -182,34 +182,34 @@ public enum IACollectionStore {
         assetName: "collection-great-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "odyssey01_1711_librivox"),
         curatedListName: "great-books-grc",
-        summaryLine: "30 LibriVox recordings from 3 works of the Great Books of the Western World, in Ancient Greek.",
-        description: """
+        summaryLine: String(localized: "30 LibriVox recordings from 3 works of the Great Books of the Western World, in Ancient Greek.", bundle: .module),
+        description: String(localized: """
             This collection presents works from the [Great Books of the Western World](https://en.wikipedia.org/wiki/Great_Books_of_the_Western_World) (2nd edition, 1990) in their original Ancient Greek.
 
             Includes recordings of Homer's Odyssey (all 24 books), Thucydides' Histories (books 1–7), and Plato's Apology and Definitions.
 
             LibriVox volunteers have contributed these recordings in the original language, making them a valuable resource for students and scholars of classical Greek. This collection complements the English-language Great Books collection.
-            """,
+            """, bundle: .module),
         language: "grc"
     )
 
     public static let greaterBooks = IACollection(
         id: "greater-books",
-        title: "Greater Books",
-        subtitle: "A broader literary canon \u{2014} the world\u{2019}s essential novels, plays, and poetry",
+        title: String(localized: "Greater Books", bundle: .module),
+        subtitle: String(localized: "A broader literary canon \u{2014} the world\u{2019}s essential novels, plays, and poetry", bundle: .module),
         archiveQuery: CuratedQueries.greaterBooks,
         systemImage: "text.book.closed",
         assetName: "collection-greater-books",
         remoteImageURL: InternetArchiveMetadata.coverURL(for: "prideandprejudice_1005_librivox"),
         curatedListName: "greater-books",
-        summaryLine: "916 LibriVox recordings spanning 340 works from the 540-row Greater Books shortlist, in English.",
-        description: """
+        summaryLine: String(localized: "916 LibriVox recordings spanning 340 works from the 540-row Greater Books shortlist, in English.", bundle: .module),
+        description: String(localized: """
             This collection draws from the Greater Books shortlist at [greaterbooks.com](https://greaterbooks.com) \u{2014} a literary canon that extends the Great Books tradition into a broader, more inclusive survey of world literature. Unlike the 60-volume Great Books set, which is weighted toward philosophy and natural science, the Greater Books list emphasizes novels, plays, poetry, scripture, history, and major works of modern literature.
 
             The collection spans roughly 2,800 years: the epics of Homer and Virgil, the tragedies and comedies of classical Athens, the medieval visions of Dante and Chaucer, the plays of Shakespeare and his contemporaries Marlowe and Moli\u{00E8}re, the early novels of Cervantes, Defoe, and Fielding, the 19th-century triumphs of Austen, the Bront\u{00EB}s, Dickens, Eliot, Melville, Hawthorne, Flaubert, Dostoevsky, and Tolstoy, and the transitional moderns \u{2014} Conrad, Henry James, Chekhov, Ibsen, Kipling, Wilde, and Wells.
 
             Each entry links to a specific English LibriVox recording matched from the Internet Archive catalog. Multiple complete recordings, translations, and public-domain readings are preserved as separate rows, while works without a completed English LibriVox recording are omitted from the listening list and tracked in the generator report. Browsing by Curation Order follows the greaterbooks.com shortlist sequence, grouped by period and then by recording version.
-            """,
+            """, bundle: .module),
         language: "eng"
     )
 
@@ -297,7 +297,7 @@ public enum IACollectionStore {
         case "lv-essays-ideas":
             return "Ralph Waldo Emerson, Michel de Montaigne, Francis Bacon, G. K. Chesterton, Henry David Thoreau"
         default:
-            return "LibriVox public-domain audiobooks"
+            return String(localized: "LibriVox public-domain audiobooks", bundle: .module)
         }
     }
 
@@ -351,47 +351,47 @@ public enum IACollectionStore {
     private static func collectionSummaryLine(for categoryID: String) -> String {
         switch categoryID {
         case "lv-general-fiction":
-            return "Classic novels and literary fiction from the 18th and 19th centuries, including Austen, Dickens, and the Bront\u{00EB}s."
+            return String(localized: "Classic novels and literary fiction from the 18th and 19th centuries, including Austen, Dickens, and the Bront\u{00EB}s.", bundle: .module)
         case "lv-science-fiction":
-            return "Early speculative fiction, space exploration, and scientific romance from Wells, Verne, Burroughs, and more."
+            return String(localized: "Early speculative fiction, space exploration, and scientific romance from Wells, Verne, Burroughs, and more.", bundle: .module)
         case "lv-horror-gothic":
-            return "Gothic tales, supernatural thrillers, and pioneering horror from Shelley, Stoker, Poe, and Lovecraft."
+            return String(localized: "Gothic tales, supernatural thrillers, and pioneering horror from Shelley, Stoker, Poe, and Lovecraft.", bundle: .module)
         case "lv-mystery-crime":
-            return "Classic detective stories, whodunits, and true crime from Doyle, Chesterton, Wallace, and Green."
+            return String(localized: "Classic detective stories, whodunits, and true crime from Doyle, Chesterton, Wallace, and Green.", bundle: .module)
         case "lv-adventure":
-            return "High-seas voyages, frontier tales, and daring quests from Dumas, Henty, Stevenson, and Twain."
+            return String(localized: "High-seas voyages, frontier tales, and daring quests from Dumas, Henty, Stevenson, and Twain.", bundle: .module)
         case "lv-fantasy-mythology":
-            return "Fairy tales, myths, legends, and early fantasy fiction from Carroll, Baum, the Brothers Grimm, and Wilde."
+            return String(localized: "Fairy tales, myths, legends, and early fantasy fiction from Carroll, Baum, the Brothers Grimm, and Wilde.", bundle: .module)
         case "lv-romance":
-            return "Love, courtship, and the comedy of manners in classic novels from Austen, Bront\u{00EB}, Hugo, and Dumas."
+            return String(localized: "Love, courtship, and the comedy of manners in classic novels from Austen, Bront\u{00EB}, Hugo, and Dumas.", bundle: .module)
         case "lv-satire-humor":
-            return "Wit, irony, and social commentary from Swift, Twain, Wodehouse, Jerome, and Voltaire."
+            return String(localized: "Wit, irony, and social commentary from Swift, Twain, Wodehouse, Jerome, and Voltaire.", bundle: .module)
         case "lv-war-military":
-            return "Military strategy, wartime memoirs, and historical accounts from Clausewitz, Sun Tzu, Caesar, and Crane."
+            return String(localized: "Military strategy, wartime memoirs, and historical accounts from Clausewitz, Sun Tzu, Caesar, and Crane.", bundle: .module)
         case "lv-short-stories":
-            return "Brief literary gems by Poe, Chekhov, Maupassant, O. Henry, Saki, and dozens of LibriVox short-story collections."
+            return String(localized: "Brief literary gems by Poe, Chekhov, Maupassant, O. Henry, Saki, and dozens of LibriVox short-story collections.", bundle: .module)
         case "lv-drama-plays":
-            return "The great stage works of Western drama: Shakespeare, Sophocles, Ibsen, Shaw, Moli\u{00E8}re, and Chekhov."
+            return String(localized: "The great stage works of Western drama: Shakespeare, Sophocles, Ibsen, Shaw, Moli\u{00E8}re, and Chekhov.", bundle: .module)
         case "lv-travel":
-            return "Journals of exploration, travelogues, and voyage narratives from Verne, Bird, Muir, and Darwin."
+            return String(localized: "Journals of exploration, travelogues, and voyage narratives from Verne, Bird, Muir, and Darwin.", bundle: .module)
         case "lv-ancient-world":
-            return "The foundational texts of classical antiquity: epic, drama, history, and philosophy from Greece and Rome."
+            return String(localized: "The foundational texts of classical antiquity: epic, drama, history, and philosophy from Greece and Rome.", bundle: .module)
         case "lv-poetry":
-            return "Verse from every tradition: the epics of Homer and Dante, the sonnets of Shakespeare, the Romantics, and the Moderns."
+            return String(localized: "Verse from every tradition: the epics of Homer and Dante, the sonnets of Shakespeare, the Romantics, and the Moderns.", bundle: .module)
         case "lv-philosophy-mind":
-            return "The major works of Western philosophy, from Plato and Aristotle through Kant, Nietzsche, and the existentialists."
+            return String(localized: "The major works of Western philosophy, from Plato and Aristotle through Kant, Nietzsche, and the existentialists.", bundle: .module)
         case "lv-history":
-            return "Narrative histories, chronicles, and biographies covering antiquity, the Middle Ages, and the modern era."
+            return String(localized: "Narrative histories, chronicles, and biographies covering antiquity, the Middle Ages, and the modern era.", bundle: .module)
         case "lv-biography":
-            return "The life stories of remarkable figures, told by themselves or by contemporaries, from Franklin to Keller."
+            return String(localized: "The life stories of remarkable figures, told by themselves or by contemporaries, from Franklin to Keller.", bundle: .module)
         case "lv-science-nature":
-            return "The classic works that shaped our understanding of the natural world: Darwin, Faraday, Newton, and more."
+            return String(localized: "The classic works that shaped our understanding of the natural world: Darwin, Faraday, Newton, and more.", bundle: .module)
         case "lv-religion":
-            return "Sacred texts, theological treatises, spiritual autobiographies, and devotional literature from many traditions."
+            return String(localized: "Sacred texts, theological treatises, spiritual autobiographies, and devotional literature from many traditions.", bundle: .module)
         case "lv-essays-ideas":
-            return "The essay as a literary form: reflections on politics, art, and culture by Montaigne, Emerson, Chesterton, and Thoreau."
+            return String(localized: "The essay as a literary form: reflections on politics, art, and culture by Montaigne, Emerson, Chesterton, and Thoreau.", bundle: .module)
         default:
-            return "LibriVox public-domain audiobooks."
+            return String(localized: "LibriVox public-domain audiobooks.", bundle: .module)
         }
     }
 

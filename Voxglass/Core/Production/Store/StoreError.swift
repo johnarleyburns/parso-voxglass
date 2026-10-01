@@ -21,12 +21,12 @@ public enum StoreError: VoxglassError {
 
     public var userMessage: String {
         switch self {
-        case .migrationFailed(let id, let detail): "Database migration \(id) failed: \(detail)"
-        case .constraintViolation(let detail): "Database constraint violation: \(detail)"
-        case .notFound(let id): "Record not found: \(id)"
-        case .projectNotFound: "No project exists in this store yet."
-        case .corruptRow(let detail): "Corrupt database row: \(detail)"
-        case .busy: "The database is busy. Please try again."
+        case .migrationFailed(let id, let detail): String(localized: "Database migration \(id) failed: \(detail)", bundle: .module)
+        case .constraintViolation(let detail): String(localized: "Database constraint violation: \(detail)", bundle: .module)
+        case .notFound(let id): String(localized: "Record not found: \(id.uuidString)", bundle: .module)
+        case .projectNotFound: String(localized: "No project exists in this store yet.", bundle: .module)
+        case .corruptRow(let detail): String(localized: "Corrupt database row: \(detail)", bundle: .module)
+        case .busy: String(localized: "The database is busy. Please try again.", bundle: .module)
         }
     }
 

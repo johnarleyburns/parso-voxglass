@@ -37,13 +37,13 @@ public enum AssetHydrationError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .noRemoteID:
-            return "This recording has no verified iCloud copy yet."
+            return String(localized: "This recording has no verified iCloud copy yet.", bundle: .module)
         case .recordMissing(let name):
-            return "The iCloud copy \(name) could not be found."
+            return String(localized: "The iCloud copy \(name) could not be found.", bundle: .module)
         case .noBlob:
-            return "The iCloud copy carried no audio data."
+            return String(localized: "The iCloud copy carried no audio data.", bundle: .module)
         case .hashMismatch:
-            return "The downloaded recording did not verify against its checksum."
+            return String(localized: "The downloaded recording did not verify against its checksum.", bundle: .module)
         }
     }
 }

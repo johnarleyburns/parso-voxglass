@@ -15,7 +15,7 @@ enum TimeFormatting {
     }
 
     static func compactDuration(_ interval: TimeInterval?) -> String {
-        guard let interval, interval.isFinite else { return "Unknown length" }
+        guard let interval, interval.isFinite else { return String(localized: "Unknown length") }
         return DurationFormatting.hoursAndMinutes(interval, minimumMinute: true)
     }
 }

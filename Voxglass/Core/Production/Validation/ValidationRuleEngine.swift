@@ -179,37 +179,37 @@ private struct Evaluator {
         let m = project.metadata
 
         if m.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            add(.missingTitle, "Missing title", "The book has no title.")
+            add(.missingTitle, String(localized: "Missing title", bundle: .module), String(localized: "The book has no title.", bundle: .module))
         }
         if m.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            add(.missingAuthor, "Missing author", "The book has no author.")
+            add(.missingAuthor, String(localized: "Missing author", bundle: .module), String(localized: "The book has no author.", bundle: .module))
         }
         if m.narrator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            add(.missingNarrator, "Missing narrator", "The book has no narrator.")
+            add(.missingNarrator, String(localized: "Missing narrator", bundle: .module), String(localized: "The book has no narrator.", bundle: .module))
         }
         if m.language.isEmpty || !isValidBCP47(m.language) {
-            add(.missingLanguage, "Missing or invalid language", "\"\(m.language)\" is not a valid BCP-47 language tag.", measured: nil, expected: "BCP-47, e.g. en-US")
+            add(.missingLanguage, String(localized: "Missing or invalid language", bundle: .module), String(localized: "\"\(m.language)\" is not a valid BCP-47 language tag.", bundle: .module), measured: nil, expected: String(localized: "BCP-47, e.g. en-US", bundle: .module))
         }
         if m.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            add(.missingDescription, "Missing description", "A description is required for this destination.")
+            add(.missingDescription, String(localized: "Missing description", bundle: .module), String(localized: "A description is required for this destination.", bundle: .module))
         }
 
         let rights = project.rights
         if rights.sourceURL == nil {
-            add(.missingSourceURL, "Missing source URL", "The authorized source edition URL is required.")
+            add(.missingSourceURL, String(localized: "Missing source URL", bundle: .module), String(localized: "The authorized source edition URL is required.", bundle: .module))
         }
         // `.missingRightsBasis` never fires: `RightsBasis` is non-optional and
         // always populated by the wizard. `personalUseOnly` for a public
         // destination is the real hazard, handled below.
         if rights.basis == .personalUseOnly {
-            add(.personalRightsForPublicTarget, "Personal-use rights", "Personal use only is not valid for a public destination.")
+            add(.personalRightsForPublicTarget, String(localized: "Personal-use rights", bundle: .module), String(localized: "Personal use only is not valid for a public destination.", bundle: .module))
         }
         if !rights.isAttested {
-            add(.unattestedRights, "Rights not attested", "The rights attestation has not been confirmed.")
+            add(.unattestedRights, String(localized: "Rights not attested", bundle: .module), String(localized: "The rights attestation has not been confirmed.", bundle: .module))
         }
 
         if m.coverRef == nil {
-            add(.missingCoverArt, "Missing cover art", "This destination requires cover art.")
+            add(.missingCoverArt, String(localized: "Missing cover art", bundle: .module), String(localized: "This destination requires cover art.", bundle: .module))
         }
         if let size = context.artworkPixelSize {
             let minPx: Int
@@ -219,27 +219,27 @@ private struct Evaluator {
             }
             let shortest = min(size.width, size.height)
             if minPx > 0, shortest < minPx {
-                add(.artworkTooSmall, "Cover art too small", "Cover is \(size.width)×\(size.height); this destination needs at least \(minPx) px on the short side.", measured: Double(shortest), expected: "≥ \(minPx) px")
+                add(.artworkTooSmall, String(localized: "Cover art too small", bundle: .module), String(localized: "Cover is \(size.width)×\(size.height); this destination needs at least \(minPx) px on the short side.", bundle: .module), measured: Double(shortest), expected: "≥ \(minPx) px")
             }
             if minPx > 0 {
                 let ratio = Double(size.width) / Double(max(1, size.height))
                 if ratio < 0.99 || ratio > 1.01 {
-                    add(.artworkNotSquare, "Cover art not square", "Cover aspect ratio is \(String(format: "%.2f", ratio)); this destination requires 1:1.", measured: ratio, expected: "1.0 ± 0.01")
+                    add(.artworkNotSquare, String(localized: "Cover art not square", bundle: .module), String(localized: "Cover aspect ratio is \(String(format: "%.2f", ratio)); this destination requires 1:1.", bundle: .module), measured: ratio, expected: "1.0 ± 0.01")
                 }
             }
         }
 
         if m.copyrightYear == nil {
-            add(.missingCopyrightYear, "Missing copyright year", "The copyright year is required for this destination.")
+            add(.missingCopyrightYear, String(localized: "Missing copyright year", bundle: .module), String(localized: "The copyright year is required for this destination.", bundle: .module))
         }
         if m.publisher == nil || m.publisher?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
-            add(.missingPublisher, "Missing publisher", "A publisher is expected for this destination.")
+            add(.missingPublisher, String(localized: "Missing publisher", bundle: .module), String(localized: "A publisher is expected for this destination.", bundle: .module))
         }
 
         if m.archiveIdentifier == nil || m.archiveIdentifier?.isEmpty == true {
-            add(.missingArchiveIdentifier, "Missing archive identifier", "An Internet Archive identifier is required.")
+            add(.missingArchiveIdentifier, String(localized: "Missing archive identifier", bundle: .module), String(localized: "An Internet Archive identifier is required.", bundle: .module))
         } else if let id = m.archiveIdentifier, !IdentifierSuggester().isValid(id) {
-            add(.invalidArchiveIdentifier, "Invalid archive identifier", "\"\(id)\" is not a valid archive.org identifier.")
+            add(.invalidArchiveIdentifier, String(localized: "Invalid archive identifier", bundle: .module), String(localized: "\"\(id)\" is not a valid archive.org identifier.", bundle: .module))
         }
     }
 
@@ -247,15 +247,15 @@ private struct Evaluator {
 
     private mutating func evaluateOriginAndEligibility() {
         if isLibrivox && !eligibility.librivoxEligible {
-            add(.aiOriginInLibriVoxProject, "AI audio in LibriVox project", LegalStrings.librivoxHumanOnly)
+            add(.aiOriginInLibriVoxProject, String(localized: "AI audio in LibriVox project", bundle: .module), LegalStrings.librivoxHumanOnly)
         }
 
         for (paragraph, take) in orderedTakes where take.origin.storageKind == "unknownImport" {
-            add(.unknownOriginTakeSelected, "Unknown-origin take selected", "Paragraph \(paragraph.ordinal) has a selected take with an undeclared origin.", paragraphID: paragraph.id, takeID: take.id)
+            add(.unknownOriginTakeSelected, String(localized: "Unknown-origin take selected", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has a selected take with an undeclared origin.", bundle: .module), paragraphID: paragraph.id, takeID: take.id)
         }
 
         if eligibility.narrationOrigin == .containsImportedAI, !context.aiDisclosurePresent {
-            add(.undisclosedAINarration, "AI narration not disclosed", "This project contains AI-origin narration; the disclosure line must appear in the delivered manifest and metadata.")
+            add(.undisclosedAINarration, String(localized: "AI narration not disclosed", bundle: .module), String(localized: "This project contains AI-origin narration; the disclosure line must appear in the delivered manifest and metadata.", bundle: .module))
         }
     }
 
@@ -265,13 +265,13 @@ private struct Evaluator {
         for finding in context.integrityFindings {
             switch finding.code {
             case .duplicateChapterOrdinal, .duplicateParagraphOrdinal:
-                add(.duplicateOrdinal, "Duplicate ordinal", finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
+                add(.duplicateOrdinal, String(localized: "Duplicate ordinal", bundle: .module), finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
             case .missingChapterOrdinal, .missingParagraphOrdinal:
-                add(.missingOrdinal, "Missing ordinal", finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
+                add(.missingOrdinal, String(localized: "Missing ordinal", bundle: .module), finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
             case .takeAssetMissing:
-                add(.assetMissing, "Missing audio asset", finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
+                add(.assetMissing, String(localized: "Missing audio asset", bundle: .module), finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
             case .takeAssetHashMismatch:
-                add(.assetHashMismatch, "Audio asset hash mismatch", finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
+                add(.assetHashMismatch, String(localized: "Audio asset hash mismatch", bundle: .module), finding.message, chapterID: finding.chapterID, paragraphID: finding.paragraphID)
             default:
                 break
             }
@@ -285,7 +285,7 @@ private struct Evaluator {
 
         for chapter in project.chapters {
             if chapter.paragraphs.isEmpty {
-                add(.emptyChapter, "Empty chapter", "Chapter \(chapter.title) has no paragraphs.", chapterID: chapter.id)
+                add(.emptyChapter, String(localized: "Empty chapter", bundle: .module), String(localized: "Chapter \(chapter.title) has no paragraphs.", bundle: .module), chapterID: chapter.id)
                 continue
             }
 
@@ -293,11 +293,11 @@ private struct Evaluator {
                 let isRecordedTarget = paragraph.role == .body || paragraph.role == .chapterHeading
 
                 if isRecordedTarget && paragraph.selectedTakeID == nil {
-                    add(.missingAcceptedTake, "Missing accepted take", "Paragraph \(paragraph.ordinal) of \(chapter.title) has no selected audio.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .recordParagraph(paragraph.id))
+                    add(.missingAcceptedTake, String(localized: "Missing accepted take", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) of \(chapter.title) has no selected audio.", bundle: .module), chapterID: chapter.id, paragraphID: paragraph.id, fix: .recordParagraph(paragraph.id))
                 }
 
                 if paragraph.reviewState == .needsPickup {
-                    add(.unresolvedNeedsPickup, "Unresolved needs pickup", "Paragraph \(paragraph.ordinal) of \(chapter.title) must be re-recorded.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .clearPickup(paragraph.id))
+                    add(.unresolvedNeedsPickup, String(localized: "Unresolved needs pickup", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) of \(chapter.title) must be re-recorded.", bundle: .module), chapterID: chapter.id, paragraphID: paragraph.id, fix: .clearPickup(paragraph.id))
                 }
 
                 if paragraph.selectedTakeID != nil && paragraph.reviewState != .approved {
@@ -308,16 +308,16 @@ private struct Evaluator {
                    let take = paragraph.takes.first(where: { $0.id == takeID }),
                    paragraph.textHash != take.textHashAtRecording {
                     if paragraph.reviewState == .needsPickup {
-                        add(.textChangedAfterRecording, "Text changed after recording", "Paragraph \(paragraph.ordinal) of \(chapter.title) was recorded against older text and must be re-recorded.", chapterID: chapter.id, paragraphID: paragraph.id, takeID: take.id, fix: .recordParagraph(paragraph.id))
+                        add(.textChangedAfterRecording, String(localized: "Text changed after recording", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) of \(chapter.title) was recorded against older text and must be re-recorded.", bundle: .module), chapterID: chapter.id, paragraphID: paragraph.id, takeID: take.id, fix: .recordParagraph(paragraph.id))
                     } else {
-                        add(.textChangedCosmetically, "Text changed", "Paragraph \(paragraph.ordinal) of \(chapter.title) changed after it was recorded.", chapterID: chapter.id, paragraphID: paragraph.id, takeID: take.id, fix: .recordParagraph(paragraph.id))
+                        add(.textChangedCosmetically, String(localized: "Text changed", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) of \(chapter.title) changed after it was recorded.", bundle: .module), chapterID: chapter.id, paragraphID: paragraph.id, takeID: take.id, fix: .recordParagraph(paragraph.id))
                     }
                 }
             }
         }
 
         if unapproved > 0 {
-            add(.unapprovedParagraphs, "Unapproved paragraphs", "\(unapproved) recorded paragraph\(unapproved == 1 ? "" : "s") \(unapproved == 1 ? "is" : "are") not yet approved.")
+            add(.unapprovedParagraphs, String(localized: "Unapproved paragraphs", bundle: .module), String(localized: "\(unapproved) recorded paragraphs are not yet approved.", bundle: .module))
         }
     }
 
@@ -335,17 +335,29 @@ private struct Evaluator {
                     // Name the part everywhere: the intro and the outro used to
                     // emit the same title and the same message, which read as
                     // one duplicated error (field report 2026-08-19, item 5).
-                    let part = kind == .libriVoxIntro ? "intro" : "outro"
+                    let isIntro = kind == .libriVoxIntro
                     if let paragraph {
                         if paragraph.selectedTakeID == nil {
-                            add(.unrecordedDisclaimer, "Unrecorded \(part)", "The LibriVox \(part) for \(chapter.title) has no recording.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .recordParagraph(paragraph.id), variant: kind.rawValue)
+                            add(.unrecordedDisclaimer,
+                                isIntro ? String(localized: "Unrecorded intro", bundle: .module) : String(localized: "Unrecorded outro", bundle: .module),
+                                isIntro
+                                    ? String(localized: "The LibriVox intro for \(chapter.title) has no recording.", bundle: .module)
+                                    : String(localized: "The LibriVox outro for \(chapter.title) has no recording.", bundle: .module), chapterID: chapter.id, paragraphID: paragraph.id, fix: .recordParagraph(paragraph.id), variant: kind.rawValue)
                         }
                         let expected = kind == .libriVoxIntro ? plan.chapterIntros[chapter.id] : plan.chapterOutros[chapter.id]
                         if let expected, paragraph.text != expected {
-                            add(.staleDisclaimerText, "Stale \(part) disclaimer", "The LibriVox \(part) for \(chapter.title) no longer matches the current metadata.", chapterID: chapter.id, paragraphID: paragraph.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
+                            add(.staleDisclaimerText,
+                                isIntro ? String(localized: "Stale intro disclaimer", bundle: .module) : String(localized: "Stale outro disclaimer", bundle: .module),
+                                isIntro
+                                    ? String(localized: "The LibriVox intro for \(chapter.title) no longer matches the current metadata.", bundle: .module)
+                                    : String(localized: "The LibriVox outro for \(chapter.title) no longer matches the current metadata.", bundle: .module), chapterID: chapter.id, paragraphID: paragraph.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
                         }
                     } else {
-                        add(.missingDisclaimerParagraph, "Missing \(part) disclaimer", "\(chapter.title) has no LibriVox \(part) paragraph.", chapterID: chapter.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
+                        add(.missingDisclaimerParagraph,
+                            isIntro ? String(localized: "Missing intro disclaimer", bundle: .module) : String(localized: "Missing outro disclaimer", bundle: .module),
+                            isIntro
+                                ? String(localized: "\(chapter.title) has no LibriVox intro paragraph.", bundle: .module)
+                                : String(localized: "\(chapter.title) has no LibriVox outro paragraph.", bundle: .module), chapterID: chapter.id, fix: .regenerateDisclaimers, variant: kind.rawValue)
                     }
                 }
             }
@@ -355,30 +367,35 @@ private struct Evaluator {
     private mutating func evaluateRetail() {
         guard isRetail else { return }
 
-        for (role, title) in [(ChapterRole.openingCredits, "opening credits"), (.closingCredits, "closing credits")] {
+        for role in [ChapterRole.openingCredits, .closingCredits] {
             let chapter = project.chapters.first { $0.role == role }
             let recorded = chapter?.paragraphs.contains { $0.selectedTakeID != nil } ?? false
             let code: IssueCode = role == .openingCredits ? .missingOpeningCredits : .missingClosingCredits
             if !recorded {
-                add(code, "Missing \(title)", "The \(title) paragraph must be recorded for a retail deliverable.", chapterID: chapter?.id, fix: .regenerateCredits)
+                let isOpening = role == .openingCredits
+                add(code,
+                    isOpening ? String(localized: "Missing opening credits", bundle: .module) : String(localized: "Missing closing credits", bundle: .module),
+                    isOpening
+                        ? String(localized: "The opening credits paragraph must be recorded for a retail deliverable.", bundle: .module)
+                        : String(localized: "The closing credits paragraph must be recorded for a retail deliverable.", bundle: .module), chapterID: chapter?.id, fix: .regenerateCredits)
             }
         }
 
         guard let sampleRule = profile.retailSample else { return }
         guard let selection = context.retailSample else {
-            add(.missingRetailSample, "Missing retail sample", "A \(Int(sampleRule.minDuration))–\(Int(sampleRule.maxDuration)) second retail sample is required.")
+            add(.missingRetailSample, String(localized: "Missing retail sample", bundle: .module), String(localized: "A \(Int(sampleRule.minDuration))–\(Int(sampleRule.maxDuration)) second retail sample is required.", bundle: .module))
             return
         }
 
         if selection.duration < sampleRule.minDuration {
-            add(.retailSampleTooShort, "Retail sample too short", "The retail sample is \(Int(selection.duration)) s; the minimum is \(Int(sampleRule.minDuration)) s.", measured: selection.duration, expected: "≥ \(Int(sampleRule.minDuration)) s", fix: .setRetailSample)
+            add(.retailSampleTooShort, String(localized: "Retail sample too short", bundle: .module), String(localized: "The retail sample is \(Int(selection.duration)) s; the minimum is \(Int(sampleRule.minDuration)) s.", bundle: .module), measured: selection.duration, expected: "≥ \(Int(sampleRule.minDuration)) s", fix: .setRetailSample)
         }
         if selection.duration > sampleRule.maxDuration {
-            add(.retailSampleTooLong, "Retail sample too long", "The retail sample is \(Int(selection.duration)) s; the maximum is \(Int(sampleRule.maxDuration)) s.", measured: selection.duration, expected: "≤ \(Int(sampleRule.maxDuration)) s", fix: .setRetailSample)
+            add(.retailSampleTooLong, String(localized: "Retail sample too long", bundle: .module), String(localized: "The retail sample is \(Int(selection.duration)) s; the maximum is \(Int(sampleRule.maxDuration)) s.", bundle: .module), measured: selection.duration, expected: "≤ \(Int(sampleRule.maxDuration)) s", fix: .setRetailSample)
         }
         if let start = project.allParagraphs.first(where: { $0.id == selection.startParagraphID }),
            start.role == .retailOpeningCredits || start.role == .retailClosingCredits {
-            add(.retailSampleStartsInCredits, "Retail sample starts in credits", "The retail sample must begin with narration, not credits.", paragraphID: start.id, fix: .setRetailSample)
+            add(.retailSampleStartsInCredits, String(localized: "Retail sample starts in credits", bundle: .module), String(localized: "The retail sample must begin with narration, not credits.", bundle: .module), paragraphID: start.id, fix: .setRetailSample)
         }
     }
 
@@ -392,20 +409,20 @@ private struct Evaluator {
             let duration = AssemblyDuration.duration(of: segments)
 
             if let max = profile.maxFileDuration, duration > max {
-                add(.chapterTooLong, "Chapter too long", "\(chapter.title) is \(Int(duration)) s; this destination caps files at \(Int(max)) s.", chapterID: chapter.id, measured: duration, expected: "≤ \(Int(max)) s", fix: .splitChapter(chapter.id, atParagraph: chapter.paragraphs.first?.id ?? chapter.id))
+                add(.chapterTooLong, String(localized: "Chapter too long", bundle: .module), String(localized: "\(chapter.title) is \(Int(duration)) s; this destination caps files at \(Int(max)) s.", bundle: .module), chapterID: chapter.id, measured: duration, expected: "≤ \(Int(max)) s", fix: .splitChapter(chapter.id, atParagraph: chapter.paragraphs.first?.id ?? chapter.id))
             }
             if duration > ValidationThresholds.veryLongChapterSeconds {
-                add(.chapterVeryLong, "Chapter very long", "\(chapter.title) exceeds \(Int(ValidationThresholds.veryLongChapterSeconds / 60)) minutes; consider splitting it.", chapterID: chapter.id, measured: duration)
+                add(.chapterVeryLong, String(localized: "Chapter very long", bundle: .module), String(localized: "\(chapter.title) exceeds \(Int(ValidationThresholds.veryLongChapterSeconds / 60)) minutes; consider splitting it.", bundle: .module), chapterID: chapter.id, measured: duration)
             }
 
             if isRetail, let rule = profile.headroomSilence, !segments.isEmpty {
                 let head = segments.first!.leadingSilence
                 if head < rule.headMin || head > rule.headMax {
-                    add(.headRoomToneOutOfRange, "Head room tone out of range", "\(chapter.title) has \(String(format: "%.2f", head)) s of head silence; expected \(String(format: "%.2f", rule.headMin))–\(String(format: "%.2f", rule.headMax)) s.", chapterID: chapter.id, measured: head)
+                    add(.headRoomToneOutOfRange, String(localized: "Head room tone out of range", bundle: .module), String(localized: "\(chapter.title) has \(String(format: "%.2f", head)) s of head silence; expected \(String(format: "%.2f", rule.headMin))–\(String(format: "%.2f", rule.headMax)) s.", bundle: .module), chapterID: chapter.id, measured: head)
                 }
                 let tail = segments.last!.trailingSilence
                 if tail < rule.tailMin || tail > rule.tailMax {
-                    add(.tailRoomToneOutOfRange, "Tail room tone out of range", "\(chapter.title) has \(String(format: "%.2f", tail)) s of tail silence; expected \(String(format: "%.2f", rule.tailMin))–\(String(format: "%.2f", rule.tailMax)) s.", chapterID: chapter.id, measured: tail)
+                    add(.tailRoomToneOutOfRange, String(localized: "Tail room tone out of range", bundle: .module), String(localized: "\(chapter.title) has \(String(format: "%.2f", tail)) s of tail silence; expected \(String(format: "%.2f", rule.tailMin))–\(String(format: "%.2f", rule.tailMax)) s.", bundle: .module), chapterID: chapter.id, measured: tail)
                 }
             }
         }
@@ -438,61 +455,61 @@ private struct Evaluator {
             }
             let entry = rmsSequence[index]
             if let median = median(neighbors), abs(entry.rmsDBFS - median) > ValidationThresholds.loudnessDiscontinuityDB {
-                add(.loudnessDiscontinuity, "Loudness discontinuity", "Paragraph is approximately \(String(format: "%.1f", abs(entry.rmsDBFS - median))) dB louder or quieter than adjacent paragraphs.", paragraphID: entry.paragraphID, measured: abs(entry.rmsDBFS - median), expected: "≤ \(ValidationThresholds.loudnessDiscontinuityDB) dB")
+                add(.loudnessDiscontinuity, String(localized: "Loudness discontinuity", bundle: .module), String(localized: "Paragraph is approximately \(String(format: "%.1f", abs(entry.rmsDBFS - median))) dB louder or quieter than adjacent paragraphs.", bundle: .module), paragraphID: entry.paragraphID, measured: abs(entry.rmsDBFS - median), expected: "≤ \(ValidationThresholds.loudnessDiscontinuityDB) dB")
             }
         }
 
         for (paragraph, take) in takes {
             guard let m = metrics[take.id] else {
-                add(.missingMetrics, "Missing quality metrics", "Paragraph \(paragraph.ordinal) has no audio-quality metrics.", paragraphID: paragraph.id, takeID: take.id, fix: .reanalyzeTake(take.id))
+                add(.missingMetrics, String(localized: "Missing quality metrics", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has no audio-quality metrics.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, fix: .reanalyzeTake(take.id))
                 continue
             }
             guard m.analyzerVersion == analyzerVersion else {
-                add(.missingMetrics, "Stale quality metrics", "Paragraph \(paragraph.ordinal) has metrics from an older analyzer.", paragraphID: paragraph.id, takeID: take.id, fix: .reanalyzeTake(take.id))
+                add(.missingMetrics, String(localized: "Stale quality metrics", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has metrics from an older analyzer.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, fix: .reanalyzeTake(take.id))
                 continue
             }
 
             if m.clipCount > 0 {
-                add(.clipping, "Clipping detected", "Paragraph \(paragraph.ordinal) contains \(m.clipCount) clipped run\(m.clipCount == 1 ? "" : "s").", paragraphID: paragraph.id, takeID: take.id, measured: Double(m.clipCount), expected: "0", fix: .recordParagraph(paragraph.id))
+                add(.clipping, String(localized: "Clipping detected", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) contains \(m.clipCount) clipped runs.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: Double(m.clipCount), expected: "0", fix: .recordParagraph(paragraph.id))
             }
             if let ceiling = profile.peakCeilingDBFS, m.truePeakDBFS > ceiling {
-                add(.peakTooHot, "Peak too hot", "Paragraph \(paragraph.ordinal) peaks at \(String(format: "%.1f", m.truePeakDBFS)) dBFS; the ceiling is \(String(format: "%.1f", ceiling)) dBFS.", paragraphID: paragraph.id, takeID: take.id, measured: m.truePeakDBFS, expected: "≤ \(String(format: "%.1f", ceiling)) dBFS")
+                add(.peakTooHot, String(localized: "Peak too hot", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) peaks at \(String(format: "%.1f", m.truePeakDBFS)) dBFS; the ceiling is \(String(format: "%.1f", ceiling)) dBFS.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: m.truePeakDBFS, expected: "≤ \(String(format: "%.1f", ceiling)) dBFS")
             }
             if m.peakDBFS < ValidationThresholds.peakTooLowDBFS {
-                add(.peakTooLow, "Suspiciously quiet capture", "Paragraph \(paragraph.ordinal) peaks at \(String(format: "%.1f", m.peakDBFS)) dBFS.", paragraphID: paragraph.id, takeID: take.id, measured: m.peakDBFS)
+                add(.peakTooLow, String(localized: "Suspiciously quiet capture", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) peaks at \(String(format: "%.1f", m.peakDBFS)) dBFS.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: m.peakDBFS)
             }
             if let ceiling = profile.noiseFloorCeilingDBFS, m.noiseFloorDBFS > ceiling {
-                add(.noiseFloorTooHigh, "Noise floor too high", "Paragraph \(paragraph.ordinal) has a \(String(format: "%.1f", m.noiseFloorDBFS)) dBFS noise floor; the ceiling is \(String(format: "%.1f", ceiling)) dBFS.", paragraphID: paragraph.id, takeID: take.id, measured: m.noiseFloorDBFS, expected: "≤ \(String(format: "%.1f", ceiling)) dBFS")
+                add(.noiseFloorTooHigh, String(localized: "Noise floor too high", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has a \(String(format: "%.1f", m.noiseFloorDBFS)) dBFS noise floor; the ceiling is \(String(format: "%.1f", ceiling)) dBFS.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: m.noiseFloorDBFS, expected: "≤ \(String(format: "%.1f", ceiling)) dBFS")
             }
             if !m.noiseFloorReliable {
-                add(.noiseFloorUnreliable, "Noise floor unreliable", "Paragraph \(paragraph.ordinal) has too little silence to measure a reliable noise floor.", paragraphID: paragraph.id, takeID: take.id)
+                add(.noiseFloorUnreliable, String(localized: "Noise floor unreliable", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has too little silence to measure a reliable noise floor.", bundle: .module), paragraphID: paragraph.id, takeID: take.id)
             }
             if abs(m.dcOffset) > ValidationThresholds.dcOffsetWarnThreshold {
-                add(.dcOffset, "DC offset", "Paragraph \(paragraph.ordinal) has a DC offset of \(String(format: "%.4f", m.dcOffset)).", paragraphID: paragraph.id, takeID: take.id, measured: m.dcOffset)
+                add(.dcOffset, String(localized: "DC offset", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has a DC offset of \(String(format: "%.4f", m.dcOffset)).", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: m.dcOffset)
             }
 
             if let majority = majorityRate, take.format.sampleRate != majority {
-                add(.sampleRateMismatch, "Sample rate mismatch", "Paragraph \(paragraph.ordinal) is \(Int(take.format.sampleRate)) Hz while the rest of the project is \(Int(majority)) Hz.", paragraphID: paragraph.id, takeID: take.id, measured: take.format.sampleRate, expected: "\(Int(majority)) Hz")
+                add(.sampleRateMismatch, String(localized: "Sample rate mismatch", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) is \(Int(take.format.sampleRate)) Hz while the rest of the project is \(Int(majority)) Hz.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: take.format.sampleRate, expected: String(localized: "\(Int(majority)) Hz", bundle: .module))
             }
             if let majority = majorityChannels, take.format.channels != majority {
-                add(.channelInconsistency, "Channel inconsistency", "Paragraph \(paragraph.ordinal) has \(take.format.channels) channel\(take.format.channels == 1 ? "" : "s") while the rest of the project has \(majority).", paragraphID: paragraph.id, takeID: take.id, measured: Double(take.format.channels), expected: "\(majority)")
+                add(.channelInconsistency, String(localized: "Channel inconsistency", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has \(take.format.channels) channels while the rest of the project has \(majority).", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: Double(take.format.channels), expected: String(localized: "\(majority)", bundle: .module))
             }
             if m.channels == 2, let expected = profile.audio.channels, expected == 1 {
-                add(.stereoWhereMonoExpected, "Stereo where mono expected", "Paragraph \(paragraph.ordinal) is stereo; this destination expects mono.", paragraphID: paragraph.id, takeID: take.id, measured: 2, expected: "1")
+                add(.stereoWhereMonoExpected, String(localized: "Stereo where mono expected", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) is stereo; this destination expects mono.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: 2, expected: "1")
             }
 
             if let edge = context.truncationEdgeLevels[take.id],
                edge.leadingDBFS > ValidationThresholds.truncationEdgeDBFS || edge.trailingDBFS > ValidationThresholds.truncationEdgeDBFS {
-                add(.suspectedTruncation, "Suspected truncated take", "Paragraph \(paragraph.ordinal) starts or ends abruptly at the file edge.", paragraphID: paragraph.id, takeID: take.id, measured: max(edge.leadingDBFS, edge.trailingDBFS), expected: "≤ \(ValidationThresholds.truncationEdgeDBFS) dBFS")
+                add(.suspectedTruncation, String(localized: "Suspected truncated take", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) starts or ends abruptly at the file edge.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: max(edge.leadingDBFS, edge.trailingDBFS), expected: "≤ \(ValidationThresholds.truncationEdgeDBFS) dBFS")
             }
             if m.leadingSilence > ValidationThresholds.excessiveLeadingSilenceSeconds {
-                add(.excessiveLeadingSilence, "Excessive leading silence", "Paragraph \(paragraph.ordinal) has \(String(format: "%.1f", m.leadingSilence)) s of leading silence.", paragraphID: paragraph.id, takeID: take.id, measured: m.leadingSilence, expected: "≤ \(ValidationThresholds.excessiveLeadingSilenceSeconds) s")
+                add(.excessiveLeadingSilence, String(localized: "Excessive leading silence", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) has \(String(format: "%.1f", m.leadingSilence)) s of leading silence.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: m.leadingSilence, expected: "≤ \(ValidationThresholds.excessiveLeadingSilenceSeconds) s")
             }
 
             let estimate = Double(paragraph.text.count) / ValidationThresholds.estimatedCharsPerSecond
             let deviation = estimate == 0 ? 0 : abs(take.duration - estimate) / estimate
             if deviation > ValidationThresholds.durationOutlierFraction {
-                add(.durationOutlier, "Duration outlier", "Paragraph \(paragraph.ordinal) is \(String(format: "%.0f", take.duration)) s against an estimated \(Int(estimate)) s of text.", paragraphID: paragraph.id, takeID: take.id, measured: take.duration, expected: "≈ \(Int(estimate)) s")
+                add(.durationOutlier, String(localized: "Duration outlier", bundle: .module), String(localized: "Paragraph \(paragraph.ordinal) is \(String(format: "%.0f", take.duration)) s against an estimated \(Int(estimate)) s of text.", bundle: .module), paragraphID: paragraph.id, takeID: take.id, measured: take.duration, expected: "≈ \(Int(estimate)) s")
             }
         }
 
@@ -514,7 +531,7 @@ private struct Evaluator {
                 guard durationSum > 0 else { continue }
                 let chapterRMS = 20 * log10(sqrt(weightedSum / durationSum))
                 if chapterRMS < minDB || chapterRMS > maxDB {
-                    add(.rmsOutOfRange, "Chapter RMS out of range", "\(chapter.title) measures \(String(format: "%.1f", chapterRMS)) dBFS RMS; expected \(Int(minDB)) to \(Int(maxDB)) dBFS.", chapterID: chapter.id, measured: chapterRMS, expected: "\(Int(minDB)) to \(Int(maxDB)) dBFS")
+                    add(.rmsOutOfRange, String(localized: "Chapter RMS out of range", bundle: .module), String(localized: "\(chapter.title) measures \(String(format: "%.1f", chapterRMS)) dBFS RMS; expected \(Int(minDB)) to \(Int(maxDB)) dBFS.", bundle: .module), chapterID: chapter.id, measured: chapterRMS, expected: String(localized: "\(Int(minDB)) to \(Int(maxDB)) dBFS", bundle: .module))
                 }
             }
         }
@@ -522,7 +539,7 @@ private struct Evaluator {
         // Mixed bit depth across the project's originals.
         let bitDepths = Set(takes.compactMap { $0.take.format.bitDepth })
         if bitDepths.count > 1 {
-            add(.bitDepthMismatch, "Mixed bit depths", "The project mixes bit depths: \(bitDepths.sorted().map(String.init).joined(separator: ", ")).")
+            add(.bitDepthMismatch, String(localized: "Mixed bit depths", bundle: .module), String(localized: "The project mixes bit depths: \(bitDepths.sorted().map(String.init).joined(separator: ", ")).", bundle: .module))
         }
     }
 
@@ -539,12 +556,12 @@ private struct Evaluator {
             let perceived = AssemblyLoudness.perceivedVolumeDB(for: m, target: target, isNormalizing: isNormalizing)
             guard perceived < low || perceived > high else { continue }
             let remedy = isNormalizing
-                ? "Normalization is already on and cannot reach the band — re-record this paragraph closer to the others."
-                : "Turn on take-to-take normalization to bring it into the band without re-recording."
+                ? String(localized: "Normalization is already on and cannot reach the band — re-record this paragraph closer to the others.", bundle: .module)
+                : String(localized: "Turn on take-to-take normalization to bring it into the band without re-recording.", bundle: .module)
             add(
                 .perceivedVolumeOutOfBand,
-                "Estimated perceived volume out of band",
-                "Estimated perceived volume is \(Int(perceived.rounded())) dB (LibriVox prefers \(Int(low))–\(Int(high)) dB). \(remedy) This is an estimate; the LibriVox checker is authoritative.",
+                String(localized: "Estimated perceived volume out of band", bundle: .module),
+                String(localized: "Estimated perceived volume is \(Int(perceived.rounded())) dB (LibriVox prefers \(Int(low))–\(Int(high)) dB). \(remedy) This is an estimate; the LibriVox checker is authoritative.", bundle: .module),
                 paragraphID: paragraph.id,
                 takeID: take.id,
                 measured: perceived,
@@ -567,8 +584,8 @@ private struct Evaluator {
             let first = draftTakes[0]
             add(
                 .routeNotRetailReady,
-                "Recorded on a draft-quality input",
-                "\(draftTakes.count) take\(draftTakes.count == 1 ? "" : "s") \(draftTakes.count == 1 ? "was" : "were") recorded on a Bluetooth or built-in input; this deliverable may not pass retail review.",
+                String(localized: "Recorded on a draft-quality input", bundle: .module),
+                String(localized: "\(draftTakes.count) takes were recorded on a Bluetooth or built-in input; this deliverable may not pass retail review.", bundle: .module),
                 paragraphID: first.paragraph.id,
                 takeID: first.take.id,
                 fix: .openAudioSetup
@@ -585,8 +602,8 @@ private struct Evaluator {
             let chapterCount = preflight.remoteHydrationChapterCount
             add(
                 .assetRemoteOnlyForExport,
-                chapterCount == 1 ? "1 chapter is in iCloud" : "\(chapterCount) chapters are in iCloud",
-                "\(PackagingSupport.formattedBytes(preflight.remoteHydrationBytes)) must download before export can start.",
+                String(localized: "\(chapterCount) chapters are in iCloud", bundle: .module),
+                String(localized: "\(PackagingSupport.formattedBytes(preflight.remoteHydrationBytes)) must download before export can start.", bundle: .module),
                 measured: Double(preflight.remoteHydrationBytes),
                 expected: "all selected-take audio local",
                 fix: .hydrateAssets
@@ -596,8 +613,8 @@ private struct Evaluator {
         if preflight.storageRequiredBytes > preflight.storageAvailableBytes {
             add(
                 .localStorageInsufficient,
-                "Not enough free space",
-                "Export needs \(PackagingSupport.formattedBytes(preflight.storageRequiredBytes)) but only \(PackagingSupport.formattedBytes(preflight.storageAvailableBytes)) is free.",
+                String(localized: "Not enough free space", bundle: .module),
+                String(localized: "Export needs \(PackagingSupport.formattedBytes(preflight.storageRequiredBytes)) but only \(PackagingSupport.formattedBytes(preflight.storageAvailableBytes)) is free.", bundle: .module),
                 measured: Double(preflight.storageRequiredBytes),
                 expected: "≤ \(PackagingSupport.formattedBytes(preflight.storageAvailableBytes)) available",
                 fix: .manageStorage
@@ -608,8 +625,8 @@ private struct Evaluator {
             let count = preflight.unverifiedSelectedTakeHashes.count
             add(
                 .backupNotVerified,
-                "Not backed up yet",
-                "\(count) take\(count == 1 ? "" : "s") exist\(count == 1 ? "s" : "") only on this iPhone; iCloud backup has not verified.",
+                String(localized: "Not backed up yet", bundle: .module),
+                String(localized: "\(count) takes exist only on this iPhone; iCloud backup has not verified.", bundle: .module),
                 fix: .backupNow
             )
         }

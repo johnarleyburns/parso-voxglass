@@ -34,7 +34,7 @@ public enum CarPlayMenuBuilder {
             var item = bookItem(current, action: .resumeCurrent)
             item.id = "now-playing"
             item.accessory = .nowPlaying
-            sections.append(CarPlaySection(header: "Now Playing", items: [item]))
+            sections.append(CarPlaySection(header: String(localized: "Now Playing", bundle: .module), items: [item]))
         }
 
         let excludedID = state.hasCurrentSession ? state.currentBookID : nil
@@ -44,7 +44,7 @@ public enum CarPlayMenuBuilder {
         })
         if !inProgress.isEmpty {
             sections.append(CarPlaySection(
-                header: sections.isEmpty ? nil : "In Progress",
+                header: sections.isEmpty ? nil : String(localized: "In Progress", bundle: .module),
                 items: applyCap(inProgress.map { bookItem($0, action: .playBook(bookID: $0.id)) })
             ))
         }
@@ -52,7 +52,7 @@ public enum CarPlayMenuBuilder {
         let finished = newestFirst(state.books.filter { $0.progress?.isFinished == true && $0.id != excludedID })
         if !finished.isEmpty {
             sections.append(CarPlaySection(
-                header: "Recently Finished",
+                header: String(localized: "Recently Finished", bundle: .module),
                 items: applyCap(finished.map { bookItem($0, action: .playBook(bookID: $0.id)) })
             ))
         }
@@ -63,7 +63,7 @@ public enum CarPlayMenuBuilder {
 
         return CarPlayTab(
             id: .continueListening,
-            title: "Continue",
+            title: String(localized: "Continue", bundle: .module),
             systemImage: "arrow.clockwise.circle.fill",
             sections: sections
         )
@@ -77,19 +77,19 @@ public enum CarPlayMenuBuilder {
             routes.append(search)
         }
         if state.books.contains(where: { $0.isFavorite }) {
-            routes.append(routeItem(id: "route-favorites", title: "Favorites",
+            routes.append(routeItem(id: "route-favorites", title: String(localized: "Favorites", bundle: .module),
                                     symbol: "heart.fill", route: .favorites))
         }
         if !state.playlists.isEmpty {
-            routes.append(routeItem(id: "route-playlists", title: "Playlists",
+            routes.append(routeItem(id: "route-playlists", title: String(localized: "Playlists", bundle: .module),
                                     symbol: "music.note.list", route: .allPlaylists))
         }
         if state.books.contains(where: { !$0.authors.isEmpty }) {
-            routes.append(routeItem(id: "route-authors", title: "Browse by Author",
+            routes.append(routeItem(id: "route-authors", title: String(localized: "Browse by Author", bundle: .module),
                                     symbol: "person.fill", route: .browseByAuthor))
         }
         if state.books.contains(where: { !$0.narrators.isEmpty }) {
-            routes.append(routeItem(id: "route-narrators", title: "Browse by Narrator",
+            routes.append(routeItem(id: "route-narrators", title: String(localized: "Browse by Narrator", bundle: .module),
                                     symbol: "waveform", route: .browseByNarrator))
         }
         if !routes.isEmpty {
@@ -101,14 +101,14 @@ public enum CarPlayMenuBuilder {
             sections.append(emptyState(.library))
         } else {
             sections.append(CarPlaySection(
-                header: "Books",
+                header: String(localized: "Books", bundle: .module),
                 items: applyCap(books.map { bookItem($0, action: .openBook(bookID: $0.id)) })
             ))
         }
 
         return CarPlayTab(
             id: .library,
-            title: "Library",
+            title: String(localized: "Library", bundle: .module),
             systemImage: "books.vertical.fill",
             sections: sections
         )
@@ -126,7 +126,7 @@ public enum CarPlayMenuBuilder {
         }
         return CarPlayTab(
             id: .downloaded,
-            title: "Downloaded",
+            title: String(localized: "Downloaded", bundle: .module),
             systemImage: "arrow.down.circle.fill",
             sections: sections
         )
@@ -140,14 +140,14 @@ public enum CarPlayMenuBuilder {
             sections.append(emptyState(.discover))
         } else {
             sections.append(CarPlaySection(
-                header: "For You",
+                header: String(localized: "For You", bundle: .module),
                 items: applyCap(recommendations.map(catalogItem))
             ))
         }
 
         let categories = [LibriVoxBrowseCategory.popular] + LibriVoxBrowseGroup.categories
         sections.append(CarPlaySection(
-            header: "Browse LibriVox",
+            header: String(localized: "Browse LibriVox", bundle: .module),
             items: applyCap(categories.map { category in
                 CarPlayItem(
                     id: "genre-\(category.id)",
@@ -161,7 +161,7 @@ public enum CarPlayMenuBuilder {
 
         return CarPlayTab(
             id: .discover,
-            title: "Discover",
+            title: String(localized: "Discover", bundle: .module),
             systemImage: "sparkles",
             sections: sections
         )
@@ -177,8 +177,8 @@ public enum CarPlayMenuBuilder {
         if state.keyboardLimited {
             return CarPlayItem(
                 id: "search-my-books",
-                title: "Search My Books",
-                subtitle: "Available when parked",
+                title: String(localized: "Search My Books", bundle: .module),
+                subtitle: String(localized: "Available when parked", bundle: .module),
                 artwork: .symbol("magnifyingglass"),
                 isEnabled: false,
                 action: .none
@@ -186,8 +186,8 @@ public enum CarPlayMenuBuilder {
         }
         return CarPlayItem(
             id: "search-my-books",
-            title: "Search My Books",
-            subtitle: "Search by title, author, or narrator",
+            title: String(localized: "Search My Books", bundle: .module),
+            subtitle: String(localized: "Search by title, author, or narrator", bundle: .module),
             artwork: .symbol("magnifyingglass"),
             accessory: .disclosure,
             action: .beginMyBooksSearch
@@ -245,7 +245,7 @@ public enum CarPlayMenuBuilder {
                 CarPlayItem(
                     id: "playlist-\(playlist.id.uuidString)",
                     title: playlist.name,
-                    detailText: "\(playlist.bookIDs.count) books",
+                    detailText: String(localized: "\(playlist.bookIDs.count) books", bundle: .module),
                     artwork: .symbol("music.note.list"),
                     accessory: .disclosure,
                     action: .openRoute(.playlist(id: playlist.id, name: playlist.name))
@@ -268,8 +268,8 @@ public enum CarPlayMenuBuilder {
             return [CarPlaySection(items: [
                 CarPlayItem(
                     id: "search-empty",
-                    title: "No results",
-                    subtitle: "Try a different title or author",
+                    title: String(localized: "No results", bundle: .module),
+                    subtitle: String(localized: "Try a different title or author", bundle: .module),
                     artwork: .symbol("magnifyingglass"),
                     isEnabled: false,
                     action: .none
@@ -305,7 +305,7 @@ public enum CarPlayMenuBuilder {
             item.id = "my-book-search-\(book.id.uuidString)"
             item.artwork = book.coverURL.map { .url($0) } ?? .symbol("books.vertical.fill")
             if !book.narrators.isEmpty {
-                let narrator = "Narrated by \(book.narrators.joined(separator: ", "))"
+                let narrator = String(localized: "Narrated by \(book.narrators.joined(separator: ", "))", bundle: .module)
                 item.detailText = [narrator, item.detailText]
                     .compactMap { $0 }
                     .joined(separator: " · ")
@@ -318,20 +318,20 @@ public enum CarPlayMenuBuilder {
 
     public static func progressDetail(_ p: CarPlayProgress) -> String {
         if p.isFinished {
-            return "Finished"
+            return String(localized: "Finished", bundle: .module)
         }
         let chapterNumber = p.chapterIndex + 1
         if let duration = p.chapterDuration, duration > 0, duration - p.position <= 60 {
-            return "Finishing Ch \(chapterNumber)"
+            return String(localized: "Finishing Ch \(chapterNumber)", bundle: .module)
         }
         if let remaining = p.bookRemaining {
-            return "Ch \(chapterNumber) of \(p.chapterCount) · \(CarPlayTimeFormat.compact(remaining)) left"
+            return String(localized: "Ch \(chapterNumber) of \(p.chapterCount) · \(CarPlayTimeFormat.compact(remaining)) left", bundle: .module)
         }
         if let duration = p.chapterDuration {
             let remaining = max(0, duration - p.position)
-            return "Ch \(chapterNumber) of \(p.chapterCount) · \(CarPlayTimeFormat.compact(remaining)) left in chapter"
+            return String(localized: "Ch \(chapterNumber) of \(p.chapterCount) · \(CarPlayTimeFormat.compact(remaining)) left in chapter", bundle: .module)
         }
-        return "Ch \(chapterNumber) of \(p.chapterCount)"
+        return String(localized: "Ch \(chapterNumber) of \(p.chapterCount)", bundle: .module)
     }
 
     public static func bookItem(_ b: CarPlayBookSnapshot, action: CarPlayAction) -> CarPlayItem {
@@ -377,8 +377,8 @@ public enum CarPlayMenuBuilder {
         case .continueListening:
             return CarPlaySection(items: [CarPlayItem(
                 id: "empty-continue",
-                title: "Nothing in progress yet",
-                subtitle: "Find your next book in Discover",
+                title: String(localized: "Nothing in progress yet", bundle: .module),
+                subtitle: String(localized: "Find your next book in Discover", bundle: .module),
                 artwork: .symbol("sparkles"),
                 accessory: .disclosure,
                 action: .openTab(.discover)
@@ -386,8 +386,8 @@ public enum CarPlayMenuBuilder {
         case .library:
             return CarPlaySection(items: [CarPlayItem(
                 id: "empty-library",
-                title: "Your library is empty",
-                subtitle: "Find free audiobooks in Discover",
+                title: String(localized: "Your library is empty", bundle: .module),
+                subtitle: String(localized: "Find free audiobooks in Discover", bundle: .module),
                 artwork: .symbol("sparkles"),
                 accessory: .disclosure,
                 action: .openTab(.discover)
@@ -395,8 +395,8 @@ public enum CarPlayMenuBuilder {
         case .downloaded:
             return CarPlaySection(items: [CarPlayItem(
                 id: "empty-downloaded",
-                title: "No downloads yet",
-                subtitle: "Download books on Wi-Fi to listen offline.",
+                title: String(localized: "No downloads yet", bundle: .module),
+                subtitle: String(localized: "Download books on Wi-Fi to listen offline.", bundle: .module),
                 artwork: .symbol("arrow.down.circle"),
                 accessory: .disclosure,
                 action: .openTab(.library)
@@ -404,8 +404,8 @@ public enum CarPlayMenuBuilder {
         case .discover:
             return CarPlaySection(items: [CarPlayItem(
                 id: "empty-discover",
-                title: "Recommendations are warming up",
-                subtitle: "Browse LibriVox below",
+                title: String(localized: "Recommendations are warming up", bundle: .module),
+                subtitle: String(localized: "Browse LibriVox below", bundle: .module),
                 artwork: .symbol("sparkles"),
                 isEnabled: false,
                 action: .none

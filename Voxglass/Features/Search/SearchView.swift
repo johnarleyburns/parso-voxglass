@@ -231,10 +231,10 @@ private enum SearchScope: CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .all: return "All"
-        case .title: return "Title"
-        case .author: return "Author"
-        case .narrator: return "Narrator"
+        case .all: return String(localized: "All")
+        case .title: return String(localized: "Title")
+        case .author: return String(localized: "Author")
+        case .narrator: return String(localized: "Narrator")
         }
     }
 }

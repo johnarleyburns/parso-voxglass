@@ -32,7 +32,7 @@ extension DestinationProfile {
     // verified 2026-08-02: LibriVox tech specs (128 kbps CBR MP3, 44.1 kHz mono); human-narration and disclaimer required
     public static let librivox = DestinationProfile(
         id: .librivox,
-        displayName: "LibriVox Contribution",
+        displayName: String(localized: "LibriVox Contribution", bundle: .module),
         tier: .free,
         audio: AudioSpec(container: .mp3, codec: .mp3, sampleRate: 44_100, channels: 1, bitrateKbps: 128, isCBR: true),
         fileGranularity: .perChapter,
@@ -94,7 +94,7 @@ extension DestinationProfile {
     // verified 2026-08-02: Apple Books audiobook intake guidance (M4B chapterized, AAC, square cover 2400 px, -20 dBFS RMS window)
     public static let appleBooksAggregator = DestinationProfile(
         id: .appleBooksAggregator,
-        displayName: "Apple Books / Aggregator",
+        displayName: String(localized: "Apple Books / Aggregator", bundle: .module),
         tier: .pro,
         audio: AudioSpec(container: .m4b, codec: .aacLC, sampleRate: 44_100, channels: 1, bitrateKbps: 128),
         secondaryAudio: AudioSpec(container: .mp3, codec: .mp3, sampleRate: 44_100, channels: 1, bitrateKbps: 192, isCBR: true),
@@ -118,7 +118,7 @@ extension DestinationProfile {
     // verified 2026-08-02: internal lossless master profile (WAV/PCM; no external intake requirements)
     public static let losslessMaster = DestinationProfile(
         id: .personalMaster,
-        displayName: "Lossless Chapter Masters",
+        displayName: String(localized: "Lossless Chapter Masters", bundle: .module),
         tier: .free,
         audio: AudioSpec(container: .wav, codec: .pcm),
         fileGranularity: .perChapter,

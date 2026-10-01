@@ -17,9 +17,9 @@ struct ScriptEditorView: View {
 
         var label: String {
             switch self {
-            case .all: return "All"
-            case .drift: return "Changed"
-            case .unrecorded: return "Unrecorded"
+            case .all: return String(localized: "All")
+            case .drift: return String(localized: "Changed")
+            case .unrecorded: return String(localized: "Unrecorded")
             }
         }
     }
@@ -57,7 +57,7 @@ struct ScriptEditorView: View {
         }
         .background(VoxglassBackground())
         .toolbar(.visible, for: .navigationBar)
-        .navigationTitle(model.project?.metadata.title ?? "Script")
+        .navigationTitle(model.project?.metadata.title ?? String(localized: "Script"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -268,7 +268,7 @@ private struct ScriptInspectorSheet: View {
         .onAppear {
             guard let paragraph = model.project?.allParagraphs.first(where: { $0.id == paragraphID }) else { return }
             direction = paragraph.directionNote ?? ""
-            pronunciation = paragraph.pronunciationRefs.isEmpty ? "" : "Set"
+            pronunciation = paragraph.pronunciationRefs.isEmpty ? "" : String(localized: "Set")
         }
         .onDisappear {
             // A discarded edit (Cancel) must not be silently flushed later.

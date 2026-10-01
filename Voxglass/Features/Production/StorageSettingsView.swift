@@ -91,7 +91,7 @@ struct StorageSettingsView: View {
         .accessibilityIdentifier("storage.workingCache")
     }
 
-    private func usageRow(_ label: String, _ bytes: Int64) -> some View {
+    private func usageRow(_ label: LocalizedStringKey, _ bytes: Int64) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(label)
                 .voxFont(.caption)
@@ -198,7 +198,7 @@ struct StorageSettingsView: View {
     }
 
     private func adaptiveHeader<Trailing: View>(
-        _ title: String,
+        _ title: LocalizedStringKey,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
         ViewThatFits(in: .horizontal) {
@@ -218,14 +218,14 @@ struct StorageSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func cardTitle(_ title: String) -> some View {
+    private func cardTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .voxFont(.callout, weight: .bold)
             .foregroundStyle(Palette.ink)
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func statusChip(_ label: String) -> some View {
+    private func statusChip(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .voxFont(.caption2, weight: .bold)
             .padding(.horizontal, 8).padding(.vertical, 4)

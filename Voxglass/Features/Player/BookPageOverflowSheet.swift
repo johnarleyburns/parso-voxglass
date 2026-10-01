@@ -218,7 +218,7 @@ struct BookPageOverflowSheet: View {
         }
     }
 
-    private func overflowRow(icon: String, title: String, detail: String? = nil) -> some View {
+    private func overflowRow(icon: String, title: LocalizedStringKey, detail: LocalizedStringKey? = nil) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .voxFont(.subheadline)

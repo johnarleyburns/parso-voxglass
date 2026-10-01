@@ -331,7 +331,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             guard !isPreloaded else { return }
             Task { @MainActor [weak self] in
                 guard let self, item.status == .failed else { return }
-                self.reportIssue(.failed(item.error?.localizedDescription ?? "The audio could not be opened."), for: item)
+                self.reportIssue(.failed(item.error?.localizedDescription ?? String(localized: "The audio could not be opened.")), for: item)
             }
         }
 
@@ -343,7 +343,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             guard !isPreloaded else { return }
             let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             Task { @MainActor [weak self] in
-                self?.reportIssue(.failed(error?.localizedDescription ?? "The audio stopped unexpectedly."), for: item)
+                self?.reportIssue(.failed(error?.localizedDescription ?? String(localized: "The audio stopped unexpectedly.")), for: item)
             }
         }
         failureTokenStore.tokens[key, default: []].append(failureToken)

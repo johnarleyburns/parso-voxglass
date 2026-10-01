@@ -45,7 +45,7 @@ struct MiniPlayerAccessory: View {
             .accessibilityIdentifier("chrome.miniPlayer")
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Now playing, \(session.book.title), \(session.chapter.title), \(session.isPlaying ? "playing" : "paused")")
-            .accessibilityAction(named: session.isPlaying ? "Pause" : "Play") {
+            .accessibilityAction(named: session.isPlaying ? String(localized: "Pause") : String(localized: "Play")) {
                 playback.togglePlayPause()
             }
             .accessibilityAction(named: "Skip forward \(forwardInterval) seconds") {

@@ -79,9 +79,9 @@ struct MicCheckView: View {
     }
 
     private var statusText: String {
-        if isPlayingBack { return "Playing back what was just recorded…" }
-        if isRecording { return "Talk for a few seconds, then stop to hear the recording back." }
-        return "Tap Start, talk for a few seconds, then stop to hear the recording back — a quick way to check your mic before recording for real."
+        if isPlayingBack { return String(localized: "Playing back what was just recorded…") }
+        if isRecording { return String(localized: "Talk for a few seconds, then stop to hear the recording back.") }
+        return String(localized: "Tap Start, talk for a few seconds, then stop to hear the recording back — a quick way to check your mic before recording for real.")
     }
 
     private var waveformCard: some View {
@@ -144,7 +144,7 @@ struct MicCheckView: View {
                 try await capture.startRecording(to: url)
                 startLevelSubscription()
             } catch {
-                errorText = "The mic check couldn't start. \(error.localizedDescription)"
+                errorText = String(localized: "The mic check couldn't start. \(error.localizedDescription)")
                 isRecording = false
                 pendingTakeURL = nil
                 try? FileManager.default.removeItem(at: url)
@@ -182,7 +182,7 @@ struct MicCheckView: View {
             pendingTakeURL = nil
             playBack(take)
         } catch {
-            errorText = "Couldn't finish the mic check. \(error.localizedDescription)"
+            errorText = String(localized: "Couldn't finish the mic check. \(error.localizedDescription)")
             if let pendingTakeURL {
                 try? FileManager.default.removeItem(at: pendingTakeURL)
             }
@@ -204,7 +204,7 @@ struct MicCheckView: View {
                 try? FileManager.default.removeItem(at: take.fileURL)
             }
         } catch {
-            errorText = "Recorded, but playback failed. \(error.localizedDescription)"
+            errorText = String(localized: "Recorded, but playback failed. \(error.localizedDescription)")
             try? FileManager.default.removeItem(at: take.fileURL)
         }
     }

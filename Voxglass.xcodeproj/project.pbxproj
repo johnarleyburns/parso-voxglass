@@ -65,6 +65,7 @@
 		3221E98B0D74E9911DA2B9A4 /* VoxglassWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F9E737556101729177BD5670 /* VoxglassWidgets.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		323FC310455784916E1AF8A3 /* girl_boat_1109_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 051C701DDE62968711413274 /* girl_boat_1109_librivox.jpg */; };
 		32CAAABEAB686600BB671219 /* AnimatedSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 614EDDFDEE2D6D46377341C6 /* AnimatedSplashView.swift */; };
+		3389E609883E0AC0E2B60444 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4A9B5950B4594C4173B11291 /* Localizable.xcstrings */; };
 		33A6B19C8EBABB66672DC421 /* frankenstein_shelley.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 04FCC00384E0A94423E5BF7C /* frankenstein_shelley.jpg */; };
 		345F9374A6BD581E921CCDE8 /* MicCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08C5E7EC2904F803DB79BE0 /* MicCheckView.swift */; };
 		3535F70DFE4809E65A722B5B /* VoxglassEncoders in Frameworks */ = {isa = PBXBuildFile; productRef = 939374D7CC51C05995A3F339 /* VoxglassEncoders */; };
@@ -112,6 +113,7 @@
 		60CB47A98B10CBFB01E1A34F /* MacSyncBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC594C14224B308CBB8AC9E /* MacSyncBootstrap.swift */; };
 		63FF3FCA96388B9CB363390D /* MacAppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF19B5E3393345D782C7B90 /* MacAppServices.swift */; };
 		6491F6B3D3E24F36631B9C95 /* ScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */; };
+		650410F94B184CAB42A42398 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D5A94C359467591A27819A47 /* InfoPlist.xcstrings */; };
 		6539622E0D5E728F474586F8 /* sense_sensibility_ver3_ek.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */; };
 		65921983DD70A9C16EA07F0D /* call_of_the_wild.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 819DD67B740EA26E6C96F048 /* call_of_the_wild.jpg */; };
 		666D60D797C0D1B5A4597EE4 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
@@ -174,7 +176,6 @@
 		9A64C2D2E69FD9609615B505 /* VoxglassUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */; };
 		9D601DFE827F77828EF805BB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 3FF9BA4E3F475FC96642625A /* ZIPFoundation */; };
 		9E60B177F487CA22A0E624CD /* alices_adventures_1003.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */; };
-		9EABB6FA26D2E80437AAF302 /* NarrationProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F827B2D592C6F51EF49127A6 /* NarrationProStore.swift */; };
 		A0DCC732CB708DA6F9C578B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8B92C41C9007B71F7A4BB38C /* PrivacyInfo.xcprivacy */; };
 		A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739CF70CFD45FD09DC69EB64 /* ListenView.swift */; };
 		A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347795F23ED3EA940FB4D8BE /* SystemPlaybackBridge.swift */; };
@@ -195,6 +196,7 @@
 		B14B2AE1CA11BC46846AA0E9 /* NarrationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */; };
 		B31C42F75DF0FC6FFF53CA95 /* PlaybackCommandRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80DC3840022582C008B0A87E /* PlaybackCommandRouter.swift */; };
 		B329B42E0CA9E0B40B1BEAD1 /* return_holmes_0708_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A42A7E5AF0C1B49C5E7A01FB /* return_holmes_0708_librivox.jpg */; };
+		B3662FA5DEA0FB8A5C1157DF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C6CA64609454389D49277852 /* Localizable.xcstrings */; };
 		B5044C8C821474568F3CEC5A /* don_quijote_vol1_0706_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61E5A9F59EE4AF7813584148 /* don_quijote_vol1_0706_librivox.jpg */; };
 		B5952AA049E325B3CBC54AF9 /* MacProductionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F87771897D730480805E37 /* MacProductionSync.swift */; };
 		B5C1B726B44A7670CE399BD3 /* 2br02b_0801_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2D878648CFAE6A1DA9323D89 /* 2br02b_0801_librivox.jpg */; };
@@ -265,6 +267,7 @@
 		E6D16B14A78484C5D7A0CC3D /* heart_of_darkness.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3B393E27114CA65865E52B0E /* heart_of_darkness.jpg */; };
 		E80388EE0E7634877EFFDDA4 /* walden_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5ACD76A1FBF9F2436A430A97 /* walden_librivox.jpg */; };
 		E901958E0908742189778915 /* adventures_sherlock_holmes_rg_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 80C8886548A2D672DC6DD80A /* adventures_sherlock_holmes_rg_librivox.jpg */; };
+		E9190FFE39F304C159222FCE /* NarrationLicenseStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCEFC0527DEA130C7DB8EA1 /* NarrationLicenseStore.swift */; };
 		E92CA2053F02F500942EC9EA /* fanny_hill_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C47467C62F52089A9F12E038 /* fanny_hill_librivox.jpg */; };
 		E9377FC490F1E5406F211C28 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
 		EA87C7DD9E014742C21AAC4E /* divine_comedy_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */; };
@@ -473,6 +476,7 @@
 		480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPageOverflowSheet.swift; sourceTree = "<group>"; };
 		48AD36A085B88B984ACA97FE /* english_fairy_tales_joy_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = english_fairy_tales_joy_librivox.jpg; sourceTree = "<group>"; };
 		49FA6D58EC651570824B18FE /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		4A9B5950B4594C4173B11291 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		4AAEDDB3F34068321C643AD3 /* prince_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = prince_librivox.jpg; sourceTree = "<group>"; };
 		4D20BE7960CDF63B338A9B8B /* VoxglassMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoxglassMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D4C14EF3CC1FDD728821195 /* alice_in_wonderland_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alice_in_wonderland_librivox.jpg; sourceTree = "<group>"; };
@@ -597,6 +601,7 @@
 		C47467C62F52089A9F12E038 /* fanny_hill_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fanny_hill_librivox.jpg; sourceTree = "<group>"; };
 		C4982A67A97291048FEDCB58 /* adventures_pinocchio_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_pinocchio_librivox.jpg; sourceTree = "<group>"; };
 		C5061FBEF9FB1D37EA33526A /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
+		C6CA64609454389D49277852 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		C8EC154B42BBE347C24283E9 /* RoutePickerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePickerButton.swift; sourceTree = "<group>"; };
 		C916EE82BAA77FF01E218A4E /* franklin_autobio_gg_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = franklin_autobio_gg_librivox.jpg; sourceTree = "<group>"; };
 		C9C9C82CDA7FAE7C991C661D /* game_of_life_0911_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = game_of_life_0911_librivox.jpg; sourceTree = "<group>"; };
@@ -613,6 +618,7 @@
 		CEC318EB68E5165403477C6D /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassUITests.swift; sourceTree = "<group>"; };
 		D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPlaybackEngine.swift; sourceTree = "<group>"; };
+		D5A94C359467591A27819A47 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		D6EFA25128B4DF9F2625F58F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		D7560D8FEEA1BCD6F92934AE /* BookActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookActivityAttributes.swift; sourceTree = "<group>"; };
 		D78C6344FCDC530F80FCD2DE /* parso-voxglass */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "parso-voxglass"; path = .; sourceTree = SOURCE_ROOT; };
@@ -624,6 +630,7 @@
 		DAD4F37F93457C1BFA5BE181 /* VoxglassZoomNamespace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassZoomNamespace.swift; sourceTree = "<group>"; };
 		DBF0BA6B47E170D692135105 /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		DC328A20FBE79B2C9ABFF3A1 /* odyssey_butler_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = odyssey_butler_librivox.jpg; sourceTree = "<group>"; };
+		DDCEFC0527DEA130C7DB8EA1 /* NarrationLicenseStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationLicenseStore.swift; sourceTree = "<group>"; };
 		DE1D2EC1CBB910F66D74380B /* NarrationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationFlow.swift; sourceTree = "<group>"; };
 		E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneProductionEnvironment.swift; sourceTree = "<group>"; };
 		E1CFFA4CFF485791A9300AA1 /* ScriptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEditorView.swift; sourceTree = "<group>"; };
@@ -644,7 +651,6 @@
 		F701EDCDE2BB625656606A03 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F7768800DF20C5E1108C2165 /* NarrationButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationButtons.swift; sourceTree = "<group>"; };
 		F8133D9EE165903ECF80F723 /* CarPlayNowPlayingConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNowPlayingConfigurator.swift; sourceTree = "<group>"; };
-		F827B2D592C6F51EF49127A6 /* NarrationProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationProStore.swift; sourceTree = "<group>"; };
 		F894F3072B9A0DE71D1E18D8 /* sense_sensibility_ver3_ek.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sense_sensibility_ver3_ek.jpg; sourceTree = "<group>"; };
 		F9C1AC88D4122B2F6085A567 /* VoxglassCarPlaySmokeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VoxglassCarPlaySmokeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9E737556101729177BD5670 /* VoxglassWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = VoxglassWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -988,7 +994,7 @@
 			children = (
 				F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */,
 				5532635DC8E5AD7E12FC2EAB /* ExportFormatsView.swift */,
-				F827B2D592C6F51EF49127A6 /* NarrationProStore.swift */,
+				DDCEFC0527DEA130C7DB8EA1 /* NarrationLicenseStore.swift */,
 				E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */,
 				503DA5CB11AB89B7119089CF /* PhoneProductionSync.swift */,
 				620A4DFD040B6B638E274BA2 /* ProductionCacheSettings.swift */,
@@ -1202,6 +1208,7 @@
 			children = (
 				08BAA2D3E4829E509F826F06 /* BookLiveActivity.swift */,
 				FD99DCDD54886C9D141EB539 /* Info.plist */,
+				C6CA64609454389D49277852 /* Localizable.xcstrings */,
 				CB6A5BC7DC98275216FFE39E /* PlaybackCommandRouter.swift */,
 				720A5EDA9A0E54D4F7F761A5 /* VoxglassWidgets.entitlements */,
 				BD23BB9D0CC40DF5959D700F /* VoxglassWidgets.swift */,
@@ -1225,6 +1232,7 @@
 				1AAEC7E4D58E0CABD44AE90F /* Artwork */,
 				1BBA5A2E92771EE1379D897D /* Assets.xcassets */,
 				17E06DEE185B6A8309E3F8BA /* CarPlayCues */,
+				D5A94C359467591A27819A47 /* InfoPlist.xcstrings */,
 				A4E3A373C90453CCB94A9980 /* Localizable.xcstrings */,
 				31F301342061165AB9B754A6 /* PrivacyInfo.xcprivacy */,
 				E27CA265F0603F339331C4A6 /* Voxglass-release.entitlements */,
@@ -1246,6 +1254,7 @@
 			isa = PBXGroup;
 			children = (
 				66F7A9D279793D2432215537 /* Assets.xcassets */,
+				4A9B5950B4594C4173B11291 /* Localizable.xcstrings */,
 				D6EFA25128B4DF9F2625F58F /* PrivacyInfo.xcprivacy */,
 				9FB9D2C66CB0110B3102BA5D /* VoxglassWatch-release.entitlements */,
 			);
@@ -1488,6 +1497,7 @@
 			buildConfigurationList = 84B207437262406804B45A94 /* Build configuration list for PBXNativeTarget "VoxglassWidgets" */;
 			buildPhases = (
 				970BDB1526ED80D0BF1EF1EB /* Sources */,
+				5095AFEAD353FC4929A6B553 /* Resources */,
 				99D2F8D224118DC98B2AFF31 /* Frameworks */,
 			);
 			buildRules = (
@@ -1620,6 +1630,7 @@
 				6E1AF6876C0B03D2CD4E4D3F /* Artwork in Resources */,
 				3D1FDC4720D46F3585E91D38 /* Assets.xcassets in Resources */,
 				846BF99F1EBD8A2AB2914127 /* CarPlayCues in Resources */,
+				650410F94B184CAB42A42398 /* InfoPlist.xcstrings in Resources */,
 				1CD31D38B3A486E8FD121513 /* Localizable.xcstrings in Resources */,
 				7481A1345194B59F5E43FB14 /* PrivacyInfo.xcprivacy in Resources */,
 				4487DE27D4F87CDA5EA2ADE6 /* adventures_holmes.jpg in Resources */,
@@ -1723,6 +1734,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5095AFEAD353FC4929A6B553 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B3662FA5DEA0FB8A5C1157DF /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A71BBE8B0D9C337D0BB38153 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1738,6 +1757,7 @@
 			files = (
 				7FE142E6F2EAADB2CD74A186 /* AppIcon.icon in Resources */,
 				FB44359C1D3A5ACF596A3A2B /* Assets.xcassets in Resources */,
+				3389E609883E0AC0E2B60444 /* Localizable.xcstrings in Resources */,
 				0F8B4A100A1D416032C806F0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1896,9 +1916,9 @@
 				24F190DC1DB3CC2AE20BD330 /* NarrationButtons.swift in Sources */,
 				B14B2AE1CA11BC46846AA0E9 /* NarrationFlow.swift in Sources */,
 				27C147259FE948D5158B6B06 /* NarrationFlowScreens.swift in Sources */,
+				E9190FFE39F304C159222FCE /* NarrationLicenseStore.swift in Sources */,
 				D0A8BA5AD04EE6FEDEDF5C6A /* NarrationPalette.swift in Sources */,
 				077DDEC93EAD3F31F9203EB8 /* NarrationPipeline.swift in Sources */,
-				9EABB6FA26D2E80437AAF302 /* NarrationProStore.swift in Sources */,
 				9313773ED1C718003C5FC794 /* NarrationProjectRepository.swift in Sources */,
 				DBBDBF3E02DCB27296991885 /* NarrationTabView.swift in Sources */,
 				C8A020B987935676F1BF6100 /* ObservationSubscription.swift in Sources */,
@@ -2253,12 +2273,14 @@
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = guru.parso.voxglass;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.watchkitapp;
 				PRODUCT_NAME = VoxglassWatch;
 				PROVISIONING_PROFILE_SPECIFIER = "Parso Voxglass Watch App Store";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Release;
@@ -2328,9 +2350,11 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.widgets;
 				PRODUCT_NAME = VoxglassWidgets;
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -2347,10 +2371,12 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.widgets;
 				PRODUCT_NAME = VoxglassWidgets;
 				PROVISIONING_PROFILE_SPECIFIER = "Parso Voxglass Widgets App Store";
 				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -2368,11 +2394,13 @@
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = guru.parso.voxglass;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.watchkitapp;
 				PRODUCT_NAME = VoxglassWatch;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Debug;

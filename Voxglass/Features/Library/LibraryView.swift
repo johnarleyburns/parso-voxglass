@@ -378,7 +378,7 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private func sortLabel(_ title: String, active: Bool) -> some View {
+    private func sortLabel(_ title: LocalizedStringKey, active: Bool) -> some View {
         if active {
             Label(title, systemImage: "checkmark")
         } else {
@@ -434,15 +434,17 @@ struct LibraryView: View {
         let hasResumePoint = libraryStore.progressByBook[book.book.id].map {
             $0.lastPosition > 0 && !$0.isFinished
         } ?? false
-        return "\(hasResumePoint ? "Resume" : "Play") \(book.book.title)"
+        return hasResumePoint
+            ? String(localized: "Resume \(book.book.title)")
+            : String(localized: "Play \(book.book.title)")
     }
 
     private func progressText(for book: BookWithChapters) -> String? {
         guard let progress = libraryStore.progressByBook[book.book.id] else { return nil }
-        if progress.isFinished { return "Finished" }
+        if progress.isFinished { return String(localized: "Finished") }
         guard progress.lastPosition > 0 else { return nil }
         guard let totalDuration = book.totalDuration, totalDuration > 0 else {
-            return "In progress"
+            return String(localized: "In progress")
         }
         let percent = Int((min(max(progress.lastPosition / totalDuration, 0), 1) * 100).rounded())
         return "\(percent)% listened"
@@ -497,17 +499,17 @@ struct LibraryView: View {
 
     private func watchContextTitle(for book: BookWithChapters) -> String {
         guard let storage = phoneAudioRelay.watchStorageInfo(for: book.book.id) else {
-            return "Download to Apple Watch"
+            return String(localized: "Download to Apple Watch")
         }
         switch storage.state {
         case .available:
-            return "Downloaded on Apple Watch"
+            return String(localized: "Downloaded on Apple Watch")
         case .transferring, .queued, .waitingForPhone:
-            return "Downloading to Apple Watch…"
+            return String(localized: "Downloading to Apple Watch…")
         case .failed:
-            return "Retry Download to Apple Watch"
+            return String(localized: "Retry Download to Apple Watch")
         case .notAvailable:
-            return "Download to Apple Watch"
+            return String(localized: "Download to Apple Watch")
         }
     }
 
@@ -767,7 +769,7 @@ private struct AddArchiveURLSheet: View {
                 await playback.present(imported)
                 showingNowPlaying = true
             } else {
-                libraryStore.importError = "Couldn't add this audiobook to your library."
+                libraryStore.importError = String(localized: "Couldn't add this audiobook to your library.")
             }
         } catch {
             libraryStore.importError = error.localizedDescription
@@ -943,11 +945,11 @@ private enum LocalAudiobookImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAudio:
-            return "No supported audio file was found in that folder."
+            return String(localized: "No supported audio file was found in that folder.")
         case .missingChapterText:
-            return "No chapter text file was found in that folder."
+            return String(localized: "No chapter text file was found in that folder.")
         case .invalidChapterTiming:
-            return "The chapter timestamps do not fit within the selected audio file."
+            return String(localized: "The chapter timestamps do not fit within the selected audio file.")
         }
     }
 }
@@ -962,10 +964,10 @@ private enum LibrarySearchScope: CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .all: return "All"
-        case .title: return "Title"
-        case .author: return "Author"
-        case .narrator: return "Narrator"
+        case .all: return String(localized: "All")
+        case .title: return String(localized: "Title")
+        case .author: return String(localized: "Author")
+        case .narrator: return String(localized: "Narrator")
         }
     }
 }

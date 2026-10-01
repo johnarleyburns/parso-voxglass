@@ -1,8 +1,8 @@
 import Foundation
 
 /// Records and aggregates on-device listening events (§5). Events are logged for
-/// **all** users (privacy-safe, local only, no telemetry); only the *viewing* of
-/// stats is Pro-gated. `book_id` uses `ON DELETE SET NULL` so lifetime totals stay
+/// **all** users (privacy-safe, local only, no telemetry), and viewing the stats
+/// is free. `book_id` uses `ON DELETE SET NULL` so lifetime totals stay
 /// correct after a book is removed.
 @MainActor
 public final class ListeningStatsStore: ObservableObject {

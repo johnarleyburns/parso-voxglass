@@ -74,11 +74,11 @@ public enum AudioEngineIssue: Equatable, Sendable {
     public var userMessage: String {
         switch self {
         case .stalled:
-            return "Playback paused while the audio source was buffering."
+            return String(localized: "Playback paused while the audio source was buffering.", bundle: .module)
         case .failed(let message):
-            return message.isEmpty ? "The audio could not continue playing." : message
+            return message.isEmpty ? String(localized: "The audio could not continue playing.", bundle: .module) : message
         case .unverifiedEnd:
-            return "Playback stopped before the chapter end could be verified."
+            return String(localized: "Playback stopped before the chapter end could be verified.", bundle: .module)
         }
     }
 }
@@ -90,9 +90,9 @@ public enum AudioEngineError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .missingPlayableURL:
-            "This chapter does not have a playable audio URL."
+            String(localized: "This chapter does not have a playable audio URL.", bundle: .module)
         case .unplayableAudio:
-            "This chapter's downloaded audio could not be opened."
+            String(localized: "This chapter's downloaded audio could not be opened.", bundle: .module)
         }
     }
 }

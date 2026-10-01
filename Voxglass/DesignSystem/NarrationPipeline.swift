@@ -8,7 +8,7 @@ struct PipelineBar: View {
             switch phase { case .draft, .recording: 0; case .review: 1; case .package: 2; case .ready: 3 }
         }()
         HStack(spacing: 4) {
-            ForEach(Array(["Record", "Review", "Package", "Hand off"].enumerated()), id: \.offset) { index, label in
+            ForEach(Array((["Record", "Review", "Package", "Hand off"] as [LocalizedStringKey]).enumerated()), id: \.offset) { index, label in
                 VStack(alignment: .leading, spacing: 4) {
                     Capsule().fill(index < current ? NarrationPalette.mint : (index == current ? Palette.brass : Color.white.opacity(0.12))).frame(height: 4)
                     Text(label).voxType(.eyebrow).foregroundStyle(index <= current ? Palette.ink2 : Palette.ink3)

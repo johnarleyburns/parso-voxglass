@@ -26,7 +26,7 @@ enum ProductionCarPlayRenderer {
 
     static func fallbackTemplate(reason: String? = nil) -> CPListTemplate {
         _ = reason
-        let item = CPListItem(text: "CarPlay is loading", detailText: "Return to Voxglass and try again")
+        let item = CPListItem(text: String(localized: "CarPlay is loading"), detailText: String(localized: "Return to Voxglass and try again"))
         item.isEnabled = false
         item.setImage(UIImage(systemName: "arrow.clockwise"))
         return CPListTemplate(
@@ -88,8 +88,8 @@ enum ProductionCarPlayRenderer {
 
     static func noteSummaryTemplate(_ summary: ProductionCarPlayNoteSummary) -> CPInformationTemplate {
         let items: [CPInformationItem] = [
-            CPInformationItem(title: "Note", detail: summary.noteText ?? "No note for this paragraph"),
-            CPInformationItem(title: "Playback", detail: summary.paragraphText ?? summary.chapterLabel)
+            CPInformationItem(title: String(localized: "Note"), detail: summary.noteText ?? String(localized: "No note for this paragraph")),
+            CPInformationItem(title: String(localized: "Playback"), detail: summary.paragraphText ?? summary.chapterLabel)
         ]
         return CPInformationTemplate(
             title: summary.chapterLabel,
@@ -105,18 +105,18 @@ enum ProductionCarPlayRenderer {
         undo: @escaping () -> Void
     ) -> CPAlertTemplate {
         let playNextAction = CPAlertAction(
-            title: "Play Next",
+            title: String(localized: "Play Next"),
             style: .default,
             handler: { _ in playNext() }
         )
         let undoAction = CPAlertAction(
-            title: "Undo",
+            title: String(localized: "Undo"),
             style: .cancel,
             handler: { _ in undo() }
         )
         var titleVariants = [confirmation.title, confirmation.message]
         if let next = confirmation.nextParagraphLabel {
-            titleVariants.append("Next: \(next)")
+            titleVariants.append(String(localized: "Next: \(next)"))
         }
         return CPAlertTemplate(titleVariants: titleVariants, actions: [playNextAction, undoAction])
     }

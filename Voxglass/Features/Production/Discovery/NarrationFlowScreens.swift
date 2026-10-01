@@ -395,7 +395,7 @@ struct RecordView: View {
     private func paragraphLabel(for paragraphID: UUID?) -> String {
         guard let paragraphID,
               let index = model.paragraphs.firstIndex(where: { $0.id == paragraphID }) else {
-            return "Recovered take"
+            return String(localized: "Recovered take")
         }
         return "paragraphs \(index + 1)"
     }
@@ -503,7 +503,7 @@ struct RecordView: View {
                             metric("Length", metrics.duration.formattedShort)
                         }
                         if metrics.clipCount > 0 {
-                            Label("Clipping detected (\(metrics.clipCount) run\(metrics.clipCount == 1 ? "" : "s"))", systemImage: "exclamationmark.triangle.fill")
+                            Label("Clipping detected (\(metrics.clipCount) runs)", systemImage: "exclamationmark.triangle.fill")
                                 .foregroundStyle(Palette.danger)
                         }
                         ForEach(model.analysisIssues(for: currentParagraphID).filter { $0.severity == .warning }) { issue in
@@ -524,7 +524,7 @@ struct RecordView: View {
         }
     }
 
-    private func metric(_ title: String, _ value: String) -> some View {
+    private func metric(_ title: LocalizedStringKey, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).foregroundStyle(Palette.ink3)
             Text(value).fontWeight(.semibold).foregroundStyle(Palette.ink)
@@ -738,9 +738,9 @@ struct RecordView: View {
 
     private func roleLabel(_ role: FlowParagraphRole) -> String {
         switch role {
-        case .intro: return "Intro"
-        case .outro: return "Outro"
-        case .body: return "Paragraph"
+        case .intro: return String(localized: "Intro")
+        case .outro: return String(localized: "Outro")
+        case .body: return String(localized: "Paragraph")
         }
     }
 
@@ -965,7 +965,7 @@ struct ReviewView: View {
     private func attempt(_ action: NarrationAction) {
         let blockers = model.blockers(for: action)
         guard blockers.isEmpty else {
-            blockedActionTitle = action == .assemble ? "Can't assemble yet" : "Can't export yet"
+            blockedActionTitle = action == .assemble ? String(localized: "Can't assemble yet") : String(localized: "Can't export yet")
             blockedActionMessage = blockers.map { "• \($0.title): \($0.message)" }.joined(separator: "\n")
             showBlockedAction = true
             return
@@ -1009,7 +1009,7 @@ struct ReviewView: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Chapter \(chapter.ordinal + 1)")
-                .accessibilityValue(collapsedChapterIDs.contains(chapter.id) ? "Collapsed" : "Expanded")
+                .accessibilityValue(collapsedChapterIDs.contains(chapter.id) ? String(localized: "Collapsed") : String(localized: "Expanded"))
                 .accessibilityHint("Double-tap to \(collapsedChapterIDs.contains(chapter.id) ? "expand" : "collapse")")
                 .accessibilityIdentifier("review.chapter.header.\(chapter.ordinal)")
                 Spacer()
@@ -1070,7 +1070,7 @@ struct ReviewView: View {
                     .accessibilityValue(
                         model.playbackDuration > 0
                             ? "\(Int((model.playbackPosition / model.playbackDuration * 100).rounded())) percent"
-                            : "Not started"
+                            : String(localized: "Not started")
                     )
             }
             Button { model.toggleCurrentPlayback() } label: {
@@ -1093,8 +1093,8 @@ struct ReviewView: View {
     private var nowPlayingLabel: String {
         guard let project = model.project, let id = model.playbackParagraphID,
               let chapter = project.chapters.first(where: { $0.paragraphs.contains(where: { $0.id == id }) }),
-              let paragraphIndex = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return "Playing" }
-        return "Chapter \(chapter.ordinal + 1) · paragraphs \(paragraphIndex + 1)"
+              let paragraphIndex = project.allParagraphs.firstIndex(where: { $0.id == id }) else { return String(localized: "Playing") }
+        return String(localized: "Chapter \(chapter.ordinal + 1) · paragraphs \(paragraphIndex + 1)")
     }
 
     private func toggleChapter(_ id: UUID) {
@@ -1236,7 +1236,7 @@ struct ReviewView: View {
             guard paragraph.take != nil else { return }
             model.togglePlayback(paragraph.id)
         }
-        .accessibilityAction(named: paragraph.state == .approved ? "Unapprove" : "Approve") {
+        .accessibilityAction(named: paragraph.state == .approved ? String(localized: "Unapprove") : String(localized: "Approve")) {
             guard paragraph.state == .recorded || paragraph.state == .approved else { return }
             model.toggleApproval(for: paragraph.id)
             Task { await model.persist() }
@@ -1263,10 +1263,10 @@ struct ReviewView: View {
 
     private func checkboxLabel(_ state: FlowParagraphState) -> String {
         switch state {
-        case .notRecorded: "Not recorded"
-        case .recorded: "Approve paragraph"
-        case .approved: "Approved — tap to un-approve"
-        case .flagged: "Flagged"
+        case .notRecorded: String(localized: "Not recorded")
+        case .recorded: String(localized: "Approve paragraph")
+        case .approved: String(localized: "Approved — tap to un-approve")
+        case .flagged: String(localized: "Flagged")
         }
     }
 
@@ -1367,7 +1367,7 @@ struct AssembleView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.metadata.title).voxFont(.callout, weight: .heavy).foregroundStyle(Palette.ink)
-                    Text("\(project.metadata.author) · \(project.chapters.count) chapter\(project.chapters.count == 1 ? "" : "s") · ~\(model.totalDuration.formattedShort)")
+                    Text("\(project.metadata.author) · \(project.chapters.count) chapters · ~\(model.totalDuration.formattedShort)")
                         .voxFont(.caption).foregroundStyle(Palette.ink2)
                 }
                 Spacer()
@@ -1519,7 +1519,7 @@ struct AssembleView: View {
 
     private func subtitle(for chapter: ProductionChapter, project: AudiobookProject) -> String {
         let recorded = chapter.paragraphs.count { $0.selectedTakeID != nil }
-        if recorded == 0 { return "Not recorded yet" }
+        if recorded == 0 { return String(localized: "Not recorded yet") }
         let segments = SegmentQueueBuilder().build(.chapter(chapter.id), from: project, settings: model.assembly)
         let duration = AssemblyDuration.duration(of: segments)
         return "\(recorded) paragraphs · \(duration.formattedShort)"
@@ -1609,7 +1609,7 @@ struct AssembleView: View {
         )
     }
 
-    private func toggleRow(_ title: String, caption: String, isOn: Binding<Bool>, id: String) -> some View {
+    private func toggleRow(_ title: LocalizedStringKey, caption: LocalizedStringKey, isOn: Binding<Bool>, id: String) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
@@ -1623,7 +1623,7 @@ struct AssembleView: View {
         }
     }
 
-    private func sliderRow(_ label: String, value: Binding<TimeInterval>, range: ClosedRange<Double>, step: Double, id: String) -> some View {
+    private func sliderRow(_ label: LocalizedStringKey, value: Binding<TimeInterval>, range: ClosedRange<Double>, step: Double, id: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
@@ -1730,9 +1730,9 @@ struct MetadataView: View {
 
     @State private var goExport = false
 
-    private func fieldRow(_ label: String, text: Binding<String>, id: String) -> some View {
+    private func fieldRow(_ label: LocalizedStringKey, text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label.uppercased())
+            Text(label).textCase(.uppercase)
                 .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
             TextField("", text: text)
                 .voxFont(.subheadline)
@@ -1744,9 +1744,9 @@ struct MetadataView: View {
         }
     }
 
-    private func areaRow(_ label: String, text: Binding<String>, id: String) -> some View {
+    private func areaRow(_ label: LocalizedStringKey, text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label.uppercased())
+            Text(label).textCase(.uppercase)
                 .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
             TextEditor(text: text)
                 .voxFont(.subheadline)
@@ -1917,7 +1917,7 @@ struct ValidateExportView: View {
 
     private var destinationName: String {
         switch model.validationDestination {
-        case .personalMaster: return "Personal listening"
+        case .personalMaster: return String(localized: "Personal listening")
         default: return "LibriVox"
         }
     }
@@ -1925,21 +1925,21 @@ struct ValidateExportView: View {
     private var exportDisabledReason: String? {
         if let field = model.missingRequiredMetadata(for: model.validationDestination).first {
             switch field {
-            case .title: return "Add a title before exporting."
-            case .narrator: return "Add a narrator name before exporting."
-            case .author: return "Add an author before exporting."
-            case .language: return "Add a language before exporting."
-            case .sourceURL: return "Add a source URL before exporting."
-            default: return "Complete the required metadata before exporting."
+            case .title: return String(localized: "Add a title before exporting.")
+            case .narrator: return String(localized: "Add a narrator name before exporting.")
+            case .author: return String(localized: "Add an author before exporting.")
+            case .language: return String(localized: "Add a language before exporting.")
+            case .sourceURL: return String(localized: "Add a source URL before exporting.")
+            default: return String(localized: "Complete the required metadata before exporting.")
             }
         }
         if !model.blockingValidationIssues.isEmpty {
             let count = model.blockingValidationIssues.count
-            return "\(count) blocking issue\(count == 1 ? "" : "s") to fix first."
+            return String(localized: "\(count) blocking issues to fix first.")
         }
-        if !model.exportScopeIsValid { return "Pick at least one chapter to export." }
+        if !model.exportScopeIsValid { return String(localized: "Pick at least one chapter to export.") }
         if let bytes = model.preflight?.hydrationPlan.byteCount, bytes > 0 {
-            return "Downloading \(PackagingSupport.formattedBytes(bytes)) from iCloud…"
+            return String(localized: "Downloading \(PackagingSupport.formattedBytes(bytes)) from iCloud…")
         }
         return nil
     }
@@ -2018,25 +2018,27 @@ struct ValidateExportView: View {
     private var currentChapterSubtitle: String {
         guard let project = model.project, let id = model.currentExportChapterID,
               let chapter = project.chapters.first(where: { $0.id == id }) else {
-            return model.project?.chapters.isEmpty == false ? "\(model.project?.chapters.first?.title ?? "Chapter 1")" : "No chapters yet"
+            return model.project?.chapters.isEmpty == false
+                ? (model.project?.chapters.first?.title ?? String(localized: "Chapter 1"))
+                : String(localized: "No chapters yet")
         }
         return chapter.title + " · " + PackagingSupport.clockTime(chapterDuration(chapter))
     }
 
     private var selectedChaptersSubtitle: String {
         let count = model.exportSelectedChapterIDs.count
-        return count == 0 ? "Pick from a list" : "\(count) chapter\(count == 1 ? "" : "s")"
+        return count == 0 ? String(localized: "Pick from a list") : String(localized: "\(count) chapters")
     }
 
     private var wholeBookSubtitle: String {
         guard let project = model.project else { return "" }
-        return "\(project.chapters.count) chapter\(project.chapters.count == 1 ? "" : "s") · " + PackagingSupport.clockTime(model.totalDuration)
+        return String(localized: "\(project.chapters.count) chapters") + " · " + PackagingSupport.clockTime(model.totalDuration)
     }
 
     private var reviewQueueSubtitle: String {
-        guard let project = model.project else { return "No flagged paragraphs" }
+        guard let project = model.project else { return String(localized: "No flagged paragraphs") }
         let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
-        return flagged == 0 ? "No flagged paragraphs" : "\(flagged) flagged paragraph\(flagged == 1 ? "" : "s")"
+        return flagged == 0 ? String(localized: "No flagged paragraphs") : String(localized: "\(flagged) flagged paragraphs")
     }
 
     private func chapterDuration(_ chapter: ProductionChapter) -> TimeInterval {
@@ -2055,7 +2057,7 @@ struct ValidateExportView: View {
                                 .foregroundStyle(model.exportSelectedChapterIDs.contains(chapter.id) ? Palette.brass : Palette.ink3)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(chapter.title).voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
-                                Text("\(chapter.paragraphs.count) paragraph\(chapter.paragraphs.count == 1 ? "" : "s") · " + PackagingSupport.clockTime(chapterDuration(chapter)))
+                                Text(String(localized: "\(chapter.paragraphs.count) paragraphs") + " · " + PackagingSupport.clockTime(chapterDuration(chapter)))
                                     .voxFont(.caption2).foregroundStyle(Palette.ink3)
                             }
                             Spacer()
@@ -2093,7 +2095,7 @@ struct ValidateExportView: View {
     }
 
     /// A full-width destination row (mockup 14).
-    private func destinationRow(_ destination: DestinationID, label: String, subtitle: String, id: String) -> some View {
+    private func destinationRow(_ destination: DestinationID, label: LocalizedStringKey, subtitle: LocalizedStringKey, id: String) -> some View {
         let selected = model.validationDestination == destination
         return Button {
             model.selectValidationDestination(destination)
@@ -2118,7 +2120,7 @@ struct ValidateExportView: View {
         .accessibilityIdentifier(id)
     }
 
-    private func issueSection(title: String, issues: [ValidationIssue]) -> some View {
+    private func issueSection(title: LocalizedStringKey, issues: [ValidationIssue]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .voxFont(.footnote, weight: .bold).foregroundStyle(Palette.ink3)
@@ -2225,23 +2227,23 @@ struct ValidateExportView: View {
 
     private func fixLabel(_ fix: FixAction) -> String {
         switch fix {
-        case .hydrateAssets: return "Download"
-        case .manageStorage: return "Storage"
-        case .backupNow: return "Back up"
-        case .openAudioSetup: return "Audio setup"
-        case .recordParagraph: return "Record"
-        case .clearPickup: return "Clear"
-        case .regenerateDisclaimers, .regenerateCredits: return "Regenerate"
-        case .normalizeLoudness: return "Normalize"
-        case .reanalyzeTake: return "Re-analyze"
-        case .setRetailSample: return "Sample"
-        case .splitChapter: return "Split"
-        case .chooseArtwork: return "Artwork"
-        case .applyMastering: return "Master"
-        case .goToParagraph, .goToChapter: return "Open"
-        case .openMetadata: return "Edit"
-        case .openRights: return "Rights"
-        case .selectTake: return "Select"
+        case .hydrateAssets: return String(localized: "Download")
+        case .manageStorage: return String(localized: "Storage")
+        case .backupNow: return String(localized: "Back up")
+        case .openAudioSetup: return String(localized: "Audio setup")
+        case .recordParagraph: return String(localized: "Record")
+        case .clearPickup: return String(localized: "Clear")
+        case .regenerateDisclaimers, .regenerateCredits: return String(localized: "Regenerate")
+        case .normalizeLoudness: return String(localized: "Normalize")
+        case .reanalyzeTake: return String(localized: "Re-analyze")
+        case .setRetailSample: return String(localized: "Sample")
+        case .splitChapter: return String(localized: "Split")
+        case .chooseArtwork: return String(localized: "Artwork")
+        case .applyMastering: return String(localized: "Master")
+        case .goToParagraph, .goToChapter: return String(localized: "Open")
+        case .openMetadata: return String(localized: "Edit")
+        case .openRights: return String(localized: "Rights")
+        case .selectTake: return String(localized: "Select")
         }
     }
 
@@ -2249,7 +2251,7 @@ struct ValidateExportView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "icloud.and.arrow.down").voxFont(.subheadline, weight: .bold).foregroundStyle(Palette.brass)
             VStack(alignment: .leading, spacing: 8) {
-                Text("\(preflight.remoteHydrationChapterCount) chapter\(preflight.remoteHydrationChapterCount == 1 ? "" : "s") are in iCloud")
+                Text("\(preflight.remoteHydrationChapterCount) chapters are in iCloud")
                     .voxFont(.footnote, weight: .semibold).foregroundStyle(Palette.ink)
                 Text("\(PackagingSupport.formattedBytes(preflight.hydrationPlan.byteCount)) must download before export can start.")
                     .voxFont(.caption2).foregroundStyle(Palette.ink3)
@@ -2505,7 +2507,7 @@ struct ExportRunView: View {
         .raisedSurface()
     }
 
-    private func pipelineRow(verified: Bool? = nil, step: String, chip: String? = nil, active: Bool = false) -> some View {
+    private func pipelineRow(verified: Bool? = nil, step: LocalizedStringKey, chip: LocalizedStringKey? = nil, active: Bool = false) -> some View {
         HStack(spacing: 10) {
             Image(systemName: verified == true ? "checkmark" : (active ? "circle.fill" : "circle"))
                 .voxFont(.caption, weight: .bold)
@@ -2547,7 +2549,7 @@ struct ExportRunView: View {
         .raisedSurface()
     }
 
-    private func chapterRow(range: String, chip: String, chipColor: Color?) -> some View {
+    private func chapterRow(range: String, chip: LocalizedStringKey, chipColor: Color?) -> some View {
         HStack(spacing: 10) {
             Text(range).voxFont(.caption).foregroundStyle(Palette.ink)
             Spacer()
@@ -2615,19 +2617,20 @@ struct ExportRunView: View {
 
     private var stepText: String {
         guard let progress = model.exportProgress else {
-            return model.isExporting ? "Preparing…" : "Preparing"
+            return model.isExporting ? String(localized: "Preparing…") : String(localized: "Preparing")
         }
-        let file = progress.currentFileName.map { " \($0)" } ?? ""
+        let file = progress.currentFileName ?? ""
+        let hasFile = !file.isEmpty
         switch progress.phase {
-        case .validating: return "Validating project…"
-        case .rendering: return "Rendering\(file)"
-        case .mastering: return "Mastering\(file)"
-        case .transcoding: return "Encoding\(file)"
-        case .tagging: return "Tagging\(file)"
-        case .writingArtifacts: return "Writing\(file)"
-        case .hashing: return "Hashing\(file)"
-        case .chapterFinished: return "Chapter \(progress.completedUnits) of \(totalChapters) done"
-        case .done: return "Package ready"
+        case .validating: return String(localized: "Validating project…")
+        case .rendering: return hasFile ? String(localized: "Rendering \(file)") : String(localized: "Rendering")
+        case .mastering: return hasFile ? String(localized: "Mastering \(file)") : String(localized: "Mastering")
+        case .transcoding: return hasFile ? String(localized: "Encoding \(file)") : String(localized: "Encoding")
+        case .tagging: return hasFile ? String(localized: "Tagging \(file)") : String(localized: "Tagging")
+        case .writingArtifacts: return hasFile ? String(localized: "Writing \(file)") : String(localized: "Writing")
+        case .hashing: return hasFile ? String(localized: "Hashing \(file)") : String(localized: "Hashing")
+        case .chapterFinished: return String(localized: "Chapter \(progress.completedUnits) of \(totalChapters) done")
+        case .done: return String(localized: "Package ready")
         }
     }
 

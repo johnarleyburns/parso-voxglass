@@ -69,7 +69,7 @@ struct ImportAudioView: View {
                 model.importPlan = nil
                 model.importError = (error as NSError).code == NSUserCancelledError
                     ? nil
-                    : "Couldn't access that audio file: \(error.localizedDescription)"
+                    : String(localized: "Couldn't access that audio file: \(error.localizedDescription)")
             }
         }
         .presentationDetents([.large])
@@ -145,7 +145,7 @@ struct ImportAudioView: View {
                 .foregroundStyle(Palette.ink3)
 
             VStack(spacing: 0) {
-                assignmentRow("Split by silence, then match in order", caption: silenceCaption, mode: .splitBySilence, id: "importAudio.mode.silence")
+                assignmentRow("Split by silence, then match in order", caption: LocalizedStringKey(silenceCaption), mode: .splitBySilence, id: "importAudio.mode.silence")
                 VoxglassListDivider()
                 assignmentRow("Assign detected segments sequentially", caption: "You confirm each boundary", mode: .sequential, id: "importAudio.mode.sequential")
                 VoxglassListDivider()
@@ -234,7 +234,7 @@ struct ImportAudioView: View {
         .accessibilityIdentifier("importAudio.start")
     }
 
-    private func assignmentRow(_ title: String, caption: String, mode: AudioImportMode, id: String) -> some View {
+    private func assignmentRow(_ title: LocalizedStringKey, caption: LocalizedStringKey, mode: AudioImportMode, id: String) -> some View {
         Button {
             model.importMode = mode
             rebuild()
@@ -254,7 +254,7 @@ struct ImportAudioView: View {
         .accessibilityIdentifier(id)
     }
 
-    private func originRow(_ title: String, caption: String? = nil, origin: FlowImportOrigin, id: String) -> some View {
+    private func originRow(_ title: LocalizedStringKey, caption: LocalizedStringKey? = nil, origin: FlowImportOrigin, id: String) -> some View {
         Button {
             model.importOrigin = origin
         } label: {
@@ -302,8 +302,10 @@ struct ImportAudioView: View {
     }
 
     private var silenceCaption: String {
-        guard let plan = model.importPlan else { return "Detecting segments…" }
-        return "\(plan.slices.count) segments\(plan.isFullyAssigned ? " · matched in order" : "")"
+        guard let plan = model.importPlan else { return String(localized: "Detecting segments…") }
+        return plan.isFullyAssigned
+            ? String(localized: "\(plan.slices.count) segments · matched in order")
+            : String(localized: "\(plan.slices.count) segments")
     }
 
     private var estimatedSlicesText: String {
@@ -329,7 +331,7 @@ struct ImportAudioView: View {
 
     private var importActionLabel: String {
         guard let plan = model.importPlan else { return "" }
-        return plan.mode == .wholeParagraph ? "audio" : "\(plan.slices.count) segment\(plan.slices.count == 1 ? "" : "s")"
+        return plan.mode == .wholeParagraph ? String(localized: "audio") : String(localized: "\(plan.slices.count) segments")
     }
 
     private func formatCaption(_ selection: FlowImportedAudio) -> String {
@@ -355,7 +357,7 @@ struct ImportAudioView: View {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
-    private func kv(_ label: String, _ value: String, tint: Color? = nil) -> some View {
+    private func kv(_ label: LocalizedStringKey, _ value: String, tint: Color? = nil) -> some View {
         HStack {
             Text(label).voxFont(.caption).foregroundStyle(Palette.ink2)
             Spacer()

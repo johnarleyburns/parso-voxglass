@@ -17,7 +17,7 @@ public struct CarPlayNowPlayingConfig: Equatable, Sendable {
         showsRateButton: Bool = false,
         rateTitle: String = "1\u{00D7}",
         sleepActive: Bool = false,
-        sleepTitle: String = "Sleep",
+        sleepTitle: String? = nil,
         showsBookmark: Bool = false,
         showsChapters: Bool = false,
         isUpNextChapters: Bool = false
@@ -25,7 +25,7 @@ public struct CarPlayNowPlayingConfig: Equatable, Sendable {
         self.showsRateButton = showsRateButton
         self.rateTitle = rateTitle
         self.sleepActive = sleepActive
-        self.sleepTitle = sleepTitle
+        self.sleepTitle = sleepTitle ?? String(localized: "Sleep", bundle: .module)
         self.showsBookmark = showsBookmark
         self.showsChapters = showsChapters
         self.isUpNextChapters = isUpNextChapters
@@ -56,15 +56,15 @@ public enum CarPlayNowPlayingModel {
         if sleepActive {
             switch sleepMode {
             case .endOfChapter:
-                sleepTitle = "Ch. end"
+                sleepTitle = String(localized: "Ch. end", bundle: .module)
             case .duration(let seconds):
                 let totalMinutes = Int(ceil(seconds / 60))
                 sleepTitle = "\(totalMinutes) min"
             case .off:
-                sleepTitle = "Sleep"
+                sleepTitle = String(localized: "Sleep", bundle: .module)
             }
         } else {
-            sleepTitle = "Sleep"
+            sleepTitle = String(localized: "Sleep", bundle: .module)
         }
         return CarPlayNowPlayingConfig(
             showsRateButton: hasSession,

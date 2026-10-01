@@ -7,7 +7,7 @@
 Voxglass has **no gated Pro features**. Every feature previously behind the
 one-time "Voxglass Narration Pro" purchase (retail destination profiles,
 mastering chain, chapterized M4B, FLAC masters, batch export, exportable
-validation reports) is free. `NarrationProStore` now hands `NarrationFlow`'s
+validation reports) is free. `NarrationLicenseStore` now hands `NarrationFlow`'s
 existing `LicenseGate`/`isProUnlocked` a `StaticLicenseProvider` pinned to
 `.pro`, so those call sites never gate anything, without needing to touch
 every UI site that reads them.

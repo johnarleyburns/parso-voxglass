@@ -172,12 +172,12 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     public var accountStatusText: String {
         switch accountStatus {
-        case .available: return "Available"
-        case .noAccount: return "No iCloud Account"
-        case .restricted: return "Restricted"
-        case .temporarilyUnavailable: return "Temporarily Unavailable"
-        case .couldNotDetermine: return "Unknown"
-        @unknown default: return "Unknown"
+        case .available: return String(localized: "Available", bundle: .module)
+        case .noAccount: return String(localized: "No iCloud Account", bundle: .module)
+        case .restricted: return String(localized: "Restricted", bundle: .module)
+        case .temporarilyUnavailable: return String(localized: "Temporarily Unavailable", bundle: .module)
+        case .couldNotDetermine: return String(localized: "Unknown", bundle: .module)
+        @unknown default: return String(localized: "Unknown", bundle: .module)
         }
     }
 

@@ -221,20 +221,20 @@ struct WatchBookDetailView: View {
 
     private var sourceLabel: String? {
         switch playback.sourceKind {
-        case .downloaded: "Downloaded"
-        case .stream: "Streaming"
+        case .downloaded: String(localized: "Downloaded")
+        case .stream: String(localized: "Streaming")
         case nil: nil
         }
     }
 
     private var outputRouteName: String {
-        AVAudioSession.sharedInstance().currentRoute.outputs.first?.portName ?? "No audio output"
+        AVAudioSession.sharedInstance().currentRoute.outputs.first?.portName ?? String(localized: "No audio output")
     }
 
     private var currentChapterTitle: String? {
         guard playback.chapterIndex >= 0, book.chapters.indices.contains(playback.chapterIndex) else { return nil }
         let chapter = book.chapters[playback.chapterIndex]
-        return "Chapter \(playback.chapterIndex + 1) of \(book.chapters.count): \(chapter.title)"
+        return String(localized: "Chapter \(playback.chapterIndex + 1) of \(book.chapters.count): \(chapter.title)")
     }
 
     /// Time left in the WHOLE book, not just the current chapter — the sum

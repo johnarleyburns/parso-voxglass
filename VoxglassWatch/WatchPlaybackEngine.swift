@@ -313,7 +313,7 @@ final class WatchPlaybackEngine {
             forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main
         ) { [weak self] note in
             let message = (note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error)?.localizedDescription
-                ?? "This chapter stopped unexpectedly."
+                ?? String(localized: "This chapter stopped unexpectedly.")
             Task { @MainActor in self?.publish(.failed(message), token: currentToken) }
         }
         playerNotificationObservers.append(contentsOf: [end, failed])
@@ -460,8 +460,8 @@ final class WatchPlaybackEngine {
     private func audioErrorMessage(_ error: Error) -> String {
         let nsError = error as NSError
         if nsError.domain == AVFoundationErrorDomain || nsError.domain == NSOSStatusErrorDomain {
-            return "Connect Bluetooth headphones, then try again."
+            return String(localized: "Connect Bluetooth headphones, then try again.")
         }
-        return "Playback failed: \(error.localizedDescription)"
+        return String(localized: "Playback failed: \(error.localizedDescription)")
     }
 }

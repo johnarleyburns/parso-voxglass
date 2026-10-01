@@ -145,7 +145,7 @@ struct SettingsView: View {
     }
 
     private func settingsGroup<Content: View>(
-        _ title: String,
+        _ title: LocalizedStringKey,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VoxglassGroupedSection(title: title) {
@@ -198,10 +198,10 @@ private struct SupportDevelopmentCard: View {
         do {
             let purchased = try await SupportDevelopmentStore.shared.purchase()
             if purchased {
-                resultMessage = "Thank you for supporting Voxglass!"
+                resultMessage = String(localized: "Thank you for supporting Voxglass!")
             }
         } catch {
-            resultMessage = "Purchase failed: \(error.localizedDescription)"
+            resultMessage = String(localized: "Purchase failed: \(error.localizedDescription)")
         }
     }
 }
@@ -280,9 +280,9 @@ private struct CacheSettingsCard: View {
 
         var title: String {
             switch self {
-            case .streaming: return "Streaming Cache"
-            case .offline: return "Offline Downloads"
-            case .all: return "All Cached Data"
+            case .streaming: return String(localized: "Streaming Cache")
+            case .offline: return String(localized: "Offline Downloads")
+            case .all: return String(localized: "All Cached Data")
             }
         }
     }
@@ -390,7 +390,7 @@ private struct CacheSettingsCard: View {
         .raisedSurface()
     }
 
-    private func storageRow(title: String, bytes: Int64, detail: String, limit: Int64?) -> some View {
+    private func storageRow(title: LocalizedStringKey, bytes: Int64, detail: LocalizedStringKey, limit: Int64?) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -467,7 +467,7 @@ private struct CacheSettingsCard: View {
         .raisedSurface()
     }
 
-    private func clearButton(_ target: ClearTarget, bytes: Int64, detail: String) -> some View {
+    private func clearButton(_ target: ClearTarget, bytes: Int64, detail: LocalizedStringKey) -> some View {
         Button {
             clearTarget = target
         } label: {
@@ -500,8 +500,13 @@ private struct CacheSettingsCard: View {
     }
 
     private var clearConfirmationTitle: String {
-        guard let clearTarget else { return "Clear cached data?" }
-        return "Clear \(ByteFormatting.string(bytes(for: clearTarget))) of \(clearTarget.title.lowercased())?"
+        guard let clearTarget else { return String(localized: "Clear cached data?") }
+        let size = ByteFormatting.string(bytes(for: clearTarget))
+        switch clearTarget {
+        case .streaming: return String(localized: "Clear \(size) of streaming cache?")
+        case .offline: return String(localized: "Clear \(size) of offline downloads?")
+        case .all: return String(localized: "Clear \(size) of all cached data?")
+        }
     }
 
     private var clearDialogPresented: Binding<Bool> {
@@ -639,6 +644,7 @@ struct AboutView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
                     aboutSection
+                    languagesSection
                     privacySection
                     licenseSection
                     detailsList
@@ -707,6 +713,47 @@ struct AboutView: View {
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .raisedSurface()
+        }
+    }
+
+    /// The languages this build actually ships, read from the bundle so the list
+    /// can never drift from the String Catalogs. Each name is shown in its own
+    /// language, the way the system language picker shows them.
+    private static var shippedLanguageNames: [String] {
+        Bundle.main.localizations
+            .filter { $0 != "Base" }
+            .sorted()
+            .map { code in
+                let locale = Locale(identifier: code)
+                let name = locale.localizedString(forIdentifier: code) ?? code
+                return name.prefix(1).uppercased(with: locale) + name.dropFirst()
+            }
+    }
+
+    private var languagesSection: some View {
+        let names = Self.shippedLanguageNames
+        return VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(title: "Languages")
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Voxglass is available in \(names.count) languages. It follows your iPhone’s language, or you can choose a language just for Voxglass in Settings.")
+                    .voxFont(.footnote)
+                    .foregroundStyle(Palette.ink2)
+                Text(verbatim: names.joined(separator: " · "))
+                    .voxFont(.footnote, weight: .semibold)
+                    .foregroundStyle(Palette.ink)
+                    .accessibilityIdentifier("settings.about.languages")
+                Button("Change Language") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .voxFont(.footnote, weight: .semibold)
+                .foregroundStyle(Palette.brass)
+                .accessibilityIdentifier("settings.about.changeLanguage")
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .raisedSurface()
         }
     }
 
@@ -1317,13 +1364,13 @@ private struct LibraryBackupRow: View {
             Button("OK", role: .cancel) { importedCount = nil }
         } message: {
             if let count = importedCount {
-                Text("\(count) book\(count == 1 ? "" : "s") restored from backup.")
+                Text("\(count) books restored from backup.")
             }
         }
         .alert("Export Failed", isPresented: $showExportError) {
             Button("OK", role: .cancel) { backupService.exportError = nil }
         } message: {
-            Text(backupService.exportError ?? "Could not write the backup file.")
+            Text(backupService.exportError ?? String(localized: "Could not write the backup file."))
         }
         .overlay {
             if backupService.isExporting {

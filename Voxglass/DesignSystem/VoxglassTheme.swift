@@ -109,7 +109,7 @@ extension Color {
 }
 
 struct VoxglassScreen<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     var embedsNavigationStack = true
     /// A screen can change its primary content surface (for example, from
     /// featured shelves to a collection result list). Resetting the shared
@@ -121,7 +121,7 @@ struct VoxglassScreen<Content: View>: View {
     var headerSecondaryActionTitle: String?
     var headerSecondaryActionSystemImage: String?
     var headerSecondaryAction: (() -> Void)?
-    var headerSecondaryActionAccessibilityLabel: String?
+    var headerSecondaryActionAccessibilityLabel: LocalizedStringKey?
     /// Screens with more than two compact actions can provide one composed
     /// trailing group while keeping the shared title/header geometry.
     var headerTrailingContent: AnyView? = nil
@@ -154,7 +154,7 @@ struct VoxglassScreen<Content: View>: View {
                 .background(VoxglassBackground())
                 .scrollEdgeEffectStyle(.soft, for: .bottom)
                 .scrollDismissesKeyboard(.interactively)
-                .navigationTitle(LocalizedStringKey(title))
+                .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     if let headerActionTitle, let headerAction {
@@ -173,7 +173,7 @@ struct VoxglassScreen<Content: View>: View {
                     } else if let headerSecondaryActionTitle, let headerSecondaryAction {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button(LocalizedStringKey(headerSecondaryActionTitle), action: headerSecondaryAction)
-                                .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? headerSecondaryActionTitle)
+                                .accessibilityLabel(headerSecondaryActionAccessibilityLabel ?? LocalizedStringKey(headerSecondaryActionTitle))
                         }
                     }
                     if let headerTrailingContent {

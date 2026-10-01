@@ -90,7 +90,7 @@ public final class LibraryBackupService: ObservableObject {
 
     public func importFromFile(_ url: URL) async -> Int {
         guard url.startAccessingSecurityScopedResource() else {
-            importError = "Could not access the backup file."
+            importError = String(localized: "Could not access the backup file.", bundle: .module)
             return 0
         }
         defer { url.stopAccessingSecurityScopedResource() }
@@ -101,7 +101,7 @@ public final class LibraryBackupService: ObservableObject {
             let payload = try decoder.decode(BackupPayload.self, from: data)
 
             guard payload.version <= BackupPayload.currentVersion else {
-                importError = "Backup file was created by a newer version of Voxglass."
+                importError = String(localized: "Backup file was created by a newer version of Voxglass.", bundle: .module)
                 return 0
             }
 

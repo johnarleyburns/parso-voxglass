@@ -47,10 +47,7 @@ public final class PlaybackCoordinator {
     public private(set) var bookmarkCount: Int?
 
     /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
-    /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
-
-    /// Records wall-clock listened time (§5). Injected by `AppServices`. Logging is
-    /// unconditional (privacy-safe, on-device); only viewing stats is Pro-gated.
+    /// unconditional and on-device; viewing the stats is free like everything else.
     @ObservationIgnored public var listeningStatsStore: ListeningStatsStore?
     @ObservationIgnored private var listenedAccumulator: TimeInterval = 0
     @ObservationIgnored private var lastListenTick: Date?
@@ -1078,11 +1075,11 @@ public final class PlaybackCoordinator {
         let announcement: String
         switch mode {
         case .off:
-            announcement = "Sleep timer off"
+            announcement = String(localized: "Sleep timer off", bundle: .module)
         case .endOfChapter:
-            announcement = "Sleep timer set to end of chapter"
+            announcement = String(localized: "Sleep timer set to end of chapter", bundle: .module)
         case .duration(let interval):
-            announcement = "Sleep timer set for \(Int(interval / 60)) minutes"
+            announcement = String(localized: "Sleep timer set for \(Int(interval / 60)) minutes", bundle: .module)
         }
         NotificationCenter.default.post(name: .playbackAccessibilityAnnouncement, object: announcement)
 
@@ -1127,7 +1124,7 @@ public final class PlaybackCoordinator {
         stopSleepTask()
         NotificationCenter.default.post(
             name: .playbackAccessibilityAnnouncement,
-            object: "Sleep timer ended. Playback paused."
+            object: String(localized: "Sleep timer ended. Playback paused.", bundle: .module)
         )
         Task { @MainActor in await fadeOutAndPause() }
     }

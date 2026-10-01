@@ -129,7 +129,7 @@ import Testing
     @Test func sharedScreenReservesWorstCaseDockHeight() throws {
         let theme = try source("Voxglass/DesignSystem/VoxglassTheme.swift")
         let screen = sourceSlice(theme, from: "struct VoxglassScreen", to: "struct VoxglassBackground")
-        #expect(theme.contains(".navigationTitle(LocalizedStringKey(title))"))
+        #expect(theme.contains(".navigationTitle(title)"))
         #expect(theme.contains(".scrollEdgeEffectStyle(.soft, for: .bottom)"))
         #expect(!theme.contains("scrollContentBottomPadding"))
         #expect(!screen.contains("chromeBottomClearance"))

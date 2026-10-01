@@ -30,13 +30,13 @@ public enum CaptureInterruptionReason: String, Codable, Sendable, CaseIterable {
     /// A short, user-facing cause description for the recovery banner.
     public var userDescription: String {
         switch self {
-        case .phoneCallOrSystem: return "Phone call or system interruption"
-        case .routeChanged: return "Your input device changed"
-        case .deviceUnplugged: return "The input device was unplugged"
-        case .headphonesRemoved: return "Headphones were removed"
-        case .diskPressure: return "Storage filled during recording"
-        case .backgroundedOrLocked: return "The app was backgrounded or the device locked"
-        case .forceQuit: return "Recovered from a previous session"
+        case .phoneCallOrSystem: return String(localized: "Phone call or system interruption", bundle: .module)
+        case .routeChanged: return String(localized: "Your input device changed", bundle: .module)
+        case .deviceUnplugged: return String(localized: "The input device was unplugged", bundle: .module)
+        case .headphonesRemoved: return String(localized: "Headphones were removed", bundle: .module)
+        case .diskPressure: return String(localized: "Storage filled during recording", bundle: .module)
+        case .backgroundedOrLocked: return String(localized: "The app was backgrounded or the device locked", bundle: .module)
+        case .forceQuit: return String(localized: "Recovered from a previous session", bundle: .module)
         }
     }
 }

@@ -68,7 +68,7 @@ struct AuthorDetailView: View {
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
-                        Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
+                        Text("\(books.count) local works")
                             .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink2)
                     }
@@ -127,7 +127,7 @@ struct NarratorDetailView: View {
                             .foregroundStyle(Palette.ink)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
-                        Text("\(books.count) local work\(books.count == 1 ? "" : "s")")
+                        Text("\(books.count) local works")
                             .voxFont(.subheadline)
                             .foregroundStyle(Palette.ink2)
                     }
@@ -207,7 +207,7 @@ struct ChapterRow: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(chapter.title)
-        .accessibilityValue(isCurrent ? "Now playing" : TimeFormatting.clock(chapter.duration))
+        .accessibilityValue(isCurrent ? String(localized: "Now playing") : TimeFormatting.clock(chapter.duration))
         .accessibilityHint("Plays this chapter")
     }
 }

@@ -127,7 +127,7 @@ struct FolderWatchView: View {
         .raisedSurface()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Indexing \(progress.remainingTracks) tracks")
-        .accessibilityValue(progress.estimatedTimeRemainingText ?? "Calculating time remaining")
+        .accessibilityValue(progress.estimatedTimeRemainingText ?? String(localized: "Calculating time remaining"))
         .accessibilityIdentifier("folderwatch.indexProgress")
     }
 

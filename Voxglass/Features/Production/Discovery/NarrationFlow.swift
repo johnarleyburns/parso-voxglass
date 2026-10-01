@@ -34,9 +34,9 @@ enum FlowParagraphRole: Equatable {
 
     var label: String {
         switch self {
-        case .intro: return "Intro"
-        case .outro: return "Outro"
-        case .body: return "Paragraph"
+        case .intro: return String(localized: "Intro")
+        case .outro: return String(localized: "Outro")
+        case .body: return String(localized: "Paragraph")
         }
     }
 }
@@ -410,7 +410,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     }
     var destinationName: String {
         switch validationDestination {
-        case .personalMaster: "Personal listening"
+        case .personalMaster: String(localized: "Personal listening")
         case .librivox: "LibriVox"
         default: "LibriVox"
         }
@@ -487,7 +487,8 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         guard let project, let plan = preflight?.hydrationPlan, !plan.assetIDs.isEmpty else { return }
         let report = await phoneProduction?.sync.hydrateAssets(Set(plan.assetIDs), in: project.id)
         if let report, !report.failed.isEmpty {
-            hydrationError = "Couldn't download \(report.failed.count) recording\(report.failed.count == 1 ? "" : "s") — \(report.failed.first?.1 ?? "the iCloud copy is unavailable")."
+            let reason = report.failed.first?.1 ?? String(localized: "the iCloud copy is unavailable")
+            hydrationError = String(localized: "Couldn't download \(report.failed.count) recordings — \(reason).")
         } else {
             hydrationError = nil
         }
@@ -510,7 +511,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             }
             .map(\.id)
         guard !localChapterIDs.isEmpty else {
-            exportError = "No chapters are fully available locally. Download them first, or choose a different scope."
+            exportError = String(localized: "No chapters are fully available locally. Download them first, or choose a different scope.")
             return
         }
         exportScopeChoice = .selectedChapters
@@ -582,7 +583,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         fetcher: any HTTPFetching = URLSessionFetcher(),
         existing: AudiobookProject? = nil,
         capture: any AudioCapturing = AudioSessionCapture(),
-        licenseProvider: any LicenseProvider = NarrationProStore.shared.provider
+        licenseProvider: any LicenseProvider = NarrationLicenseStore.shared.provider
     ) {
         self.repository = repository
         self.fetcher = fetcher
@@ -640,27 +641,27 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     func blockers(for action: NarrationAction) -> [NarrationBlocker] {
         var blockers: [NarrationBlocker] = []
         guard let project else {
-            return [NarrationBlocker(id: "project", title: "No narration", message: "Create or reopen a narration before continuing.")]
+            return [NarrationBlocker(id: "project", title: String(localized: "No narration"), message: String(localized: "Create or reopen a narration before continuing."))]
         }
 
         if project.totalCount == 0 {
-            blockers.append(NarrationBlocker(id: "empty", title: "No paragraphs", message: "Add source text before assembling or exporting."))
+            blockers.append(NarrationBlocker(id: "empty", title: String(localized: "No paragraphs"), message: String(localized: "Add source text before assembling or exporting.")))
         }
         let missing = project.allParagraphs.count { $0.selectedTakeID == nil }
         if missing > 0 {
-            blockers.append(NarrationBlocker(id: "missing-recordings", title: "Missing recordings", message: "Record \(missing) more paragraph\(missing == 1 ? "" : "s") before continuing."))
+            blockers.append(NarrationBlocker(id: "missing-recordings", title: String(localized: "Missing recordings"), message: String(localized: "Record \(missing) more paragraphs before continuing.")))
         }
         let flagged = project.allParagraphs.count { $0.reviewState == .flagged }
         if flagged > 0 {
-            blockers.append(NarrationBlocker(id: "flagged", title: "Flagged paragraphs", message: "Review and clear \(flagged) flagged paragraph\(flagged == 1 ? "" : "s") before continuing."))
+            blockers.append(NarrationBlocker(id: "flagged", title: String(localized: "Flagged paragraphs"), message: String(localized: "Review and clear \(flagged) flagged paragraphs before continuing.")))
         }
         let recordedUnapproved = project.allParagraphs.count { $0.selectedTakeID != nil && $0.reviewState != .approved }
         if recordedUnapproved > 0 {
-            blockers.append(NarrationBlocker(id: "unapproved", title: "Paragraphs need approval", message: "Approve \(recordedUnapproved) recorded paragraph\(recordedUnapproved == 1 ? "" : "s") before continuing."))
+            blockers.append(NarrationBlocker(id: "unapproved", title: String(localized: "Paragraphs need approval"), message: String(localized: "Approve \(recordedUnapproved) recorded paragraphs before continuing.")))
         }
 
         if let preflight = renderPreflight, preflight.neededBytes > preflight.freeBytes {
-            blockers.append(NarrationBlocker(id: "storage", title: "Not enough storage", message: "Free up space before rendering this narration."))
+            blockers.append(NarrationBlocker(id: "storage", title: String(localized: "Not enough storage"), message: String(localized: "Free up space before rendering this narration.")))
         }
         let selectedRemoteBytes = project.allParagraphs.compactMap { paragraph -> Int64? in
             guard let take = paragraph.selectedTake,
@@ -668,23 +669,38 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             return bytes
         }.reduce(0, +)
         if selectedRemoteBytes > 0 {
-            blockers.append(NarrationBlocker(id: "icloud", title: "Audio is in iCloud", message: "Download the selected recordings before continuing."))
+            blockers.append(NarrationBlocker(id: "icloud", title: String(localized: "Audio is in iCloud"), message: String(localized: "Download the selected recordings before continuing.")))
         }
 
         guard action == .export else { return blockers }
 
         for field in missingRequiredMetadata(for: validationDestination) {
-            let label: String
+            let title: String
+            let message: String
             switch field {
-            case .title: label = "title"
-            case .author: label = "author"
-            case .narrator: label = "narrator"
-            case .language: label = "language"
-            case .sourceURL: label = "source URL"
-            case .rightsAttestation: label = "rights attestation"
-            default: label = field.rawValue
+            case .title:
+                title = String(localized: "Missing title")
+                message = String(localized: "Add the required title in Metadata before exporting.")
+            case .author:
+                title = String(localized: "Missing author")
+                message = String(localized: "Add the required author in Metadata before exporting.")
+            case .narrator:
+                title = String(localized: "Missing narrator")
+                message = String(localized: "Add the required narrator in Metadata before exporting.")
+            case .language:
+                title = String(localized: "Missing language")
+                message = String(localized: "Add the required language in Metadata before exporting.")
+            case .sourceURL:
+                title = String(localized: "Missing source URL")
+                message = String(localized: "Add the required source URL in Metadata before exporting.")
+            case .rightsAttestation:
+                title = String(localized: "Missing rights attestation")
+                message = String(localized: "Add the required rights attestation in Metadata before exporting.")
+            default:
+                title = String(localized: "Missing \(field.rawValue)")
+                message = String(localized: "Add the required \(field.rawValue) in Metadata before exporting.")
             }
-            blockers.append(NarrationBlocker(id: "metadata-\(field.rawValue)", title: "Missing \(label)", message: "Add the required \(label) in Metadata before exporting."))
+            blockers.append(NarrationBlocker(id: "metadata-\(field.rawValue)", title: title, message: message))
         }
         if !validationIssues.isEmpty {
             blockers.append(contentsOf: blockingValidationIssues.map {
@@ -693,10 +709,10 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         }
         if DestinationProfile.requiresRightsAttestation(validationDestination), !project.rights.isAttested,
            !blockers.contains(where: { $0.id == "metadata-rightsAttestation" }) {
-            blockers.append(NarrationBlocker(id: "rights", title: "Rights not attested", message: "Confirm the rights attestation before exporting."))
+            blockers.append(NarrationBlocker(id: "rights", title: String(localized: "Rights not attested"), message: String(localized: "Confirm the rights attestation before exporting.")))
         }
         if !exportScopeIsValid {
-            blockers.append(NarrationBlocker(id: "scope", title: "No chapters selected", message: "Choose at least one chapter to export."))
+            blockers.append(NarrationBlocker(id: "scope", title: String(localized: "No chapters selected"), message: String(localized: "Choose at least one chapter to export.")))
         }
         return blockers
     }
@@ -773,7 +789,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         guard var project else { return }
         guard let image = UIImage(data: data),
               let jpeg = image.jpegData(compressionQuality: 0.9) else {
-            artworkError = "The selected file is not a readable image."
+            artworkError = String(localized: "The selected file is not a readable image.")
             return
         }
         do {
@@ -790,7 +806,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             artworkError = nil
             await persist()
         } catch {
-            artworkError = "Voxglass couldn't save that artwork. Try another image."
+            artworkError = String(localized: "Voxglass couldn't save that artwork. Try another image.")
         }
     }
 
@@ -1059,21 +1075,21 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         defer { isImporting = false }
         let id = identifier.trimmingCharacters(in: .whitespaces)
         guard !id.isEmpty else {
-            importError = "Enter a gutenberg.org link or ebook number."
+            importError = String(localized: "Enter a gutenberg.org link or ebook number.")
             return
         }
         guard let ebookID = GutenbergInput.ebookID(from: id) else {
-            importError = "Enter a Gutenberg ebook number or a gutenberg.org link."
+            importError = String(localized: "Enter a Gutenberg ebook number or a gutenberg.org link.")
             return
         }
         guard let url = URL(string: "https://www.gutenberg.org/cache/epub/\(ebookID)/pg\(ebookID).txt") else {
-            importError = "Couldn't build a Gutenberg URL."
+            importError = String(localized: "Couldn't build a Gutenberg URL.")
             return
         }
         do {
             let result = try await fetcher.get(url, timeout: 15, userAgent: "Voxglass/1.1 (narration-needs; contact: hello@parso.guru)")
             guard result.statusCode == 200 else {
-                importError = "Gutenberg returned HTTP \(result.statusCode)."
+                importError = String(localized: "Gutenberg returned HTTP \(result.statusCode).")
                 return
             }
             let text = String(decoding: result.data, as: UTF8.self)
@@ -1083,7 +1099,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             if let titleLine = firstHeaderLine(text, matching: "Title:") { draftTitle = titleLine }
             if let authorLine = firstHeaderLine(text, matching: "Author:") { draftAuthor = authorLine }
         } catch {
-            importError = "Couldn't reach Project Gutenberg. Paste the text instead."
+            importError = String(localized: "Couldn't reach Project Gutenberg. Paste the text instead.")
         }
     }
 
@@ -1103,7 +1119,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         // Refuse to create it instead of sending the user into an empty
         // recording flow (field fix: "narration asks to record NO CONTENT").
         guard !body.isEmpty else {
-            importError = "This work doesn't have its text on this device yet. Try another short work."
+            importError = String(localized: "This work doesn't have its text on this device yet. Try another short work.")
             return
         }
 
@@ -1182,7 +1198,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         )
 
         guard !build.project.allParagraphs.isEmpty else {
-            importError = "This work doesn't have its text on this device yet. Try another work."
+            importError = String(localized: "This work doesn't have its text on this device yet. Try another work.")
             return
         }
 
@@ -1576,13 +1592,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             isRecording = false
             recordingDestinationURL = nil
             micPermissionDenied = true
-            importError = "Microphone access is blocked. Allow the microphone in Settings → Privacy → Microphone, then try again."
+            importError = String(localized: "Microphone access is blocked. Allow the microphone in Settings → Privacy → Microphone, then try again.")
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
         } catch {
             recordingLifecycle = .idle
             isRecording = false
             recordingDestinationURL = nil
-            importError = "Couldn't start recording. \(error.localizedDescription)"
+            importError = String(localized: "Couldn't start recording. \(error.localizedDescription)")
             AutosaveSessionFile.delete(at: repository.layout(for: project.id).autosaveSessionURL)
         }
     }
@@ -1614,7 +1630,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             levelTask = nil
             guard let project else {
                 recordingLifecycle = .idle
-                importError = "Couldn't save this recording because the project is no longer open."
+                importError = String(localized: "Couldn't save this recording because the project is no longer open.")
                 return
             }
             let textHash = project.allParagraphs.first { $0.id == activeID }?.textHash ?? ""
@@ -1660,7 +1676,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             levelTask?.cancel()
             levelTask = nil
             recordingLifecycle = .idle
-            importError = "Couldn't save this recording. \(error.localizedDescription)"
+            importError = String(localized: "Couldn't save this recording. \(error.localizedDescription)")
         }
     }
 
@@ -1926,10 +1942,10 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     private static func transportLabel(_ transports: Set<CapturePortTransport>) -> String {
         if transports.contains(.usb) { return "USB-C interface" }
         if transports.contains(.bluetooth) { return "Bluetooth" }
-        if transports.contains(.wiredHeadset) { return "Wired headset" }
+        if transports.contains(.wiredHeadset) { return String(localized: "Wired headset") }
         if transports.contains(.builtIn) { return "iPhone mic" }
         if transports.contains(.airPlay) { return "AirPlay" }
-        return "Current input"
+        return String(localized: "Current input")
     }
 
     private func writeAutosaveSession(for paragraphID: UUID, url: URL, project: AudiobookProject) {
@@ -2034,7 +2050,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         playbackQueue = []
         playbackQueueIndex = 0
         guard let url = playbackURL(for: id) else {
-            playbackError = "Couldn't play this recording — the audio file is missing."
+            playbackError = String(localized: "Couldn't play this recording — the audio file is missing.")
             return
         }
         _ = play(url: url, paragraphID: id, chapterID: nil, at: 0)
@@ -2054,7 +2070,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         // or the audio is silent. Recording re-enters `.record` on the next
         // startRecordingParagraph call.
         guard let paragraphID else {
-            playbackError = "Couldn't start audio playback — no paragraph was selected."
+            playbackError = String(localized: "Couldn't start audio playback — no paragraph was selected.")
             return false
         }
         let session = AVAudioSession.sharedInstance()
@@ -2062,28 +2078,28 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try session.setActive(true)
         } catch {
-            playbackError = "Couldn't start audio playback — the audio session is unavailable (\(error.localizedDescription))."
+            playbackError = String(localized: "Couldn't start audio playback — the audio session is unavailable (\(error.localizedDescription)).")
             return false
         }
         guard FileManager.default.fileExists(atPath: url.path) else {
-            playbackError = "Couldn't play this recording — the audio file is missing."
+            playbackError = String(localized: "Couldn't play this recording — the audio file is missing.")
             return false
         }
         let player: AVAudioPlayer
         do {
             player = try AVAudioPlayer(contentsOf: url)
         } catch {
-            playbackError = "Couldn't start audio playback — this recording couldn't be opened (\(error.localizedDescription))."
+            playbackError = String(localized: "Couldn't start audio playback — this recording couldn't be opened (\(error.localizedDescription)).")
             return false
         }
         guard player.prepareToPlay() else {
-            playbackError = "Couldn't start audio playback — this recording couldn't be decoded."
+            playbackError = String(localized: "Couldn't start audio playback — this recording couldn't be decoded.")
             return false
         }
         player.currentTime = at
         player.delegate = self
         guard player.play() else {
-            playbackError = "Couldn't start audio playback — the audio output refused to start."
+            playbackError = String(localized: "Couldn't start audio playback — the audio output refused to start.")
             return false
         }
         playbackTask?.cancel()
@@ -2116,7 +2132,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         if let paragraphID, let start = items.firstIndex(where: { $0.paragraphID == paragraphID }) {
             items = Array(items[start...])
         }
-        playbackNotice = skipped == 0 ? nil : "\(skipped) paragraph\(skipped == 1 ? " is" : "s are") in iCloud — download \(skipped == 1 ? "it" : "them") to include \(skipped == 1 ? "it" : "them")."
+        playbackNotice = skipped == 0 ? nil : String(localized: "\(skipped) paragraphs are in iCloud — download them to include them.")
         beginPlaybackQueue(items)
     }
 
@@ -2135,7 +2151,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         if let paragraphID, let start = items.firstIndex(where: { $0.paragraphID == paragraphID }) {
             items = Array(items[start...])
         }
-        playbackNotice = skipped == 0 ? nil : "\(skipped) paragraph\(skipped == 1 ? " is" : "s are") in iCloud — download \(skipped == 1 ? "it" : "them") to include \(skipped == 1 ? "it" : "them")."
+        playbackNotice = skipped == 0 ? nil : String(localized: "\(skipped) paragraphs are in iCloud — download them to include them.")
         beginPlaybackQueue(items)
     }
 
@@ -2177,7 +2193,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                   let player = playbackPlayer {
             player.currentTime = at
             guard player.play() else {
-                playbackError = "Couldn't start audio playback."
+                playbackError = String(localized: "Couldn't start audio playback.")
                 return
             }
             takePlayback = .playing(paragraph: id, chapter: chapter)
@@ -2199,7 +2215,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         case .paused(let paragraph, let chapter, let at):
             player.currentTime = at
             guard player.play() else {
-                playbackError = "Couldn't start audio playback."
+                playbackError = String(localized: "Couldn't start audio playback.")
                 return
             }
             takePlayback = .playing(paragraph: paragraph, chapter: chapter)
@@ -2297,7 +2313,8 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         hydratingParagraphID = nil
         await refreshRemoteAssetStates()
         if report.hydrated.isEmpty, !report.failed.isEmpty {
-            hydrationError = "Couldn't download this recording — \(report.failed.first?.1 ?? "the iCloud copy is unavailable")."
+            let reason = report.failed.first?.1 ?? String(localized: "the iCloud copy is unavailable")
+                hydrationError = String(localized: "Couldn't download this recording — \(reason).")
         }
     }
 
@@ -2354,7 +2371,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         let m = take.metrics
         return TakeComparison.Side(
             takeID: take.id,
-            label: take.label ?? "Take \(number)",
+            label: take.label ?? String(localized: "Take \(number)"),
             isSelected: take.id == paragraph.selectedTakeID,
             isArchived: take.isArchived,
             recordedAt: take.recordedAt,
@@ -2457,7 +2474,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
         } catch is CancellationError {
             await refreshRenderStatuses()
         } catch {
-            renderError = "Rendering stopped: \(error.localizedDescription)"
+            renderError = String(localized: "Rendering stopped: \(error.localizedDescription)")
         }
     }
 
@@ -2555,13 +2572,13 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
     private func audioImportError(for url: URL, error: Error) -> String {
         let exists = FileManager.default.fileExists(atPath: url.path)
         guard exists else {
-            return "Couldn't access that audio file. Make sure it is downloaded and try again."
+            return String(localized: "Couldn't access that audio file. Make sure it is downloaded and try again.")
         }
         let supported = ["wav", "aiff", "aif", "caf", "m4a", "aac", "mp3", "flac"]
         guard supported.contains(url.pathExtension.lowercased()) else {
-            return "That file format isn't supported. Choose a WAV, AIFF, CAF, M4A, MP3, or FLAC file."
+            return String(localized: "That file format isn't supported. Choose a WAV, AIFF, CAF, M4A, MP3, or FLAC file.")
         }
-        return "Couldn't decode that audio file. It may be corrupt or incomplete; try downloading it again."
+        return String(localized: "Couldn't decode that audio file. It may be corrupt or incomplete; try downloading it again.")
     }
 
     /// Recomputes the assignment plan for the current mode against the decoded
@@ -2774,11 +2791,11 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             return
         }
         if DestinationProfile.requiresRightsAttestation(validationDestination), !project.rights.isAttested {
-            exportError = "Attest the rights for this recording before exporting to \(DestinationProfile.profile(for: validationDestination).displayName)."
+            exportError = String(localized: "Attest the rights for this recording before exporting to \(DestinationProfile.profile(for: validationDestination).displayName).")
             return
         }
         guard blockingValidationIssues.isEmpty else {
-            exportError = "Resolve the blocking validation issues before exporting."
+            exportError = String(localized: "Resolve the blocking validation issues before exporting.")
             return
         }
         isExporting = true
@@ -2828,7 +2845,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
             exportRunRecord = outcome.run
             exportReusedFileCount = outcome.reusedFileCount
             guard let bundle = outcome.bundle else {
-                exportError = "Export was cancelled. Finished chapters are kept — run it again to resume."
+                exportError = String(localized: "Export was cancelled. Finished chapters are kept — run it again to resume.")
                 return
             }
             let slug = PackagingSupport.directorySlug(project.metadata.title)
@@ -2870,7 +2887,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                             coverURL: coverURL
                         )
                     } catch {
-                        exportError = "Your files are ready, but Voxglass couldn't add them to My Books: \(error.localizedDescription)"
+                        exportError = String(localized: "Your files are ready, but Voxglass couldn't add them to My Books: \(error.localizedDescription)")
                     }
                 }
             }
@@ -2882,7 +2899,7 @@ final class NarrationFlowModel: NSObject, AVAudioPlayerDelegate {
                 totalDuration: bundle.totalDuration
             )
         } catch {
-            exportError = "Export failed: \(error.localizedDescription)"
+            exportError = String(localized: "Export failed: \(error.localizedDescription)")
         }
     }
 
@@ -3061,7 +3078,7 @@ struct NarrationFlowRoot: View {
             }
         }
         .confirmationDialog(
-            model.project.map { "Delete \"\($0.metadata.title)\" and its recordings?" } ?? "Delete this narration?",
+            model.project.map { String(localized: "Delete \"\($0.metadata.title)\" and its recordings?") } ?? String(localized: "Delete this narration?"),
             isPresented: $confirmDelete,
             titleVisibility: .visible
         ) {
@@ -3102,7 +3119,7 @@ struct NarrationFlowRoot: View {
                 } else {
                     // Textless need: stay on Import so the error is visible
                     // instead of opening an empty recording flow.
-                    model.importError = "This work doesn't have its text on this device yet. Try another short work."
+                    model.importError = String(localized: "This work doesn't have its text on this device yet. Try another short work.")
                 }
             }
             if !narrationOnboardingSeen {
@@ -3264,7 +3281,7 @@ struct WorkImportView: View {
                             Text("Parsing…").voxFont(.caption).foregroundStyle(Palette.ink2)
                             Spacer()
                             if let preview = model.importPreview {
-                                Text("\(preview.chapterCount) chapter\(preview.chapterCount == 1 ? "" : "s") so far")
+                                Text("\(preview.chapterCount) chapters so far")
                                     .voxFont(.caption2, weight: .bold).foregroundStyle(Palette.brass)
                             }
                         }
@@ -3338,7 +3355,7 @@ struct WorkImportView: View {
         return types
     }
 
-    private func importOption(systemImage: String, title: String, id: String, action: @escaping () -> Void) -> some View {
+    private func importOption(systemImage: String, title: LocalizedStringKey, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 13) {
                 ZStack {
@@ -3386,7 +3403,7 @@ struct WorkImportView: View {
         .accessibilityIdentifier("wizard.purpose")
     }
 
-    private func destinationRow(title: String, caption: String, id: String, choice: NarrationDestinationChoice) -> some View {
+    private func destinationRow(title: LocalizedStringKey, caption: LocalizedStringKey, id: String, choice: NarrationDestinationChoice) -> some View {
         let selected = model.draftDestinationChoice == choice
         return Button {
             model.draftDestinationChoice = choice
@@ -3427,7 +3444,7 @@ struct WorkImportView: View {
             defer { model.isImporting = false }
             do {
                 guard let importer = SourceImporterRegistry.importer(for: url) else {
-                    model.importError = "Couldn't find an importer for that file."
+                    model.importError = String(localized: "Couldn't find an importer for that file.")
                     return
                 }
                 let stream = try await importer.extractProgressively(from: url)
@@ -3445,7 +3462,7 @@ struct WorkImportView: View {
             } catch is CancellationError {
                 return
             } catch {
-                model.importError = "Couldn't read that file."
+                model.importError = String(localized: "Couldn't read that file.")
             }
         }
     }
@@ -3590,7 +3607,7 @@ private final class GutenbergSearchModel {
             return
         } catch {
             guard generation == searchGeneration else { return }
-            errorMessage = "Couldn't search Project Gutenberg. Check your connection and try again."
+            errorMessage = String(localized: "Couldn't search Project Gutenberg. Check your connection and try again.")
         }
     }
 
@@ -3619,7 +3636,7 @@ private final class GutenbergSearchModel {
             return
         } catch {
             guard generation == matchGeneration else { return }
-            matchError = "Couldn't check LibriVox right now. Try again."
+            matchError = String(localized: "Couldn't check LibriVox right now. Try again.")
         }
     }
 

@@ -91,7 +91,7 @@ public final class PhoneProductionEnvironment {
         let payload = ResolvedQueuePayload(
             projectID: target.id,
             projectTitle: target.title,
-            queueLabel: "Flagged",
+            queueLabel: String(localized: "Flagged"),
             paragraphIDs: flagged.map(\.id),
             texts: dictionary(flagged.compactMap { p in p.text.map { (p.id, $0) } }),
             notes: dictionary(flagged.compactMap { p in p.latestNoteText.map { (p.id, $0) } }),

@@ -23,10 +23,10 @@ struct NarrationPressStyle: ButtonStyle {
 /// Shared narration-flow call to action. Keeping the disabled explanation in
 /// the component makes a blocked export understandable instead of merely dim.
 struct NarrationPrimaryButton: View {
-    let title: String
+    let title: LocalizedStringKey
     var systemImage: String? = nil
     var isBusy = false
-    var disabledReason: String? = nil
+    var disabledReason: LocalizedStringKey? = nil
     let identifier: String
     let action: () -> Void
 
@@ -36,7 +36,7 @@ struct NarrationPrimaryButton: View {
                 HStack(spacing: 8) {
                     if isBusy { ProgressView().tint(NarrationPalette.espresso) }
                     if let systemImage { Image(systemName: systemImage) }
-                    Text(LocalizedStringKey(title))
+                    Text(title)
                 }
                 .voxFont(.subheadline, weight: .heavy)
                 .frame(maxWidth: .infinity, minHeight: 50)
@@ -51,7 +51,7 @@ struct NarrationPrimaryButton: View {
             .accessibilityIdentifier(identifier)
 
             if let disabledReason {
-                Text(LocalizedStringKey(disabledReason))
+                Text(disabledReason)
                     .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("\(identifier).reason")
@@ -61,10 +61,10 @@ struct NarrationPrimaryButton: View {
 }
 
 struct NarrationSecondaryButton: View {
-    let title: String
+    let title: LocalizedStringKey
     var systemImage: String? = nil
     var isBusy = false
-    var disabledReason: String? = nil
+    var disabledReason: LocalizedStringKey? = nil
     let identifier: String
     let action: () -> Void
 
@@ -74,7 +74,7 @@ struct NarrationSecondaryButton: View {
                 HStack(spacing: 8) {
                     if isBusy { ProgressView().tint(Palette.brass) }
                     if let systemImage { Image(systemName: systemImage) }
-                    Text(LocalizedStringKey(title))
+                    Text(title)
                 }
                 .voxFont(.subheadline, weight: .heavy)
                 .frame(maxWidth: .infinity, minHeight: 50)
@@ -86,7 +86,7 @@ struct NarrationSecondaryButton: View {
             .accessibilityIdentifier(identifier)
 
             if let disabledReason {
-                Text(LocalizedStringKey(disabledReason))
+                Text(disabledReason)
                     .voxFont(.caption2)
                     .foregroundStyle(Palette.ink3)
                     .accessibilityIdentifier("\(identifier).reason")

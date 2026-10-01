@@ -51,7 +51,7 @@ struct ExportFormatsView: View {
     }
 
     private func bitrate(_ spec: AudioSpec) -> String {
-        guard let bitrateKbps = spec.bitrateKbps else { return "Lossless" }
+        guard let bitrateKbps = spec.bitrateKbps else { return String(localized: "Lossless") }
         return "\(bitrateKbps) kbps"
     }
 

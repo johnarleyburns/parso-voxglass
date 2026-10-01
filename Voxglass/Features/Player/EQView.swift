@@ -85,7 +85,7 @@ struct EQView: View {
                 HStack(spacing: 8) {
                     ForEach(presets) { preset in
                         FilterChip(
-                            title: preset.name,
+                            title: LocalizedStringKey(preset.name),
                             systemImage: preset.isBuiltIn ? nil : "person.fill",
                             isSelected: selectedPresetID == preset.id
                         ) {

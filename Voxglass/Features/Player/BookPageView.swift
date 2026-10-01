@@ -285,7 +285,7 @@ struct BookPageView: View {
 
     private func previewStateLabel(isPending: Bool) -> some View {
         Label(
-            isPending ? "Previewing" : "In My Books",
+            isPending ? String(localized: "Previewing") : String(localized: "In My Books"),
             systemImage: isPending ? "eye" : "checkmark.circle.fill"
         )
             .voxFont(.caption, weight: .semibold)
@@ -840,13 +840,13 @@ struct BookPageView: View {
                     DisclosureListRow(
                         icon: "bookmark.fill",
                         title: "Bookmarks",
-                        detail: "\(count) bookmark\(count == 1 ? "" : "s")",
+                        detail: "\(count) bookmarks",
                         count: nil
                     )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Bookmarks")
-                .accessibilityValue("\(count) bookmark\(count == 1 ? "" : "s")")
+                .accessibilityValue("\(count) bookmarks")
                 VoxglassListDivider()
             }
 
@@ -915,7 +915,7 @@ struct BookPageView: View {
     }
 
     private func discoveryLink(
-        label: String,
+        label: LocalizedStringKey,
         systemImage: String,
         destinationTitle: String,
         query: String

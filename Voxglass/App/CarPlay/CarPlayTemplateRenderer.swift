@@ -46,7 +46,7 @@ enum CarPlayTemplateRenderer {
 
     static func fallbackTemplate(reason: String? = nil) -> CPListTemplate {
         _ = reason
-        let item = CPListItem(text: "CarPlay is loading", detailText: "Return to Voxglass and try again")
+        let item = CPListItem(text: String(localized: "CarPlay is loading"), detailText: String(localized: "Return to Voxglass and try again"))
         item.isEnabled = false
         item.setImage(UIImage(systemName: "arrow.clockwise"))
         return CPListTemplate(

@@ -124,20 +124,20 @@ struct ProjectDashboardView: View {
             Task {
                 do {
                     guard let data = try await item.loadTransferable(type: Data.self) else {
-                        model.artworkError = "The selected photo could not be read."
+                        model.artworkError = String(localized: "The selected photo could not be read.")
                         return
                     }
                     await model.setArtwork(data)
                     artworkItem = nil
                 } catch {
-                    model.artworkError = "The selected photo could not be read."
+                    model.artworkError = String(localized: "The selected photo could not be read.")
                 }
             }
         }
         .alert("Artwork unavailable", isPresented: artworkErrorBinding) {
             Button("OK") { model.artworkError = nil }
         } message: {
-            Text(model.artworkError ?? "Please choose another image.")
+            Text(model.artworkError ?? String(localized: "Please choose another image."))
         }
         .alert("Add narrator name", isPresented: $model.needsNarratorPrompt) {
             TextField("Narrator name", text: $narratorBackfill)
@@ -222,7 +222,7 @@ struct ProjectDashboardView: View {
             do {
                 await model.setArtwork(try Data(contentsOf: url))
             } catch {
-                model.artworkError = "The selected file could not be read."
+                model.artworkError = String(localized: "The selected file could not be read.")
             }
         }
     }
@@ -230,7 +230,7 @@ struct ProjectDashboardView: View {
     // MARK: - Record next
 
     private var recordNextButton: some View {
-        NarrationPrimaryButton(title: recordNextCaption, identifier: "dashboard.recordNext") {
+        NarrationPrimaryButton(title: LocalizedStringKey(recordNextCaption), identifier: "dashboard.recordNext") {
             flowProjectID = FlowTarget(id: project.id)
         }
     }
@@ -238,9 +238,9 @@ struct ProjectDashboardView: View {
     private var recordNextCaption: String {
         guard let next = dashboard.recordNext else {
             let reviewComplete = dashboard.approvedCount == dashboard.paragraphCount && dashboard.flaggedCount == 0
-            return reviewComplete ? "Everything recorded — export" : "Everything recorded — review"
+            return reviewComplete ? String(localized: "Everything recorded — export") : String(localized: "Everything recorded — review")
         }
-        return "Record next — paragraphs \(next.paragraphNumber), Chapter \(next.chapterOrdinal + 1)"
+        return String(localized: "Record next — paragraphs \(next.paragraphNumber), Chapter \(next.chapterOrdinal + 1)")
     }
 
     // MARK: - Progress
@@ -290,9 +290,9 @@ struct ProjectDashboardView: View {
     /// longer starts an edit, and edits are committed once on Done instead of
     /// on every keystroke (field report 2026-08-19, items 3 and 7).
     @ViewBuilder
-    private func detailField(_ label: String, field: MetadataField, isMultiline: Bool = false) -> some View {
+    private func detailField(_ label: LocalizedStringKey, field: MetadataField, isMultiline: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(label.uppercased()).voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
+            Text(label).textCase(.uppercase).voxFont(.caption2, weight: .bold).foregroundStyle(Palette.ink3)
             if isEditingDetails {
                 let binding = Binding(
                     get: { detailDrafts[field] ?? storedDetail(field) },
@@ -401,7 +401,7 @@ struct ProjectDashboardView: View {
         .raisedSurface()
     }
 
-    private func attentionRow(_ title: String, _ detail: String, systemImage: String, tint: Color, id: String) -> some View {
+    private func attentionRow(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, systemImage: String, tint: Color, id: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage).voxFont(.subheadline).foregroundStyle(tint).frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
@@ -491,7 +491,7 @@ struct ProjectDashboardView: View {
         .raisedSurface()
     }
 
-    private func workOnRow(_ title: String, _ detail: String, systemImage: String, id: String, action: @escaping () -> Void) -> some View {
+    private func workOnRow(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, systemImage: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: systemImage).voxFont(.subheadline).foregroundStyle(Palette.brass).frame(width: 22)
@@ -579,7 +579,7 @@ struct ProjectDashboardView: View {
             : "circle.dashed"
     }
 
-    private func kv(_ label: String, _ value: String) -> some View {
+    private func kv(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack {
             Text(label).voxFont(.footnote).foregroundStyle(Palette.ink3)
             Spacer()
@@ -593,9 +593,9 @@ struct ProjectDashboardView: View {
 private extension DestinationID {
     var label: String {
         switch self {
-        case .librivox: return "LibriVox lane"
-        case .personalMaster: return "Personal master"
-        default: return "LibriVox lane"
+        case .librivox: return String(localized: "LibriVox lane")
+        case .personalMaster: return String(localized: "Personal master")
+        default: return String(localized: "LibriVox lane")
         }
     }
 }

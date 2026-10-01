@@ -9,61 +9,61 @@ public struct LibriVoxTaste: Identifiable, Equatable, Sendable {
     public static let all: [LibriVoxTaste] = [
         LibriVoxTaste(
             id: "classics",
-            title: "Classics",
+            title: String(localized: "Classics", bundle: .module),
             systemImage: "building.columns.fill",
             archiveQuery: LibriVoxCatalogScope.matching("subject:Classics OR subject:Literature OR subject:\"Classics (Greek & Latin Antiquity)\"")
         ),
         LibriVoxTaste(
             id: "mystery",
-            title: "Mystery",
+            title: String(localized: "Mystery", bundle: .module),
             systemImage: "magnifyingglass",
             archiveQuery: LibriVoxBrowseCategory.mysteryCrime.archiveQuery
         ),
         LibriVoxTaste(
             id: "sci-fi",
-            title: "Sci-Fi",
+            title: String(localized: "Sci-Fi", bundle: .module),
             systemImage: "sparkles",
             archiveQuery: LibriVoxBrowseCategory.scienceFiction.archiveQuery
         ),
         LibriVoxTaste(
             id: "horror",
-            title: "Horror",
+            title: String(localized: "Horror", bundle: .module),
             systemImage: "moon.stars.fill",
             archiveQuery: LibriVoxBrowseCategory.horrorGothic.archiveQuery
         ),
         LibriVoxTaste(
             id: "romance",
-            title: "Romance",
+            title: String(localized: "Romance", bundle: .module),
             systemImage: "heart.fill",
             archiveQuery: LibriVoxBrowseCategory.romance.archiveQuery
         ),
         LibriVoxTaste(
             id: "history",
-            title: "History",
+            title: String(localized: "History", bundle: .module),
             systemImage: "clock.arrow.circlepath",
             archiveQuery: LibriVoxBrowseCategory.history.archiveQuery
         ),
         LibriVoxTaste(
             id: "philosophy",
-            title: "Philosophy",
+            title: String(localized: "Philosophy", bundle: .module),
             systemImage: "brain.head.profile",
             archiveQuery: LibriVoxBrowseCategory.philosophyMind.archiveQuery
         ),
         LibriVoxTaste(
             id: "poetry",
-            title: "Poetry",
+            title: String(localized: "Poetry", bundle: .module),
             systemImage: "quote.bubble.fill",
             archiveQuery: LibriVoxBrowseCategory.poetry.archiveQuery
         ),
         LibriVoxTaste(
             id: "short-stories",
-            title: "Short Stories",
+            title: String(localized: "Short Stories", bundle: .module),
             systemImage: "text.book.closed",
             archiveQuery: LibriVoxBrowseCategory.shortStories.archiveQuery
         ),
         LibriVoxTaste(
             id: "biography",
-            title: "Biography",
+            title: String(localized: "Biography", bundle: .module),
             systemImage: "person.text.rectangle",
             archiveQuery: LibriVoxBrowseCategory.biography.archiveQuery
         )

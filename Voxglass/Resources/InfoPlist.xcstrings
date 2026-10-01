@@ -1,0 +1,84 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Microphone permission prompt shown before the first narration recording.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass nimmt Ihre Stimme für das Hörbuch auf, das Sie produzieren. Ihre Aufnahmen bleiben auf diesem Gerät, außer Sie teilen sie oder hören sie in der Vorschau an."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass enregistre votre narration pour le livre audio que vous produisez. Vos enregistrements restent sur cet appareil, sauf si vous choisissez de les partager ou d’en écouter un aperçu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass graba tu narración para el audiolibro que estás produciendo. Tus grabaciones se quedan en este dispositivo salvo que decidas compartirlas o escucharlas en vista previa."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass registra la tua narrazione per l’audiolibro che stai producendo. Le registrazioni restano su questo dispositivo, a meno che tu non scelga di condividerle o ascoltarne un’anteprima."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "O Voxglass grava sua narração para o audiolivro que você está produzindo. Suas gravações ficam neste dispositivo, a menos que você escolha compartilhá-las ou ouvir uma prévia."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass neemt je stem op voor het luisterboek dat je maakt. Je opnames blijven op dit apparaat, tenzij je ervoor kiest ze te delen of een voorbeeld te beluisteren."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass は、制作中のオーディオブックのためにあなたの朗読を録音します。共有やプレビューを選ばない限り、録音はこのデバイスに保存されたままです。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass 会录制你为有声书所做的朗读。除非你选择分享或预览，否则录音只保留在此设备上。"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass записывает ваш голос для аудиокниги, которую вы создаёте. Записи остаются на этом устройстве, если вы сами не решите поделиться ими или прослушать их."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass nagrywa twój głos do tworzonego audiobooka. Nagrania pozostają na tym urządzeniu, chyba że zdecydujesz się je udostępnić lub odsłuchać podgląd."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass מקליט את ההקראה שלך עבור ספר השמע שמפיקים. ההקלטות נשארות במכשיר הזה, אלא אם בוחרים לשתף אותן או להאזין לתצוגה מקדימה."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

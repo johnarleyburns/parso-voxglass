@@ -119,15 +119,15 @@ final class CarPlayActionDispatcher {
                 self?.controller?.dismissPresented()
             }
         }
-        let sheet = CPActionSheetTemplate(title: "Sleep Timer", message: nil, actions: actions)
+        let sheet = CPActionSheetTemplate(title: String(localized: "Sleep Timer"), message: nil, actions: actions)
         controller?.present(sheet)
     }
 
     static func sleepOptionTitle(_ mode: SleepTimer.Mode) -> String {
         switch mode {
-        case .endOfChapter: return "End of chapter"
+        case .endOfChapter: return String(localized: "End of chapter")
         case .duration(let seconds): return "\(Int(seconds / 60)) min"
-        case .off: return "Off"
+        case .off: return String(localized: "Off")
         }
     }
 
@@ -228,7 +228,7 @@ final class CarPlayActionDispatcher {
             let results = (try? await InternetArchiveClient().searchLibriVox(query: query, rows: 25)) ?? []
             guard let self, let controller = self.controller else { return }
             let sections = CarPlayMenuBuilder.searchResults(results.map(controller.makeCatalogSnapshot))
-            controller.push(sections: sections, title: "Results")
+            controller.push(sections: sections, title: String(localized: "Results"))
         }
     }
 
@@ -243,16 +243,16 @@ final class CarPlayActionDispatcher {
 
     private static func routeTitle(_ route: CarPlayBrowseRoute) -> String {
         switch route {
-        case .favorites: return "Favorites"
-        case .finished: return "Finished"
-        case .inProgress: return "In Progress"
+        case .favorites: return String(localized: "Favorites")
+        case .finished: return String(localized: "Finished")
+        case .inProgress: return String(localized: "In Progress")
         case .playlist(_, let name): return name
         case .author(let name): return name
         case .narrator(let name): return name
         case .genre(_, let name): return name
-        case .allPlaylists: return "Playlists"
-        case .browseByAuthor: return "Authors"
-        case .browseByNarrator: return "Narrators"
+        case .allPlaylists: return String(localized: "Playlists")
+        case .browseByAuthor: return String(localized: "Authors")
+        case .browseByNarrator: return String(localized: "Narrators")
         }
     }
 }

@@ -74,7 +74,7 @@ struct ParagraphReviewView: View {
 
     private func header(_ paragraph: FlowParagraph) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(context.map { "Chapter \($0.chapterOrdinal + 1) · ¶ \($0.number) of \($0.count)" } ?? "Paragraph review")
+            Text(context.map { String(localized: "Chapter \($0.chapterOrdinal + 1) · ¶ \($0.number) of \($0.count)") } ?? String(localized: "Paragraph review"))
                 .voxFont(.callout, weight: .heavy)
                 .foregroundStyle(Palette.ink)
                 .accessibilityIdentifier("paragraphReview.title")
@@ -299,21 +299,21 @@ struct ParagraphReviewView: View {
 
     private func roleName(_ role: ParagraphRole?) -> String {
         switch role {
-        case .libriVoxIntro: "Intro"
-        case .libriVoxOutro: "Outro"
-        case .chapterHeading: "Chapter heading"
-        case .retailOpeningCredits: "Opening credits"
-        case .retailClosingCredits: "Closing credits"
-        case .body, .none: "Body"
+        case .libriVoxIntro: String(localized: "Intro")
+        case .libriVoxOutro: String(localized: "Outro")
+        case .chapterHeading: String(localized: "Chapter heading")
+        case .retailOpeningCredits: String(localized: "Opening credits")
+        case .retailClosingCredits: String(localized: "Closing credits")
+        case .body, .none: String(localized: "Body")
         }
     }
 
     private func stateName(_ state: FlowParagraphState) -> String {
         switch state {
-        case .notRecorded: "Not recorded"
-        case .recorded: "Recorded"
-        case .approved: "Approved"
-        case .flagged: "Flagged"
+        case .notRecorded: String(localized: "Not recorded")
+        case .recorded: String(localized: "Recorded")
+        case .approved: String(localized: "Approved")
+        case .flagged: String(localized: "Flagged")
         }
     }
 
@@ -328,10 +328,10 @@ struct ParagraphReviewView: View {
 
     private func takeSubtitle(_ take: Take) -> String {
         let origin: String = switch take.origin {
-        case .recorded: "Recorded"
-        case .importedHuman: "Imported recording"
-        case .aiImported: "Imported AI audio"
-        case .unknownImport: "Imported audio"
+        case .recorded: String(localized: "Recorded")
+        case .importedHuman: String(localized: "Imported recording")
+        case .aiImported: String(localized: "Imported AI audio")
+        case .unknownImport: String(localized: "Imported audio")
         }
         let date = RelativeDateTimeFormatter().localizedString(for: take.recordedAt, relativeTo: model.repository.clock.now)
         let peak = take.metrics.map { String(format: "%.1f dBFS", $0.peakDBFS) }

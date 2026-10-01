@@ -89,7 +89,7 @@ final class WatchAppServices: ObservableObject {
     }
     func remove(_ book: WatchBookDTO) { downloaded.remove(book.id); UserDefaults.standard.set(downloaded.map(\.rawValue), forKey: "watch.downloaded") }
     func play(_ book: WatchBookDTO, chapterIndex: Int = 0) {
-        guard !book.chapters.isEmpty else { error = "No playable chapters."; return }
+        guard !book.chapters.isEmpty else { error = String(localized: "No playable chapters."); return }
         let index = min(max(0, chapterIndex), book.chapters.count - 1)
         playbackEngine.play(book, chapterIndex: index, allowsStreaming: isConnected)
     }
@@ -108,7 +108,7 @@ final class WatchAppServices: ObservableObject {
         let urls = book.chapters.compactMap(\.approvedStreamURL)
         guard urls.count == book.chapters.count, !urls.isEmpty else {
             downloading.remove(book.id)
-            error = "Waiting for the iPhone to transfer this book."
+            error = String(localized: "Waiting for the iPhone to transfer this book.")
             return
         }
         do {
@@ -131,7 +131,7 @@ final class WatchAppServices: ObservableObject {
             UserDefaults.standard.set(downloaded.map(\.rawValue), forKey: "watch.downloaded")
             session.reportDownload(book: book, bytes: bytes, complete: true)
         } catch {
-            self.error = "Download failed: \(error.localizedDescription)"
+            self.error = String(localized: "Download failed: \(error.localizedDescription)")
             session.reportDownload(book: book, bytes: 0, complete: false)
         }
         downloading.remove(book.id)

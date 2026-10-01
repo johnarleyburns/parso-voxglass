@@ -68,7 +68,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
 
     public var narratorLine: String? {
         let names = narrators
-        return names.isEmpty ? nil : "Read by \(names.joined(separator: ", "))"
+        return names.isEmpty ? nil : String(localized: "Read by \(names.joined(separator: ", "))", bundle: .module)
     }
 
     public var narrationKind: NarrationKind {

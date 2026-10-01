@@ -128,7 +128,7 @@ struct ListenView: View {
                                 .foregroundStyle(Palette.ink)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
-                            Text(book.book.displayAuthorLine ?? "Imported")
+                            Text(book.book.displayAuthorLine ?? String(localized: "Imported"))
                                 .voxType(.meta)
                                 .foregroundStyle(Palette.ink2)
                             Text(continueActionLabel(for: book))
@@ -252,7 +252,7 @@ struct ListenView: View {
         }
     }
 
-    private func statTile(value: String, label: String) -> some View {
+    private func statTile(value: String, label: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
                 .voxFont(.title2, weight: .heavy)
@@ -296,9 +296,9 @@ struct ListenView: View {
         guard let progress = libraryStore.progressByBook[book.book.id],
               progress.lastPosition > 0,
               !progress.isFinished else {
-            return "Play"
+            return String(localized: "Play")
         }
-        return "Resume"
+        return String(localized: "Resume")
     }
 
     private struct ListeningStatsSnapshot {
@@ -431,7 +431,7 @@ struct ListenView: View {
     }
 
     private var errorTitle: String {
-        playbackFailure == nil ? "Playback Failed" : "Playback Interrupted"
+        playbackFailure == nil ? String(localized: "Playback Failed") : String(localized: "Playback Interrupted")
     }
 
     private var errorMessage: String {

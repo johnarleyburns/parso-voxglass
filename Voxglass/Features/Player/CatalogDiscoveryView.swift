@@ -67,7 +67,7 @@ struct CatalogDiscoveryView: View {
                             Toggle("Single narrator", isOn: $soloOnly)
                         } label: {
                             Label(
-                                soloOnly ? "Single narrator" : "Filter",
+                                soloOnly ? String(localized: "Single narrator") : String(localized: "Filter"),
                                 systemImage: soloOnly
                                     ? "line.3.horizontal.decrease.circle.fill"
                                     : "line.3.horizontal.decrease.circle"

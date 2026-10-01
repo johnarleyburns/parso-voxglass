@@ -367,7 +367,7 @@ struct BrowseView: View {
     private var catalogResults: some View {
         if hasActiveCatalogResultsSurface {
             VStack(alignment: .leading, spacing: 6) {
-                SectionTitle(title: resultsTitle)
+                SectionTitle(title: LocalizedStringKey(resultsTitle))
                 if selectedCollection != nil {
                     if selectedCollection?.isCurated == true {
                         curatedStatusBanner
@@ -450,10 +450,10 @@ struct BrowseView: View {
 
     private var resultsTitle: String {
         if !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Search Results"
+            return String(localized: "Search Results")
         }
         if let selectedCollection { return selectedCollection.title }
-        return "Search Results"
+        return String(localized: "Search Results")
     }
 
     private var curatedStatusBanner: some View {
@@ -714,10 +714,10 @@ private enum DiscoverSearchScope: CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .all: return "All"
-        case .title: return "Title"
-        case .author: return "Author"
-        case .narrator: return "Narrator"
+        case .all: return String(localized: "All")
+        case .title: return String(localized: "Title")
+        case .author: return String(localized: "Author")
+        case .narrator: return String(localized: "Narrator")
         }
     }
 }
@@ -819,11 +819,11 @@ private struct ExploreCollectionCard: View {
         guard let count = approximateCount, count > 0 else { return nil }
         if collection.isCurated {
             let formatted = Self.formatter.string(from: NSNumber(value: count)) ?? "\(count)"
-            return "\(formatted) book\(count == 1 ? "" : "s")"
+            return String(localized: "\(formatted) books")
         }
         let rounded = Self.roundedToTwoSignificantFigures(count)
         let formatted = Self.formatter.string(from: NSNumber(value: rounded)) ?? "\(rounded)"
-        return "\(formatted)+ books"
+        return String(localized: "\(formatted)+ books")
     }
 
     private static let formatter: NumberFormatter = {

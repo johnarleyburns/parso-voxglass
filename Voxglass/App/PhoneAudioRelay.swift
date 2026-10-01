@@ -52,11 +52,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     }
 
     var connectionStatusText: String {
-        if !WCSession.isSupported() { return "Apple Watch is not supported on this iPhone." }
-        if !isPaired { return "No Apple Watch is paired." }
-        if !isWatchAppInstalled { return "Voxglass is not installed on the paired Apple Watch." }
-        if !isActivated { return "Connecting to Apple Watch…" }
-        return isReachable ? "Apple Watch connected" : "Apple Watch not currently reachable"
+        if !WCSession.isSupported() { return String(localized: "Apple Watch is not supported on this iPhone.") }
+        if !isPaired { return String(localized: "No Apple Watch is paired.") }
+        if !isWatchAppInstalled { return String(localized: "Voxglass is not installed on the paired Apple Watch.") }
+        if !isActivated { return String(localized: "Connecting to Apple Watch…") }
+        return isReachable ? String(localized: "Apple Watch connected") : String(localized: "Apple Watch not currently reachable")
     }
 
     var watchStoredBytes: Int64 {
@@ -96,21 +96,21 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             try session.updateApplicationContext(message)
             UserDefaults.standard.set(watchLibraryID.rawValue, forKey: "voxglass.watch.libraryID")
             lastWatchSyncDate = Date()
-            watchSyncStatus = "My Books sent to Apple Watch."
+            watchSyncStatus = String(localized: "My Books sent to Apple Watch.")
         } catch {
-            watchSyncStatus = "Watch sync failed: \(error.localizedDescription)"
+            watchSyncStatus = String(localized: "Watch sync failed: \(error.localizedDescription)")
         }
     }
 
     func syncWatchNow() async {
         refreshConnectionState()
-        guard isPaired else { watchSyncStatus = "No Apple Watch is paired."; return }
+        guard isPaired else { watchSyncStatus = String(localized: "No Apple Watch is paired."); return }
         guard isWatchAppInstalled else {
-            watchSyncStatus = "Install Voxglass on the paired Apple Watch first."
+            watchSyncStatus = String(localized: "Install Voxglass on the paired Apple Watch first.")
             return
         }
         guard let libraryStore, let watchProjectionStore else {
-            watchSyncStatus = "The iPhone app is still starting."
+            watchSyncStatus = String(localized: "The iPhone app is still starting.")
             return
         }
         do {
@@ -123,22 +123,22 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             try session.updateApplicationContext(message)
             lastWatchSyncDate = Date()
             watchSyncStatus = isReachable
-                ? "Apple Watch sync sent."
-                : "Apple Watch is not reachable; sync queued."
+                ? String(localized: "Apple Watch sync sent.")
+                : String(localized: "Apple Watch is not reachable; sync queued.")
             if isReachable {
                 session.sendMessage(
                     message,
                     replyHandler: { [weak self] _ in
-                        Task { @MainActor in self?.watchSyncStatus = "Apple Watch updated." }
+                        Task { @MainActor in self?.watchSyncStatus = String(localized: "Apple Watch updated.") }
                     },
                     errorHandler: { [weak self] error in
-                        Task { @MainActor in self?.watchSyncStatus = "Watch sync failed: \(error.localizedDescription)" }
+                        Task { @MainActor in self?.watchSyncStatus = String(localized: "Watch sync failed: \(error.localizedDescription)") }
                     }
                 )
-                connectionToast = "Apple Watch connected"
+                connectionToast = String(localized: "Apple Watch connected")
             }
         } catch {
-            watchSyncStatus = "Watch sync failed: \(error.localizedDescription)"
+            watchSyncStatus = String(localized: "Watch sync failed: \(error.localizedDescription)")
         }
     }
 
@@ -294,12 +294,12 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     private func playBook(bookID: UUID, chapterID: UUID?) async -> WatchPhonePlaybackState {
         guard let libraryStore, let playbackCoordinator else {
-            return WatchPhonePlaybackState(accepted: false, errorMessage: "The iPhone app is still starting.")
+            return WatchPhonePlaybackState(accepted: false, errorMessage: String(localized: "The iPhone app is still starting."))
         }
 
         await libraryStore.refresh()
         guard let book = libraryStore.books.first(where: { $0.book.id == bookID }) else {
-            return WatchPhonePlaybackState(accepted: false, errorMessage: "This book is not in My Books on the iPhone.")
+            return WatchPhonePlaybackState(accepted: false, errorMessage: String(localized: "This book is not in My Books on the iPhone."))
         }
 
         let chapter = chapterID.flatMap { id in
@@ -315,7 +315,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     private func importAndPlay(identifier: String) async -> WatchPhonePlaybackState {
         guard let libraryStore, let playbackCoordinator else {
-            return WatchPhonePlaybackState(accepted: false, errorMessage: "The iPhone app is still starting.")
+            return WatchPhonePlaybackState(accepted: false, errorMessage: String(localized: "The iPhone app is still starting."))
         }
 
         do {
@@ -324,7 +324,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             guard let book = await libraryStore.importInternetArchiveItem(metadata, sourceKind: sourceKind) else {
                 return WatchPhonePlaybackState(
                     accepted: false,
-                    errorMessage: libraryStore.importError ?? "The iPhone could not add this book."
+                    errorMessage: libraryStore.importError ?? String(localized: "The iPhone could not add this book.")
                 )
             }
             await playbackCoordinator.play(book)
@@ -340,7 +340,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     private func handlePlaybackCommand(_ request: WatchPhonePlaybackCommandRequest) async -> WatchPhonePlaybackState {
         guard let playbackCoordinator else {
-            return WatchPhonePlaybackState(accepted: false, errorMessage: "The iPhone app is still starting.")
+            return WatchPhonePlaybackState(accepted: false, errorMessage: String(localized: "The iPhone app is still starting."))
         }
 
         switch request.command {
@@ -364,7 +364,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
 
     private func playbackState(accepted: Bool) -> WatchPhonePlaybackState {
         guard let playbackCoordinator else {
-            return WatchPhonePlaybackState(accepted: false, errorMessage: "The iPhone app is still starting.")
+            return WatchPhonePlaybackState(accepted: false, errorMessage: String(localized: "The iPhone app is still starting."))
         }
 
         var session = playbackCoordinator.currentSession
@@ -409,7 +409,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     private func applyWatchStorageSnapshot(_ snapshot: WatchStorageSnapshot) {
         watchStorageSnapshot = snapshot
         lastWatchSyncDate = Date()
-        watchSyncStatus = "Watch storage updated."
+        watchSyncStatus = String(localized: "Watch storage updated.")
     }
 
     private func applyWatchAcknowledgement(_ acknowledgement: WatchManifestAcknowledgement) {
@@ -748,7 +748,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
             isActivated = activated
             productionTransport?.updateReachability(reachable: reachable, activated: activated)
             if becameConnected {
-                connectionToast = "Apple Watch connected"
+                connectionToast = String(localized: "Apple Watch connected")
             }
             await publishLibrarySnapshot()
         }
@@ -790,7 +790,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
             isActivated = activated
             productionTransport?.updateReachability(reachable: reachable, activated: activated)
             if becameConnected {
-                connectionToast = "Apple Watch connected"
+                connectionToast = String(localized: "Apple Watch connected")
             }
             if reachable {
                 await publishLibrarySnapshot()
@@ -874,7 +874,7 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 replyBox.value(replyMessage)
                 try? self.session.updateApplicationContext(replyMessage)
                 lastWatchSyncDate = Date()
-                watchSyncStatus = "My Books sent to Apple Watch."
+                watchSyncStatus = String(localized: "My Books sent to Apple Watch.")
                 return
             }
             if WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.requestRefresh

@@ -86,7 +86,7 @@ public final class CarPlayReviewController {
             ],
             handler: { [weak self] command in self?.perform(command) }
         )
-        updateNowPlayingInfo(paragraphLabel: payload.chapterLabels[payload.paragraphIDs[0]] ?? "Paragraph")
+        updateNowPlayingInfo(paragraphLabel: payload.chapterLabels[payload.paragraphIDs[0]] ?? String(localized: "Paragraph"))
 
         if let interfaceController {
             interfaceController.presentTemplate(template, animated: true, completion: nil)
@@ -120,7 +120,7 @@ public final class CarPlayReviewController {
         }
 
         if let paragraphID = current.currentParagraphID {
-            updateNowPlayingInfo(paragraphLabel: current.currentChapterLabel ?? "Paragraph")
+            updateNowPlayingInfo(paragraphLabel: current.currentChapterLabel ?? String(localized: "Paragraph"))
             playbackTask?.cancel()
             playbackTask = Task { await player.play(paragraphID: paragraphID, in: current.payload) }
         }
@@ -167,7 +167,7 @@ public final class CarPlayReviewController {
 
     public func openSettings() {
         let template = ProductionCarPlayRenderer.listTemplate(
-            title: "Review Settings",
+            title: String(localized: "Review Settings"),
             sections: ProductionCarPlayBuilder.settingsSections(
                 autoAdvance: autoAdvance,
                 context: playContext,

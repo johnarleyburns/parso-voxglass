@@ -102,19 +102,19 @@ public enum SyncError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .serverRecordChanged(let recordName, _, _):
-            return "A conflicting change was received for \(recordName); adopting the server copy."
+            return String(localized: "A conflicting change was received for \(recordName); adopting the server copy.", bundle: .module)
         case .transient(let reason, _):
             return reason
         case .auth:
-            return "Not signed in to iCloud."
+            return String(localized: "Not signed in to iCloud.", bundle: .module)
         case .quotaExceeded:
-            return "Your iCloud storage is full. Narration data could not be backed up. Free up iCloud space or change the iCloud plan in Settings."
+            return String(localized: "Your iCloud storage is full. Narration data could not be backed up. Free up iCloud space or change the iCloud plan in Settings.", bundle: .module)
         case .zoneNotFound:
-            return "The narration backup zone does not exist yet."
+            return String(localized: "The narration backup zone does not exist yet.", bundle: .module)
         case .transport(let reason):
             return reason
         case .changeTokenExpired:
-            return "The sync token expired; refreshing from scratch."
+            return String(localized: "The sync token expired; refreshing from scratch.", bundle: .module)
         }
     }
 }

@@ -48,15 +48,15 @@ public enum CatalogSort: String, CaseIterable, Identifiable, Sendable {
     public var title: String {
         switch self {
         case .popularity:
-            "Popularity"
+            String(localized: "Popularity", bundle: .module)
         case .title:
-            "Title"
+            String(localized: "Title", bundle: .module)
         case .author:
-            "Author"
+            String(localized: "Author", bundle: .module)
         case .recordedDate:
-            "Date"
+            String(localized: "Date", bundle: .module)
         case .curation:
-            "Curated"
+            String(localized: "Curated", bundle: .module)
         }
     }
 
@@ -274,17 +274,17 @@ public enum InternetArchiveError: Error, LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "The archive.org URL could not be built."
+            String(localized: "The archive.org URL could not be built.", bundle: .module)
         case .missingIdentifier:
-            "The Internet Archive item identifier is missing."
+            String(localized: "The Internet Archive item identifier is missing.", bundle: .module)
         case .unsupportedURL:
-            "Use an archive.org item, collection, list, search, metadata, or download URL."
+            String(localized: "Use an archive.org item, collection, list, search, metadata, or download URL.", bundle: .module)
         case .itemNotFound(let identifier):
-            "Internet Archive item not found: \(identifier)."
+            String(localized: "Internet Archive item not found: \(identifier).", bundle: .module)
         case .noPlayableAudio(let identifier):
-            "No playable audio files were found for \(identifier)."
+            String(localized: "No playable audio files were found for \(identifier).", bundle: .module)
         case .requestFailed(let statusCode):
-            "Internet Archive request failed with status \(statusCode)."
+            String(localized: "Internet Archive request failed with status \(statusCode).", bundle: .module)
         }
     }
 }

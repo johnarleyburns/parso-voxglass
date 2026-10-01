@@ -9,8 +9,8 @@ import VoxglassCore
 /// anything — see `LicenseTypes.swift`. Purchasing is now
 /// `SupportDevelopmentStore`'s optional, non-gating consumable.
 @MainActor
-final class NarrationProStore {
-    static let shared = NarrationProStore()
+final class NarrationLicenseStore {
+    static let shared = NarrationLicenseStore()
 
     let provider: any LicenseProvider
     var gate: LicenseGate { LicenseGate(provider: provider) }

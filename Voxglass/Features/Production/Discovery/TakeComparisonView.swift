@@ -192,7 +192,7 @@ struct TakeComparisonView: View {
         return parts.joined(separator: " · ")
     }
 
-    private func kv(_ label: String, _ value: String, tint: Color? = nil) -> some View {
+    private func kv(_ label: LocalizedStringKey, _ value: String, tint: Color? = nil) -> some View {
         HStack {
             Text(label).voxFont(.caption).foregroundStyle(Palette.ink2)
             Spacer()

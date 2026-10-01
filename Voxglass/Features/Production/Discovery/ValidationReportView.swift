@@ -71,7 +71,7 @@ struct ValidationReportView: View {
         }
     }
 
-    private func issueSection(_ title: String, issues: [ValidationIssue]) -> some View {
+    private func issueSection(_ title: LocalizedStringKey, issues: [ValidationIssue]) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title).voxFont(.caption, weight: .bold).foregroundStyle(Palette.ink3)
             ForEach(Array(issues.enumerated()), id: \.element.id) { index, issue in
@@ -99,23 +99,23 @@ struct ValidationReportView: View {
 
     private func fixTitle(_ fix: FixAction) -> String {
         switch fix {
-        case .hydrateAssets: "Download"
-        case .manageStorage: "Storage"
-        case .backupNow: "Back up"
-        case .openAudioSetup: "Audio setup"
-        case .recordParagraph: "Record"
-        case .clearPickup: "Clear"
-        case .regenerateDisclaimers, .regenerateCredits: "Regenerate"
-        case .normalizeLoudness: "Normalize"
-        case .reanalyzeTake: "Re-analyze"
-        case .setRetailSample: "Sample"
-        case .splitChapter: "Split"
-        case .chooseArtwork: "Artwork"
-        case .applyMastering: "Master"
-        case .goToParagraph, .goToChapter: "Open"
-        case .openMetadata: "Edit"
-        case .openRights: "Rights"
-        case .selectTake: "Select"
+        case .hydrateAssets: String(localized: "Download")
+        case .manageStorage: String(localized: "Storage")
+        case .backupNow: String(localized: "Back up")
+        case .openAudioSetup: String(localized: "Audio setup")
+        case .recordParagraph: String(localized: "Record")
+        case .clearPickup: String(localized: "Clear")
+        case .regenerateDisclaimers, .regenerateCredits: String(localized: "Regenerate")
+        case .normalizeLoudness: String(localized: "Normalize")
+        case .reanalyzeTake: String(localized: "Re-analyze")
+        case .setRetailSample: String(localized: "Sample")
+        case .splitChapter: String(localized: "Split")
+        case .chooseArtwork: String(localized: "Artwork")
+        case .applyMastering: String(localized: "Master")
+        case .goToParagraph, .goToChapter: String(localized: "Open")
+        case .openMetadata: String(localized: "Edit")
+        case .openRights: String(localized: "Rights")
+        case .selectTake: String(localized: "Select")
         }
     }
 }

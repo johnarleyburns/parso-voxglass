@@ -25,10 +25,10 @@ public enum ExportScopeSelection: String, Sendable, Equatable, CaseIterable, Ide
 
     public var title: String {
         switch self {
-        case .currentChapter: return "This chapter"
-        case .selectedChapters: return "Selected chapters"
-        case .wholeBook: return "Whole book"
-        case .reviewQueue: return "Review queue range"
+        case .currentChapter: return String(localized: "This chapter", bundle: .module)
+        case .selectedChapters: return String(localized: "Selected chapters", bundle: .module)
+        case .wholeBook: return String(localized: "Whole book", bundle: .module)
+        case .reviewQueue: return String(localized: "Review queue range", bundle: .module)
         }
     }
 }

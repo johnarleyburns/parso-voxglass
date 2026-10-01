@@ -204,19 +204,19 @@ struct BookPageActionRow: View {
     private var sleepTimerAccessibilityValue: String {
         switch playback.sleepMode {
         case .off:
-            return "Off"
+            return String(localized: "Off")
         case .endOfChapter:
-            return "End of chapter"
+            return String(localized: "End of chapter")
         case .duration:
             if let remaining = playback.sleepRemaining {
                 return "\(Int(remaining / 60)) minutes remaining"
             }
-            return "On"
+            return String(localized: "On")
         }
     }
 
     @ViewBuilder
-    private func sleepMenuLabel(_ title: String, active: Bool) -> some View {
+    private func sleepMenuLabel(_ title: LocalizedStringKey, active: Bool) -> some View {
         if active {
             Label(title, systemImage: "checkmark")
         } else {

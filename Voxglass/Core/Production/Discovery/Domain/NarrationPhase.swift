@@ -26,21 +26,21 @@ public enum NarrationPhase: Equatable, Sendable {
 
     public var label: String {
         switch self {
-        case .draft: "Draft"
-        case .recording: "Recording"
-        case .review: "Review"
-        case .package: "Package"
-        case .ready: "Ready"
+        case .draft: String(localized: "Draft", bundle: .module)
+        case .recording: String(localized: "Recording", bundle: .module)
+        case .review: String(localized: "Review", bundle: .module)
+        case .package: String(localized: "Package", bundle: .module)
+        case .ready: String(localized: "Ready", bundle: .module)
         }
     }
 
     public var caption: String {
         switch self {
-        case .draft: "Rights and disclaimer ready"
-        case let .recording(recorded, total): "\(recorded) of \(total) paragraphs recorded"
-        case let .review(pending, _): "\(pending) takes to review"
-        case .package: "Approved, ready to package"
-        case .ready: "Package ready to hand off"
+        case .draft: String(localized: "Rights and disclaimer ready", bundle: .module)
+        case let .recording(recorded, total): String(localized: "\(recorded) of \(total) paragraphs recorded", bundle: .module)
+        case let .review(pending, _): String(localized: "\(pending) takes to review", bundle: .module)
+        case .package: String(localized: "Approved, ready to package", bundle: .module)
+        case .ready: String(localized: "Package ready to hand off", bundle: .module)
         }
     }
 }

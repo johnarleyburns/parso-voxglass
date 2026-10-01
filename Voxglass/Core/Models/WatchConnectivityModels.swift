@@ -164,9 +164,9 @@ public enum WatchPhoneMessageError: Error, LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .missingPayload:
-            "The iPhone reply did not include a payload."
+            String(localized: "The iPhone reply did not include a payload.", bundle: .module)
         case .missingAction:
-            "The watch request did not include an action."
+            String(localized: "The watch request did not include an action.", bundle: .module)
         case .remoteError(let message):
             message
         }

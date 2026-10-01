@@ -105,7 +105,7 @@ struct AudioSetupView: View {
             if let result {
                 kv("Noise floor", "\(String(format: "%.1f", result.noiseFloorDBFS)) dBFS", ok: result.noiseFloorDBFS <= audioSetupNoiseFloorCeiling)
                 kv("Peak", "\(String(format: "%.1f", result.peakDBFS)) dBFS", ok: result.peakDBFS <= audioSetupPeakCeiling)
-                kv("Sample-rate stability", result.isStable ? "Stable" : "Unstable")
+                kv("Sample-rate stability", result.isStable ? String(localized: "Stable") : String(localized: "Unstable"))
             } else if isTesting {
                 HStack(spacing: 8) {
                     ProgressView().tint(Palette.brass)
@@ -169,7 +169,7 @@ struct AudioSetupView: View {
         .raisedSurface()
     }
 
-    private func guidanceRow(_ title: String, _ caption: String, _ color: Color, _ chip: String) -> some View {
+    private func guidanceRow(_ title: LocalizedStringKey, _ caption: LocalizedStringKey, _ color: Color, _ chip: LocalizedStringKey) -> some View {
         HStack(spacing: 10) {
             Circle().fill(color.opacity(0.9)).frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 1) {
@@ -186,7 +186,7 @@ struct AudioSetupView: View {
         .padding(.vertical, 6)
     }
 
-    private func kv(_ label: String, _ value: String, ok: Bool? = nil) -> some View {
+    private func kv(_ label: LocalizedStringKey, _ value: String, ok: Bool? = nil) -> some View {
         HStack {
             Text(label).voxFont(.caption).foregroundStyle(Palette.ink2)
             Spacer()
@@ -214,10 +214,10 @@ struct AudioSetupView: View {
         let transports = routeInfo.transports
         if transports.contains(.usb) { return "USB-C interface" }
         if transports.contains(.bluetooth) { return "Bluetooth" }
-        if transports.contains(.wiredHeadset) { return "Wired headset" }
+        if transports.contains(.wiredHeadset) { return String(localized: "Wired headset") }
         if transports.contains(.builtIn) { return "iPhone mic" }
         if transports.contains(.airPlay) { return "AirPlay" }
-        return "Current input"
+        return String(localized: "Current input")
     }
 
     private var formatLabel: String {
@@ -270,7 +270,7 @@ struct AudioSetupView: View {
             )
             try? FileManager.default.removeItem(at: take.fileURL)
         } catch {
-            errorText = "The room test couldn't run. \(error.localizedDescription)"
+            errorText = String(localized: "The room test couldn't run. \(error.localizedDescription)")
             try? FileManager.default.removeItem(at: url)
         }
     }
@@ -302,7 +302,7 @@ struct AudioSetupView: View {
             classification = CaptureRouteClassifier.classify(routeInfo)
             dismiss()
         } catch {
-            errorText = "That input couldn't be selected. (error.localizedDescription)"
+            errorText = String(localized: "That input couldn't be selected. \(error.localizedDescription)")
         }
     }
 }

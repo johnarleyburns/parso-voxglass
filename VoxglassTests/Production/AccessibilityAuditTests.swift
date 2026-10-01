@@ -214,7 +214,7 @@ import VoxglassCoreTestSupport
         let watchSources = Self.sourceFiles(in: "VoxglassWatch").joined(separator: "\n")
 
         #expect(phoneRelay.contains("sessionWatchStateDidChange"))
-        #expect(phoneRelay.contains("connectionToast = \"Apple Watch connected\""))
+        #expect(phoneRelay.contains("connectionToast = String(localized: \"Apple Watch connected\")"))
         #expect(phoneRelay.contains("kind: .librarySnapshot"))
         #expect(phoneViews.contains("\"nowplaying.watchDownload\""))
         #expect(phoneViews.contains("\"watchsync.connectionStatus\""))

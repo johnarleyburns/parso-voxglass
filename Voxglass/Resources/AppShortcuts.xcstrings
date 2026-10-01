@@ -1,545 +1,270 @@
 {
-  "sourceLanguage": "en",
-  "version": "1.0",
-  "strings": {
-    "Resume \\(.applicationName)": {
-      "comment": "Siri phrase for resuming the last audiobook.",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(.applicationName) fortsetzen"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Resume ${applicationName}" : {
+      "comment" : "Siri / Shortcuts phrases (VoxglassIntents.swift). One entry per shortcut; keep ${applicationName} and ${book} tokens.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Resume ${applicationName}",
+              "Resume my audiobook in ${applicationName}",
+              "Continue my book in ${applicationName}"
+            ]
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reprendre \\(.applicationName)"
+        "de" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "${applicationName} fortsetzen",
+              "Mein Hörbuch in ${applicationName} fortsetzen",
+              "Mein Buch in ${applicationName} fortsetzen"
+            ]
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reanudar \\(.applicationName)"
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Reanudar ${applicationName}",
+              "Reanudar mi audiolibro en ${applicationName}",
+              "Continuar mi libro en ${applicationName}"
+            ]
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Riprendi \\(.applicationName)"
+        "fr" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Reprendre ${applicationName}",
+              "Reprendre mon livre audio dans ${applicationName}",
+              "Reprendre mon livre dans ${applicationName}"
+            ]
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retomar \\(.applicationName)"
+        "he" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "להמשיך את ${applicationName}",
+              "להמשיך את ספר השמע שלי ב-${applicationName}",
+              "להמשיך את הספר שלי ב-${applicationName}"
+            ]
           }
         },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(.applicationName) hervatten"
+        "it" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Riprendi ${applicationName}",
+              "Riprendi il mio audiolibro in ${applicationName}",
+              "Continua il mio libro in ${applicationName}"
+            ]
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "\\(.applicationName)を再開"
+        "ja" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "${applicationName}を再開",
+              "${applicationName}でオーディオブックを再開",
+              "${applicationName}で本の続きを再生"
+            ]
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "继续 \\(.applicationName)"
+        "nl" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Hervat ${applicationName}",
+              "Hervat mijn luisterboek in ${applicationName}",
+              "Ga verder met mijn boek in ${applicationName}"
+            ]
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Продолжить в \\(.applicationName)"
+        "pl" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Wznów ${applicationName}",
+              "Wznów mój audiobook w ${applicationName}",
+              "Kontynuuj moją książkę w ${applicationName}"
+            ]
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wznów w \\(.applicationName)"
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Retomar o ${applicationName}",
+              "Retomar meu audiolivro no ${applicationName}",
+              "Continuar meu livro no ${applicationName}"
+            ]
           }
         },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "המשך ב־\\(.applicationName)"
+        "ru" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Продолжить ${applicationName}",
+              "Продолжить мою аудиокнигу в ${applicationName}",
+              "Продолжить мою книгу в ${applicationName}"
+            ]
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume \\(.applicationName)"
-          }
-        }
-      }
-    },
-    "Resume my audiobook in \\(.applicationName)": {
-      "comment": "Siri phrase for resuming the listener's audiobook.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
-          }
-        },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume my audiobook in \\(.applicationName)"
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "继续播放${applicationName}",
+              "在${applicationName}中继续我的有声书",
+              "在${applicationName}中继续我的书"
+            ]
           }
         }
       }
     },
-    "Continue my book in \\(.applicationName)": {
-      "comment": "Siri phrase for continuing the current book.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+    "Play ${book} in ${applicationName}" : {
+      "comment" : "Siri / Shortcuts phrases (VoxglassIntents.swift). One entry per shortcut; keep ${applicationName} and ${book} tokens.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Play ${book} in ${applicationName}",
+              "Play ${book} on ${applicationName}",
+              "Listen to ${book} in ${applicationName}",
+              "Play a book in ${applicationName}"
+            ]
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "de" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "${book} in ${applicationName} abspielen",
+              "${book} mit ${applicationName} abspielen",
+              "${book} in ${applicationName} anhören",
+              "Ein Buch in ${applicationName} abspielen"
+            ]
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Reproducir ${book} en ${applicationName}",
+              "Reproducir ${book} con ${applicationName}",
+              "Escuchar ${book} en ${applicationName}",
+              "Reproducir un libro en ${applicationName}"
+            ]
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "fr" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Lire ${book} dans ${applicationName}",
+              "Lire ${book} avec ${applicationName}",
+              "Écouter ${book} dans ${applicationName}",
+              "Lire un livre dans ${applicationName}"
+            ]
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "he" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "להפעיל את ${book} ב-${applicationName}",
+              "לנגן את ${book} עם ${applicationName}",
+              "להאזין ל-${book} ב-${applicationName}",
+              "להפעיל ספר ב-${applicationName}"
+            ]
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "it" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Riproduci ${book} in ${applicationName}",
+              "Riproduci ${book} con ${applicationName}",
+              "Ascolta ${book} in ${applicationName}",
+              "Riproduci un libro in ${applicationName}"
+            ]
           }
         },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "ja" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "${applicationName}で${book}を再生",
+              "${applicationName}で${book}をかけて",
+              "${applicationName}で${book}を聴く",
+              "${applicationName}で本を再生"
+            ]
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "nl" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Speel ${book} af in ${applicationName}",
+              "Speel ${book} af met ${applicationName}",
+              "Luister naar ${book} in ${applicationName}",
+              "Speel een boek af in ${applicationName}"
+            ]
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "pl" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Odtwórz ${book} w ${applicationName}",
+              "Włącz ${book} w ${applicationName}",
+              "Słuchaj ${book} w ${applicationName}",
+              "Odtwórz książkę w ${applicationName}"
+            ]
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Tocar ${book} no ${applicationName}",
+              "Tocar ${book} com o ${applicationName}",
+              "Ouvir ${book} no ${applicationName}",
+              "Tocar um livro no ${applicationName}"
+            ]
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
+        "ru" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Включить ${book} в ${applicationName}",
+              "Воспроизвести ${book} через ${applicationName}",
+              "Слушать ${book} в ${applicationName}",
+              "Включить книгу в ${applicationName}"
+            ]
           }
         },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue my book in \\(.applicationName)"
-          }
-        }
-      }
-    },
-    "Play \\(.\\$book) in \\(.applicationName)": {
-      "comment": "Siri phrase for playing a selected audiobook.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) in \\(.applicationName)"
-          }
-        }
-      }
-    },
-    "Play \\(.\\$book) on \\(.applicationName)": {
-      "comment": "Siri phrase for playing a selected audiobook.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play \\(.\\$book) on \\(.applicationName)"
-          }
-        }
-      }
-    },
-    "Listen to \\(.\\$book) in \\(.applicationName)": {
-      "comment": "Siri phrase for listening to a selected audiobook.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listen to \\(.\\$book) in \\(.applicationName)"
-          }
-        }
-      }
-    },
-    "Play a book in \\(.applicationName)": {
-      "comment": "Siri phrase for playing any audiobook.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
-          }
-        },
-        "he": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Play a book in \\(.applicationName)"
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "在${applicationName}中播放${book}",
+              "用${applicationName}播放${book}",
+              "在${applicationName}中收听${book}",
+              "在${applicationName}中播放一本书"
+            ]
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.0"
 }

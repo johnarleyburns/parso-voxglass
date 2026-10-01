@@ -167,7 +167,7 @@ public final class PhoneProductionSync {
                 syncError = error.localizedDescription
             }
         } else if accountStatus == .notAuthenticated {
-            syncError = "Sign in to iCloud to back up your narrations."
+            syncError = String(localized: "Sign in to iCloud to back up your narrations.")
         }
 
         // The fold is local-only and never waits on iCloud.

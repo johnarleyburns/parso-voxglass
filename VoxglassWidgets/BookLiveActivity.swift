@@ -35,10 +35,10 @@ struct BookLiveActivity: Widget {
                     VStack(spacing: 6) {
                         if context.state.isPlaying, let start = context.state.progressStart, let end = context.state.progressEnd, start < end {
                             ProgressView(timerInterval: start...end, countsDown: false)
-                                .tint(Color(red: 0.89, green: 0.64, blue: 0.29))
+                                .tint(Color.voxglassBrass)
                         } else {
                             ProgressView(value: context.state.chapterFraction)
-                                .tint(Color(red: 0.89, green: 0.64, blue: 0.29))
+                                .tint(Color.voxglassBrass)
                         }
                         HStack(spacing: 24) {
                             Button(intent: SkipBackwardIntent()) {
@@ -82,13 +82,13 @@ struct BookLiveActivity: Widget {
                 if context.state.isPlaying, let start = context.state.progressStart, let end = context.state.progressEnd, start < end {
                     ProgressView(timerInterval: start...end, countsDown: false)
                         .progressViewStyle(.circular)
-                        .tint(Color(red: 0.89, green: 0.64, blue: 0.29))
-                        .overlay { Image(systemName: "waveform").font(.system(size: 8)).foregroundStyle(Color(red: 0.89, green: 0.64, blue: 0.29)) }
+                        .tint(Color.voxglassBrass)
+                        .overlay { Image(systemName: "waveform").font(.caption2).imageScale(.small).foregroundStyle(Color.voxglassBrass) }
                 } else {
                     ProgressView(value: context.state.chapterFraction)
                         .progressViewStyle(.circular)
-                        .tint(Color(red: 0.89, green: 0.64, blue: 0.29))
-                        .overlay { Image(systemName: "waveform").font(.system(size: 8)) }
+                        .tint(Color.voxglassBrass)
+                        .overlay { Image(systemName: "waveform").font(.caption2).imageScale(.small) }
                 }
             }
             .widgetURL(URL(string: "voxglass://book/\(context.attributes.bookID.uuidString)"))
@@ -102,9 +102,10 @@ struct BookLiveActivity: Widget {
                 cover(for: context, size: 56)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("VOXGLASS · CH \(context.state.chapterIndex) OF \(context.state.chapterCount)")
+                    Text("Voxglass · Chapter \(context.state.chapterIndex) of \(context.state.chapterCount)")
+                        .textCase(.uppercase)
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color(red: 0.89, green: 0.64, blue: 0.29))
+                        .foregroundStyle(Color.voxglassBrass)
                     Text(context.attributes.title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
@@ -116,7 +117,7 @@ struct BookLiveActivity: Widget {
                 if let sleepText = sleepCapsuleText(context.state) {
                     HStack(spacing: 4) {
                         Image(systemName: "moon.fill")
-                            .font(.system(size: 9))
+                            .font(.caption2)
                         Text(sleepText)
                             .font(.caption2.weight(.medium))
                     }
@@ -129,10 +130,10 @@ struct BookLiveActivity: Widget {
 
             if context.state.isPlaying, let start = context.state.progressStart, let end = context.state.progressEnd, start < end {
                 ProgressView(timerInterval: start...end, countsDown: false)
-                    .tint(Color(red: 0.89, green: 0.64, blue: 0.29))
+                    .tint(Color.voxglassBrass)
             } else {
                 ProgressView(value: context.state.chapterFraction)
-                    .tint(Color(red: 0.89, green: 0.64, blue: 0.29))
+                    .tint(Color.voxglassBrass)
             }
 
             HStack {
@@ -149,9 +150,9 @@ struct BookLiveActivity: Widget {
                 }
                 Spacer()
                 if let remainingInBook = context.state.bookRemaining, remainingInBook > 0 {
-                    let hours = Int(remainingInBook) / 3600
-                    let mins = (Int(remainingInBook) % 3600) / 60
-                    Text("\(hours)h \(mins)m left in book")
+                    let remaining = Duration.seconds(Int(remainingInBook) / 60 * 60)
+                        .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+                    Text("\(remaining) left in book")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -170,7 +171,7 @@ struct BookLiveActivity: Widget {
                 Spacer()
                 Text("\(context.state.rate.formatted(.number.precision(.fractionLength(0...2))))×")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.89, green: 0.64, blue: 0.29))
+                    .foregroundStyle(Color.voxglassBrass)
             }
 
             HStack(spacing: 16) {
@@ -215,7 +216,7 @@ struct BookLiveActivity: Widget {
         }
         .padding(14)
         .activityBackgroundTint(Color(red: 0.08, green: 0.09, blue: 0.11))
-        .activitySystemActionForegroundColor(Color(red: 0.89, green: 0.64, blue: 0.29))
+        .activitySystemActionForegroundColor(Color.voxglassBrass)
     }
 
     private func detailLine(context: ActivityViewContext<BookActivityAttributes>) -> String {
@@ -228,11 +229,11 @@ struct BookLiveActivity: Widget {
 
     private func sleepCapsuleText(_ state: BookActivityAttributes.ContentState) -> String? {
         if state.sleepEndOfChapter {
-            return "☾ End of chapter"
+            return String(localized: "☾ End of chapter")
         }
         if let until = state.sleepUntil, until > Date() {
             let mins = max(1, Int(until.timeIntervalSinceNow / 60))
-            return "☾ \(mins)m"
+            return "☾ " + Duration.seconds(mins * 60).formatted(.units(allowed: [.minutes], width: .abbreviated))
         }
         return nil
     }
@@ -258,4 +259,10 @@ struct BookLiveActivity: Widget {
                 .accessibilityLabel(context.attributes.title)
         }
     }
+}
+
+private extension Color {
+    /// Voxglass brass (the app's accent asset), defined once for the Live
+    /// Activity, which renders outside the app and cannot read its catalog.
+    static let voxglassBrass = Color(red: 0.89, green: 0.64, blue: 0.29)
 }
