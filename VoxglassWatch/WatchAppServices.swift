@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 import WatchKit
+import WidgetKit
 import VoxglassWatchProtocol
 import VoxglassWatchCore
 
@@ -36,6 +37,8 @@ final class WatchAppServices: ObservableObject {
     private var downloadTasks: [WatchBookID: Task<Void, Never>] = [:]
     private var pausedDownloads = Set<WatchBookID>()
     private var lastListenedSave = Date.distantPast
+    private var lastWidgetState: WatchContinueListeningState?
+    private var lastWidgetSave = Date.distantPast
     private static let listenedKey = "watch.listened"
 
     private init() {
@@ -126,6 +129,7 @@ final class WatchAppServices: ObservableObject {
             listened = decoded
         }
         books = session.snapshot?.books ?? []
+        lastWidgetState = WatchContinueListeningStore.load()
         session.refresh()
     }
 
@@ -166,6 +170,7 @@ final class WatchAppServices: ObservableObject {
     private func applyPlayback(_ snapshot: WatchPlaybackSnapshot) {
         let previousPhase = playback.phase
         playback = snapshot
+        defer { publishWidget() }
         guard let bookID = snapshot.bookID, snapshot.chapterIndex >= 0 else { return }
         let phaseChanged = previousPhase != snapshot.phase
         guard phaseChanged || Date().timeIntervalSince(lastListenedSave) > 10 else { return }
@@ -175,6 +180,27 @@ final class WatchAppServices: ObservableObject {
         if let data = try? JSONEncoder().encode(listened) {
             UserDefaults.standard.set(data, forKey: Self.listenedKey)
         }
+    }
+
+    // MARK: - Smart Stack (A2)
+
+    /// Writes the "Continue listening" card's state to the App Group. The widget reloads only when
+    /// what it shows changes (book, chapter, play state, a minute of time left) — never per tick.
+    private func publishWidget() {
+        guard let book = heroBook else { return }
+        let isCurrent = playbackBook?.id == book.id
+        let index = resumeChapterIndex(for: book)
+        let state = WatchContinueListeningState(
+            bookTitle: book.title, chapterIndex: index,
+            chapterTitle: book.chapters.indices.contains(index) ? book.chapters[index].title : "",
+            progress: progress(for: book), remainingInBook: remainingInBook(for: book),
+            isPlaying: isCurrent && playback.isActuallyPlaying, anchorDate: Date())
+        let structural = state.differsStructurally(from: lastWidgetState)
+        guard structural || Date().timeIntervalSince(lastWidgetSave) > 30 else { return }
+        WatchContinueListeningStore.save(state)
+        lastWidgetSave = Date()
+        lastWidgetState = state
+        if structural { WidgetCenter.shared.reloadTimelines(ofKind: "VoxglassWatchContinueListening") }
     }
 
     // MARK: - Transport

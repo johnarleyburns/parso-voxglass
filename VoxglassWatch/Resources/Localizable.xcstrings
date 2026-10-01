@@ -2171,6 +2171,77 @@
         }
       }
     },
+    "Continues the book you were listening to, or pauses it." : {
+      "comment" : "Description of the Smart Stack widget's resume/pause action (App Intent).",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setzt das Buch fort, das du gehört hast, oder pausiert es."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continúa el libro que estabas escuchando o lo pausa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Reprend le livre que vous écoutiez, ou le met en pause."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ממשיך את הספר שהאזנת לו, או משהה אותו."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Riprende il libro che stavi ascoltando o lo mette in pausa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "聴いていた本を再開、または一時停止します。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gaat verder met het boek waar je naar luisterde, of pauzeert het."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wznawia książkę, której słuchałeś, lub ją wstrzymuje."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Continua o livro que você estava ouvindo ou o pausa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Продолжает книгу, которую вы слушали, или ставит её на паузу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "继续播放你正在听的书，或将其暂停。"
+          }
+        }
+      }
+    },
     "Cover" : {
       "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
       "localizations" : {
@@ -6149,6 +6220,77 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "继续"
+          }
+        }
+      }
+    },
+    "Resume or Pause Voxglass" : {
+      "comment" : "Title of the Smart Stack widget's resume/pause action (App Intent).",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass fortsetzen oder pausieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Reanudar o pausar Voxglass"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Reprendre ou mettre en pause Voxglass"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "המשך או השהה את Voxglass"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Riprendi o metti in pausa Voxglass"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglassを再開または一時停止"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voxglass hervatten of pauzeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wznów lub wstrzymaj Voxglass"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retomar ou pausar o Voxglass"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Продолжить или приостановить Voxglass"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "继续或暂停 Voxglass"
           }
         }
       }

@@ -31,5 +31,7 @@ xcrun xcstringstool sync Voxglass/Core/Resources/Localizable.xcstrings --strings
 xcrun xcstringstool sync VoxglassWatch/Resources/Localizable.xcstrings --stringsdata $(stringsdata VoxglassWatch)
 # shellcheck disable=SC2046
 xcrun xcstringstool sync VoxglassWidgets/Localizable.xcstrings --stringsdata $(stringsdata VoxglassWidgets)
+# shellcheck disable=SC2046
+xcrun xcstringstool sync VoxglassWatchWidgets/Localizable.xcstrings --stringsdata $(stringsdata VoxglassWatchWidgets)
 
 echo "Catalogs synced. Stale keys are marked extractionState=stale; remove them once confirmed unused."

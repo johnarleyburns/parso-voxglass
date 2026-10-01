@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00A7FDEC93990D541CB6D779 /* WatchResumeListeningIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72E0AB465E5315FCE366341 /* WatchResumeListeningIntent.swift */; };
 		00BD9E1FDB911BA9BC24D3CD /* AudioSessionCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396BF796DE405288AE846317 /* AudioSessionCapture.swift */; };
 		00FFA880CAA14A1624EC1369 /* 1891_collection_bt_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 088AA4A9A7602E0A0C49E97C /* 1891_collection_bt_librivox.jpg */; };
 		015D93E451F9C1CE0C297E47 /* VoxglassMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BB0E8A95C7A31FB9C872B9A /* VoxglassMacApp.swift */; };
@@ -86,6 +87,7 @@
 		3FEEE5663792C3026722EDE7 /* king_solomon_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2C89F09B2802010B27CD6943 /* king_solomon_librivox.jpg */; };
 		4066ABDD4010CF0B8FCAAD2B /* pride_prejudice_krs_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E967226D4468771DC77D2A02 /* pride_prejudice_krs_librivox.jpg */; };
 		40C82A08A418FC46B5922DD6 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28210879609150716CCE1C62 /* BookmarksView.swift */; };
+		412AE1FFD832EDD8F31E1E12 /* VoxglassWatchWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9AA596430BDF79D75C1431 /* VoxglassWatchWidget.swift */; };
 		41BBB220E6190D73AFE7348C /* moby_dick_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 446298FA2910316179E29ECB /* moby_dick_librivox.jpg */; };
 		423DFA0E519EE3E7FB5969AF /* DiscoveryEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5367337FE628EB8F9CB6BA55 /* DiscoveryEnvironment.swift */; };
 		4316D94382F1DD709A02C4F0 /* terror_mystery_0707_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9434A47A806A4EA4509EC595 /* terror_mystery_0707_librivox.jpg */; };
@@ -154,6 +156,7 @@
 		8081D5896F8561DDA17DD65A /* CoverPlate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F642462854BCCD9A42A0E5 /* CoverPlate.swift */; };
 		80A80266C5F84B32A0F214B2 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CD3C1E4D608137C5EB95024 /* VoxglassCore */; };
 		846BF99F1EBD8A2AB2914127 /* CarPlayCues in Resources */ = {isa = PBXBuildFile; fileRef = 17E06DEE185B6A8309E3F8BA /* CarPlayCues */; };
+		848D15585297684B3403A414 /* VoxglassWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B424798599C8652BF62F4861 /* VoxglassWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		85B29F15855ACB432C7F1D2F /* VoxglassWatchProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = FE26B0E3BCED7CB2CC2829E7 /* VoxglassWatchProtocol */; };
 		8645A692BC33932A36BAB264 /* your_invisible_power_2104_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6F0D99DCD6D4A6A80BC79732 /* your_invisible_power_2104_librivox.jpg */; };
 		86AB2D7CF7030E425F2334F6 /* VoxglassCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0554A18A3278FA4DD94DEFEC /* VoxglassCore */; };
@@ -184,6 +187,7 @@
 		9D601DFE827F77828EF805BB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 3FF9BA4E3F475FC96642625A /* ZIPFoundation */; };
 		9E60B177F487CA22A0E624CD /* alices_adventures_1003.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FA14453863EDE79F9ECE585B /* alices_adventures_1003.jpg */; };
 		A0DCC732CB708DA6F9C578B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8B92C41C9007B71F7A4BB38C /* PrivacyInfo.xcprivacy */; };
+		A0EFF7A3A9E5A00D55C2A313 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0C0A7F7D55652F914058BBBA /* Localizable.xcstrings */; };
 		A1A49A4770F9A81018DA901C /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739CF70CFD45FD09DC69EB64 /* ListenView.swift */; };
 		A2EA425AAC92703C91129FF2 /* SystemPlaybackBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347795F23ED3EA940FB4D8BE /* SystemPlaybackBridge.swift */; };
 		A4A9DF4E0A8D66C0B6CDB936 /* ProductionRenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5023830EA677771F7C38078C /* ProductionRenderCache.swift */; };
@@ -268,6 +272,7 @@
 		E2C8D782C3327D8BF72024C1 /* aliceinwonderland_1102_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 76F77E862DBA8E6F6449833B /* aliceinwonderland_1102_librivox.jpg */; };
 		E3030A7DE0905476B64A8619 /* flag.wav in Resources */ = {isa = PBXBuildFile; fileRef = FCBA4FCCF47EA1619C25179B /* flag.wav */; };
 		E3992AD6F8D76143C3113AC4 /* 8thanniversary_1308_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6FF3F7E592030AE8DB6A3300 /* 8thanniversary_1308_librivox.jpg */; };
+		E43E9AD45C342FA5F04D0121 /* VoxglassWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2681AC96E2D96399F8D72254 /* VoxglassWatchCore */; };
 		E49B96933CC7CFC6A2335E63 /* AVChapterRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DCAA83C6304E45BA0480AB /* AVChapterRenderer.swift */; };
 		E49DAE00872F00FC3F1B47E9 /* VoxglassType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50017B41AAE9826B89ECF0A5 /* VoxglassType.swift */; };
 		E4D272BAADB2E5D3B087D9DB /* PhoneAudioRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 545AD98342DD254058C3BA00 /* PhoneAudioRelay.swift */; };
@@ -278,6 +283,7 @@
 		E9190FFE39F304C159222FCE /* NarrationLicenseStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCEFC0527DEA130C7DB8EA1 /* NarrationLicenseStore.swift */; };
 		E92CA2053F02F500942EC9EA /* fanny_hill_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = C47467C62F52089A9F12E038 /* fanny_hill_librivox.jpg */; };
 		E9377FC490F1E5406F211C28 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 85B1181A1D8983DA914206C2 /* libsqlite3.tbd */; };
+		E9DC72E337B31A396119EC78 /* WatchResumeListeningIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72E0AB465E5315FCE366341 /* WatchResumeListeningIntent.swift */; };
 		EA87C7DD9E014742C21AAC4E /* divine_comedy_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 92C22C97A028F7EC7BE266A7 /* divine_comedy_librivox.jpg */; };
 		EA90CB84AE0EA716EDC2A2AE /* prideandprejudice_1005_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B3FBDB34C807AC848ED38203 /* prideandprejudice_1005_librivox.jpg */; };
 		EB56E7CCC961186FDBB57669 /* ScaledFontModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C32F38CFF851AFE807E124B /* ScaledFontModifier.swift */; };
@@ -356,6 +362,13 @@
 			remoteGlobalIDString = 802D0647F5389B292FA56781;
 			remoteInfo = VoxglassWidgets;
 		};
+		9CE67C7015B4C63C25C9AAFD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD0A9B0C49BB2C98805AB4F9;
+			remoteInfo = VoxglassWatchWidgets;
+		};
 		C286DB67187B0CA95E219115 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8A93FEDC260681E1ACBD4811 /* Project object */;
@@ -373,6 +386,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		0E629F48B0B27C8B8604313E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				848D15585297684B3403A414 /* VoxglassWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3AD446DDD6303A74D0E3FF49 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -415,6 +439,7 @@
 		08B309922E7F9EA263E5DDF7 /* CarPlayTemplateValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayTemplateValidation.swift; sourceTree = "<group>"; };
 		08BAA2D3E4829E509F826F06 /* BookLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookLiveActivity.swift; sourceTree = "<group>"; };
 		08BCFD8ACA913E9EFA9AD767 /* adventures_sherlockholmes_1007_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_sherlockholmes_1007_librivox.jpg; sourceTree = "<group>"; };
+		0C0A7F7D55652F914058BBBA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		0C6FAF2F26334EDEF94D37F6 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
 		0CCF2E9417CB73821291CA21 /* NarrationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationPipeline.swift; sourceTree = "<group>"; };
 		0D05CDEA73075148B3331D3D /* VoxglassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassComponents.swift; sourceTree = "<group>"; };
@@ -490,6 +515,7 @@
 		4D20BE7960CDF63B338A9B8B /* VoxglassMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoxglassMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D4C14EF3CC1FDD728821195 /* alice_in_wonderland_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = alice_in_wonderland_librivox.jpg; sourceTree = "<group>"; };
 		4DE029504EEF4954467251CA /* swiss_family_robinson_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = swiss_family_robinson_librivox.jpg; sourceTree = "<group>"; };
+		4E9AA596430BDF79D75C1431 /* VoxglassWatchWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassWatchWidget.swift; sourceTree = "<group>"; };
 		4F695ED501176D7E86BED918 /* american_indian_tales_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = american_indian_tales_librivox.jpg; sourceTree = "<group>"; };
 		50017B41AAE9826B89ECF0A5 /* VoxglassType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassType.swift; sourceTree = "<group>"; };
 		5023830EA677771F7C38078C /* ProductionRenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionRenderCache.swift; sourceTree = "<group>"; };
@@ -595,8 +621,10 @@
 		B08031FB6970F7E4B5A64C0B /* robinson_crusoe_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = robinson_crusoe_librivox.jpg; sourceTree = "<group>"; };
 		B0F652B44CEB7E5C6E362184 /* adventures_holmes.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = adventures_holmes.jpg; sourceTree = "<group>"; };
 		B3FBDB34C807AC848ED38203 /* prideandprejudice_1005_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = prideandprejudice_1005_librivox.jpg; sourceTree = "<group>"; };
+		B424798599C8652BF62F4861 /* VoxglassWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VoxglassWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5D32B1ADBD5E2A825589454 /* Voxglass.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Voxglass.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B68D355409D2D26B2CDCCF3E /* romeoandjuliet_ss_0901_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = romeoandjuliet_ss_0901_librivox.jpg; sourceTree = "<group>"; };
+		B72E0AB465E5315FCE366341 /* WatchResumeListeningIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchResumeListeningIntent.swift; sourceTree = "<group>"; };
 		B77D6E2359A80524C8B5CC29 /* ScrubberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrubberView.swift; sourceTree = "<group>"; };
 		B7B41CFE2DB33DDCA5488BAB /* wizard_of_oz.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = wizard_of_oz.jpg; sourceTree = "<group>"; };
 		B8077EBEF9C060ACA4C53E35 /* TTSAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSAudioCapture.swift; sourceTree = "<group>"; };
@@ -741,6 +769,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D298AD3DFE2946F4716D46FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E43E9AD45C342FA5F04D0121 /* VoxglassWatchCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6473759D2C8AD6F08BF207C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -830,6 +866,7 @@
 				5C0776929EF6C15128EF628F /* WatchPlayerView.swift */,
 				BE058162DB1348D28317C06A /* WatchRootView.swift */,
 				BBC87A8E7DC98401D6EC9592 /* WatchSessionAdapter.swift */,
+				9E81ABFDF4EB696FC3905A23 /* AppIntents */,
 				8140D251E81C189907F21D7C /* Kit */,
 				E713B2F4E79E3A3590A39454 /* Resources */,
 			);
@@ -989,6 +1026,15 @@
 			path = Artwork;
 			sourceTree = "<group>";
 		};
+		4233D63A456D9BA06B225528 /* VoxglassWatchWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				0C0A7F7D55652F914058BBBA /* Localizable.xcstrings */,
+				4E9AA596430BDF79D75C1431 /* VoxglassWatchWidget.swift */,
+			);
+			path = VoxglassWatchWidgets;
+			sourceTree = "<group>";
+		};
 		4FF87AFE93B4D9DF1F64B844 /* Library */ = {
 			isa = PBXGroup;
 			children = (
@@ -1121,6 +1167,7 @@
 				502C6F0D6AB044871EE800C9 /* VoxglassUITests.xctest */,
 				1399460F5AB0EEA78A9F6B79 /* VoxglassWatch.app */,
 				F048D421BA997703B42A14D4 /* VoxglassWatchUITests.xctest */,
+				B424798599C8652BF62F4861 /* VoxglassWatchWidgets.appex */,
 				F9E737556101729177BD5670 /* VoxglassWidgets.appex */,
 			);
 			name = Products;
@@ -1176,6 +1223,14 @@
 			path = Discover;
 			sourceTree = "<group>";
 		};
+		9E81ABFDF4EB696FC3905A23 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				B72E0AB465E5315FCE366341 /* WatchResumeListeningIntent.swift */,
+			);
+			path = AppIntents;
+			sourceTree = "<group>";
+		};
 		A8CDFF63283253FCE1DB2B33 = {
 			isa = PBXGroup;
 			children = (
@@ -1190,6 +1245,7 @@
 				F1BE95C159C6821B95663D5C /* VoxglassUITests */,
 				1A2173D840425F15B525BF0A /* VoxglassWatch */,
 				977B5A609EF8BE9B399FF945 /* VoxglassWatchUITests */,
+				4233D63A456D9BA06B225528 /* VoxglassWatchWidgets */,
 				CDE3385F541452FCE04A2FD7 /* VoxglassWidgets */,
 				14120B8711EC104FE616E7D7 /* Frameworks */,
 				796B34DD940E8756362344DD /* Products */,
@@ -1379,10 +1435,12 @@
 				79662845A239BA8E7AE43638 /* Sources */,
 				FDCCBD6B6C12EE73BA9D5061 /* Resources */,
 				33D139B1E9C36DE5CDC4D11E /* Frameworks */,
+				0E629F48B0B27C8B8604313E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7D36B7136919E31A35D826E0 /* PBXTargetDependency */,
 			);
 			name = VoxglassWatch;
 			packageProductDependencies = (
@@ -1582,6 +1640,26 @@
 			productReference = 517313AFEE920D385A5A0082 /* VoxglassMacUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		FD0A9B0C49BB2C98805AB4F9 /* VoxglassWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A1CAB4A6AEC2AE543133461 /* Build configuration list for PBXNativeTarget "VoxglassWatchWidgets" */;
+			buildPhases = (
+				6A8269AA8C26A5902A83FA01 /* Sources */,
+				51ADC9C2934FD3FE72E13397 /* Resources */,
+				D298AD3DFE2946F4716D46FB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoxglassWatchWidgets;
+			packageProductDependencies = (
+				2681AC96E2D96399F8D72254 /* VoxglassWatchCore */,
+			);
+			productName = VoxglassWatchWidgets;
+			productReference = B424798599C8652BF62F4861 /* VoxglassWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1635,6 +1713,7 @@
 				66284DBA90AC39B124263951 /* Voxglass */,
 				802D0647F5389B292FA56781 /* VoxglassWidgets */,
 				0C8750037BEC39E703C622B9 /* VoxglassWatch */,
+				FD0A9B0C49BB2C98805AB4F9 /* VoxglassWatchWidgets */,
 				3B8880C71EB76B457C2934CE /* VoxglassUITests */,
 				CA2AB979DA67E0AF8133D1BE /* VoxglassCarPlaySmokeTests */,
 				1F672496B40AE2799422B3C4 /* VoxglassWatchUITests */,
@@ -1774,6 +1853,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		51ADC9C2934FD3FE72E13397 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0EFF7A3A9E5A00D55C2A313 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A71BBE8B0D9C337D0BB38153 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1845,6 +1932,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6A8269AA8C26A5902A83FA01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				412AE1FFD832EDD8F31E1E12 /* VoxglassWatchWidget.swift in Sources */,
+				00A7FDEC93990D541CB6D779 /* WatchResumeListeningIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		79662845A239BA8E7AE43638 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1862,6 +1958,7 @@
 				77315EC12BB9D482B436AE2F /* WatchPlayerView.swift in Sources */,
 				629ED86D4A0DDE22006502FA /* WatchProblemCard.swift in Sources */,
 				D26FD2F4000293F3BCA28FA0 /* WatchProgressViews.swift in Sources */,
+				E9DC72E337B31A396119EC78 /* WatchResumeListeningIntent.swift in Sources */,
 				9005B6ABE5E61D5BEAA71186 /* WatchRootView.swift in Sources */,
 				D86160C08BAB46E86DD6F402 /* WatchSessionAdapter.swift in Sources */,
 				189F50B5EDE48351424221BB /* WatchTransportButton.swift in Sources */,
@@ -2063,6 +2160,11 @@
 			target = 66284DBA90AC39B124263951 /* Voxglass */;
 			targetProxy = 5D44F3BB7C258632BECB468F /* PBXContainerItemProxy */;
 		};
+		7D36B7136919E31A35D826E0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD0A9B0C49BB2C98805AB4F9 /* VoxglassWatchWidgets */;
+			targetProxy = 9CE67C7015B4C63C25C9AAFD /* PBXContainerItemProxy */;
+		};
 		A5D8FE0A039CD9801BE03528 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 4F003E1B22C828F1992CEEED /* VoxglassMac */;
@@ -2160,6 +2262,31 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass";
 			};
 			name = Debug;
+		};
+		223F5D3009C95B34A6847E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = VoxglassWatchWidgets/VoxglassWatchWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				INFOPLIST_FILE = VoxglassWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.watchkitapp.widgets;
+				PRODUCT_NAME = VoxglassWatchWidgets;
+				PROVISIONING_PROFILE_SPECIFIER = "Parso Voxglass Watch Widgets App Store";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) VOXGLASS_WATCH_WIDGET";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
 		};
 		2293B2BB344EF6340713E676 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -2262,6 +2389,29 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		4755D66F3A4E06EE3E191772 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = VoxglassWatchWidgets/VoxglassWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = VoxglassWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.watchkitapp.widgets;
+				PRODUCT_NAME = VoxglassWatchWidgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) VOXGLASS_WATCH_WIDGET";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Debug;
 		};
@@ -2690,6 +2840,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		7A1CAB4A6AEC2AE543133461 /* Build configuration list for PBXNativeTarget "VoxglassWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4755D66F3A4E06EE3E191772 /* Debug */,
+				223F5D3009C95B34A6847E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		84B207437262406804B45A94 /* Build configuration list for PBXNativeTarget "VoxglassWidgets" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -2740,6 +2899,10 @@
 		0554A18A3278FA4DD94DEFEC /* VoxglassCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VoxglassCore;
+		};
+		2681AC96E2D96399F8D72254 /* VoxglassWatchCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoxglassWatchCore;
 		};
 		2CAA5CA27C7FB6ED43B55A2A /* VoxglassCore */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -107,3 +107,26 @@ struct WatchListeningTests {
         #expect(WatchBookDownload(done: 0, total: 0, state: .waitingForPhone).fraction == 0)
     }
 }
+
+@Suite("Watch continue-listening widget state (redesign A2)")
+struct WatchContinueListeningStateTests {
+    @Test("Round-trips, reloads only on real changes, and ranks relevance")
+    func roundTrip() throws {
+        let defaults = try #require(UserDefaults(suiteName: "continue-\(UUID().uuidString)"))
+        let state = WatchContinueListeningState(bookTitle: "Moby Dick", chapterIndex: 2, chapterTitle: "Loomings",
+                                                progress: 0.12, remainingInBook: 3_600, isPlaying: false,
+                                                anchorDate: Date(timeIntervalSince1970: 0))
+        WatchContinueListeningStore.save(state, defaults: defaults)
+        #expect(WatchContinueListeningStore.load(defaults: defaults) == state)
+        var tick = state
+        tick.remainingInBook -= 5
+        #expect(!tick.differsStructurally(from: state))
+        tick.isPlaying = true
+        #expect(tick.differsStructurally(from: state))
+        #expect(tick.relevance(at: Date()) == 1)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        #expect(state.relevance(at: Date(timeIntervalSince1970: 21 * 3600), calendar: calendar) == 0.6)
+        #expect(state.relevance(at: Date(timeIntervalSince1970: 9 * 3600), calendar: calendar) == 0.2)
+    }
+}

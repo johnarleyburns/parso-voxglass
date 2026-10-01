@@ -144,6 +144,7 @@ jobs:
       BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
       WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
       WATCH_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_PROVISIONING_PROFILE_BASE64 }}
+      WATCH_WIDGETS_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_WIDGETS_PROVISIONING_PROFILE_BASE64 }}
       MAC_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_PROVISIONING_PROFILE_BASE64 }}
       MAC_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.MAC_INSTALLER_CERTIFICATE_BASE64 }}
       MAC_INSTALLER_P12_PASSWORD: ${{ secrets.MAC_INSTALLER_P12_PASSWORD }}
@@ -170,6 +171,7 @@ jobs:
             BUILD_PROVISION_PROFILE_BASE64
             WIDGET_PROVISIONING_PROFILE_BASE64
             WATCH_PROVISIONING_PROFILE_BASE64
+            WATCH_WIDGETS_PROVISIONING_PROFILE_BASE64
             DEVELOPMENT_TEAM_ID
             KEYCHAIN_PASSWORD
             P12_PASSWORD
@@ -342,6 +344,8 @@ jobs:
           profile_path="$RUNNER_TEMP/build_profile.mobileprovision"
           widget_profile_path="$RUNNER_TEMP/widget_profile.mobileprovision"
           watch_profile_path="$RUNNER_TEMP/watch_profile.mobileprovision"
+          watch_widgets_profile_path="$RUNNER_TEMP/watch_widgets_profile.mobileprovision"
+          watch_widgets_profile_plist_path="$RUNNER_TEMP/watch_widgets_profile.plist"
           profile_plist_path="$RUNNER_TEMP/build_profile.plist"
           widget_profile_plist_path="$RUNNER_TEMP/widget_profile.plist"
           watch_profile_plist_path="$RUNNER_TEMP/watch_profile.plist"
@@ -351,6 +355,7 @@ jobs:
           printf '%s' "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$profile_path"
           printf '%s' "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$widget_profile_path"
           printf '%s' "$WATCH_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$watch_profile_path"
+          printf '%s' "$WATCH_WIDGETS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$watch_widgets_profile_path"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
           security set-keychain-settings -lut 21600 "$keychain_path"
@@ -412,6 +417,28 @@ jobs:
           watch_profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$watch_profile_plist_path")"
           cp "$watch_profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$watch_profile_uuid.mobileprovision"
           echo "watch_profile_name=$watch_profile_name" >> "$GITHUB_OUTPUT"
+
+          # Install the watch Smart Stack widget profile (watch redesign A2). It shares the App
+          # Group with the watch app, which writes the "Continue listening" state.
+          security cms -D -i "$watch_widgets_profile_path" > "$watch_widgets_profile_plist_path"
+          watch_widgets_profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$watch_widgets_profile_plist_path")"
+          watch_widgets_profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$watch_widgets_profile_plist_path")"
+          watch_widgets_app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$watch_widgets_profile_plist_path")"
+          watch_widgets_app_group="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups:0' "$watch_widgets_profile_plist_path" 2>/dev/null || true)"
+          if [ "$watch_widgets_app_id" != "${DEVELOPMENT_TEAM_ID}.guru.parso.voxglass.watchkitapp.widgets" ]; then
+            echo "::error title=Watch widget profile bundle mismatch::Profile '$watch_widgets_profile_name' targets '$watch_widgets_app_id'; expected '${DEVELOPMENT_TEAM_ID}.guru.parso.voxglass.watchkitapp.widgets'."
+            exit 1
+          fi
+          if [ "$watch_widgets_app_group" != "group.guru.parso.voxglass" ]; then
+            echo "::error title=Watch widget App Group capability missing::Profile '$watch_widgets_profile_name' does not include group.guru.parso.voxglass."
+            exit 1
+          fi
+          if [ "$watch_widgets_profile_name" != "Parso Voxglass Watch Widgets App Store" ]; then
+            echo "::error title=Watch widget profile mismatch::Installed watch widget profile '$watch_widgets_profile_name' does not match 'Parso Voxglass Watch Widgets App Store'."
+            exit 1
+          fi
+          cp "$watch_widgets_profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$watch_widgets_profile_uuid.mobileprovision"
+          echo "watch_widgets_profile_name=$watch_widgets_profile_name" >> "$GITHUB_OUTPUT"
 
           expected_profile="$(sed -n 's/.*PROVISIONING_PROFILE_SPECIFIER: "\(.*\)"/\1/p' project.yml | head -1)"
           if [ "$profile_name" != "$expected_profile" ]; then
@@ -574,6 +601,8 @@ jobs:
               <string>${{ steps.signing.outputs.widget_profile_name }}</string>
               <key>guru.parso.voxglass.watchkitapp</key>
               <string>${{ steps.signing.outputs.watch_profile_name }}</string>
+              <key>guru.parso.voxglass.watchkitapp.widgets</key>
+              <string>${{ steps.signing.outputs.watch_widgets_profile_name }}</string>
             </dict>
             <key>signingCertificate</key>
             <string>Apple Distribution</string>
