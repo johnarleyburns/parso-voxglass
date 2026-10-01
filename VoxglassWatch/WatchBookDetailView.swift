@@ -150,7 +150,10 @@ struct WatchBookDetailView: View {
             // no output route was connected.
             Text(outputRouteName).font(.caption2).foregroundStyle(.secondary)
                 .accessibilityIdentifier("watch.book.output")
-            Text(playback.statusText).font(.caption2).foregroundStyle(statusColor).lineLimit(2)
+            Text(playback.statusText).font(.caption2).foregroundStyle(statusColor)
+                // A failure carries the diagnostic that says which step broke; never truncate it.
+                .lineLimit(isFailed ? nil : 2)
+                .fixedSize(horizontal: false, vertical: isFailed)
                 .accessibilityIdentifier("watch.book.phase")
             if indeterminateProgress {
                 ProgressView().accessibilityIdentifier("watch.book.progress")
@@ -255,6 +258,11 @@ struct WatchBookDetailView: View {
         case .idle, .preparing, .waitingForOutput, .buffering: true
         default: false
         }
+    }
+
+    private var isFailed: Bool {
+        if case .failed = playback.phase { return true }
+        return false
     }
 
     private var statusColor: Color {

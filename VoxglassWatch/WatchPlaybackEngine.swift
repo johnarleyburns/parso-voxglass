@@ -267,7 +267,11 @@ final class WatchPlaybackEngine {
                     continue
                 }
                 guard Date().timeIntervalSince(lastProgressAt) > stallTimeout else { continue }
-                let reason = player.reasonForWaitingToPlay?.rawValue ?? "none"
+                // Trim the AVFoundation constant to its distinguishing words so the whole reason
+                // fits on the watch face, e.g. "ToMinimizeStalls".
+                let reason = player.reasonForWaitingToPlay?.rawValue
+                    .replacingOccurrences(of: "AVPlayerWaiting", with: "")
+                    .replacingOccurrences(of: "Reason", with: "") ?? "none"
                 self.publish(.failed(
                     "Playback stalled (timeControlStatus: \(player.timeControlStatus.rawValue), waiting: \(reason))."
                 ), token: currentToken)
