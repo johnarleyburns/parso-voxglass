@@ -48,8 +48,10 @@ never translated.
 
 **Translation status:** every string has a first-pass translation marked `needs_review` in the
 String Catalogs. A native speaker should review each language in Xcode's catalog editor and flip
-reviewed entries to `translated`; `scripts/audit_app_store_release.sh` blocks a release while any
-entry still needs review. Term choices are recorded in the localization glossary.
+reviewed entries to `translated`. Drafts ship to TestFlight so reviewers can check them in context;
+`scripts/audit_app_store_release.sh` reports how many remain, and running it with
+`REQUIRE_REVIEWED_TRANSLATIONS=1` before the final App Store submission fails while any entry still
+needs review. Term choices are recorded in the localization glossary.
 
 **Adding or changing UI text:** write it as a SwiftUI literal, `LocalizedStringKey`, or
 `String(localized:)` (with `bundle: .module` in `Voxglass/Core`) — never pass UI text through a plain

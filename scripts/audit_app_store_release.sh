@@ -124,10 +124,13 @@ require((root / "Voxglass/Resources/AppIcon.icon/icon.json").is_file(), "iOS/mac
 require(not (root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset").exists(), "watchOS icon must come from AppIcon.icon, not a Watch appiconset")
 require("guru.parso.voxglass.studio" not in project, "retired native Mac bundle identifier must not return")
 
-# Draft translations are useful during development but must never ship without
-# native-speaker review. The current catalogs are machine-drafted first passes
-# (state `needs_review`); a native speaker flips each entry to `translated` in
-# Xcode's catalog editor. This gate blocks a release until that is done.
+# Machine-drafted translations carry state `needs_review` until a native speaker
+# flips them to `translated` in Xcode's catalog editor. They must be able to
+# ship to TestFlight so reviewers can check them in context, so they are
+# reported here, not blocked. Set REQUIRE_REVIEWED_TRANSLATIONS=1 for the final
+# App Store submission to turn any remaining `needs_review` entry into a failure.
+import os
+pending_review = 0
 for catalog in root.rglob("*.xcstrings"):
     # Build products (SwiftPM `.build`, DerivedData) hold stale copies of the catalogs.
     if {".build", "DerivedData"} & set(catalog.relative_to(root).parts):
@@ -137,16 +140,22 @@ for catalog in root.rglob("*.xcstrings"):
     except Exception as error:
         errors.append(f"{catalog}: invalid string catalog ({error})")
         continue
-    def walk(value, path=()):
+    def walk(value):
+        global pending_review
         if isinstance(value, dict):
             if value.get("state") == "needs_review":
-                errors.append(f"{catalog}: translation needs review at {'/'.join(path)}")
-            for key, child in value.items():
-                walk(child, path + (str(key),))
+                pending_review += 1
+            for child in value.values():
+                walk(child)
         elif isinstance(value, list):
-            for index, child in enumerate(value):
-                walk(child, path + (str(index),))
+            for child in value:
+                walk(child)
     walk(payload)
+if pending_review:
+    if os.environ.get("REQUIRE_REVIEWED_TRANSLATIONS") == "1":
+        errors.append(f"{pending_review} translations still need native-speaker review (state needs_review)")
+    else:
+        print(f"App Store release audit: note: {pending_review} translations are drafts awaiting native-speaker review (needs_review); allowed for TestFlight")
 
 bundle = pathlib.Path(sys.argv[1]) if sys.argv[1] else None
 if bundle:
