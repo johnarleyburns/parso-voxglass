@@ -131,26 +131,26 @@ final class ArtworkService: @unchecked Sendable {
             guard let image = Self.decodeFileImage(at: url) else {
                 throw ArtworkServiceError.notFoundImage
             }
-            memoryCache.setObject(image, forKey: nsURL)
+            storeInMemory(image, forKey: nsURL)
             return image
         }
 
         for localURL in await localArtworkURLs(for: url) {
             if let image = await diskImage(for: url, at: localURL) {
-                memoryCache.setObject(image, forKey: nsURL)
+                storeInMemory(image, forKey: nsURL)
                 touchKey(cacheKey(url))
                 return image
             }
         }
 
         if let bundled = BundledArtworkProvider.image(forCoverURL: url) {
-            memoryCache.setObject(bundled, forKey: nsURL)
+            storeInMemory(bundled, forKey: nsURL)
             return bundled
         }
 
         let (data, response) = try await fetcher(url)
         let image = try Self.validatedImage(from: data, response: response)
-        memoryCache.setObject(image, forKey: nsURL)
+        storeInMemory(image, forKey: nsURL)
         logger.debug("artworkNetworkDecodeCompleted")
         write(data, to: cacheFileURL(for: url))
         registerBytes(cacheKey(url), Int64(data.count))
@@ -168,25 +168,27 @@ final class ArtworkService: @unchecked Sendable {
         }
     }
 
+    /// Memory-only lookup for SwiftUI views to call synchronously before they
+    /// start `image(for:)`. It never touches disk: views call it from the main
+    /// actor, and reading plus downsampling a cached cover there blocked the
+    /// main thread once per cover on every appearance (Discover draws ~80).
+    /// Disk and network hits load through `image(for:)` off the main actor,
+    /// which stores them in memory so later appearances hit here.
     func cachedImage(for url: URL) -> UIImage? {
-        if let image = memoryCache.object(forKey: url as NSURL) {
-            if !url.isFileURL { touchKey(cacheKey(url)) }
-            return image
-        }
-        if url.isFileURL {
-            guard let image = Self.decodeFileImage(at: url) else { return nil }
-            memoryCache.setObject(image, forKey: url as NSURL)
-            return image
-        }
-        if let image = diskImage(at: cacheFileURL(for: url)) {
-            touchKey(cacheKey(url))
-            return image
-        }
-        return nil
+        guard let image = memoryCache.object(forKey: url as NSURL) else { return nil }
+        if !url.isFileURL { touchKey(cacheKey(url)) }
+        return image
     }
 
     /// Empties the in-memory tier for the Settings "Clear Cache" path.
     /// Disk artwork is wiped by `StreamCacheStore.clearAll()`.
+    /// Caches with the decoded size as cost so `totalCostLimit` (64 MB) is
+    /// enforced; without a cost NSCache only applies `countLimit`.
+    private func storeInMemory(_ image: UIImage, forKey key: NSURL) {
+        let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+        memoryCache.setObject(image, forKey: key, cost: cost)
+    }
+
     func clearMemory() {
         memoryCache.removeAllObjects()
     }
@@ -358,21 +360,6 @@ final class ArtworkService: @unchecked Sendable {
                 try? self.fileManager.value.removeItem(at: url)
                 return nil
             }
-            return image
-        })
-    }
-
-    /// Synchronous, purgeable-tier lookup used by SwiftUI before starting its
-    /// async task. Pinned entries are rechecked by `loadImage(for:)`.
-    private func diskImage(at url: URL) -> UIImage? {
-        return ioQueue.sync(execute: {
-            guard
-                let attributes = try? self.fileManager.value.attributesOfItem(atPath: url.path),
-                let modificationDate = attributes[.modificationDate] as? Date,
-                Date().timeIntervalSince(modificationDate) <= timeToLive,
-                let data = try? Data(contentsOf: url),
-                let image = Self.downsampledImage(from: data)
-            else { return nil }
             return image
         })
     }

@@ -79,8 +79,13 @@ public enum IACollectionStore {
 
     public static let featured: [IACollection] = [popular] + browseCollections
 
-    public static var browseCollections: [IACollection] {
+    /// Built once: each collection resolves several localized strings, and
+    /// Discover reads this list on every body pass.
+    public static let browseCollections: [IACollection] =
         LibriVoxBrowseGroup.categories.map { browseCollection(for: $0) }
+
+    private static let browseCollectionsByTitle: [IACollection] = browseCollections.sorted {
+        $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
     }
 
     public static var allSelectableCollections: [IACollection] {
@@ -221,9 +226,7 @@ public enum IACollectionStore {
     public static func collections(for selectedIDs: Set<String>, languages: Set<String> = LibriVoxLanguage.defaultSelection) -> [IACollection] {
         // Popular LibriVox always first, then the two curated collections,
         // then the remaining 21 browse categories sorted alphabetically.
-        let sortedBrowse = browseCollections.sorted {
-            $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-        }
+        let sortedBrowse = browseCollectionsByTitle
         // Collection preferences seed recommendations; Discover is the catalog
         // browser and must always expose the complete collection set. An empty
         // preference value is normal for users who skipped onboarding.
