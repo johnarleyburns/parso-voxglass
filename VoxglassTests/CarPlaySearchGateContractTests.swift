@@ -34,11 +34,21 @@ import Testing
         #expect(!availability.contains("#available(iOS 27.0, *)"))
     }
 
-    @Test func renderedListsExposeNativeVoiceSearch() throws {
-        let renderer = try source("Voxglass/App/CarPlay/CarPlayTemplateRenderer.swift")
-        #expect(renderer.contains("CPAssistantCellConfiguration("))
-        #expect(renderer.contains("assistantAction: .playMedia"))
-        #expect(renderer.contains("assistantCellConfiguration: assistantCellConfiguration"))
+    /// `CPAssistantCellConfiguration(.playMedia)` is only valid for an app with a legacy SiriKit
+    /// Intents extension handling `INPlayMediaIntent` (App Intents don't count). Voxglass has
+    /// none, and adding the cell (5748045, build 377) made CarPlay raise an Objective-C exception
+    /// on connect — the app aborted at launch in the car (build 406). The same mistake broke
+    /// Platterhead's CarPlay (tonearm 3e34979). In-car search stays on `CPSearchTemplate`.
+    @Test func assistantCellOnlyWithAPlayMediaIntentsExtension() throws {
+        let cellFiles = try swiftFiles(under: ["Voxglass", "VoxglassMac", "VoxglassShared"])
+            .filter { try source($0).contains("CPAssistantCellConfiguration(") }
+        guard !cellFiles.isEmpty else { return }
+        let topLevel = try FileManager.default.contentsOfDirectory(atPath: repoRoot.path)
+            .filter { !$0.hasPrefix(".") && !$0.hasSuffix("Tests") }
+        let handlesPlayMedia = try swiftFiles(under: topLevel)
+            .contains { try source($0).contains(": INPlayMediaIntentHandling") || source($0).contains(", INPlayMediaIntentHandling") }
+        #expect(handlesPlayMedia,
+                "CPAssistantCellConfiguration in \(cellFiles) needs an Intents extension implementing INPlayMediaIntentHandling, or CarPlay aborts on connect")
     }
 
     @Test func tabBarNeverReceivesASearchTemplate() throws {

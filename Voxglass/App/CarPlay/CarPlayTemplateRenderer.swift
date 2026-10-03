@@ -9,12 +9,6 @@ import VoxglassCore
 @MainActor
 enum CarPlayTemplateRenderer {
 
-    private static let assistantCellConfiguration = CPAssistantCellConfiguration(
-        position: .top,
-        visibility: .always,
-        assistantAction: .playMedia
-    )
-
     struct Dispatcher {
         let dispatch: @MainActor (CarPlayAction) -> Void
 
@@ -62,8 +56,7 @@ enum CarPlayTemplateRenderer {
     ) -> CPListTemplate {
         let template = CPListTemplate(
             title: tab.title,
-            sections: sections(tab.sections, dispatcher: dispatcher, artwork: artwork),
-            assistantCellConfiguration: assistantCellConfiguration
+            sections: sections(tab.sections, dispatcher: dispatcher, artwork: artwork)
         )
         template.tabTitle = tab.title
         template.tabImage = UIImage(systemName: tab.systemImage)
@@ -78,8 +71,7 @@ enum CarPlayTemplateRenderer {
     ) -> CPListTemplate {
         CPListTemplate(
             title: title,
-            sections: sections(modelSections, dispatcher: dispatcher, artwork: artwork),
-            assistantCellConfiguration: assistantCellConfiguration
+            sections: sections(modelSections, dispatcher: dispatcher, artwork: artwork)
         )
     }
 
