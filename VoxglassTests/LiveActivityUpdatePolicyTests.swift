@@ -48,4 +48,23 @@ import Testing
         #expect(playing == Date(timeIntervalSince1970: 750))
         #expect(paused == Date(timeIntervalSince1970: 1_000))
     }
+
+    @Test func unknownPlayerTimesNeverReachTheLiveActivityAsNaN() {
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: .nan, duration: 600) == 0)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: 10, duration: .nan) == 0)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: 10, duration: nil) == 0)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: 10, duration: 0) == 0)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: .infinity, duration: 600) == 0)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: 700, duration: 600) == 1)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: -5, duration: 600) == 0)
+        #expect(LiveActivityUpdatePolicy.chapterFraction(elapsed: 150, duration: 600) == 0.25)
+        #expect(LiveActivityUpdatePolicy.bookRemaining(.nan) == nil)
+        #expect(LiveActivityUpdatePolicy.bookRemaining(-1) == nil)
+        #expect(LiveActivityUpdatePolicy.bookRemaining(90) == 90)
+    }
+
+    @Test func aNaNPlayheadHasNoProgressIntervalInsteadOfTrapping() {
+        #expect(LiveActivityUpdatePolicy.progressInterval(for: content(elapsed: .nan)) == nil)
+        #expect(LiveActivityUpdatePolicy.staleDate(for: content(elapsed: .nan)) != nil)
+    }
 }

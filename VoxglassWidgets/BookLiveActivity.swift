@@ -37,7 +37,7 @@ struct BookLiveActivity: Widget {
                             ProgressView(timerInterval: start...end, countsDown: false)
                                 .tint(Color.voxglassBrass)
                         } else {
-                            ProgressView(value: context.state.chapterFraction)
+                            ProgressView(value: Double(Self.percent(context.state.chapterFraction)) / 100)
                                 .tint(Color.voxglassBrass)
                         }
                         HStack(spacing: 24) {
@@ -85,7 +85,7 @@ struct BookLiveActivity: Widget {
                         .tint(Color.voxglassBrass)
                         .overlay { Image(systemName: "waveform").font(.caption2).imageScale(.small).foregroundStyle(Color.voxglassBrass) }
                 } else {
-                    ProgressView(value: context.state.chapterFraction)
+                    ProgressView(value: Double(Self.percent(context.state.chapterFraction)) / 100)
                         .progressViewStyle(.circular)
                         .tint(Color.voxglassBrass)
                         .overlay { Image(systemName: "waveform").font(.caption2).imageScale(.small) }
@@ -132,7 +132,7 @@ struct BookLiveActivity: Widget {
                 ProgressView(timerInterval: start...end, countsDown: false)
                     .tint(Color.voxglassBrass)
             } else {
-                ProgressView(value: context.state.chapterFraction)
+                ProgressView(value: Double(Self.percent(context.state.chapterFraction)) / 100)
                     .tint(Color.voxglassBrass)
             }
 
@@ -144,7 +144,7 @@ struct BookLiveActivity: Widget {
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                 } else {
-                    Text("\(Int((context.state.chapterFraction * 100).rounded()))% elapsed")
+                    Text("\(Self.percent(context.state.chapterFraction))% elapsed")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -164,7 +164,7 @@ struct BookLiveActivity: Widget {
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                 } else {
-                    Text("\(Int(((1 - context.state.chapterFraction) * 100).rounded()))% left")
+                    Text("\(Self.percent(1 - context.state.chapterFraction))% left")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -217,6 +217,13 @@ struct BookLiveActivity: Widget {
         .padding(14)
         .activityBackgroundTint(Color(red: 0.08, green: 0.09, blue: 0.11))
         .activitySystemActionForegroundColor(Color.voxglassBrass)
+    }
+
+    /// Whole percent of a fraction. Never traps: `Int(Double.nan)` crashed this extension, and a
+    /// crashed Live Activity renders only as the grey placeholder.
+    static func percent(_ fraction: Double) -> Int {
+        guard fraction.isFinite else { return 0 }
+        return Int((min(max(fraction, 0), 1) * 100).rounded())
     }
 
     private func detailLine(context: ActivityViewContext<BookActivityAttributes>) -> String {

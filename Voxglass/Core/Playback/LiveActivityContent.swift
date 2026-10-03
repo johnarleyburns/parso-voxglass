@@ -55,9 +55,25 @@ public enum LiveActivityUpdatePolicy {
     }
 
     public static func progressInterval(for content: LiveActivityContent) -> ClosedRange<Date>? {
-        guard content.isPlaying, content.rate > 0, let duration = content.chapterDuration, duration > 0 else { return nil }
+        guard content.isPlaying, content.rate > 0, content.chapterElapsed.isFinite,
+              let duration = content.chapterDuration, duration.isFinite, duration > 0 else { return nil }
         let start = content.capturedAt.addingTimeInterval(-content.chapterElapsed / Double(content.rate))
         return start...start.addingTimeInterval(duration / Double(content.rate))
+    }
+
+    /// The chapter's played fraction, always finite and within 0...1. AVPlayer reports an unknown
+    /// position or duration as NaN (paused, loading); a NaN fraction reached the Live Activity,
+    /// whose `Int(fraction * 100)` trapped in the widget extension, so the lock screen showed only
+    /// the grey placeholder.
+    public static func chapterFraction(elapsed: TimeInterval, duration: TimeInterval?) -> Double {
+        guard let duration, duration.isFinite, duration > 0, elapsed.isFinite else { return 0 }
+        return min(max(elapsed / duration, 0), 1)
+    }
+
+    /// Time left in the book, or nil when it isn't a real, positive number.
+    public static func bookRemaining(_ remaining: TimeInterval?) -> TimeInterval? {
+        guard let remaining, remaining.isFinite, remaining > 0 else { return nil }
+        return remaining
     }
 
     public static func staleDate(for content: LiveActivityContent) -> Date? {
