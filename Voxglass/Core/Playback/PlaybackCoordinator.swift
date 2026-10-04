@@ -1880,9 +1880,19 @@ public final class PlaybackCoordinator {
 
     /// An audio route change (e.g. headphones unplugged) — persist position.
     public func handleAudioRouteChanged() {
+        let shouldResume = currentSession?.isPlaying == true && isEngineLoaded
+        // A CarPlay attach/detach can leave AVPlayer paused while the app's
+        // session still says playing. Reactivate the audio session and replay
+        // the current item on the new route instead of waiting for a force quit.
+        if shouldResume {
+            engine.configureAudioSession()
+            engine.play()
+            suppressNextIsPlayingSync = true
+        }
         Task { [weak self] in
             await self?.persistCurrentPosition(reason: .routeChange)
         }
+        if shouldResume { updateNowPlayingInfo() }
     }
 
     private func updateNowPlayingInfo() {

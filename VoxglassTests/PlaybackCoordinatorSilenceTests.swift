@@ -119,4 +119,15 @@ import Foundation
 
         #expect(engine.calls.contains(.setRate(3.5)))  // At 2.5×, 1.5× boost would be 3.75×, must clamp to 3.5×
     }
+
+    @Test func routeChangeReactivatesAPlayingBook() async {
+        let (coordinator, engine) = makeCoordinator()
+        await coordinator.play(makeBook())
+        engine.reset()
+
+        coordinator.handleAudioRouteChanged()
+
+        #expect(engine.calls.contains(.configureAudioSession))
+        #expect(engine.calls.contains(.play))
+    }
 }

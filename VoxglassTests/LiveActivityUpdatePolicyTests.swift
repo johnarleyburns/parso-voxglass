@@ -67,4 +67,12 @@ import Testing
         #expect(LiveActivityUpdatePolicy.progressInterval(for: content(elapsed: .nan)) == nil)
         #expect(LiveActivityUpdatePolicy.staleDate(for: content(elapsed: .nan)) != nil)
     }
+
+    @Test func activityContentNormalizesTransientPlayerNumbers() {
+        #expect(LiveActivityUpdatePolicy.safeRate(.nan) == 1)
+        #expect(LiveActivityUpdatePolicy.safeRate(.infinity) == 1)
+        #expect(LiveActivityUpdatePolicy.safeRate(1.5) == 1.5)
+        #expect(LiveActivityUpdatePolicy.safeElapsed(.infinity) == 0)
+        #expect(LiveActivityUpdatePolicy.safeElapsed(-2) == 0)
+    }
 }

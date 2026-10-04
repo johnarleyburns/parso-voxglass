@@ -32,7 +32,8 @@ public struct LiveActivityContent: Equatable, Sendable {
     ) {
         self.bookID = bookID; self.title = title; self.author = author; self.narrator = narrator
         self.chapterTitle = chapterTitle; self.chapterIndex = chapterIndex; self.chapterCount = chapterCount
-        self.isPlaying = isPlaying; self.rate = rate; self.chapterElapsed = max(chapterElapsed, 0)
+        self.isPlaying = isPlaying; self.rate = rate
+        self.chapterElapsed = chapterElapsed.isFinite ? max(chapterElapsed, 0) : chapterElapsed
         self.chapterDuration = chapterDuration; self.bookRemaining = bookRemaining; self.sleep = sleep
         self.capturedAt = capturedAt
     }
@@ -40,6 +41,14 @@ public struct LiveActivityContent: Equatable, Sendable {
 
 /// Pure policy for deciding when ActivityKit needs a new payload.
 public enum LiveActivityUpdatePolicy {
+    public static func safeRate(_ rate: Float) -> Float {
+        rate.isFinite && rate > 0 ? rate : 1
+    }
+
+    public static func safeElapsed(_ elapsed: TimeInterval) -> TimeInterval {
+        elapsed.isFinite ? max(elapsed, 0) : 0
+    }
+
     public static func shouldPush(previous: LiveActivityContent?, next: LiveActivityContent) -> Bool {
         guard let previous else { return true }
         guard previous.bookID == next.bookID,
