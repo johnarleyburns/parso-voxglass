@@ -65,7 +65,7 @@ public actor ProjectDatabase {
         return rows
     }
 
-    public func transaction<T>(_ body: (ProjectDatabase) async throws -> T) async throws -> T {
+    public func transaction<T: Sendable>(_ body: @Sendable (ProjectDatabase) async throws -> T) async throws -> T {
         try prepare()
         try executeRaw("BEGIN IMMEDIATE TRANSACTION")
         do {

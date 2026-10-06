@@ -60,13 +60,14 @@ public actor AuthoringLocalStore {
         let encoded = String(decoding: payload, as: UTF8.self)
         let fields = try JSONEncoder().encode(changedFields)
         let fieldsJSON = String(decoding: fields, as: UTF8.self)
+        let modifiedAt = clock.now.timeIntervalSince1970
         try await database.transaction { transaction in
             try await transaction.execute("""
                 INSERT INTO authoring_entity(id, kind, payload_json, modified_at)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, payload_json=excluded.payload_json,
                     local_revision=authoring_entity.local_revision+1, tombstoned=0, modified_at=excluded.modified_at
-                """, [.string(entityId.uuidString), .string(entityKind), .string(encoded), .double(clock.now.timeIntervalSince1970)])
+                """, [.string(entityId.uuidString), .string(entityKind), .string(encoded), .double(modifiedAt)])
             try await transaction.execute("""
                 INSERT INTO authoring_outbox(operation_id, entity_id, entity_kind, base_change_tag,
                     changed_fields_json, payload_json, payload_sha256, created_at)
@@ -74,7 +75,7 @@ public actor AuthoringLocalStore {
                 """, [
                     .string(mutation.operationId.uuidString), .string(entityId.uuidString), .string(entityKind),
                     effectiveBaseChangeTag.map(DatabaseValue.string) ?? .null, .string(fieldsJSON), .string(encoded),
-                    .string(mutation.payloadSha256), .double(clock.now.timeIntervalSince1970)
+                    .string(mutation.payloadSha256), .double(modifiedAt)
                 ])
         }
         return mutation
@@ -88,6 +89,8 @@ public actor AuthoringLocalStore {
         try await database.prepare()
         let cursorJSON = cursor.map { String(decoding: $0, as: UTF8.self) }
         let engineState = engineState?.base64EncodedString()
+        let modifiedAt = clock.now.timeIntervalSince1970
+        let ids = self.ids
         try await database.transaction { transaction in
             for record in records {
                 let payload = String(decoding: record.payload, as: UTF8.self)
@@ -122,7 +125,7 @@ public actor AuthoringLocalStore {
                         ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, payload_json=excluded.payload_json,
                             server_change_tag=excluded.server_change_tag, server_base_json=excluded.server_base_json,
                             tombstoned=0, modified_at=excluded.modified_at
-                        """, [.string(record.id.uuidString), .string(record.kind), .string(mergedJSON), .string(record.changeTag), .string(payload), .double(clock.now.timeIntervalSince1970)])
+                        """, [.string(record.id.uuidString), .string(record.kind), .string(mergedJSON), .string(record.changeTag), .string(payload), .double(modifiedAt)])
                     for (field, local, remote, base) in conflicts {
                         try await transaction.execute("""
                             INSERT OR IGNORE INTO authoring_conflict(id, entity_id, field, base_json, local_json, remote_json, remote_change_tag, created_at)
@@ -132,7 +135,7 @@ public actor AuthoringLocalStore {
                                 try base.map { .string(String(decoding: try encoder.encode($0), as: UTF8.self)) } ?? .null,
                                 .string(String(decoding: try encoder.encode(local), as: UTF8.self)),
                                 .string(String(decoding: try encoder.encode(remote), as: UTF8.self)),
-                                .string(record.changeTag), .double(clock.now.timeIntervalSince1970)
+                                .string(record.changeTag), .double(modifiedAt)
                             ])
                     }
                 }
@@ -144,7 +147,7 @@ public actor AuthoringLocalStore {
                 ON CONFLICT(scope) DO UPDATE SET cursor_json=excluded.cursor_json,
                     ck_engine_state_b64=COALESCE(excluded.ck_engine_state_b64, authoring_sync_state.ck_engine_state_b64),
                     updated_at=excluded.updated_at
-                """, [.string(scope), cursorJSON.map(DatabaseValue.string) ?? .null, engineState.map(DatabaseValue.string) ?? .null, .double(clock.now.timeIntervalSince1970)])
+                """, [.string(scope), cursorJSON.map(DatabaseValue.string) ?? .null, engineState.map(DatabaseValue.string) ?? .null, .double(modifiedAt)])
         }
     }
 
