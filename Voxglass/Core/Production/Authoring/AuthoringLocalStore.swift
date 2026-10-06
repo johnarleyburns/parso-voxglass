@@ -131,7 +131,7 @@ public actor AuthoringLocalStore {
                         } else {
                             try await transaction.execute("UPDATE authoring_entity SET tombstoned=1, server_change_tag=?, server_system_fields_b64=NULL, modified_at=? WHERE id=?", [.string(record.changeTag), .double(modifiedAt), .string(record.id.uuidString)])
                         }
-                        let tombstoneID = ids.next()
+                        let tombstoneID = Self.deterministicID("\(record.id.uuidString):\(record.changeTag)")
                         try await transaction.execute("INSERT OR IGNORE INTO authoring_tombstone(operation_id, entity_id, entity_kind, deleted_at, payload_json) VALUES (?, ?, ?, ?, ?)", [
                             .string(tombstoneID.uuidString), .string(record.id.uuidString), .string(record.kind),
                             .double(modifiedAt), .string("{}")
@@ -283,5 +283,13 @@ public actor AuthoringLocalStore {
             }
         }
         return (.object(merged), conflicts)
+    }
+
+    private static func deterministicID(_ value: String) -> UUID {
+        let bytes = Array(SHA256.hash(data: Data(value.utf8)).prefix(16))
+        let hex = bytes.map { String(format: "%02x", $0) }.joined()
+        let formatted = "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-\(hex.dropFirst(12).prefix(4))-\(hex.dropFirst(16).prefix(4))-\(hex.suffix(12))"
+        guard let id = UUID(uuidString: formatted) else { preconditionFailure("SHA-256 UUID formatting invariant failed") }
+        return id
     }
 }

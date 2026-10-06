@@ -20,7 +20,7 @@ public final class PhoneProductionEnvironment {
     public let narrationRepository: NarrationProjectRepository
     /// Native v2 CloudKit interface for the next authoring repository cutover.
     /// It uses an isolated, account-scoped store and does not alter v1 preview sync.
-    public lazy var authoringV2Sync = CloudKitAuthoringV2Sync(
+    @ObservationIgnored public lazy var authoringV2Sync = CloudKitAuthoringV2Sync(
         databaseURL: narrationRepository.applicationSupport
             .appendingPathComponent("Voxglass", isDirectory: true)
             .appendingPathComponent("AuthoringV2", isDirectory: true)

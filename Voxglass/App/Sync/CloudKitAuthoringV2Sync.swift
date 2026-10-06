@@ -17,7 +17,7 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
     private let baseDatabaseURL: URL
     private var store: AuthoringLocalStore?
     private var accountScope: String?
-    private let zoneID = CKRecordZone.ID(zoneName: Self.zoneName, ownerName: CKCurrentUserDefaultName)
+    private let zoneID = CKRecordZone.ID(zoneName: CloudKitAuthoringV2Sync.zoneName, ownerName: CKCurrentUserDefaultName)
     private var engine: CKSyncEngine?
     private var fetchInProgress = false
     private var deferredState: CKSyncEngine.State.Serialization?
@@ -26,7 +26,7 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
     private var pausedForAccountSwitch = false
     public private(set) var lastFailure: AuthoringCloudKitFailure?
 
-    public init(databaseURL: URL, containerIdentifier: String = Self.containerIdentifier) {
+    public init(databaseURL: URL, containerIdentifier: String = CloudKitAuthoringV2Sync.containerIdentifier) {
         self.container = CKContainer(identifier: containerIdentifier)
         self.database = container.privateCloudDatabase
         self.baseDatabaseURL = databaseURL
@@ -234,7 +234,7 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
         guard let store else { return nil }
         let pending = syncEngine.state.pendingRecordZoneChanges.filter { context.options.scope.contains($0) }
         guard !pending.isEmpty else { return nil }
-        return await CKSyncEngine.RecordZoneChangeBatch(pendingChanges: pending) { [store, zoneID] recordID in
+        guard var batch = await CKSyncEngine.RecordZoneChangeBatch(pendingChanges: pending, recordProvider: { [store, zoneID] recordID in
             guard recordID.zoneID == zoneID,
                   let entityID = UUID(uuidString: recordID.recordName),
                   let mutations = try? await store.pendingMutations(),
@@ -249,7 +249,9 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
             record["mutationID"] = mutation.operationId.uuidString as CKRecordValue
             record["payloadSHA256"] = mutation.payloadSha256 as CKRecordValue
             return record
-        }
+        }) else { return nil }
+        batch.atomicByZone = true
+        return batch
     }
 
     private func persistState(_ state: CKSyncEngine.State.Serialization) async {

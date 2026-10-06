@@ -174,4 +174,14 @@ private struct PatchFixture: Codable, Equatable {
         #expect(row?.int("tombstoned") == 0)
         #expect(try await database.query("SELECT field FROM authoring_conflict WHERE entity_id=?", [.string(entityID.uuidString)]).first?.string("field") == "$deleted")
     }
+
+    @Test func replayedRemoteDeletionCreatesOneTombstone() async throws {
+        let database = ProjectDatabase.makeTemporary(named: "authoring_delete_replay")
+        let store = AuthoringLocalStore(databaseURL: database.url, clock: FixedClock(Date(timeIntervalSince1970: 105)))
+        let entityID = UUID()
+        let deletion = AuthoringRemoteRecord(id: entityID, kind: "paragraph", changeTag: "deleted-v2", payload: Data("null".utf8), isDeleted: true)
+        try await store.applyRemotePage(scope: "private:authoring-v2", pageId: UUID(), records: [deletion], cursor: nil)
+        try await store.applyRemotePage(scope: "private:authoring-v2", pageId: UUID(), records: [deletion], cursor: nil)
+        #expect(try await database.query("SELECT operation_id FROM authoring_tombstone WHERE entity_id=?", [.string(entityID.uuidString)]).count == 1)
+    }
 }
