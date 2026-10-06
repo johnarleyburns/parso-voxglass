@@ -15,7 +15,9 @@ public struct ProductionMigration: Sendable {
         ProductionMigration(id: 1, name: "initial_production_schema", statements: schemaV1),
         ProductionMigration(id: 2, name: "production_asset_table", statements: schemaV2),
         ProductionMigration(id: 3, name: "take_capture_fields", statements: schemaV3),
-        ProductionMigration(id: 4, name: "cover_asset_reference", statements: schemaV4)
+        ProductionMigration(id: 4, name: "cover_asset_reference", statements: schemaV4),
+        ProductionMigration(id: 5, name: "authoring_v2_outbox_inbox_conflicts", statements: schemaV5),
+        ProductionMigration(id: 6, name: "authoring_v2_server_base_conflict_revisions", statements: schemaV6)
     ]
 
     static let schemaV1: [String] = [
@@ -259,5 +261,94 @@ public struct ProductionMigration: Sendable {
         "ALTER TABLE project ADD COLUMN cover_path TEXT",
         "ALTER TABLE project ADD COLUMN cover_bytes INTEGER",
         "ALTER TABLE project ADD COLUMN cover_content_type TEXT"
+    ]
+
+    /// Additive v2 multiwriter sync state. Legacy v1 projections and review
+    /// tables stay intact; v2 remote apply has a separate no-echo inbox path.
+    static let schemaV5: [String] = [
+        """
+        CREATE TABLE authoring_entity (
+            id TEXT PRIMARY KEY NOT NULL,
+            kind TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            local_revision INTEGER NOT NULL DEFAULT 1,
+            server_change_tag TEXT,
+            server_system_fields_b64 TEXT,
+            tombstoned INTEGER NOT NULL DEFAULT 0,
+            modified_at REAL NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE authoring_outbox (
+            operation_id TEXT PRIMARY KEY NOT NULL,
+            entity_id TEXT NOT NULL,
+            entity_kind TEXT NOT NULL,
+            base_change_tag TEXT,
+            changed_fields_json TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            payload_sha256 TEXT NOT NULL,
+            state TEXT NOT NULL DEFAULT 'pending',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            created_at REAL NOT NULL
+        )
+        """,
+        "CREATE INDEX idx_authoring_outbox_state ON authoring_outbox(state, created_at)",
+        """
+        CREATE TABLE authoring_inbox (
+            scope TEXT NOT NULL,
+            page_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            entity_kind TEXT NOT NULL,
+            change_tag TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            applied INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY(scope, record_id, change_tag)
+        )
+        """,
+        "CREATE INDEX idx_authoring_inbox_pending ON authoring_inbox(scope, applied)",
+        """
+        CREATE TABLE authoring_sync_state (
+            scope TEXT PRIMARY KEY NOT NULL,
+            cursor_json TEXT,
+            ck_engine_state_b64 TEXT,
+            updated_at REAL NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE authoring_conflict (
+            id TEXT PRIMARY KEY NOT NULL,
+            entity_id TEXT NOT NULL,
+            field TEXT NOT NULL,
+            base_json TEXT,
+            local_json TEXT NOT NULL,
+            remote_json TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            resolved_at REAL
+        )
+        """,
+        "CREATE INDEX idx_authoring_conflict_entity ON authoring_conflict(entity_id, resolved_at)",
+        """
+        CREATE TABLE authoring_receipt (
+            operation_id TEXT PRIMARY KEY NOT NULL,
+            payload_sha256 TEXT NOT NULL,
+            accepted_at REAL NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE authoring_tombstone (
+            operation_id TEXT PRIMARY KEY NOT NULL,
+            entity_id TEXT NOT NULL,
+            entity_kind TEXT NOT NULL,
+            deleted_at REAL NOT NULL,
+            payload_json TEXT NOT NULL
+        )
+        """,
+        "CREATE INDEX idx_authoring_tombstone_entity ON authoring_tombstone(entity_id, deleted_at)"
+    ]
+
+    static let schemaV6: [String] = [
+        "ALTER TABLE authoring_entity ADD COLUMN server_base_json TEXT",
+        "ALTER TABLE authoring_conflict ADD COLUMN remote_change_tag TEXT NOT NULL DEFAULT ''",
+        "CREATE UNIQUE INDEX idx_authoring_conflict_revision ON authoring_conflict(entity_id, field, remote_change_tag)"
     ]
 }

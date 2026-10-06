@@ -147,7 +147,8 @@ let package = Package(
             resources: [
                 .copy("Fixtures/ReplayGain"),
                 .copy("Fixtures/InternetArchive"),
-                .copy("Fixtures/LibriVox")
+                .copy("Fixtures/LibriVox"),
+                .copy("Fixtures/AuthoringV2")
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),

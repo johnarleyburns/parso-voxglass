@@ -13,7 +13,9 @@ import VoxglassCoreTestSupport
             "schema_migrations", "project", "chapter", "paragraph",
             "take", "pronunciation", "paragraph_pronunciation",
             "review_note", "review_event", "render_cache",
-            "proxy_cache", "sync_state", "export_run", "production_asset"
+            "proxy_cache", "sync_state", "export_run", "production_asset",
+            "authoring_entity", "authoring_outbox", "authoring_inbox",
+            "authoring_sync_state", "authoring_conflict", "authoring_receipt", "authoring_tombstone"
         ]
 
         let rows = try await db.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")

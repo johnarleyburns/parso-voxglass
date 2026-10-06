@@ -1,0 +1,10 @@
+{
+  "protocolVersion": 2,
+  "id": "54d843b7-9307-45b0-a27e-9b43cf45cd59",
+  "title": "The Secret Garden",
+  "metadata": {"author": "Frances Hodgson Burnett", "rightsBasis": "publicDomain"},
+  "sourceIds": ["101d0a9b-40b0-4cca-8628-86ba26b34f53"],
+  "capabilityFlags": ["takes-v1", "text-v1"],
+  "modifiedAt": "2026-10-05T15:04:05.125Z",
+  "futureCapability": "preserved"
+}
