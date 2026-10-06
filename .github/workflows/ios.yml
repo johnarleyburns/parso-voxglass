@@ -135,7 +135,14 @@ jobs:
     runs-on: macos-latest
     needs: [compile, logic-tests, guarded-tests]
     timeout-minutes: 45
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    # Manual builds may be sent to TestFlight when only the broad logic-test
+    # suite fails; compile and guarded release checks remain mandatory.
+    if: >-
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      needs.compile.result == 'success' &&
+      needs.guarded-tests.result == 'success' &&
+      (needs.logic-tests.result == 'success' || github.event_name == 'workflow_dispatch')
     env:
       APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
