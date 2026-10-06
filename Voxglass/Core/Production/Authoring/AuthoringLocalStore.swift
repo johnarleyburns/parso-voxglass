@@ -155,8 +155,8 @@ public actor AuthoringLocalStore {
             FROM authoring_outbox WHERE state='pending' ORDER BY created_at, operation_id
             """)
         return try rows.map { row in
-            guard let operationId = row.string("operation_id").flatMap(UUID.init(uuidString:)),
-                  let entityId = row.string("entity_id").flatMap(UUID.init(uuidString)),
+            guard let operationId = row.string("operation_id").flatMap({ UUID(uuidString: $0) }),
+                  let entityId = row.string("entity_id").flatMap({ UUID(uuidString: $0) }),
                   let kind = row.string("entity_kind"), let fields = row.string("changed_fields_json"),
                   let payload = row.string("payload_json")?.data(using: .utf8) else { throw StoreError.corruptRow("authoring outbox payload") }
             return AuthoringMutation(

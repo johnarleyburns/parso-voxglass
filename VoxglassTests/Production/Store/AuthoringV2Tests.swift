@@ -73,6 +73,11 @@ private struct PatchFixture: Codable, Equatable {
         let counts = try await database.query("SELECT (SELECT COUNT(*) FROM authoring_entity) AS entities, (SELECT COUNT(*) FROM authoring_outbox) AS pending")
         #expect(counts.first?.int("entities") == 1)
         #expect(counts.first?.int("pending") == 1)
+        let pending = try await store.pendingMutations()
+        #expect(pending.count == 1)
+        #expect(pending.first?.entityId == entityID)
+        #expect(pending.first?.changedFields == ["text"])
+        #expect(pending.first?.payload == Data(#"{"text":"offline edit"}"#.utf8))
 
         try await database.executeRaw("CREATE TRIGGER reject_authoring_outbox BEFORE INSERT ON authoring_outbox BEGIN SELECT RAISE(ABORT, 'injected failure'); END")
         let failedID = UUID()

@@ -19,7 +19,7 @@ public enum AuthoringValue: Codable, Sendable, Equatable {
 
     public init(from decoder: any Decoder) throws {
         let value = try decoder.singleValueContainer()
-        if try value.decodeNil() { self = .null }
+        if value.decodeNil() { self = .null }
         else if let bool = try? value.decode(Bool.self) { self = .bool(bool) }
         else if let integer = try? value.decode(Int64.self) { self = .integer(integer) }
         else if let number = try? value.decode(Double.self) { self = .number(number) }
@@ -51,7 +51,7 @@ public enum AuthoringPatch<Value: Codable & Sendable & Equatable>: Codable, Send
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
-        if try container.decodeNil() { self = .clear }
+        if container.decodeNil() { self = .clear }
         else { self = .set(try container.decode(Value.self)) }
     }
 
