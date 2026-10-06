@@ -8,17 +8,19 @@ Remote records are committed through the no-echo inbox before the engine checkpo
 
 ## Development schema and production promotion
 
-The adapter creates the custom zone through `CKSyncEngine`. CloudKit creates the record type and fields in the Development schema the first time a v2 record is saved. No manual record data or Production record should be created in CloudKit Console.
+The phone exposes this adapter under **Settings → Sync → Sync narration projects**. It is off by default and requires an explicit confirmation. It uploads project metadata and chapter/script structure to the user's private database; recording audio, source files, and artwork bytes remain on each device. New projects, edits, and deletions are queued locally and sent on foreground sync. Remote authoring edits are applied to the local project while preserving local takes.
 
-After a signed development build has written and read back a v2 project on two devices:
+The adapter creates `VGStudioAuthoringV2` through `CKSyncEngine`. CloudKit can create the record type and fields automatically in Development when the app first saves a record. **TestFlight uses the Production CloudKit environment**, where new record types and fields cannot be created by the app. Therefore, create and deploy the additive schema before turning on this feature in a TestFlight build ([Apple: CloudKit containers and environments](https://developer.apple.com/documentation/cloudkit/ckcontainer), [Apple: deploying a CloudKit schema](https://developer.apple.com/documentation/cloudkit/deploying-an-icloud-container-s-schema)). No record data needs to be created in CloudKit Console.
+
+To prepare the schema for the TestFlight two-device test:
 
 1. Open [CloudKit Console](https://icloud.developer.apple.com/) and select `iCloud.guru.parso.voxglass`.
 2. Choose **Development** and inspect **Schema → Record Types → VGAuthoringEntityV2**. Verify the six fields above and check that `VGStudioAuthoringV2` is a private custom zone created by the app.
-3. Use **Deploy Schema Changes** to promote the tested additive schema to **Production**. Review the displayed changes before deploying. Schema promotion does not copy Development records.
+3. Use **Deploy Schema Changes** to promote the additive schema to **Production**. Review the displayed changes before deploying. Schema promotion does not copy Development records.
 4. Do not use **Reset Environment**. Do not create a record type named `VGStudioAuthoringV2`; that is the zone name.
 
-Production promotion is intentionally a later release action. The v2 path is not enabled by existing app startup or old releases; integration into project mutation/privacy-consent flows and live two-device validation are still release gates. Until those gates pass, keep the Production schema unchanged.
+After deploying the schema and installing the next TestFlight build on two devices signed into the same Apple Account, enable **Sync narration projects** on one device and allow the first sync to finish. Check the private Production database for records in the `VGStudioAuthoringV2` zone, then make a title or script edit on one device and use **Sync Narration Projects Now** on the other. Start with sequential edits; simultaneous changes to the same field are recorded as unresolved conflicts and do not yet have an in-app resolution screen. Confirm the text update arrives and each device retains its own locally stored recording assets. Use a throwaway project until this passes.
 
 ## Verification status
 
-The Linux host cannot run Xcode or Swift locally. GitHub Actions is the platform build/test authority. The store tests exercise engine-state checkpoint persistence, full-system-field byte retention, outbox acknowledgment, remote apply, and transaction rollback. The Xcode CI job compiles the iOS, watchOS, and native macOS targets; a signed, live CloudKit two-device test is still required to validate CloudKit runtime behavior and the Development schema.
+The Linux host cannot run Xcode or Swift locally. GitHub Actions is the platform build/test authority. The store tests exercise engine-state checkpoint persistence, full-system-field byte retention, outbox acknowledgment, remote apply, conflict merging, and transaction rollback. The Xcode CI job compiles the iOS, watchOS, and native macOS targets. A signed two-device TestFlight run against Production is still required to validate CloudKit runtime behavior after the schema has been deployed.

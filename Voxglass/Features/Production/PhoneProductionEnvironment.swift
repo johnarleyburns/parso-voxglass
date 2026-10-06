@@ -73,6 +73,27 @@ public final class PhoneProductionEnvironment {
         try await authoringV2Sync.synchronize()
     }
 
+    /// Mirrors portable authoring snapshots to the private v2 zone, performs a
+    /// foreground fetch/send, and materializes merged metadata/script edits back
+    /// into the local project repository. Audio assets remain device-local.
+    public func synchronizeAuthoringV2(projects: [AudiobookProject]) async throws -> [AudiobookProject] {
+        let snapshots = try projects.flatMap(AuthoringProjectBridge.records(for:))
+        let knownEntities = try await authoringV2Sync.storedEntities()
+        let deletions = AuthoringProjectBridge.deletionRecordsForRemovedChildren(
+            in: knownEntities, desiredSnapshots: snapshots
+        )
+        try await authoringV2Sync.commitMutations(snapshots + deletions)
+        try await authoringV2Sync.synchronize()
+        let entities = try await authoringV2Sync.storedEntities()
+        let merge = try AuthoringProjectBridge.applying(entities, to: projects)
+        for id in merge.deletedProjectIDs { try? await narrationRepository.delete(id) }
+        return merge.projects
+    }
+
+    public func deleteAuthoringV2Project(_ project: AudiobookProject) async throws {
+        try await authoringV2Sync.commitMutations(AuthoringProjectBridge.deletionRecords(for: project))
+    }
+
     /// Derives the local `AudiobookProject` into its projection and applies it
     /// to the preview store and the watch (spec §4.3 / §13.6). The iPhone is the
     /// writer: a freshly saved narration is visible to My Productions and to the

@@ -11,7 +11,8 @@ on:
 
 concurrency:
   group: ios-${{ github.ref }}
-  cancel-in-progress: true
+  # A new push must not interrupt a TestFlight upload already running for this branch.
+  cancel-in-progress: false
 
 permissions:
   contents: read

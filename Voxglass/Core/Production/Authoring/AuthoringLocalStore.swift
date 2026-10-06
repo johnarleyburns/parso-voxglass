@@ -35,6 +35,17 @@ public struct AuthoringMutation: Codable, Sendable, Equatable {
     }
 }
 
+public struct AuthoringStoredEntity: Sendable, Equatable {
+    public var id: UUID
+    public var kind: String
+    public var payload: Data
+    public var isTombstoned: Bool
+
+    public init(id: UUID, kind: String, payload: Data, isTombstoned: Bool) {
+        self.id = id; self.kind = kind; self.payload = payload; self.isTombstoned = isTombstoned
+    }
+}
+
 /// Durable multiwriter state kept separate from the legacy selected-take projection.
 public actor AuthoringLocalStore {
     private let database: ProjectDatabase
@@ -84,6 +95,37 @@ public actor AuthoringLocalStore {
                 ])
         }
         return mutation
+    }
+
+    /// Avoids adding identical full-entity snapshots to the durable outbox on
+    /// every autosave while retaining the same atomic local write semantics.
+    public func commitLocalMutationIfChanged(
+        entityId: UUID, entityKind: String, payload: Data, changedFields: [String]
+    ) async throws -> AuthoringMutation? {
+        try await database.prepare()
+        if let row = try await database.query(
+            "SELECT kind, payload_json, tombstoned FROM authoring_entity WHERE id=?",
+            [.string(entityId.uuidString)]
+        ).first,
+           row.string("kind") == entityKind,
+           row.string("payload_json") == String(decoding: payload, as: UTF8.self),
+           row.int("tombstoned") == 0 {
+            return nil
+        }
+        return try await commitLocalMutation(entityId: entityId, entityKind: entityKind, payload: payload, changedFields: changedFields)
+    }
+
+    public func entities() async throws -> [AuthoringStoredEntity] {
+        try await database.prepare()
+        let rows = try await database.query("SELECT id, kind, payload_json, tombstoned FROM authoring_entity ORDER BY modified_at")
+        return try rows.map { row in
+            guard let id = row.string("id").flatMap(UUID.init(uuidString:)),
+                  let kind = row.string("kind"),
+                  let payload = row.string("payload_json")?.data(using: .utf8) else {
+                throw StoreError.corruptRow("authoring entity")
+            }
+            return AuthoringStoredEntity(id: id, kind: kind, payload: payload, isTombstoned: row.int("tombstoned") != 0)
+        }
     }
 
     /// Applies a remote page and checkpoints the cursor/CKSyncEngine state in one transaction.
@@ -268,21 +310,37 @@ public actor AuthoringLocalStore {
               case .object(let remoteObject) = remote else {
             return (local, [("$", local, remote, base)])
         }
-        var merged = remoteObject
         var conflicts: [(String, AuthoringValue, AuthoringValue, AuthoringValue?)] = []
-        for key in Set(baseObject.keys).union(localObject.keys).union(remoteObject.keys).sorted() {
-            let original = baseObject[key]
-            let ours = localObject[key]
-            let theirs = remoteObject[key]
+        let merged = mergeObject(baseObject, localObject, remoteObject, path: "", conflicts: &conflicts)
+        return (.object(merged), conflicts)
+    }
+
+    private static func mergeObject(
+        _ base: [String: AuthoringValue],
+        _ local: [String: AuthoringValue],
+        _ remote: [String: AuthoringValue],
+        path: String,
+        conflicts: inout [(String, AuthoringValue, AuthoringValue, AuthoringValue?)]
+    ) -> [String: AuthoringValue] {
+        var merged = remote
+        for key in Set(base.keys).union(local.keys).union(remote.keys).sorted() {
+            let original = base[key]
+            let ours = local[key]
+            let theirs = remote[key]
+            let field = path.isEmpty ? key : "\(path).\(key)"
             guard ours != original else { continue }
             if theirs == original || ours == theirs {
                 if let ours { merged[key] = ours } else { merged.removeValue(forKey: key) }
+            } else if case .object(let baseObject)? = original,
+                      case .object(let localObject)? = ours,
+                      case .object(let remoteObject)? = theirs {
+                merged[key] = .object(mergeObject(baseObject, localObject, remoteObject, path: field, conflicts: &conflicts))
             } else {
-                conflicts.append((key, ours ?? .null, theirs ?? .null, original))
+                conflicts.append((field, ours ?? .null, theirs ?? .null, original))
                 if let ours { merged[key] = ours } else { merged.removeValue(forKey: key) }
             }
         }
-        return (.object(merged), conflicts)
+        return merged
     }
 
     private static func deterministicID(_ value: String) -> UUID {

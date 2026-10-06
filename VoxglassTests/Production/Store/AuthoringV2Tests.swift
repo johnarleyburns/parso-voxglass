@@ -18,6 +18,116 @@ private struct PatchFixture: Codable, Equatable {
 }
 
 @Suite struct AuthoringV2Tests {
+    @Test func projectBridgeBuildsPortableRecordsAndPreservesDeviceLocalTakes() throws {
+        let projectID = UUID()
+        let chapterID = UUID()
+        let paragraphID = UUID()
+        let takeID = UUID()
+        let take = Take(
+            id: takeID,
+            paragraphID: paragraphID,
+            assetRef: AudioAssetReference(sha256: String(repeating: "a", count: 64), relativePath: "takes/one.wav", byteCount: 96, contentType: "audio/wav"),
+            origin: .recorded,
+            recordedAt: Date(timeIntervalSince1970: 100),
+            duration: 2,
+            format: AudioFormatDescription(sampleRate: 48_000, channels: 1, codec: "pcm_s16le"),
+            textHashAtRecording: "old-hash"
+        )
+        let paragraph = Paragraph(
+            id: paragraphID, ordinal: 0, text: "The original script.", textHash: "script-hash",
+            takes: [take], selectedTakeID: takeID, updatedAt: Date(timeIntervalSince1970: 101)
+        )
+        let chapter = ProductionChapter(id: chapterID, ordinal: 0, title: "Chapter One", paragraphs: [paragraph])
+        let project = AudiobookProject(
+            id: projectID,
+            metadata: BookMetadata(
+                title: "A Test Book", author: "A. Writer", narrator: "Reader",
+                coverRef: AudioAssetReference(sha256: String(repeating: "c", count: 64), relativePath: "artwork/cover.jpg", byteCount: 64, contentType: "image/jpeg")
+            ),
+            chapters: [chapter],
+            createdAt: Date(timeIntervalSince1970: 90),
+            modifiedAt: Date(timeIntervalSince1970: 102)
+        )
+
+        let snapshots = try AuthoringProjectBridge.records(for: project)
+        #expect(snapshots.map(\.kind) == ["project", "chapter", "paragraph"])
+        #expect(snapshots.allSatisfy { $0.payload.count < 512 * 1024 })
+        let stored = snapshots.map {
+            AuthoringStoredEntity(id: $0.id, kind: $0.kind, payload: $0.payload, isTombstoned: false)
+        }
+        let merge = try AuthoringProjectBridge.applying(stored, to: [project])
+        let restored = try #require(merge.projects.first)
+        #expect(restored.metadata.title == "A Test Book")
+        #expect(restored.chapters.first?.paragraphs.first?.text == "The original script.")
+        #expect(restored.chapters.first?.paragraphs.first?.takes == [take])
+        #expect(restored.chapters.first?.paragraphs.first?.selectedTakeID == takeID)
+        #expect(restored.metadata.coverRef?.relativePath == "artwork/cover.jpg")
+
+        let paragraphSnapshot = try #require(snapshots.last)
+        let authoringParagraph = try JSONDecoder().decode(AuthoringParagraph.self, from: paragraphSnapshot.payload)
+        #expect(authoringParagraph.selectedTakeId == takeID)
+        #expect(!String(decoding: paragraphSnapshot.payload, as: UTF8.self).contains("one.wav"))
+        #expect(!String(decoding: snapshots[0].payload, as: UTF8.self).contains("cover.jpg"))
+    }
+
+    @Test func projectBridgeAppliesRemoteScriptEditsWithoutReplacingLocalAudio() throws {
+        let projectID = UUID()
+        let chapterID = UUID()
+        let paragraphID = UUID()
+        let takeID = UUID()
+        let take = Take(
+            id: takeID,
+            paragraphID: paragraphID,
+            assetRef: AudioAssetReference(sha256: String(repeating: "b", count: 64), relativePath: "takes/local.wav", byteCount: 128, contentType: "audio/wav"),
+            origin: .recorded,
+            recordedAt: Date(timeIntervalSince1970: 200),
+            duration: 3,
+            format: AudioFormatDescription(sampleRate: 48_000, channels: 1, codec: "pcm_s16le"),
+            textHashAtRecording: "before"
+        )
+        let paragraph = Paragraph(id: paragraphID, ordinal: 0, text: "Before", textHash: "before", takes: [take], selectedTakeID: takeID)
+        let project = AudiobookProject(
+            id: projectID,
+            metadata: BookMetadata(title: "Remote Edit", author: "Writer", narrator: "Reader"),
+            chapters: [ProductionChapter(id: chapterID, ordinal: 0, title: "Chapter", paragraphs: [paragraph])]
+        )
+        let snapshots = try AuthoringProjectBridge.records(for: project)
+        var remote = try JSONDecoder().decode(AuthoringParagraph.self, from: try #require(snapshots.last).payload)
+        remote.text = "After"
+        remote.textSha256 = "after"
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        var changed = snapshots
+        changed[changed.count - 1].payload = try encoder.encode(remote)
+        let stored = changed.map {
+            AuthoringStoredEntity(id: $0.id, kind: $0.kind, payload: $0.payload, isTombstoned: false)
+        }
+
+        let merge = try AuthoringProjectBridge.applying(stored, to: [project])
+        let updated = try #require(merge.projects.first?.chapters.first?.paragraphs.first)
+        #expect(updated.text == "After")
+        #expect(updated.textHash == "after")
+        #expect(updated.takes == [take])
+        #expect(updated.selectedTakeID == takeID)
+    }
+
+    @Test func bridgeTombstonesRemovedParagraphsAndProjects() throws {
+        let projectID = UUID()
+        let chapterID = UUID()
+        let paragraphID = UUID()
+        let chapter = AuthoringChapter(id: chapterID, projectId: projectID, ordinal: 0, title: "Chapter", role: "body", headGapFrames: 0, tailGapFrames: 0, sampleRate: 48_000)
+        let paragraph = AuthoringParagraph(id: paragraphID, projectId: projectID, chapterId: chapterID, ordinal: 0, text: "Text", textSha256: "hash", selectionRevision: "r1")
+        let existing = [
+            AuthoringStoredEntity(id: chapterID, kind: "chapter", payload: try JSONEncoder().encode(chapter), isTombstoned: false),
+            AuthoringStoredEntity(id: paragraphID, kind: "paragraph", payload: try JSONEncoder().encode(paragraph), isTombstoned: false)
+        ]
+        let desired = [AuthoringEntitySnapshot(id: projectID, kind: "project", payload: Data("{}".utf8), changedFields: [])]
+
+        let deletions = AuthoringProjectBridge.deletionRecordsForRemovedChildren(in: existing, desiredSnapshots: desired)
+        #expect(Set(deletions.map(\.id)) == [chapterID, paragraphID])
+        #expect(deletions.allSatisfy { $0.kind.hasPrefix("tombstone_") })
+    }
+
     @Test func portableProjectFixtureRoundTripsAndPreservesUnknownFields() throws {
         let url = try #require(Bundle.module.url(forResource: "cross-language-project", withExtension: "json", subdirectory: "AuthoringV2"))
         let fixture = try Data(contentsOf: url)
@@ -111,6 +221,17 @@ private struct PatchFixture: Codable, Equatable {
         #expect(try await store.cursor(scope: failureScope) == nil)
     }
 
+    @Test func repeatedProjectAutosavesDoNotAppendDuplicateOutboxRows() async throws {
+        let database = ProjectDatabase.makeTemporary(named: "authoring_snapshot_dedupe")
+        let store = AuthoringLocalStore(databaseURL: database.url, clock: FixedClock(Date(timeIntervalSince1970: 100)))
+        let entityID = UUID()
+        let payload = Data(#"{"title":"Draft"}"#.utf8)
+        #expect(try await store.commitLocalMutationIfChanged(entityId: entityID, entityKind: "project", payload: payload, changedFields: ["title"]) != nil)
+        #expect(try await store.commitLocalMutationIfChanged(entityId: entityID, entityKind: "project", payload: payload, changedFields: ["title"]) == nil)
+        #expect(try await store.pendingMutations().count == 1)
+        #expect(try await store.entities().first?.payload == payload)
+    }
+
     @Test func remoteUpdatesMergeDisjointFieldsAndPersistConflictingCandidates() async throws {
         let database = ProjectDatabase.makeTemporary(named: "authoring_three_way_merge")
         let store = AuthoringLocalStore(databaseURL: database.url, clock: FixedClock(Date(timeIntervalSince1970: 102)))
@@ -133,6 +254,29 @@ private struct PatchFixture: Codable, Equatable {
         #expect(conflicts.first?.string("local_json") == #""local take""#)
         #expect(conflicts.first?.string("remote_json") == #""remote take""#)
         #expect(try await database.query("SELECT operation_id FROM authoring_outbox WHERE state='pending'").count == 1)
+    }
+
+    @Test func remoteUpdatesMergeDisjointNestedMetadataAndNameNestedConflicts() async throws {
+        let database = ProjectDatabase.makeTemporary(named: "authoring_nested_merge")
+        let store = AuthoringLocalStore(databaseURL: database.url, clock: FixedClock(Date(timeIntervalSince1970: 102)))
+        let entityID = UUID()
+        let scope = "private:user-nested"
+        try await store.applyRemotePage(scope: scope, pageId: UUID(), records: [
+            AuthoringRemoteRecord(id: entityID, kind: "project", changeTag: "r1", payload: Data(#"{"metadata":{"author":"Base","narrator":"Base"},"title":"Base"}"#.utf8))
+        ], cursor: nil)
+        _ = try await store.commitLocalMutation(
+            entityId: entityID, entityKind: "project",
+            payload: Data(#"{"metadata":{"author":"Local","narrator":"Base"},"title":"Base"}"#.utf8),
+            changedFields: ["metadata.author"]
+        )
+        try await store.applyRemotePage(scope: scope, pageId: UUID(), records: [
+            AuthoringRemoteRecord(id: entityID, kind: "project", changeTag: "r2", payload: Data(#"{"metadata":{"author":"Remote","narrator":"New Narrator"},"title":"Base"}"#.utf8))
+        ], cursor: nil)
+
+        let payload = try #require(try await database.query("SELECT payload_json FROM authoring_entity WHERE id=?", [.string(entityID.uuidString)]).first?.string("payload_json"))
+        #expect(payload.contains("\"author\":\"Local\""))
+        #expect(payload.contains("\"narrator\":\"New Narrator\""))
+        #expect(try await database.query("SELECT field FROM authoring_conflict WHERE entity_id=?", [.string(entityID.uuidString)]).first?.string("field") == "metadata.author")
     }
 
     @Test func engineCheckpointAndUploadReceiptSurviveStoreReopen() async throws {

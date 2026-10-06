@@ -54,6 +54,9 @@ public final class DiscoveryEnvironment {
     public private(set) var freshness: Freshness = .seedOnly
     public private(set) var myNarrations: [AudiobookProject] = []
     public private(set) var isRefreshing = false
+    public private(set) var isAuthoringV2Syncing = false
+    public private(set) var authoringV2SyncStatus: String?
+    @ObservationIgnored private var authoringV2SyncTask: Task<Void, Never>?
     private var persistedNeedIDs: Set<String> = []
     private var hasLoadedNarrations = false
 
@@ -176,11 +179,63 @@ public final class DiscoveryEnvironment {
         try? await repository.save(project)
         await publish(project)
         await reloadNarrations()
+        scheduleAuthoringV2SyncIfEnabled()
     }
 
     public func delete(_ project: AudiobookProject) async {
+        if isAuthoringV2SyncEnabled, let phoneProduction {
+            do {
+                try await phoneProduction.deleteAuthoringV2Project(project)
+            } catch {
+                authoringV2SyncStatus = "Could not queue the project deletion: \(error.localizedDescription)"
+            }
+        }
         try? await repository.delete(project.id)
         await reloadNarrations()
+        scheduleAuthoringV2SyncIfEnabled()
+    }
+
+    public var isAuthoringV2SyncEnabled: Bool {
+        UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled)
+    }
+
+    /// Explicit foreground sync used by the consent screen and the manual
+    /// settings action. Existing local projects are bootstrapped on first opt-in.
+    public func syncAuthoringV2Now() async {
+        guard isAuthoringV2SyncEnabled else {
+            authoringV2SyncStatus = "Narration sync is off."
+            return
+        }
+        guard let phoneProduction else {
+            authoringV2SyncStatus = "Narration sync is unavailable right now."
+            return
+        }
+        isAuthoringV2Syncing = true
+        defer { isAuthoringV2Syncing = false }
+        do {
+            let localProjects = await repository.allProjects()
+            let mergedProjects = try await phoneProduction.synchronizeAuthoringV2(projects: localProjects)
+            for project in mergedProjects {
+                if !localProjects.contains(where: { $0 == project }) {
+                    try await repository.save(project)
+                    await phoneProduction.localPublish(project)
+                }
+            }
+            await reloadNarrations()
+            authoringV2SyncStatus = "Narration projects synced just now."
+        } catch {
+            authoringV2SyncStatus = "Narration sync failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func scheduleAuthoringV2SyncIfEnabled() {
+        guard isAuthoringV2SyncEnabled else { return }
+        authoringV2SyncTask?.cancel()
+        authoringV2SyncTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.syncAuthoringV2Now()
+        }
     }
 
     // MARK: - Projection to preview store + watch

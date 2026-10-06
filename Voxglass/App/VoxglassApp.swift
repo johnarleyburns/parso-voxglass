@@ -38,6 +38,9 @@ struct VoxglassApp: App {
                     discovery.phoneProduction = services.productionEnvironment
                     discovery.library = NarrationLibraryImporter(services: services)
                     await services.bootstrapOnce()
+                    if discovery.isAuthoringV2SyncEnabled {
+                        await discovery.syncAuthoringV2Now()
+                    }
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     services.playbackCoordinator.handleScenePhase(newPhase)

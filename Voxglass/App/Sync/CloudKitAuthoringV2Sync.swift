@@ -95,6 +95,35 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
         return mutation
     }
 
+    /// Queues a project snapshot set with one engine startup and makes only
+    /// changed records pending, so autosaves do not grow an identical outbox.
+    public func commitMutations(_ snapshots: [AuthoringEntitySnapshot]) async throws {
+        try await start()
+        guard let store, let engine, !pausedForAccountSwitch else { throw AuthoringCloudKitError.accountTransition }
+        var pending = Set<CKSyncEngine.PendingRecordZoneChange>()
+        for snapshot in snapshots {
+            guard snapshot.payload.count <= 512 * 1024,
+                  (try? JSONSerialization.jsonObject(with: snapshot.payload, options: [.fragmentsAllowed])) != nil else {
+                throw AuthoringCloudKitError.invalidPayload
+            }
+            if try await store.commitLocalMutationIfChanged(
+                entityId: snapshot.id,
+                entityKind: snapshot.kind,
+                payload: snapshot.payload,
+                changedFields: snapshot.changedFields
+            ) != nil {
+                pending.insert(.saveRecord(recordID(for: snapshot.id)))
+            }
+        }
+        if !pending.isEmpty { engine.state.add(pendingRecordZoneChanges: Array(pending)) }
+    }
+
+    public func storedEntities() async throws -> [AuthoringStoredEntity] {
+        try await start()
+        guard let store else { throw AuthoringCloudKitError.accountTransition }
+        return try await store.entities()
+    }
+
     /// Call after the conflict-resolution flow has persisted the user's choice.
     public func retryResolvedEntity(_ entityId: UUID) async throws {
         guard let engine, let store, !pausedForAccountSwitch else { throw AuthoringCloudKitError.accountTransition }
