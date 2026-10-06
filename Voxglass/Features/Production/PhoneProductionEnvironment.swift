@@ -18,6 +18,14 @@ public final class PhoneProductionEnvironment {
     public let sync: PhoneProductionSync
     public let watchTransport: WatchConnectivityTransport
     public let narrationRepository: NarrationProjectRepository
+    /// Native v2 CloudKit interface for the next authoring repository cutover.
+    /// It uses an isolated, account-scoped store and does not alter v1 preview sync.
+    public lazy var authoringV2Sync = CloudKitAuthoringV2Sync(
+        databaseURL: narrationRepository.applicationSupport
+            .appendingPathComponent("Voxglass", isDirectory: true)
+            .appendingPathComponent("AuthoringV2", isDirectory: true)
+            .appendingPathComponent("authoring.sqlite")
+    )
 
     /// The flow's active recording-remote coordinator, registered while the
     /// record screen is on screen (§14.3). Commands the watch sends are routed
@@ -59,6 +67,10 @@ public final class PhoneProductionEnvironment {
     /// Pulls the latest projection and flushes the outbox (spec §14.5 Flow A).
     public func checkForUpdates() async {
         await sync.checkForUpdates()
+    }
+
+    public func checkForAuthoringV2Updates() async throws {
+        try await authoringV2Sync.synchronize()
     }
 
     /// Derives the local `AudiobookProject` into its projection and applies it

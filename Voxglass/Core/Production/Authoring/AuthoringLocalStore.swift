@@ -6,9 +6,12 @@ public struct AuthoringRemoteRecord: Codable, Sendable, Equatable {
     public var kind: String
     public var changeTag: String
     public var payload: Data
+    public var systemFields: Data?
+    public var isDeleted: Bool
 
-    public init(id: UUID, kind: String, changeTag: String, payload: Data) {
+    public init(id: UUID, kind: String, changeTag: String, payload: Data, systemFields: Data? = nil, isDeleted: Bool = false) {
         self.id = id; self.kind = kind; self.changeTag = changeTag; self.payload = payload
+        self.systemFields = systemFields; self.isDeleted = isDeleted
     }
 }
 
@@ -42,6 +45,8 @@ public actor AuthoringLocalStore {
         database = ProjectDatabase(url: databaseURL, clock: clock)
         self.clock = clock; self.ids = ids
     }
+
+    public func prepareForSync() async throws { try await database.prepare() }
 
     /// Writes local entity data and its outbox operation atomically.
     public func commitLocalMutation(
@@ -106,6 +111,34 @@ public actor AuthoringLocalStore {
                     let hasPending = try await transaction.query("""
                         SELECT operation_id FROM authoring_outbox WHERE entity_id = ? AND state='pending' LIMIT 1
                         """, [.string(record.id.uuidString)]).first != nil
+                    if record.isDeleted {
+                        let current = try await transaction.query("SELECT payload_json, server_base_json FROM authoring_entity WHERE id=?", [.string(record.id.uuidString)]).first
+                        let hasPending = try await transaction.query("SELECT operation_id FROM authoring_outbox WHERE entity_id=? AND state='pending' LIMIT 1", [.string(record.id.uuidString)]).first != nil
+                        if hasPending, let localJSON = current?.string("payload_json") {
+                            let encoder = JSONEncoder()
+                            let local = try JSONDecoder().decode(AuthoringValue.self, from: Data(localJSON.utf8))
+                            let base = try current?.string("server_base_json").map { try JSONDecoder().decode(AuthoringValue.self, from: Data($0.utf8)) }
+                            try await transaction.execute("""
+                                INSERT OR IGNORE INTO authoring_conflict(id, entity_id, field, base_json, local_json, remote_json, remote_change_tag, created_at)
+                                VALUES (?, ?, '$deleted', ?, ?, 'null', ?, ?)
+                                """, [
+                                    .string(ids.next().uuidString), .string(record.id.uuidString),
+                                    try base.map { .string(String(decoding: try encoder.encode($0), as: UTF8.self)) } ?? .null,
+                                    .string(String(decoding: try encoder.encode(local), as: UTF8.self)),
+                                    .string(record.changeTag), .double(modifiedAt)
+                                ])
+                            try await transaction.execute("UPDATE authoring_entity SET server_change_tag=?, server_system_fields_b64=NULL, modified_at=? WHERE id=?", [.string(record.changeTag), .double(modifiedAt), .string(record.id.uuidString)])
+                        } else {
+                            try await transaction.execute("UPDATE authoring_entity SET tombstoned=1, server_change_tag=?, server_system_fields_b64=NULL, modified_at=? WHERE id=?", [.string(record.changeTag), .double(modifiedAt), .string(record.id.uuidString)])
+                        }
+                        let tombstoneID = ids.next()
+                        try await transaction.execute("INSERT OR IGNORE INTO authoring_tombstone(operation_id, entity_id, entity_kind, deleted_at, payload_json) VALUES (?, ?, ?, ?, ?)", [
+                            .string(tombstoneID.uuidString), .string(record.id.uuidString), .string(record.kind),
+                            .double(modifiedAt), .string("{}")
+                        ])
+                        try await transaction.execute("UPDATE authoring_inbox SET applied=1 WHERE scope=? AND record_id=? AND change_tag=?", [.string(scope), .string(record.id.uuidString), .string(record.changeTag)])
+                        continue
+                    }
                     let remoteValue = try JSONDecoder().decode(AuthoringValue.self, from: record.payload)
                     let localValue = try current?.string("payload_json").map { try JSONDecoder().decode(AuthoringValue.self, from: Data($0.utf8)) }
                     let baseValue = try current?.string("server_base_json").map { try JSONDecoder().decode(AuthoringValue.self, from: Data($0.utf8)) }
@@ -120,12 +153,15 @@ public actor AuthoringLocalStore {
                     let encoder = JSONEncoder()
                     let mergedJSON = String(decoding: try encoder.encode(merged), as: UTF8.self)
                     try await transaction.execute("""
-                        INSERT INTO authoring_entity(id, kind, payload_json, server_change_tag, server_base_json, modified_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO authoring_entity(id, kind, payload_json, server_change_tag, server_system_fields_b64, server_base_json, modified_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, payload_json=excluded.payload_json,
-                            server_change_tag=excluded.server_change_tag, server_base_json=excluded.server_base_json,
+                            server_change_tag=excluded.server_change_tag, server_system_fields_b64=excluded.server_system_fields_b64,
+                            server_base_json=excluded.server_base_json,
                             tombstoned=0, modified_at=excluded.modified_at
-                        """, [.string(record.id.uuidString), .string(record.kind), .string(mergedJSON), .string(record.changeTag), .string(payload), .double(modifiedAt)])
+                        """, [.string(record.id.uuidString), .string(record.kind), .string(mergedJSON), .string(record.changeTag),
+                               record.systemFields.map { .string($0.base64EncodedString()) } ?? .null,
+                               .string(payload), .double(modifiedAt)])
                     for (field, local, remote, base) in conflicts {
                         try await transaction.execute("""
                             INSERT OR IGNORE INTO authoring_conflict(id, entity_id, field, base_json, local_json, remote_json, remote_change_tag, created_at)
@@ -155,7 +191,7 @@ public actor AuthoringLocalStore {
         try await database.prepare()
         let rows = try await database.query("""
             SELECT operation_id, entity_id, entity_kind, base_change_tag, changed_fields_json, payload_json
-            FROM authoring_outbox WHERE state='pending' ORDER BY created_at, operation_id
+            FROM authoring_outbox WHERE state='pending' ORDER BY rowid
             """)
         return try rows.map { row in
             guard let operationId = row.string("operation_id").flatMap({ UUID(uuidString: $0) }),
@@ -173,6 +209,56 @@ public actor AuthoringLocalStore {
     public func cursor(scope: String) async throws -> String? {
         try await database.prepare()
         return try await database.query("SELECT cursor_json FROM authoring_sync_state WHERE scope=?", [.string(scope)]).first?.string("cursor_json")
+    }
+
+    public func engineState(scope: String) async throws -> Data? {
+        try await database.prepare()
+        guard let encoded = try await database.query("SELECT ck_engine_state_b64 FROM authoring_sync_state WHERE scope=?", [.string(scope)])
+            .first?.string("ck_engine_state_b64") else { return nil }
+        return Data(base64Encoded: encoded)
+    }
+
+    /// Checkpoints CKSyncEngine state only after fetched records have been applied.
+    public func saveEngineState(scope: String, state: Data) async throws {
+        try await database.prepare()
+        let now = clock.now.timeIntervalSince1970
+        try await database.execute("""
+            INSERT INTO authoring_sync_state(scope, cursor_json, ck_engine_state_b64, updated_at)
+            VALUES (?, NULL, ?, ?)
+            ON CONFLICT(scope) DO UPDATE SET ck_engine_state_b64=excluded.ck_engine_state_b64, updated_at=excluded.updated_at
+            """, [.string(scope), .string(state.base64EncodedString()), .double(now)])
+    }
+
+    public func systemFields(entityId: UUID) async throws -> Data? {
+        try await database.prepare()
+        guard let encoded = try await database.query("SELECT server_system_fields_b64 FROM authoring_entity WHERE id=?", [.string(entityId.uuidString)])
+            .first?.string("server_system_fields_b64") else { return nil }
+        return Data(base64Encoded: encoded)
+    }
+
+    public func hasUnresolvedConflicts(entityId: UUID) async throws -> Bool {
+        try await database.prepare()
+        return try await database.query("SELECT id FROM authoring_conflict WHERE entity_id=? AND resolved_at IS NULL LIMIT 1", [.string(entityId.uuidString)]).first != nil
+    }
+
+    /// A successful CKSyncEngine save acknowledges the immutable outbox prefix represented by that record.
+    public func acknowledgeUpload(entityId: UUID, operationId: UUID, changeTag: String, systemFields: Data) async throws {
+        try await database.prepare()
+        let now = clock.now.timeIntervalSince1970
+        try await database.transaction { transaction in
+            guard let operation = try await transaction.query("SELECT rowid AS outbox_order, payload_json FROM authoring_outbox WHERE operation_id=? AND entity_id=?", [.string(operationId.uuidString), .string(entityId.uuidString)]).first,
+                  let order = operation.int("outbox_order"), let acceptedPayload = operation.string("payload_json") else { return }
+            try await transaction.execute("""
+                UPDATE authoring_entity SET server_change_tag=?, server_system_fields_b64=?,
+                    server_base_json=?, modified_at=? WHERE id=?
+                """, [.string(changeTag), .string(systemFields.base64EncodedString()), .string(acceptedPayload), .double(now), .string(entityId.uuidString)])
+            let acknowledged = try await transaction.query("SELECT operation_id, payload_sha256 FROM authoring_outbox WHERE entity_id=? AND state='pending' AND rowid<=?", [.string(entityId.uuidString), .int(order)])
+            for row in acknowledged {
+                guard let acknowledgedID = row.string("operation_id"), let digest = row.string("payload_sha256") else { continue }
+                try await transaction.execute("INSERT OR IGNORE INTO authoring_receipt(operation_id, payload_sha256, accepted_at) VALUES (?, ?, ?)", [.string(acknowledgedID), .string(digest), .double(now)])
+            }
+            try await transaction.execute("UPDATE authoring_outbox SET state='sent' WHERE entity_id=? AND state='pending' AND rowid<=?", [.string(entityId.uuidString), .int(order)])
+        }
     }
 
     private static func merge(

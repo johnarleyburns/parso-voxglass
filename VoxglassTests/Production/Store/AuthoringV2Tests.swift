@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import VoxglassCore
+import VoxglassCoreTestSupport
 
 private struct PatchFixture: Codable, Equatable {
     var title: AuthoringPatch<String>
@@ -132,5 +133,45 @@ private struct PatchFixture: Codable, Equatable {
         #expect(conflicts.first?.string("local_json") == #""local take""#)
         #expect(conflicts.first?.string("remote_json") == #""remote take""#)
         #expect(try await database.query("SELECT operation_id FROM authoring_outbox WHERE state='pending'").count == 1)
+    }
+
+    @Test func engineCheckpointAndUploadReceiptSurviveStoreReopen() async throws {
+        let database = ProjectDatabase.makeTemporary(named: "authoring_engine_checkpoint")
+        let store = AuthoringLocalStore(databaseURL: database.url, clock: FixedClock(Date(timeIntervalSince1970: 103)))
+        let entityID = UUID()
+        let mutation = try await store.commitLocalMutation(
+            entityId: entityID, entityKind: "project", payload: Data(#"{"title":"Draft"}"#.utf8), changedFields: ["title"]
+        )
+        let state = Data([0, 1, 2, 255])
+        try await store.saveEngineState(scope: "private:authoring-v2", state: state)
+        #expect(try await store.engineState(scope: "private:authoring-v2") == state)
+
+        let systemFields = Data([7, 8, 9])
+        try await store.acknowledgeUpload(entityId: entityID, operationId: mutation.operationId, changeTag: "tag-2", systemFields: systemFields)
+        #expect(try await store.pendingMutations().isEmpty)
+        #expect(try await store.systemFields(entityId: entityID) == systemFields)
+        let row = try await database.query("SELECT server_change_tag, server_base_json FROM authoring_entity WHERE id=?", [.string(entityID.uuidString)]).first
+        #expect(row?.string("server_change_tag") == "tag-2")
+        #expect(row?.string("server_base_json") == #"{"title":"Draft"}"#)
+        #expect(try await database.query("SELECT operation_id FROM authoring_receipt WHERE operation_id=?", [.string(mutation.operationId.uuidString)]).count == 1)
+    }
+
+    @Test func remoteDeletionWithPendingEditRetainsCandidateInsteadOfDroppingLocalWork() async throws {
+        let database = ProjectDatabase.makeTemporary(named: "authoring_delete_conflict")
+        let store = AuthoringLocalStore(databaseURL: database.url, clock: FixedClock(Date(timeIntervalSince1970: 104)))
+        let entityID = UUID()
+        try await store.applyRemotePage(scope: "private:authoring-v2", pageId: UUID(), records: [
+            AuthoringRemoteRecord(id: entityID, kind: "project", changeTag: "tag-1", payload: Data(#"{"title":"Before"}"#.utf8))
+        ], cursor: nil)
+        _ = try await store.commitLocalMutation(entityId: entityID, entityKind: "project", payload: Data(#"{"title":"Offline edit"}"#.utf8), changedFields: ["title"])
+        try await store.applyRemotePage(scope: "private:authoring-v2", pageId: UUID(), records: [
+            AuthoringRemoteRecord(id: entityID, kind: "project", changeTag: "deleted", payload: Data("null".utf8), isDeleted: true)
+        ], cursor: nil)
+
+        #expect(try await store.hasUnresolvedConflicts(entityId: entityID))
+        let row = try await database.query("SELECT payload_json, tombstoned FROM authoring_entity WHERE id=?", [.string(entityID.uuidString)]).first
+        #expect(row?.string("payload_json")?.contains("Offline edit") == true)
+        #expect(row?.int("tombstoned") == 0)
+        #expect(try await database.query("SELECT field FROM authoring_conflict WHERE entity_id=?", [.string(entityID.uuidString)]).first?.string("field") == "$deleted")
     }
 }

@@ -162,6 +162,11 @@ public struct AuthoringChapter: Codable, Sendable, Equatable {
     public var tailGapFrames: UInt64
     public var sampleRate: UInt32
     public var extensions: [String: AuthoringValue]
+
+    public init(id: UUID, projectId: UUID, ordinal: UInt32, title: String, role: String, headGapFrames: UInt64, tailGapFrames: UInt64, sampleRate: UInt32, extensions: [String: AuthoringValue] = [:]) {
+        self.id = id; self.projectId = projectId; self.ordinal = ordinal; self.title = title; self.role = role
+        self.headGapFrames = headGapFrames; self.tailGapFrames = tailGapFrames; self.sampleRate = sampleRate; self.extensions = extensions
+    }
 }
 
 /// A paragraph's text, source position, and selected-take pointer are separate mutable fields.
@@ -178,12 +183,23 @@ public struct AuthoringParagraph: Codable, Sendable, Equatable {
     public var selectedTakeId: UUID?
     public var selectionRevision: String
     public var extensions: [String: AuthoringValue]
+
+    public init(id: UUID, projectId: UUID, chapterId: UUID, ordinal: UInt32, text: String, textSha256: String, direction: String? = nil, sourceRange: AuthoringSourceRange? = nil, pronunciationIds: [UUID] = [], selectedTakeId: UUID? = nil, selectionRevision: String, extensions: [String: AuthoringValue] = [:]) {
+        self.id = id; self.projectId = projectId; self.chapterId = chapterId; self.ordinal = ordinal; self.text = text
+        self.textSha256 = textSha256; self.direction = direction; self.sourceRange = sourceRange
+        self.pronunciationIds = pronunciationIds; self.selectedTakeId = selectedTakeId
+        self.selectionRevision = selectionRevision; self.extensions = extensions
+    }
 }
 
 public struct AuthoringSourceRange: Codable, Sendable, Equatable {
     public var sourceId: UUID
     public var startUtf8: UInt64
     public var endUtf8: UInt64
+
+    public init(sourceId: UUID, startUtf8: UInt64, endUtf8: UInt64) {
+        self.sourceId = sourceId; self.startUtf8 = startUtf8; self.endUtf8 = endUtf8
+    }
 }
 
 /// Immutable capture identity; label, archive state, and processing live in `AuthoringTakeState`.
@@ -202,6 +218,13 @@ public struct AuthoringTakeCapture: Codable, Sendable, Equatable {
     public var warning: String?
     public var assetManifestId: UUID
     public var extensions: [String: AuthoringValue]
+
+    public init(id: UUID, projectId: UUID, paragraphId: UUID, capturedAt: String, origin: String, recordedTextSha256: String, sampleRate: UInt32, channels: UInt16, bitsPerSample: UInt16? = nil, codec: String, frameCount: UInt64, warning: String? = nil, assetManifestId: UUID, extensions: [String: AuthoringValue] = [:]) {
+        self.id = id; self.projectId = projectId; self.paragraphId = paragraphId; self.capturedAt = capturedAt
+        self.origin = origin; self.recordedTextSha256 = recordedTextSha256; self.sampleRate = sampleRate
+        self.channels = channels; self.bitsPerSample = bitsPerSample; self.codec = codec; self.frameCount = frameCount
+        self.warning = warning; self.assetManifestId = assetManifestId; self.extensions = extensions
+    }
 }
 
 /// Mutable state is versioned separately from the immutable media capture.
@@ -212,11 +235,18 @@ public struct AuthoringTakeState: Codable, Sendable, Equatable {
     public var recipe: [AuthoringProcessingStep]
     public var recipeRevision: String
     public var extensions: [String: AuthoringValue]
+
+    public init(takeId: UUID, label: String? = nil, archived: Bool = false, recipe: [AuthoringProcessingStep] = [], recipeRevision: String, extensions: [String: AuthoringValue] = [:]) {
+        self.takeId = takeId; self.label = label; self.archived = archived; self.recipe = recipe
+        self.recipeRevision = recipeRevision; self.extensions = extensions
+    }
 }
 
 public struct AuthoringProcessingStep: Codable, Sendable, Equatable {
     public var kind: String
     public var parameters: [String: Double]
+
+    public init(kind: String, parameters: [String: Double] = [:]) { self.kind = kind; self.parameters = parameters }
 }
 
 public struct AuthoringAssetManifest: Codable, Sendable, Equatable {
@@ -228,6 +258,11 @@ public struct AuthoringAssetManifest: Codable, Sendable, Equatable {
     public var chunks: [AuthoringAssetChunk]
     public var contentType: String
     public var extensions: [String: AuthoringValue]
+
+    public init(id: UUID, projectId: UUID, role: String, byteLength: UInt64, sha256: String, chunks: [AuthoringAssetChunk], contentType: String, extensions: [String: AuthoringValue] = [:]) {
+        self.id = id; self.projectId = projectId; self.role = role; self.byteLength = byteLength
+        self.sha256 = sha256; self.chunks = chunks; self.contentType = contentType; self.extensions = extensions
+    }
 }
 
 public struct AuthoringAssetChunk: Codable, Sendable, Equatable {
@@ -235,6 +270,10 @@ public struct AuthoringAssetChunk: Codable, Sendable, Equatable {
     public var byteLength: UInt64
     public var sha256: String
     public var recordId: String
+
+    public init(ordinal: UInt32, byteLength: UInt64, sha256: String, recordId: String) {
+        self.ordinal = ordinal; self.byteLength = byteLength; self.sha256 = sha256; self.recordId = recordId
+    }
 }
 
 /// Review is historical and binds to the exact text/take/recipe basis reviewed.
@@ -249,6 +288,12 @@ public struct AuthoringReviewEvent: Codable, Sendable, Equatable {
     public var note: String?
     public var createdAt: String
     public var extensions: [String: AuthoringValue]
+
+    public init(id: UUID, projectId: UUID, paragraphId: UUID, takeId: UUID? = nil, action: String, textRevision: String, recipeRevision: String? = nil, note: String? = nil, createdAt: String, extensions: [String: AuthoringValue] = [:]) {
+        self.id = id; self.projectId = projectId; self.paragraphId = paragraphId; self.takeId = takeId
+        self.action = action; self.textRevision = textRevision; self.recipeRevision = recipeRevision
+        self.note = note; self.createdAt = createdAt; self.extensions = extensions
+    }
 }
 
 public struct AuthoringMutationReceipt: Codable, Sendable, Equatable {
