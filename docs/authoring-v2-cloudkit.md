@@ -15,9 +15,9 @@ The adapter creates `VGStudioAuthoringV2` through `CKSyncEngine`. CloudKit can c
 To prepare the schema for the TestFlight two-device test:
 
 1. Open [CloudKit Console](https://icloud.developer.apple.com/) and select `iCloud.guru.parso.voxglass`.
-2. Choose **Development** and inspect **Schema → Record Types → VGAuthoringEntityV2**. Verify the six fields above and check that `VGStudioAuthoringV2` is a private custom zone created by the app.
-3. Use **Deploy Schema Changes** to promote the additive schema to **Production**. Review the displayed changes before deploying. Schema promotion does not copy Development records.
-4. Do not use **Reset Environment**. Do not create a record type named `VGStudioAuthoringV2`; that is the zone name.
+2. Choose **Development → Schema → Record Types**. If `VGAuthoringEntityV2` is not listed, create that record type in the console. Add `protocolVersion` as **Int64** and `entityID`, `entityKind`, `payloadJSON`, `mutationID`, and `payloadSHA256` as **String** fields, then save the changes. The app normally creates this schema on its first Development save; because TestFlight only uses Production, create it here manually if no Development build has done that yet.
+3. Choose **Deploy Schema Changes** and promote the additive schema to **Production**. Review the displayed changes before deploying. Schema promotion copies record types and fields, not Development records.
+4. Do not use **Reset Environment**. Do not create a record type named `VGStudioAuthoringV2`; that is the custom zone name. The app creates that private zone when it first syncs in Production.
 
 After deploying the schema and installing the next TestFlight build on two devices signed into the same Apple Account, enable **Sync narration projects** on one device and allow the first sync to finish. Check the private Production database for records in the `VGStudioAuthoringV2` zone, then make a title or script edit on one device and use **Sync Narration Projects Now** on the other. Start with sequential edits; simultaneous changes to the same field are recorded as unresolved conflicts and do not yet have an in-app resolution screen. Confirm the text update arrives and each device retains its own locally stored recording assets. Use a throwaway project until this passes.
 
