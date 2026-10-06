@@ -937,3 +937,30 @@ The platform decisions are consistent with Apple's current guidance:
   configuration before release.
 - [Configuring the macOS App Sandbox](https://developer.apple.com/documentation/xcode/configuring-the-macos-app-sandbox)
   informs the microphone, file access, network, and iCloud entitlement work.
+
+## 18. Playback parity and localization audit — 2026-10-05
+
+The native listening surface was re-audited against the product requirements
+added after the original plan audit. The Mac target now includes:
+
+- a real book-detail sheet with cover artwork, author/narrator metadata,
+  summary, chapter rows, favorite, offline, and listen actions;
+- a real Now Playing sheet with artwork, chapter identity, scrubbing,
+  chapter navigation, skip controls, playback speed, sleep timer, bookmark,
+  equalizer, and preset controls;
+- stable `native-mac.book.*` and `native-mac.now-playing.*` identifiers and a
+  signed UI test covering the detail-to-Now-Playing path;
+- a Mac-specific string catalog containing the new book-detail, artwork,
+  playback, and sleep-timer strings in the same 15 non-English locales used by
+  the iOS catalog;
+- artwork file/network loading moved off the main actor, with HTTP failure
+  validation and the existing accessible fallback cover retained.
+- the Playback menu's Space command now toggles the active session, while
+  Show Now Playing is a separate correctly routed command.
+
+The focused Mac unit suite, signed Mac build, production guards, and Swift 6
+guard pass. The Mac UI runner was also exercised; two attempts timed out before
+automation mode initialized, without executing an assertion. The earlier signed
+UI run passed the four-destination shell and detail/Now Playing flow, so the
+automation timeout remains an environment-level rerun item rather than an app
+assertion failure.

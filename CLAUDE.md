@@ -17,6 +17,22 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 - Set the command timeout to at least **10 minutes (600 seconds)** for `git commit`; the pre-commit hook runs the host `swift test` suite only.
 - Set the command timeout to about **2 minutes (120 seconds)** for `git push`; the pre-push hook runs no tests or guards (CI verifies pushed commits).
 
+## Mac signing and UI-test verification
+
+- Do not infer signing capability from a single Xcode error. Verify the local
+  certificate identities, Xcode account state, bundle identifier, entitlements,
+  and installed provisioning profiles separately before reporting a signing
+  limitation.
+- A macOS Debug/UI-test build that uses App Sandbox and CloudKit requires a
+  Mac development signing identity and a matching Mac App Development profile
+  for the app's bundle identifier and iCloud container. A Mac App Store profile
+  is for release distribution and is not a substitute for the development
+  profile.
+- `CODE_SIGNING_ALLOWED=NO` is appropriate for compile-only Mac checks, but it
+  produces an ad-hoc host and is not valid verification of CloudKit, sandbox,
+  or other entitlement-backed behavior. Prefer signed Mac UI tests whenever
+  the matching development assets are available.
+
 ## Fast codebase search (`rg`)
 
 - Use `rg` (ripgrep) instead of `grep` for codebase search and exploration for higher speed.

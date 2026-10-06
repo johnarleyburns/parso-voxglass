@@ -1,0 +1,246 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "About this book" : {
+      "comment" : "Heading for the book description section.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Über dieses Buch" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Σχετικά με αυτό το βιβλίο" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "About this book" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sobre este libro" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Tietoja tästä kirjasta" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "À propos de ce livre" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "על הספר הזה" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Informazioni sul libro" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この本について" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Over dit boek" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "O tej książce" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Sobre este livro" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Об этой книге" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关于本书" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關於本書" } }
+      }
+    },
+    "Artwork for %@" : {
+      "comment" : "Accessibility label for a book's cover artwork.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Cover für %@" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Εξώφυλλο για %@" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Artwork for %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Portada de %@" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Teoksen %@ kansikuva" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Illustration de %@" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "עטיפה של %@" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copertina di %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ のアートワーク" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Omslag van %@" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Okładka %@" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Capa de %@" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Обложка: %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 的封面" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@ 的封面" } }
+      }
+    },
+    "Book details" : {
+      "comment" : "Title of the book details window.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Buchdetails" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Λεπτομέρειες βιβλίου" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Book details" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Detalles del libro" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Kirjan tiedot" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Détails du livre" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "פרטי הספר" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Dettagli del libro" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "本の詳細" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Boekdetails" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Szczegóły książki" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Detalhes do livro" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Сведения о книге" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "书籍详情" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "書籍詳情" } }
+      }
+    },
+    "Chapter %lld · %@" : {
+      "comment" : "Chapter label in the book details chapter list.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Kapitel %lld · %@" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Κεφάλαιο %lld · %@" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Chapter %lld · %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Capítulo %lld · %@" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Luku %lld · %@" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Chapitre %lld · %@" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "פרק %lld · %@" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Capitolo %lld · %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "第%lld章 · %@" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Hoofdstuk %lld · %@" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Rozdział %lld · %@" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Capítulo %lld · %@" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Глава %lld · %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "第 %lld 章 · %@" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "第 %lld 章 · %@" } }
+      }
+    },
+    "Choose a book to start listening." : {
+      "comment" : "Empty state message shown when no book is selected for playback.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wähle ein Buch aus, um mit dem Hören zu beginnen." } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Επίλεξε ένα βιβλίο για να ξεκινήσεις την ακρόαση." } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Choose a book to start listening." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Elige un libro para empezar a escuchar." } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Valitse kirja kuuntelun aloittamiseksi." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Choisissez un livre pour commencer l'écoute." } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "בחר ספר כדי להתחיל להאזין." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Scegli un libro per iniziare l'ascolto." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "聴き始める本を選択してください。" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Kies een boek om te beginnen met luisteren." } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Wybierz książkę, aby rozpocząć słuchanie." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Escolha um livro para começar a ouvir." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Выберите книгу, чтобы начать слушать." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选择一本书开始收听。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "選擇一本書開始收聽。" } }
+      }
+    },
+    "Listen now" : {
+      "comment" : "Action that starts playback from the book detail view.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Jetzt anhören" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Ακούστε τώρα" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Listen now" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Escuchar ahora" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Kuuntele nyt" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Écouter maintenant" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "האזן עכשיו" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ascolta ora" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今すぐ聴く" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Nu luisteren" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Słuchaj teraz" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ouvir agora" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Слушать сейчас" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "立即收听" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "立即收聽" } }
+      }
+    },
+    "Nothing is playing" : {
+      "comment" : "Empty state title shown in the Mac now playing view.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Nichts wird abgespielt" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Δεν αναπαράγεται τίποτα" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Nothing is playing" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se está reproduciendo nada" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Mikään ei soi" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Aucune lecture en cours" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "לא מתנגן דבר" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Niente in riproduzione" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再生中の項目はありません" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Er wordt niets afgespeeld" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Nic nie jest odtwarzane" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Nada está sendo reproduzido" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Ничего не воспроизводится" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "没有正在播放的内容" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "沒有正在播放的內容" } }
+      }
+    },
+    "Now Playing" : {
+      "comment" : "Title of the expanded Mac now playing window.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wiedergabe" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Αναπαραγωγή τώρα" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Now Playing" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reproduciendo" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Nyt soi" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "À l’écoute" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "מנגן כעת" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "In riproduzione" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再生中" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Speelt nu" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Teraz odtwarzane" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Reproduzindo" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Сейчас играет" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在播放" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "正在播放" } }
+      }
+    },
+    "Open Now Playing" : {
+      "comment" : "Button that opens the expanded now playing window.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktuelle Wiedergabe öffnen" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Άνοιγμα αναπαραγωγής" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Open Now Playing" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abrir reproducción actual" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Avaa Nyt soi" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ouvrir la lecture en cours" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "פתיחת הנגן" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Apri In riproduzione" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再生中を開く" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Speelt nu openen" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Otwórz odtwarzanie" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abrir reprodução" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Открыть экран воспроизведения" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开正在播放" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開啟正在播放" } }
+      }
+    },
+    "Open book" : {
+      "comment" : "Button that opens the selected book details.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Buch öffnen" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Άνοιγμα βιβλίου" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Open book" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abrir libro" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Avaa kirja" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Ouvrir le livre" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "פתיחת הספר" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Apri libro" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "本を開く" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Boek openen" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Otwórz książkę" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abrir livro" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Открыть книгу" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开书籍" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開啟書籍" } }
+      }
+    },
+    "Play Chapter %lld, %@" : {
+      "comment" : "Accessibility label for a chapter playback button.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Kapitel %lld abspielen, %@" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Αναπαραγωγή κεφαλαίου %lld, %@" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "Play Chapter %lld, %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reproducir capítulo %lld, %@" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "Toista luku %lld, %@" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Lire le chapitre %lld, %@" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "נגן פרק %lld, %@" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Riproduci capitolo %lld, %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "第%lld章を再生、%@" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Hoofdstuk %lld afspelen, %@" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Odtwórz rozdział %lld, %@" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Reproduzir capítulo %lld, %@" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Воспроизвести главу %lld, %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "播放第 %lld 章，%@" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "播放第 %lld 章，%@" } }
+      }
+    },
+    "%d minutes remaining" : {
+      "comment" : "Sleep timer countdown displayed in the now playing controls.",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch %d Minuten" } },
+        "el" : { "stringUnit" : { "state" : "translated", "value" : "Απομένουν %d λεπτά" } },
+        "en-GB" : { "stringUnit" : { "state" : "translated", "value" : "%d minutes remaining" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Quedan %d minutos" } },
+        "fi" : { "stringUnit" : { "state" : "translated", "value" : "%d minuuttia jäljellä" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "%d minutes restantes" } },
+        "he" : { "stringUnit" : { "state" : "translated", "value" : "נותרו %d דקות" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Restano %d minuti" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "残り%d分" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "%d minuten resterend" } },
+        "pl" : { "stringUnit" : { "state" : "translated", "value" : "Pozostało %d minut" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%d minutos restantes" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Осталось минут: %d" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "还剩 %d 分钟" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "還剩 %d 分鐘" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

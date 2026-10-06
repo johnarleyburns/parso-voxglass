@@ -47,9 +47,10 @@ final class MacCommandTests: XCTestCase {
         XCTAssertTrue(received.isEmpty)
 
         router.setHasPlaybackSession(true)
+        router.send(.togglePlayPause)
         router.send(.showNowPlaying)
         router.send(.stopPlayback)
-        XCTAssertEqual(received, [.showNowPlaying, .stopPlayback])
+        XCTAssertEqual(received, [.togglePlayPause, .showNowPlaying, .stopPlayback])
     }
 
     func testDestinationsExposeTheFourNativeMacProductSurfaces() {

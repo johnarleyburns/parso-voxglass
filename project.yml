@@ -349,6 +349,8 @@ targets:
       - path: Voxglass/Resources/AppIcon.icon
     resources:
       - path: Voxglass/Resources/Assets.xcassets
+      - path: Voxglass/Resources/Localizable.xcstrings
+      - path: VoxglassMac/Resources/Localizable.xcstrings
       - path: VoxglassMac/Resources/PrivacyInfo.xcprivacy
     dependencies:
       - package: VoxglassCore
@@ -384,12 +386,15 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         INFOPLIST_FILE: VoxglassMac/Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: VoxglassMac/Resources/VoxglassMac.entitlements
+        DEVELOPMENT_TEAM: 3264Y8YUGV
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_EMIT_LOC_STRINGS: YES
       configs:
         Debug:
-          CODE_SIGN_STYLE: Automatic
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Development"
+          PROVISIONING_PROFILE_SPECIFIER: "Parso Voxglass Mac Development"
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
@@ -419,7 +424,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.macuitests
         TEST_TARGET_NAME: VoxglassMac
-        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Apple Development"
+        DEVELOPMENT_TEAM: 3264Y8YUGV
+        GENERATE_INFOPLIST_FILE: YES
   VoxglassNarrationE2E:
     type: bundle.unit-test
     platform: iOS
@@ -475,3 +484,4 @@ schemes:
       gatherCoverageData: true
       targets:
         - VoxglassMacTests
+        - VoxglassMacUITests

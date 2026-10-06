@@ -20,6 +20,7 @@ enum MacCommandAction: Equatable {
     case openAudioSetup
     case openReviewExport
     case toggleInspector
+    case togglePlayPause
     case showNowPlaying
     case stopPlayback
     case showKeyboardShortcuts
@@ -53,7 +54,7 @@ struct MacCommandContext: Equatable {
             destination == .narration && hasSelectedParagraph && !isTextEditorFocused
         case .acceptAndNext, .retry:
             destination == .narration && hasSelectedTake && !isTextEditorFocused
-        case .previousChapter, .nextChapter, .addBookmark, .showNowPlaying, .stopPlayback:
+        case .previousChapter, .nextChapter, .addBookmark, .togglePlayPause, .showNowPlaying, .stopPlayback:
             hasPlaybackSession
         }
     }
@@ -148,13 +149,15 @@ struct VoxglassMacCommands: Commands {
                 .keyboardShortcut("0", modifiers: [.command, .option])
         }
         CommandMenu("Playback") {
-            Button("Play / Pause") { send(.showNowPlaying) }
+            Button("Play / Pause") { send(.togglePlayPause) }
                 .keyboardShortcut(.space, modifiers: [])
-                .disabled(!canPerform(.showNowPlaying))
+                .disabled(!canPerform(.togglePlayPause))
             Button("Stop") { send(.stopPlayback) }
                 .keyboardShortcut(.escape, modifiers: [])
                 .disabled(!canPerform(.stopPlayback))
             Divider()
+            Button("Show Now Playing") { send(.showNowPlaying) }
+                .disabled(!canPerform(.showNowPlaying))
             Button("Previous Chapter") { send(.previousChapter) }
                 .disabled(!canPerform(.previousChapter))
             Button("Next Chapter") { send(.nextChapter) }

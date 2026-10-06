@@ -12,10 +12,11 @@ final class MacAppServices: ObservableObject {
     let playback: PlaybackCoordinator
     let offlineDownloads: OfflineDownloadManager
     let cloudSync: VoxglassCloudSync
-    let cloudKitSync: CloudKitSyncEngine
+    let cloudKitSync: CloudKitSyncEngine?
     let narrationRepository: NarrationProjectRepository
     let productionSync: MacProductionSync
     let capture: MacAudioCapture
+    let uiTestBook: BookWithChapters?
     private var automaticSyncTask: Task<Void, Never>?
 
     init(database: AppDatabase = AppDatabase.makeApplicationDatabase()) {
@@ -42,9 +43,12 @@ final class MacAppServices: ObservableObject {
         self.offlineDownloads = offline
         self.cloudSync = cloudSync
         self.narrationRepository = NarrationProjectRepository()
-        self.cloudKitSync = CloudKitSyncEngine(database: database)
+        self.cloudKitSync = Self.isRunningUITests
+            ? nil
+            : CloudKitSyncEngine(database: database)
         self.productionSync = MacProductionSync(repository: narrationRepository)
         self.capture = MacAudioCapture()
+        self.uiTestBook = Self.makeUITestBookIfRequested()
 
         playback.bookmarkStore = bookmarkStore
         libraryStore.configure(playback: playback, offlineManager: offline)
@@ -66,6 +70,7 @@ final class MacAppServices: ObservableObject {
             },
             sync: { [weak self] in
                 guard let self else { return }
+                guard !self.isCloudKitDisabledForUITest else { return }
                 await self.syncLibrary()
             }
         )
@@ -73,8 +78,10 @@ final class MacAppServices: ObservableObject {
     }
 
     func syncLibrary() async {
+        guard !isCloudKitDisabledForUITest else { return }
         guard cloudSync.isEnabled else { return }
         await cloudSync.sync()
+        guard let cloudKitSync else { return }
         await cloudKitSync.start()
         if cloudKitSync.lastUploadedCount > 0 {
             UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
@@ -113,7 +120,50 @@ final class MacAppServices: ObservableObject {
         }
     }
 
+    private var isCloudKitDisabledForUITest: Bool {
+        Self.isRunningUITests
+    }
+
+    private static var isRunningUITests: Bool {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        let environment = ProcessInfo.processInfo.environment
+        return arguments.contains("-uiTestDisableCloudKit") ||
+            environment["XCTestConfigurationFilePath"] != nil ||
+            environment["XCTestSessionIdentifier"] != nil
+        #else
+        return false
+        #endif
+    }
+
     deinit {
         automaticSyncTask?.cancel()
     }
+
+    #if DEBUG
+    private static func makeUITestBookIfRequested() -> BookWithChapters? {
+        guard ProcessInfo.processInfo.arguments.contains("-uiTestSeedBook") else { return nil }
+        let bookID = UUID(uuidString: "8B4C7B13-3A1F-4D69-9BE5-ED65C8B8A4D0")!
+        let sourceID = UUID(uuidString: "3E1F5A2E-6C1B-4F90-8A0C-7B9B7D88D6E1")!
+        let book = Book(
+            id: bookID,
+            title: "The Mac Playback Test Book",
+            authors: ["Voxglass Test Author"],
+            narrators: ["Voxglass Test Narrator"],
+            summary: "A deterministic book fixture for the native Mac detail and Now Playing UI tests.",
+            sourceID: sourceID,
+            coverURL: URL(string: "https://archive.org/download/voxglass-ui-test/voxglass-ui-test_cover.jpg")
+        )
+        let chapter = Chapter(
+            bookID: bookID,
+            title: "A chapter with full controls",
+            index: 0,
+            duration: 600,
+            remoteURL: URL(string: "https://example.invalid/voxglass-ui-test.mp3")
+        )
+        return BookWithChapters(book: book, chapters: [chapter])
+    }
+    #else
+    private static func makeUITestBookIfRequested() -> BookWithChapters? { nil }
+    #endif
 }

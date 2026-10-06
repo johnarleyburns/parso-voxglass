@@ -7,7 +7,7 @@ import VoxglassEncoders
 enum MacDestination: String, CaseIterable, Hashable, Identifiable {
     case listen, books, discover, narration
     var id: Self { self }
-    var title: String {
+    var title: LocalizedStringKey {
         switch self { case .listen: "Listen"; case .books: "My Books"; case .discover: "Discover"; case .narration: "Narration" }
     }
     var icon: String {
@@ -32,6 +32,8 @@ struct VoxglassMacRootView: View {
     @State private var showKeyboardShortcuts = false
     @State private var showRecordingTroubleshooting = false
     @State private var showDiagnostics = false
+    @State private var selectedBook: BookWithChapters?
+    @State private var showingNowPlaying = false
 
     var body: some View {
         NavigationSplitView {
@@ -48,11 +50,17 @@ struct VoxglassMacRootView: View {
                 Group {
                     switch selection {
                     case .listen:
-                        MacListenView(onNavigate: { selection = $0 })
+                        MacListenView(onNavigate: { selection = $0 }, onOpenBook: { selectedBook = $0 })
                     case .books:
-                        MacBooksView(router: router, searchRequest: $searchRequest, importRequest: $importBookRequest)
+                        MacBooksView(
+                            router: router,
+                            searchRequest: $searchRequest,
+                            importRequest: $importBookRequest,
+                            onOpenBook: { selectedBook = $0 },
+                            previewBook: services.uiTestBook
+                        )
                     case .discover:
-                        MacDiscoverView(router: router, searchRequest: $searchRequest)
+                        MacDiscoverView(router: router, searchRequest: $searchRequest, onOpenBook: { selectedBook = $0 })
                     case .narration:
                         MacNarrationView(
                             services: services,
@@ -67,7 +75,7 @@ struct VoxglassMacRootView: View {
                 }
                 if let session = playback.currentSession,
                    let book = library.book(withID: session.book.id) {
-                    MacMiniPlayer(session: session, book: book)
+                    MacMiniPlayer(session: session, book: book) { showingNowPlaying = true }
                 }
             }
             .frame(minWidth: 720, minHeight: 560)
@@ -118,6 +126,17 @@ struct VoxglassMacRootView: View {
             Text("For support, include the Voxglass version, macOS version, selected microphone, and the time of the problem. Recordings and local books are not sent automatically.")
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .sheet(item: $selectedBook) { book in
+            MacBookDetailView(book: book, services: services) {
+                selectedBook = nil
+                showingNowPlaying = true
+            }
+            .frame(minWidth: 760, minHeight: 620)
+        }
+        .sheet(isPresented: $showingNowPlaying) {
+            MacNowPlayingView(services: services)
+                .frame(minWidth: 700, minHeight: 620)
+        }
     }
 
     private func installRouter() {
@@ -130,7 +149,8 @@ struct VoxglassMacRootView: View {
             case .importBook: selection = .books; importBookRequest += 1
             case .importAudio: selection = .books; importBookRequest += 1
             case .toggleInspector: showInspector.toggle()
-            case .showNowPlaying: services.playback.togglePlayPause()
+            case .togglePlayPause: services.playback.togglePlayPause()
+            case .showNowPlaying: showingNowPlaying = true
             case .stopPlayback: services.playback.pause()
             case .previousChapter: Task { await services.playback.skipToPreviousChapter() }
             case .nextChapter: Task { await services.playback.skipToNextChapter() }
@@ -153,11 +173,12 @@ struct VoxglassMacRootView: View {
 struct MacMiniPlayer: View {
     let session: PlaybackSession
     let book: BookWithChapters
+    let onOpenNowPlaying: () -> Void
     @Environment(PlaybackCoordinator.self) private var playback
 
     var body: some View {
         HStack(spacing: 12) {
-            MacCover(title: book.book.title, size: CGSize(width: 34, height: 42))
+            MacArtworkView(title: book.book.title, author: book.book.authorLine, coverURL: book.book.coverURL, size: CGSize(width: 34, height: 42))
             VStack(alignment: .leading, spacing: 2) {
                 Text(book.book.title).font(.callout.weight(.semibold)).lineLimit(1)
                 Text(session.chapter.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -167,6 +188,10 @@ struct MacMiniPlayer: View {
             Button(session.isPlaying ? "Pause" : "Play") { playback.togglePlayPause() }
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("native-mac.miniplayer.toggle")
+            Button("Now Playing", systemImage: "waveform") { onOpenNowPlaying() }
+                .labelStyle(.iconOnly)
+                .accessibilityLabel("Open Now Playing")
+                .accessibilityIdentifier("native-mac.miniplayer.openNowPlaying")
         }
         .padding(.horizontal, 18).padding(.vertical, 8)
         .background(.regularMaterial)
@@ -180,6 +205,7 @@ struct MacListenView: View {
     @State private var recent: [BookWithChapters] = []
 
     let onNavigate: (MacDestination) -> Void
+    let onOpenBook: (BookWithChapters) -> Void
 
     var body: some View {
         ScrollView {
@@ -200,7 +226,7 @@ struct MacListenView: View {
                     MacEmptyCard(title: "Your listening history will appear here", message: "Resume a book and Voxglass will keep your place.", actions: [])
                 } else {
                     LazyVStack(spacing: 10) {
-                        ForEach(recent) { book in MacBookRow(book: book, actionTitle: "Resume") }
+                        ForEach(recent) { book in MacBookRow(book: book, actionTitle: "Resume", onOpenBook: { onOpenBook(book) }) }
                     }
                 }
                 MacSectionTitle(title: "Downloaded")
@@ -208,7 +234,7 @@ struct MacListenView: View {
                     ForEach(library.visibleBooks.filter { book in
                         if case .cached = offlineDownloads.state(for: book.book.id) { return true }
                         return false
-                    }.prefix(4)) { book in MacBookRow(book: book, actionTitle: "Open") }
+                    }.prefix(4)) { book in MacBookRow(book: book, actionTitle: "Open", onOpenBook: { onOpenBook(book) }) }
                 }
             }
             .padding(28)
@@ -226,7 +252,7 @@ struct MacResumeCard: View {
 
     var body: some View {
         HStack(spacing: 24) {
-            MacCover(title: book.book.title, size: CGSize(width: 150, height: 190))
+            MacArtworkView(title: book.book.title, author: book.book.authorLine, coverURL: book.book.coverURL, size: CGSize(width: 150, height: 190))
             VStack(alignment: .leading, spacing: 10) {
                 Text("Continue listening").macEyebrow()
                 Text(book.book.title).font(.system(size: 30, weight: .bold, design: .rounded))
@@ -250,12 +276,306 @@ struct MacResumeCard: View {
     }
 }
 
+struct MacBookDetailView: View {
+    let book: BookWithChapters
+    let services: MacAppServices
+    let onOpenNowPlaying: () -> Void
+    @EnvironmentObject private var library: LibraryStore
+    @EnvironmentObject private var offlineDownloads: OfflineDownloadManager
+    @Environment(PlaybackCoordinator.self) private var playback
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack(alignment: .top, spacing: 24) {
+                    MacArtworkView(
+                        title: book.book.title,
+                        author: book.book.authorLine,
+                        coverURL: book.book.coverURL,
+                        size: CGSize(width: 220, height: 280)
+                    )
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Book details").macEyebrow()
+                        Text(book.book.title)
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .accessibilityAddTraits(.isHeader)
+                        Text(book.book.authorLine).foregroundStyle(.secondary)
+                        if let narrator = book.book.narratorLine {
+                            Text(narrator).foregroundStyle(.secondary)
+                        }
+                        Text("\(book.chapters.count) chapters")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            Button("Listen now", systemImage: "play.fill") {
+                                Task {
+                                    await playback.present(book)
+                                    onOpenNowPlaying()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("native-mac.book-detail.listen")
+
+                            Button(book.book.isFavorite ? "Remove favorite" : "Add favorite", systemImage: book.book.isFavorite ? "heart.fill" : "heart") {
+                                Task { await library.setFavorite(!book.book.isFavorite, for: book.book.id) }
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("native-mac.book-detail.favorite")
+                        }
+                        if book.book.isPending {
+                            Button("Add to My Books", systemImage: "plus") {
+                                Task { await library.confirmAddToLibrary(book.book.id) }
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("native-mac.book-detail.addToLibrary")
+                        }
+                        offlineAction
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                if let summary = book.book.summary, !summary.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("About this book").font(.title3.bold()).accessibilityAddTraits(.isHeader)
+                        Text(summary).foregroundStyle(.secondary).textSelection(.enabled)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Chapters").font(.title3.bold()).accessibilityAddTraits(.isHeader)
+                    ForEach(book.chapters) { chapter in
+                        Button {
+                            Task {
+                                await playback.present(book, chapter: chapter)
+                                onOpenNowPlaying()
+                            }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("Chapter \(chapter.index + 1) · \(chapter.title)")
+                                    if let narrator = chapter.narrators.first, !narrator.isEmpty {
+                                        Text(narrator).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                }
+                                Spacer()
+                                if let duration = chapter.duration {
+                                    Text(formatTime(duration)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                                }
+                                Image(systemName: "play.circle")
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.vertical, 8)
+                        .accessibilityLabel("Play Chapter \(chapter.index + 1), \(chapter.title)")
+                        .accessibilityIdentifier("native-mac.book-detail.chapter.\(chapter.index)")
+                        Divider()
+                    }
+                }
+            }
+            .padding(32)
+        }
+        .background(MacBackground())
+        .accessibilityIdentifier("native-mac.book-detail")
+    }
+
+    @ViewBuilder
+    private var offlineAction: some View {
+        if case .cached = offlineDownloads.state(for: book.book.id) {
+            Button("Remove offline copy", systemImage: "trash") {
+                Task { await offlineDownloads.removeOffline(book: book) }
+            }
+            .buttonStyle(.borderless)
+        } else {
+            Button("Make available offline", systemImage: "arrow.down.circle") {
+                Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) }
+            }
+            .buttonStyle(.borderless)
+        }
+    }
+}
+
+struct MacNowPlayingView: View {
+    let services: MacAppServices
+    @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Group {
+            if let session = playback.currentSession {
+                ScrollView {
+                    VStack(spacing: 22) {
+                        MacArtworkView(
+                            title: session.book.title,
+                            author: session.book.authorLine,
+                            coverURL: session.book.coverURL,
+                            size: CGSize(width: 280, height: 350)
+                        )
+                        Text("Now Playing")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        Text(session.book.title)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .accessibilityAddTraits(.isHeader)
+                        Text(session.book.authorLine).foregroundStyle(.secondary)
+                        Text(session.chapter.title).font(.headline).lineLimit(2)
+                        progressControls(session)
+                        transportControls(session)
+                        playbackOptions
+                    }
+                    .frame(maxWidth: 620)
+                    .frame(maxWidth: .infinity)
+                    .padding(34)
+                }
+            } else {
+                ContentUnavailableView("Nothing is playing", systemImage: "waveform", description: Text("Choose a book to start listening."))
+            }
+        }
+        .background(MacBackground())
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
+        .accessibilityIdentifier("native-mac.now-playing")
+    }
+
+    private func progressControls(_ session: PlaybackSession) -> some View {
+        let duration = max(playback.playheadDuration ?? session.duration ?? 1, 1)
+        return VStack(spacing: 7) {
+            Slider(
+                value: Binding(
+                    get: { min(max(playback.playhead, 0), duration) },
+                    set: { value in Task { await playback.seek(to: value) } }
+                ),
+                in: 0...duration
+            )
+            .accessibilityLabel("Playback position")
+            .accessibilityValue("\(formatTime(playback.playhead)) of \(formatTime(duration))")
+            .accessibilityIdentifier("native-mac.now-playing.scrubber")
+            HStack {
+                Text(formatTime(playback.playhead)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                Spacer()
+                Text("-\(formatTime(max(duration - playback.playhead, 0)))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func transportControls(_ session: PlaybackSession) -> some View {
+        HStack(spacing: 24) {
+            Button { Task { await playback.skipToPreviousChapter() } } label: {
+                Image(systemName: "backward.end.fill")
+            }
+            .accessibilityLabel("Previous chapter")
+            .accessibilityIdentifier("native-mac.now-playing.previousChapter")
+
+            Button { Task { await playback.skip(by: -TimeInterval(playback.resolvedSkipBackwardInterval)) } } label: {
+                Image(systemName: "gobackward.\(playback.resolvedSkipBackwardInterval)")
+            }
+            .accessibilityLabel("Back \(playback.resolvedSkipBackwardInterval) seconds")
+            .accessibilityIdentifier("native-mac.now-playing.skipBack")
+
+            Button { playback.togglePlayPause() } label: {
+                Image(systemName: session.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    .font(.system(size: 56))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(session.isPlaying ? "Pause" : "Play")
+            .accessibilityIdentifier("native-mac.now-playing.playPause")
+
+            Button { Task { await playback.skip(by: TimeInterval(playback.resolvedSkipForwardInterval)) } } label: {
+                Image(systemName: "goforward.\(playback.resolvedSkipForwardInterval)")
+            }
+            .accessibilityLabel("Forward \(playback.resolvedSkipForwardInterval) seconds")
+            .accessibilityIdentifier("native-mac.now-playing.skipForward")
+
+            Button { Task { await playback.skipToNextChapter() } } label: {
+                Image(systemName: "forward.end.fill")
+            }
+            .accessibilityLabel("Next chapter")
+            .accessibilityIdentifier("native-mac.now-playing.nextChapter")
+        }
+        .font(.title2)
+    }
+
+    private var playbackOptions: some View {
+        HStack(spacing: 18) {
+            Menu {
+                ForEach(PlaybackRate.menuLadder, id: \.self) { rate in
+                    Button {
+                        playback.setPlaybackRate(rate)
+                    } label: {
+                        if playback.playbackRate == rate {
+                            Label(PlaybackRate.label(rate), systemImage: "checkmark")
+                        } else {
+                            Text(PlaybackRate.label(rate))
+                        }
+                    }
+                }
+            } label: {
+                Label(PlaybackRate.label(playback.playbackRate), systemImage: "speedometer")
+            }
+            .accessibilityLabel("Playback speed")
+            .accessibilityValue(PlaybackRate.label(playback.playbackRate))
+            .accessibilityIdentifier("native-mac.now-playing.speed")
+
+            Menu {
+                Button("Off") { playback.setSleepTimer(.off) }
+                ForEach([5, 10, 15, 30, 45, 60], id: \.self) { minutes in
+                    Button("\(minutes) minutes") { playback.setSleepTimer(.duration(TimeInterval(minutes * 60))) }
+                }
+                Button("End of chapter") { playback.setSleepTimer(.endOfChapter) }
+            } label: {
+                Label("Sleep timer", systemImage: "moon.zzz")
+            }
+            .accessibilityValue(sleepTimerValue)
+            .accessibilityIdentifier("native-mac.now-playing.sleepTimer")
+
+            Button {
+                playback.addBookmark()
+            } label: {
+                Label("Bookmark", systemImage: "bookmark")
+            }
+            .accessibilityIdentifier("native-mac.now-playing.bookmark")
+
+            Menu {
+                Toggle("Equalizer", isOn: Binding(
+                    get: { playback.isEQEngaged },
+                    set: { playback.setEQEngaged($0) }
+                ))
+                ForEach(EQPreset.builtInPresets) { preset in
+                    Button(preset.name) { playback.applyEQPreset(preset) }
+                }
+            } label: {
+                Label("Equalizer", systemImage: "slider.horizontal.3")
+            }
+            .accessibilityValue(playback.isEQEngaged ? "On" : "Off")
+            .accessibilityIdentifier("native-mac.now-playing.equalizer")
+        }
+        .controlSize(.large)
+    }
+
+    private var sleepTimerValue: String {
+        switch playback.sleepMode {
+        case .off: return String(localized: "Off")
+        case .endOfChapter: return String(localized: "End of chapter")
+        case .duration:
+            guard let remaining = playback.sleepRemaining else { return String(localized: "On") }
+            return String(format: String(localized: "%d minutes remaining"), Int(remaining / 60))
+        }
+    }
+}
+
 struct MacBooksView: View {
     @ObservedObject var router: MacCommandRouter
     @EnvironmentObject private var library: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var searchRequest: Int
     @Binding var importRequest: Int
+    let onOpenBook: (BookWithChapters) -> Void
+    let previewBook: BookWithChapters?
     @State private var query = ""
     @State private var isSearching = false
     @State private var showImporter = false
@@ -263,7 +583,10 @@ struct MacBooksView: View {
     @FocusState private var searchFocused: Bool
 
     var filteredBooks: [BookWithChapters] {
-        let books = library.visibleBooks
+        var books = library.visibleBooks
+        if let previewBook, !books.contains(where: { $0.book.id == previewBook.book.id }) {
+            books.insert(previewBook, at: 0)
+        }
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return books }
         let needle = query.lowercased()
         return books.filter {
@@ -316,7 +639,7 @@ struct MacBooksView: View {
                 Text("\(filteredBooks.count) books").font(.caption).foregroundStyle(.secondary)
             }.padding(.horizontal, 28).padding(.vertical, 16)
             List(filteredBooks) { book in
-                MacBookRow(book: book, actionTitle: "Open") { Task { await playback.present(book) } }
+                MacBookRow(book: book, actionTitle: "Open", onOpenBook: { onOpenBook(book) })
                     .listRowBackground(Color.clear)
                     .accessibilityIdentifier("native-mac.books.row.\(book.book.id.uuidString)")
             }.listStyle(.inset)
@@ -360,6 +683,7 @@ struct MacDiscoverView: View {
     @EnvironmentObject private var catalog: CatalogStore
     @EnvironmentObject private var library: LibraryStore
     @Binding var searchRequest: Int
+    let onOpenBook: (BookWithChapters) -> Void
     @State private var query = ""
     @State private var isSearching = false
     @State private var mode: DiscoverMode = .collections
@@ -368,6 +692,7 @@ struct MacDiscoverView: View {
     @State private var searchScope: SearchScope = .all
     @State private var showFilters = false
     @State private var infoCollection: IACollection?
+    @State private var openingResultID: String?
     @FocusState private var searchFocused: Bool
 
     enum DiscoverMode: String, CaseIterable { case all = "All", collections = "Collections" }
@@ -428,7 +753,11 @@ struct MacDiscoverView: View {
                     }
                     if !catalog.results.isEmpty {
                         MacSectionTitle(title: "Catalog")
-                        ForEach(catalog.results) { result in MacCatalogRow(result: result) }
+                        ForEach(catalog.results) { result in
+                            MacCatalogRow(result: result, isOpening: openingResultID == result.identifier) {
+                                Task { await openResult(result) }
+                            }
+                        }
                     } else if catalog.isSearching {
                         ProgressView("Searching catalog…").frame(maxWidth: .infinity, minHeight: 180)
                     } else if !query.isEmpty {
@@ -483,6 +812,18 @@ struct MacDiscoverView: View {
         query = ""
         catalog.resetResultsForNavigation()
         mode = .collections
+    }
+
+    private func openResult(_ result: InternetArchiveSearchResult) async {
+        openingResultID = result.identifier
+        defer { openingResultID = nil }
+
+        let existingBookIDs = Set(library.books.map(\.book.id))
+        guard let imported = await catalog.importResult(result, into: library) else { return }
+        if !existingBookIDs.contains(imported.book.id) {
+            await library.markBookPending(imported.book.id)
+        }
+        onOpenBook(library.book(withID: imported.book.id) ?? imported)
     }
 }
 
@@ -1282,7 +1623,32 @@ struct MacInspectorView: View {
 
 struct MacCatalogRow: View {
     let result: InternetArchiveSearchResult
-    var body: some View { HStack { MacCover(title: result.title, size: CGSize(width: 45, height: 58)); VStack(alignment: .leading) { Text(result.title).fontWeight(.semibold); Text("\(result.authorLine) · \(result.recordingDetailsLine)").font(.caption).foregroundStyle(.secondary); if let narrator = result.narratorLine { Text(narrator).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Button("Open book") { NSWorkspace.shared.open(result.detailsURL) }.buttonStyle(.bordered) }.padding(12).background(MacPanel()) }
+    let isOpening: Bool
+    let onOpen: () -> Void
+
+    var body: some View {
+        HStack {
+            MacArtworkView(title: result.title, author: result.authorLine, coverURL: result.coverURL, size: CGSize(width: 45, height: 58))
+            VStack(alignment: .leading) {
+                Text(result.title).fontWeight(.semibold).lineLimit(2)
+                Text("\(result.authorLine) · \(result.recordingDetailsLine)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let narrator = result.narratorLine {
+                    Text(narrator).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Button(isOpening ? "Loading…" : "Open book", action: onOpen)
+                .buttonStyle(.bordered)
+                .disabled(isOpening)
+                .accessibilityLabel("Open \(result.title)")
+                .accessibilityIdentifier("native-mac.catalog.open.\(result.identifier)")
+        }
+        .padding(12)
+        .background(MacPanel())
+        .accessibilityElement(children: .contain)
+    }
 }
 
 private struct MacRecordingStatus: View {
@@ -1328,7 +1694,7 @@ struct MacFeaturedCollections: View {
             LazyVStack(spacing: 10) {
                 ForEach(collections) { collection in
                     HStack(spacing: 14) {
-                        MacCover(title: collection.title, size: CGSize(width: 120, height: 76))
+                        MacCoverFallback(title: collection.title, author: nil, size: CGSize(width: 120, height: 76))
                         VStack(alignment: .leading, spacing: 4) {
                             Text(collection.title).fontWeight(.semibold)
                             Text(collection.summaryLine.isEmpty ? collection.subtitle : collection.summaryLine)
@@ -1362,20 +1728,52 @@ struct MacCollectionInfoView: View {
 struct MacBookRow: View {
     let book: BookWithChapters
     let actionTitle: String
-    var action: (() -> Void)?
+    let onOpenBook: () -> Void
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var offlineDownloads: OfflineDownloadManager
     @EnvironmentObject private var library: LibraryStore
-    init(book: BookWithChapters, actionTitle: String, action: (() -> Void)? = nil) { self.book = book; self.actionTitle = actionTitle; self.action = action }
-    var body: some View { HStack { MacCover(title: book.book.title, size: CGSize(width: 54, height: 70)); VStack(alignment: .leading, spacing: 4) { Text(book.book.title).fontWeight(.semibold); Text(book.book.authorLine).font(.caption).foregroundStyle(.secondary); if let narrator = book.book.narratorLine { Text(narrator).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Button(actionTitle) { openBook() }.buttonStyle(.borderedProminent); Menu { Button("Play") { Task { await playback.play(book) } }; Button(book.book.isFavorite ? "Remove favorite" : "Add favorite") { Task { await library.setFavorite(!book.book.isFavorite, for: book.book.id) } }; Divider(); if case .cached = offlineDownloads.state(for: book.book.id) { Button("Remove offline copy") { Task { await offlineDownloads.removeOffline(book: book) } } } else { Button("Make available offline") { Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) } } } } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).accessibilityLabel("More options for \(book.book.title)") }.padding(12).background(MacPanel()) }
-    private func openBook() { if let action { action() } else { Task { await playback.present(book) } } }
+    var body: some View {
+        HStack {
+            MacArtworkView(title: book.book.title, author: book.book.authorLine, coverURL: book.book.coverURL, size: CGSize(width: 54, height: 70))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(book.book.title).fontWeight(.semibold).lineLimit(2)
+                Text(book.book.authorLine).font(.caption).foregroundStyle(.secondary)
+                if let narrator = book.book.narratorLine {
+                    Text(narrator).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Button(actionTitle, action: onOpenBook)
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("native-mac.book.open.\(book.book.id.uuidString)")
+            Menu {
+                Button("Play") { Task { await playback.play(book) } }
+                Button(book.book.isFavorite ? "Remove favorite" : "Add favorite") {
+                    Task { await library.setFavorite(!book.book.isFavorite, for: book.book.id) }
+                }
+                Divider()
+                if case .cached = offlineDownloads.state(for: book.book.id) {
+                    Button("Remove offline copy") { Task { await offlineDownloads.removeOffline(book: book) } }
+                } else {
+                    Button("Make available offline") { Task { _ = await offlineDownloads.makeAvailableOffline(book: book, isCellular: false) } }
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+            }
+            .menuStyle(.borderlessButton)
+            .accessibilityLabel("More options for \(book.book.title)")
+        }
+        .padding(12)
+        .background(MacPanel())
+        .accessibilityElement(children: .contain)
+    }
 }
 
-struct MacFilterButton: View { let title: String; let selected: Bool; let action: () -> Void; var body: some View { Button(title, action: action).buttonStyle(.borderedProminent).tint(selected ? .accentColor : .gray.opacity(0.3)) } }
-struct MacPageHeader: View { let eyebrow: String; let title: String; var trailing: AnyView? = nil; var body: some View { HStack(alignment: .bottom) { VStack(alignment: .leading, spacing: 6) { Text(eyebrow).macEyebrow(); Text(title).font(.system(size: 30, weight: .bold, design: .rounded)) }; Spacer(); if let trailing { trailing } }.padding(.horizontal, 28).padding(.top, 28).padding(.bottom, 10) } }
-struct MacSectionTitle: View { let title: String; var body: some View { HStack { Text(title).font(.title3.bold()); Spacer() } } }
-struct MacEmptyCard: View { let title: String; let message: String; let actions: [(String, String)]; var action: ((String) -> Void)? = nil; var body: some View { VStack(alignment: .leading, spacing: 10) { Text(title).font(.title3.bold()); Text(message).foregroundStyle(.secondary); if !actions.isEmpty { HStack { ForEach(actions, id: \.0) { item in Button(item.0) { action?(item.0) }.buttonStyle(.borderedProminent).disabled(action == nil) } } } }.frame(maxWidth: .infinity, alignment: .leading).padding(22).background(MacPanel()) } }
-struct MacCover: View { let title: String; let size: CGSize; var body: some View { RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [.brown.opacity(0.8), .mint.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)).frame(width: size.width, height: size.height).overlay(Text(title.prefix(2).uppercased()).font(.system(size: min(size.width, size.height) / 3, weight: .heavy, design: .serif)).foregroundStyle(.white.opacity(0.85))) } }
+struct MacFilterButton: View { let title: String; let selected: Bool; let action: () -> Void; var body: some View { Button(LocalizedStringKey(title), action: action).buttonStyle(.borderedProminent).tint(selected ? .accentColor : .gray.opacity(0.3)) } }
+struct MacPageHeader: View { let eyebrow: String; let title: String; var trailing: AnyView? = nil; var body: some View { HStack(alignment: .bottom) { VStack(alignment: .leading, spacing: 6) { Text(LocalizedStringKey(eyebrow)).macEyebrow(); Text(LocalizedStringKey(title)).font(.system(size: 30, weight: .bold, design: .rounded)).accessibilityAddTraits(.isHeader) }; Spacer(); if let trailing { trailing } }.padding(.horizontal, 28).padding(.top, 28).padding(.bottom, 10) } }
+struct MacSectionTitle: View { let title: String; var body: some View { HStack { Text(LocalizedStringKey(title)).font(.title3.bold()).accessibilityAddTraits(.isHeader); Spacer() } } }
+struct MacEmptyCard: View { let title: String; let message: String; let actions: [(String, String)]; var action: ((String) -> Void)? = nil; var body: some View { VStack(alignment: .leading, spacing: 10) { Text(LocalizedStringKey(title)).font(.title3.bold()).accessibilityAddTraits(.isHeader); Text(LocalizedStringKey(message)).foregroundStyle(.secondary); if !actions.isEmpty { HStack { ForEach(actions, id: \.0) { item in Button(LocalizedStringKey(item.0)) { action?(item.0) }.buttonStyle(.borderedProminent).disabled(action == nil) } } } }.frame(maxWidth: .infinity, alignment: .leading).padding(22).background(MacPanel()) } }
+struct MacCoverFallback: View { let title: String; let author: String?; let size: CGSize; var body: some View { RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [.brown.opacity(0.8), .mint.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)).frame(width: size.width, height: size.height).overlay { VStack(spacing: 4) { Text(title.prefix(2).uppercased()).font(.system(size: min(size.width, size.height) / 3, weight: .heavy, design: .serif)); if let author { Text(author).font(.caption2).lineLimit(2).multilineTextAlignment(.center) } }.foregroundStyle(.white.opacity(0.85)).padding(6) } } }
 struct MacBackground: View { var body: some View { Color(nsColor: .windowBackgroundColor).ignoresSafeArea() } }
 struct MacPanel: View { var body: some View { RoundedRectangle(cornerRadius: 12).fill(Color(nsColor: .controlBackgroundColor)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08))) } }
 private extension Text { func macEyebrow() -> some View { self.font(.caption.bold()).foregroundStyle(.secondary).textCase(.uppercase) } }
