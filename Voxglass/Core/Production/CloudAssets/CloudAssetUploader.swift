@@ -97,7 +97,8 @@ public actor CloudAssetUploader {
             } catch CloudAssetUploadError.alreadyRemote {
                 skipped.append(record.id)
             } catch {
-                failed.append((record.id, String(describing: error)))
+                let reason = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                failed.append((record.id, reason))
             }
         }
         return CloudAssetUploadReport(uploaded: uploaded, skipped: skipped, failed: failed)

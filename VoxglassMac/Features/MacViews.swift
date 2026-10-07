@@ -1446,7 +1446,7 @@ struct MacSettingsView: View {
     @State private var confirmOfflineClear = false
     @State private var showAuthoringSyncConsent = false
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
-    @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = false
+    @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = true
 
     var body: some View {
         Form {
@@ -1513,6 +1513,10 @@ struct MacSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(status.localizedCaseInsensitiveContains("failed") ? .red : .secondary)
                             .accessibilityIdentifier("native-mac.sync.authoring.status")
+                    }
+                    if let lastSync = services.authoringV2LastSyncDate {
+                        Text("Narration last synced: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     Button(services.isAuthoringV2Syncing ? "Syncing narration projects…" : "Sync Narration Projects Now") {
                         Task { await services.syncAuthoringV2Now() }

@@ -21,6 +21,7 @@ final class MacAppServices: ObservableObject {
     private var authoringV2SyncTask: Task<Void, Never>?
     @Published private(set) var isAuthoringV2Syncing = false
     @Published private(set) var authoringV2SyncStatus: String?
+    @Published private(set) var authoringV2LastSyncDate = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.authoringV2LastSync) as? Date
     lazy var authoringV2Sync = CloudKitAuthoringV2Sync(
         databaseURL: narrationRepository.applicationSupport
             .appendingPathComponent("Voxglass", isDirectory: true)
@@ -99,13 +100,13 @@ final class MacAppServices: ObservableObject {
                 await libraryStore.refresh()
             }
         }
-        if UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled) {
+        if AppPreferencesStore.authoringV2SyncEnabled() {
             await syncAuthoringV2Now()
         }
     }
 
     func syncAuthoringV2Now() async {
-        guard UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled) else {
+        guard AppPreferencesStore.authoringV2SyncEnabled() else {
             authoringV2SyncStatus = "Narration sync is off."
             return
         }
@@ -115,6 +116,7 @@ final class MacAppServices: ObservableObject {
         }
         isAuthoringV2Syncing = true
         defer { isAuthoringV2Syncing = false }
+        authoringV2SyncStatus = "Checking iCloud for narration projects…"
         do {
             let localProjects = await narrationRepository.allProjects()
             let snapshots = try localProjects.flatMap(AuthoringProjectBridge.records(for:))
@@ -130,14 +132,20 @@ final class MacAppServices: ObservableObject {
             for project in merge.projects where !localProjects.contains(project) {
                 try await narrationRepository.save(project)
             }
-            authoringV2SyncStatus = "Narration projects synced just now."
+            let now = Date()
+            authoringV2LastSyncDate = now
+            UserDefaults.standard.set(now, forKey: AppPreferencesStore.Keys.authoringV2LastSync)
+            let projectCount = merge.projects.count
+            authoringV2SyncStatus = projectCount == 0
+                ? "iCloud sync completed; no narration projects were found."
+                : "Synced \(projectCount) narration project\(projectCount == 1 ? "" : "s")."
         } catch {
             authoringV2SyncStatus = "Narration sync failed: \(error.localizedDescription)"
         }
     }
 
     func scheduleAuthoringV2SyncIfEnabled() {
-        guard UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled) else { return }
+        guard AppPreferencesStore.authoringV2SyncEnabled() else { return }
         authoringV2SyncTask?.cancel()
         authoringV2SyncTask = Task { @MainActor [weak self] in
             do { try await Task.sleep(for: .seconds(1)) }

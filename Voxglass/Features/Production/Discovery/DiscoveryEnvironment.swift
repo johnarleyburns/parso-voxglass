@@ -56,6 +56,7 @@ public final class DiscoveryEnvironment {
     public private(set) var isRefreshing = false
     public private(set) var isAuthoringV2Syncing = false
     public private(set) var authoringV2SyncStatus: String?
+    public private(set) var authoringV2LastSyncDate = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.authoringV2LastSync) as? Date
     @ObservationIgnored private var authoringV2SyncTask: Task<Void, Never>?
     private var persistedNeedIDs: Set<String> = []
     private var hasLoadedNarrations = false
@@ -196,7 +197,7 @@ public final class DiscoveryEnvironment {
     }
 
     public var isAuthoringV2SyncEnabled: Bool {
-        UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled)
+        AppPreferencesStore.authoringV2SyncEnabled()
     }
 
     /// Explicit foreground sync used by the consent screen and the manual
@@ -212,6 +213,7 @@ public final class DiscoveryEnvironment {
         }
         isAuthoringV2Syncing = true
         defer { isAuthoringV2Syncing = false }
+        authoringV2SyncStatus = "Checking iCloud for narration projects…"
         do {
             let localProjects = await repository.allProjects()
             let mergedProjects = try await phoneProduction.synchronizeAuthoringV2(projects: localProjects)
@@ -222,7 +224,13 @@ public final class DiscoveryEnvironment {
                 }
             }
             await reloadNarrations()
-            authoringV2SyncStatus = "Narration projects synced just now."
+            let now = Date()
+            authoringV2LastSyncDate = now
+            UserDefaults.standard.set(now, forKey: AppPreferencesStore.Keys.authoringV2LastSync)
+            let projectCount = mergedProjects.count
+            authoringV2SyncStatus = projectCount == 0
+                ? "iCloud sync completed; no narration projects were found."
+                : "Synced \(projectCount) narration project\(projectCount == 1 ? "" : "s")."
         } catch {
             authoringV2SyncStatus = "Narration sync failed: \(error.localizedDescription)"
         }

@@ -114,6 +114,7 @@ public final class PhoneProductionSync {
 #endif
         isChecking = true
         defer { isChecking = false }
+        var assetUploadFailures: [String] = []
 
         accountStatus = await syncCore.transport.accountStatus()
         if accountStatus == .available {
@@ -141,7 +142,7 @@ public final class PhoneProductionSync {
                     for project in projects {
                         _ = try? await publishProject(project)
                     }
-                    try await uploadPendingAssets()
+                    assetUploadFailures = await uploadPendingAssets()
 
                     // Fetch the mirror back (recovery / second device) and apply it.
                     let report = try await syncCore.engine.pump()
@@ -156,7 +157,7 @@ public final class PhoneProductionSync {
                     // Restore any remote-only originals.
                     try await hydrateRemoteAssets()
                 }
-                syncError = nil
+                syncError = Self.assetUploadErrorMessage(assetUploadFailures)
             } catch let error as SyncError where error == .quotaExceeded {
                 // §6.5 quota behavior: the pass halts cleanly, the entitlement to
                 // offload is unchanged (assets stay un-evictable), and the UI
@@ -200,7 +201,8 @@ public final class PhoneProductionSync {
 
     /// Uploads every unverified original for every project. A failed upload never
     /// aborts the pass and never makes the asset evictable (spec §6.3).
-    private func uploadPendingAssets() async throws {
+    private func uploadPendingAssets() async -> [String] {
+        var failures: [String] = []
         for project in await narrationRepository.allProjects() {
             let repository = SQLiteProductionAssetRepository(databaseURL: narrationRepository.layout(for: project.id).databaseURL)
             let takeIDs = takeIDsBySHA(in: project)
@@ -210,8 +212,19 @@ public final class PhoneProductionSync {
                 assetStore: narrationRepository.fileStore(for: project.id),
                 takeIDProvider: { sha in takeIDs[sha] }
             )
-            _ = try? await uploader.uploadPending()
+            do {
+                let report = try await uploader.uploadPending()
+                failures.append(contentsOf: report.failed.map(\.1))
+            } catch {
+                failures.append(error.localizedDescription)
+            }
         }
+        return failures
+    }
+
+    static func assetUploadErrorMessage(_ failures: [String]) -> String? {
+        guard let firstFailure = failures.first else { return nil }
+        return "\(failures.count) narration recording\(failures.count == 1 ? "" : "s") could not be backed up. They remain safely on this iPhone. First error: \(firstFailure)"
     }
 
     /// Hydrates `remoteOnly` originals for every project, SHA-verifying before

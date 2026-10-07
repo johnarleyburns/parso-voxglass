@@ -800,7 +800,7 @@ private struct SyncSettingsCard: View {
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
     @Environment(DiscoveryEnvironment.self) private var discovery
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
-    @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = false
+    @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = true
     @State private var showAuthoringSyncConsent = false
 
     var body: some View {
@@ -855,6 +855,11 @@ private struct SyncSettingsCard: View {
                             .foregroundStyle(status.localizedCaseInsensitiveContains("failed") ? Palette.danger : Palette.ink3)
                             .accessibilityIdentifier("authoringSync.status")
                     }
+                    if let lastSync = discovery.authoringV2LastSyncDate {
+                        Text("Narration last synced: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                            .voxFont(.caption2)
+                            .foregroundStyle(Palette.ink3)
+                    }
                     Button {
                         Task { await discovery.syncAuthoringV2Now() }
                     } label: {
@@ -884,7 +889,7 @@ private struct SyncSettingsCard: View {
 
             if cloudSync.isEnabled {
                 if let lastSync = cloudSync.lastSyncDate {
-                    Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                    Text("Listening library last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
                 }

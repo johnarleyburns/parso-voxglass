@@ -8,6 +8,7 @@ import VoxglassCore
 /// backup state, and restates the offload rule — nothing is removed until the
 /// iCloud copy is SHA-256-verified.
 struct StorageSettingsView: View {
+    @Environment(DiscoveryEnvironment.self) private var discovery
     @State private var model = StorageSettingsModel()
 
     var body: some View {
@@ -107,6 +108,22 @@ struct StorageSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private func countRow(_ label: LocalizedStringKey, _ count: Int64) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(label)
+                .voxFont(.caption)
+                .foregroundStyle(Palette.ink2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(count.formatted())
+                .voxFont(.caption, weight: .medium)
+                .foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // MARK: - Audiobook downloads
 
     private var audiobookCacheCard: some View {
@@ -133,14 +150,26 @@ struct StorageSettingsView: View {
     private var iCloudBackupCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             adaptiveHeader("iCloud backup") {
-                statusChip(model.backupRunning ? "Uploading" : "On")
+                statusChip(model.hasPendingUploads ? "Pending" : "On")
             }
 
             VStack(spacing: 6) {
-                usageRow("Verified in iCloud", model.verifiedCount)
-                usageRow("Uploading now", model.uploadingCount)
+                countRow("Verified in iCloud", model.verifiedCount)
+                countRow("Uploading now", model.uploadingCount)
                 usageRow("In your iCloud", model.remoteBytes)
-                usageRow("Local only", model.localOnlyCount)
+                countRow("Local only", model.localOnlyCount)
+            }
+
+            Text("Counts show recording files; the iCloud total shows their stored size.")
+                .voxFont(.caption2)
+                .foregroundStyle(Palette.ink3)
+
+            if let syncError = discovery.phoneProduction?.sync.syncError {
+                Text(syncError)
+                    .voxFont(.caption2)
+                    .foregroundStyle(Palette.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("storage.iCloudBackup.error")
             }
 
             Text("Nothing is removed until it is safe. A recording can only be offloaded after its iCloud copy is verified byte-for-byte by checksum and the reference is written to this project.")
@@ -252,7 +281,7 @@ final class StorageSettingsModel {
     var uploadingCount: Int64 = 0
     var localOnlyCount: Int64 = 0
     var remoteBytes: Int64 = 0
-    var backupRunning = false
+    var hasPendingUploads = false
 
     var limitBytes: Int64 {
         get { settings.workingCacheBytes }
@@ -278,7 +307,7 @@ final class StorageSettingsModel {
         let projects = await repository.allProjects()
         var original = Int64(0), render = Int64(0), proxy = Int64(0), staging = Int64(0)
         var verified = Int64(0), uploading = Int64(0), localOnly = Int64(0)
-        var remote = Int64(0), backupActive = false
+        var remote = Int64(0), hasPendingUploads = false
 
         for project in projects {
             let layout = repository.layout(for: project.id)
@@ -291,7 +320,7 @@ final class StorageSettingsModel {
                 case .uploading:
                     uploading += 1
                     original += record.byteCount
-                    backupActive = true
+                    hasPendingUploads = true
                 case .localAndRemote:
                     verified += 1
                     original += record.byteCount
@@ -318,7 +347,7 @@ final class StorageSettingsModel {
         uploadingCount = uploading
         localOnlyCount = localOnly
         remoteBytes = remote
-        backupRunning = backupActive
+        self.hasPendingUploads = hasPendingUploads
 
         audiobookBytes = await AudioCache.shared.totalCachedBytes()
     }

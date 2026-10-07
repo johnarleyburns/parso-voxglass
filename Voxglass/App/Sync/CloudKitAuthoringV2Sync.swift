@@ -70,10 +70,15 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
     /// unavailable and are replayed from the SQLite outbox on the next start.
     public func synchronize() async throws {
         try await start()
-        guard !pausedForAccountSwitch, let engine else { return }
+        guard !pausedForAccountSwitch, let engine, let store else { throw AuthoringCloudKitError.accountTransition }
+        lastFailure = nil
         try await engine.fetchChanges()
-        guard !pausedForAccountSwitch else { return }
+        guard !pausedForAccountSwitch else { throw AuthoringCloudKitError.accountTransition }
         try await engine.sendChanges()
+        if let lastFailure { throw AuthoringCloudKitError.syncFailure(lastFailure) }
+        let pendingMutations = try await store.pendingMutations()
+        let pendingCount = pendingMutations.count
+        guard pendingCount == 0 else { throw AuthoringCloudKitError.pendingMutations(pendingCount) }
     }
 
     /// Entry point for phone/Mac authoring repositories: persists the entity and
@@ -186,7 +191,6 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
                       let fields = Self.encodeSystemFields(record) else { continue }
                 do {
                     try await store.acknowledgeUpload(entityId: entityID, operationId: operationID, changeTag: changeTag, systemFields: fields)
-                    lastFailure = nil
                 } catch {
                     Logger(subsystem: "guru.parso.voxglass", category: "AuthoringV2Sync")
                         .error("Authoring v2 upload receipt persistence failed: \(String(describing: error), privacy: .public)")
@@ -229,13 +233,14 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
                     syncEngine.state.add(pendingRecordZoneChanges: [.saveRecord(failure.record.recordID)])
                     lastFailure = .temporarilyUnavailable
                 } else {
-                    switch failure.error.code {
-                    case .quotaExceeded: lastFailure = .quotaExceeded
-                    case .notAuthenticated, .accountTemporarilyUnavailable: lastFailure = .reauthenticationRequired
-                    case .networkFailure, .networkUnavailable, .serviceUnavailable, .zoneBusy: lastFailure = .temporarilyUnavailable
-                    default: lastFailure = .other(code: failure.error.code.rawValue)
-                    }
+                    lastFailure = Self.failure(for: failure.error)
                 }
+            }
+        case .sentDatabaseChanges(let changes):
+            if let failure = changes.failedZoneSaves.first {
+                lastFailure = Self.failure(for: failure.error)
+                Logger(subsystem: "guru.parso.voxglass", category: "AuthoringV2Sync")
+                    .error("Authoring v2 zone save failed: \(String(describing: failure.error), privacy: .public)")
             }
         case .accountChange(let change):
             switch change.changeType {
@@ -293,6 +298,15 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
         }
     }
 
+    private static func failure(for error: CKError) -> AuthoringCloudKitFailure {
+        switch error.code {
+        case .quotaExceeded: .quotaExceeded
+        case .notAuthenticated, .accountTemporarilyUnavailable: .reauthenticationRequired
+        case .networkFailure, .networkUnavailable, .serviceUnavailable, .zoneBusy: .temporarilyUnavailable
+        default: .other(code: error.code.rawValue)
+        }
+    }
+
     private func recordID(for id: UUID) -> CKRecord.ID { CKRecord.ID(recordName: id.uuidString, zoneID: zoneID) }
 
     private static func entityID(_ id: CKRecord.ID) throws -> UUID {
@@ -334,13 +348,39 @@ public enum AuthoringCloudKitError: Error, Sendable {
     case accountTransition
     case invalidPayload
     case unresolvedConflict
+    case syncFailure(AuthoringCloudKitFailure)
+    case pendingMutations(Int)
 }
 
-public enum AuthoringCloudKitFailure: Sendable, Equatable {
+extension AuthoringCloudKitError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .invalidEntityID(let id): "CloudKit returned an invalid narration entity ID: \(id)."
+        case .invalidRecord: "CloudKit returned a narration record with an unsupported format."
+        case .accountTransition: "The iCloud account changed. Try narration sync again."
+        case .invalidPayload: "A narration project record is too large or invalid to sync."
+        case .unresolvedConflict: "Resolve the narration sync conflict before trying again."
+        case .syncFailure(let failure): failure.errorDescription
+        case .pendingMutations(let count): "iCloud left \(count) narration change\(count == 1 ? "" : "s") pending. Try again shortly."
+        }
+    }
+}
+
+public enum AuthoringCloudKitFailure: Sendable, Equatable, LocalizedError {
     case quotaExceeded
     case reauthenticationRequired
     case temporarilyUnavailable
     case conflictPendingResolution
     case other(code: Int)
+
+    public var errorDescription: String? {
+        switch self {
+        case .quotaExceeded: "Your iCloud account is out of storage. Narration sync could not finish."
+        case .reauthenticationRequired: "Sign in to iCloud on this device, then try narration sync again."
+        case .temporarilyUnavailable: "iCloud is temporarily unavailable. Narration changes are saved locally; try again shortly."
+        case .conflictPendingResolution: "A narration project has a sync conflict that needs to be resolved."
+        case .other(let code): "iCloud could not save narration project data (CloudKit error \(code))."
+        }
+    }
 }
 #endif
