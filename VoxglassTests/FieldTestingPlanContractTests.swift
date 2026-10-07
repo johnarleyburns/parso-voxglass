@@ -62,7 +62,20 @@ import Testing
         #expect(dock.contains("struct MiniPlayerAccessory"))
         #expect(dock.contains("chrome.miniPlayer.playPause"))
         #expect(dock.contains("chrome.miniPlayer.skipForward"))
+        #expect(dock.contains(".padding(.vertical, placement == .inline ? 7 : 10)"))
+        #expect(dock.contains(".frame(minHeight: placement == .inline ? 64 : 80)"))
         #expect(theme.contains("minimumControlHitTarget"))
+    }
+
+    @Test func myBooksLeavesRoomForBottomAccessoriesAndGrowingRows() throws {
+        let library = try source("Voxglass/Features/Library/LibraryView.swift")
+        #expect(library.contains(".padding(.bottom, 156)"))
+        #expect(library.contains(".frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)"))
+        #expect(!library.contains(".frame(height: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)"))
+
+        let rows = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
+        #expect(rows.contains(".padding(.vertical, 10)"))
+        #expect(rows.contains("rowContentHeight + 16 + 10"))
     }
 
     @Test func carPlayConstructionUsesValidatedRootsAndGenerationGuards() throws {

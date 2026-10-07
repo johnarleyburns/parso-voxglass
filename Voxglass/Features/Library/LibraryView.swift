@@ -34,6 +34,10 @@ struct LibraryView: View {
                 bookList
             }
             .padding(.top, 12)
+            // The tab bar and expanded mini-player are outside the screen's
+            // scroll content safe area. Leave enough trailing room for the
+            // final book to scroll completely above both accessories.
+            .padding(.bottom, 156)
             // Must be inside VoxglassScreen's trailing closure, not chained
             // after the VoxglassScreen(...) call: VoxglassScreen wraps this
             // content in its own internal `NavigationStack`, and
@@ -215,7 +219,12 @@ struct LibraryView: View {
                     .listStyle(.plain)
                     .scrollDisabled(true)
                     .environment(\.editMode, .constant(isEditing ? .active : .inactive))
-                    .frame(height: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)
+                    // Use a minimum rather than an exact height: grouped
+                    // rows grow when narrator, watch, or progress metadata is
+                    // present. An exact row-count frame clipped the final
+                    // book and sometimes clipped the metadata of earlier
+                    // rows as well.
+                    .frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }

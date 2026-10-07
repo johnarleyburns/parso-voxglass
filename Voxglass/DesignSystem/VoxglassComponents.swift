@@ -165,9 +165,11 @@ struct BookListRow: View {
     /// The row's own drawn height. Fixed so the two list screens that disable
     /// scrolling and size their `List` by row count stay in sync with it.
     static let rowContentHeight: CGFloat = 72
-    /// Height one row occupies in a `List` — the drawn content plus the 5pt
-    /// top + 5pt bottom `listRowInsets` both screens apply.
-    static let fixedRowHeight: CGFloat = rowContentHeight + 10
+    /// Baseline height one grouped row occupies in a `List` — the drawn
+    /// content, grouped-row breathing room, and the 5pt top + 5pt bottom
+    /// `listRowInsets` the library applies. This is a minimum; populated rows
+    /// may grow beyond it.
+    static let fixedRowHeight: CGFloat = rowContentHeight + 16 + 10
 
     var title: String
     var subtitle: String
@@ -192,6 +194,7 @@ struct BookListRow: View {
         switch style {
         case .card:
             rowContent
+                .padding(.vertical, 10)
                 .raisedSurface()
         case .grouped:
             rowContent

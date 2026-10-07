@@ -40,7 +40,11 @@ struct MiniPlayerAccessory: View {
                 }
             }
             .padding(.horizontal, 10)
-            .frame(height: placement == .inline ? 50 : 60)
+            // Two title lines plus 44-point controls need real vertical
+            // breathing room. A fixed 50/60-point frame put the glyphs and
+            // descenders against the capsule edge on compact devices.
+            .padding(.vertical, placement == .inline ? 7 : 10)
+            .frame(minHeight: placement == .inline ? 64 : 80)
             .glassEffect(.regular, in: .capsule)
             .accessibilityIdentifier("chrome.miniPlayer")
             .accessibilityElement(children: .combine)
