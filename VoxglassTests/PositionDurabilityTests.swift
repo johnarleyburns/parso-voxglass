@@ -72,6 +72,25 @@ import Foundation
         #expect(abs((PlaybackCoordinator.preferredPosition(row: row, snapshot: snapshot)?.position ?? -1) - (100)) <= 0.001)
     }
 
+    @Test func cloudNowPlayingOnlyWinsWhenNewerAndLocalSessionIsPaused() {
+        let local = Date(timeIntervalSince1970: 100)
+        let remoteLater = Date(timeIntervalSince1970: 101)
+        let remoteOlder = Date(timeIntervalSince1970: 99)
+
+        #expect(NowPlayingHandoffPolicy.shouldAdopt(
+            remoteUpdatedAt: remoteLater, localUpdatedAt: local, localIsPlaying: false
+        ))
+        #expect(!NowPlayingHandoffPolicy.shouldAdopt(
+            remoteUpdatedAt: remoteLater, localUpdatedAt: local, localIsPlaying: true
+        ))
+        #expect(!NowPlayingHandoffPolicy.shouldAdopt(
+            remoteUpdatedAt: remoteOlder, localUpdatedAt: local, localIsPlaying: false
+        ))
+        #expect(NowPlayingHandoffPolicy.shouldAdopt(
+            remoteUpdatedAt: remoteLater, localUpdatedAt: nil, localIsPlaying: false
+        ))
+    }
+
     @Test func reconcileReplaysSnapshotsIntoDatabaseOnLaunch() async throws {
         let db = AppDatabase.makeTemporaryDatabase(named: "reconcile-\(UUID().uuidString)")
         let store = SQLitePositionStore(database: db)

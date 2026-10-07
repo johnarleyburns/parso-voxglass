@@ -7,7 +7,23 @@ public protocol PositionStore: Sendable {
     func latestPosition(forBookID bookID: UUID) async throws -> PlaybackPosition?
 }
 
-public struct SQLitePositionStore: PositionStore {
+public protocol LocalPlaybackCheckpointStore: Sendable {
+    func saveLocalCheckpoint(_ position: PlaybackPosition) async throws
+}
+
+public enum NowPlayingHandoffPolicy {
+    public static func shouldAdopt(
+        remoteUpdatedAt: Date,
+        localUpdatedAt: Date?,
+        localIsPlaying: Bool
+    ) -> Bool {
+        guard !localIsPlaying else { return false }
+        guard let localUpdatedAt else { return true }
+        return remoteUpdatedAt > localUpdatedAt
+    }
+}
+
+public struct SQLitePositionStore: PositionStore, LocalPlaybackCheckpointStore {
     private let database: AppDatabase
     public var mutationLog: SyncMutationLog?
 
@@ -16,6 +32,14 @@ public struct SQLitePositionStore: PositionStore {
     }
 
     public func save(_ position: PlaybackPosition) async throws {
+        try await persist(position, enqueueForCloudSync: true)
+    }
+
+    public func saveLocalCheckpoint(_ position: PlaybackPosition) async throws {
+        try await persist(position, enqueueForCloudSync: false)
+    }
+
+    private func persist(_ position: PlaybackPosition, enqueueForCloudSync: Bool) async throws {
         let clamped = PlaybackPosition(
             id: position.id,
             bookID: position.bookID,
@@ -45,7 +69,14 @@ public struct SQLitePositionStore: PositionStore {
             ModelMapping.databaseValue(clamped.updatedAt),
             .bool(clamped.isFinished)
         ])
-        try? await mutationLog?.enqueue(localID: clamped.id.uuidString, recordType: "PlaybackPosition", changeType: "update")
+        if enqueueForCloudSync {
+            let storedRows = try? await database.query(
+                "SELECT id FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
+                [ModelMapping.databaseValue(clamped.bookID), ModelMapping.databaseValue(clamped.chapterID)]
+            )
+            let storedID = storedRows?.first?.string("id") ?? clamped.id.uuidString
+            try? await mutationLog?.enqueue(localID: storedID, recordType: "PlaybackPosition", changeType: "update")
+        }
     }
 
     public func position(for bookID: UUID, chapterID: UUID) async throws -> PlaybackPosition? {

@@ -160,7 +160,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         Task {
-            await AppServices.shared.cloudKitSyncEngine.fetchChanges()
+            let services = AppServices.shared
+            await services.cloudKitSyncEngine.fetchChanges()
+            await services.libraryStore.refresh()
+            await services.playbackCoordinator.adoptCloudNowPlayingIfNewer(
+                services.cloudKitSyncEngine.lastFetchedPlaybackPosition,
+                from: services.libraryStore.books
+            )
             completionHandler(.newData)
         }
     }

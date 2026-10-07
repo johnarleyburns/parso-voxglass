@@ -72,6 +72,9 @@ final class AppServices: ObservableObject {
         self.tasteProfileStore = tasteProfileStore
         self.cloudSync = cloudSync
         self.cloudKitSyncEngine = cloudKitSyncEngine
+        mutationLog.onEnqueued = { [weak cloudKitSyncEngine] in
+            Task { @MainActor in cloudKitSyncEngine?.pushAfterMutation() }
+        }
         self.homeRecommendationStore = HomeRecommendationStore()
         self.offlineDownloadManager = OfflineDownloadManager(repository: libraryRepository)
         self.listeningStatsStore = listeningStatsStore
@@ -213,6 +216,10 @@ final class AppServices: ObservableObject {
             // snapshot was loaded. Refresh the published library now so those
             // records appear without requiring an app restart.
             await libraryStore.refresh()
+            await playbackCoordinator.adoptCloudNowPlayingIfNewer(
+                cloudKitSyncEngine.lastFetchedPlaybackPosition,
+                from: libraryStore.books
+            )
             if cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }

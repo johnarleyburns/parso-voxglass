@@ -75,6 +75,50 @@ import Foundation
         #expect(fetched.updatedAt == Date(timeIntervalSince1970: 200))
     }
 
+    @Test func updatingPositionQueuesItsPersistedRecordID() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "position-sync-stable-id")
+        let ids = try await seedBook(in: database)
+        let stateStore = CloudSyncStateStore(database: database)
+        var store = SQLitePositionStore(database: database)
+        store.mutationLog = SyncMutationLog(stateStore: stateStore)
+        let original = PlaybackPosition(
+            bookID: ids.bookID, chapterID: ids.chapterID, position: 10,
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+        try await store.save(original)
+        let persistedOptional = try await store.position(for: ids.bookID, chapterID: ids.chapterID)
+        let persisted = try #require(persistedOptional)
+        try await stateStore.clearPending()
+
+        let later = PlaybackPosition(
+            bookID: ids.bookID, chapterID: ids.chapterID, position: 20,
+            updatedAt: Date(timeIntervalSince1970: 200)
+        )
+        try await store.save(later)
+
+        let pending = try await stateStore.dequeuePending(limit: 10)
+        #expect(pending.count == 1)
+        #expect(pending.first?.localID == persisted.id.uuidString)
+        #expect(pending.first?.localID != later.id.uuidString)
+    }
+
+    @Test func localHandoffCheckpointDoesNotEchoOverTheNewerCloudPosition() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "position-local-checkpoint")
+        let ids = try await seedBook(in: database)
+        let stateStore = CloudSyncStateStore(database: database)
+        var store = SQLitePositionStore(database: database)
+        store.mutationLog = SyncMutationLog(stateStore: stateStore)
+
+        try await store.saveLocalCheckpoint(PlaybackPosition(
+            bookID: ids.bookID, chapterID: ids.chapterID, position: 37,
+            updatedAt: Date(timeIntervalSince1970: 150)
+        ))
+
+        #expect(try await stateStore.pendingCount() == 0)
+        let saved = try await store.position(for: ids.bookID, chapterID: ids.chapterID)
+        #expect(abs((saved?.position ?? -1) - 37) <= 0.001)
+    }
+
     private func seedBook(
         in database: AppDatabase,
         title: String = "Seed Book"

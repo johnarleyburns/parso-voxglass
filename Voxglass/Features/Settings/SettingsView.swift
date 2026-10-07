@@ -800,6 +800,7 @@ private struct SyncSettingsCard: View {
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
     @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
     @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(PlaybackCoordinator.self) private var playback
     @Environment(DiscoveryEnvironment.self) private var discovery
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
     @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = true
@@ -929,6 +930,10 @@ private struct SyncSettingsCard: View {
                         await cloudSync.sync()
                         await cloudKitSync.start()
                         await libraryStore.refresh()
+                        await playback.adoptCloudNowPlayingIfNewer(
+                            cloudKitSync.lastFetchedPlaybackPosition,
+                            from: libraryStore.books
+                        )
                     }
                 } label: {
                     Text(cloudSync.isSyncing || cloudKitSync.syncState == .syncing ? "Syncing…" : "Sync Now") // l10n-exempt: state-dependent accessibility or status copy

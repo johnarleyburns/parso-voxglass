@@ -57,6 +57,11 @@ final class MacAppServices: ObservableObject {
         self.cloudKitSync = Self.isRunningUITests
             ? nil
             : CloudKitSyncEngine(database: database)
+        if let cloudKitSync = self.cloudKitSync {
+            mutationLog.onEnqueued = { [weak cloudKitSync] in
+                Task { @MainActor in cloudKitSync?.pushAfterMutation() }
+            }
+        }
         self.productionSync = MacProductionSync(repository: narrationRepository)
         self.capture = MacAudioCapture()
         self.uiTestBook = Self.makeUITestBookIfRequested()
@@ -106,6 +111,10 @@ final class MacAppServices: ObservableObject {
                 }
                 await productionSync.checkForUpdates()
                 await libraryStore.refresh()
+                await playback.adoptCloudNowPlayingIfNewer(
+                    cloudKitSync.lastFetchedPlaybackPosition,
+                    from: libraryStore.books
+                )
             }
         } else {
             librarySyncStatus = "My Books sync is off on this Mac. Turn on Sync with iCloud to transfer books."

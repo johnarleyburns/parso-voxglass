@@ -66,6 +66,7 @@ public final class PlaybackCoordinator {
     @ObservationIgnored public let eqPresets = EQPresetStore()
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     @ObservationIgnored private var lastPeriodicSave = Date.distantPast
+    @ObservationIgnored private var currentSessionUpdatedAt: Date?
     @ObservationIgnored private var isHandlingInterruption = false
     /// Limits automatic reloads for AVFoundation's transient "interrupted /
     /// action could not be completed" failures. A user-initiated play resets
@@ -204,6 +205,7 @@ public final class PlaybackCoordinator {
                 ?? target.chapter.duration,
             isPlaying: false
         )
+        currentSessionUpdatedAt = latest.updatedAt
         if let currentSession { resetConfirmedPosition(for: currentSession) }
         isEngineLoaded = false
         updateNowPlayingInfo()
@@ -215,8 +217,83 @@ public final class PlaybackCoordinator {
     /// launch. Also makes the miniplayer appear on a fresh install once the
     /// pull delivers positions for a book already in the library.
     public func refreshPresentedSessionAfterCloudPull(from books: [BookWithChapters]) async {
-        guard !isEngineLoaded, currentSession?.isPlaying != true else { return }
-        await restorePresentedSession(from: books)
+        guard currentSession?.isPlaying != true else { return }
+        let row = try? await positionStore.latestPosition()
+        let latest = Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.latest())
+        await adoptCloudNowPlayingIfNewer(latest, from: books)
+    }
+
+    /// Adopts a newer position received from another device as Now Playing.
+    /// The local paused point is durably saved first, so switching the presented
+    /// session never discards the place this device was showing.
+    public func adoptCloudNowPlayingIfNewer(
+        _ remote: PlaybackPosition?,
+        from books: [BookWithChapters]
+    ) async {
+        guard let remote,
+              let book = books.first(where: { $0.book.id == remote.bookID }),
+              let target = Self.resolveResume(chapters: book.chapters, saved: remote) else { return }
+        if let session = currentSession {
+            guard !session.isPlaying,
+                  playbackPhase == .paused,
+                  NowPlayingHandoffPolicy.shouldAdopt(
+                    remoteUpdatedAt: remote.updatedAt,
+                    localUpdatedAt: currentSessionUpdatedAt,
+                    localIsPlaying: session.isPlaying
+                  ) else { return }
+
+            let localPoint = PlaybackPosition(
+                bookID: session.book.id,
+                chapterID: session.chapter.id,
+                position: isEngineLoaded ? relativeEngineTime(for: session) : session.position,
+                duration: session.duration,
+                updatedAt: Date(),
+                isFinished: false
+            )
+            snapshotStore.save(localPoint)
+            do {
+                if session.book.id == remote.bookID,
+                   session.chapter.id == remote.chapterID,
+                   let checkpointStore = positionStore as? any LocalPlaybackCheckpointStore {
+                    try await checkpointStore.saveLocalCheckpoint(localPoint)
+                } else {
+                    try await positionStore.save(localPoint)
+                }
+                currentSessionUpdatedAt = localPoint.updatedAt
+            } catch {
+                playbackError = error.localizedDescription
+                return
+            }
+        }
+
+        engine.pause()
+        progressTask?.cancel()
+        progressTask = nil
+        applyStoredRate(forBookID: book.book.id)
+        updateArtwork(for: book.book)
+        playbackPhase = .paused
+        currentSession = PlaybackSession(
+            book: book.book,
+            chapters: book.chapters,
+            chapter: target.chapter,
+            position: target.startTime,
+            duration: (remote.chapterID == target.chapter.id ? remote.duration : nil)
+                ?? target.chapter.duration,
+            isPlaying: false
+        )
+        let adoptedSnapshot = PlaybackPosition(
+            bookID: remote.bookID,
+            chapterID: target.chapter.id,
+            position: target.startTime,
+            duration: remote.duration,
+            updatedAt: Date(),
+            isFinished: remote.isFinished
+        )
+        snapshotStore.save(adoptedSnapshot)
+        currentSessionUpdatedAt = adoptedSnapshot.updatedAt
+        if let currentSession { resetConfirmedPosition(for: currentSession) }
+        isEngineLoaded = false
+        updateNowPlayingInfo()
     }
 
     /// Loads the engine for the presented session at `session.position` if it
@@ -434,6 +511,7 @@ public final class PlaybackCoordinator {
             duration: duration,
             isPlaying: false
         )
+        currentSessionUpdatedAt = Date()
         if let currentSession { resetConfirmedPosition(for: currentSession) }
         playbackError = nil
         playbackPhase = .preparing
@@ -553,6 +631,7 @@ public final class PlaybackCoordinator {
             duration: target.chapter.duration ?? target.savedDuration,
             isPlaying: false
         )
+        currentSessionUpdatedAt = Date()
         if let currentSession { resetConfirmedPosition(for: currentSession) }
         isEngineLoaded = false
         updateNowPlayingInfo()
@@ -581,6 +660,7 @@ public final class PlaybackCoordinator {
             duration: chapter.duration ?? target.savedDuration,
             isPlaying: false
         )
+        currentSessionUpdatedAt = Date()
         if let currentSession { resetConfirmedPosition(for: currentSession) }
         playhead = startTime
         playheadDuration = validTime(chapter.duration ?? target.savedDuration)
@@ -1343,6 +1423,7 @@ public final class PlaybackCoordinator {
         )
         snapshotStore.save(start)
         try? await positionStore.save(start)
+        currentSessionUpdatedAt = start.updatedAt
     }
 
     private func handleItemChanged() async {
@@ -1650,6 +1731,7 @@ public final class PlaybackCoordinator {
         snapshotStore.save(playbackPosition)
         do {
             try await positionStore.save(playbackPosition)
+            currentSessionUpdatedAt = playbackPosition.updatedAt
             if reason == .periodic {
                 lastPeriodicSave = Date()
             }

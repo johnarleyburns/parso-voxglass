@@ -4,6 +4,7 @@ import Foundation
 /// the database service boundary.
 public final class SyncMutationLog: @unchecked Sendable {
     private let stateStore: CloudSyncStateStore
+    public var onEnqueued: (@Sendable () -> Void)?
 
     public init(stateStore: CloudSyncStateStore) {
         self.stateStore = stateStore
@@ -11,5 +12,6 @@ public final class SyncMutationLog: @unchecked Sendable {
 
     public func enqueue(localID: String, recordType: String, changeType: String = "update") async throws {
         try await stateStore.enqueuePending(localID: localID, recordType: recordType, changeType: changeType)
+        onEnqueued?()
     }
 }
