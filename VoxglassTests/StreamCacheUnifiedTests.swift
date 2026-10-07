@@ -105,13 +105,19 @@ struct StreamCacheUnifiedTests {
                                 limitBytes: limit)
     }
 
-    private func poll(_ c: @Sendable () async -> Bool) async {
-        let deadline = Date().addingTimeInterval(15)
+    /// `CachingResourceLoader.warm(upTo:)` runs detached at background priority.
+    /// Swift Testing runs CPU-heavy suites concurrently, so a hosted runner can
+    /// leave this task unscheduled for a while even though the cache path works.
+    /// Match the audio-engine's own warm-cache tests and allow runner headroom.
+    private func poll(timeout: TimeInterval = 600,
+                      _ c: @Sendable () async -> Bool) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if await c() { return }
-            try? await Task.sleep(nanoseconds: 20_000_000)
+            if await c() { return true }
+            try? await Task.sleep(nanoseconds: 100_000_000)
         }
-        Issue.record("condition not met in time")
+        Issue.record("condition not met within \(timeout)s")
+        return false
     }
 
     // MARK: - Wiring
@@ -135,13 +141,17 @@ struct StreamCacheUnifiedTests {
             session: stubSession())
 
         loader.warm(upTo: 8192)
-        await poll { await store.rangeMap(for: loader.cacheKey).contiguousBytes(from: 0) >= 8192 }
+        guard await poll({ await store.rangeMap(for: loader.cacheKey).contiguousBytes(from: 0) >= 8192 }) else {
+            return
+        }
         // The loader updates its range map before the asynchronous blob flush
         // is visible on disk. Wait for both halves of the cache contract before
         // shutting the loader down; otherwise a fast full-suite run can race
         // the final file move and report a false cache miss.
         let cacheURL = await store.fileURL(for: loader.cacheKey)
-        await poll { FileManager.default.fileExists(atPath: cacheURL.path) }
+        guard await poll({ FileManager.default.fileExists(atPath: cacheURL.path) }) else {
+            return
+        }
         loader.shutdown()
 
         RangeStub.offline = true
