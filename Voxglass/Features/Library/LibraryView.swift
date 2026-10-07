@@ -224,7 +224,7 @@ struct LibraryView: View {
                     // present. An exact row-count frame clipped the final
                     // book and sometimes clipped the metadata of earlier
                     // rows as well.
-                    .frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)
+                    .frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.libraryRowMinimumHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }

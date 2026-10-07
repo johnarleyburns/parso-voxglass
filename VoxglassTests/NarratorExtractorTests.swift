@@ -46,4 +46,15 @@ import Testing
     @Test func supportsSemicolonSeparatedLibriVoxReaders() {
         #expect(NarratorExtractor.extract(from: "Read in English by Mike T.; Shelby Rae Lyon; Chris Moland.") == ["Mike T", "Shelby Rae Lyon", "Chris Moland"])
     }
+
+    @Test func doesNotTreatDramaticReadingRolesAsReaders() {
+        let description = "Read by StephenC AEGISTHUS, cousin to Agamemnon, read by mb ORESTES, son of Agamemnon, read by David O'Connell CLYTEMNESTRA, wife of Agamemnon, read by Christie Nowak CASSANDRA"
+
+        #expect(NarratorExtractor.extract(from: description) == [
+            "StephenC",
+            "mb",
+            "David O'Connell",
+            "Christie Nowak"
+        ])
+    }
 }

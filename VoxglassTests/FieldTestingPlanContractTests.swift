@@ -70,12 +70,30 @@ import Testing
     @Test func myBooksLeavesRoomForBottomAccessoriesAndGrowingRows() throws {
         let library = try source("Voxglass/Features/Library/LibraryView.swift")
         #expect(library.contains(".padding(.bottom, 156)"))
-        #expect(library.contains(".frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)"))
-        #expect(!library.contains(".frame(height: CGFloat(max(1, books.count)) * BookListRow.fixedRowHeight)"))
+        #expect(library.contains(".frame(minHeight: CGFloat(max(1, books.count)) * BookListRow.libraryRowMinimumHeight)"))
+        #expect(!library.contains(".frame(height: CGFloat(max(1, books.count)) * BookListRow.libraryRowMinimumHeight)"))
 
         let rows = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
         #expect(rows.contains(".padding(.vertical, 10)"))
         #expect(rows.contains("rowContentHeight + 16 + 10"))
+        #expect(rows.contains("static let libraryRowMinimumHeight: CGFloat = 160"))
+        #expect(rows.contains(".lineLimit(2)"))
+    }
+
+    @Test func liveActivityFitsLongChaptersAndUsesItsOwnMargins() throws {
+        let activity = try source("VoxglassWidgets/BookLiveActivity.swift")
+        #expect(activity.contains(".contentMarginsDisabled()"))
+        #expect(activity.contains("Text(detailLine(context: context))"))
+        #expect(activity.contains(".truncationMode(.tail)"))
+        #expect(activity.contains(".minimumScaleFactor(0.8)"))
+        #expect(activity.contains(".minimumScaleFactor(0.75)"))
+    }
+
+    @Test func collectionCardMakesItsWholeSurfaceTappable() throws {
+        let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        let card = sourceSlice(discover, from: "private struct ExploreCollectionCard", to: "private struct CollectionInfoSheet")
+        #expect(card.contains(".contentShape(Rectangle())"))
+        #expect(card.contains(".contentShape(RoundedRectangle(cornerRadius: 14"))
     }
 
     @Test func carPlayConstructionUsesValidatedRootsAndGenerationGuards() throws {

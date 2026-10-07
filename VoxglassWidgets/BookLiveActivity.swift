@@ -20,10 +20,15 @@ struct BookLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(context.attributes.title).widgetAccentable()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                         Text("Chapter \(context.state.chapterIndex) of \(context.state.chapterCount)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                         Text(context.state.chapterTitle).font(.caption)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -93,39 +98,37 @@ struct BookLiveActivity: Widget {
             }
             .widgetURL(URL(string: "voxglass://book/\(context.attributes.bookID.uuidString)"))
         }
+        // ActivityKit supplies a tight, system-owned container. Opt out of
+        // the extra WidgetKit margins so the activity's own safe padding is
+        // the only inset and the lock-screen content is not clipped.
+        .contentMarginsDisabled()
     }
 
     @ViewBuilder
     private func lockScreenView(context: ActivityViewContext<BookActivityAttributes>) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
-                cover(for: context, size: 56)
+                cover(for: context, size: 52)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Voxglass · Chapter \(context.state.chapterIndex) of \(context.state.chapterCount)")
                         .textCase(.uppercase)
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(Color.voxglassBrass)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Text(context.attributes.title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     Text(detailLine(context: context))
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
                 Spacer(minLength: 4)
-                if let sleepText = sleepCapsuleText(context.state) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "moon.fill")
-                            .font(.caption2)
-                        Text(sleepText)
-                            .font(.caption2.weight(.medium))
-                    }
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.14), in: Capsule())
-                    .foregroundStyle(.white)
-                }
             }
 
             if context.state.isPlaying, let start = context.state.progressStart, let end = context.state.progressEnd, start < end {
@@ -136,17 +139,21 @@ struct BookLiveActivity: Widget {
                     .tint(Color.voxglassBrass)
             }
 
-            HStack {
+            HStack(spacing: 8) {
                 if context.state.isPlaying,
                    let start = context.state.progressStart,
                    start < Date() {
                     Text(timerInterval: start...Date(), countsDown: false)
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 } else {
                     Text("\(Self.percent(context.state.chapterFraction))% elapsed")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 Spacer()
                 if let remainingInBook = context.state.bookRemaining, remainingInBook > 0 {
@@ -155,6 +162,8 @@ struct BookLiveActivity: Widget {
                     Text("\(remaining) left in book")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 Spacer()
                 if context.state.isPlaying,
@@ -172,6 +181,7 @@ struct BookLiveActivity: Widget {
                 Text("\(context.state.rate.formatted(.number.precision(.fractionLength(0...2))))×")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Color.voxglassBrass)
+                    .lineLimit(1)
             }
 
             HStack(spacing: 16) {

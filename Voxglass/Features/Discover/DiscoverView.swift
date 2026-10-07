@@ -753,11 +753,20 @@ private struct ExploreCollectionCard: View {
                 if let caption = approximateCountCaption { Text(caption).voxType(.eyebrow).foregroundStyle(Palette.ink2) }
             }
             .padding(14)
+            // The visual surface is the control. Keep the complete card in
+            // the button's hit shape so taps on its title, description,
+            // count, and empty artwork space all open the collection.
+            // Give the Button label the full visual card bounds. A frame on
+            // the Button itself changes layout, but does not reliably expand
+            // the label's hit target into otherwise empty card space.
+            .frame(maxWidth: .infinity, minHeight: 196, alignment: .topLeading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("discover.collection.\(collection.id)")
         .frame(maxWidth: .infinity)
         .frame(height: 196)
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .raisedSurface()
         .overlay(alignment: .topTrailing) {
             if collection.isCurated { curatedBadge }

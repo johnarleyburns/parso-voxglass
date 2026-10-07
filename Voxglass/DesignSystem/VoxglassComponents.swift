@@ -167,9 +167,13 @@ struct BookListRow: View {
     static let rowContentHeight: CGFloat = 72
     /// Baseline height one grouped row occupies in a `List` — the drawn
     /// content, grouped-row breathing room, and the 5pt top + 5pt bottom
-    /// `listRowInsets` the library applies. This is a minimum; populated rows
-    /// may grow beyond it.
+    /// `listRowInsets` the library applies.
     static let fixedRowHeight: CGFloat = rowContentHeight + 16 + 10
+    /// A populated My Books row can contain a two-line title, author,
+    /// narrator, progress, and watch status. The embedded non-scrolling List
+    /// needs a container budget that includes those lines or it clips the
+    /// narrator/status at the top of the Finished shelf.
+    static let libraryRowMinimumHeight: CGFloat = 160
 
     var title: String
     var subtitle: String
@@ -225,6 +229,7 @@ struct BookListRow: View {
                 Text(title)
                     .voxFont(.subheadline, weight: .medium)
                     .foregroundStyle(Palette.ink)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.86)
                 if isImported {
                     ImportedTag()
@@ -232,21 +237,25 @@ struct BookListRow: View {
                     Text(subtitle)
                         .voxType(.meta)
                         .foregroundStyle(Palette.ink3)
+                        .lineLimit(1)
                 }
                 if let tertiary, !tertiary.isEmpty {
                     Text(tertiary)
                         .voxFont(.caption)
                         .foregroundStyle(Palette.brass)
+                        .lineLimit(1)
                 }
                 if let metadata, !metadata.isEmpty {
                     Text(metadata)
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.ink3)
+                        .lineLimit(1)
                 }
                 if let watchStatus, !watchStatus.isEmpty {
                     Label(watchStatus, systemImage: "applewatch")
                         .voxFont(.caption2)
                         .foregroundStyle(Palette.brass)
+                        .lineLimit(1)
                 }
                 if let progress, progress > 0, progress < 1 {
                     GeometryReader { geometry in

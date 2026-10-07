@@ -12,7 +12,12 @@ import os
 public enum NarratorExtractor {
 
     private static let patterns: [String] = [
-        #"(?:read(?:\s+in\s+[^\.\n\r;|]+?)?|narrated|voiced|performed)\s+by\s*[:\-]?\s*([^\n\r|]+)"#,
+        // Do not let a LibriVox role sheet consume every character credit
+        // after the first one. Those descriptions commonly look like:
+        // "Read by StephenC AEGISTHUS, cousin ..., read by mb ORESTES ...".
+        // Matching lazily through the next credit gives each reader a chance
+        // to be normalized independently.
+        #"(?:read(?:\s+in\s+[^\.\n\r;|]+?)?|narrated|voiced|performed)\s+by\s*[:\-]?\s*([^\n\r|]+?)(?=(?:\b(?:read|narrated|voiced|performed)\s+by\b)|$)"#,
         #"(?:narrators?|readers?)\s*[:\-]\s*([^\.\n\r|]+)"#
     ]
 
@@ -23,6 +28,16 @@ public enum NarratorExtractor {
     }
 
     private static let andSeparator = try? NSRegularExpression(pattern: #"\band\b"#, options: [.caseInsensitive])
+
+    // In dramatic-reading metadata, a role name is often uppercased and
+    // followed by its description. It is not part of the reader's name:
+    // "David O'Connell CLYTEMNESTRA, wife of Agamemnon".
+    private static let roleBoundary = try? NSRegularExpression(
+        pattern: #"\s+[A-Z][A-Z0-9'’.-]{2,}\s*,\s*(?i:cousin|son|daughter|wife|husband|mother|father|brother|sister|king|queen|servant|messenger)\b"#
+    )
+    private static let roleAtEnd = try? NSRegularExpression(
+        pattern: #"\s+[A-Z][A-Z0-9'’.-]{2,}\s*$"#
+    )
 
     /// Recent results keyed by the source text. Rows re-render many times while
     /// covers and counts load; after the first pass each lookup is a hash hit.
@@ -43,13 +58,16 @@ public enum NarratorExtractor {
     private static func uncachedExtract(from text: String) -> [String] {
         var seen: Set<String> = []
         var ordered: [String] = []
+        let hasRoleSheet = text.range(of: #"\bread\s+by\b.*\bread\s+by\b"#, options: [.regularExpression, .caseInsensitive]) != nil
 
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         for regex in regexes {
             for match in regex.matches(in: text, options: [], range: range) {
                 guard match.numberOfRanges > 1,
                       let captureRange = Range(match.range(at: 1), in: text) else { continue }
-                for name in splitNames(narratorSegment(String(text[captureRange]))) {
+                let rawSegment = String(text[captureRange])
+                let segment = narratorSegment(trimRoleMetadata(rawSegment, hasRoleSheet: hasRoleSheet))
+                for name in splitNames(segment) {
                     if seen.insert(name.lowercased()).inserted {
                         ordered.append(name)
                     }
@@ -59,6 +77,27 @@ public enum NarratorExtractor {
         }
 
         return ordered
+    }
+
+    private static func trimRoleMetadata(_ raw: String, hasRoleSheet: Bool) -> String {
+        let range = NSRange(raw.startIndex..<raw.endIndex, in: raw)
+        if let roleBoundary,
+           let match = roleBoundary.firstMatch(in: raw, options: [], range: range),
+           let boundary = Range(match.range, in: raw) {
+            return String(raw[..<boundary.lowerBound])
+        }
+
+        // The last role in a sheet may omit its prose description. Only apply
+        // this fallback when the complete description already proved that it
+        // contains several role credits; ordinary names such as "PETER
+        // YEARSLEY" must remain untouched.
+        if hasRoleSheet,
+           let roleAtEnd,
+           let match = roleAtEnd.firstMatch(in: raw, options: [], range: range),
+           let boundary = Range(match.range, in: raw) {
+            return String(raw[..<boundary.lowerBound])
+        }
+        return raw
     }
 
     private static func splitNames(_ raw: String) -> [String] {

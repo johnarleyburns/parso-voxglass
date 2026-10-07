@@ -33,7 +33,7 @@ import Testing
         #expect(components.contains("static let rowContentHeight: CGFloat = 72"))
     }
 
-    @Test func sharedBookListRowHasAFixedHeightThatBothListScreensReuse() throws {
+    @Test func sharedBookListRowHasBoundedContentAndLibraryReservesItsPopulatedHeight() throws {
         let components = try source("Voxglass/DesignSystem/VoxglassComponents.swift")
 
         // The row draws at a fixed height (not `minHeight`) so a row with the
@@ -42,9 +42,10 @@ import Testing
         #expect(components.contains("static let rowContentHeight: CGFloat = 72"))
         #expect(components.contains(".frame(minHeight: 72)"))
 
-        // Both screens size their List by row count × the shared constant.
+        // The library list reserves enough space for its populated multi-line
+        // rows; the old fixed baseline was too short for narrator/status text.
         let library = try source("Voxglass/Features/Library/LibraryView.swift")
-        #expect(library.contains("* BookListRow.fixedRowHeight"))
+        #expect(library.contains("* BookListRow.libraryRowMinimumHeight"))
         #expect(!library.contains(") * 104"))
 
         let narrations = try source("Voxglass/Features/Production/Discovery/DiscoveryViews.swift")
