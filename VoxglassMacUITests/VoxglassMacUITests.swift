@@ -26,6 +26,14 @@ final class VoxglassMacUITests: XCTestCase {
         XCTAssertTrue(app.buttons["native-mac.toolbar.inspector"].waitForExistence(timeout: 10))
     }
 
+    func testNativeMacSettingsExposesAuthoringSyncSeparately() {
+        let app = launchApp()
+        app.typeKey(",", modifierFlags: .command)
+
+        XCTAssertTrue(app.switches["native-mac.sync.authoring.enabled"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.switches["native-mac.sync.library.enabled"].exists)
+    }
+
     func testBookDetailAndNowPlayingExposeTheFullPlaybackSurface() {
         let app = launchApp(arguments: ["-uiTestSeedBook"])
 

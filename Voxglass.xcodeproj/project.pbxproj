@@ -63,6 +63,7 @@
 		2BF42FAECA7D703D09AD3BE2 /* penguin_island_ms_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6E0713144FB8D6284CDDBE78 /* penguin_island_ms_librivox.jpg */; };
 		2C2E08B90C9BCF92211C7D2E /* PhoneProductionEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E04B627857202416D41E3CA1 /* PhoneProductionEnvironment.swift */; };
 		A0A0A0A0A0A0A0A0A0A0A0A1 /* CloudKitAuthoringV2Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A0A0A0A0A0A0A0A0A0A0A2 /* CloudKitAuthoringV2Sync.swift */; };
+		B8A6D0E71F2741BC91A635EA /* CloudKitAuthoringV2Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A0A0A0A0A0A0A0A0A0A0A2 /* CloudKitAuthoringV2Sync.swift */; };
 		2ECFF65697F24826FB305EC7 /* 12_creepytales_1206_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 95933760B74CDDA0DF861AD9 /* 12_creepytales_1206_librivox.jpg */; };
 		3033A4EB6B56EC2D70ABCDFB /* BookPageOverflowSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */; };
 		307531D63A9AD0EB05D94E43 /* PlaylistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78FC81862BCB58FA50870112 /* PlaylistsView.swift */; };
@@ -2164,6 +2165,7 @@
 				700494798ED57CFC111DA9FC /* MacPlaybackAudioEngine.swift in Sources */,
 				B5952AA049E325B3CBC54AF9 /* MacProductionSync.swift in Sources */,
 				60CB47A98B10CBFB01E1A34F /* MacSyncBootstrap.swift in Sources */,
+				B8A6D0E71F2741BC91A635EA /* CloudKitAuthoringV2Sync.swift in Sources */,
 				7F6CC048FE6AC0EFCCC6D39E /* MacViews.swift in Sources */,
 				804F43C374A56FDF2AD78E52 /* NarrationProjectRepository.swift in Sources */,
 				015D93E451F9C1CE0C297E47 /* VoxglassMacApp.swift in Sources */,

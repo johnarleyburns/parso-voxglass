@@ -113,13 +113,8 @@ extension FocusedValues {
 
 struct VoxglassMacCommands: Commands {
     @FocusedValue(\.voxglassMacCommandRouter) private var router
-    @Environment(\.openSettings) private var openSettings
 
     var body: some Commands {
-        CommandGroup(replacing: .appSettings) {
-            Button("Settings…") { openSettings() }
-                .keyboardShortcut(",", modifiers: .command)
-        }
         CommandMenu("File") {
             Button("New Narration") { send(.newNarration) }
                 .keyboardShortcut("n", modifiers: .command)

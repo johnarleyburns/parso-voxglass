@@ -892,7 +892,10 @@ struct MacNarrationView: View {
     }
 
     private func reload() {
-        Task { projects = await services.narrationRepository.allProjects() }
+        Task {
+            projects = await services.narrationRepository.allProjects()
+            services.scheduleAuthoringV2SyncIfEnabled()
+        }
     }
 
     private func createProject(from url: URL) async {
@@ -1434,14 +1437,16 @@ private struct MacTakeComparisonView: View {
 }
 
 struct MacSettingsView: View {
-    let services: MacAppServices
+    @ObservedObject var services: MacAppServices
     @State private var usage: AudioCache.StorageUsage?
     @State private var productionUsage: StorageReport?
     @State private var devices: [AudioDeviceInfo] = []
     @State private var selectedDeviceID = ""
     @State private var confirmStreamingClear = false
     @State private var confirmOfflineClear = false
+    @State private var showAuthoringSyncConsent = false
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
+    @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = false
 
     var body: some View {
         Form {
@@ -1480,6 +1485,7 @@ struct MacSettingsView: View {
             }
             Section("Sync") {
                 Toggle("Sync with iCloud", isOn: $syncEnabled)
+                    .accessibilityIdentifier("native-mac.sync.library.enabled")
                     .onChange(of: syncEnabled) { _, newValue in
                         services.cloudSync.isEnabled = newValue
                         if newValue {
@@ -1491,6 +1497,29 @@ struct MacSettingsView: View {
                      ? "Local recording never waits for iCloud. Sync runs at startup and periodically while Voxglass is open."
                      : "Sync is off. Local books, positions, and projects stay on this Mac.")
                     .font(.caption).foregroundStyle(.secondary)
+                Toggle("Sync narration projects", isOn: Binding(
+                    get: { authoringSyncEnabled },
+                    set: { requested in
+                        if requested { showAuthoringSyncConsent = true }
+                        else { authoringSyncEnabled = false }
+                    }
+                ))
+                .accessibilityIdentifier("native-mac.sync.authoring.enabled")
+                Text("Sync project details and script text through your private iCloud account. Recording audio and package files remain on each device.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if authoringSyncEnabled {
+                    if let status = services.authoringV2SyncStatus {
+                        Text(status)
+                            .font(.caption)
+                            .foregroundStyle(status.localizedCaseInsensitiveContains("failed") ? .red : .secondary)
+                            .accessibilityIdentifier("native-mac.sync.authoring.status")
+                    }
+                    Button(services.isAuthoringV2Syncing ? "Syncing narration projects…" : "Sync Narration Projects Now") {
+                        Task { await services.syncAuthoringV2Now() }
+                    }
+                    .disabled(services.isAuthoringV2Syncing)
+                    .accessibilityIdentifier("native-mac.sync.authoring.now")
+                }
             }
         }
         .formStyle(.grouped)
@@ -1503,6 +1532,15 @@ struct MacSettingsView: View {
             Button("Clear \(formatBytes(usage?.durableBytes ?? 0))", role: .destructive) { Task { await services.offlineDownloads.removeAllOffline(); await AudioCache.clearOfflineCache(); usage = await AudioCache.storageUsage() } }
             Button("Cancel", role: .cancel) {}
         } message: { Text("Downloaded copies will be removed. Local book files and narration originals remain untouched.") }
+        .alert("Sync narration projects with iCloud?", isPresented: $showAuthoringSyncConsent) {
+            Button("Enable and Sync") {
+                authoringSyncEnabled = true
+                Task { await services.syncAuthoringV2Now() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Voxglass will upload project details and script text to your private iCloud database. Audio recordings, imported source files, and artwork remain on this Mac.")
+        }
         .task {
             usage = await AudioCache.storageUsage()
             productionUsage = await loadProductionStorage()

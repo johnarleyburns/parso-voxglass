@@ -18,6 +18,15 @@ final class MacAppServices: ObservableObject {
     let capture: MacAudioCapture
     let uiTestBook: BookWithChapters?
     private var automaticSyncTask: Task<Void, Never>?
+    private var authoringV2SyncTask: Task<Void, Never>?
+    @Published private(set) var isAuthoringV2Syncing = false
+    @Published private(set) var authoringV2SyncStatus: String?
+    lazy var authoringV2Sync = CloudKitAuthoringV2Sync(
+        databaseURL: narrationRepository.applicationSupport
+            .appendingPathComponent("Voxglass", isDirectory: true)
+            .appendingPathComponent("AuthoringV2", isDirectory: true)
+            .appendingPathComponent("authoring.sqlite")
+    )
 
     init(database: AppDatabase = AppDatabase.makeApplicationDatabase()) {
         let repository = LibraryRepository(database: database)
@@ -79,15 +88,63 @@ final class MacAppServices: ObservableObject {
 
     func syncLibrary() async {
         guard !isCloudKitDisabledForUITest else { return }
-        guard cloudSync.isEnabled else { return }
-        await cloudSync.sync()
-        guard let cloudKitSync else { return }
-        await cloudKitSync.start()
-        if cloudKitSync.lastUploadedCount > 0 {
-            UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+        if cloudSync.isEnabled {
+            await cloudSync.sync()
+            if let cloudKitSync {
+                await cloudKitSync.start()
+                if cloudKitSync.lastUploadedCount > 0 {
+                    UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
+                }
+                await productionSync.checkForUpdates()
+                await libraryStore.refresh()
+            }
         }
-        await productionSync.checkForUpdates()
-        await libraryStore.refresh()
+        if UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled) {
+            await syncAuthoringV2Now()
+        }
+    }
+
+    func syncAuthoringV2Now() async {
+        guard UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled) else {
+            authoringV2SyncStatus = "Narration sync is off."
+            return
+        }
+        guard !isCloudKitDisabledForUITest else {
+            authoringV2SyncStatus = "Narration sync is unavailable during UI tests."
+            return
+        }
+        isAuthoringV2Syncing = true
+        defer { isAuthoringV2Syncing = false }
+        do {
+            let localProjects = await narrationRepository.allProjects()
+            let snapshots = try localProjects.flatMap(AuthoringProjectBridge.records(for:))
+            let knownEntities = try await authoringV2Sync.storedEntities()
+            let deletions = AuthoringProjectBridge.deletionRecordsForRemovedChildren(
+                in: knownEntities, desiredSnapshots: snapshots
+            )
+            try await authoringV2Sync.commitMutations(snapshots + deletions)
+            try await authoringV2Sync.synchronize()
+            let entities = try await authoringV2Sync.storedEntities()
+            let merge = try AuthoringProjectBridge.applying(entities, to: localProjects)
+            for id in merge.deletedProjectIDs { try? await narrationRepository.delete(id) }
+            for project in merge.projects where !localProjects.contains(project) {
+                try await narrationRepository.save(project)
+            }
+            authoringV2SyncStatus = "Narration projects synced just now."
+        } catch {
+            authoringV2SyncStatus = "Narration sync failed: \(error.localizedDescription)"
+        }
+    }
+
+    func scheduleAuthoringV2SyncIfEnabled() {
+        guard UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.authoringV2SyncEnabled) else { return }
+        authoringV2SyncTask?.cancel()
+        authoringV2SyncTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .seconds(1)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            await self?.syncAuthoringV2Now()
+        }
     }
 
     private func startAutomaticSync() {
@@ -138,6 +195,7 @@ final class MacAppServices: ObservableObject {
 
     deinit {
         automaticSyncTask?.cancel()
+        authoringV2SyncTask?.cancel()
     }
 
     #if DEBUG
