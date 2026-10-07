@@ -55,7 +55,7 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
                 guard let duration = self.duration,
                       self.currentTime >= duration - 0.75 else {
                     self.lastEndWasVerified = false
-                    self.reportIssue(.unverifiedEnd)
+                    self.reportIssue(.unverifiedEnd, for: item)
                     return
                 }
                 self.lastEndWasVerified = true
@@ -65,7 +65,7 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
         statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
             Task { @MainActor [weak self] in
-                self?.reportIssue(.failed(item.error?.localizedDescription ?? "The audio could not be opened."))
+                self?.reportIssue(.playbackFailure(item.error, fallback: "The audio could not be opened."), for: item)
             }
         }
         let center = NotificationCenter.default
@@ -76,7 +76,7 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
         ) { [weak self] notification in
             let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             Task { @MainActor [weak self] in
-                self?.reportIssue(.failed(error?.localizedDescription ?? "The audio stopped unexpectedly."))
+                self?.reportIssue(.playbackFailure(error, fallback: "The audio stopped unexpectedly."), for: item)
             }
         })
         issueObserverRegistry.tokens.append(center.addObserver(
@@ -84,17 +84,18 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
             object: item,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.reportIssue(.stalled) }
+            Task { @MainActor [weak self] in self?.reportIssue(.stalled, for: item) }
         })
         await seek(to: startTime)
         onItemChanged?()
     }
 
-    private func reportIssue(_ issue: AudioEngineIssue) {
+    private func reportIssue(_ issue: AudioEngineIssue, for item: AVPlayerItem) {
+        guard item === player.currentItem else { return }
         let key: String
         switch issue {
         case .stalled: key = "stalled"
-        case .failed: key = "failed"
+        case .failed, .decodeFailed: key = "failed"
         case .unverifiedEnd: key = "unverifiedEnd"
         }
         guard reportedIssueKinds.insert(key).inserted else { return }

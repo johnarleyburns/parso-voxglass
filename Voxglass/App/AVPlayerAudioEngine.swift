@@ -226,6 +226,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         observe(item: item, isPreloaded: false)
 
         let isPlayable = try await item.asset.load(.isPlayable)
+        try Task.checkCancellation()
+        guard player.currentItem === item else { throw CancellationError() }
         guard isPlayable else { throw AudioEngineError.unplayableAudio }
 
         eqProcessor.attach(to: item)
@@ -328,10 +330,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         endObservers[key] = token
 
         itemStatusObservers[key] = item.observe(\.status, options: [.new]) { [weak self] item, _ in
-            guard !isPreloaded else { return }
             Task { @MainActor [weak self] in
                 guard let self, item.status == .failed else { return }
-                self.reportIssue(.failed(item.error?.localizedDescription ?? String(localized: "The audio could not be opened.")), for: item)
+                self.reportIssue(.playbackFailure(item.error, fallback: String(localized: "The audio could not be opened.")), for: item)
             }
         }
 
@@ -340,10 +341,9 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             object: item,
             queue: .main
         ) { [weak self] notification in
-            guard !isPreloaded else { return }
             let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             Task { @MainActor [weak self] in
-                self?.reportIssue(.failed(error?.localizedDescription ?? String(localized: "The audio stopped unexpectedly.")), for: item)
+                self?.reportIssue(.playbackFailure(error, fallback: String(localized: "The audio stopped unexpectedly.")), for: item)
             }
         }
         failureTokenStore.tokens[key, default: []].append(failureToken)
@@ -353,7 +353,6 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             object: item,
             queue: .main
         ) { [weak self] _ in
-            guard !isPreloaded else { return }
             Task { @MainActor [weak self] in
                 self?.scheduleStallRecovery(for: item)
             }
@@ -447,11 +446,13 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     }
 
     private func reportIssue(_ issue: AudioEngineIssue, for item: AVPlayerItem) {
+        guard item === player.currentItem || (issue == .unverifiedEnd && item === activeItem) else { return }
+        Self.log.error("Playback issue: \(String(describing: issue), privacy: .public)")
         let key = ObjectIdentifier(item)
         let kind: String
         switch issue {
         case .stalled: kind = "stalled"
-        case .failed: kind = "failed"
+        case .failed, .decodeFailed: kind = "failed"
         case .unverifiedEnd: kind = "unverifiedEnd"
         }
         guard !reportedIssueKinds[key, default: []].contains(kind) else { return }

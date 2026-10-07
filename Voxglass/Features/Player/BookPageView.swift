@@ -609,7 +609,8 @@ struct BookPageView: View {
             if isActiveSession, let session = playback.currentSession {
                 Button {
                     userToggleCount += 1
-                    playback.togglePlayPause()
+                    if playback.decodeRecoveryAttempt != nil { playback.pause() }
+                    else { playback.togglePlayPause() }
                 } label: {
                     Group {
                         // `currentSession` publishes before the engine actually
@@ -619,7 +620,11 @@ struct BookPageView: View {
                         // local-files book (bookmark resolution + AVAsset
                         // duration probe) that could be several seconds with
                         // no feedback at all, reading as a frozen/janky UI.
-                        if playback.playbackPhase == .preparing {
+                        if playback.decodeRecoveryAttempt != nil {
+                            Image(systemName: "pause.fill")
+                                .voxFont(.title, weight: .bold)
+                                .foregroundStyle(.white)
+                        } else if playback.playbackPhase == .preparing {
                             ProgressView()
                                 .tint(.white)
                         } else {
@@ -632,8 +637,8 @@ struct BookPageView: View {
                     .frame(width: 66, height: 66)
                     .background(Circle().fill(Color.white.opacity(0.16)))
                 }
-                .disabled(playback.playbackPhase == .preparing)
-                .accessibilityLabel(playback.playbackPhase == .preparing ? "Loading" : (session.isPlaying ? "Pause" : "Play")) // l10n-exempt: state-dependent accessibility or status copy
+                .disabled(playback.playbackPhase == .preparing && playback.decodeRecoveryAttempt == nil)
+                .accessibilityLabel(playback.decodeRecoveryAttempt != nil ? "Stop audio recovery" : (playback.playbackPhase == .preparing ? "Loading" : (session.isPlaying ? "Pause" : "Play"))) // l10n-exempt: state-dependent accessibility or status copy
                 .accessibilityIdentifier("bookpage.togglePlayback")
                 .sensoryFeedback(.impact(weight: .light), trigger: userToggleCount)
             } else {
@@ -697,7 +702,16 @@ struct BookPageView: View {
             .accessibilityLabel("Next chapter")
             .accessibilityIdentifier("nowplaying.nextChapter")
         }
-        return controls
+        return VStack(spacing: 8) {
+            controls
+            if isActiveSession, let attempt = playback.decodeRecoveryAttempt {
+                Text("Recovering audio: skipping forward 1 second (\(attempt)/3).")
+                    .voxFont(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("nowplaying.decodeRecovery")
+            }
+        }
         .frame(maxWidth: 360)
         .frame(maxWidth: .infinity)
         .buttonStyle(.plain)

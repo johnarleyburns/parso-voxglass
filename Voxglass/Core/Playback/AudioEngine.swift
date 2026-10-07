@@ -69,13 +69,30 @@ public protocol AudioEngine: AnyObject {
 public enum AudioEngineIssue: Equatable, Sendable {
     case stalled
     case failed(String)
+    /// A damaged or undecodable media packet; eligible for bounded forward recovery.
+    case decodeFailed(String)
     case unverifiedEnd
+
+    /// Preserves decode identity across localized descriptions and wrapped errors.
+    public static func playbackFailure(_ error: Error?, fallback: String) -> AudioEngineIssue {
+        guard let error else { return .failed(fallback) }
+        var current = error as NSError
+        for _ in 0..<8 {
+            // AVError.Code.decodeFailed. Keep AVFoundation out of the core seam.
+            if current.domain == "AVFoundationErrorDomain", current.code == -11821 {
+                return .decodeFailed(error.localizedDescription)
+            }
+            guard let underlying = current.userInfo[NSUnderlyingErrorKey] as? NSError else { break }
+            current = underlying
+        }
+        return .failed(error.localizedDescription)
+    }
 
     public var userMessage: String {
         switch self {
         case .stalled:
             return String(localized: "Playback paused while the audio source was buffering.", bundle: .module)
-        case .failed(let message):
+        case .failed(let message), .decodeFailed(let message):
             return message.isEmpty ? String(localized: "The audio could not continue playing.", bundle: .module) : message
         case .unverifiedEnd:
             return String(localized: "Playback stopped before the chapter end could be verified.", bundle: .module)
