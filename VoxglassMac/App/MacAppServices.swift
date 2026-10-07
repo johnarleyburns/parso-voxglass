@@ -22,6 +22,7 @@ final class MacAppServices: ObservableObject {
     @Published private(set) var isAuthoringV2Syncing = false
     @Published private(set) var authoringV2SyncStatus: String?
     @Published private(set) var authoringV2LastSyncDate = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.authoringV2LastSync) as? Date
+    @Published private(set) var librarySyncStatus = "My Books has not synced yet."
     lazy var authoringV2Sync = CloudKitAuthoringV2Sync(
         databaseURL: narrationRepository.applicationSupport
             .appendingPathComponent("Voxglass", isDirectory: true)
@@ -93,12 +94,21 @@ final class MacAppServices: ObservableObject {
             await cloudSync.sync()
             if let cloudKitSync {
                 await cloudKitSync.start()
+                if let error = cloudKitSync.syncError {
+                    librarySyncStatus = "My Books sync failed: \(error)"
+                } else if cloudKitSync.syncState == .disconnected {
+                    librarySyncStatus = "My Books sync is disconnected. Check the iCloud account and Sync with iCloud setting."
+                } else {
+                    librarySyncStatus = "My Books CloudKit: \(cloudKitSync.lastFetchedCount) records received, \(cloudKitSync.lastUploadedCount) sent, \(cloudKitSync.pendingCount) queued."
+                }
                 if cloudKitSync.lastUploadedCount > 0 {
                     UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
                 }
                 await productionSync.checkForUpdates()
                 await libraryStore.refresh()
             }
+        } else {
+            librarySyncStatus = "My Books sync is off on this Mac. Turn on Sync with iCloud to transfer books."
         }
         if AppPreferencesStore.authoringV2SyncEnabled() {
             await syncAuthoringV2Now()

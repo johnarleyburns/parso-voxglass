@@ -798,6 +798,8 @@ struct AboutView: View {
 
 private struct SyncSettingsCard: View {
     @EnvironmentObject private var cloudSync: VoxglassCloudSync
+    @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
+    @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(DiscoveryEnvironment.self) private var discovery
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
     @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = true
@@ -818,7 +820,7 @@ private struct SyncSettingsCard: View {
                 }
             }
 
-            Text("Your playback position, bookmarks, and favorites sync across devices using your private iCloud account. No app account required.")
+            Text("Your My Books library, playback position, bookmarks, and favorites sync across devices using your private iCloud account. No app account required.")
                 .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
 
@@ -904,14 +906,36 @@ private struct SyncSettingsCard: View {
                         .foregroundStyle(Palette.danger)
                 }
 
+                if let error = cloudKitSync.syncError {
+                    Text("My Books sync failed: \(error)")
+                        .voxFont(.caption2)
+                        .foregroundStyle(Palette.danger)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("sync.library.error")
+                } else if cloudKitSync.syncState == .disconnected {
+                    Text("My Books sync is disconnected (\(cloudKitSync.accountStatusText)).")
+                        .voxFont(.caption2)
+                        .foregroundStyle(Palette.ink3)
+                        .accessibilityIdentifier("sync.library.status")
+                } else {
+                    Text("My Books CloudKit: \(cloudKitSync.lastFetchedCount) records received, \(cloudKitSync.lastUploadedCount) sent, \(cloudKitSync.pendingCount) queued")
+                        .voxFont(.caption2)
+                        .foregroundStyle(Palette.ink3)
+                        .accessibilityIdentifier("sync.library.status")
+                }
+
                 Button {
-                    Task { await cloudSync.sync() }
+                    Task {
+                        await cloudSync.sync()
+                        await cloudKitSync.start()
+                        await libraryStore.refresh()
+                    }
                 } label: {
-                    Text(cloudSync.isSyncing ? "Syncing…" : "Sync Now") // l10n-exempt: state-dependent accessibility or status copy
+                    Text(cloudSync.isSyncing || cloudKitSync.syncState == .syncing ? "Syncing…" : "Sync Now") // l10n-exempt: state-dependent accessibility or status copy
                         .voxFont(.caption, weight: .semibold)
                         .foregroundStyle(cloudSync.isAvailable ? Palette.brass : Palette.ink3)
                 }
-                .disabled(cloudSync.isSyncing || !cloudSync.isAvailable)
+                .disabled(cloudSync.isSyncing || cloudKitSync.syncState == .syncing || !cloudSync.isAvailable)
                 .accessibilityIdentifier("sync.now")
             }
         }

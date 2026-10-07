@@ -47,6 +47,8 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     public func start() async {
+        lastUploadedCount = 0
+        lastFetchedCount = 0
         await refreshAccountStatus()
         Self.log.info("start: accountStatus=\(self.accountStatus.rawValue, privacy: .public) iCloudSyncEnabled=\(self.iCloudSyncEnabled, privacy: .public) shouldSync=\(self.shouldSync, privacy: .public)")
         guard shouldSync else {
@@ -60,6 +62,7 @@ public final class CloudKitSyncEngine: ObservableObject {
             try await ensureZoneExists()
             await ensureZoneSubscription()
             try await fetchRecordZoneChanges()
+            syncError = nil
             syncState = .idle
             await sendChanges()
             syncState = .idle

@@ -1493,6 +1493,10 @@ struct MacSettingsView: View {
                         }
                     }
                 Button("Check iCloud now") { Task { await services.syncLibrary() } }
+                Text(services.librarySyncStatus)
+                    .font(.caption).foregroundStyle(services.librarySyncStatus.contains("failed") ? .red : .secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("native-mac.sync.library.status")
                 Text(syncEnabled
                      ? "Local recording never waits for iCloud. Sync runs at startup and periodically while Voxglass is open."
                      : "Sync is off. Local books, positions, and projects stay on this Mac.")

@@ -209,6 +209,10 @@ final class AppServices: ObservableObject {
         if !cloudBootstrapDisabled {
             await cloudSync.sync()
             await cloudKitSyncEngine.start()
+            // CloudKit can materialize books after the first interactive
+            // snapshot was loaded. Refresh the published library now so those
+            // records appear without requiring an app restart.
+            await libraryStore.refresh()
             if cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }
