@@ -46,7 +46,14 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
         store = accountStore
         let scope = "private:authoring-v2:\(accountDigest)"
         accountScope = scope
-        let stateData = try await accountStore.engineState(scope: scope)
+        let repairKey = "authoring-zone-scope-repair-v1"
+        let stateData: Data?
+        if try await accountStore.hasSyncRepair(scope: scope, repair: repairKey) {
+            stateData = try await accountStore.engineState(scope: scope)
+        } else {
+            try await accountStore.resetEngineStateForRepair(scope: scope, repair: repairKey)
+            stateData = nil
+        }
         let serializedState = try stateData.map { try JSONDecoder().decode(CKSyncEngine.State.Serialization.self, from: $0) }
         var configuration = CKSyncEngine.Configuration(
             database: database,
@@ -72,9 +79,11 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
         try await start()
         guard !pausedForAccountSwitch, let engine, let store else { throw AuthoringCloudKitError.accountTransition }
         lastFailure = nil
-        try await engine.fetchChanges()
+        try await engine.fetchChanges(.init(scope: .zoneIDs([zoneID])))
+        if let lastFailure { throw AuthoringCloudKitError.syncFailure(lastFailure) }
+        guard !fetchApplyFailed else { throw AuthoringCloudKitError.inboxApplyFailed }
         guard !pausedForAccountSwitch else { throw AuthoringCloudKitError.accountTransition }
-        try await engine.sendChanges()
+        try await engine.sendChanges(.init(scope: .zoneIDs([zoneID])))
         if let lastFailure { throw AuthoringCloudKitError.syncFailure(lastFailure) }
         let pendingMutations = try await store.pendingMutations()
         let pendingCount = pendingMutations.count
@@ -151,8 +160,8 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
         case .fetchedRecordZoneChanges(let changes):
             do {
                 guard let store, let accountScope else { return }
-                let records = try changes.modifications.map { try Self.decode($0.record) }
-                    + changes.deletions.map { deletion in
+                let records = try changes.modifications.filter { $0.record.recordID.zoneID == zoneID }.map { try Self.decode($0.record) }
+                    + changes.deletions.filter { $0.recordID.zoneID == zoneID }.map { deletion in
                         AuthoringRemoteRecord(
                             id: try Self.entityID(deletion.recordID), kind: deletion.recordType,
                             changeTag: "deleted", payload: Data("null".utf8), isDeleted: true
@@ -168,6 +177,12 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
                 // previous serialized token causes CloudKit to replay this page.
                 Logger(subsystem: "guru.parso.voxglass", category: "AuthoringV2Sync")
                     .error("Authoring v2 inbox apply failed: \(String(describing: error), privacy: .public)")
+            }
+        case .didFetchRecordZoneChanges(let fetch):
+            if fetch.zoneID == zoneID, let error = fetch.error, error.code != .zoneNotFound {
+                fetchApplyFailed = true
+                checkpointBlocked = true
+                lastFailure = Self.failure(for: error)
             }
         case .didFetchChanges:
             fetchInProgress = false
@@ -345,6 +360,7 @@ public actor CloudKitAuthoringV2Sync: CKSyncEngineDelegate {
 public enum AuthoringCloudKitError: Error, Sendable {
     case invalidEntityID(String)
     case invalidRecord
+    case inboxApplyFailed
     case accountTransition
     case invalidPayload
     case unresolvedConflict
@@ -357,6 +373,7 @@ extension AuthoringCloudKitError: LocalizedError {
         switch self {
         case .invalidEntityID(let id): "CloudKit returned an invalid narration entity ID: \(id)."
         case .invalidRecord: "CloudKit returned a narration record with an unsupported format."
+        case .inboxApplyFailed: "Narration data was received from iCloud but could not be imported. Your local projects are safe; try sync again."
         case .accountTransition: "The iCloud account changed. Try narration sync again."
         case .invalidPayload: "A narration project record is too large or invalid to sync."
         case .unresolvedConflict: "Resolve the narration sync conflict before trying again."

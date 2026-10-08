@@ -253,6 +253,28 @@ public actor AuthoringLocalStore {
         return try await database.query("SELECT cursor_json FROM authoring_sync_state WHERE scope=?", [.string(scope)]).first?.string("cursor_json")
     }
 
+    /// Whether a scoped engine checkpoint repair has already been performed.
+    public func hasSyncRepair(scope: String, repair: String) async throws -> Bool {
+        try await database.prepare()
+        return !(try await database.query("SELECT value FROM sync_state WHERE key=?", [.string(scope + ":" + repair)])).isEmpty
+    }
+
+    /// Replays remote data after a historical import bug without discarding
+    /// local entities, recording references, pending edits, or upload receipts.
+    public func resetEngineStateForRepair(scope: String, repair: String) async throws {
+        try await database.prepare()
+        try await database.transaction { transaction in
+            try await transaction.execute(
+                "UPDATE authoring_sync_state SET ck_engine_state_b64=NULL, cursor_json=NULL WHERE scope=?",
+                [.string(scope)]
+            )
+            try await transaction.execute(
+                "INSERT OR REPLACE INTO sync_state(key, value) VALUES (?, ?)",
+                [.string(scope + ":" + repair), .string("complete")]
+            )
+        }
+    }
+
     public func engineState(scope: String) async throws -> Data? {
         try await database.prepare()
         guard let encoded = try await database.query("SELECT ck_engine_state_b64 FROM authoring_sync_state WHERE scope=?", [.string(scope)])

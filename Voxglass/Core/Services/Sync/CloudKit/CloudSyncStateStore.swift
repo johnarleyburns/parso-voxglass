@@ -81,26 +81,42 @@ public final class CloudSyncStateStore: @unchecked Sendable {
         ])
     }
 
-    public func dequeuePending(limit: Int = 50) async throws -> [(localID: String, recordType: String, changeType: String)] {
+    public func dequeuePending(limit: Int = 50, offset: Int = 0) async throws -> [(localID: String, recordType: String, changeType: String, enqueuedAt: Double)] {
         try await database.prepare()
         let rows = try await database.query("""
-        SELECT local_id, record_type, change_type FROM pending_sync
-        ORDER BY enqueued_at ASC LIMIT ?
-        """, [.int(Int64(limit))])
+        SELECT local_id, record_type, change_type, enqueued_at FROM pending_sync
+        ORDER BY CASE WHEN record_type = 'Book' AND change_type != 'delete' THEN 0 ELSE 1 END,
+                 enqueued_at ASC, local_id ASC
+        LIMIT ? OFFSET ?
+        """, [.int(Int64(limit)), .int(Int64(offset))])
         return rows.compactMap { row in
             guard let localID = row.string("local_id"),
                   let recordType = row.string("record_type"),
                   let changeType = row.string("change_type") else { return nil }
-            return (localID, recordType, changeType)
+            return (localID, recordType, changeType, row.double("enqueued_at") ?? 0)
         }
     }
 
-    public func removePending(localID: String, recordType: String) async throws {
+    public func removePending(localID: String, recordType: String, enqueuedAt: Double? = nil) async throws {
         try await database.prepare()
         try await database.execute(
-            "DELETE FROM pending_sync WHERE local_id = ? AND record_type = ?",
-            [.string(localID), .string(recordType)]
+            "DELETE FROM pending_sync WHERE local_id = ? AND record_type = ? AND (? IS NULL OR enqueued_at = ?)",
+            [.string(localID), .string(recordType), enqueuedAt.map(DatabaseValue.double) ?? .null, enqueuedAt.map(DatabaseValue.double) ?? .null]
         )
+    }
+
+    /// Removes historical queue identities that cannot describe a saved position.
+    /// Playback rows and their actual resume offsets are never deleted.
+    @discardableResult
+    public func pruneOrphanedPlaybackChanges() async throws -> Int {
+        try await database.prepare()
+        let before = try await pendingCount()
+        try await database.execute("""
+        DELETE FROM pending_sync
+        WHERE record_type = 'PlaybackPosition'
+          AND NOT EXISTS (SELECT 1 FROM playback_positions WHERE id = pending_sync.local_id)
+        """)
+        return max(0, before - (try await pendingCount()))
     }
 
     public func clearPending() async throws {

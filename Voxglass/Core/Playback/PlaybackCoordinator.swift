@@ -235,7 +235,7 @@ public final class PlaybackCoordinator {
     /// launch. Also makes the miniplayer appear on a fresh install once the
     /// pull delivers positions for a book already in the library.
     public func refreshPresentedSessionAfterCloudPull(from books: [BookWithChapters]) async {
-        guard currentSession?.isPlaying != true else { return }
+        guard !isEngineLoaded, currentSession?.isPlaying != true else { return }
         let row = try? await positionStore.latestPosition()
         let latest = Self.preferredPosition(row: row ?? nil, snapshot: snapshotStore.latest())
         await adoptCloudNowPlayingIfNewer(latest, from: books)

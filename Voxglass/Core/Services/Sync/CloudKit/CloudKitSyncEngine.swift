@@ -10,6 +10,7 @@ public final class CloudKitSyncEngine: ObservableObject {
     @Published public private(set) var lastUploadedCount: Int = 0
     @Published public private(set) var lastFetchedCount: Int = 0
     @Published public private(set) var pendingCount: Int = 0
+    @Published public private(set) var blockedCount: Int = 0
     public private(set) var lastFetchedPlaybackPosition: PlaybackPosition?
 
     private static let log = Logger(subsystem: "guru.parso.voxglass", category: "cloudkit-sync")
@@ -22,6 +23,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         case error
     }
 
+    private let defaults: UserDefaults
     private let database: AppDatabase
     private let stateStore: CloudSyncStateStore
     private let containerID: String
@@ -31,17 +33,19 @@ public final class CloudKitSyncEngine: ObservableObject {
     // CloudKit; normal sync still creates the same container on first use.
     private lazy var container = CKContainer(identifier: containerID)
     private let zoneID: CKRecordZone.ID
+    private var sendingChanges = false
+    private var starting = false
     private var scheduledPush: Task<Void, Never>?
 
     private var iCloudSyncEnabled: Bool {
-        let defaults = UserDefaults.standard
         if defaults.object(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled) == nil {
             return true
         }
         return defaults.bool(forKey: AppPreferencesStore.Keys.iCloudSyncEnabled)
     }
 
-    public init(database: AppDatabase, containerID: String = "iCloud.guru.parso.voxglass") {
+    public init(database: AppDatabase, containerID: String = "iCloud.guru.parso.voxglass", defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         self.database = database
         self.stateStore = CloudSyncStateStore(database: database)
         self.containerID = containerID
@@ -49,6 +53,9 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     public func start() async {
+        guard !starting, !sendingChanges else { return }
+        starting = true
+        defer { starting = false }
         lastUploadedCount = 0
         lastFetchedCount = 0
         lastFetchedPlaybackPosition = nil
@@ -62,13 +69,17 @@ public final class CloudKitSyncEngine: ObservableObject {
         syncState = .initializing
         do {
             try await database.prepare()
+            let repairKey = "voxglass.cloudKit.libraryImportRepair.v1"
+            if !defaults.bool(forKey: repairKey) {
+                try await stateStore.clearEngineState()
+                defaults.set(true, forKey: repairKey)
+            }
             try await ensureZoneExists()
             await ensureZoneSubscription()
             try await fetchRecordZoneChanges()
             syncError = nil
             syncState = .idle
             await sendChanges()
-            syncState = .idle
             await refreshPendingCount()
         } catch {
             syncState = .error
@@ -82,13 +93,20 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     public func sendChanges() async {
-        guard shouldSync, syncState != .initializing else { return }
+        guard shouldSync, syncState != .initializing, !sendingChanges else { return }
+        sendingChanges = true
+        defer { sendingChanges = false }
         syncState = .syncing
         do {
             try await sendPendingChanges(modify: modifyRecords)
-            syncState = .idle
             lastSyncDate = Date()
-            syncError = nil
+            if blockedCount > 0 {
+                syncState = .error
+                syncError = "\(blockedCount) queued library changes refer to missing or unsupported local records. Other available changes were sent."
+            } else {
+                syncState = .idle
+                syncError = nil
+            }
         } catch {
             syncState = .error
             syncError = error.localizedDescription
@@ -100,68 +118,76 @@ public final class CloudKitSyncEngine: ObservableObject {
     func sendPendingChanges(
         modify: ([CKRecord], [CKRecord.ID]) async throws -> Void
     ) async throws {
-        let pending = try await stateStore.dequeuePending(limit: 50)
-        guard !pending.isEmpty else {
-            syncState = .idle
-            lastUploadedCount = 0
-            return
-        }
+        let pruned = try await stateStore.pruneOrphanedPlaybackChanges()
+        if pruned > 0 { Self.log.notice("Removed \(pruned, privacy: .public) obsolete playback queue identities") }
+        lastUploadedCount = 0
+        blockedCount = 0
+        var skipped = 0
+        while true {
+            try Task.checkCancellation()
+            guard shouldSync else { return }
+            let pending = try await stateStore.dequeuePending(limit: 50, offset: skipped)
+            guard !pending.isEmpty else { return }
 
-        // Dedupe saves by recordName: a Source record is shared across many books,
-        // and a batch must not contain the same record ID twice.
-        var recordsToSave: [String: CKRecord] = [:]
-        var recordIDsToDelete: [CKRecord.ID] = []
-        var succeeded: [(localID: String, recordType: String)] = []
+            // Dedupe saves by recordName: a Source record is shared across many books,
+            // and a batch must not contain the same record ID twice.
+            var recordsToSave: [String: CKRecord] = [:]
+            var recordIDsToDelete: [CKRecord.ID] = []
+            var succeeded: [(localID: String, recordType: String, enqueuedAt: Double)] = []
 
-        for item in pending {
-            var built = false
-            switch item.recordType {
-            case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
-                if let record = try? await positionRecord(localID: item.localID) {
-                    recordsToSave[record.recordID.recordName] = record
-                    built = true
-                }
-            case CloudKitRecordMapper.RecordType.bookmark.rawValue:
-                if let record = try? await bookmarkRecord(localID: item.localID) {
-                    recordsToSave[record.recordID.recordName] = record
-                    built = true
-                }
-            case CloudKitRecordMapper.RecordType.book.rawValue where item.changeType == "delete":
-                if let recordID = try? await bookDeleteRecordID(localID: item.localID) {
-                    recordIDsToDelete.append(recordID)
-                    built = true
-                }
-            default:
-                if let record = try? await bookRecord(localID: item.localID) {
-                    recordsToSave[record.recordID.recordName] = record
-                    // Publish the Book's Source too so the sourceRef isn't dangling.
-                    if let sourceRec = try? await sourceRecordForBook(localID: item.localID) {
-                        recordsToSave[sourceRec.recordID.recordName] = sourceRec
+            for item in pending {
+                var built = false
+                switch item.recordType {
+                case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
+                    if let record = try? await positionRecord(localID: item.localID) {
+                        recordsToSave[record.recordID.recordName] = record
+                        built = true
                     }
-                    built = true
-                } else {
-                    Self.log.notice("sendPendingChanges: could not build Book record for localID=\(item.localID, privacy: .public) (missing content_key or /details/ source URL)")
+                case CloudKitRecordMapper.RecordType.bookmark.rawValue:
+                    if let record = try? await bookmarkRecord(localID: item.localID) {
+                        recordsToSave[record.recordID.recordName] = record
+                        built = true
+                    }
+                case CloudKitRecordMapper.RecordType.book.rawValue where item.changeType == "delete":
+                    if let recordID = try? await bookDeleteRecordID(localID: item.localID) {
+                        recordIDsToDelete.append(recordID)
+                        built = true
+                    }
+                default:
+                    if let record = try? await bookRecord(localID: item.localID) {
+                        recordsToSave[record.recordID.recordName] = record
+                        // Publish the Book's Source too so the sourceRef isn't dangling.
+                        if let sourceRec = try? await sourceRecordForBook(localID: item.localID) {
+                            recordsToSave[sourceRec.recordID.recordName] = sourceRec
+                        }
+                        built = true
+                    } else {
+                        Self.log.notice("sendPendingChanges: could not build Book record for localID=\(item.localID, privacy: .public) (missing content_key or /details/ source URL)")
+                    }
+                }
+                if built {
+                    succeeded.append((item.localID, item.recordType, item.enqueuedAt))
                 }
             }
-            if built {
-                succeeded.append((item.localID, item.recordType))
+
+            let saves = Array(recordsToSave.values)
+            if !saves.isEmpty || !recordIDsToDelete.isEmpty {
+                Self.log.info("sendPendingChanges: saving \(saves.count, privacy: .public) records, deleting \(recordIDsToDelete.count, privacy: .public)")
+                try await modify(saves, recordIDsToDelete)
             }
-        }
+            lastUploadedCount += saves.count
 
-        let saves = Array(recordsToSave.values)
-        if !saves.isEmpty || !recordIDsToDelete.isEmpty {
-            Self.log.info("sendPendingChanges: saving \(saves.count, privacy: .public) records, deleting \(recordIDsToDelete.count, privacy: .public)")
-            try await modify(saves, recordIDsToDelete)
-        }
-        lastUploadedCount = saves.count
-
-        for item in succeeded {
-            try? await stateStore.removePending(localID: item.localID, recordType: item.recordType)
+            for item in succeeded {
+                try await stateStore.removePending(localID: item.localID, recordType: item.recordType, enqueuedAt: item.enqueuedAt)
+            }
+            skipped += pending.count - succeeded.count
+            blockedCount = skipped
+            await refreshPendingCount()
         }
     }
 
     public func pushAfterMutation() {
-        guard shouldSync else { return }
+        guard shouldSync, !sendingChanges else { return }
         scheduledPush?.cancel()
         scheduledPush = Task { @MainActor [weak self] in
             do { try await Task.sleep(for: .milliseconds(600)) }
@@ -260,10 +286,10 @@ public final class CloudKitSyncEngine: ObservableObject {
                             recordZonesToSave: [CKRecordZone(zoneID: self.zoneID)],
                             recordZoneIDsToDelete: nil
                         )
-                        recreate.modifyRecordZonesResultBlock = { _ in continuation.resume() }
+                        recreate.modifyRecordZonesResultBlock = { result in continuation.resume(with: result) }
                         db.add(recreate)
                     } else {
-                        continuation.resume()
+                        continuation.resume(throwing: error)
                     }
                 }
             }
@@ -278,7 +304,7 @@ public final class CloudKitSyncEngine: ObservableObject {
     /// notifies this device of remote changes. Without it, the app only ever
     /// pulls at cold-launch. Idempotent: only re-attempts until it succeeds once.
     private func ensureZoneSubscription() async {
-        let defaults = UserDefaults.standard
+        let defaults = self.defaults
         guard !defaults.bool(forKey: Self.zoneSubscribedDefaultsKey) else { return }
 
         let subscription = CKRecordZoneSubscription(zoneID: zoneID, subscriptionID: Self.zoneSubscriptionID)
@@ -332,11 +358,16 @@ public final class CloudKitSyncEngine: ObservableObject {
             let callbackLock = NSLock()
             var changedRecords: [CKRecord] = []
             var deletedRecordIDs: [CKRecord.ID] = []
+            var individualFailure: Error?
 
             operation.recordWasChangedBlock = { _, result in
                 if case .success(let record) = result {
                     callbackLock.lock()
                     changedRecords.append(record)
+                    callbackLock.unlock()
+                } else if case .failure(let error) = result {
+                    callbackLock.lock()
+                    individualFailure = individualFailure ?? error
                     callbackLock.unlock()
                 }
             }
@@ -353,7 +384,7 @@ public final class CloudKitSyncEngine: ObservableObject {
                 callbackLock.unlock()
             }
 
-            operation.recordZoneFetchResultBlock = { [weak self] zoneID, result in
+            operation.recordZoneFetchResultBlock = { _, result in
                 if case .failure(let error) = result {
                     if let ckError = error as? CKError,
                        ckError.code == .changeTokenExpired || ckError.code == .zoneNotFound {
@@ -361,9 +392,9 @@ public final class CloudKitSyncEngine: ObservableObject {
                         needsTokenReset = true
                         callbackLock.unlock()
                     }
-                    Task { @MainActor [weak self] in
-                        self?.syncError = error.localizedDescription
-                    }
+                    callbackLock.lock()
+                    individualFailure = individualFailure ?? error
+                    callbackLock.unlock()
                 }
             }
 
@@ -373,6 +404,7 @@ public final class CloudKitSyncEngine: ObservableObject {
                 let deletionsToApply = deletedRecordIDs
                 let token = newToken
                 let mustReset = needsTokenReset
+                let itemError = individualFailure
                 callbackLock.unlock()
 
                 Task { @MainActor [weak self] in
@@ -396,39 +428,23 @@ public final class CloudKitSyncEngine: ObservableObject {
                         return
                     }
 
+                    if let itemError {
+                        continuation.resume(throwing: itemError)
+                        return
+                    }
                     switch result {
                     case .success:
-                        var imported = 0
-                        let dependencyOrderedRecords = recordsToImport.sorted { lhs, rhs in
-                            Self.importPriority(lhs.recordType) < Self.importPriority(rhs.recordType)
-                        }
-                        for record in dependencyOrderedRecords {
-                            do {
-                                try await self.importRecord(record)
-                                imported += 1
-                            } catch {
-                                Self.log.error("fetch: import failed for \(record.recordType, privacy: .public) — \(String(describing: error), privacy: .public)")
+                        do {
+                            let tokenData = try token.map {
+                                try NSKeyedArchiver.archivedData(withRootObject: $0, requiringSecureCoding: true)
                             }
+                            try await self.applyFetchedLibraryChanges(
+                                records: recordsToImport, deletions: deletionsToApply, tokenData: tokenData
+                            )
+                            continuation.resume()
+                        } catch {
+                            continuation.resume(throwing: error)
                         }
-                        var playbackPositions: [PlaybackPosition] = []
-                        for record in recordsToImport {
-                            if let position = await self.localPlaybackPosition(from: record) {
-                                playbackPositions.append(position)
-                            }
-                        }
-                        self.lastFetchedPlaybackPosition = playbackPositions.max {
-                            $0.updatedAt < $1.updatedAt
-                        }
-                        for recordID in deletionsToApply {
-                            try? await self.handleDeletion(recordID: recordID)
-                        }
-                        self.lastFetchedCount = imported
-                        Self.log.info("fetch: received \(recordsToImport.count, privacy: .public) records, imported \(imported, privacy: .public), deleted \(deletionsToApply.count, privacy: .public)")
-                        if let token,
-                           let tokenData = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
-                            try? await self.stateStore.saveEngineState(tokenData)
-                        }
-                        continuation.resume()
                     case .failure(let error):
                         Self.log.error("fetch: zone changes failed — \(String(describing: error), privacy: .public)")
                         continuation.resume(throwing: error)
@@ -438,6 +454,26 @@ public final class CloudKitSyncEngine: ObservableObject {
 
             db.add(operation)
         }
+    }
+
+    /// Applies the same library pull on iPhone and Mac. A failed import keeps
+    /// the previous token so the next pull retries the incomplete page.
+    func applyFetchedLibraryChanges(
+        records: [CKRecord], deletions: [CKRecord.ID] = [], tokenData: Data? = nil
+    ) async throws {
+        var imported = 0
+        let ordered = records.sorted { Self.importPriority($0.recordType) < Self.importPriority($1.recordType) }
+        for record in ordered {
+            if try await importRecord(record) { imported += 1 }
+        }
+        var positions: [PlaybackPosition] = []
+        for record in records {
+            if let position = await localPlaybackPosition(from: record) { positions.append(position) }
+        }
+        for id in deletions { try await handleDeletion(recordID: id) }
+        if let tokenData { try await stateStore.saveEngineState(tokenData) }
+        lastFetchedCount = imported
+        lastFetchedPlaybackPosition = positions.max { $0.updatedAt < $1.updatedAt }
     }
 
     private func modifyRecords(save: [CKRecord], delete: [CKRecord.ID]) async throws {
@@ -452,10 +488,31 @@ public final class CloudKitSyncEngine: ObservableObject {
             // would sink the whole batch. We want best-effort — new records save
             // even if some already exist on the server (creation-wins by contentKey).
             operation.isAtomic = false
+            let lock = NSLock()
+            var itemFailure: Error?
+            operation.perRecordSaveBlock = { _, result in
+                if case .failure(let error) = result {
+                    // Existing server records are benign for creation-wins;
+                    // authentication, schema, quota, and network failures are not.
+                    if (error as? CKError)?.code == .serverRecordChanged { return }
+                    lock.lock()
+                    itemFailure = itemFailure ?? error
+                    lock.unlock()
+                }
+            }
+            operation.perRecordDeleteBlock = { _, result in
+                if case .failure(let error) = result {
+                    if (error as? CKError)?.code == .unknownItem { return }
+                    lock.lock()
+                    itemFailure = itemFailure ?? error
+                    lock.unlock()
+                }
+            }
             operation.modifyRecordsResultBlock = { result in
                 switch result {
                 case .success:
-                    continuation.resume()
+                    if let itemFailure { continuation.resume(throwing: itemFailure) }
+                    else { continuation.resume() }
                 case .failure(let error):
                     // A record already on the server (serverRecordChanged) is not a
                     // real failure for our creation-wins model — the record is there,
@@ -481,7 +538,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         return partials.values.allSatisfy { sub in
             guard let subCK = sub as? CKError else { return false }
             switch subCK.code {
-            case .serverRecordChanged, .unknownItem, .batchRequestFailed:
+            case .serverRecordChanged, .unknownItem:
                 return true
             default:
                 return false
@@ -577,29 +634,37 @@ public final class CloudKitSyncEngine: ObservableObject {
         return CloudKitRecordMapper.bookmarkRecord(from: bookmark, bookContentKey: bookContentKey)
     }
 
-    private func importRecord(_ record: CKRecord) async throws {
+    private func importRecord(_ record: CKRecord) async throws -> Bool {
         switch record.recordType {
         case CloudKitRecordMapper.RecordType.source.rawValue:
-            guard let source = CloudKitRecordMapper.source(from: record) else { return }
+            guard let source = CloudKitRecordMapper.source(from: record) else { throw LibraryCloudImportError.invalidRecord(record.recordType) }
             try await upsertSource(source)
 
         case CloudKitRecordMapper.RecordType.book.rawValue:
             guard let book = CloudKitRecordMapper.book(from: record),
-                  let contentKey = CloudKitRecordMapper.contentKey(from: record) else { return }
+                  let contentKey = CloudKitRecordMapper.contentKey(from: record) else { throw LibraryCloudImportError.invalidRecord(record.recordType) }
             let chapters = try CloudKitRecordMapper.chaptersData(from: record)
             try await upsertBook(book, chapters: chapters, contentKey: contentKey)
+            if let localID = await localBookID(forBookRecordName: record.recordID.recordName) {
+                let coder = NSKeyedArchiver(requiringSecureCoding: true)
+                record.encodeSystemFields(with: coder)
+                coder.finishEncoding()
+                try await stateStore.saveSystemFields(coder.encodedData, recordName: record.recordID.recordName,
+                                                      recordType: record.recordType, localID: localID)
+            }
 
         case CloudKitRecordMapper.RecordType.playbackPosition.rawValue:
-            guard let position = CloudKitRecordMapper.position(from: record) else { return }
+            guard let position = CloudKitRecordMapper.position(from: record) else { throw LibraryCloudImportError.invalidRecord(record.recordType) }
             try await upsertPosition(position, bookRef: record)
 
         case CloudKitRecordMapper.RecordType.bookmark.rawValue:
-            guard let bookmark = CloudKitRecordMapper.bookmark(from: record) else { return }
+            guard let bookmark = CloudKitRecordMapper.bookmark(from: record) else { throw LibraryCloudImportError.invalidRecord(record.recordType) }
             try await upsertBookmark(bookmark, bookRef: record)
 
         default:
-            break
+            return false
         }
+        return true
     }
 
     private func localPlaybackPosition(from record: CKRecord) async -> PlaybackPosition? {
@@ -609,12 +674,13 @@ public final class CloudKitSyncEngine: ObservableObject {
             return nil
         }
         guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName),
-              let bookID = UUID(uuidString: localBookID) else {
+              let bookID = UUID(uuidString: localBookID),
+              let chapterID = try? await localChapterID(position.chapterID, bookID: localBookID) else {
             return nil
         }
         return PlaybackPosition(
             bookID: bookID,
-            chapterID: position.chapterID,
+            chapterID: chapterID,
             position: position.position,
             duration: position.duration,
             updatedAt: position.updatedAt,
@@ -624,8 +690,11 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     private func handleDeletion(recordID: CKRecord.ID) async throws {
         let recordName = recordID.recordName
-        if let localID = try? await stateStore.localID(for: recordName) {
-            try? await database.execute("DELETE FROM books WHERE id = ?", [.string(localID)])
+        guard recordName.hasPrefix("book-") else { return }
+        var localID = try await stateStore.localID(for: recordName)
+        if localID == nil { localID = await localBookID(forBookRecordName: recordName) }
+        if let localID {
+            try await database.execute("DELETE FROM books WHERE id = ?", [.string(localID)])
         }
     }
 
@@ -678,7 +747,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         if let existingRow = existing.first, let bookIDStr = existingRow.string("id") {
             try await database.execute("""
             UPDATE books SET title = ?, authors_json = ?, narrators_json = ?, summary = ?, cover_url = ?,
-            updated_at = ?, is_favorite = ? WHERE id = ?
+            updated_at = ?, is_favorite = ?, source_id = ? WHERE id = ?
             """, [
                 .string(book.title),
                 .string(ModelMapping.authorsJSON(book.authors)),
@@ -687,8 +756,10 @@ public final class CloudKitSyncEngine: ObservableObject {
                 ModelMapping.databaseValue(book.coverURL),
                 ModelMapping.databaseValue(book.updatedAt),
                 .bool(book.isFavorite),
+                .string(book.sourceID.uuidString),
                 .string(bookIDStr)
             ])
+            try await reconcileCloudChapters(chapters, bookID: bookIDStr)
         } else {
             try await importNewBook(book, chapters: chapters, contentKey: contentKey)
         }
@@ -722,43 +793,78 @@ public final class CloudKitSyncEngine: ObservableObject {
             .bool(book.isFavorite),
             .string(contentKey)
         ])
+        for chapter in chapters { try await insertCloudChapter(chapter, bookID: book.id) }
+        try await reconcileCloudChapters(chapters, bookID: book.id.uuidString)
+    }
+
+    private func insertCloudChapter(_ chapter: Chapter, bookID: UUID) async throws {
+        var c = chapter
+        c.bookID = bookID
+        c.localURL = nil
+        let chapterKey = ContentKey.chapter(
+            remoteURL: c.remoteURL,
+            localURL: c.localURL,
+            index: c.index,
+            title: c.title
+        )
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            ModelMapping.databaseValue(c.id),
+            ModelMapping.databaseValue(c.bookID),
+            .string(c.title),
+            .string(c.sortKey),
+            .int(Int64(c.index)),
+            .double(c.startTime),
+            ModelMapping.databaseValue(c.duration),
+            ModelMapping.databaseValue(c.remoteURL),
+            ModelMapping.databaseValue(c.opusURL),
+            .null,
+            .string(ModelMapping.narratorsJSON(c.narrators)),
+            .string(chapterKey)
+        ])
+    }
+
+    /// A book already imported independently on the Mac has different UUIDs.
+    /// Retain its chapters/downloads and map the cloud chapter identities to them.
+    private func reconcileCloudChapters(_ chapters: [Chapter], bookID: String) async throws {
+        let local = try await database.query("SELECT id, chapter_index, content_key FROM chapters WHERE book_id=?", [.string(bookID)])
         for chapter in chapters {
-            var c = chapter
-            c.bookID = book.id
-            c.localURL = nil
-            let chapterKey = ContentKey.chapter(
-                remoteURL: c.remoteURL,
-                localURL: c.localURL,
-                index: c.index,
-                title: c.title
-            )
-            try await database.execute("""
-            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, start_time_seconds, duration_seconds, remote_url, opus_url, local_url, narrators_json, content_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, [
-                ModelMapping.databaseValue(c.id),
-                ModelMapping.databaseValue(c.bookID),
-                .string(c.title),
-                .string(c.sortKey),
-                .int(Int64(c.index)),
-                .double(c.startTime),
-                ModelMapping.databaseValue(c.duration),
-                ModelMapping.databaseValue(c.remoteURL),
-                ModelMapping.databaseValue(c.opusURL),
-                .null,
-                .string(ModelMapping.narratorsJSON(c.narrators)),
-                .string(chapterKey)
-            ])
+            let key = ContentKey.chapter(remoteURL: chapter.remoteURL, localURL: nil, index: chapter.index, title: chapter.title)
+            let match = local.first { $0.string("id") == chapter.id.uuidString }
+                ?? local.first { $0.string("content_key") == key }
+                ?? local.first { $0.int("chapter_index") == Int64(chapter.index) }
+            let id: String
+            if let existingID = match?.string("id") {
+                id = existingID
+            } else {
+                guard let localBook = UUID(uuidString: bookID) else { throw LibraryCloudImportError.invalidRecord("Book") }
+                try await insertCloudChapter(chapter, bookID: localBook)
+                id = chapter.id.uuidString
+            }
+            try await stateStore.saveSystemFields(Data(), recordName: "chapter-" + chapter.id.uuidString,
+                                                  recordType: "Chapter", localID: id)
         }
+    }
+
+    private func localChapterID(_ remoteID: UUID, bookID: String) async throws -> UUID {
+        let alias = try await stateStore.localID(for: "chapter-" + remoteID.uuidString) ?? remoteID.uuidString
+        let rows = try await database.query("SELECT id FROM chapters WHERE id=? AND book_id=?", [.string(alias), .string(bookID)])
+        guard let id = rows.first?.string("id").flatMap(UUID.init(uuidString:)) else {
+            throw LibraryCloudImportError.invalidRecord("chapter reference")
+        }
+        return id
     }
 
     private func upsertPosition(_ position: PlaybackPosition, bookRef record: CKRecord) async throws {
         guard let bookRef = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference else { return }
         guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { return }
+        let chapterID = try await localChapterID(position.chapterID, bookID: localBookID)
         let localUpdate = position.updatedAt.timeIntervalSince1970
         let existingRows = try await database.query(
             "SELECT id, updated_at FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
-            [.string(localBookID), .string(position.chapterID.uuidString)]
+            [.string(localBookID), .string(chapterID.uuidString)]
         )
         if let existingRow = existingRows.first,
            (existingRow.double("updated_at") ?? 0) >= localUpdate {
@@ -775,7 +881,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         """, [
             .string(existingRows.first?.string("id") ?? UUID().uuidString),
             .string(localBookID),
-            .string(position.chapterID.uuidString),
+            .string(chapterID.uuidString),
             .double(position.position),
             ModelMapping.databaseValue(position.duration),
             .double(localUpdate),
@@ -788,6 +894,7 @@ public final class CloudKitSyncEngine: ObservableObject {
               let bookmarkID = bookmark.id else { return }
         guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { return }
 
+        let chapterID = try await localChapterID(bookmark.chapterID, bookID: localBookID)
         try await database.execute("""
         INSERT INTO bookmarks (id, book_id, chapter_id, position_seconds, note, created_at, updated_at, is_deleted)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -799,7 +906,7 @@ public final class CloudKitSyncEngine: ObservableObject {
         """, [
             .string(bookmarkID.uuidString),
             .string(localBookID),
-            .string(bookmark.chapterID.uuidString),
+            .string(chapterID.uuidString),
             .double(bookmark.position),
             .string(bookmark.note ?? ""),
             .double(bookmark.createdAt.timeIntervalSince1970),
@@ -872,5 +979,16 @@ public final class CloudKitSyncEngine: ObservableObject {
         let kind = SourceKind(rawValue: row.string("kind") ?? "") ?? .librivox
         guard let sourceKey = CloudKitRecordMapper.sourceRecordName(sourceURL: url, kind: kind) else { return nil }
         return sourceKey.replacingOccurrences(of: "source-", with: "")
+    }
+}
+
+/// A malformed library record must be retried rather than checkpointed as imported.
+private enum LibraryCloudImportError: Error, LocalizedError {
+    case invalidRecord(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidRecord(let type): "An iCloud \(type) record could not be imported. The next sync will retry it."
+        }
     }
 }

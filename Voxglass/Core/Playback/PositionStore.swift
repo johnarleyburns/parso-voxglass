@@ -69,13 +69,13 @@ public struct SQLitePositionStore: PositionStore, LocalPlaybackCheckpointStore {
             ModelMapping.databaseValue(clamped.updatedAt),
             .bool(clamped.isFinished)
         ])
-        if enqueueForCloudSync {
-            let storedRows = try? await database.query(
+        if enqueueForCloudSync, let mutationLog {
+            let storedRows = try await database.query(
                 "SELECT id FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
                 [ModelMapping.databaseValue(clamped.bookID), ModelMapping.databaseValue(clamped.chapterID)]
             )
-            let storedID = storedRows?.first?.string("id") ?? clamped.id.uuidString
-            try? await mutationLog?.enqueue(localID: storedID, recordType: "PlaybackPosition", changeType: "update")
+            guard let storedID = storedRows.first?.string("id") else { return }
+            try await mutationLog.enqueue(localID: storedID, recordType: "PlaybackPosition", changeType: "update")
         }
     }
 

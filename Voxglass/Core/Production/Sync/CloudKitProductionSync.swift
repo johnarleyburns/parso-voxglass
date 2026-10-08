@@ -143,11 +143,16 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[SyncRecord], Error>) in
             var fetched: [SyncRecord] = []
             let lock = NSLock()
+            var recordError: Error?
 
             operation.perRecordResultBlock = { _, result in
                 if case .success(let record) = result {
                     lock.lock()
                     fetched.append(Self.record(from: record))
+                    lock.unlock()
+                } else if case .failure(let error) = result {
+                    lock.lock()
+                    recordError = recordError ?? error
                     lock.unlock()
                 }
             }
@@ -155,7 +160,8 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
             operation.fetchRecordsResultBlock = { result in
                 switch result {
                 case .success:
-                    continuation.resume(returning: fetched)
+                    if let recordError { continuation.resume(throwing: Self.mapError(recordError)) }
+                    else { continuation.resume(returning: fetched) }
                 case .failure(let error):
                     continuation.resume(throwing: Self.mapError(error))
                 }
@@ -167,7 +173,7 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
 
     public func pushRecords(_ records: [SyncRecord]) async throws {
         try await ensureZoneExists()
-        var ckRecords = try await Self.records(from: records, proxyFileProvider: proxyFileProvider)
+        var ckRecords = try await Self.records(from: records, zoneID: zoneID, proxyFileProvider: proxyFileProvider)
 
         do {
             try await pushCKRecords(ckRecords)
@@ -179,7 +185,10 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
                 throw SyncError.serverRecordChanged(recordName: name, serverChangeTag: "", serverRevision: serverRevision)
             }
             let adopted = server
-            adopted["revision"] = ckRecords[index]["revision"]
+            for key in ckRecords[index].allKeys() {
+                adopted[key] = ckRecords[index][key]
+            }
+            adopted.parent = ckRecords[index].parent
             if ckRecords[index].recordType == ProductionRecordType.project.rawValue, let serverRevision {
                 let local = (ckRecords[index]["revision"] as? NSNumber)?.int64Value ?? 0
                 adopted["revision"] = max(local, serverRevision + 1) as NSNumber
@@ -197,16 +206,24 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
         operation.isAtomic = false
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let lock = NSLock()
+            var recordError: Error?
             operation.perRecordSaveBlock = { [cache = serverRecordCache] recordID, result in
-                if case .failure(let error) = result, let ckError = error as? CKError,
-                   ckError.code == .serverRecordChanged, let server = ckError.serverRecord {
-                    cache.store(server, for: recordID.recordName)
+                if case .failure(let error) = result {
+                    lock.lock()
+                    recordError = recordError ?? error
+                    lock.unlock()
+                    if let ckError = error as? CKError, ckError.code == .serverRecordChanged,
+                       let server = ckError.serverRecord {
+                        cache.store(server, for: recordID.recordName)
+                    }
                 }
             }
             operation.modifyRecordsResultBlock = { [cache = serverRecordCache] result in
                 switch result {
                 case .success:
-                    continuation.resume()
+                    if let recordError { continuation.resume(throwing: Self.mapError(recordError)) }
+                    else { continuation.resume() }
                 case .failure(let error):
                     if let ckError = error as? CKError,
                        ckError.code == .serverRecordChanged,
@@ -276,13 +293,14 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
         )
     }
 
-    private static func records(
+    static func records(
         from syncRecords: [SyncRecord],
+        zoneID: CKRecordZone.ID,
         proxyFileProvider: @Sendable (String) async throws -> URL?
     ) async throws -> [CKRecord] {
         var result: [CKRecord] = []
         for record in syncRecords {
-            let ck = CKRecord(recordType: record.recordType, recordID: .init(recordName: record.recordName))
+            let ck = CKRecord(recordType: record.recordType, recordID: .init(recordName: record.recordName, zoneID: zoneID))
             for (key, value) in record.fields {
                 switch value {
                 case .string(let string): ck[key] = string
@@ -308,8 +326,10 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
             }
             // Attach the content-addressed original as a CKAsset (§6.3 step 2).
             if record.recordType == ProductionRecordType.asset.rawValue,
-               let sha = record.fields[ProductionField.assetSHA]?.stringValue(),
-               let url = try await proxyFileProvider(sha) {
+               let sha = record.fields[ProductionField.assetSHA]?.stringValue() {
+                guard let url = try await proxyFileProvider(sha) else {
+                    throw SyncError.transport("The local recording could not be attached to its iCloud backup. The original remains on this device.")
+                }
                 ck[ProductionAssetField.original] = CKAsset(fileURL: url)
             }
             result.append(ck)
@@ -366,12 +386,9 @@ public actor CloudKitProductionSync: ProductionSyncTransport {
 
     private func ensureZoneExists() async throws {
         let operation = CKModifyRecordZonesOperation(recordZonesToSave: [CKRecordZone(zoneID: zoneID)], recordZoneIDsToDelete: nil)
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             operation.modifyRecordZonesResultBlock = { result in
-                if case .failure(let error) = result {
-                    Self.logError("zone creation reported failure — \(error)")
-                }
-                continuation.resume()
+                continuation.resume(with: result)
             }
             database.add(operation)
         }

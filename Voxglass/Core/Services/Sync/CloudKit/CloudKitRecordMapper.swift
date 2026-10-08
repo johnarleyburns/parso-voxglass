@@ -101,8 +101,10 @@ public enum CloudKitRecordMapper {
     public static func source(from record: CKRecord) -> Source? {
         guard let kindRaw = record[Field.kind] as? String,
               let kind = SourceKind(rawValue: kindRaw),
-              let title = record[Field.title] as? String else { return nil }
+              let title = record[Field.title] as? String,
+              let identity = sourceIdentity(from: record.recordID) else { return nil }
         return Source(
+            id: stableUUID(from: identity),
             kind: kind,
             title: title,
             url: (record[Field.url] as? String).flatMap(URL.init(string:)),
