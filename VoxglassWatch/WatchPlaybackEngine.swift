@@ -98,7 +98,7 @@ final class WatchPlaybackEngine {
             if smokeMode {
                 if smokeFailure {
                     publish(.problem(.chapterUnavailable,
-                                     message: String(localized: "Download this chapter or reconnect to stream it."),
+                                     message: String(localized: "Send this book to Apple Watch from your iPhone."),
                                      code: "chapterUnavailable"), token: currentToken)
                     return
                 }
@@ -112,7 +112,7 @@ final class WatchPlaybackEngine {
                     bookID: book.id,
                     chapter: chapter,
                     downloadsRoot: downloadsRoot,
-                    allowsStreaming: allowsStreaming
+                    allowsStreaming: false
                 )
                 assetOffset = source.assetOffset
                 snapshot.sourceKind = source.kind
@@ -122,7 +122,7 @@ final class WatchPlaybackEngine {
                 installPlayer(url: source.url, kind: source.kind, resumePosition: savedPosition, token: currentToken)
             } catch WatchPlaybackResolutionError.chapterUnavailable {
                 publish(.problem(.chapterUnavailable,
-                                 message: String(localized: "Download this chapter or reconnect to stream it."),
+                                 message: String(localized: "Send this book to Apple Watch from your iPhone."),
                                  code: "chapterUnavailable"), token: currentToken)
             } catch {
                 publishActivationFailure(error, token: currentToken)
@@ -421,14 +421,13 @@ final class WatchPlaybackEngine {
         // §5 S3: at a boundary with no file and no way to stream, stop cleanly and say why —
         // never a silent "Buffering…".
         let next = book.chapters[snapshot.chapterIndex + 1]
-        let canStream = streamingAllowed() && next.approvedStreamURL != nil
         let resolvable = (try? WatchPlaybackSourceResolver.resolve(
-            bookID: book.id, chapter: next, downloadsRoot: downloadsRoot, allowsStreaming: canStream)) != nil
+            bookID: book.id, chapter: next, downloadsRoot: downloadsRoot, allowsStreaming: false)) != nil
         if resolvable {
             nextChapter()
         } else {
             publish(.problem(.chapterUnavailable,
-                             message: String(localized: "Chapter \(next.index + 1) isn't on this watch, and your iPhone isn't nearby to stream it."),
+                             message: String(localized: "Chapter \(next.index + 1) isn't on this watch. Send the book again from your iPhone."),
                              code: "nextChapterUnavailable"),
                     token: currentToken)
         }

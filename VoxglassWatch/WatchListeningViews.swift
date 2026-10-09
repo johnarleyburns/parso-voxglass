@@ -80,12 +80,11 @@ struct WatchChaptersView: View {
         if chapter.index == currentIndex, isCurrentBook {
             return String(localized: "\(WatchTimeFormat.clock(max(0, services.playback.duration - services.playback.position))) left")
         }
-        if !services.downloaded.contains(book.id) { return String(localized: "Stream · \(WatchTimeFormat.clock(chapter.duration))") }
         return WatchTimeFormat.clock(chapter.duration)
     }
 
     private func isPlayable(_ chapter: WatchChapterDTO) -> Bool {
-        services.downloaded.contains(book.id) || (services.isConnected && chapter.approvedStreamURL != nil)
+        services.downloaded.contains(book.id)
     }
 
     private func play(_ index: Int) {
@@ -194,127 +193,50 @@ struct WatchSleepView: View {
 /// Resume / Stop on the same screen; then storage used by books on this watch.
 struct WatchDownloadsView: View {
     @EnvironmentObject private var services: WatchAppServices
-    @State private var confirmStop: WatchBookDTO?
-
     var body: some View {
         List {
-            let active = services.books.filter { services.downloads[$0.id] != nil }
-            if !active.isEmpty {
-                Section("Downloading") {
-                    ForEach(active, id: \.id) { book in
-                        if let download = services.downloads[book.id] { downloadRow(book, download) }
+            Text("Send and manage books from Voxglass on your iPhone.").font(.caption2)
+            ForEach(services.visibleBooks, id: \.id) { book in
+                Label(book.title, systemImage: "book.closed").watchCardRow()
+            }
+            if services.visibleBooks.isEmpty { Text("No books installed on this watch.").font(.caption2) }
+        }.navigationTitle("On This Watch").listStyle(.plain)
+    }
+}
+
+/// Connection and metadata are distinct from installed audio; no download/retry actions.
+struct WatchListeningSyncStatusView: View {
+    @EnvironmentObject private var services: WatchAppServices
+    var body: some View {
+        List {
+            Section("iPhone") {
+                Text(services.isConnected ? String(localized: "iPhone connected") : String(localized: "iPhone not connected"))
+                Button("Sync Now") { services.session.syncNow() }
+                    .disabled(!services.isConnected || services.session.isSyncing)
+                if !services.isConnected { Text("Sync Now available when connected to iPhone.").font(.caption2) }
+                if let message = services.session.syncMessage { Text(message).font(.caption2) }
+                if let date = services.session.lastCatalogDate { Text("Last iPhone catalog: \(date.formatted())").font(.caption2) }
+            }
+            Section("Installed audio") {
+                Text("\(services.downloaded.count) books on this watch")
+                ForEach(services.books.filter { !services.downloaded.contains($0.id) }, id: \.id) { book in
+                    VStack(alignment: .leading) {
+                        Text(book.title)
+                        let count = services.session.bookReports[book.id]?.installedChapterIDs?.count ?? 0
+                        Text("\(count) of \(book.chapters.count) chapters installed").font(.caption2)
+                        if case .failed(let message)? = services.session.snapshot?.downloadStates?[book.id] {
+                            Text(message).font(.caption2)
+                        } else { Text("Audio submitted by iPhone; installation is unconfirmed.").font(.caption2) }
                     }
                 }
             }
-            Section {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Storage").font(.caption2).foregroundStyle(.secondary)
-                    Text(storageLine).font(.footnote)
-                }
-                .watchCardRow()
-                .accessibilityIdentifier("watch.downloads.storage")
-                ForEach(services.books.filter { services.downloaded.contains($0.id) }, id: \.id) { book in
-                    HStack(spacing: 8) {
-                        WatchCoverTile(artworkKey: book.artworkKey, width: 20)
-                        Text(book.title).lineLimit(1)
-                    }
-                    .watchCardRow()
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) { confirmStop = book } label: {
-                            Label("Remove", systemImage: "trash")
-                        }
-                    }
-                }
-            } header: {
-                Text("On this watch")
+            Section("Diagnostics") {
+                Button("Refresh") { services.session.refresh() }
+                Text("Audio receipt: " + services.session.audioReceipt).font(.caption2)
+                Text("Artwork receipt: " + services.session.artworkReceipt).font(.caption2)
+                Text("Watch report: " + services.session.reportMessage).font(.caption2)
+                if let error = services.session.connectionError { Text(error).font(.caption2) }
             }
-        }
-        .listStyle(.plain)
-        .navigationTitle("Downloads")
-        .confirmationDialog(confirmTitle, isPresented: Binding(get: { confirmStop != nil },
-                                                               set: { if !$0 { confirmStop = nil } }),
-                            titleVisibility: .visible) {
-            Button("Stop and Remove", role: .destructive) {
-                if let book = confirmStop { services.stopDownload(book) }
-                confirmStop = nil
-            }
-            Button("Cancel", role: .cancel) { confirmStop = nil }
-        } message: {
-            Text("This book's audio is removed from the watch. Your place is kept.")
-        }
-    }
-
-    private func downloadRow(_ book: WatchBookDTO, _ download: WatchBookDownload) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                WatchTransferRing(fraction: download.total > 0 && download.done > 0 ? download.fraction : nil)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(book.title).lineLimit(1)
-                    Text(status(download)).font(.caption2).foregroundStyle(color(download)).lineLimit(2)
-                }
-            }
-            HStack(spacing: 6) {
-                switch download.state {
-                case .paused:
-                    Button("Resume") { services.resumeDownload(book) }.buttonStyle(.watchPrimarySmall)
-                case .failed:
-                    Button("Retry") { services.resumeDownload(book) }.buttonStyle(.watchPrimarySmall)
-                case .downloading:
-                    Button("Pause") { services.pauseDownload(book) }.buttonStyle(.watchSecondarySmall)
-                case .sendingFromPhone, .waitingForPhone:
-                    EmptyView()
-                }
-                Button("Stop") { confirmStop = book }.buttonStyle(.watchDestructiveSmall)
-            }
-            if download.state == .sendingFromPhone {
-                Text("Pause this from Voxglass on your iPhone.").font(.caption2).foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 4)
-        .watchCardRow()
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("watch.downloads.book.\(book.id.rawValue)")
-    }
-
-    private func status(_ download: WatchBookDownload) -> String {
-        let progress = String(localized: "\(download.done) of \(download.total) chapters")
-        switch download.state {
-        case .downloading: return String(localized: "Downloading · \(progress)")
-        case .sendingFromPhone: return String(localized: "Sending from iPhone · \(progress)")
-        case .waitingForPhone: return String(localized: "Waiting for your iPhone to send it")
-        case .paused: return String(localized: "Paused · \(progress)")
-        case .failed(let message): return message
-        }
-    }
-
-    private func color(_ download: WatchBookDownload) -> Color {
-        switch download.state {
-        case .failed: WatchPalette.failure
-        case .paused, .waitingForPhone: WatchPalette.warning
-        default: .secondary
-        }
-    }
-
-    private var storageLine: String {
-        let root = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                                                 appropriateFor: nil, create: false))?
-            .appendingPathComponent("DownloadedBooks", isDirectory: true)
-        let bytes = root.map(Self.directorySize) ?? 0
-        let count = services.downloaded.count
-        return String(localized: "Books on watch: \(count) · \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))")
-    }
-
-    private static func directorySize(_ url: URL) -> Int64 {
-        guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
-        var total: Int64 = 0
-        for case let file as URL in enumerator {
-            total += Int64((try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
-        }
-        return total
-    }
-
-    private var confirmTitle: String {
-        guard let book = confirmStop else { return "" }
-        return String(localized: "Stop “\(book.title)”?")
+        }.navigationTitle("Sync Status").listStyle(.plain)
     }
 }

@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import VoxglassWatchCore
 
 /// Watch redesign §3 — a read-only 3 pt progress line. No scrubbing on the watch.
 struct WatchProgressHairline: View {
@@ -42,19 +44,15 @@ struct WatchTransferRing: View {
     }
 }
 
-/// A 3:4 book cover from the projection's artwork URL, with a gold gradient placeholder.
+/// A 3:4 book cover from installed local artwork, with a gold gradient placeholder.
 struct WatchCoverTile: View {
     let artworkKey: String?
     var width: CGFloat = 24
 
     var body: some View {
         Group {
-            if let url = artworkKey.flatMap(URL.init(string:)), url.scheme?.hasPrefix("http") == true {
-                AsyncImage(url: url) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    placeholder
-                }
+            if let image = localImage {
+                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
                 placeholder
             }
@@ -70,5 +68,14 @@ struct WatchCoverTile: View {
                            startPoint: .topLeading, endPoint: .bottomTrailing)
             Image(systemName: "book.closed").font(width > 30 ? .body : .caption2).foregroundStyle(.white.opacity(0.85))
         }
+    }
+
+    private var localImage: UIImage? {
+        guard let artworkKey else { return nil }
+        let parts = artworkKey.split(separator: "/").map(String.init)
+        guard parts.count == 2, parts.allSatisfy(WatchPhonePushFiles.safeComponent) else { return nil }
+        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DownloadedBooks", isDirectory: true)
+        return UIImage(contentsOfFile: root.appendingPathComponent(artworkKey).path)
     }
 }

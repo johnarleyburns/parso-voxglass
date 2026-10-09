@@ -985,7 +985,7 @@ private struct WatchSyncCard: View {
             }
             .accessibilityIdentifier("watchsync.connectionStatus")
 
-            Text("Apple Watch gets My Books directly from this iPhone. Use “Download to Apple Watch” on a book page or in its My Books context menu.")
+            Text("Only books you send from this iPhone appear on Apple Watch, prepared as 96 kbps AAC. Use “Download to Apple Watch” on a book page or in its My Books context menu; manage them in My Books → On My Watch.")
                 .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
 
@@ -994,11 +994,12 @@ private struct WatchSyncCard: View {
                 .foregroundStyle(Palette.ink3)
                 .accessibilityIdentifier("watchsync.storageSummary")
 
-            if let date = phoneAudioRelay.lastWatchSyncDate {
-                Text("Last Watch update: \(date.formatted(date: .abbreviated, time: .shortened))")
-                    .voxFont(.caption2)
-                    .foregroundStyle(Palette.ink3)
+            if let date = phoneAudioRelay.lastCatalogSentDate {
+                Text("Last iPhone catalog sent: \(date.formatted())").voxFont(.caption2)
             }
+            if let date = phoneAudioRelay.lastWatchReportDate {
+                Text("Last watch report: \(date.formatted())").voxFont(.caption2)
+            } else { Text("No watch report received this session.").voxFont(.caption2) }
             if let status = phoneAudioRelay.watchSyncStatus {
                 Text(status)
                     .voxFont(.caption2)

@@ -1,4 +1,6 @@
 import Foundation
+import AVFoundation
+import VoxglassWatchCore
 import ParsoAudioStreaming
 
 /// Resolves the on-phone blob for a phone→watch chapter transfer. Extracted so
@@ -7,6 +9,80 @@ import ParsoAudioStreaming
 /// URL must come from the store — never from a hand-built path (RC2). Never
 /// touches the network.
 public enum WatchChapterTransfer {
+    /// The watch-only listening profile. Phone originals and narration masters are untouched.
+    public static let watchBitRate = 96_000
+
+    /// Prepare a complete, chapter-bounded AAC file before submitting it to Apple.
+    /// Shared-file M4B chapters are extracted once per chapter; the caller may memoize source hashes.
+    public static func prepareAAC(source: URL, directory: URL, startTime: Double = 0,
+                                  duration: Double? = nil, sourceHash: String? = nil,
+                                  mimeType: String? = nil) async throws -> URL {
+        let accessed = source.startAccessingSecurityScopedResource()
+        defer { if accessed { source.stopAccessingSecurityScopedResource() } }
+        guard source.isFileURL, startTime.isFinite, startTime >= 0,
+              duration == nil || (duration?.isFinite == true && (duration ?? 0) > 0) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let digest = try sourceHash ?? WatchChecksum.sha256(of: source)
+        guard digest.count == 64, digest.allSatisfy({ $0.isHexDigit }) else { throw CocoaError(.fileReadCorruptFile) }
+        let name = "\(digest)-watch-aac96-\(Int64(startTime * 1000))-\(Int64((duration ?? 0) * 1000)).m4a"
+        let destination = directory.appendingPathComponent(name)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if FileManager.default.fileExists(atPath: destination.path) {
+            if let audio = try? AVAudioFile(forReading: destination), audio.length > 0,
+               audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatMPEG4AAC { return destination }
+            // Only this disposable derived file is replaced; never the source/master.
+            try FileManager.default.removeItem(at: destination)
+        }
+        let temporary = destination.appendingPathExtension("preparing")
+        if FileManager.default.fileExists(atPath: temporary.path) { try FileManager.default.removeItem(at: temporary) }
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let asset = AVURLAsset(url: source, options: mimeType.map { [AVURLAssetOverrideMIMETypeKey: $0] })
+        guard let track = try await asset.loadTracks(withMediaType: .audio).first else { throw CocoaError(.fileReadCorruptFile) }
+        let assetDuration = try await asset.load(.duration).seconds
+        let length = min(duration ?? (assetDuration - startTime), assetDuration - startTime)
+        guard length.isFinite, length > 0 else { throw CocoaError(.fileReadCorruptFile) }
+        let reader = try AVAssetReader(asset: asset)
+        let start = CMTime(seconds: startTime, preferredTimescale: 44_100)
+        reader.timeRange = CMTimeRange(start: start, duration: CMTime(seconds: length, preferredTimescale: 44_100))
+        let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
+            AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 44_100,
+            AVNumberOfChannelsKey: 2, AVLinearPCMBitDepthKey: 32,
+            AVLinearPCMIsFloatKey: true, AVLinearPCMIsNonInterleaved: false])
+        guard reader.canAdd(output) else { throw CocoaError(.fileReadCorruptFile) }
+        reader.add(output)
+        let writer = try AVAssetWriter(outputURL: temporary, fileType: .m4a)
+        let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
+            AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100,
+            AVNumberOfChannelsKey: 2, AVEncoderBitRateKey: watchBitRate,
+            AVEncoderBitRateStrategyKey: AVAudioBitRateStrategy_Constant])
+        input.expectsMediaDataInRealTime = false
+        guard writer.canAdd(input) else { throw CocoaError(.fileWriteUnknown) }
+        writer.add(input)
+        guard writer.startWriting(), reader.startReading() else {
+            throw writer.error ?? reader.error ?? CocoaError(.fileReadCorruptFile)
+        }
+        writer.startSession(atSourceTime: start)
+        do {
+            while let buffer = output.copyNextSampleBuffer() {
+                while !input.isReadyForMoreMediaData {
+                    guard writer.status == .writing else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+                    try await Task.sleep(for: .milliseconds(2))
+                }
+                try Task.checkCancellation()
+                guard input.append(buffer) else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+            }
+            guard reader.status == .completed else { throw reader.error ?? CocoaError(.fileReadCorruptFile) }
+            input.markAsFinished()
+            await writer.finishWriting()
+            guard writer.status == .completed else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+            try FileManager.default.moveItem(at: temporary, to: destination)
+            return destination
+        } catch {
+            reader.cancelReading(); writer.cancelWriting()
+            throw error
+        }
+    }
     /// Returns the complete blob's URL for `chapterKey`, or nil when the blob is
     /// absent or incomplete.
     public static func resolvedFileURL(cacheStore: SparseCacheStore, chapterKey: String) async -> URL? {

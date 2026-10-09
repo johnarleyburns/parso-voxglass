@@ -28,14 +28,12 @@ final class WatchAppServices: ObservableObject {
     /// §5 C3 — the armed sleep timer and its seconds remaining, for the chip and the list.
     @Published private(set) var sleepTimer: WatchSleepTimer?
     @Published private(set) var sleepRemaining: TimeInterval?
-    /// §5 D1 — downloads the watch is doing itself (with pause/stop) and ones the iPhone is pushing.
+    /// Read-only progress for complete audio chapter files pushed by the iPhone.
     @Published private(set) var downloads: [WatchBookID: WatchBookDownload] = [:]
     @Published private(set) var listened: [String: WatchListenedRecord] = [:]
     @Published var error: String?
     private let playbackEngine: WatchPlaybackEngine
     private var cancellables = Set<AnyCancellable>()
-    private var downloadTasks: [WatchBookID: Task<Void, Never>] = [:]
-    private var pausedDownloads = Set<WatchBookID>()
     private var lastListenedSave = Date.distantPast
     private var lastWidgetState: WatchContinueListeningState?
     private var lastWidgetSave = Date.distantPast
@@ -54,7 +52,7 @@ final class WatchAppServices: ObservableObject {
             self?.sleepTimer = timer
             self?.sleepRemaining = remaining
         }
-        playbackEngine.streamingAllowed = { [weak self] in self?.isConnected ?? false }
+        playbackEngine.streamingAllowed = { false }
         session.$snapshot
             .compactMap { $0 }
             .receive(on: RunLoop.main)
@@ -64,41 +62,17 @@ final class WatchAppServices: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        session.$requestedDownloadBookID
-            .compactMap { $0 }
+        session.$bookReports
             .receive(on: RunLoop.main)
-            .sink { [weak self] bookID in
-                guard let self, let book = self.books.first(where: { $0.id == bookID }) else { return }
-                self.startDownload(book, notifyPhone: false)
-            }
-            .store(in: &cancellables)
-        session.$phoneTransferProgress
-            .receive(on: RunLoop.main)
-            .sink { [weak self] progress in
+            .sink { [weak self] reports in
                 guard let self else { return }
-                for (bookID, entry) in progress where self.downloadTasks[bookID] == nil {
-                    self.downloads[bookID] = WatchBookDownload(done: entry.done, total: entry.total,
-                                                               state: .sendingFromPhone)
-                }
-            }
-            .store(in: &cancellables)
-        session.$completedFileTransfer
-            .compactMap { $0 }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] completion in
-                guard let self, let book = self.books.first(where: { $0.id == completion.bookID }) else { return }
-                self.markDownloaded(book.id)
-                self.downloading.remove(completion.bookID)
-                self.downloads.removeValue(forKey: completion.bookID)
-                self.session.reportDownload(book: book, bytes: completion.bytes, complete: true)
-            }
-            .store(in: &cancellables)
-        NotificationCenter.default.publisher(for: .watchRemoveDownloadedBook)
-            .compactMap { $0.object as? String }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] rawID in
-                guard let self, let book = self.books.first(where: { $0.id.rawValue == rawID }) else { return }
-                self.remove(book)
+                self.downloaded = Set(reports.values.filter(\.complete).map(\.bookID))
+                self.downloading = Set(reports.values.filter { !$0.complete }.map(\.bookID))
+                self.downloads = Dictionary(uniqueKeysWithValues: reports.values.filter { !$0.complete }.map { report in
+                    let total = self.books.first { $0.id == report.bookID }?.chapters.count ?? 0
+                    return (report.bookID, WatchBookDownload(done: report.installedChapterIDs?.count ?? 0,
+                        total: total, state: .sendingFromPhone))
+                })
             }
             .store(in: &cancellables)
     }
@@ -107,7 +81,7 @@ final class WatchAppServices: ObservableObject {
 
     /// Library rows (H2): sorted by last listened, then title.
     var visibleBooks: [WatchBookDTO] {
-        let base = isConnected ? books : books.filter { downloaded.contains($0.id) }
+        let base = books.filter { downloaded.contains($0.id) }
         return base.sorted { lhs, rhs in
             let l = listened[lhs.id.rawValue]?.date ?? .distantPast
             let r = listened[rhs.id.rawValue]?.date ?? .distantPast
@@ -123,7 +97,7 @@ final class WatchAppServices: ObservableObject {
     }
 
     func bootstrap() {
-        downloaded = Set(UserDefaults.standard.stringArray(forKey: "watch.downloaded")?.map(WatchBookID.init) ?? [])
+        downloaded = Set(session.bookReports.values.filter(\.complete).map(\.bookID))
         // A seeded UI-test launch starts with no listening history, so every run sees the same Home.
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeed") {
             UserDefaults.standard.removeObject(forKey: Self.listenedKey)
@@ -212,7 +186,7 @@ final class WatchAppServices: ObservableObject {
     func play(_ book: WatchBookDTO, chapterIndex: Int = 0) {
         guard !book.chapters.isEmpty else { error = String(localized: "No playable chapters."); return }
         let index = min(max(0, chapterIndex), book.chapters.count - 1)
-        playbackEngine.play(book, chapterIndex: index, allowsStreaming: isConnected)
+        playbackEngine.play(book, chapterIndex: index, allowsStreaming: false)
     }
     func togglePlayPause() { playbackEngine.togglePlayPause() }
     func nextChapter() { playbackEngine.nextChapter() }
@@ -232,114 +206,6 @@ final class WatchAppServices: ObservableObject {
     func setSleepTimer(_ mode: WatchSleepTimer.Mode?) { playbackEngine.setSleepTimer(mode) }
     func persistPlaybackPosition() { playbackEngine.persistPlaybackPosition() }
 
-    // MARK: - Downloads (§5 D1)
-
-    func download(_ book: WatchBookDTO) {
-        startDownload(book, notifyPhone: true)
-    }
-
-    func pauseDownload(_ book: WatchBookDTO) {
-        pausedDownloads.insert(book.id)
-        downloadTasks[book.id]?.cancel()
-        downloadTasks[book.id] = nil
-        downloading.remove(book.id)
-        if var entry = downloads[book.id] { entry.state = .paused; downloads[book.id] = entry }
-    }
-
-    func resumeDownload(_ book: WatchBookDTO) {
-        pausedDownloads.remove(book.id)
-        startDownload(book, notifyPhone: false)
-    }
-
-    /// Stop and remove: cancels the watch's own download and deletes this book's audio here.
-    func stopDownload(_ book: WatchBookDTO) {
-        pausedDownloads.remove(book.id)
-        downloadTasks[book.id]?.cancel()
-        downloadTasks[book.id] = nil
-        downloading.remove(book.id)
-        downloads.removeValue(forKey: book.id)
-        deleteAudio(for: book.id)
-        remove(book)
-        session.reportDownload(book: book, bytes: 0, complete: false)
-    }
-
-    private func startDownload(_ book: WatchBookDTO, notifyPhone: Bool) {
-        guard downloadTasks[book.id] == nil else { return }
-        if notifyPhone {
-            session.requestDownload(for: book)
-        }
-        downloading.insert(book.id)
-        downloadTasks[book.id] = Task { [weak self] in
-            await self?.downloadApprovedChapters(for: book)
-            self?.downloadTasks[book.id] = nil
-        }
-    }
-
-    func remove(_ book: WatchBookDTO) {
-        downloaded.remove(book.id)
-        UserDefaults.standard.set(downloaded.map(\.rawValue), forKey: "watch.downloaded")
-    }
-
-    private func markDownloaded(_ id: WatchBookID) {
-        downloaded.insert(id)
-        UserDefaults.standard.set(downloaded.map(\.rawValue), forKey: "watch.downloaded")
-        WKInterfaceDevice.current().play(.success)
-    }
-
-    private func bookRoot(_ id: WatchBookID) throws -> URL {
-        try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                                    appropriateFor: nil, create: true)
-            .appendingPathComponent("DownloadedBooks/\(id.rawValue)", isDirectory: true)
-    }
-
-    private func deleteAudio(for id: WatchBookID) {
-        guard let root = try? bookRoot(id) else { return }
-        try? FileManager.default.removeItem(at: root)
-    }
-
-    private func downloadApprovedChapters(for book: WatchBookDTO) async {
-        let urls = book.chapters.compactMap(\.approvedStreamURL)
-        guard urls.count == book.chapters.count, !urls.isEmpty else {
-            downloading.remove(book.id)
-            // Not an error: the iPhone transfers this book (or hasn't approved it yet). Say so.
-            if downloads[book.id] == nil {
-                downloads[book.id] = WatchBookDownload(done: 0, total: book.chapters.count, state: .waitingForPhone)
-            }
-            return
-        }
-        do {
-            let root = try bookRoot(book.id)
-            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            var bytes: Int64 = 0
-            var done = 0
-            downloads[book.id] = WatchBookDownload(done: 0, total: book.chapters.count, state: .downloading)
-            for (chapter, url) in zip(book.chapters, urls) {
-                try Task.checkCancellation()
-                let destination = root.appendingPathComponent(chapter.durableFilename)
-                // Resume after Pause: chapters already on disk are kept, not fetched again.
-                if !FileManager.default.fileExists(atPath: destination.path) {
-                    let (temporary, _) = try await URLSession.shared.download(from: url)
-                    try Task.checkCancellation()
-                    try? FileManager.default.removeItem(at: destination)
-                    try FileManager.default.moveItem(at: temporary, to: destination)
-                }
-                bytes += Int64((try FileManager.default.attributesOfItem(atPath: destination.path)[.size] as? NSNumber)?.int64Value ?? 0)
-                done += 1
-                downloads[book.id] = WatchBookDownload(done: done, total: book.chapters.count, state: .downloading)
-            }
-            markDownloaded(book.id)
-            downloads.removeValue(forKey: book.id)
-            session.reportDownload(book: book, bytes: bytes, complete: true)
-        } catch is CancellationError {
-            // Paused or stopped: the state was already set by the caller.
-        } catch let urlError as URLError where urlError.code == .cancelled {
-            // Same as above for an in-flight URLSession task.
-        } catch {
-            let message = String(localized: "Download failed: \(error.localizedDescription)")
-            downloads[book.id] = WatchBookDownload(done: downloads[book.id]?.done ?? 0, total: book.chapters.count,
-                                                   state: .failed(message))
-            session.reportDownload(book: book, bytes: 0, complete: false)
-        }
-        downloading.remove(book.id)
-    }
+    // Audio is selected and transferred on the phone only. This watch keeps local playback
+    // positions, speed, sleep timers and narration features; it never fetches chapter URLs.
 }

@@ -2,6 +2,7 @@ import SwiftUI
 import AVFoundation
 import UniformTypeIdentifiers
 import VoxglassCore
+import VoxglassWatchProtocol
 
 struct LibraryView: View {
     @EnvironmentObject private var libraryStore: LibraryStore
@@ -24,6 +25,8 @@ struct LibraryView: View {
     // silently hide saved books from the primary library view.
     @State private var soloOnly = false
     @State private var myNarrationOnly = false
+    @State private var onMyWatchOnly = false
+    @State private var pendingWatchRemoval: WatchBookDTO?
 
     var body: some View {
         VoxglassScreen(
@@ -31,7 +34,12 @@ struct LibraryView: View {
             headerTrailingContent: AnyView(libraryHeaderActions)
         ) {
             VStack(alignment: .leading, spacing: 18) {
-                bookList
+                HStack(spacing: 10) {
+                    Button("All Books") { onMyWatchOnly = false }
+                    Button("On My Watch") { onMyWatchOnly = true }
+                }
+                .buttonStyle(.bordered).tint(Palette.brass)
+                if onMyWatchOnly { watchMirror } else { bookList }
             }
             .padding(.top, 12)
             // The tab bar and expanded mini-player are outside the screen's
@@ -60,6 +68,17 @@ struct LibraryView: View {
         } message: {
             Text(libraryStore.importError ?? "")
         }
+        .confirmationDialog("Remove from Apple Watch?", isPresented: Binding(
+            get: { pendingWatchRemoval != nil }, set: { if !$0 { pendingWatchRemoval = nil } }
+        ), titleVisibility: .visible) {
+            Button("Remove from Apple Watch", role: .destructive) {
+                if let book = pendingWatchRemoval, let id = UUID(uuidString: book.id.rawValue) {
+                    Task { await phoneAudioRelay.removeBookFromWatch(bookID: id) }
+                }
+                pendingWatchRemoval = nil
+            }
+            Button("Cancel", role: .cancel) { pendingWatchRemoval = nil }
+        } message: { Text("The iPhone original stays in My Books.") }
         .sheet(isPresented: $showingAddArchiveURL) {
             AddArchiveURLSheet(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
@@ -125,6 +144,50 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
+    private var watchMirror: some View {
+        if phoneAudioRelay.watchCatalogBooks.isEmpty {
+            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch")
+        } else {
+            ForEach(phoneAudioRelay.watchCatalogBooks, id: \.id) { book in
+                let id = UUID(uuidString: book.id.rawValue)
+                let storage = id.flatMap { phoneAudioRelay.watchStorageInfo(for: $0) }
+                let desired = phoneAudioRelay.watchDesiredStates[book.id]
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(book.title).font(.headline)
+                            if let author = book.author { Text(author).font(.caption).foregroundStyle(.secondary) }
+                        }
+                        Spacer()
+                        if storage?.state == .available, desired != .removing {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                                .accessibilityLabel("Installed on Apple Watch")
+                        }
+                    }
+                    if desired == .removing {
+                        Text("Removal sent to Apple Watch.").font(.caption)
+                    } else if case .failed(let reason)? = desired {
+                        Text(reason).font(.caption)
+                        Button("Try Again") {
+                            if let original = libraryStore.books.first(where: { $0.book.id == id }) {
+                                Task { await transferToWatch(original, allowCellular: false) }
+                            } else { phoneAudioRelay.watchTransferError = "Add this book to My Books before sending it again." }
+                        }.buttonStyle(.borderless).disabled(phoneAudioRelay.isTransferringToWatch)
+                    } else if case .transferring(let fraction)? = storage?.state {
+                        ProgressView(value: fraction)
+                        Text("Transferring audio to Apple Watch").font(.caption)
+                    } else if storage?.state != .available {
+                        Text(desired == .preparing ? String(localized: "Preparing watch AAC on iPhone…") : String(localized: "Submitted to Apple's transfer service; not yet installed.")).font(.caption)
+                        ProgressView()
+                    }
+                    Button("Remove from Apple Watch", role: .destructive) { pendingWatchRemoval = book }
+                        .buttonStyle(.borderless).disabled(desired == .removing)
+                }.padding(14).raisedSurface()
+            }
+        }
+    }
+
+    @ViewBuilder
     private var bookList: some View {
         VStack(alignment: .leading, spacing: 10) {
             if libraryStore.books.isEmpty {
@@ -180,7 +243,7 @@ struct LibraryView: View {
                             Button {
                                 Task {
                                     if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
-                                        await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id)
+                                        pendingWatchRemoval = phoneAudioRelay.watchCatalogBooks.first { $0.id.rawValue == book.book.id.uuidString }
                                     } else {
                                         await transferToWatch(book, allowCellular: false)
                                     }
@@ -231,8 +294,11 @@ struct LibraryView: View {
         }
     }
 
+    @ViewBuilder
     private var filteredEmptyState: some View {
-        if libraryStore.downloadedOnly {
+        if onMyWatchOnly {
+            EmptyStatePanel(title: "Nothing on My Watch", message: "Send a book from your iPhone. Scheduled and installed books appear here.", systemImage: "applewatch")
+        } else if libraryStore.downloadedOnly {
             EmptyStatePanel(
                 title: "No Downloads Yet",
                 message: "Books you cache for offline listening will appear here.",
@@ -470,6 +536,12 @@ struct LibraryView: View {
 
     private var filteredBooks: [BookWithChapters] {
         var books = libraryStore.visibleBooks
+        if onMyWatchOnly {
+            books = books.filter {
+                phoneAudioRelay.watchSelectedBookIDs.contains($0.book.id)
+                    || phoneAudioRelay.watchStorageInfo(for: $0.book.id) != nil
+            }
+        }
 
         if soloOnly {
             books = books.filter { $0.narrationKind == .solo }

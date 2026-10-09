@@ -70,10 +70,14 @@ public actor PhoneWatchProjectionStore {
         public var desired: [WatchBookID: WatchDownloadState]
         public var desiredRoots: [WatchBookID: WatchManifest]
         public var acknowledgements: [WatchBookID: WatchManifestAcknowledgement]
+        /// Only explicitly selected books; no full-phone library is mirrored.
+        public var selectedBooks: [WatchBookID: WatchBookDTO] = [:]
+        /// Persistent submission times survive phone relaunch; retries remain user initiated.
+        public var submittedAt: [WatchBookID: Date] = [:]
         public init(libraryID: WatchPairedLibraryID, revision: Int64 = 0, desired: [WatchBookID: WatchDownloadState] = [:], desiredRoots: [WatchBookID: WatchManifest] = [:], acknowledgements: [WatchBookID: WatchManifestAcknowledgement] = [:]) {
             self.libraryID = libraryID; self.revision = revision; self.desired = desired; self.desiredRoots = desiredRoots; self.acknowledgements = acknowledgements
         }
-        private enum CodingKeys: String, CodingKey { case libraryID, revision, desired, desiredRoots, acknowledgements }
+        private enum CodingKeys: String, CodingKey { case libraryID, revision, desired, desiredRoots, acknowledgements, selectedBooks, submittedAt }
         public init(from decoder: Decoder) throws {
             let values = try decoder.container(keyedBy: CodingKeys.self)
             libraryID = try values.decode(WatchPairedLibraryID.self, forKey: .libraryID)
@@ -81,6 +85,8 @@ public actor PhoneWatchProjectionStore {
             desired = try values.decodeIfPresent([WatchBookID: WatchDownloadState].self, forKey: .desired) ?? [:]
             desiredRoots = try values.decodeIfPresent([WatchBookID: WatchManifest].self, forKey: .desiredRoots) ?? [:]
             acknowledgements = try values.decodeIfPresent([WatchBookID: WatchManifestAcknowledgement].self, forKey: .acknowledgements) ?? [:]
+            selectedBooks = try values.decodeIfPresent([WatchBookID: WatchBookDTO].self, forKey: .selectedBooks) ?? [:]
+            submittedAt = try values.decodeIfPresent([WatchBookID: Date].self, forKey: .submittedAt) ?? [:]
         }
     }
     private let url: URL
@@ -94,13 +100,63 @@ public actor PhoneWatchProjectionStore {
     public func nextRevision() throws -> Int64 { state.revision += 1; try persist(); return state.revision }
     public func setDesired(_ value: WatchDownloadState, for bookID: WatchBookID) throws { state.desired[bookID] = value; try persist() }
     public func setDesiredRoot(_ manifest: WatchManifest) throws { state.desiredRoots[manifest.bookID] = manifest; state.desired[manifest.bookID] = .queued; try persist() }
+    /// Persist the prepared, URL-free catalog before submitting audio files.
+    public func select(_ book: WatchBookDTO) throws { state.selectedBooks[book.id] = book; try persist() }
+    /// Save before handing audio to Apple; this does not enqueue or retry files.
+    public func markSubmitted(_ bookID: WatchBookID, at date: Date) throws {
+        state.submittedAt[bookID] = date
+        state.desired[bookID] = .transferring
+        try persist()
+    }
+    /// Only surface a manual retry after 24 hours, including following app relaunch.
+    public func expireTransfers(at date: Date) throws {
+        var changed = false
+        for (id, started) in state.submittedAt where date.timeIntervalSince(started) >= 24 * 60 * 60 {
+            if state.desired[id] == .transferring {
+                state.desired[id] = .failed("Not installed after 24 hours. Try again from iPhone if needed.")
+                changed = true
+            }
+        }
+        if changed { try persist() }
+    }
     public func acknowledge(_ acknowledgement: WatchManifestAcknowledgement) throws {
+        if let root = state.desiredRoots[acknowledgement.bookID], root.revision > acknowledgement.revision { return }
+        if state.desired[acknowledgement.bookID] == .removing {
+            guard acknowledgement.isRemoval == true, !acknowledgement.complete,
+                  acknowledgement.installedBytes == 0 else { return }
+            state.selectedBooks.removeValue(forKey: acknowledgement.bookID)
+            state.desiredRoots.removeValue(forKey: acknowledgement.bookID)
+            state.desired.removeValue(forKey: acknowledgement.bookID)
+            state.acknowledgements.removeValue(forKey: acknowledgement.bookID)
+            state.submittedAt.removeValue(forKey: acknowledgement.bookID)
+            try persist(); return
+        }
+        guard acknowledgement.isRemoval != true else { return }
         if let existing = state.acknowledgements[acknowledgement.bookID], existing.revision > acknowledgement.revision { return }
         state.acknowledgements[acknowledgement.bookID] = acknowledgement
         if acknowledgement.complete { state.desired[acknowledgement.bookID] = .downloaded }
+        else if let message = acknowledgement.failureMessage { state.desired[acknowledgement.bookID] = .failed(message) }
+        else if state.desired[acknowledgement.bookID] == .downloaded {
+            state.desired[acknowledgement.bookID] = .failed("Audio is no longer fully installed. Send again from iPhone if needed.")
+        }
         try persist()
     }
-    public func remove(bookID: WatchBookID) throws { state.desired[bookID] = .removing; try persist() }
+    /// A full inventory clears stale installation claims without scheduling any transfer.
+    public func reconcile(_ catalog: WatchDeviceCatalog) throws {
+        let present = Set(catalog.reports.map(\.bookID))
+        for id in Array(state.acknowledgements.keys) where !present.contains(id) {
+            state.acknowledgements.removeValue(forKey: id)
+            if state.desired[id] == .downloaded { state.desired[id] = .failed("No longer installed on Apple Watch. Send again from iPhone if needed.") }
+        }
+        for report in catalog.reports { try acknowledge(report) }
+        try persist()
+    }
+    /// Keep a durable removal revision so metadata deletion can be sent after activation/relaunch.
+    public func remove(bookID: WatchBookID, revision: Int64? = nil) throws {
+        state.desired[bookID] = .removing
+        if let revision { state.desiredRoots[bookID] = WatchManifest(bookID: bookID, revision: revision, requiredChapterIDs: []) }
+        try persist()
+    }
     public func isTruthfullyDownloaded(_ bookID: WatchBookID) -> Bool { state.acknowledgements[bookID]?.complete == true }
     private func persist() throws { try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true); try JSONEncoder().encode(state).write(to: url, options: .atomic) }
 }

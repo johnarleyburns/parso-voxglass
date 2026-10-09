@@ -66,11 +66,10 @@ final class VoxglassWatchUITests: XCTestCase {
         snapshot("H1-home")
         alice.tap()
 
-        // Watch redesign B1: the Book page's one big button starts playback and opens the Player.
-        // The fixture isn't on the watch and the iPhone is nearby (B2): Download is primary and
-        // Stream Chapter 1 sits right under it.
-        XCTAssertTrue(app.buttons["watch.book.download"].waitForExistence(timeout: 10))
-        let start = app.buttons["watch.book.stream"]
+        // The injected book is installed. The watch is a local player, not a downloader.
+        XCTAssertFalse(app.buttons["watch.book.download"].exists)
+        XCTAssertFalse(app.buttons["watch.book.stream"].exists)
+        let start = app.buttons["watch.book.start"]
         XCTAssertTrue(start.waitForExistence(timeout: 10), app.debugDescription)
         snapshot("B2-book")
         tapFullyVisible(start, app: app)
@@ -126,8 +125,8 @@ final class VoxglassWatchUITests: XCTestCase {
         let alice = bookRow(app, titled: "Alice's Adventures in Wonderland")
         XCTAssertTrue(alice.waitForExistence(timeout: 20))
         alice.tap()
-        XCTAssertTrue(app.buttons["watch.book.stream"].waitForExistence(timeout: 10))
-        tapFullyVisible(app.buttons["watch.book.stream"], app: app)
+        XCTAssertTrue(app.buttons["watch.book.start"].waitForExistence(timeout: 10))
+        tapFullyVisible(app.buttons["watch.book.start"], app: app)
         // Watch redesign S3: the Problem Card replaces the transport in place, with its action and
         // diagnostic code — never a Play button that silently does nothing.
         XCTAssertTrue(app.descendants(matching: .any)["watch.book.problem"].waitForExistence(timeout: 10),
@@ -138,7 +137,7 @@ final class VoxglassWatchUITests: XCTestCase {
         }
         XCTAssertTrue(app.buttons["watch.book.retry"].waitForExistence(timeout: 10), app.debugDescription)
         snapshot("S3-problem")
-        XCTAssertEqual(app.staticTexts["watch.book.phase"].label, "Download this chapter or reconnect to stream it.")
+        XCTAssertEqual(app.staticTexts["watch.book.phase"].label, "Send this book to Apple Watch from your iPhone.")
         XCTAssertTrue(app.staticTexts["watch.book.errorCode"].label.hasSuffix("chapterUnavailable"),
                       app.staticTexts["watch.book.errorCode"].label)
     }

@@ -346,6 +346,7 @@ targets:
           - Resources/VoxglassMac-release.entitlements
       - path: Voxglass/Features/Production/Discovery/NarrationProjectRepository.swift
       - path: Voxglass/Features/Production/AVChapterRenderer.swift
+      - path: Voxglass/App/Sync/CloudKitAuthoringV2Sync.swift
       - path: Voxglass/Resources/AppIcon.icon
     resources:
       - path: Voxglass/Resources/Assets.xcassets

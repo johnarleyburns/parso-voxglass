@@ -21,7 +21,7 @@ public struct WatchPairedLibraryID: WatchStableID {
     public var isKnown: Bool { !rawValue.isEmpty }
 }
 
-public enum WatchProtocolVersion { public static let current = 1 }
+public enum WatchProtocolVersion { public static let current = 2 }
 public enum WatchTransportChannel: String, Codable, Sendable { case immediate, applicationContext, userInfo, file }
 public enum WatchCapability: String, Codable, Sendable, CaseIterable { case libraryProjection, playback, downloadManagement, reconciliation }
 public enum WatchDownloadState: Codable, Equatable, Sendable {
@@ -59,6 +59,8 @@ public struct WatchBookDTO: Codable, Equatable, Sendable {
     }
 }
 public struct WatchLibrarySnapshot: Codable, Equatable, Sendable {
+    /// Phone-owned transfer states, independent of watch-installed truth.
+    public var downloadStates: [WatchBookID: WatchDownloadState]?
     public var pairedLibraryID: WatchPairedLibraryID; public var revision: Int64; public var books: [WatchBookDTO]
     public init(pairedLibraryID: WatchPairedLibraryID, revision: Int64, books: [WatchBookDTO]) { self.pairedLibraryID=pairedLibraryID; self.revision=revision; self.books=books }
 }
@@ -67,18 +69,30 @@ public struct WatchManifest: Codable, Equatable, Sendable {
     public init(bookID: WatchBookID, revision: Int64, requiredChapterIDs: [WatchChapterID]) { self.bookID=bookID; self.revision=revision; self.requiredChapterIDs=requiredChapterIDs }
 }
 public struct WatchManifestAcknowledgement: Codable, Equatable, Sendable {
+    /// Validated, unique chapters currently installed. Missing for older counterparts.
+    public var installedChapterIDs: [WatchChapterID]?
+    /// A user-visible installation error, never an instruction to retry automatically.
+    public var failureMessage: String?
+    /// An explicit completed removal, distinct from a partially installed book.
+    public var isRemoval: Bool?
     public var bookID: WatchBookID; public var revision: Int64; public var complete: Bool; public var installedBytes: Int64
     public init(bookID: WatchBookID, revision: Int64, complete: Bool, installedBytes: Int64) { self.bookID=bookID; self.revision=revision; self.complete=complete; self.installedBytes=installedBytes }
+}
+
+/// Complete device inventory, including an explicitly empty inventory after reset.
+public struct WatchDeviceCatalog: Codable, Equatable, Sendable {
+    public var reports: [WatchManifestAcknowledgement]
+    public init(reports: [WatchManifestAcknowledgement]) { self.reports = reports }
 }
 
 public enum WatchMessageKind: String, Codable, Sendable, CaseIterable {
     case hello, helloReply, librarySnapshot, bookDetailRequest, bookDetailResponse, playRequest, jitChapterRequest
     case playbackSnapshot, setBookDownload, removeBookDownload, downloadStatusSnapshot, bookManifest, assetFile
-    case watchManifest, reconcileRequest, error
+    case watchManifest, watchCatalog, reconcileRequest, error
     public var channel: WatchTransportChannel {
         switch self {
         case .hello, .helloReply, .bookDetailRequest, .bookDetailResponse, .playRequest, .jitChapterRequest, .error: .immediate
-        case .librarySnapshot, .playbackSnapshot, .downloadStatusSnapshot: .applicationContext
+        case .librarySnapshot, .playbackSnapshot, .downloadStatusSnapshot, .watchCatalog: .applicationContext
         case .setBookDownload, .removeBookDownload, .bookManifest, .watchManifest, .reconcileRequest: .userInfo
         case .assetFile: .file
         }
@@ -95,14 +109,34 @@ public struct WatchHelloReply: Codable, Equatable, Sendable {
 }
 
 public struct WatchProtocolEnvelope: Codable, Equatable, Sendable {
+    /// Binary catalog payloads use LZFSE; other messages remain tiny binary property lists.
+    public var payloadCompression: String?
     public static let currentProtocolVersion = WatchProtocolVersion.current
     public static let payloadKey = "watchProtocolEnvelope"
     public var version: Int; public var messageID: UUID; public var correlationID: UUID?; public var pairedLibraryID: WatchPairedLibraryID
     public var projectionRevision: Int64; public var sentAt: Date; public var kind: WatchMessageKind; public var payload: Data
     public init(version: Int = Self.currentProtocolVersion, messageID: UUID = UUID(), correlationID: UUID? = nil, pairedLibraryID: WatchPairedLibraryID, projectionRevision: Int64 = 0, sentAt: Date = Date(), kind: WatchMessageKind, payload: Data) { self.version=version; self.messageID=messageID; self.correlationID=correlationID; self.pairedLibraryID=pairedLibraryID; self.projectionRevision=projectionRevision; self.sentAt=sentAt; self.kind=kind; self.payload=payload }
     public func encoded() throws -> Data { let e=PropertyListEncoder(); e.outputFormat = .binary; return try e.encode(self) }
-    public static func encode<T: Encodable>(kind: WatchMessageKind, payload: T, libraryID: WatchPairedLibraryID, revision: Int64 = 0, correlationID: UUID? = nil) throws -> Data { let e=PropertyListEncoder(); e.outputFormat = .binary; return try Self(correlationID: correlationID, pairedLibraryID: libraryID, projectionRevision: revision, kind: kind, payload: e.encode(payload)).encoded() }
-    public static func decode(_ data: Data) throws -> Self { try PropertyListDecoder().decode(Self.self, from: data) }
+    public static func encode<T: Encodable>(kind: WatchMessageKind, payload: T, libraryID: WatchPairedLibraryID, revision: Int64 = 0, correlationID: UUID? = nil) throws -> Data {
+        let e = PropertyListEncoder(); e.outputFormat = .binary
+        var value = Self(correlationID: correlationID, pairedLibraryID: libraryID, projectionRevision: revision, kind: kind, payload: try e.encode(payload))
+        if kind == .librarySnapshot || kind == .watchCatalog {
+            value.payload = try (value.payload as NSData).compressed(using: .lzfse) as Data
+            value.payloadCompression = "lzfse"
+        }
+        return try value.encoded()
+    }
+    public static func decode(_ data: Data) throws -> Self {
+        var value = try PropertyListDecoder().decode(Self.self, from: data)
+        guard value.version <= currentProtocolVersion else { throw WatchProtocolFault(.unsupportedVersion) }
+        if let codec = value.payloadCompression {
+            guard codec == "lzfse", value.kind == .librarySnapshot || value.kind == .watchCatalog else { throw WatchProtocolFault(.malformed) }
+            value.payload = try (value.payload as NSData).decompressed(using: .lzfse) as Data
+            guard value.payload.count <= 1_048_576 else { throw WatchProtocolFault(.malformed) }
+            value.payloadCompression = nil
+        }
+        return value
+    }
     public func decodePayload<T: Decodable>(_ type: T.Type) throws -> T { try PropertyListDecoder().decode(type, from: payload) }
     public static func dictionary(for data: Data) -> [String: Any] { [payloadKey: data] }
     public static func payloadData(in dictionary: [String: Any]) -> Data? { dictionary[payloadKey] as? Data }

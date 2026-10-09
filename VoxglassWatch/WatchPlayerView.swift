@@ -13,7 +13,6 @@ struct WatchPlayerView: View {
     @Binding var path: [WatchRoute]
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var crownVolume = 1.0
     @State private var showingOutput = false
     @State private var outputName: String?
 
@@ -32,6 +31,8 @@ struct WatchPlayerView: View {
                 } else {
                     Text("Nothing playing").font(.headline).foregroundStyle(.secondary).padding(.top, 20)
                 }
+                WatchLocalVolumeControl(enabled: !isLuminanceReduced && services.playbackBook != nil)
+                    .frame(height: 24)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 4)
@@ -39,12 +40,7 @@ struct WatchPlayerView: View {
             // below them (mockup P1).
             .padding(.top, 8)
         }
-        .focusable(!isLuminanceReduced)
-        .digitalCrownRotation($crownVolume, from: 0, through: 1, by: 0.05, sensitivity: .medium,
-                              isContinuous: false, isHapticFeedbackEnabled: true)
-        .onChange(of: crownVolume) { _, value in services.setVolume(value) }
         .onAppear {
-            crownVolume = services.volume
             refreshOutput()
         }
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
@@ -320,6 +316,16 @@ struct WatchPlayerView: View {
         WatchToolButton(systemImage: systemImage, label: Text(label), action: action)
             .accessibilityIdentifier(identifier)
     }
+}
+
+/// Native output volume and crown orientation, not a second player-gain control.
+private struct WatchLocalVolumeControl: WKInterfaceObjectRepresentable {
+    let enabled: Bool
+    func makeWKInterfaceObject(context: Context) -> WKInterfaceVolumeControl { WKInterfaceVolumeControl(origin: .local) }
+    func updateWKInterfaceObject(_ control: WKInterfaceVolumeControl, context: Context) {
+        if enabled { control.focus() } else { control.resignFocus() }
+    }
+    static func dismantleWKInterfaceObject(_ control: WKInterfaceVolumeControl, coordinator: ()) { control.resignFocus() }
 }
 
 /// Output (§5): watchOS has no route-picker view, so this hosts the system `NowPlayingView`, whose

@@ -1,281 +1,324 @@
 import Foundation
+import AVFoundation
 @preconcurrency import WatchConnectivity
 import VoxglassWatchProtocol
+import VoxglassWatchCore
 
+/// Native messaging handles metadata; Apple file transfer handles only AAC audio and artwork.
 @MainActor
 final class WatchSessionAdapter: NSObject, ObservableObject {
     static let shared = WatchSessionAdapter()
     @Published private(set) var isReachable = false
     @Published private(set) var snapshot: WatchLibrarySnapshot?
     @Published private(set) var connectionError: String?
-    @Published private(set) var requestedDownloadBookID: WatchBookID?
-    /// Set once a book pushed from the phone (`PhoneAudioRelay.transferBookToWatch`)
-    /// has had every one of its chapter files received over `WCSession`
-    /// file-transfer. `WatchAppServices` observes this the same way it already
-    /// observes `requestedDownloadBookID`.
-    @Published private(set) var completedFileTransfer: (bookID: WatchBookID, bytes: Int64)?
-    /// Chapters received so far for books the iPhone is pushing (watch redesign D1), so
-    /// "Downloads" shows "Sending from iPhone · 3 of 12" instead of a bare spinner.
     @Published private(set) var phoneTransferProgress: [WatchBookID: (done: Int, total: Int)] = [:]
-    /// Per-book count of chapter files received so far via `didReceive file:`,
-    /// keyed against the `totalChapterCount` each file's metadata carries.
-    /// In-memory only: if the app is killed mid-transfer, re-tapping "Send to
-    /// Watch" on the phone resends everything, which is an acceptable retry
-    /// story for this feature.
-    private var receivedChapterFiles: [WatchBookID: (count: Int, bytes: Int64)] = [:]
-    /// `WCSession.isReachable` can toggle rapidly and spuriously — observed
-    /// live flapping the connection indicator and the visible book list
-    /// (`WatchAppServices.visibleBooks` depends on it) back and forth, jarring
-    /// during an active file transfer in particular. Only commit a change
-    /// once it's held for a short settle window instead of reacting to every
-    /// raw toggle.
-    private var reachabilityDebounce: Task<Void, Never>?
-    private let smoke = ProcessInfo.processInfo.arguments.contains("-uiTestSeed") || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
-    /// `snapshot` used to be in-memory only — populated exclusively by a live
-    /// WCSession message/context delivery. That meant a book already
-    /// downloaded to the watch (its bytes on disk, its id in
-    /// `WatchAppServices.downloaded`) still couldn't be *shown* while
-    /// disconnected, because there was no title/author/chapter metadata for
-    /// it until the next live connection. Persist the last snapshot so it
-    /// survives a relaunch or a stretch with no iPhone in range.
-    private static let snapshotDefaultsKey = "watch.librarySnapshot"
+    @Published private(set) var bookReports: [WatchBookID: WatchManifestAcknowledgement] = [:]
+    @Published private(set) var isSyncing = false
+    @Published private(set) var syncMessage: String?
+    @Published private(set) var lastCatalogDate: Date?
+    @Published private(set) var isReconciling = false
+    @Published private(set) var audioReceipt = UserDefaults.standard.string(forKey: "watch.audioReceipt") ?? "No audio received yet."
+    @Published private(set) var artworkReceipt = "No artwork received this session."
+    @Published private(set) var reportMessage = "No watch report sent this session."
+    private var reportGeneration = 0
+    // Native file callbacks and MainActor removal/catalog callbacks share durable state.
+    nonisolated private static let fileIO = NSLock()
+    nonisolated private static func validateAAC(_ url: URL) throws {
+        let audio = try AVAudioFile(forReading: url)
+        guard audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatMPEG4AAC,
+              audio.length > 0 else { throw CocoaError(.fileReadCorruptFile) }
+    }
+    private var lastReceivedBookID: WatchBookID?
+    private let smoke = ProcessInfo.processInfo.arguments.contains("-uiTestSeed")
+        || ProcessInfo.processInfo.environment["VOXGLASS_WATCH_SMOKE_ALICE"] == "1"
+    private static let snapshotKey = "watch.librarySnapshot"
+    static let resetKey = "watch.listeningResetPending"
+    private static var audioRoot: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DownloadedBooks", isDirectory: true)
+    }
 
     override init() {
         super.init()
-        snapshot = Self.loadPersistedSnapshot()
-        guard WCSession.isSupported() else { seedSmoke(); return }
+        if UserDefaults.standard.bool(forKey: Self.resetKey) {
+            // A confirmed reset applies before opening the listening state. Narration outboxes
+            // are deliberately excluded: unsubmitted review events must never be erased.
+            do {
+                let root = Self.audioRoot
+                if FileManager.default.fileExists(atPath: root.path) { try FileManager.default.removeItem(at: root) }
+                for name in ["watch-playback-positions.json", "watch-playback-speeds.json"] {
+                    let url = root.deletingLastPathComponent().appendingPathComponent(name)
+                    if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+                }
+                for key in [Self.snapshotKey, "watch.downloaded", "watch.listened", "watch.audioReceipt", "watch.removedBookIDs", "watch.bookRevisions", Self.resetKey] {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+                WatchContinueListeningStore.save(nil)
+                audioReceipt = "No audio received yet."
+            } catch { connectionError = "Reset failed: \(error.localizedDescription)" }
+        }
+        if let data = UserDefaults.standard.data(forKey: Self.snapshotKey) {
+            snapshot = try? JSONDecoder().decode(WatchLibrarySnapshot.self, from: data)
+        }
+        if smoke { seedSmoke(); return }
+        guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
-        seedSmoke()
+        reconcileFiles(forceReport: true)
     }
 
-    private static func loadPersistedSnapshot() -> WatchLibrarySnapshot? {
-        guard let data = UserDefaults.standard.data(forKey: snapshotDefaultsKey) else { return nil }
-        return try? JSONDecoder().decode(WatchLibrarySnapshot.self, from: data)
-    }
-
-    private func persistSnapshot() {
-        guard let snapshot, let data = try? JSONEncoder().encode(snapshot) else { return }
-        UserDefaults.standard.set(data, forKey: Self.snapshotDefaultsKey)
-    }
-
+    /// Refresh local diagnostics and consume the phone's latest retained context, never request it.
     func refresh() {
-        if smoke { seedSmoke() }
-        else {
-            apply(WCSession.default.applicationContext)
-            requestProjection()
-        }
+        guard !smoke, WCSession.isSupported() else { return }
+        isReachable = WCSession.default.activationState == .activated && WCSession.default.isReachable
+        apply(WCSession.default.receivedApplicationContext)
+        reconcileFiles(forceReport: true)
     }
 
-    func requestDownload(for book: WatchBookDTO) {
-        guard WCSession.isSupported(), WCSession.default.activationState == .activated else {
-            connectionError = String(localized: "The iPhone connection is not active.")
+    /// The sole watch-initiated sync request is live-only, matching Cladiron's settings sync.
+    func syncNow() {
+        guard WCSession.isSupported(), WCSession.default.activationState == .activated,
+              WCSession.default.isReachable else {
+            isReachable = false
+            syncMessage = "Sync Now available when connected to iPhone."
             return
         }
-        let manifest = WatchManifest(
-            bookID: book.id,
-            revision: snapshot?.revision ?? 0,
-            requiredChapterIDs: book.chapters.map(\.id)
-        )
-        guard let data = try? WatchProtocolEnvelope.encode(
-            kind: .setBookDownload,
-            payload: manifest,
-            libraryID: snapshot?.pairedLibraryID ?? .unknown,
-            revision: snapshot?.revision ?? 0
-        ) else { return }
-        WCSession.default.transferUserInfo(WatchProtocolEnvelope.dictionary(for: data))
-    }
-
-    func reportDownload(book: WatchBookDTO, bytes: Int64, complete: Bool) {
-        let acknowledgement = WatchManifestAcknowledgement(
-            bookID: book.id,
-            revision: snapshot?.revision ?? 0,
-            complete: complete,
-            installedBytes: bytes
-        )
-        guard let data = try? WatchProtocolEnvelope.encode(
-            kind: .watchManifest,
-            payload: acknowledgement,
-            libraryID: snapshot?.pairedLibraryID ?? .unknown,
-            revision: snapshot?.revision ?? 0
-        ) else { return }
-        WCSession.default.transferUserInfo(WatchProtocolEnvelope.dictionary(for: data))
-    }
-
-    private func requestProjection() {
-        guard WCSession.default.activationState == .activated else { return }
-        isReachable = WCSession.default.isReachable
-        guard isReachable else { return }
-        let hello = WatchHello(
-            pairedLibraryID: snapshot?.pairedLibraryID ?? .unknown,
-            lastAppliedRevision: snapshot?.revision ?? 0
-        )
-        guard let data = try? WatchProtocolEnvelope.encode(
-            kind: .hello,
-            payload: hello,
-            libraryID: snapshot?.pairedLibraryID ?? .unknown,
-            revision: snapshot?.revision ?? 0
-        ) else { return }
-        WCSession.default.sendMessage(
-            WatchProtocolEnvelope.dictionary(for: data),
-            replyHandler: { [weak self] reply in
-                Task { @MainActor in self?.apply(reply) }
-            },
+        guard !isSyncing else { return }
+        isSyncing = true
+        syncMessage = "Sync sent."
+        guard let data = try? WatchProtocolEnvelope.encode(kind: .reconcileRequest,
+            payload: [String: String](), libraryID: snapshot?.pairedLibraryID ?? .unknown) else {
+            isSyncing = false
+            return
+        }
+        WCSession.default.sendMessage(WatchProtocolEnvelope.dictionary(for: data), replyHandler: { _ in },
             errorHandler: { [weak self] error in
-                Task { @MainActor in self?.connectionError = error.localizedDescription }
-            }
-        )
+                let message = error.localizedDescription
+                Task { @MainActor in
+                    self?.isSyncing = false
+                    self?.syncMessage = message
+                }
+            })
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(8))
+            guard let self, isSyncing else { return }
+            isSyncing = false
+            syncMessage = "Sync sent. No updated iPhone catalog received yet."
+        }
     }
 
     private func apply(_ dictionary: [String: Any]) {
+        // Never block the UI behind a large native file copy/checksum. Defer this
+        // already-received local value; this sends no request and retries no audio.
+        guard Self.fileIO.try() else {
+            let box = WatchUncheckedBox(dictionary)
+            Task { [weak self] in
+                try? await Task.sleep(for: .milliseconds(100))
+                self?.apply(box.value)
+            }
+            return
+        }
+        defer { Self.fileIO.unlock() }
         guard let data = WatchProtocolEnvelope.payloadData(in: dictionary),
               let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
         switch envelope.kind {
         case .librarySnapshot:
+            // A retained pre-rewrite full-library projection is not this local-only catalog.
+            guard envelope.version >= 2 else { return }
             guard var value = try? envelope.decodePayload(WatchLibrarySnapshot.self) else { return }
-            if snapshot == nil || value.revision >= (snapshot?.revision ?? 0) {
-                // Belt-and-braces: de-duplicate by book id so a duplicate
-                // record on the phone side (or a re-sent/merged snapshot)
-                // never renders the same book twice in the watch's list.
-                var seen = Set<WatchBookID>()
-                value.books = value.books.filter { seen.insert($0.id).inserted }
-                snapshot = value
-                connectionError = nil
-                persistSnapshot()
+            if let current = snapshot, current.pairedLibraryID == value.pairedLibraryID,
+               current.revision > value.revision { return }
+            var seen = Set<WatchBookID>()
+            value.books = value.books.filter { seen.insert($0.id).inserted }
+            let needsScan = WatchPhonePushFiles.needsReconciliation(previous: snapshot, next: value)
+            snapshot = value
+            lastCatalogDate = envelope.sentAt
+            isSyncing = false
+            syncMessage = "Sync updated."
+            connectionError = nil
+            if let saved = try? JSONEncoder().encode(value) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
+            var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
+            var revisions = UserDefaults.standard.dictionary(forKey: "watch.bookRevisions") ?? [:]
+            for book in value.books {
+                let latest = revisions[book.id.rawValue] as? Int64 ?? 0
+                if book.metadataRevision > latest, value.downloadStates?[book.id] != .removing {
+                    removed.remove(book.id.rawValue)
+                }
+                revisions[book.id.rawValue] = max(latest, book.metadataRevision)
             }
-        case .bookManifest:
-            guard let manifest = try? envelope.decodePayload(WatchManifest.self) else { return }
-            requestedDownloadBookID = manifest.bookID
+            UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
+            UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
+            if needsScan { reconcileFiles(forceReport: true) }
+            else if !isReconciling { publishCurrentReports() }
         case .removeBookDownload:
-            guard let manifest = try? envelope.decodePayload(WatchManifest.self) else { return }
-            requestedDownloadBookID = nil
-            NotificationCenter.default.post(
-                name: .watchRemoveDownloadedBook,
-                object: manifest.bookID.rawValue
-            )
-        default:
-            break
+            guard let manifest = try? envelope.decodePayload(WatchManifest.self),
+                  WatchPhonePushFiles.safeComponent(manifest.bookID.rawValue) else { return }
+            var revisions = UserDefaults.standard.dictionary(forKey: "watch.bookRevisions") ?? [:]
+            guard manifest.revision >= (revisions[manifest.bookID.rawValue] as? Int64 ?? 0) else { return }
+            revisions[manifest.bookID.rawValue] = manifest.revision
+            UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
+            var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
+            removed.insert(manifest.bookID.rawValue)
+            UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
+            let directory = Self.audioRoot.appendingPathComponent(manifest.bookID.rawValue, isDirectory: true)
+            do {
+                if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
+                bookReports.removeValue(forKey: manifest.bookID)
+                phoneTransferProgress.removeValue(forKey: manifest.bookID)
+                snapshot?.books.removeAll { $0.id == manifest.bookID }
+                if let snapshot, let saved = try? JSONEncoder().encode(snapshot) { UserDefaults.standard.set(saved, forKey: Self.snapshotKey) }
+                var removal = WatchManifestAcknowledgement(bookID: manifest.bookID, revision: manifest.revision,
+                    complete: false, installedBytes: 0)
+                removal.isRemoval = true
+                report(removal, libraryID: envelope.pairedLibraryID)
+                reconcileFiles()
+            } catch { connectionError = "Removal failed: \(error.localizedDescription)" }
+        case .reconcileRequest:
+            reconcileFiles(forceReport: true)
+        default: break
         }
     }
 
-    /// Called after a chapter file has already been copied into its final
-    /// `DownloadedBooks/<bookID>/<filename>` location. Tracks arrival count
-    /// per book and publishes completion once every expected chapter is in.
-    private func recordReceivedChapterFile(bookID: WatchBookID, totalChapterCount: Int, bytes: Int64) {
-        var entry = receivedChapterFiles[bookID] ?? (count: 0, bytes: 0)
-        entry.count += 1
-        entry.bytes += bytes
-        guard entry.count < totalChapterCount else {
-            receivedChapterFiles.removeValue(forKey: bookID)
-            phoneTransferProgress.removeValue(forKey: bookID)
-            completedFileTransfer = (bookID, entry.bytes)
-            return
+    private func reconcileFiles(forceReport: Bool = false) {
+        guard !smoke, let snapshot else { return }
+        reportGeneration += 1
+        let generation = reportGeneration
+        isReconciling = true
+        let root = Self.audioRoot
+        Task { [weak self] in
+            let reports = await Task.detached {
+                snapshot.books.map { WatchPhonePushFiles.report(book: $0, root: root) }
+            }.value
+            guard let self, generation == reportGeneration else { return }
+            isReconciling = false
+            let old = bookReports
+            bookReports = Dictionary(uniqueKeysWithValues: reports.map { ($0.bookID, $0) })
+            phoneTransferProgress = Dictionary(uniqueKeysWithValues: reports.filter { !$0.complete }.map { value in
+                (value.bookID, (done: value.installedChapterIDs?.count ?? 0,
+                    total: snapshot.books.first { $0.id == value.bookID }?.chapters.count ?? 0))
+            })
+            if forceReport || old != bookReports { publishCurrentReports() }
+            if let id = lastReceivedBookID, bookReports[id]?.complete == true {
+                audioReceipt = "Audio installed and ready to play."
+                UserDefaults.standard.set(audioReceipt, forKey: "watch.audioReceipt")
+            }
         }
-        receivedChapterFiles[bookID] = entry
-        phoneTransferProgress[bookID] = (entry.count, totalChapterCount)
     }
 
-    private func debounceReachabilityChange() {
-        reachabilityDebounce?.cancel()
-        reachabilityDebounce = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(1500))
-            guard !Task.isCancelled, let self else { return }
-            // Re-read the live value rather than trusting what triggered this
-            // call — if it flipped again during the settle window, this task
-            // was already cancelled and superseded by a fresh one.
-            self.isReachable = WCSession.default.isReachable
-        }
+    /// Status reports are metadata, not requests. No fresh transfer is scheduled here.
+    func publishCurrentReports() {
+        guard !isReconciling else { return }
+        let revision = Int64(UserDefaults.standard.integer(forKey: "watch.reportRevision")) + 1
+        UserDefaults.standard.set(revision, forKey: "watch.reportRevision")
+        guard let snapshot, WCSession.isSupported(), WCSession.default.activationState == .activated,
+              let data = try? WatchProtocolEnvelope.encode(kind: .watchCatalog,
+                payload: WatchDeviceCatalog(reports: bookReports.values.sorted { $0.bookID.rawValue < $1.bookID.rawValue }),
+                libraryID: snapshot.pairedLibraryID, revision: revision) else { return }
+        let message = WatchProtocolEnvelope.dictionary(for: data)
+        // Native context coalesces periodic inventory reports; live delivery is only a fast path.
+        do { try WCSession.default.updateApplicationContext(message) }
+        catch { connectionError = "Report failed: \(error.localizedDescription)" }
+        if WCSession.default.isReachable { WCSession.default.sendMessage(message, replyHandler: nil, errorHandler: nil) }
+        reportMessage = "Watch inventory sent to iPhone. \(bookReports.values.filter(\.complete).count) books installed."
+    }
+
+    private func report(_ value: WatchManifestAcknowledgement, libraryID: WatchPairedLibraryID? = nil) {
+        guard let data = try? WatchProtocolEnvelope.encode(kind: .watchManifest, payload: value,
+            libraryID: libraryID ?? snapshot?.pairedLibraryID ?? .unknown, revision: value.revision),
+              WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
+        WCSession.default.transferUserInfo(WatchProtocolEnvelope.dictionary(for: data))
+        reportMessage = "Report queued for iPhone. \(value.installedChapterIDs?.count ?? 0) chapters installed."
     }
 
     private func seedSmoke() {
-        guard smoke else { return }
-        let aliceID = WatchBookID("alice")
-        let catchID = WatchBookID("catch-22")
-        func chapters(_ prefix: String) -> [WatchChapterDTO] {
-            (1...3).map { WatchChapterDTO(id: WatchChapterID("\(prefix)-\($0)"), index: $0 - 1, title: "Chapter \($0)", duration: 640, approvedStreamURL: URL(string: "https://archive.org/download/example/ch\($0).mp3")) }
-        }
-        snapshot = WatchLibrarySnapshot(pairedLibraryID: WatchPairedLibraryID("smoke"), revision: 1, books: [
-            WatchBookDTO(id: aliceID, title: "Alice's Adventures in Wonderland", author: "Lewis Carroll", artworkKey: "alice", metadataRevision: 1, chapters: chapters("alice")),
-            WatchBookDTO(id: catchID, title: "Catch-22", author: "Joseph Heller", artworkKey: "catch-22", metadataRevision: 1, chapters: chapters("catch"))
-        ])
-        isReachable = true
+        let id = WatchBookID("alice")
+        snapshot = WatchLibrarySnapshot(pairedLibraryID: "smoke", revision: 1, books: [
+            WatchBookDTO(id: id, title: "Alice's Adventures in Wonderland", author: "Lewis Carroll",
+                chapters: (1...3).map { WatchChapterDTO(id: WatchChapterID("alice-\($0)"),
+                    index: $0 - 1, title: "Chapter \($0)", duration: 640) })])
+        bookReports[id] = WatchManifestAcknowledgement(bookID: id, revision: 1, complete: true, installedBytes: 3)
     }
 }
 
 extension WatchSessionAdapter: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        let reachable = session.isReachable
+        let reachable = activationState == .activated && session.isReachable
         let message = error?.localizedDescription
-        Task { @MainActor in
-            self.isReachable = activationState == .activated && reachable
-            self.connectionError = message
-            self.refresh()
-        }
+        Task { @MainActor in self.isReachable = reachable; self.connectionError = message; self.refresh() }
     }
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
-        Task { @MainActor in self.debounceReachabilityChange() }
+        let reachable = session.activationState == .activated && session.isReachable
+        Task { @MainActor in self.isReachable = reachable }
     }
-    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
-        let context = WatchUncheckedBox(applicationContext)
-        Task { @MainActor in self.apply(context.value) }
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext context: [String: Any]) {
+        let box = WatchUncheckedBox(context)
+        Task { @MainActor in self.apply(box.value) }
     }
-    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any]) {
-        let payload = WatchUncheckedBox(userInfo)
-        Task { @MainActor in self.apply(payload.value) }
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo info: [String: Any]) {
+        let box = WatchUncheckedBox(info)
+        Task { @MainActor in self.apply(box.value) }
     }
-
-    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        let payload = WatchUncheckedBox(message)
-        Task { @MainActor in self.apply(payload.value) }
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        let box = WatchUncheckedBox(message)
+        Task { @MainActor in self.apply(box.value) }
     }
-
-    nonisolated func session(
-        _ session: WCSession,
-        didReceiveMessage message: [String : Any],
-        replyHandler: @escaping ([String : Any]) -> Void
-    ) {
-        let payload = WatchUncheckedBox(message)
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        let box = WatchUncheckedBox(message)
         let reply = WatchUncheckedBox(replyHandler)
-        Task { @MainActor in
-            self.apply(payload.value)
-            reply.value(["received": true])
-        }
+        // Acknowledge native delivery before any asynchronous disk reconciliation.
+        reply.value(["received": true])
+        Task { @MainActor in self.apply(box.value) }
     }
-
-    /// `file.fileURL` and `file.metadata` are only valid synchronously during
-    /// this call — WCSession deletes the underlying temp file once this
-    /// method returns — so the copy into durable storage happens right here,
-    /// not after hopping to the main actor. Files lacking the phone-push
-    /// metadata this expects (e.g. the just-in-time single-chapter reply
-    /// path, or the separate manifest-driven asset-file transfer) are
-    /// silently ignored; they're handled elsewhere or not yet wired up.
     nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
-        guard let metadata = file.metadata,
-              let bookIDRaw = metadata["bookID"] as? String,
-              let chapterFilename = metadata["chapterFilename"] as? String,
-              let totalChapterCount = metadata["totalChapterCount"] as? Int else { return }
-        let bookID = WatchBookID(bookIDRaw)
+        guard let metadata = file.metadata, let bookID = metadata["bookID"] as? String,
+              let name = metadata["chapterFilename"] as? String,
+              let bytes = metadata["expectedBytes"] as? Int64,
+              let hash = metadata["expectedSHA256"] as? String,
+              let revision = metadata["revision"] as? Int64,
+              let kind = metadata["assetKind"] as? String,
+              kind == "audio-aac96" || kind == "artwork" else { return }
+        Self.fileIO.lock()
+        defer { Self.fileIO.unlock() }
+        var revisions = UserDefaults.standard.dictionary(forKey: "watch.bookRevisions") ?? [:]
+        let latest = revisions[bookID] as? Int64 ?? 0
+        guard revision >= latest else { return }
+        var removed = Set(UserDefaults.standard.stringArray(forKey: "watch.removedBookIDs") ?? [])
+        if removed.contains(bookID) {
+            guard revision > latest else { return }
+            removed.remove(bookID)
+            UserDefaults.standard.set(Array(removed), forKey: "watch.removedBookIDs")
+        }
+        revisions[bookID] = revision
+        UserDefaults.standard.set(revisions, forKey: "watch.bookRevisions")
+        let validator: ((URL) throws -> Void)?
+        if kind == "audio-aac96" { validator = { url in try Self.validateAAC(url) } }
+        else { validator = nil }
         do {
-            let root = try FileManager.default.url(
-                for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
-            ).appendingPathComponent("DownloadedBooks/\(bookID.rawValue)", isDirectory: true)
-            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            let destination = root.appendingPathComponent(chapterFilename)
-            try? FileManager.default.removeItem(at: destination)
-            try FileManager.default.copyItem(at: file.fileURL, to: destination)
-            let attributes = try? FileManager.default.attributesOfItem(atPath: destination.path)
-            let bytes = (attributes?[.size] as? NSNumber)?.int64Value ?? 0
+            let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("DownloadedBooks", isDirectory: true)
+            _ = try WatchPhonePushFiles.install(source: file.fileURL, root: root, bookID: bookID,
+                filename: name, expectedBytes: bytes, expectedSHA256: hash,
+                validateAudio: validator)
             Task { @MainActor in
-                self.recordReceivedChapterFile(bookID: bookID, totalChapterCount: totalChapterCount, bytes: bytes)
+                if kind == "artwork" { self.artworkReceipt = "Artwork installed." }
+                else {
+                    self.lastReceivedBookID = WatchBookID(bookID)
+                    self.audioReceipt = "Audio received and validated; checking installed catalog."
+                    UserDefaults.standard.set(self.audioReceipt, forKey: "watch.audioReceipt")
+                }
+                self.reconcileFiles()
             }
         } catch {
-            return
+            let message = error.localizedDescription
+            Task { @MainActor in
+                self.audioReceipt = "Installation failed: \(message)"; self.connectionError = message
+                var value = self.bookReports[WatchBookID(bookID)] ?? WatchManifestAcknowledgement(
+                    bookID: WatchBookID(bookID), revision: revision, complete: false, installedBytes: 0)
+                value.complete = false; value.failureMessage = message
+                self.report(value)
+            }
         }
     }
-}
-
-extension Notification.Name {
-    static let watchRemoveDownloadedBook = Notification.Name("watchRemoveDownloadedBook")
 }
 
 private struct WatchUncheckedBox<Value>: @unchecked Sendable {

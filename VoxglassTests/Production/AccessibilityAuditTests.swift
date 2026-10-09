@@ -208,7 +208,7 @@ import VoxglassCoreTestSupport
         #expect(offenders.isEmpty, "Malformed accessibility identifiers: \(offenders)")
     }
 
-    @Test func watchFieldConnectionAndDownloadControlsStayWired() {
+    @Test func watchFieldConnectionAndPhoneOnlyDownloadControlsStayWired() {
         let phoneRelay = Self.sourceFiles(in: "Voxglass/App").joined(separator: "\n")
         let phoneViews = Self.sourceFiles(in: "Voxglass/Features").joined(separator: "\n")
         let watchSources = Self.sourceFiles(in: "VoxglassWatch").joined(separator: "\n")
@@ -221,9 +221,15 @@ import VoxglassCoreTestSupport
         #expect(phoneViews.contains("\"watchsync.storageSummary\""))
         #expect(phoneViews.contains("\"watchsync.result\""))
         #expect(watchSources.contains("activationDidCompleteWith activationState"))
-        #expect(watchSources.contains("kind: .hello"))
+        #expect(!watchSources.contains("kind: .hello"))
+        #expect(watchSources.contains("kind: .reconcileRequest"))
+        #expect(watchSources.contains("WCSession.default.isReachable else"))
+        #expect(watchSources.contains("receivedApplicationContext"))
         #expect(watchSources.contains("didReceiveUserInfo"))
-        #expect(watchSources.contains("requestedDownloadBookID"))
+        #expect(!watchSources.contains("requestedDownloadBookID"))
+        #expect(!watchSources.contains("kind: .setBookDownload"))
+        #expect(watchSources.contains("WatchPhonePushFiles.install(source: file.fileURL"))
+        #expect(watchSources.contains("kind: .watchCatalog"))
     }
 }
 

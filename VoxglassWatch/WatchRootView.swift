@@ -30,10 +30,18 @@ struct WatchRootView: View {
                         WatchDownloadsView()
                     case .about:
                         WatchAboutView()
+                    case .syncStatus:
+                        WatchListeningSyncStatusView()
                     }
                 }
         }
-        .task { services.bootstrap() }
+        .task {
+            services.bootstrap()
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                services.session.publishCurrentReports()
+            }
+        }
     }
 }
 
@@ -45,6 +53,7 @@ enum WatchRoute: Hashable {
     case sleep
     case downloads
     case about
+    case syncStatus
 }
 
 enum WatchAccessibilityID {

@@ -13,12 +13,15 @@ struct WatchHomeView: View {
 
     var body: some View {
         List {
+            if services.session.isReconciling {
+                ProgressView("Checking installed books…").font(.caption2)
+            }
             if let hero = services.heroBook {
                 heroCard(hero)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
             }
-            if services.visibleBooks.isEmpty {
+            if services.visibleBooks.isEmpty && !services.session.isReconciling {
                 emptyCard
                     .listRowBackground(Color.clear)
             } else {
@@ -125,6 +128,8 @@ struct WatchHomeView: View {
                 .watchCardRow()
                 .accessibilityIdentifier("watch.downloads.row")
             }
+            Button { path.append(.syncStatus) } label: { Text("Sync Status") }
+                .watchCardRow().accessibilityIdentifier("watch.syncStatus")
             Button { path.append(.about) } label: { Text("About") }
                 .watchCardRow()
                 .accessibilityIdentifier("watch.about.row")
