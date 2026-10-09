@@ -121,18 +121,58 @@ import Testing
         #expect(try await SQLitePositionStore(database: db).position(for: localBook, chapterID: second.id)?.position == 20)
     }
 
-    @Test func failedMyBooksImportDoesNotCheckpointPastMissingRecords() async throws {
+    @Test func missingChapterDoesNotBlockLibraryAndRetriesAfterRestart() async throws {
+        let db = AppDatabase.makeTemporaryDatabase()
+        let (localBook, _) = try await seed(db)[0]
+        let key = "ia:test_sync-0"
+        let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/test_sync"))
+        let book = Book(title: "Book", authors: [], sourceID: source.id)
+        let chapter = Chapter(bookID: book.id, title: "Later chapter", index: 1,
+                              remoteURL: URL(string: "https://archive.org/download/test_sync/later.mp3"))
+        let position = CloudKitRecordMapper.positionRecord(
+            from: PlaybackPosition(bookID: book.id, chapterID: chapter.id, position: 42), bookContentKey: key)
+        let bookmark = try #require(CloudKitRecordMapper.bookmarkRecord(
+            from: Bookmark(id: UUID(), bookID: book.id, chapterID: chapter.id, position: 35), bookContentKey: key))
+        let sync = CloudKitSyncEngine(database: db)
+        try await sync.applyFetchedLibraryChanges(records: [position, bookmark], tokenData: Data([7]))
+        #expect(try await CloudSyncStateStore(database: db).loadEngineState() == Data([7]))
+        #expect(try await db.query("SELECT id FROM playback_positions").isEmpty)
+        #expect(sync.importErrors.count == 2)
+
+        let restarted = CloudKitSyncEngine(database: db)
+        try await restarted.applyFetchedLibraryChanges(records: [
+            CloudKitRecordMapper.sourceRecord(from: source, sourceKey: "test_sync"),
+            CloudKitRecordMapper.bookRecord(from: book, chapters: [chapter], contentKey: key, sourceKey: "test_sync")
+        ], tokenData: Data([8]))
+        #expect(try await SQLitePositionStore(database: db).position(for: localBook, chapterID: chapter.id)?.position == 42)
+        #expect(try await db.query("SELECT chapter_id FROM bookmarks").first?.string("chapter_id") == chapter.id.uuidString)
+        #expect(restarted.importErrors.isEmpty)
+        #expect(try await db.query("SELECT record_name FROM deferred_library_imports").isEmpty)
+        try await restarted.applyFetchedLibraryChanges(records: [])
+        #expect(try await db.query("SELECT id FROM playback_positions").count == 1)
+    }
+
+    @Test func failedMyBooksImportIsRetainedWhileOtherRecordsCheckpoint() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         try await db.prepare()
         let state = CloudSyncStateStore(database: db)
         try await state.saveEngineState(Data([1]))
         let sync = CloudKitSyncEngine(database: db)
         let malformed = CKRecord(recordType: "Book", recordID: .init(recordName: "book-invalid", zoneID: CloudKitRecordMapper.libraryZoneID))
-        await #expect(throws: (any Error).self) {
-            try await sync.applyFetchedLibraryChanges(records: [malformed], tokenData: Data([2]))
-        }
-        #expect(try await state.loadEngineState() == Data([1]))
-        #expect(sync.lastFetchedCount == 0)
+        let source = Source(kind: .librivox, title: "Healthy source")
+        let healthy = CloudKitRecordMapper.sourceRecord(from: source, sourceKey: "healthy")
+        try await sync.applyFetchedLibraryChanges(records: [malformed, healthy], tokenData: Data([2]))
+        #expect(try await state.loadEngineState() == Data([2]))
+        #expect(sync.lastFetchedCount == 1)
+        #expect(sync.importErrors.count == 1)
+        #expect(sync.importErrors[0].contains("book-invalid"))
+        #expect(try await db.query("SELECT record_name FROM deferred_library_imports").count == 1)
+        let restarted = CloudKitSyncEngine(database: db)
+        try await restarted.applyFetchedLibraryChanges(records: [])
+        #expect(restarted.importErrors.count == 1)
+        try await restarted.applyFetchedLibraryChanges(records: [], deletions: [malformed.recordID])
+        #expect(restarted.importErrors.isEmpty)
+        #expect(try await db.query("SELECT record_name FROM deferred_library_imports").isEmpty)
     }
 
     @Test func repeatedCheckpointsQueueOnePersistedIdentity() async throws {

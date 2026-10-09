@@ -134,7 +134,9 @@ struct StreamCacheUnifiedTests {
     @Test func streamedChapterReplaysFromCacheWithNetworkGone() async throws {
         RangeStub.reset(blob: Data((0..<8192).map { UInt8($0 & 0xff) }))
         let store = makeStore()
-        let url = URL(string: "https://archive.org/download/book/ch1.mp3")!
+        // A private scheme keeps this stubbed request away from macOS's
+        // HTTP AppSSO interception while exercising the real cache loader.
+        let url = URL(string: "voxglass-cache-test://archive.org/download/book/ch1.mp3")!
         let loader = CachingResourceLoader(
             originalURL: url, store: store,
             config: .init(scheme: AudioCache.scheme, keyStrategy: AudioCache.keyStrategy),

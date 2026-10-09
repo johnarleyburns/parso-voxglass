@@ -330,6 +330,13 @@ private struct DatabaseMigration {
                 WHERE cover_url LIKE 'file://%/Application Support/%'
                 """
             ]
+        ),
+        DatabaseMigration(
+            id: 14,
+            name: "deferred_library_cloud_imports",
+            statements: [
+                "CREATE TABLE deferred_library_imports (record_name TEXT PRIMARY KEY, record_data TEXT NOT NULL)"
+            ]
         )
     ]
 }

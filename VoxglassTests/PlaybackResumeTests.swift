@@ -220,8 +220,15 @@ import Foundation
         #expect(abs((preserved?.position ?? -1) - 60) <= 0.001)
 
         engine.isReady = true
+        let loadsBeforeRetry = engine.loadCalls.count
         coordinator.retryPlayback()
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        // Retry loads asynchronously through SQLite. Wait for its completion
+        // rather than assuming a fixed delay is enough on a busy test runner.
+        let retryDeadline = ContinuousClock.now.advanced(by: .seconds(10))
+        while ContinuousClock.now < retryDeadline {
+            if engine.loadCalls.count > loadsBeforeRetry, coordinator.playbackPhase == .playing { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
 
         #expect(coordinator.currentSession?.chapter.id == chapters[0].id)
         #expect(abs((engine.loadCalls.last?.startTime ?? -1) - 60) <= 0.001)

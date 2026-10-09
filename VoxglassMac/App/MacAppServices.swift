@@ -101,6 +101,8 @@ final class MacAppServices: ObservableObject {
                 await cloudKitSync.start()
                 if let error = cloudKitSync.syncError {
                     librarySyncStatus = "My Books sync failed: \(error)"
+                } else if !cloudKitSync.importErrors.isEmpty {
+                    librarySyncStatus = "My Books synced \(cloudKitSync.lastFetchedCount) records; \(cloudKitSync.importErrors.count) records could not be imported and will retry. " + cloudKitSync.importErrors.joined(separator: "\n")
                 } else if cloudKitSync.syncState == .disconnected {
                     librarySyncStatus = "My Books sync is disconnected. Check the iCloud account and Sync with iCloud setting."
                 } else {

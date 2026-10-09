@@ -7,6 +7,8 @@ public final class CloudKitSyncEngine: ObservableObject {
     @Published public private(set) var syncState: SyncState = .disconnected
     @Published public private(set) var lastSyncDate: Date?
     @Published public var syncError: String?
+    /// Record-level failures retained locally for retry without stopping the pull.
+    @Published public private(set) var importErrors: [String] = []
     @Published public private(set) var lastUploadedCount: Int = 0
     @Published public private(set) var lastFetchedCount: Int = 0
     @Published public private(set) var pendingCount: Int = 0
@@ -456,18 +458,62 @@ public final class CloudKitSyncEngine: ObservableObject {
         }
     }
 
-    /// Applies the same library pull on iPhone and Mac. A failed import keeps
-    /// the previous token so the next pull retries the incomplete page.
+    /// Applies the same library pull on iPhone and Mac. Failed records are
+    /// retained durably for retry before advancing the page checkpoint.
     func applyFetchedLibraryChanges(
         records: [CKRecord], deletions: [CKRecord.ID] = [], tokenData: Data? = nil
     ) async throws {
         var imported = 0
-        let ordered = records.sorted { Self.importPriority($0.recordType) < Self.importPriority($1.recordType) }
+        importErrors = []
+        try await database.prepare()
+        let deferred = try await database.query("SELECT record_data FROM deferred_library_imports")
+        var pending: [String: CKRecord] = [:]
+        for row in deferred {
+            guard let encoded = row.string("record_data"), let data = Data(base64Encoded: encoded),
+                  let record = try NSKeyedUnarchiver.unarchivedObject(ofClass: CKRecord.self, from: data) else {
+                throw LibraryCloudImportError.invalidRecord("saved retry")
+            }
+            pending[record.recordID.recordName] = record
+        }
+        // The newest server version replaces any older retained version.
+        for record in records { pending[record.recordID.recordName] = record }
+        for id in deletions {
+            pending.removeValue(forKey: id.recordName)
+            try await database.execute("DELETE FROM deferred_library_imports WHERE record_name=?", [.string(id.recordName)])
+        }
+        let deletedNames = Set(deletions.map { $0.recordName })
+        for record in Array(pending.values) {
+            if let ref = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference,
+               deletedNames.contains(ref.recordID.recordName) {
+                pending.removeValue(forKey: record.recordID.recordName)
+                try await database.execute("DELETE FROM deferred_library_imports WHERE record_name=?", [.string(record.recordID.recordName)])
+            }
+        }
+        let ordered = pending.values.sorted { Self.importPriority($0.recordType) < Self.importPriority($1.recordType) }
         for record in ordered {
-            if try await importRecord(record) { imported += 1 }
+            do {
+                if try await importRecord(record) { imported += 1 }
+            } catch {
+                // Persist before checkpointing. Chapter attachments must outlive
+                // CloudKit's temporary asset files when a Book import fails.
+                if let asset = record[CloudKitRecordMapper.Field.chaptersData] as? CKAsset,
+                   let url = asset.fileURL {
+                    record[CloudKitRecordMapper.Field.chaptersData] = try Data(contentsOf: url)
+                }
+                let data = try NSKeyedArchiver.archivedData(withRootObject: record, requiringSecureCoding: true)
+                try await database.execute("""
+                    INSERT INTO deferred_library_imports (record_name, record_data) VALUES (?, ?)
+                    ON CONFLICT(record_name) DO UPDATE SET record_data=excluded.record_data
+                    """, [.string(record.recordID.recordName), .string(data.base64EncodedString())])
+                let message = "\(record.recordType) \(record.recordID.recordName): \(error.localizedDescription)"
+                importErrors.append(message)
+                Self.log.error("Library import deferred: \(message, privacy: .public)")
+                continue
+            }
+            try await database.execute("DELETE FROM deferred_library_imports WHERE record_name=?", [.string(record.recordID.recordName)])
         }
         var positions: [PlaybackPosition] = []
-        for record in records {
+        for record in ordered {
             if let position = await localPlaybackPosition(from: record) { positions.append(position) }
         }
         for id in deletions { try await handleDeletion(recordID: id) }
@@ -858,8 +904,8 @@ public final class CloudKitSyncEngine: ObservableObject {
     }
 
     private func upsertPosition(_ position: PlaybackPosition, bookRef record: CKRecord) async throws {
-        guard let bookRef = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference else { return }
-        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { return }
+        guard let bookRef = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference else { throw LibraryCloudImportError.invalidRecord("book reference") }
+        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { throw LibraryCloudImportError.invalidRecord("book reference") }
         let chapterID = try await localChapterID(position.chapterID, bookID: localBookID)
         let localUpdate = position.updatedAt.timeIntervalSince1970
         let existingRows = try await database.query(
@@ -891,8 +937,8 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     private func upsertBookmark(_ bookmark: Bookmark, bookRef record: CKRecord) async throws {
         guard let bookRef = record[CloudKitRecordMapper.Field.bookRef] as? CKRecord.Reference,
-              let bookmarkID = bookmark.id else { return }
-        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { return }
+              let bookmarkID = bookmark.id else { throw LibraryCloudImportError.invalidRecord("bookmark reference") }
+        guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { throw LibraryCloudImportError.invalidRecord("book reference") }
 
         let chapterID = try await localChapterID(bookmark.chapterID, bookID: localBookID)
         try await database.execute("""

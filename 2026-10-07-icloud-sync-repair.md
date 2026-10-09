@@ -115,3 +115,51 @@ repeated imports, real Source URLs, chapters and playback positions, preservatio
 of a failed import's checkpoint, and matching remote positions/bookmarks to an
 existing Mac library plus applying a cloud Book deletion. The focused cloud and
 restore run passed 75 tests; the latest Mac compile passed.
+
+## October 9: opportunistic My Books imports
+
+A playback position or bookmark with an unmatched chapter UUID previously threw
+`invalidRecord("chapter reference")`, aborting the pull at the same record on
+every retry. Chapter UUIDs may be absent from the current local library, and
+replaying the same page cannot by itself resolve that dependency.
+
+Library imports now process each record independently. Failed records are archived
+in the SQLite `deferred_library_imports` inbox (migration 14) before the cloud
+checkpoint advances. Subsequent pulls retry this inbox, including after an engine
+restart, alongside newly received sources and books. A newer server record replaces
+its retained version; deletions remove retained records and dependent records for
+that deleted book. Book chapter assets are copied into the archive as bytes so a
+retry does not rely on a temporary CloudKit asset file.
+
+Record errors remain visible through `importErrors`, logs, and partial-sync status
+in iPhone Settings and the Mac. Successful imports proceed. Failures to receive a
+cloud page or durably preserve a failed record still prevent a safe checkpoint.
+No unmatched position or bookmark is assigned to a guessed chapter.
+
+The regression test was observed failing against the original code with the exact
+`invalidRecord("chapter reference")` error. It now checks position and bookmark
+retention across restart and eventual import when the chapter arrives. A second
+regression checks that a malformed book does not block a healthy source, that its
+error survives retry, and that its cloud deletion clears the retained record.
+
+Validation: 68 focused sync tests passed, including both regressions. The Mac
+signing-disabled compile, production guards, Swift 6 guard, and whitespace checks
+passed. The full host run was stopped after it blocked in the existing
+`StreamCacheUnifiedTests.streamedChapterReplaysFromCacheWithNetworkGone` test;
+a process sample showed the main thread waiting in macOS AppSSO's
+`bootstrap_look_up` path. The full suite therefore has no passing completion result.
+Live signed iCloud verification remains pending installation of the rebuilt app.
+
+The AppSSO test blocker is now resolved: the stubbed cache-loader round trip uses
+an explicit private URL scheme, so it exercises the real loader and range cache
+without entering the operating system's HTTP SSO interception. All six cache
+integration tests passed in 0.167 seconds. iPhone/embedded Watch and Mac
+signing-disabled builds passed, as did production and Swift 6 guards. The normal
+pre-commit hook runs the full host suite for this change.
+
+The pre-commit run also exposed a timing assumption in the existing playback
+resume regression: retry was asserted after a fixed 100 ms delay, before its
+asynchronous SQLite-backed load finished. The test now waits up to ten seconds
+for a new engine load and the playing phase, then keeps the original resume-offset
+and chapter assertions. All 30 focused resume, library-recovery, and cache tests
+passed with these test fixes.

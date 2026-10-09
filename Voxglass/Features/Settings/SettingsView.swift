@@ -913,6 +913,12 @@ private struct SyncSettingsCard: View {
                         .foregroundStyle(Palette.danger)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("sync.library.error")
+                } else if !cloudKitSync.importErrors.isEmpty {
+                    Text("My Books synced \(cloudKitSync.lastFetchedCount) records; \(cloudKitSync.importErrors.count) records could not be imported and will retry.\n" + cloudKitSync.importErrors.joined(separator: "\n"))
+                        .voxFont(.caption2)
+                        .foregroundStyle(Palette.danger)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("sync.library.partial")
                 } else if cloudKitSync.syncState == .disconnected {
                     Text("My Books sync is disconnected (\(cloudKitSync.accountStatusText)).")
                         .voxFont(.caption2)
