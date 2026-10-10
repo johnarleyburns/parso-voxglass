@@ -53,6 +53,40 @@ struct WatchPhonePushTests {
         #expect(duration > 0.2 && duration < 0.4)
     }
 
+    @Test("Concurrent AAC conversions leave Swift workers available and all produce readable audio", .timeLimit(.minutes(1)))
+    func concurrentAAC() async throws {
+        let root = try directory(); defer { try? FileManager.default.removeItem(at: root) }
+        let source = try fixture()
+        try await withThrowingTaskGroup(of: URL.self) { group in
+            for index in 0..<12 {
+                group.addTask {
+                    try await WatchChapterTransfer.prepareAAC(source: source,
+                        directory: root.appendingPathComponent("conversion-\(index)"), mimeType: "audio/mpeg")
+                }
+            }
+            var completed = 0
+            for try await url in group {
+                let audio = try AVAudioFile(forReading: url)
+                #expect(audio.length > 0)
+                #expect(audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatMPEG4AAC)
+                completed += 1
+            }
+            #expect(completed == 12)
+        }
+    }
+
+    @Test("Already-cancelled preparation does no file work")
+    func cancelledAAC() async throws {
+        let root = try directory(); defer { try? FileManager.default.removeItem(at: root) }
+        let source = try fixture()
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await WatchChapterTransfer.prepareAAC(source: source, directory: root)
+        }
+        await #expect(throws: CancellationError.self) { try await task.value }
+        #expect(try FileManager.default.contentsOfDirectory(atPath: root.path).isEmpty)
+    }
+
     @Test("Files arriving before metadata, duplicates and relaunch derive installation from disk")
     func diskTruth() async throws {
         let root = try directory(); defer { try? FileManager.default.removeItem(at: root) }

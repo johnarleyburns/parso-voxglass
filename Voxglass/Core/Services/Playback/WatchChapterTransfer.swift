@@ -2,6 +2,7 @@ import Foundation
 import AVFoundation
 import VoxglassWatchCore
 import ParsoAudioStreaming
+import os
 
 /// Resolves the on-phone blob for a phone→watch chapter transfer. Extracted so
 /// the phone relay and host tests share one implementation: a chapter is
@@ -9,6 +10,9 @@ import ParsoAudioStreaming
 /// URL must come from the store — never from a hand-built path (RC2). Never
 /// touches the network.
 public enum WatchChapterTransfer {
+    // AVFoundation's synchronous decoder may block while waiting for its codec
+    // workers. Never occupy Swift's bounded cooperative pool with that wait.
+    private static let conversionQueue = DispatchQueue(label: "guru.parso.voxglass.watch-aac", qos: .userInitiated, attributes: .concurrent)
     /// The watch-only listening profile. Phone originals and narration masters are untouched.
     public static let watchBitRate = 96_000
 
@@ -17,6 +21,7 @@ public enum WatchChapterTransfer {
     public static func prepareAAC(source: URL, directory: URL, startTime: Double = 0,
                                   duration: Double? = nil, sourceHash: String? = nil,
                                   mimeType: String? = nil) async throws -> URL {
+        try Task.checkCancellation()
         let accessed = source.startAccessingSecurityScopedResource()
         defer { if accessed { source.stopAccessingSecurityScopedResource() } }
         guard source.isFileURL, startTime.isFinite, startTime >= 0,
@@ -63,18 +68,25 @@ public enum WatchChapterTransfer {
             throw writer.error ?? reader.error ?? CocoaError(.fileReadCorruptFile)
         }
         writer.startSession(atSourceTime: start)
+        let cancelled = OSAllocatedUnfairLock(initialState: false)
+        let pipeline = WatchAACPipeline(reader: reader, output: output, writer: writer, input: input)
         do {
-            while let buffer = output.copyNextSampleBuffer() {
-                while !input.isReadyForMoreMediaData {
-                    guard writer.status == .writing else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
-                    try await Task.sleep(for: .milliseconds(2))
+            try Task.checkCancellation()
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    conversionQueue.async {
+                        do {
+                            try pipeline.consume(cancelled: cancelled)
+                            continuation.resume()
+                        } catch { continuation.resume(throwing: error) }
+                    }
                 }
-                try Task.checkCancellation()
-                guard input.append(buffer) else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+            } onCancel: {
+                cancelled.withLock { $0 = true }
             }
-            guard reader.status == .completed else { throw reader.error ?? CocoaError(.fileReadCorruptFile) }
-            input.markAsFinished()
+            try Task.checkCancellation()
             await writer.finishWriting()
+            try Task.checkCancellation()
             guard writer.status == .completed else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
             try FileManager.default.moveItem(at: temporary, to: destination)
             return destination
@@ -90,5 +102,35 @@ public enum WatchChapterTransfer {
         let url = await cacheStore.fileURL(for: chapterKey)
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         return url
+    }
+}
+
+/// AVFoundation handles are constructed before submission, then exclusively consumed
+/// by one dispatch-queue invocation. The caller does not touch them until that
+/// invocation resumes its continuation. Cancellation shares only a locked flag,
+/// never the non-Sendable reader/writer handles themselves.
+private struct WatchAACPipeline: @unchecked Sendable {
+    let reader: AVAssetReader
+    let output: AVAssetReaderTrackOutput
+    let writer: AVAssetWriter
+    let input: AVAssetWriterInput
+
+    func consume(cancelled: OSAllocatedUnfairLock<Bool>) throws {
+        while true {
+            if cancelled.withLock({ $0 }) { throw CancellationError() }
+            let finished = try autoreleasepool { () throws -> Bool in
+                guard let buffer = output.copyNextSampleBuffer() else { return true }
+                while !input.isReadyForMoreMediaData {
+                    if cancelled.withLock({ $0 }) { throw CancellationError() }
+                    guard writer.status == .writing else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+                    Thread.sleep(forTimeInterval: 0.002)
+                }
+                guard input.append(buffer) else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+                return false
+            }
+            if finished { break }
+        }
+        guard reader.status == .completed else { throw reader.error ?? CocoaError(.fileReadCorruptFile) }
+        input.markAsFinished()
     }
 }
