@@ -71,6 +71,44 @@ struct FilterChip: View {
     }
 }
 
+/// Shared book-scope controls with the app's typography and glass surfaces.
+struct BookScopeBar<Selection: Hashable>: View {
+    let title: LocalizedStringKey
+    @Binding var selection: Selection
+    let options: [(value: Selection, title: LocalizedStringKey)]
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            buttons
+            ScrollView(.horizontal, showsIndicators: false) { buttons }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
+    }
+
+    private var buttons: some View {
+        HStack(spacing: 8) {
+            ForEach(options, id: \.value) { option in
+                Button {
+                    selection = option.value
+                } label: {
+                    Text(option.title)
+                        .voxType(.body)
+                        .fixedSize()
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: 44)
+                        .foregroundStyle(selection == option.value ? Palette.onBrass : Palette.ink)
+                        .background(selection == option.value ? Palette.brass : Color.white.opacity(0.08), in: Capsule())
+                        .overlay(Capsule().stroke(selection == option.value ? Color.clear : Palette.hairline, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .tactileTap()
+                .accessibilityAddTraits(selection == option.value ? .isSelected : [])
+            }
+        }
+    }
+}
+
 /// A lightweight swipe-to-remove row for the glass shelves, which are built
 /// inside a `ScrollView` rather than a system `List`.
 struct SwipeToRemoveRow<Content: View>: View {

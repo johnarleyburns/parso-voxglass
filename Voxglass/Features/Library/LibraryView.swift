@@ -381,13 +381,9 @@ struct LibraryView: View {
     }
 
     private var filterBar: some View {
-        Picker("Filter", selection: $libraryStore.progressFilter) {
-            Text("In Progress").tag(LibraryProgressFilter.inProgress)
-            Text("Finished").tag(LibraryProgressFilter.finished)
-            Text("All").tag(LibraryProgressFilter.all)
-        }
-        .pickerStyle(.segmented)
-        .tint(Palette.brass)
+        BookScopeBar(title: "Filter", selection: $libraryStore.progressFilter, options: [
+            (.inProgress, "In Progress"), (.finished, "Finished"), (.all, "All")
+        ])
     }
 
     private var libraryHeaderActions: some View {

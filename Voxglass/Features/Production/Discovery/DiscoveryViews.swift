@@ -97,7 +97,7 @@ struct NarrationHomeShelf: View {
         // NOTE: no accessibilityIdentifier on this container — a plain VStack
         // with one overrides every child's identifier (SwiftUI quirk), which
         // would make rail CTAs unreachable from UI tests.
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Start a Narration")
                     .voxFont(.body, weight: .bold)
@@ -348,11 +348,10 @@ struct NarrationNeedsView: View {
 
                 let rows = discovery.availableNeeds
                     .filter(filter.matches)
-                    .filter(\.recordableOniOS)
                 if rows.isEmpty {
                     EmptyStatePanel(
                         title: "Nothing Here Yet",
-                        message: "Saved public-domain works will appear here.",
+                        message: "No verified open LibriVox projects are available right now. Pull to refresh to check again.",
                         systemImage: "quote.opening"
                     )
                 } else {
@@ -367,12 +366,13 @@ struct NarrationNeedsView: View {
             .padding(.top, 12)
         }
         .task { await discovery.refreshOnce() }
+        .refreshable { await discovery.refreshOnce() }
     }
 
     @ViewBuilder
     private var freshnessCaption: some View {
         if discovery.freshness == .seedOnly {
-            Text("Offline · showing saved works")
+            Text("No live update · verified projects only")
                 .voxFont(.caption2)
                 .foregroundStyle(Palette.ink3)
         } else {
@@ -385,8 +385,8 @@ struct NarrationNeedsView: View {
     private var liveCaption: String {
         switch discovery.freshness {
         case .liveEnriched: return String(localized: "Updated just now · live sources")
-        case .cached: return String(localized: "Showing saved works")
-        case .seedOnly: return String(localized: "Offline · showing saved works")
+        case .cached: return String(localized: "Showing saved LibriVox projects")
+        case .seedOnly: return String(localized: "No live update · verified projects only")
         }
     }
 }
@@ -420,23 +420,29 @@ struct NeedRow: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                startProject(need)
-            } label: {
-                Text("Start")
-                    .voxFont(.caption, weight: .heavy)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .foregroundStyle(NarrationPalette.espresso)
-                    .background(LinearGradient(colors: [Palette.brass.opacity(0.85), Palette.brass], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 11))
-                    .clipShape(RoundedRectangle(cornerRadius: 11))
-            }
-            .buttonStyle(.plain)
-            .tactileTap()
-            .accessibilityIdentifier("need.startNarrating.\(needSlug(need))")
+            NeedAction(need: need, startProject: startProject)
         }
         .padding(.vertical, 10)
         .accessibilityIdentifier("needs.card.\(needSlug(need))")
+    }
+}
+
+/// Textless projects open the real coordinator thread instead of an empty import flow.
+struct NeedAction: View {
+    let need: NarrationNeed
+    let startProject: (NarrationNeed) -> Void
+
+    var body: some View {
+        Group {
+            if need.recordableOniOS {
+                Button("Start") { startProject(need) }
+            } else if let thread = need.provenance.libriVoxThreadURL {
+                Link("View project", destination: thread)
+            }
+        }
+        .buttonStyle(.glassProminent)
+        .tint(Palette.brass)
+        .accessibilityIdentifier("need.startNarrating.\(needSlug(need))")
     }
 }
 
@@ -450,6 +456,7 @@ struct MyNarrationsSection: View {
     @State private var dashboardProject: AudiobookProject?
     @State private var isEditing = false
     @State private var projectOrder: [UUID] = []
+    @State private var rowHeights: [UUID: CGFloat] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -474,6 +481,11 @@ struct MyNarrationsSection: View {
                             dashboardProject = project
                         } label: {
                             projectRow(project)
+                        }
+                        .onGeometryChange(for: CGFloat.self) { geometry in
+                            geometry.size.height
+                        } action: { height in
+                            rowHeights[project.id] = height
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
@@ -507,7 +519,10 @@ struct MyNarrationsSection: View {
                 .listStyle(.plain)
                 .scrollDisabled(true)
                 .environment(\.editMode, .constant(isEditing ? .active : .inactive))
-                .frame(height: CGFloat(max(1, projects.count)) * 104)
+                .contentMargins(.vertical, 0, for: .scrollContent)
+                .frame(height: projects.reduce(CGFloat.zero) { height, project in
+                    height + (rowHeights[project.id] ?? 160) + 10
+                })
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }

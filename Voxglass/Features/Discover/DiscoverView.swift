@@ -228,12 +228,9 @@ struct BrowseView: View {
     }
 
     private var scopeBar: some View {
-        Picker("Discover scope", selection: $discoverScope) {
-            Text("All").tag(DiscoverBrowseScope.all)
-            Text("Collection").tag(DiscoverBrowseScope.collection)
-        }
-        .pickerStyle(.segmented)
-        .tint(Palette.brass)
+        BookScopeBar(title: "Discover scope", selection: $discoverScope, options: [
+            (.all, "All"), (.collection, "Collection")
+        ])
         .accessibilityIdentifier("discover.scopePicker")
     }
 

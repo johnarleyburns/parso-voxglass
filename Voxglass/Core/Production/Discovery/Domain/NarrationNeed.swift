@@ -205,6 +205,23 @@ public struct NarrationNeed: Sendable, Codable, Identifiable, Equatable {
 }
 
 extension NarrationNeed {
+    /// Only verified, active LibriVox reader requests belong in discovery.
+    /// General public-domain catalogs and bundled exercises are not requests.
+    public func isOpenLibriVoxReaderRequest(at now: Date) -> Bool {
+        guard isSubmittable,
+              provenance.pdBasis != .unverified,
+              signal == .openProjectNeedsReader || signal == .weeklyFeatured,
+              expiresAt.map({ $0 > now }) ?? true,
+              let thread = provenance.libriVoxThreadURL,
+              thread.scheme?.lowercased() == "https",
+              thread.host?.lowercased() == "forum.librivox.org",
+              thread.path == "/viewtopic.php",
+              let components = URLComponents(url: thread, resolvingAgainstBaseURL: false),
+              let topic = components.queryItems?.first(where: { $0.name == "t" })?.value,
+              let topicID = Int(topic), topicID > 0 else { return false }
+        return true
+    }
+
     /// Removes works already represented by a local narration project. The
     /// persisted need ID is authoritative when available; title/author is the
     /// compatibility path for projects whose source row changed or predates

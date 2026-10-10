@@ -62,8 +62,8 @@ import Testing
         #expect(dock.contains("struct MiniPlayerAccessory"))
         #expect(dock.contains("chrome.miniPlayer.playPause"))
         #expect(dock.contains("chrome.miniPlayer.skipForward"))
-        #expect(dock.contains(".padding(.vertical, placement == .inline ? 7 : 10)"))
-        #expect(dock.contains(".frame(minHeight: placement == .inline ? 64 : 80)"))
+        #expect(dock.contains(".padding(.vertical, placement == .inline ? 12 : 16)"))
+        #expect(dock.contains(".frame(minHeight: placement == .inline ? 72 : 88)"))
         #expect(theme.contains("minimumControlHitTarget"))
     }
 
@@ -156,6 +156,22 @@ import Testing
         #expect(flow.contains("fetcher: any HTTPFetching"))
         #expect(flow.contains("archiveClient: any InternetArchiveCatalogClient"))
         #expect(flow.contains("searchGeneration"))
+    }
+
+    @Test func narrationResumeTargetsStoredProjectAndRowsGrowWithContent() throws {
+        let tab = try source("Voxglass/Features/Production/Discovery/NarrationTabView.swift")
+        #expect(tab.contains("resume: { resumeProject = $0 }"))
+        #expect(tab.contains("NarrationFlowRoot(existingID: project.id, startAt: resumeStep(for: project))"))
+        #expect(tab.contains("embedsNavigationStack: false"))
+        let views = try source("Voxglass/Features/Production/Discovery/DiscoveryViews.swift")
+        let section = sourceSlice(views, from: "struct MyNarrationsSection", to: "extension AudiobookProject")
+        #expect(section.contains(".onGeometryChange(for: CGFloat.self)"))
+        #expect(section.contains("rowHeights[project.id] = height"))
+        #expect(!section.contains("CGFloat(max(1, projects.count)) * 104"))
+        #expect(section.contains(".onMove"))
+        #expect(section.contains(".onDelete"))
+        let discovery = try source("Voxglass/Features/Production/Discovery/DiscoveryEnvironment.swift")
+        #expect(discovery.contains("needs.filter { $0.isOpenLibriVoxReaderRequest(at: clock.now) }"))
     }
 
     @Test func planDocumentsTheFieldTestingRequirements() throws {

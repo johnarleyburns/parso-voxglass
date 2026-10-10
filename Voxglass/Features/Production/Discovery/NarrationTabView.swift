@@ -8,6 +8,7 @@ struct NarrationTabView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var flowNeed: NarrationNeed?
+    @State private var resumeProject: AudiobookProject?
     @State private var showNewNarration = false
     @State private var showAllNeeds = false
 
@@ -25,12 +26,13 @@ struct NarrationTabView: View {
 
     private var narrationContent: some View {
         NavigationStack {
-            VoxglassScreen(title: "Narrate", headerSecondaryActionSystemImage: "plus", headerSecondaryAction: { showNewNarration = true }, headerSecondaryActionAccessibilityLabel: "Start a narration") {
+            VoxglassScreen(title: "Narrate", embedsNavigationStack: false, headerSecondaryActionSystemImage: "plus", headerSecondaryAction: { showNewNarration = true }, headerSecondaryActionAccessibilityLabel: "Start a narration") {
                 VStack(alignment: .leading, spacing: 26) {
                     NarrationStudioHero(
                         project: discovery.myNarrations.first(where: { !$0.isReady }),
                         availableNeedCount: discovery.availableNeeds.count,
                         start: { showNewNarration = true },
+                        resume: { resumeProject = $0 },
                         findBook: { showAllNeeds = true }
                     )
                     if discovery.myNarrations.contains(where: { $0.recordedCount > 0 }) {
@@ -45,12 +47,21 @@ struct NarrationTabView: View {
                 }
                 .padding(.top, 12)
             }
+            .refreshable { await discovery.refreshOnce() }
         }
         .accessibilityIdentifier("narration.tab")
     }
 
+    private func resumeStep(for project: AudiobookProject) -> NarrationStep? {
+        if case .review = project.phase { return .reviewList }
+        return nil
+    }
+
     private var compactFlowHost: some View {
         narrationContent
+            .fullScreenCover(item: $resumeProject) { project in
+                NarrationFlowRoot(existingID: project.id, startAt: resumeStep(for: project))
+            }
             .fullScreenCover(item: $flowNeed) { need in
                 NarrationFlowRoot(startNeed: need)
             }
@@ -69,6 +80,10 @@ struct NarrationTabView: View {
 
     private var regularFlowHost: some View {
         narrationContent
+            .sheet(item: $resumeProject) { project in
+                NarrationFlowRoot(existingID: project.id, startAt: resumeStep(for: project))
+                    .frame(minWidth: 720, minHeight: 600)
+            }
             .sheet(item: $flowNeed) { need in
                 NarrationFlowRoot(startNeed: need)
                     .frame(minWidth: 720, minHeight: 600)
@@ -92,6 +107,7 @@ private struct NarrationStudioHero: View {
     let project: AudiobookProject?
     let availableNeedCount: Int
     let start: () -> Void
+    let resume: (AudiobookProject) -> Void
     let findBook: () -> Void
 
     var body: some View {
@@ -109,13 +125,13 @@ private struct NarrationStudioHero: View {
                 PipelineBar(phase: phase)
                 switch phase {
                 case .review:
-                    Button("Review \(project.recordedCount) takes", action: start)
+                    Button("Review \(project.recordedCount) takes") { resume(project) }
                         .buttonStyle(.glassProminent)
                         .tint(Palette.brass)
                         .frame(maxWidth: .infinity)
                         .accessibilityIdentifier("narration.studio.nextStep")
                 default:
-                    Button("Record next paragraph", action: start)
+                    Button("Record next paragraph") { resume(project) }
                         .buttonStyle(.glassProminent)
                         .tint(Palette.brass)
                         .frame(maxWidth: .infinity)
@@ -161,9 +177,14 @@ private struct NeedsPreview: View {
     let seeAll: () -> Void
 
     var body: some View {
-        let needs = Array(NarrationHomeShelfPlan(needs: discovery.availableNeeds, featured: discovery.availableFeatured).short.prefix(limit))
+        let needs = Array(discovery.availableNeeds.prefix(limit))
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Waiting for a narrator", actionTitle: "See all", action: seeAll, actionIdentifier: "narration.needsSeeAll")
+            if needs.isEmpty {
+                Text("No verified open LibriVox projects are available right now. Pull to refresh to check again.")
+                    .voxType(.body).foregroundStyle(Palette.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             ForEach(needs) { need in
                 HStack(spacing: 10) {
                     CoverPlate(title: need.work.title, author: need.work.author, coverURL: nil, size: 40, shape: .portrait)
@@ -172,10 +193,7 @@ private struct NeedsPreview: View {
                         Text("\(need.work.lengthClass == .short ? "Short work" : "Group project") · about \(max(1, need.work.estSeconds / 60)) min").voxType(.meta).foregroundStyle(Palette.ink2) // l10n-exempt: state-dependent accessibility or status copy
                     }
                     Spacer()
-                    Button("Start") { startProject(need) }
-                        .buttonStyle(.glassProminent)
-                        .tint(Palette.brass)
-                        .accessibilityIdentifier("need.startNarrating.\(needSlug(need))")
+                    NeedAction(need: need, startProject: startProject)
                 }
                 .padding(10)
                 .raisedSurface(radius: Radius.tile)

@@ -36,8 +36,8 @@ final class NarrationLibraryImporter: NarrationLibraryImporting {
 
 /// The phone's discovery composition root (NARRATION_NEEDS_SPEC §11.1): owns
 /// the ladder aggregator (all seven rungs), the last-good cache, the fetcher,
-/// the deterministic clock, and the My Narrations store. The surface is always
-/// full: the bundled seed floors it, live rungs enrich it, failures vanish.
+/// the deterministic clock, and the My Narrations store. Only verified open
+/// LibriVox reader requests reach discovery surfaces; exercises never fill gaps.
 ///
 /// My Narrations are `AudiobookProject`s in the SQLite production store (spec
 /// §4.3). Saving a narration also projects it into `ProductionPreviewStore` and
@@ -61,13 +61,13 @@ public final class DiscoveryEnvironment {
     private var persistedNeedIDs: Set<String> = []
     private var hasLoadedNarrations = false
 
-    /// The one filtered collection consumed by every narration-needs surface.
+    /// The verified open LibriVox requests consumed by every needs surface.
     /// An empty value during the initial repository load is deliberate: it
     /// prevents a persisted narration from flashing as an available need.
     public var availableNeeds: [NarrationNeed] {
         guard hasLoadedNarrations else { return [] }
         return NarrationNeed.excludingPersistedProjects(
-            needs,
+            needs.filter { $0.isOpenLibriVoxReaderRequest(at: clock.now) },
             projects: myNarrations,
             persistedNeedIDs: persistedNeedIDs
         )
