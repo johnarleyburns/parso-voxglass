@@ -17,6 +17,8 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     @Published private(set) var isActivated: Bool = false
     @Published private(set) var watchStorageSnapshot: WatchStorageSnapshot?
     @Published private(set) var isTransferringToWatch = false
+    @Published private(set) var isPreparingWatchAudio = false
+    private var watchPreparationTask: Task<Void, Error>?
     @Published private(set) var lastWatchSyncDate: Date?
     @Published private(set) var watchSyncStatus: String?
     @Published var connectionToast: String?
@@ -138,9 +140,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             lastCatalogSentDate = SystemClock().now
             UserDefaults.standard.set(watchLibraryID.rawValue, forKey: "voxglass.watch.libraryID")
             lastWatchSyncDate = Date()
-            watchSyncStatus = session.isReachable
-                ? String(localized: "Watch catalog sent.")
-                : String(localized: "Watch catalog saved for delivery when Apple Watch connects.")
+            if !isPreparingWatchAudio {
+                watchSyncStatus = session.isReachable
+                    ? String(localized: "Watch catalog sent.")
+                    : String(localized: "Watch catalog saved for delivery when Apple Watch connects.")
+            }
         } catch {
             guard generation == catalogPublishGeneration else { return }
             lastCatalogContent = nil
@@ -406,6 +410,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         return url
     }
 
+    /// Stops only preparation requested by the user; phone originals remain intact.
+    func cancelWatchPreparation() {
+        watchPreparationTask?.cancel()
+    }
+
     func transferBookToWatch(
         _ book: BookWithChapters,
         allowCellularOverride: Bool = false
@@ -474,6 +483,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             try? await watchProjectionStore.setDesired(.failed(message), for: selected.id)
             watchTransferError = message
             await publishTypedWatchProjection()
+            watchSyncStatus = message
             return .failed(message)
         }
 
@@ -556,47 +566,81 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         var sourceHashes: [URL: String] = [:]
         var artwork: (url: URL, bytes: Int64, hash: String)?
         do {
-            let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Voxglass/WatchAAC96", isDirectory: true)
-            selected.chapters = []
-            for (chapter, key, source) in resolvedChapterFiles {
-                watchSyncStatus = "Preparing watch AAC: \(chapter.title)"
-                let hash: String
-                if let cached = sourceHashes[source] { hash = cached }
-                else {
-                    hash = try await Task.detached {
-                        let accessed = source.startAccessingSecurityScopedResource()
-                        defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-                        return try WatchChecksum.sha256(of: source)
-                    }.value
-                    sourceHashes[source] = hash
+            // Media conversion needs foreground execution or a finite iOS
+            // background assertion. Prevent automatic screen locking during the
+            // explicit operation, then restore the user's prior idle-timer state.
+            let preparation = Task { @MainActor () async throws -> Void in
+                let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("Voxglass/WatchAAC96", isDirectory: true)
+                selected.chapters = []
+                for (index, item) in resolvedChapterFiles.enumerated() {
+                    try Task.checkCancellation()
+                    let (chapter, key, source) = item
+                    watchSyncStatus = "Preparing chapter \(index + 1) of \(resolvedChapterFiles.count): \(chapter.title). Keep Voxglass open until preparation finishes."
+                    let hash: String
+                    if let cached = sourceHashes[source] { hash = cached }
+                    else {
+                        hash = try await Task.detached {
+                            let accessed = source.startAccessingSecurityScopedResource()
+                            defer { if accessed { source.stopAccessingSecurityScopedResource() } }
+                            return try WatchChecksum.sha256(of: source)
+                        }.value
+                        sourceHashes[source] = hash
+                    }
+                    let remote = chapter.remoteURL
+                    let mime = remote.flatMap { RemoteAudioURL.contentTypeMIME(for: $0) }
+                        ?? (remote?.pathExtension.lowercased() == "mp3" ? "audio/mpeg" : nil)
+                    let url = try await WatchChapterTransfer.prepareAAC(source: source, directory: directory,
+                        startTime: max(0, chapter.startTime), duration: chapter.duration.flatMap { $0 > 0 ? $0 : nil },
+                        sourceHash: hash, mimeType: mime)
+                    let size = Int64(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
+                    let checksum = try await Task.detached { try WatchChecksum.sha256(of: url) }.value
+                    let filename = "\(chapter.id.uuidString).m4a"
+                    let preparedDuration = try await AVURLAsset(url: url).load(.duration).seconds
+                    selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
+                        index: chapter.index, title: chapter.title, duration: preparedDuration, startTime: 0,
+                        expectedBytes: size, expectedSHA256: checksum, durableFilename: filename))
+                    preparedFiles.append((chapter, key, url, size, checksum))
                 }
-                let remote = chapter.remoteURL
-                let mime = remote.flatMap { RemoteAudioURL.contentTypeMIME(for: $0) }
-                    ?? (remote?.pathExtension.lowercased() == "mp3" ? "audio/mpeg" : nil)
-                let url = try await WatchChapterTransfer.prepareAAC(source: source, directory: directory,
-                    startTime: max(0, chapter.startTime), duration: chapter.duration.flatMap { $0 > 0 ? $0 : nil },
-                    sourceHash: hash, mimeType: mime)
-                let size = Int64(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
-                let checksum = try await Task.detached { try WatchChecksum.sha256(of: url) }.value
-                let filename = "\(chapter.id.uuidString).m4a"
-                let preparedDuration = try await AVURLAsset(url: url).load(.duration).seconds
-                selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
-                    index: chapter.index, title: chapter.title, duration: preparedDuration, startTime: 0,
-                    expectedBytes: size, expectedSHA256: checksum, durableFilename: filename))
-                preparedFiles.append((chapter, key, url, size, checksum))
+                selected.duration = selected.chapters.reduce(0) { $0 + $1.duration }
+                artwork = await prepareWatchArtwork(book: book, directory: directory)
+                if let artwork { selected.artworkKey = "\(book.book.id.uuidString)/\(artwork.hash).jpg" }
+                try await watchProjectionStore.select(selected)
+                watchSelectedBookIDs.insert(book.book.id)
+                try await watchProjectionStore.setDesiredRoot(WatchManifest(bookID: selected.id, revision: revision,
+                    requiredChapterIDs: selected.chapters.map(\.id)))
+                await publishTypedWatchProjection()
             }
-            selected.duration = selected.chapters.reduce(0) { $0 + $1.duration }
-            artwork = await prepareWatchArtwork(book: book, directory: directory)
-            if let artwork { selected.artworkKey = "\(book.book.id.uuidString)/\(artwork.hash).jpg" }
-            try await watchProjectionStore.select(selected)
-            watchSelectedBookIDs.insert(book.book.id)
-            try await watchProjectionStore.setDesiredRoot(WatchManifest(bookID: selected.id, revision: revision,
-                requiredChapterIDs: selected.chapters.map(\.id)))
-            await publishTypedWatchProjection()
+            watchPreparationTask = preparation
+            isPreparingWatchAudio = true
+            let application = UIApplication.shared
+            let previousIdleTimerState = application.isIdleTimerDisabled
+            application.isIdleTimerDisabled = true
+            let backgroundTask = application.beginBackgroundTask(withName: "Prepare Watch audiobook") {
+                preparation.cancel()
+            }
+            defer {
+                application.isIdleTimerDisabled = previousIdleTimerState
+                if backgroundTask != .invalid { application.endBackgroundTask(backgroundTask) }
+                watchPreparationTask = nil
+                isPreparingWatchAudio = false
+            }
+            try await withTaskCancellationHandler {
+                try await preparation.value
+            } onCancel: {
+                preparation.cancel()
+            }
         } catch {
-            try? await watchProjectionStore.setDesired(.failed("AAC preparation failed: \(error.localizedDescription)"), for: selected.id)
-            return await fail("The iPhone could not prepare watch AAC. No audio file was submitted. \(error.localizedDescription)")
+            let reason: String
+            if error is CancellationError {
+                reason = "Watch audio preparation stopped. Keep Voxglass open and send the book again when ready. Prepared chapters are saved; no audio file was submitted."
+            } else if (error as NSError).domain == AVFoundationErrorDomain,
+                      (error as NSError).code == AVError.operationInterrupted.rawValue {
+                reason = "iOS interrupted watch audio preparation. Keep Voxglass open on the unlocked iPhone and send the book again. Prepared chapters are saved; no audio file was submitted."
+            } else {
+                reason = "The iPhone could not prepare watch AAC. No audio file was submitted. \(error.localizedDescription)"
+            }
+            return await fail(reason)
         }
 
         do { try await watchProjectionStore.markSubmitted(selected.id, at: SystemClock().now) }

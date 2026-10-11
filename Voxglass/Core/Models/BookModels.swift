@@ -160,14 +160,13 @@ public enum SecurityScopedBookmarkAccess {
             return nil
         }
 
-        let alreadyStarted = started.withLock { started in
-            let wasStarted = started.contains(url)
-            started.insert(url)
-            return wasStarted
-        }
-
-        if !alreadyStarted {
-            _ = url.startAccessingSecurityScopedResource()
+        started.withLock { activeURLs in
+            guard !activeURLs.contains(url) else { return }
+            // Failed or expired grants must remain retryable after the user
+            // chooses the folder again. Only remember scopes we actually acquired.
+            if url.startAccessingSecurityScopedResource() {
+                activeURLs.insert(url)
+            }
         }
         return url
     }

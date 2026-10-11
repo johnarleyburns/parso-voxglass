@@ -790,6 +790,38 @@ public final class LibraryRepository: @unchecked Sendable {
 
     // MARK: - Local folder import (Folder Watch, §4)
 
+    /// Repairs missing access bookmarks while a watched folder's scope is open.
+    /// Existing chapter identities, metadata, and playback positions are preserved.
+    @discardableResult
+    public func repairLocalFileBookmarks(forFolder folderURL: URL) async throws -> Int {
+        try await database.prepare()
+        let rows = try await database.query(
+            """
+            SELECT c.id, c.local_url, s.url AS folder_url
+            FROM chapters c
+            JOIN books b ON b.id = c.book_id
+            JOIN sources s ON s.id = b.source_id
+            WHERE s.kind = ? AND c.local_url IS NOT NULL AND c.local_bookmark IS NULL
+            """,
+            [.string(SourceKind.localFiles.rawValue)]
+        )
+        var repaired = 0
+        for row in rows {
+            try Task.checkCancellation()
+            guard let rawFolder = row.string("folder_url"), let storedFolder = URL(string: rawFolder),
+                  Self.canonicalLocalURL(storedFolder) == Self.canonicalLocalURL(folderURL),
+                  let id = row.string("id"), let raw = row.string("local_url"),
+                  let url = URL(string: raw), FileManager.default.fileExists(atPath: url.path) else { continue }
+            let bookmark = try url.bookmarkData()
+            try await database.execute(
+                "UPDATE chapters SET local_bookmark = ? WHERE id = ? AND local_bookmark IS NULL",
+                [ModelMapping.databaseValue(bookmark), .string(id)]
+            )
+            repaired += 1
+        }
+        return repaired
+    }
+
     /// Returns the local audio URLs already imported from a watched folder.
     /// Folder Watch uses this before probing durations so a relaunch does not
     /// reopen every existing audio asset just to discard it during the idempotent
@@ -800,19 +832,20 @@ public final class LibraryRepository: @unchecked Sendable {
             try await database.prepare()
             let rows = try await database.query(
                 """
-                SELECT c.local_url
+                SELECT c.local_url, s.url AS folder_url
                 FROM chapters c
                 JOIN books b ON b.id = c.book_id
                 JOIN sources s ON s.id = b.source_id
-                WHERE s.kind = ? AND s.url = ? AND c.local_url IS NOT NULL
+                WHERE s.kind = ? AND c.local_url IS NOT NULL
                 """,
                 [
-                    .string(SourceKind.localFiles.rawValue),
-                    ModelMapping.databaseValue(canonicalFolder)
+                    .string(SourceKind.localFiles.rawValue)
                 ]
             )
             return Set(rows.compactMap { row in
-                guard let raw = row.string("local_url"), let url = URL(string: raw) else { return nil }
+                guard let rawFolder = row.string("folder_url"), let storedFolder = URL(string: rawFolder),
+                      Self.canonicalLocalURL(storedFolder) == Self.canonicalLocalURL(canonicalFolder),
+                      let raw = row.string("local_url"), let url = URL(string: raw) else { return nil }
                 return Self.canonicalLocalURL(url)
             })
         } catch {
@@ -937,10 +970,13 @@ public final class LibraryRepository: @unchecked Sendable {
         // keeps re-exports of the same narration matching the same source.
         let folderURL = folderURL.resolvingSymlinksInPath()
         let existing = try await database.query(
-            "SELECT id, kind, title, url, created_at FROM sources WHERE url = ? AND kind = ? LIMIT 1",
-            [ModelMapping.databaseValue(folderURL), .string(SourceKind.localFiles.rawValue)]
+            "SELECT id, kind, title, url, created_at FROM sources WHERE kind = ?",
+            [.string(SourceKind.localFiles.rawValue)]
         )
-        if let row = existing.first {
+        if let row = existing.first(where: { row in
+            guard let raw = row.string("url"), let stored = URL(string: raw) else { return false }
+            return Self.canonicalLocalURL(stored) == Self.canonicalLocalURL(folderURL)
+        }) {
             return try Self.source(from: row)
         }
 

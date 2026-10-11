@@ -1007,6 +1007,13 @@ private struct WatchSyncCard: View {
                     .accessibilityIdentifier("watchsync.result")
             }
 
+            if phoneAudioRelay.isPreparingWatchAudio {
+                Button("Cancel watch audio preparation", role: .cancel) {
+                    phoneAudioRelay.cancelWatchPreparation()
+                }
+                .accessibilityIdentifier("watchsync.cancelPreparation")
+            }
+
             Button {
                 Task {
                     isSyncingWatch = true

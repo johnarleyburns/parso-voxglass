@@ -109,4 +109,46 @@ import Foundation
         let sources = try await repository.fetchSources()
         #expect(sources.count == 1)  // One source per folder
     }
+    @Test func repairsLegacyBookmarksWithoutChangingChapterOrPlaybackIdentity() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let audio = folder.appendingPathComponent("one.mp3")
+        try Data("audio".utf8).write(to: audio)
+        let database = AppDatabase.makeTemporaryDatabase(named: "folder-bookmark-repair")
+        let repository = LibraryRepository(database: database)
+        let imported = try await repository.importLocalFolder(
+            folderURL: folder, folderName: "Legacy book",
+            files: [LocalAudioImport(url: audio, title: "One", sortKey: "one.mp3", duration: 60)]
+        )
+        let chapter = try #require(imported.chapters.first)
+        #expect(chapter.localBookmark == nil)
+        try await database.execute(
+            """
+            INSERT INTO playback_positions (id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished)
+            VALUES (?, ?, ?, 23, 60, 1000, 0)
+            """,
+            [.string(UUID().uuidString), .string(imported.book.id.uuidString), .string(chapter.id.uuidString)]
+        )
+        let defaultsName = "Voxglass.FolderAccessTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: defaultsName))
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let service = FolderWatchService(repository: repository, defaults: defaults)
+        await service.addFolder(folder)
+        await service.addFolder(folder)
+        #expect(service.folders.count == 1)
+        #expect((defaults.array(forKey: "voxglass.folderWatch.bookmarks") as? [Data])?.count == 1)
+        #expect(service.errorMessage == nil)
+        #expect(try await repository.repairLocalFileBookmarks(forFolder: folder) == 0)
+        let reloaded = try #require(try await repository.fetchLibrary().first)
+        #expect(reloaded.book.id == imported.book.id)
+        #expect(reloaded.chapters.count == 1)
+        #expect(reloaded.chapters.first?.id == chapter.id)
+        #expect(reloaded.chapters.first?.duration == 60)
+        #expect(reloaded.chapters.first?.localBookmark != nil)
+        #expect(reloaded.chapters.first?.resolvedPlayableURL()?.standardizedFileURL == audio.standardizedFileURL)
+        let position = try await database.query("SELECT position_seconds FROM playback_positions WHERE chapter_id = ?", [.string(chapter.id.uuidString)])
+        #expect(position.first?.double("position_seconds") == 23)
+    }
+
 }

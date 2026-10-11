@@ -115,18 +115,26 @@ public final class FolderWatchService: ObservableObject {
     // MARK: - Public API
 
     public func addFolder(_ url: URL) async {
-        guard !folders.contains(where: { $0.url == url }) else { return }
-
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
         do {
             let bookmark = try url.bookmarkData()
             var bookmarks = storedBookmarks()
-            bookmarks.append(bookmark)
+            // A fresh picker selection renews access even for an already-watched
+            // folder. Never force users to delete the book to repair permission.
+            if let index = bookmarks.firstIndex(where: { data in
+                var stale = false
+                guard let existing = try? URL(resolvingBookmarkData: data, bookmarkDataIsStale: &stale) else { return false }
+                return Self.canonicalFolder(existing) == Self.canonicalFolder(url)
+            }) {
+                bookmarks[index] = bookmark
+            } else {
+                bookmarks.append(bookmark)
+            }
             saveBookmarks(bookmarks)
             reloadFolders()
-            if let folder = folders.first(where: { $0.url == url }) {
+            if let folder = folders.first(where: { Self.canonicalFolder($0.url) == Self.canonicalFolder(url) }) {
                 await scan(folder: folder)
             }
         } catch {
@@ -170,12 +178,21 @@ public final class FolderWatchService: ObservableObject {
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
         ) else {
+            errorMessage = "Could not read the watched folder \(folder.name). Open it in Files and make sure its audio is available on this iPhone."
             return
         }
 
         // Do not probe AVURLAsset duration for files that are already in the
         // database. This scan runs on every launch and used to reopen every
         // audiobook in every watched folder before bootstrap could finish.
+        do {
+            if try await repository.repairLocalFileBookmarks(forFolder: url) > 0 {
+                await libraryStore?.refresh()
+            }
+        } catch {
+            errorMessage = "Could not restore audio file access: \(error.localizedDescription)"
+            return
+        }
         let knownURLs = await repository.knownLocalFileURLs(forFolder: url)
         let canonicalContents = contents.map { URL(fileURLWithPath: $0.path).standardizedFileURL.resolvingSymlinksInPath() }
         let audioURLs = Self.newAudioFiles(in: canonicalContents, knownURLs: knownURLs)
@@ -192,12 +209,19 @@ public final class FolderWatchService: ObservableObject {
 
         for (index, fileURL) in audioURLs.enumerated() {
             if Task.isCancelled { return }
+            let bookmark: Data
+            do { bookmark = try fileURL.bookmarkData() }
+            catch {
+                errorMessage = "Could not save audio file access: \(error.localizedDescription)"
+                return
+            }
             let duration = await Self.duration(of: fileURL)
             imports.append(LocalAudioImport(
                 url: fileURL,
                 title: fileURL.deletingPathExtension().lastPathComponent,
                 sortKey: fileURL.lastPathComponent,
-                duration: duration
+                duration: duration,
+                bookmark: bookmark
             ))
             soundIndexProgress = SoundIndexProgress(
                 totalTracks: audioURLs.count,
@@ -220,6 +244,10 @@ public final class FolderWatchService: ObservableObject {
         }
     }
 
+    private static func canonicalFolder(_ url: URL) -> URL {
+        URL(fileURLWithPath: url.path, isDirectory: true).standardizedFileURL.resolvingSymlinksInPath()
+    }
+
     // MARK: - Bookmark persistence
 
     private func storedBookmarks() -> [Data] {
@@ -234,8 +262,9 @@ public final class FolderWatchService: ObservableObject {
         unregisterPresenters()
         var resolved: [WatchedFolder] = []
         for data in storedBookmarks() {
-            var stale = false
-            guard let url = try? URL(resolvingBookmarkData: data, bookmarkDataIsStale: &stale) else { continue }
+            // Keep the user-selected folder readable for playback, not only
+            // for the brief scan. This also covers legacy chapters with no bookmark.
+            guard let url = SecurityScopedBookmarkAccess.resolve(data) else { continue }
             resolved.append(WatchedFolder(id: url.absoluteString, url: url))
         }
         folders = resolved
