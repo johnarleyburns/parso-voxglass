@@ -353,7 +353,8 @@ public final class PlaybackCoordinator {
             // instead of the resumed chapter).
             do {
                 try await engine.load(url: url, startTime: session.chapter.startTime + session.position)
-            } catch AudioEngineError.unplayableAudio where Self.isCacheFile(url, replacing: session.chapter.remoteURL) {
+            } catch AudioEngineError.unplayableAudio where url.isFileURL && session.chapter.remoteURL != nil && session.chapter.remoteURL != url {
+                // A fully downloaded chapter is a local cache file; the engine supplies its MIME type.
                 // A truncated or corrupt completed cache entry must not make a
                 // chapter permanently unplayable; stream the canonical URL instead.
                 guard let remote = session.chapter.remoteURL else { throw AudioEngineError.unplayableAudio }
@@ -392,15 +393,6 @@ public final class PlaybackCoordinator {
             return nil
         }
         return value
-    }
-
-    /// A fully downloaded chapter is a local file, not a stream. Bypass the
-    /// resource loader for complete cache entries; the engine supplies the MIME
-    /// type that the historical extensionless cache filename cannot provide.
-    /// Partial or missing cache entries retain the canonical remote URL and the
-    /// streaming loader's network fallback.
-    private static func isCacheFile(_ url: URL, replacing remote: URL?) -> Bool {
-        url.isFileURL && remote != nil && remote != url
     }
 
     private func playbackURL(for chapter: Chapter) async -> URL? {
