@@ -54,7 +54,7 @@ jobs:
           xcodebuild build \
             -project Voxglass.xcodeproj \
             -scheme VoxglassWatch \
-            -destination 'generic/platform=watchOS Simulator' \
+            -destination 'generic/platform=watchOS' \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Build native macOS
