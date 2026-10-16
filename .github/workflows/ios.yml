@@ -135,6 +135,11 @@ jobs:
 
   testflight:
     name: TestFlight Build
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      actions: read
     runs-on: macos-latest
     concurrency: { group: cadence-macos, cancel-in-progress: false, queue: max }
     needs: [compile, logic-tests, guarded-tests]
@@ -637,6 +642,17 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/appstore/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8" \
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Record TestFlight delivery
+        if: success() && steps.signing.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_WORKFLOW_TOKEN || github.token }}
+          APP_NAME: Voxglass
+          ARCHIVED_APP: ${{ runner.temp }}/Voxglass.xcarchive/Products/Applications/Voxglass.app
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ runner.temp }}/appstore/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+        run: bash .github/scripts/record-testflight-delivery.sh
 
       - name: Report skipped TestFlight build
         if: steps.signing.outputs.ready != 'true' || steps.app_record.outputs.ready != 'true'
