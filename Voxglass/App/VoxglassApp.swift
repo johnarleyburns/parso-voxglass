@@ -107,6 +107,15 @@ final class LaunchDiagnostics {
         Self.logger.info("launch interactive")
     }
 
+    /// Separate from `phase` so a stalled offline-session activation is
+    /// distinguishable from `interactive` in the next launch's breadcrumb.
+    func noteOfflineSession(_ status: String) {
+        record["offlineSession"] = status
+        record["updatedAt"] = Date().timeIntervalSince1970
+        write()
+        Self.logger.info("offline-session \(status, privacy: .public)")
+    }
+
     func beginDeferredWork() {
         record["state"] = "deferred"
         record["updatedAt"] = Date().timeIntervalSince1970
@@ -176,11 +185,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         handleEventsForBackgroundURLSession identifier: String,
         completionHandler: @escaping () -> Void
     ) {
-        guard identifier == OfflineDownloadManager.sessionIdentifier,
-              let manager = OfflineDownloadManager.current else {
-            completionHandler()
-            return
+        let hasManager = OfflineBackgroundEventRelay.shared.receive(
+            identifier: identifier,
+            completionHandler: completionHandler
+        )
+        if !hasManager {
+            // Background relaunch before any manager exists: build services
+            // outside this callback, then activate (which delivers the handler).
+            Task { await AppServices.shared.offlineDownloadManager.activateSession() }
         }
-        manager.handleBackgroundEvents(completionHandler: completionHandler)
     }
 }
