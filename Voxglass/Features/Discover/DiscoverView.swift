@@ -18,8 +18,7 @@ struct BrowseView: View {
     // narrow another catalog surface later.
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
-    @State private var selectedCatalogResult: InternetArchiveSearchResult?
-    @State private var selectedCatalogResultID: String?
+    @State private var selectedCatalogResult: CatalogResultRoute?
     @State private var showingHistory = false
     @State private var showSearch = false
     @State private var discoverScope: DiscoverBrowseScope = .collection
@@ -30,14 +29,11 @@ struct BrowseView: View {
 
     var body: some View {
         VoxglassScreen(
-            title: "Discover",
+            title: "Find",
             scrollToTopTrigger: AnyHashable(selectedCollection?.id ?? "discover.featured"),
             headerTrailingContent: AnyView(discoverHeaderActions),
             content: { discoverContent }
         )
-        .navigationDestination(item: $selectedCatalogResultID) { _ in
-            selectedCatalogDestination
-        }
         .sheet(isPresented: $showingHistory) {
             HistoryView(showingNowPlaying: $showingNowPlaying)
                 .environmentObject(libraryStore)
@@ -45,7 +41,7 @@ struct BrowseView: View {
         .sheet(item: $showingCollectionInfo, content: collectionInfoSheet)
         .alert(isPresented: errorBinding) {
             Alert(
-                title: Text("Discover Failed"),
+                title: Text("Find Failed"),
                 message: Text(verbatim: discoverErrorMessage),
                 dismissButton: .cancel(Text("OK"), action: clearDiscoverErrors)
             )
@@ -99,15 +95,13 @@ struct BrowseView: View {
                 catalogResults
             }
             .padding(.top, 12)
-    }
-
-    @ViewBuilder
-    private var selectedCatalogDestination: some View {
-        if let selectedCatalogResult {
-            CatalogBookDestinationView(result: selectedCatalogResult, showingNowPlaying: $showingNowPlaying)
-        } else {
-            EmptyView()
-        }
+            // Must live inside VoxglassScreen's content: it wraps content in its
+            // own NavigationStack, so a destination attached outside is never
+            // registered and taps would appear inert (see LibraryView).
+            .navigationDestination(item: $selectedCatalogResult) { route in
+                CatalogBookDestinationView(result: route.result, showingNowPlaying: $showingNowPlaying)
+                    .id(route.id)
+            }
     }
 
     @ToolbarContentBuilder
@@ -182,7 +176,7 @@ struct BrowseView: View {
                     .foregroundStyle(Palette.brass)
                     .frame(width: 36, height: 36)
             }
-            .accessibilityLabel(showSearch ? "Close search" : "Search Discover") // l10n-exempt: state-dependent accessibility or status copy
+            .accessibilityLabel(showSearch ? "Close search" : "Search Find") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("discover.searchButton")
 
             Menu {
@@ -228,7 +222,7 @@ struct BrowseView: View {
     }
 
     private var scopeBar: some View {
-        BookScopeBar(title: "Discover scope", selection: $discoverScope, options: [
+        BookScopeBar(title: "Find scope", selection: $discoverScope, options: [
             (.all, "All"), (.collection, "Collection")
         ])
         .accessibilityIdentifier("discover.scopePicker")
@@ -671,8 +665,7 @@ struct BrowseView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         // Push immediately; CatalogBookDestinationView performs the metadata
         // import after navigation so the tap has instant visual feedback.
-        selectedCatalogResult = result
-        selectedCatalogResultID = result.identifier
+        selectedCatalogResult = CatalogResultRoute(result: result)
     }
 
     private var selectedCollectionIDs: Set<String> {
@@ -896,4 +889,13 @@ private struct CollectionInfoSheet: View {
             }
         }
     }
+}
+
+/// Single navigation value for a tapped catalog result so the destination
+/// can never receive a stale or nil result.
+private struct CatalogResultRoute: Identifiable, Hashable {
+    let result: InternetArchiveSearchResult
+    var id: String { result.identifier }
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
