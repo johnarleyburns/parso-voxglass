@@ -68,7 +68,7 @@ import Testing
             let text = try source(path)
             if path == "Voxglass/Features/Discover/DiscoverView.swift" {
                 #expect(text.contains("CatalogBookDestinationView"))
-                #expect(text.contains("selectedCatalogResult = result"))
+                #expect(text.contains("selectedCatalogResult = CatalogResultRoute(result: result)"))
                 #expect(text.contains("Push immediately"))
                 continue
             }
