@@ -142,12 +142,15 @@ struct BookLiveActivity: Widget {
             HStack(spacing: 8) {
                 if context.state.isPlaying,
                    let start = context.state.progressStart,
-                   start < Date() {
-                    Text(timerInterval: start...Date(), countsDown: false)
+                   let end = context.state.progressEnd,
+                   start < end {
+                    Text(timerInterval: start...end, countsDown: false)
                         .font(.caption2)
+                        .monospacedDigit()
                         .foregroundStyle(.white.opacity(0.6))
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Text("\(Self.percent(context.state.chapterFraction))% elapsed")
                         .font(.caption2)
@@ -155,7 +158,6 @@ struct BookLiveActivity: Widget {
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                 }
-                Spacer()
                 if let remainingInBook = context.state.bookRemaining, remainingInBook > 0 {
                     let remaining = Duration.seconds(Int(remainingInBook) / 60 * 60)
                         .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
@@ -165,19 +167,21 @@ struct BookLiveActivity: Widget {
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                 }
-                Spacer()
                 if context.state.isPlaying,
                    let end = context.state.progressEnd,
                    Date() < end {
                     Text(timerInterval: Date()...end, countsDown: true)
                         .font(.caption2)
+                        .monospacedDigit()
                         .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 } else {
                     Text("\(Self.percent(1 - context.state.chapterFraction))% left")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                Spacer()
                 Text("\(context.state.rate.formatted(.number.precision(.fractionLength(0...2))))×")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Color.voxglassBrass)
@@ -224,7 +228,7 @@ struct BookLiveActivity: Widget {
                 .accessibilityLabel("Sleep timer")
             }
         }
-        .padding(14)
+        .padding(16)
         .activityBackgroundTint(Color(red: 0.08, green: 0.09, blue: 0.11))
         .activitySystemActionForegroundColor(Color.voxglassBrass)
     }
