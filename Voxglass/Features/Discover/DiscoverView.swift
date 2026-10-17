@@ -897,5 +897,5 @@ private struct CatalogResultRoute: Identifiable, Hashable {
     let result: InternetArchiveSearchResult
     var id: String { result.identifier }
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
-    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) } // hash-exempt: Hashable identity, not a visual hash
 }
