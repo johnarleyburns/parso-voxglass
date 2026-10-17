@@ -14,6 +14,16 @@ final class LiveActivityController {
     private var pausedEndTask: Task<Void, Never>?
     #endif
 
+    /// True while a Voxglass Live Activity owns the lock screen, so the system
+    /// Now Playing card would only duplicate it.
+    var isShowingActivity: Bool {
+        #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
+        return activity != nil
+        #else
+        return false
+        #endif
+    }
+
     func update(_ content: LiveActivityContent?) {
         #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
         guard UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.liveActivity) == nil
