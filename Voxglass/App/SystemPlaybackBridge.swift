@@ -39,7 +39,13 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
 
     func updateNowPlaying(_ info: NowPlayingInfo?) {
         latestInfo = info
-        guard let info else {
+        publishNowPlaying()
+    }
+
+    /// Publishes the system Now Playing card unless the Voxglass Live Activity
+    /// is already on the lock screen, so only one player shows.
+    private func publishNowPlaying() {
+        guard let info = latestInfo, liveActivityController?.isShowingActivity != true else {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
         }
@@ -54,13 +60,12 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         }
         // Re-emit so the lock screen picks up the new artwork without waiting for
         // the next Now Playing refresh.
-        if let info = latestInfo {
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = mpInfo(from: info)
-        }
+        publishNowPlaying()
     }
 
     func updateLiveActivity(_ content: LiveActivityContent?) {
         liveActivityController?.update(content)
+        publishNowPlaying()
     }
 
     func setSkipIntervals(backward: Int, forward: Int) {
