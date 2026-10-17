@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import ParsoAudioStreaming
 
 /// Per-book offline availability state (§7).
@@ -22,11 +23,23 @@ public enum OfflineStartDecision: Equatable {
 /// Cellular is gated by the §5 "Cache full books on cellular data" toggle.
 @MainActor
 public final class OfflineDownloadManager: NSObject, ObservableObject {
-    public static let sessionIdentifier = "guru.parso.voxglass.offline"
+    public nonisolated static let sessionIdentifier = "guru.parso.voxglass.offline"
 
-    /// The active manager, so the `UIApplicationDelegate` background-events hook
-    /// can forward the system completion handler.
-    public static weak var current: OfflineDownloadManager?
+    /// Builds (or reconnects) the single background session. Runs off the main
+    /// actor, so it may block without stalling launch.
+    public typealias SessionFactory = @Sendable (_ delegate: OfflineDownloadManager) throws -> URLSession
+
+    private static let logger = Logger(subsystem: "guru.parso.voxglass", category: "offline-session")
+    private static let signposter = OSSignposter(logger: logger)
+
+    /// Production factory: the background session for `sessionIdentifier`.
+    public nonisolated static let backgroundSessionFactory: SessionFactory = { delegate in
+        let config = URLSessionConfiguration.background(withIdentifier: sessionIdentifier)
+        config.sessionSendsLaunchEvents = true
+        config.isDiscretionary = false
+        config.allowsCellularAccess = true   // the §5 toggle gates whether we start, not the transport
+        return URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
+    }
 
     @Published public private(set) var state: [UUID: OfflineState] = [:]
 
@@ -34,7 +47,13 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     private let cacheStore: SparseCacheStore
     private let defaults: UserDefaults
     private let taskRegistryKey = "voxglass.offline.taskRegistry.v1"
-    private lazy var session: URLSession = makeSession()
+    private let sessionFactory: SessionFactory
+    private let backgroundEvents: OfflineBackgroundEventRelay
+    private var session: URLSession?
+    private var activationTask: Task<Bool, Never>?
+
+    /// True once the background session exists and is attached to this manager.
+    public var isSessionActive: Bool { session != nil }
 
     private var chapterFractions: [UUID: [UUID: Double]] = [:]  // bookID -> chapterID -> 0...1
     private var plannedCount: [UUID: Int] = [:]                 // bookID -> chapters in job
@@ -47,8 +66,12 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     public init(
         repository: LibraryRepository,
         cacheStore: SparseCacheStore = AudioCache.shared,
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        sessionFactory: @escaping SessionFactory = OfflineDownloadManager.backgroundSessionFactory,
+        backgroundEvents: OfflineBackgroundEventRelay = .shared
     ) {
+        self.sessionFactory = sessionFactory
+        self.backgroundEvents = backgroundEvents
         self.repository = repository
         self.cacheStore = cacheStore
         self.defaults = defaults
@@ -59,16 +82,41 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
             self.taskRegistry = [:]
         }
         super.init()
-        Self.current = self
-        _ = session   // eagerly reconnect the background session on launch
+        // Construction does no I/O: the session is created by `activateSession()`.
+        backgroundEvents.manager = self
     }
 
-    private func makeSession() -> URLSession {
-        let config = URLSessionConfiguration.background(withIdentifier: Self.sessionIdentifier)
-        config.sessionSendsLaunchEvents = true
-        config.isDiscretionary = false
-        config.allowsCellularAccess = true   // the §5 toggle gates whether we start, not the transport
-        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
+    /// Creates or reconnects the background session off the main actor.
+    /// Idempotent: concurrent callers share one attempt, and a failed attempt
+    /// may be retried by calling again. Returns whether the session is active.
+    @discardableResult
+    public func activateSession() async -> Bool {
+        if session != nil { return true }
+        if let activationTask { return await activationTask.value }
+        let factory = sessionFactory
+        let task = Task { @MainActor [weak self] () -> Bool in
+            let state = Self.signposter.beginInterval("offline-session-activation-start")
+            Self.logger.info("offline-session-activation-start")
+            guard let self else { return false }
+            let result = await Task.detached(priority: .utility) { () -> Result<URLSession, Error> in
+                Result { try factory(self) }
+            }.value
+            activationTask = nil
+            switch result {
+            case .success(let created):
+                session = created
+                Self.signposter.endInterval("offline-session-activation-start", state)
+                Self.logger.info("offline-session-activation-ready")
+                backgroundEvents.deliverPending(to: self)
+                return true
+            case .failure(let error):
+                Self.signposter.endInterval("offline-session-activation-start", state)
+                Self.logger.error("offline-session-activation-failed: \(String(describing: type(of: error)), privacy: .public)")
+                return false
+            }
+        }
+        activationTask = task
+        return await task.value
     }
 
     // MARK: - Pure decision helpers (testable)
@@ -217,6 +265,8 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     /// Stores the system-provided completion handler for background events; the
     /// session calls it once all events have been delivered.
     public func handleBackgroundEvents(completionHandler: @escaping () -> Void) {
+        // A superseded handler must still be called exactly once.
+        backgroundCompletionHandler?()
         backgroundCompletionHandler = completionHandler
     }
 
@@ -258,6 +308,7 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
         chapterFractions[bookID] = fractions
         try? await repository.replaceDownloadRecords(records, forBookID: bookID)
 
+        guard await activateSession(), let session else { return }
         for item in toEnqueue {
             let task = session.downloadTask(with: item.url)
             let info = TaskInfo(bookID: bookID, chapterID: item.chapter.id, key: item.key)
@@ -404,7 +455,8 @@ public final class OfflineDownloadManager: NSObject, ObservableObject {
     }
 
     private func allTasks() async -> [URLSessionTask] {
-        await withCheckedContinuation { continuation in
+        guard await activateSession(), let session else { return [] }
+        return await withCheckedContinuation { continuation in
             session.getAllTasks { continuation.resume(returning: $0) }
         }
     }
@@ -540,5 +592,48 @@ extension OfflineDownloadManager: URLSessionDownloadDelegate {
         Task { @MainActor in
             self.flushBackgroundCompletion()
         }
+    }
+}
+
+/// Hands the system's background-session completion handler to the offline
+/// manager, holding it until the manager's session is active so it is neither
+/// dropped nor invoked early.
+@MainActor
+public final class OfflineBackgroundEventRelay {
+    public static let shared = OfflineBackgroundEventRelay()
+
+    private static let logger = Logger(subsystem: "guru.parso.voxglass", category: "offline-session")
+
+    public weak var manager: OfflineDownloadManager?
+    private var pending: (() -> Void)?
+
+    public init() {}
+
+    /// Returns true when a manager exists to activate; false means the caller
+    /// must create one (the handler stays pending until it activates).
+    @discardableResult
+    public func receive(identifier: String, completionHandler: @escaping () -> Void) -> Bool {
+        guard identifier == OfflineDownloadManager.sessionIdentifier else {
+            completionHandler()
+            return true
+        }
+        if let manager, manager.isSessionActive {
+            Self.logger.info("offline-background-events-delivered")
+            manager.handleBackgroundEvents(completionHandler: completionHandler)
+            return true
+        }
+        pending?()
+        pending = completionHandler
+        Self.logger.info("offline-background-events-pending")
+        guard let manager else { return false }
+        Task { await manager.activateSession() }
+        return true
+    }
+
+    func deliverPending(to manager: OfflineDownloadManager) {
+        guard let handler = pending else { return }
+        pending = nil
+        Self.logger.info("offline-background-events-delivered")
+        manager.handleBackgroundEvents(completionHandler: handler)
     }
 }

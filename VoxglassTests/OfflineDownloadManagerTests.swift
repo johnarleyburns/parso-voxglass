@@ -123,4 +123,102 @@ import ParsoAudioStreaming
         )
         #expect(try await withType.load(.isPlayable))
     }
+
+    // MARK: - Deferred background-session activation
+
+    private final class FactoryCounter: @unchecked Sendable {   // test-only; guarded by lock
+        private let lock = NSLock()
+        private var count = 0
+        private var failuresRemaining: Int
+        init(failures: Int = 0) { failuresRemaining = failures }
+        var calls: Int { lock.withLock { count } }
+        func next() throws {
+            try lock.withLock {
+                count += 1
+                if failuresRemaining > 0 {
+                    failuresRemaining -= 1
+                    throw URLError(.cannotConnectToHost)
+                }
+            }
+        }
+    }
+
+    private func makeManager(
+        counter: FactoryCounter,
+        relay: OfflineBackgroundEventRelay
+    ) throws -> OfflineDownloadManager {
+        let defaults = try #require(UserDefaults(suiteName: "offline-activation-\(UUID().uuidString)"))
+        let repository = LibraryRepository(database: AppDatabase.makeTemporaryDatabase(named: "offline-activation-\(UUID().uuidString)"))
+        return OfflineDownloadManager(
+            repository: repository,
+            defaults: defaults,
+            sessionFactory: { _ in
+                try counter.next()
+                return URLSession(configuration: .ephemeral)
+            },
+            backgroundEvents: relay
+        )
+    }
+
+    @Test func constructionDoesNotCreateSession() throws {
+        let counter = FactoryCounter()
+        let manager = try makeManager(counter: counter, relay: OfflineBackgroundEventRelay())
+        #expect(counter.calls == 0)
+        #expect(!manager.isSessionActive)
+    }
+
+    @Test func concurrentActivationCreatesOneSession() async throws {
+        let counter = FactoryCounter()
+        let manager = try makeManager(counter: counter, relay: OfflineBackgroundEventRelay())
+        async let a = manager.activateSession()
+        async let b = manager.activateSession()
+        let results = await [a, b]
+        #expect(results == [true, true])
+        #expect(await manager.activateSession())
+        #expect(counter.calls == 1)
+    }
+
+    @Test func failedActivationCanBeRetried() async throws {
+        let counter = FactoryCounter(failures: 1)
+        let manager = try makeManager(counter: counter, relay: OfflineBackgroundEventRelay())
+        #expect(await manager.activateSession() == false)
+        #expect(!manager.isSessionActive)
+        #expect(await manager.activateSession() == true)
+        #expect(counter.calls == 2)
+    }
+
+    @Test func backgroundEventsBeforeActivationAreHeldThenCompletedOnce() async throws {
+        let counter = FactoryCounter()
+        let relay = OfflineBackgroundEventRelay()
+        let manager = try makeManager(counter: counter, relay: relay)
+        var completions = 0
+        relay.receive(identifier: OfflineDownloadManager.sessionIdentifier) { completions += 1 }
+        #expect(completions == 0)
+        #expect(await manager.activateSession())
+        #expect(completions == 0)   // held until the session reports all events handled
+        manager.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession(configuration: .ephemeral))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(completions == 1)
+        manager.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession(configuration: .ephemeral))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(completions == 1)
+    }
+
+    @Test func backgroundEventsAfterActivationCompleteOnce() async throws {
+        let relay = OfflineBackgroundEventRelay()
+        let manager = try makeManager(counter: FactoryCounter(), relay: relay)
+        #expect(await manager.activateSession())
+        var completions = 0
+        relay.receive(identifier: OfflineDownloadManager.sessionIdentifier) { completions += 1 }
+        #expect(completions == 0)
+        manager.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession(configuration: .ephemeral))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(completions == 1)
+    }
+
+    @Test func unknownSessionIdentifierCompletesImmediately() {
+        var completions = 0
+        OfflineBackgroundEventRelay().receive(identifier: "other") { completions += 1 }
+        #expect(completions == 1)
+    }
 }
