@@ -17,6 +17,11 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 - Set the command timeout to at least **10 minutes (600 seconds)** for `git commit`; the pre-commit hook runs the host `swift test` suite only.
 - Set the command timeout to about **2 minutes (120 seconds)** for `git push`; the pre-push hook runs no tests or guards (CI verifies pushed commits).
 
+## Delivery discipline
+
+- **Test the requested behavior before and after implementation:** for every non-UI issue, first add or strengthen a focused automated test that fails for the reported defect, then make that same test pass with the implementation. If a behavior cannot be covered automatically, explain why in the PR and add the narrowest reliable alternative verification.
+- **Perform a completion audit before committing a PR:** re-read the entire issue and compare every requirement and acceptance criterion against the actual diff and tests. Fix every gap found, then repeat the audit until no gaps remain. Do not commit, open, or update a PR while a known issue requirement is unaddressed.
+
 ## Mac signing and UI-test verification
 
 - Do not infer signing capability from a single Xcode error. Verify the local

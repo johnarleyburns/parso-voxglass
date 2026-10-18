@@ -3,7 +3,7 @@ run-name: Admit one stranded issue
 
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '27,57 * * * *'
   workflow_dispatch:
 
 permissions:
