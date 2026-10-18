@@ -48,7 +48,7 @@ struct AdaptiveNavigationShortcuts: View {
                 .keyboardShortcut(VoxglassKeyboardShortcut.listen, modifiers: [.command])
             Button("My Books") { selection = .library }
                 .keyboardShortcut(VoxglassKeyboardShortcut.myBooks, modifiers: [.command])
-            Button("Discover") { selection = .discover }
+            Button("Find") { selection = .find }
                 .keyboardShortcut(VoxglassKeyboardShortcut.discover, modifiers: [.command])
             Button("Narration") { selection = .narration }
                 .keyboardShortcut(VoxglassKeyboardShortcut.narration, modifiers: [.command])

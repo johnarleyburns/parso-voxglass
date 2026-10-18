@@ -74,7 +74,7 @@ final class VoxglassUITests: XCTestCase {
         // Every tab is reachable and renders a stable anchor without crashing.
         let tabs: [(button: String, anchor: String)] = [
             ("My Books", "My Books"),
-            ("Discover", "Featured Collections"),
+            ("Find", "Featured Collections"),
             ("Narrate", "Start a Narration"),
             ("Listen", "Recommended for You")
         ]
@@ -320,15 +320,15 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Recommended for You"].waitForExistence(timeout: 10))
 
         // Discover renders the catalog search field (kept last: it puts focus in a text field).
-        tab("Discover", in: app).tap()
+        tab("Find", in: app).tap()
         let searchField = app.textFields["discover.catalogSearch"]
         if !searchField.waitForExistence(timeout: 20) {
-            tab("Discover", in: app).tap()
+            tab("Find", in: app).tap()
             _ = searchField.waitForExistence(timeout: 20)
         }
         XCTAssertTrue(
             searchField.exists,
-            "Discover did not render its catalog search field.\n\(app.debugDescription)"
+            "Find did not render its catalog search field.\n\(app.debugDescription)"
         )
 
         // The ten-band EQ is reachable from Settings (Audio section) and
@@ -446,16 +446,16 @@ final class VoxglassUITests: XCTestCase {
     /// the other half of that change: the "Listening History" entry point
     /// (Discover's history icon) renders and opens without crashing.
     private func assertHistoryOpensFromExploreWithoutCrashing(app: XCUIApplication) {
-        tab("Discover", in: app).tap()
+        tab("Find", in: app).tap()
         XCTAssertTrue(
             app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
-            "Discover did not render before opening History.\n\(app.debugDescription)"
+            "Find did not render before opening History.\n\(app.debugDescription)"
         )
 
         let historyButton = app.buttons["Listening History"]
         XCTAssertTrue(
             historyButton.waitForExistence(timeout: 10),
-            "Discover is missing its Listening History button.\n\(app.debugDescription)"
+            "Find is missing its Listening History button.\n\(app.debugDescription)"
         )
         historyButton.tap()
 
@@ -480,10 +480,10 @@ final class VoxglassUITests: XCTestCase {
     /// user has actually selected — the default onboarding selection is
     /// English only, so the German/Spanish titles must not appear.
     private func assertFeaturedCollectionsRespectSelectedLanguage(app: XCUIApplication) {
-        tab("Discover", in: app).tap()
+        tab("Find", in: app).tap()
         XCTAssertTrue(
             app.staticTexts["Featured Collections"].waitForExistence(timeout: 10),
-            "Discover did not render.\n\(app.debugDescription)"
+            "Find did not render.\n\(app.debugDescription)"
         )
         XCTAssertTrue(
             app.buttons["discover.collection.great-books"].waitForExistence(timeout: 10),

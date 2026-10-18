@@ -147,6 +147,15 @@ final class AppServices: ObservableObject {
         #endif
         diagnostics.markInteractive()
 
+        // Deferred past scene creation and detached from the rest of deferred
+        // bootstrap: a slow session daemon must not delay or block anything.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            diagnostics.noteOfflineSession("activating")
+            let ready = await self.offlineDownloadManager.activateSession()
+            diagnostics.noteOfflineSession(ready ? "ready" : "failed")
+        }
+
         Task { @MainActor [weak self] in
             guard let self else { return }
             try? await Task.sleep(for: .milliseconds(250))

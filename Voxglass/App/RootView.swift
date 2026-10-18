@@ -139,11 +139,12 @@ struct RootView: View {
             Tab("My Books", systemImage: "books.vertical", value: VoxglassTab.library) {
                 LibraryView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
             }
-            Tab("Discover", systemImage: "square.grid.2x2", value: VoxglassTab.discover) {
-                BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
-            }
             Tab("Narrate", systemImage: "mic", value: VoxglassTab.narration) {
                 NarrationTabView()
+            }
+            // Dedicated search/discovery destination belongs at the trailing end.
+            Tab("Find", systemImage: "magnifyingglass", value: VoxglassTab.find) {
+                BrowseView(showingNowPlaying: miniPlayerRouter.bindNowPlaying())
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -193,7 +194,10 @@ private struct MiniPlayerBottomAccessory: ViewModifier {
 }
 
 enum VoxglassTab: Hashable {
-    case listen, library, discover, narration
+    case listen, library, narration, find
+
+    /// Display order in the tab bar; Find is trailing.
+    static let tabBarOrder: [VoxglassTab] = [.listen, .library, .narration, .find]
 
     static var launchDefault: VoxglassTab {
         #if DEBUG
@@ -203,11 +207,11 @@ enum VoxglassTab: Hashable {
         return .listen
     }
 
-    private init?(argument: String) {
+    init?(argument: String) {
         switch argument.lowercased() {
         case "listen", "home": self = .listen
         case "library": self = .library
-        case "explore", "browse", "discover", "search": self = .discover
+        case "find", "search", "explore", "browse", "discover": self = .find
         case "narration", "narrate": self = .narration
         default: return nil
         }
