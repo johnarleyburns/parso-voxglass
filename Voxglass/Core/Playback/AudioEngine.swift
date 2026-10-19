@@ -48,18 +48,33 @@ public protocol AudioEngine: AnyObject {
     var lastEndWasVerified: Bool { get }
 
     func configureAudioSession()
-    func load(url: URL, startTime: TimeInterval) async throws
+    /// `lease` (if any) is owned by the engine from the call onward: it is held
+    /// for the lifetime of the loaded item and released when the item is
+    /// replaced, the load fails, or `releasePlaybackLeases()` runs.
+    func load(url: URL, startTime: TimeInterval, lease: PlaybackLease?) async throws
     func play()
     func pause()
     func seek(to position: TimeInterval) async
     func setRate(_ rate: Float)                // P0-1
-    func preloadNext(url: URL)
+    /// The engine owns `lease` whether or not the preload is accepted; it is
+    /// released on `cancelPreload()`, when the item is replaced, or once the
+    /// preloaded item is no longer queued.
+    func preloadNext(url: URL, lease: PlaybackLease?)
     func cancelPreload()                        // sleep timer depends on this
+    /// Releases the current and preload leases (stop / teardown).
+    func releasePlaybackLeases()
     func prefetchIntoCache(urls: [URL])
     func setEQEngaged(_ engaged: Bool)
     func applyEQPreset(_ preset: EQPreset)
     func setEQGain(_ gain: Float, at band: Int)
     func setEQGains(_ gains: [Float])
+}
+
+extension AudioEngine {
+    func load(url: URL, startTime: TimeInterval) async throws {
+        try await load(url: url, startTime: startTime, lease: nil)
+    }
+    func preloadNext(url: URL) { preloadNext(url: url, lease: nil) }
 }
 
 /// A playback-engine problem that must not be interpreted as chapter

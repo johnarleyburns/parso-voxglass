@@ -874,7 +874,7 @@ private enum LocalAudiobookPreparer {
         /// The audio file's own on-disk location — never copied.
         let audioURL: URL
         /// A security-scoped bookmark for `audioURL`, so the app can read it
-        /// again after relaunch (`SecurityScopedBookmarkAccess`).
+        /// again after relaunch (`PlaybackSourceResolver`).
         let bookmark: Data
         let markers: [LocalChapterMarker]
         let audioDuration: TimeInterval

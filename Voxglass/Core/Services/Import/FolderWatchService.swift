@@ -68,6 +68,7 @@ public final class FolderWatchService: ObservableObject {
     private let bookmarksKey = "voxglass.folderWatch.bookmarks"
     private weak var libraryStore: LibraryStore?
     private var presenters: [FolderPresenter] = []
+    private var folderLeases: [PlaybackLease] = []
     private var foregroundObserver: ObserverToken?
     private var isScanning = false
 
@@ -261,10 +262,19 @@ public final class FolderWatchService: ObservableObject {
     private func reloadFolders() {
         unregisterPresenters()
         var resolved: [WatchedFolder] = []
+        // Release the previous generation's leases before taking new ones.
+        folderLeases.forEach { $0.release() }
+        folderLeases.removeAll()
         for data in storedBookmarks() {
-            // Keep the user-selected folder readable for playback, not only
-            // for the brief scan. This also covers legacy chapters with no bookmark.
-            guard let url = SecurityScopedBookmarkAccess.resolve(data) else { continue }
+            // Hold the user-selected folder readable for playback, not only
+            // for the brief scan, for as long as it stays watched. This also
+            // covers legacy chapters with no bookmark.
+            // A denied scope keeps the folder listed (no lease) so a later
+            // scan or reselection can still retry it.
+            guard let url = PlaybackSourceResolver.system.bookmarkURL(data) else { continue }
+            if let lease = SecurityScopedLeaseRegistry.shared.acquire(url) {
+                folderLeases.append(lease)
+            }
             resolved.append(WatchedFolder(id: url.absoluteString, url: url))
         }
         folders = resolved

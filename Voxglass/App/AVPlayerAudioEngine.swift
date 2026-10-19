@@ -24,6 +24,10 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
     /// so requiring the ended item to still be current loses the transition.
     private var activeItem: AVPlayerItem?
     private(set) var isCurrentItemPreloaded = false
+    /// Security-scope leases for the playing item and the queued item. A lease
+    /// lives exactly as long as the item that needs the file.
+    private var currentLease: PlaybackLease?
+    private var preloadLease: PlaybackLease?
 
     var hasPreloadedItem: Bool { preloadedItem != nil }
 
@@ -208,7 +212,33 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         }
     }
 
-    func load(url: URL, startTime: TimeInterval) async throws {
+    func releasePlaybackLeases() {
+        currentLease?.release()
+        currentLease = nil
+        preloadLease?.release()
+        preloadLease = nil
+    }
+
+    /// The queued item became the current one: its lease replaces the old one.
+    private func promotePreloadLease() {
+        guard let next = preloadLease else { return }
+        currentLease?.release()
+        currentLease = next
+        preloadLease = nil
+    }
+
+    func load(url: URL, startTime: TimeInterval, lease: PlaybackLease?) async throws {
+        releasePlaybackLeases()
+        currentLease = lease
+        do {
+            try await loadItem(url: url, startTime: startTime)
+        } catch {
+            if currentLease === lease { releasePlaybackLeases() }
+            throw error
+        }
+    }
+
+    private func loadItem(url: URL, startTime: TimeInterval) async throws {
         configureAudioSession()
         tearDownCurrentItem()
         lastEndPosition = 0
@@ -236,12 +266,13 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         await seek(to: startTime)
     }
 
-    func preloadNext(url: URL) {
-        guard preloadedItem == nil else { return }
+    func preloadNext(url: URL, lease: PlaybackLease?) {
+        guard preloadedItem == nil else { lease?.release(); return }
 
         let item = makePlayerItem(for: url)
-        guard player.canInsert(item, after: player.currentItem) else { return }
+        guard player.canInsert(item, after: player.currentItem) else { lease?.release(); return }
         preloadedItem = item
+        preloadLease = lease
         // The previous end belongs to the previous current item. Reset it as
         // soon as a new queued transition is armed so a stale verified end
         // cannot authorize a later item change before that chapter ends.
@@ -286,6 +317,8 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
             preloadedItem = nil
             isCurrentItemPreloaded = false
         }
+        preloadLease?.release()
+        preloadLease = nil
     }
 
     func play() {
@@ -365,6 +398,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
                     guard let self else { return }
                     if player.currentItem == item {
                         self.preloadedItem = nil
+                        self.promotePreloadLease()
                         self.isCurrentItemPreloaded = true
                         // The previous chapter's item has left the queue; drop its
                         // now-orphaned EQ tap so only live items keep taps.
@@ -415,6 +449,7 @@ final class AVPlayerAudioEngine: NSObject, AudioEngine {
         }
         if item == preloadedItem {
             preloadedItem = nil
+            promotePreloadLease()
         }
         let position = item.currentTime().seconds
         let duration = item.duration.seconds

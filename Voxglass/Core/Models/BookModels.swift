@@ -122,7 +122,9 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
     /// local-only books with no remote fallback — the original local URL so
     /// the caller surfaces a playback error instead of silently skipping.
     public func resolvedPlayableURL() -> URL? {
-        if let localBookmark, let resolved = SecurityScopedBookmarkAccess.resolve(localBookmark) {
+        // Metadata only: no security scope is started here. Playback acquires
+        // a lease through `PlaybackSourceResolver`.
+        if let localBookmark, let resolved = PlaybackSourceResolver.system.bookmarkURL(localBookmark) {
             return resolved
         }
         guard let localURL else { return remoteURL }
@@ -131,44 +133,6 @@ public struct Chapter: Identifiable, Codable, Equatable, Sendable {
             return local
         }
         return remoteURL ?? local
-    }
-}
-
-/// Security-scoped access for local audiobook files an import leaves in
-/// place instead of copying (a folder/file picked via `fileImporter` needs
-/// this to stay readable after the app relaunches). Access is started once
-/// per URL and deliberately never stopped: Apple's own guidance tolerates an
-/// unbalanced start for a small, bounded set of long-lived references — this
-/// app never has more than a handful of locally-referenced books — and it
-/// avoids threading a start/stop pair through `AVQueuePlayer`'s overlapping
-/// preloaded items, where no single, clear teardown point exists.
-public enum SecurityScopedBookmarkAccess {
-    // `OSAllocatedUnfairLock` carries its own lock-protected state, so the
-    // Swift 6 checker can verify this static's Sendability on its own —
-    // no unsafe-isolation escape hatch needed for what's otherwise the
-    // same NSLock-guarded set.
-    private static let started = OSAllocatedUnfairLock<Set<URL>>(initialState: [])
-
-    /// Resolves `bookmark` to a URL and ensures security-scoped access is
-    /// active for it, or nil if the bookmark can't be resolved (the file was
-    /// moved, deleted, or the bookmark is otherwise invalid).
-    public static func resolve(_ bookmark: Data) -> URL? {
-        var isStale = false
-        guard let url = try? URL(
-            resolvingBookmarkData: bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale
-        ) else {
-            return nil
-        }
-
-        started.withLock { activeURLs in
-            guard !activeURLs.contains(url) else { return }
-            // Failed or expired grants must remain retryable after the user
-            // chooses the folder again. Only remember scopes we actually acquired.
-            if url.startAccessingSecurityScopedResource() {
-                activeURLs.insert(url)
-            }
-        }
-        return url
     }
 }
 
