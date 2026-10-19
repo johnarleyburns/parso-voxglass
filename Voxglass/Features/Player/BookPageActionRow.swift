@@ -18,6 +18,7 @@ struct BookPageActionRow: View {
     @State private var showWatchCellularPrompt = false
     @State private var showRemoveWatchConfirm = false
     @State private var bookmarkCount = 0
+    @State private var showingBookmarkPrompt = false
     @State private var userPlaybackRateChangeCount = 0
     @State private var userSleepTimerChangeCount = 0
 
@@ -254,9 +255,7 @@ struct BookPageActionRow: View {
 
     private var bookmarkButton: some View {
         Button {
-            bookmarkCount += 1
-            playback.addBookmark()
-            showingBookmarks = true
+            showingBookmarkPrompt = true
         } label: {
             Image(systemName: bookmarkCount > 0 ? "bookmark.fill" : "bookmark")
                 .voxFont(.callout)
@@ -265,6 +264,14 @@ struct BookPageActionRow: View {
         }
         .accessibilityLabel("Bookmark")
         .accessibilityIdentifier("nowplaying.bookmark")
+        .confirmationDialog("Bookmarks", isPresented: $showingBookmarkPrompt) {
+            Button("Add Bookmark?") {
+                bookmarkCount += 1
+                playback.addBookmark()
+            }
+            Button("View Bookmarks") { showingBookmarks = true }
+            Button("Close", role: .cancel) {}
+        }
         .sensoryFeedback(.success, trigger: bookmarkCount)
     }
 
