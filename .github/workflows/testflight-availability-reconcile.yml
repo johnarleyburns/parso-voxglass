@@ -1,0 +1,22 @@
+name: TestFlight Availability Reconcile
+on:
+  schedule: [{cron: '3,18,33,48 * * * *'}]
+  workflow_dispatch:
+permissions: {contents: read, issues: write}
+concurrency: {group: testflight-availability-reconcile, cancel-in-progress: false}
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.CLAUDE_WORKFLOW_TOKEN }}
+      ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      ASC_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: |
+          test -n "$ASC_KEY_B64" || exit 1
+          printf '%s' "$ASC_KEY_B64" | base64 --decode > "$RUNNER_TEMP/appstore-key.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/appstore-key.p8" >> "$GITHUB_ENV"
+      - run: bash .github/scripts/reconcile-testflight-status.sh

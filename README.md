@@ -11,6 +11,18 @@ application also builds as Mac Catalyst, and the repository now includes a separ
 same library, playback, narration packages, and iCloud identity; the old source remains available
 only in Git history.
 
+## TestFlight and human QA
+
+The release system reconciles accepted uploads with App Store Connect on a
+schedule. `testflight-uploaded` means Apple accepted the archive;
+`testflight-processing` means it is not ready; `ready-for-qa` means the exact
+version/build is processed (`VALID`). `testflight-distribution-confirmed` is
+extra tester-group evidence. `testflight-access-unverified` does not mean the
+build cannot be installed—it only records an unavailable or empty group query.
+Testers should install the exact build named in the issue's **TestFlight
+availability** comment, run its checklist, then record device, OS, build, and
+pass/fail on the issue. Only the human owner closes issues.
+
 ## Highlights
 
 - Stream or download the full LibriVox catalog (70,000+ public-domain audiobooks) sourced through the

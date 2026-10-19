@@ -21,6 +21,8 @@ Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-onl
 
 - **Test the requested behavior before and after implementation:** for every non-UI issue, first add or strengthen a focused automated test that fails for the reported defect, then make that same test pass with the implementation. If a behavior cannot be covered automatically, explain why in the PR and add the narrowest reliable alternative verification.
 - **Perform a completion audit before committing a PR:** re-read the entire issue and compare every requirement and acceptance criterion against the actual diff and tests. Fix every gap found, then repeat the audit until no gaps remain. Do not commit, open, or update a PR while a known issue requirement is unaddressed.
+- **TestFlight labels are a state machine, not human QA:** `testflight-uploaded` means Apple accepted the binary; `testflight-processing` means Apple has not finished; `ready-for-qa` means App Store Connect reports the exact build `VALID`; `testflight-distribution-confirmed` is extra group evidence; and `testflight-access-unverified` means only that the group lookup was unavailable or empty. Never add `ready-for-qa` merely because an upload command succeeded.
+- **Human QA belongs on the issue:** after installing the exact version/build, record device, OS, issue-specific scenario, and pass/fail in the issue checklist. A failure starts a repair cycle and must not be hidden by TestFlight labels.
 
 ## Mac signing and UI-test verification
 

@@ -89,11 +89,7 @@ notes="$RUNNER_TEMP/testflight-notes-${build}.txt"
 head -c 4000 "$notes" > "$notes.limited" && mv "$notes.limited" "$notes"
 cat "$notes" >> "$GITHUB_STEP_SUMMARY"
 
-# App Store Connect does not promise that an accepted upload is immediately
-# visible.  When the workflow supplies its API key, make a best-effort update
-# of "What to Test" only after the build is processing-complete.  A later
-# deployment reruns this harmlessly if Apple is still processing it now.
-availability='Uploaded to App Store Connect; Apple processing and tester-group availability are not yet confirmed.'
+availability='Upload accepted. Apple processing and tester distribution will be reconciled separately.'
 if [[ -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" && -n "${ASC_KEY_PATH:-}" && -f "${ASC_KEY_PATH:-}" ]]; then
   token=$(ruby -rjson -ropenssl -rbase64 -e '
     h=Base64.urlsafe_encode64({alg:"ES256",kid:ENV.fetch("ASC_KEY_ID"),typ:"JWT"}.to_json,padding:false)
@@ -146,12 +142,9 @@ while IFS=$'\t' read -r issue _title; do
   else
     gh issue comment "$issue" --repo "$repo" --body "$body" >/dev/null
   fi
-  # An accepted upload is the delivery contract.  Apple processing and tester
-  # group availability remain visible in the status above, but must not delay
-  # the issue's QA handoff.
-  gh label create ready-for-qa --repo "$repo" --color 0E8A16 \
-    --description 'A successful TestFlight upload includes this issue' --force >/dev/null
-  gh issue edit "$issue" --repo "$repo" --add-label ready-for-qa >/dev/null
+  gh label create testflight-uploaded --repo "$repo" --color 1D76DB --description 'TestFlight upload was accepted; Apple processing is being reconciled.' --force >/dev/null
+  gh label create testflight-processing --repo "$repo" --color FBCA04 --description 'Apple is still processing the accepted TestFlight build.' --force >/dev/null
+  gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-processing --remove-label ready-for-qa >/dev/null
 done < "$issues_file"
 
 echo "Recorded TestFlight upload $bundle $version ($build) for $issue_count associated issue(s)."
