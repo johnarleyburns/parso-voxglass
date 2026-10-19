@@ -40,7 +40,7 @@ write_state() {
 
 marker_for_issue="<!-- claude-issue:${issue} -->"
 prs=$(gh pr list --repo "$repo" --state all --base main --limit 200 --json number,state,body \
-  --jq --arg marker "$marker_for_issue" '[.[] | select((.body // "") | contains($marker))]')
+  | jq --arg marker "$marker_for_issue" '[.[] | select((.body // "") | contains($marker))]')
 if jq -e 'any(.[]; .state == "OPEN" or .state == "MERGED")' <<<"$prs" >/dev/null; then
   clear_args=(--remove-label intake-running --remove-label intake-blocked --remove-label retry-ai)
   has_label intake-blocked && clear_args+=(--remove-label needs-human-review)
