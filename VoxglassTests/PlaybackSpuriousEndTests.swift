@@ -22,8 +22,9 @@ import Foundation
         return BookWithChapters(book: book, chapters: chs)
     }
 
-    private func makeCoordinator() -> (PlaybackCoordinator, FakeAudioEngine) {
+    private func makeCoordinator(seeding book: BookWithChapters? = nil) async -> (PlaybackCoordinator, FakeAudioEngine) {
         let db = AppDatabase.makeTemporaryDatabase(named: "spurious-end-\(UUID().uuidString)")
+        if let book { await db.seedLibrary(for: book) }
         let engine = FakeAudioEngine()
         let coordinator = PlaybackCoordinator(
             engine: engine,
@@ -42,8 +43,8 @@ import Foundation
     }
 
     @Test func spuriousItemChangeRevertsToCurrentChapter() async {
-        let (coordinator, engine) = makeCoordinator()
         let book = makeBook()
+        let (coordinator, engine) = await makeCoordinator(seeding: book)
         await coordinator.play(book)
 
         let firstChapter = book.chapters[0]
@@ -69,8 +70,8 @@ import Foundation
     }
 
     @Test func genuineItemChangeAdvancesToNextChapter() async {
-        let (coordinator, engine) = makeCoordinator()
         let book = makeBook()
+        let (coordinator, engine) = await makeCoordinator(seeding: book)
         await coordinator.play(book)
 
         // A real end: position == duration.
@@ -89,8 +90,8 @@ import Foundation
     }
 
     @Test func unverifiedEndDoesNotAdvance() async {
-        let (coordinator, engine) = makeCoordinator()
         let book = makeBook()
+        let (coordinator, engine) = await makeCoordinator(seeding: book)
         await coordinator.play(book)
 
         // Unknown duration (e.g. streaming) cannot prove that the chapter
@@ -109,8 +110,8 @@ import Foundation
     }
 
     @Test func endCallbackAfterQueueSwitchCompletesPendingTransition() async {
-        let (coordinator, engine) = makeCoordinator()
         let book = makeBook()
+        let (coordinator, engine) = await makeCoordinator(seeding: book)
         await coordinator.play(book)
 
         // Model AVQueuePlayer switching currentItem before the end
@@ -138,8 +139,8 @@ import Foundation
     }
 
     @Test func equalDurationChaptersNeverTriggerASecondManualLoad() async {
-        let (coordinator, engine) = makeCoordinator()
         let book = makeBook()
+        let (coordinator, engine) = await makeCoordinator(seeding: book)
         await coordinator.play(book)
         engine.reset()
 
