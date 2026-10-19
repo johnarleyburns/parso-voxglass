@@ -54,6 +54,7 @@ jobs:
         run: |
           cp .github/scripts/issue-to-pr.sh "$RUNNER_TEMP/issue-to-pr-runner.sh"
           # Preserve agent output even when it fails before validation logging.
+          mkdir -p /tmp/claude-issue-logs
           bash "$RUNNER_TEMP/issue-to-pr-runner.sh" 2>&1 | tee /tmp/claude-issue-logs/runner.log
           exit "${PIPESTATUS[0]}"
       - name: Upload logs
