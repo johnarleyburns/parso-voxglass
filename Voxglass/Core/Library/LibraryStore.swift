@@ -218,6 +218,20 @@ public final class LibraryStore: ObservableObject {
         }
     }
 
+    /// Renews bookmarks for imported files under a user-reselected folder or
+    /// file. The caller must hold security-scoped access to `url`.
+    @discardableResult
+    public func repairLocalAccess(selected url: URL) async -> Int {
+        do {
+            let repaired = try await repository.repairLocalFileBookmarks(forFolder: url)
+            if repaired > 0 { await refresh() }
+            return repaired
+        } catch {
+            importError = error.localizedDescription
+            return 0
+        }
+    }
+
     @discardableResult
     public func importLocalSingleFile(
         folderURL: URL,

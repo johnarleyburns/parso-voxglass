@@ -11,9 +11,13 @@ public enum PlaybackPhase: Equatable, Sendable {
 public struct PlaybackFailure: Equatable, Sendable {
     public let message: String
     public let isRetryable: Bool
+    /// True when the imported local file can be recovered by reselecting its
+    /// folder or file in the Files picker.
+    public let needsReselect: Bool
 
-    public init(message: String, isRetryable: Bool) {
+    public init(message: String, isRetryable: Bool, needsReselect: Bool = false) {
         self.message = message
         self.isRetryable = isRetryable
+        self.needsReselect = needsReselect
     }
 }

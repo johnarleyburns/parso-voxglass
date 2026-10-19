@@ -2,6 +2,13 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
+// Device checklist (physical iPhone, Files-provider content such as iCloud Drive):
+// 1. Import a folder, play, note position. 2. Move the folder in Files, relaunch,
+// open the book: the unavailable message and "Reselect Folder or File" appear and
+// the book stays in My Books. 3. Reselect the moved folder: playback resumes at the
+// saved position with no duplicate book/chapters. 4. Repeat for watched-folder and
+// single-file imports. 5. Delete the file: book stays recoverable. Record
+// device/OS/scenario/result in the issue checklist.
 @MainActor
 @Suite struct FolderWatchServiceTests {
 
@@ -151,4 +158,72 @@ import Foundation
         #expect(position.first?.double("position_seconds") == 23)
     }
 
+
+    @Test func repairsLegacyBookmarksViaNonCanonicalSelectionAndDirectFile() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let audio = folder.appendingPathComponent("one.mp3")
+        let other = folder.appendingPathComponent("two.mp3")
+        try Data("audio".utf8).write(to: audio)
+        try Data("audio".utf8).write(to: other)
+        let repository = LibraryRepository(database: AppDatabase.makeTemporaryDatabase(named: "reselect-repair"))
+        let imported = try await repository.importLocalFolder(
+            folderURL: folder, folderName: "Legacy",
+            files: [
+                LocalAudioImport(url: audio, title: "One", sortKey: "1", duration: 60),
+                LocalAudioImport(url: other, title: "Two", sortKey: "2", duration: 60)
+            ]
+        )
+        #expect(imported.chapters.allSatisfy { $0.localBookmark == nil })
+        // A file selected directly repairs only that file's chapter.
+        #expect(try await repository.repairLocalFileBookmarks(forFolder: audio) == 1)
+        // The same folder spelled through /private (or an unstandardized path) still matches.
+        let alias = URL(fileURLWithPath: folder.path + "/../" + folder.lastPathComponent, isDirectory: true)
+        #expect(try await repository.repairLocalFileBookmarks(forFolder: alias) == 1)
+        let library = try await repository.fetchLibrary()
+        #expect(library.count == 1)
+        #expect(Set(library[0].chapters.map(\.id)) == Set(imported.chapters.map(\.id)))
+        #expect(library[0].chapters.allSatisfy { $0.localBookmark != nil })
+    }
+
+    @Test func movedFileStaysPresentAndUnrepairedWithoutDuplication() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let audio = folder.appendingPathComponent("gone.mp3")
+        try Data("audio".utf8).write(to: audio)
+        let repository = LibraryRepository(database: AppDatabase.makeTemporaryDatabase(named: "moved-file"))
+        let imported = try await repository.importLocalFolder(
+            folderURL: folder, folderName: "Gone",
+            files: [LocalAudioImport(url: audio, title: "Gone", sortKey: "1", duration: 60)]
+        )
+        try FileManager.default.removeItem(at: audio)
+        #expect(try await repository.repairLocalFileBookmarks(forFolder: folder) == 0)
+        let library = try await repository.fetchLibrary()
+        #expect(library.count == 1)
+        #expect(library[0].chapters.map(\.id) == imported.chapters.map(\.id))
+    }
+
+    @Test func importPersistsBookmarkProvidedWhileAccessIsGranted() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let audio = folder.appendingPathComponent("book.mp3")
+        try Data("audio".utf8).write(to: audio)
+        let repository = LibraryRepository(database: AppDatabase.makeTemporaryDatabase(named: "persist-bookmark"))
+        let imported = try await repository.importLocalFolder(
+            folderURL: folder, folderName: "Book",
+            files: [LocalAudioImport(url: audio, title: "Book", sortKey: "1", duration: 60, bookmark: try audio.bookmarkData())]
+        )
+        #expect(imported.chapters.first?.localBookmark != nil)
+        #expect(try await repository.fetchLibrary().first?.chapters.first?.localBookmark != nil)
+    }
+
+    @Test func localOnlyUnavailableMessageDoesNotOfferRemoteFallback() {
+        let local = Chapter(bookID: UUID(), title: "c", index: 0, localBookmark: Data("x".utf8))
+        let resolution = PlaybackSourceResolver(bookmarkResolver: { _ in nil }).resolve(local)
+        if case .missingFile = resolution {} else { Issue.record("expected missingFile, got \(resolution)") }
+        #expect(!LocalPlaybackUnavailable.message.isEmpty)
+    }
 }

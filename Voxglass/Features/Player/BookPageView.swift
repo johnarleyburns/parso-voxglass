@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import VoxglassCore
 
 struct BookPageView: View {
@@ -31,6 +32,7 @@ struct BookPageView: View {
         deep: PlateRGB(red: 0.04, green: 0.03, blue: 0.02)
     )
     @State private var showCompactHeader = false
+    @State private var showingReselect = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
 
@@ -206,11 +208,21 @@ struct BookPageView: View {
                     playback.retryPlayback()
                 }
             }
+            if let failure = playbackFailure, failure.needsReselect {
+                Button("Reselect Folder or File") {
+                    playback.playbackError = nil
+                    showingReselect = true
+                }
+            }
             Button("OK", role: .cancel) {
                 playback.playbackError = nil
             }
         } message: {
             Text(playback.playbackError ?? "")
+        }
+        .fileImporter(isPresented: $showingReselect, allowedContentTypes: [.folder, .audio]) { result in
+            guard case .success(let url) = result else { return }
+            Task { await repairLocalAccess(selected: url) }
         }
         .confirmationDialog(
             "Remove the offline copy?",
@@ -251,6 +263,16 @@ struct BookPageView: View {
         } set: { isPresented in
             if !isPresented { playback.playbackError = nil }
         }
+    }
+
+    private func repairLocalAccess(selected url: URL) async {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        await libraryStore.repairLocalAccess(selected: url)
+        guard let session = playback.currentSession,
+              let fresh = libraryStore.book(withID: session.book.id) else { return }
+        let chapter = fresh.chapters.first { $0.id == session.chapter.id }
+        playback.selectAndPlay(fresh, chapter: chapter ?? session.chapter)
     }
 
     private var playbackFailure: PlaybackFailure? {
