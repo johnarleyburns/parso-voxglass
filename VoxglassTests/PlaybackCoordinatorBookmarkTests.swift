@@ -16,8 +16,9 @@ import Foundation
                                 chapters: [chapter1, chapter2])
     }
 
-    private func makeCoordinator() -> (PlaybackCoordinator, FakeAudioEngine, SQLiteBookmarkStore) {
+    private func makeCoordinator(seeding book: BookWithChapters? = nil) async -> (PlaybackCoordinator, FakeAudioEngine, SQLiteBookmarkStore) {
         let db = AppDatabase.makeTemporaryDatabase(named: "bm-coord-\(UUID().uuidString)")
+        if let book { await db.seedLibrary(for: book) }
         let engine = FakeAudioEngine()
         let store = SQLiteBookmarkStore(database: db)
         let coordinator = PlaybackCoordinator(engine: engine, positionStore: SQLitePositionStore(database: db))
@@ -27,7 +28,7 @@ import Foundation
     }
 
     @Test func jumpToSameChapterSeeks() async {
-        let (coordinator, engine, _) = makeCoordinator()
+        let (coordinator, engine, _) = await makeCoordinator()
         await coordinator.play(makeBook())
         engine.reset()
         let bookmark = Bookmark(bookID: bookID, chapterID: coordinator.currentChapterID!, position: 30)
@@ -36,7 +37,7 @@ import Foundation
     }
 
     @Test func jumpToDifferentChapterLoads() async {
-        let (coordinator, engine, _) = makeCoordinator()
+        let (coordinator, engine, _) = await makeCoordinator()
         let book = makeBook()
         await coordinator.play(book)
         engine.reset()
@@ -49,8 +50,9 @@ import Foundation
     }
 
     @Test func jumpStartsPlaybackWhenPaused() async {
-        let (coordinator, engine, _) = makeCoordinator()
-        await coordinator.play(makeBook())
+        let book = makeBook()
+        let (coordinator, engine, _) = await makeCoordinator(seeding: book)
+        await coordinator.play(book)
         coordinator.pause()
         engine.reset()
         let bookmark = Bookmark(bookID: bookID, chapterID: coordinator.currentChapterID!, position: 30)

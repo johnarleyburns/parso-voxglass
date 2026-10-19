@@ -282,8 +282,10 @@ public final class PlaybackCoordinator {
                 }
                 currentSessionUpdatedAt = localPoint.updatedAt
             } catch {
-                playbackError = error.localizedDescription
-                return
+                if !handleStalePositionWrite(error, localPoint) {
+                    playbackError = error.localizedDescription
+                    return
+                }
             }
         }
 
@@ -631,9 +633,30 @@ public final class PlaybackCoordinator {
                     try await positionStore.save(snapshot)
                 }
             } catch {
+                _ = handleStalePositionWrite(error, snapshot)
                 continue
             }
         }
+    }
+
+    /// Classifies a position-write failure. For a stale (book, chapter) reference
+    /// it clears only the matching snapshot and, if the live session references
+    /// those exact IDs, tears it down silently. Returns false for any other error
+    /// so callers keep surfacing it.
+    @discardableResult
+    private func handleStalePositionWrite(_ error: Error, _ position: PlaybackPosition) -> Bool {
+        guard let stale = error as? StalePlaybackReferenceError else { return false }
+        if let snapshot = snapshotStore.position(forBookID: stale.bookID),
+           snapshot.chapterID == stale.chapterID {
+            snapshotStore.clear(bookID: stale.bookID)
+        }
+        if let session = currentSession,
+           session.book.id == stale.bookID,
+           session.chapter.id == stale.chapterID {
+            stopPlayback(forDeletedBook: stale.bookID)
+            playbackError = nil
+        }
+        return true
     }
 
     /// Pure tie-break between a SQLite row and a UserDefaults snapshot for the
@@ -910,7 +933,7 @@ public final class PlaybackCoordinator {
         for chapter in book.chapters {
             let existing: PlaybackPosition? = try? await positionStore.position(for: book.book.id, chapterID: chapter.id)
             guard finished || existing != nil else { continue }
-            try? await positionStore.save(PlaybackPosition(
+            let updated = PlaybackPosition(
                 id: existing?.id ?? UUID(),
                 bookID: book.book.id,
                 chapterID: chapter.id,
@@ -918,7 +941,8 @@ public final class PlaybackCoordinator {
                 duration: existing?.duration ?? chapter.duration,
                 updatedAt: Date(),
                 isFinished: finished
-            ))
+            )
+            do { try await positionStore.save(updated) } catch { handleStalePositionWrite(error, updated) }
         }
     }
 
@@ -1510,7 +1534,11 @@ public final class PlaybackCoordinator {
             isFinished: false
         )
         snapshotStore.save(start)
-        try? await positionStore.save(start)
+        do {
+            try await positionStore.save(start)
+        } catch {
+            if handleStalePositionWrite(error, start) { return }
+        }
         currentSessionUpdatedAt = start.updatedAt
     }
 
@@ -1842,7 +1870,9 @@ public final class PlaybackCoordinator {
                 ))
             }
         } catch {
-            playbackError = error.localizedDescription
+            if !handleStalePositionWrite(error, playbackPosition) {
+                playbackError = error.localizedDescription
+            }
         }
     }
 
@@ -1931,7 +1961,9 @@ public final class PlaybackCoordinator {
             snapshotStore.save(savepoint)
             Task { [weak self] in
                 guard let self else { return }
-                try? await self.positionStore.save(savepoint)
+                do { try await self.positionStore.save(savepoint) } catch {
+                    self.handleStalePositionWrite(error, savepoint)
+                }
             }
         }
 
@@ -1982,7 +2014,13 @@ public final class PlaybackCoordinator {
                 try await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation,
                       self.currentSession?.chapter.id == session.chapter.id else { return }
-                try await self.positionStore.save(savepoint)
+                do {
+                    try await self.positionStore.save(savepoint)
+                } catch {
+                    // Deleted rows: abandon recovery rather than reload them.
+                    if self.handleStalePositionWrite(error, savepoint) { return }
+                    throw error
+                }
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
                 guard let source = await self.playbackSource(for: session.chapter) else {
                     throw AudioEngineError.missingPlayableURL

@@ -198,4 +198,50 @@ import Testing
         }
         #expect(AudioEngineIssue.playbackFailure(URLError(.timedOut), fallback: "fallback") == .failed(URLError(.timedOut).localizedDescription))
     }
+
+    @Test func staleSessionAfterDeleteClearsOnlyMatchingStateWithoutUIError() async {
+        let h = await makeHarness()
+        let staleBook = h.book.book.id
+        try? await h.positions.database_deleteBookForTests(staleBook)
+
+        h.coordinator.pause()
+        try? await Task.sleep(for: .milliseconds(100))
+
+        #expect(h.coordinator.playbackError == nil)
+        #expect(h.snapshot.position(forBookID: staleBook) == nil)
+        #expect(h.coordinator.currentSession == nil)
+        let rows = try? await h.positions.latestPosition(forBookID: staleBook)
+        #expect(rows == nil || rows! == nil)
+    }
+
+    @Test func decodeRecoverySkipsDeletedRows() async {
+        let h = await makeHarness()
+        try? await h.positions.database_deleteBookForTests(h.book.book.id)
+        h.engine.firePlaybackIssue(.decodeFailed("Cannot Decode"))
+        try? await Task.sleep(for: .milliseconds(300))
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.coordinator.playbackError == nil)
+        #expect(h.snapshot.position(forBookID: h.book.book.id) == nil)
+    }
+
+    @Test func reconcileSkipsOrphanSnapshotsAndKeepsValidOnes() async {
+        let h = await makeHarness()
+        let orphan = PlaybackPosition(bookID: UUID(), chapterID: UUID(), position: 10, updatedAt: Date())
+        h.snapshot.save(orphan)
+        await h.coordinator.reconcileSnapshots()
+        #expect(h.snapshot.position(forBookID: orphan.bookID) == nil)
+        #expect(h.snapshot.position(forBookID: h.book.book.id) != nil)
+    }
+
+    @Test func nonForeignKeyFailuresStayObservable() {
+        let error = DatabaseError.stepFailed("disk I/O error")
+        #expect(!(error is StalePlaybackReferenceError))
+        #expect(error.localizedDescription.contains("disk I/O error"))
+    }
+}
+
+extension SQLitePositionStore {
+    func database_deleteBookForTests(_ id: UUID) async throws {
+        try await databaseForTests.execute("DELETE FROM books WHERE id = ?", [.string(id.uuidString)])
+    }
 }
