@@ -23,6 +23,7 @@ endstep
 
 step "Automation regression tests"
 bash scripts/tests/test-issue-pr-policy.sh
+bash scripts/tests/test-issue-backlog-order.sh
 bash scripts/tests/test-release-repair-policy.sh
 bash scripts/tests/test-testflight-delivery-body.sh
 if [[ -f scripts/tests/test-pr-maintenance.sh && -f .github/scripts/pr-maintenance.sh ]]; then
