@@ -47,4 +47,16 @@ import Foundation
         #expect(!(loads.isEmpty))  // A load(...) call must be issued for the new chapter
         #expect(loads.first?.startTime == 55)
     }
+
+    @Test func jumpStartsPlaybackWhenPaused() async {
+        let (coordinator, engine, _) = makeCoordinator()
+        await coordinator.play(makeBook())
+        coordinator.pause()
+        engine.reset()
+        let bookmark = Bookmark(bookID: bookID, chapterID: coordinator.currentChapterID!, position: 30)
+        await coordinator.jump(to: bookmark)
+        try? await Task.sleep(for: .milliseconds(200))
+        #expect(engine.calls.contains(.seek(30)))
+        #expect(engine.calls.contains(.play))
+    }
 }

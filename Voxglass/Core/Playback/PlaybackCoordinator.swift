@@ -1315,8 +1315,9 @@ public final class PlaybackCoordinator {
         guard let session = currentSession, session.book.id == bookmark.bookID else { return }
         if bookmark.chapterID == session.chapter.id {
             await seek(to: bookmark.position)
+            if !engine.isPlaying { togglePlayPause() }
         } else if let chapter = session.chapters.first(where: { $0.id == bookmark.chapterID }) {
-            await loadChapter(chapter, in: session, startTime: bookmark.position, shouldPlay: engine.isPlaying)
+            await loadChapter(chapter, in: session, startTime: bookmark.position, shouldPlay: true)
         }
     }
 
