@@ -2,6 +2,8 @@
 
 ## Swift 6 hard rule
 
+**Automated issue-intake worker contract:** in the non-interactive issue-to-PR workflow, save the requested source and test edits in the worktree. Do not personally commit, push, or open the PR because the wrapper publishes a validated saved diff. Before responding, run `git diff --check`, report `git diff --name-only`, run required tests in the foreground (never background them), and audit the actual saved diff against the issue. A prose-only description is not a deliverable.
+
 Voxglass is fully on Swift 6 language mode with complete strict-concurrency checking and is kept as warning-free as the selected toolchain permits. Do not introduce or permit any deviation, mixed Swift modes, warning suppression, or unexplained concurrency escape hatch. A commit runs `swift test` only; release verification includes the simulator smoke suite and CI checks.
 
 Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md) for the full operating brief.
