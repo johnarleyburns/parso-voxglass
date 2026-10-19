@@ -64,8 +64,9 @@ public final class LibraryStore: ObservableObject {
             result = result.filter { progressByBook[$0.book.id]?.isFinished == true }
         case .inProgress:
             result = result.filter {
-                guard let p = progressByBook[$0.book.id] else { return false }
-                return !p.isFinished && p.lastPosition > 0
+                // An added book is In Progress by default, even if unplayed.
+                guard let p = progressByBook[$0.book.id] else { return true }
+                return !p.isFinished
             }
         }
 
