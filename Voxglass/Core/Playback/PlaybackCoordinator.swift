@@ -53,6 +53,7 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var lastListenTick: Date?
 
     @ObservationIgnored private let engine: AudioEngine
+    @ObservationIgnored private let sourceResolver: PlaybackSourceResolver
     @ObservationIgnored private let positionStore: PositionStore
     @ObservationIgnored private let cacheStore: SparseCacheStore
     @ObservationIgnored public var navigationHistory: NavigationHistoryStore
@@ -155,9 +156,11 @@ public final class PlaybackCoordinator {
         sleepTimer: SleepTimer = SleepTimer(),
         cacheStore: SparseCacheStore = AudioCache.shared,
         bridge: PlaybackPlatformBridge? = nil,
-        navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore()
+        navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore(),
+        sourceResolver: PlaybackSourceResolver = .system
     ) {
         self.engine = engine
+        self.sourceResolver = sourceResolver
         self.positionStore = positionStore
         self.cacheStore = cacheStore
         self.snapshotStore = snapshotStore
@@ -333,7 +336,7 @@ public final class PlaybackCoordinator {
 
     private func loadEngineForPresentedSession() async -> Bool {
         guard let session = currentSession,
-              let url = await playbackURL(for: session.chapter) else {
+              let source = await playbackSource(for: session.chapter) else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
             playbackPhase = .failed(PlaybackFailure(
                 message: AudioEngineError.missingPlayableURL.localizedDescription,
@@ -352,8 +355,8 @@ public final class PlaybackCoordinator {
             // which always seeked to the start of the underlying file
             // instead of the resumed chapter).
             do {
-                try await engine.load(url: url, startTime: session.chapter.startTime + session.position)
-            } catch AudioEngineError.unplayableAudio where url.isFileURL && session.chapter.remoteURL != nil && session.chapter.remoteURL != url {
+                try await engine.load(url: source.url, startTime: session.chapter.startTime + session.position, lease: source.lease)
+            } catch AudioEngineError.unplayableAudio where source.url.isFileURL && session.chapter.remoteURL != nil && session.chapter.remoteURL != source.url {
                 // A fully downloaded chapter is a local cache file; the engine supplies its MIME type.
                 // A truncated or corrupt completed cache entry must not make a
                 // chapter permanently unplayable; stream the canonical URL instead.
@@ -395,15 +398,28 @@ public final class PlaybackCoordinator {
         return value
     }
 
-    private func playbackURL(for chapter: Chapter) async -> URL? {
-        guard let url = chapter.resolvedPlayableURL() else { return nil }
-        guard RemoteAudioURL.isCacheable(url) else { return url }
+    private struct PlaybackSource {
+        let url: URL
+        /// Non-nil for a security-scoped local file; ownership moves to the engine.
+        let lease: PlaybackLease?
+    }
 
-        let key = AudioCache.key(for: url)
-        if let cached = await cacheStore.completeFileURL(for: key) {
-            return cached
+    /// A playable URL for `chapter`, or nil for every local-only failure
+    /// (stale, denied, missing, unreadable) so nothing reaches the engine.
+    private func playbackSource(for chapter: Chapter) async -> PlaybackSource? {
+        switch sourceResolver.resolve(chapter) {
+        case .playableLocal(let url, let lease):
+            return PlaybackSource(url: url, lease: lease)
+        case .remoteFallback(let url):
+            guard RemoteAudioURL.isCacheable(url) else { return PlaybackSource(url: url, lease: nil) }
+            let key = AudioCache.key(for: url)
+            if let cached = await cacheStore.completeFileURL(for: key) {
+                return PlaybackSource(url: cached, lease: nil)
+            }
+            return PlaybackSource(url: url, lease: nil)
+        case .staleBookmark, .scopeDenied, .missingFile, .unreadableFile:
+            return nil
         }
-        return url
     }
 
     /// Records the current session to the navigation history so accidental
@@ -545,7 +561,7 @@ public final class PlaybackCoordinator {
         playbackPhase = .preparing
 
         // 3. Load the engine.
-        guard let playableURL = await playbackURL(for: targetChapter) else {
+        guard let source = await playbackSource(for: targetChapter) else {
             guard activeSelectionID == requestID else { return }
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
             playbackPhase = .failed(PlaybackFailure(
@@ -556,7 +572,7 @@ public final class PlaybackCoordinator {
         }
 
         do {
-            try await engine.load(url: playableURL, startTime: targetChapter.startTime + startTime)
+            try await engine.load(url: source.url, startTime: targetChapter.startTime + startTime, lease: source.lease)
             guard !Task.isCancelled, activeSelectionID == requestID else { return }
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
@@ -580,8 +596,8 @@ public final class PlaybackCoordinator {
             let nextIndex = chapterIndex(in: book, for: targetChapter) + 1
             if !usesSharedAudioAsset(in: book, for: targetChapter),
                book.chapters.indices.contains(nextIndex),
-               let nextURL = await playbackURL(for: book.chapters[nextIndex]) {
-                engine.preloadNext(url: nextURL)
+               let nextURL = await playbackSource(for: book.chapters[nextIndex]) {
+                engine.preloadNext(url: nextURL.url, lease: nextURL.lease)
             }
         } catch is CancellationError {
             return
@@ -699,7 +715,7 @@ public final class PlaybackCoordinator {
         playhead = startTime
         playheadDuration = validTime(chapter.duration ?? target.savedDuration)
 
-        guard let playableURL = await playbackURL(for: chapter) else {
+        guard let source = await playbackSource(for: chapter) else {
             playbackError = AudioEngineError.missingPlayableURL.localizedDescription
             playbackPhase = .failed(PlaybackFailure(
                 message: AudioEngineError.missingPlayableURL.localizedDescription,
@@ -715,7 +731,7 @@ public final class PlaybackCoordinator {
             // `chapter.startTime +` every other `engine.load` call already
             // has, so tapping any chapter but the first in a single-file
             // local book always seeked to the start of the underlying file.
-            try await engine.load(url: playableURL, startTime: chapter.startTime + startTime)
+            try await engine.load(url: source.url, startTime: chapter.startTime + startTime, lease: source.lease)
             guard !Task.isCancelled else { return }
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
@@ -747,8 +763,8 @@ public final class PlaybackCoordinator {
             let nextIndex = chapterIndex(in: book, for: chapter) + 1
             if !usesSharedAudioAsset(in: book, for: chapter),
                book.chapters.indices.contains(nextIndex),
-               let nextURL = await playbackURL(for: book.chapters[nextIndex]) {
-                engine.preloadNext(url: nextURL)
+               let nextURL = await playbackSource(for: book.chapters[nextIndex]) {
+                engine.preloadNext(url: nextURL.url, lease: nextURL.lease)
             }
         } catch is CancellationError {
             return
@@ -1027,8 +1043,8 @@ public final class PlaybackCoordinator {
         // Set up preload for the chapter after next
         let afterNextIndex = nextIndex + 1
         if session.chapters.indices.contains(afterNextIndex),
-           let afterNextURL = await playbackURL(for: session.chapters[afterNextIndex]) {
-            engine.preloadNext(url: afterNextURL)
+           let afterNextURL = await playbackSource(for: session.chapters[afterNextIndex]) {
+            engine.preloadNext(url: afterNextURL.url, lease: afterNextURL.lease)
         }
     }
 
@@ -1089,6 +1105,18 @@ public final class PlaybackCoordinator {
         }
     }
 
+    /// Releases every security-scoped lease the engine holds. Call when the
+    /// coordinator is being discarded; `deinit` cannot reach the main-actor engine.
+    public func teardown() {
+        progressTask?.cancel()
+        progressTask = nil
+        sleepTask?.cancel()
+        sleepTask = nil
+        engine.pause()
+        engine.releasePlaybackLeases()
+        isEngineLoaded = false
+    }
+
     /// Stops and tears down the current session when its book is deleted (§6),
     /// and clears the restore snapshot so it can't resurface on next launch.
     public func stopPlayback(forDeletedBook bookID: UUID) {
@@ -1098,6 +1126,7 @@ public final class PlaybackCoordinator {
         lastListenTick = nil
         resetSilenceBoost()
         engine.pause()
+        engine.releasePlaybackLeases()
         progressTask?.cancel()
         progressTask = nil
         currentSession = nil
@@ -1284,8 +1313,8 @@ public final class PlaybackCoordinator {
     private func preloadImmediateNextChapter(in session: PlaybackSession) async {
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex),
-              let url = await playbackURL(for: session.chapters[nextIndex]) else { return }
-        engine.preloadNext(url: url)
+              let source = await playbackSource(for: session.chapters[nextIndex]) else { return }
+        engine.preloadNext(url: source.url, lease: source.lease)
     }
 
     // MARK: - Bookmarks (P0-3, FREE; bookmark sync = Pro iCloud gate)
@@ -1417,7 +1446,7 @@ public final class PlaybackCoordinator {
 
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
         cancelDecodeRecovery()
-        guard let url = await playbackURL(for: chapter) else { return }
+        guard let source = await playbackSource(for: chapter) else { return }
         let newSession = PlaybackSession(
             book: session.book,
             chapters: session.chapters,
@@ -1432,7 +1461,7 @@ public final class PlaybackCoordinator {
         isEngineLoaded = false
         do {
             resetSilenceBoost()
-            try await engine.load(url: url, startTime: chapter.startTime + startTime)
+            try await engine.load(url: source.url, startTime: chapter.startTime + startTime, lease: source.lease)
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: session.book.id)
@@ -1453,8 +1482,8 @@ public final class PlaybackCoordinator {
             let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
             if !usesSharedAudioAsset(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter),
                session.chapters.indices.contains(nextIndex),
-               let nextURL = await playbackURL(for: session.chapters[nextIndex]) {
-                engine.preloadNext(url: nextURL)
+               let nextURL = await playbackSource(for: session.chapters[nextIndex]) {
+                engine.preloadNext(url: nextURL.url, lease: nextURL.lease)
             }
         } catch {
             isEngineLoaded = false
@@ -1573,8 +1602,8 @@ public final class PlaybackCoordinator {
         let nextIndex = session.chapterIndex + 2
         guard session.chapters.indices.contains(nextIndex) else { return }
         let afterNext = session.chapters[nextIndex]
-        guard let url = await playbackURL(for: afterNext) else { return }
-        engine.preloadNext(url: url)
+        guard let source = await playbackSource(for: afterNext) else { return }
+        engine.preloadNext(url: source.url, lease: source.lease)
     }
 
     private func advanceAfterChapterEnd() async {
@@ -1625,7 +1654,7 @@ public final class PlaybackCoordinator {
 
         // Fallback: if preloading didn't happen, do a manual load
         let nextChapter = session.chapters[nextIndex]
-        guard await playbackURL(for: nextChapter) != nil else {
+        guard await playbackSource(for: nextChapter) != nil else {
             updateNowPlayingInfo()
             return
         }
@@ -1955,11 +1984,11 @@ public final class PlaybackCoordinator {
                       self.currentSession?.chapter.id == session.chapter.id else { return }
                 try await self.positionStore.save(savepoint)
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
-                guard let url = await self.playbackURL(for: session.chapter) else {
+                guard let source = await self.playbackSource(for: session.chapter) else {
                     throw AudioEngineError.missingPlayableURL
                 }
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
-                try await self.engine.load(url: url, startTime: session.chapter.startTime + position)
+                try await self.engine.load(url: source.url, startTime: session.chapter.startTime + position, lease: source.lease)
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
                 self.decodeRecoveryTask = nil
                 self.decodeRecoveryAttempt = nil

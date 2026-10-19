@@ -27,6 +27,9 @@ final class FakeAudioEngine: AudioEngine {
     }
 
     private(set) var calls: [Call] = []
+    /// Mirrors the real engines' lease ownership: one lease per loaded item.
+    private(set) var currentLease: PlaybackLease?
+    private(set) var preloadLease: PlaybackLease?
 
     var currentTime: TimeInterval = 0
     var duration: TimeInterval?
@@ -102,7 +105,9 @@ final class FakeAudioEngine: AudioEngine {
 
     func configureAudioSession() { calls.append(.configureAudioSession) }
 
-    func load(url: URL, startTime: TimeInterval) async throws {
+    func load(url: URL, startTime: TimeInterval, lease: PlaybackLease?) async throws {
+        releasePlaybackLeases()
+        currentLease = lease
         calls.append(.load(url: url, startTime: startTime))
         if suspendLoads {
             if armedResumes.isEmpty {
@@ -137,8 +142,22 @@ final class FakeAudioEngine: AudioEngine {
         calls.append(.setRate(rate))
     }
 
-    func preloadNext(url: URL) { calls.append(.preloadNext(url: url)) }
-    func cancelPreload() { calls.append(.cancelPreload) }
+    func preloadNext(url: URL, lease: PlaybackLease?) {
+        calls.append(.preloadNext(url: url))
+        preloadLease?.release()
+        preloadLease = lease
+    }
+    func cancelPreload() {
+        calls.append(.cancelPreload)
+        preloadLease?.release()
+        preloadLease = nil
+    }
+    func releasePlaybackLeases() {
+        currentLease?.release()
+        currentLease = nil
+        preloadLease?.release()
+        preloadLease = nil
+    }
     func prefetchIntoCache(urls: [URL]) { calls.append(.prefetchIntoCache(urls: urls)) }
 
     func setEQEngaged(_ engaged: Bool) {
@@ -155,7 +174,14 @@ final class FakeAudioEngine: AudioEngine {
     /// The engine callbacks are `@MainActor`; fire them synchronously in tests.
     func firePlaybackEnded() { onPlaybackEnded?() }
     func firePlaybackIssue(_ issue: AudioEngineIssue) { onPlaybackIssue?(issue) }
-    func fireItemChanged() { onItemChanged?() }
+    func fireItemChanged() {
+        if let next = preloadLease {
+            currentLease?.release()
+            currentLease = next
+            preloadLease = nil
+        }
+        onItemChanged?()
+    }
 
     func fireSilenceChanged(_ isSilent: Bool) {
         calls.append(.fireSilenceChanged(isSilent))

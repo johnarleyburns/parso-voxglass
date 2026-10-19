@@ -6,6 +6,7 @@ import VoxglassCore
 final class MacPlaybackAudioEngine: NSObject, AudioEngine {
     private let player = AVPlayer()
     private var endObserver: NSObjectProtocol?
+    private var currentLease: PlaybackLease?
     private var statusObserver: NSKeyValueObservation?
     private let issueObserverRegistry = IssueObserverRegistry()
     private var reportedIssueKinds = Set<String>()
@@ -36,7 +37,9 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
 
     func configureAudioSession() {}
 
-    func load(url: URL, startTime: TimeInterval) async throws {
+    func load(url: URL, startTime: TimeInterval, lease: PlaybackLease?) async throws {
+        currentLease?.release()
+        currentLease = lease
         tearDownObservers()
         let item = AVPlayerItem(url: url)
         player.replaceCurrentItem(with: item)
@@ -132,8 +135,12 @@ final class MacPlaybackAudioEngine: NSObject, AudioEngine {
         self.rate = rate
         if isPlaying { player.rate = rate }
     }
-    func preloadNext(url: URL) {}
+    func preloadNext(url: URL, lease: PlaybackLease?) { lease?.release() }
     func cancelPreload() {}
+    func releasePlaybackLeases() {
+        currentLease?.release()
+        currentLease = nil
+    }
     func prefetchIntoCache(urls: [URL]) {}
     func setEQEngaged(_ engaged: Bool) {}
     func applyEQPreset(_ preset: EQPreset) {}
