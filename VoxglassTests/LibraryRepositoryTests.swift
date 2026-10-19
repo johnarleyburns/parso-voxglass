@@ -115,6 +115,33 @@ import Foundation
         #expect(downloads.isEmpty)  // Download records should cascade-delete
     }
 
+    @Test func previewDoesNotDemoteBookWithListeningState() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "pending-guard")
+        let repository = LibraryRepository(database: database)
+        let kept = try await seedBook(in: database, title: "Kept Book")
+        let fresh = try await seedBook(in: database, title: "Fresh Preview")
+        try await database.execute(
+            "INSERT INTO bookmarks (id, book_id, chapter_id, position_seconds, note, created_at) VALUES (?, ?, ?, 5, NULL, 0)",
+            [.string(UUID().uuidString), .string(kept.bookID.uuidString), .string(kept.chapterID.uuidString)]
+        )
+
+        try await repository.setBookPending(true, for: kept.bookID)
+        try await repository.setBookPending(true, for: fresh.bookID)
+
+        let library = try await repository.fetchLibrary()
+        #expect(library.first { $0.book.id == kept.bookID }?.book.isPending == false)
+        #expect(library.first { $0.book.id == fresh.bookID }?.book.isPending == true)
+    }
+
+    @Test func unplayedBookCountsAsInProgress() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "in-progress-default")
+        let repository = LibraryRepository(database: database)
+        let seeded = try await seedBook(in: database, title: "Unplayed")
+
+        let inProgress = try await repository.fetchBooks(filteredBy: .inProgress)
+        #expect(inProgress.map(\.book.id) == [seeded.bookID])
+    }
+
     @Test func downloadRecordsDriveDownloadedFilter() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "downloaded-filter")
         let repository = LibraryRepository(database: database)

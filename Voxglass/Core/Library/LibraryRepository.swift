@@ -133,8 +133,9 @@ public final class LibraryRepository: @unchecked Sendable {
         case .inProgress:
             let progress = try await fetchBookProgress()
             return library.filter { book in
-                guard let p = progress[book.book.id] else { return false }
-                return !p.isFinished && p.lastPosition > 0
+                // An added book is In Progress by default, even if unplayed.
+                guard let p = progress[book.book.id] else { return true }
+                return !p.isFinished
             }
         }
     }
@@ -228,6 +229,16 @@ public final class LibraryRepository: @unchecked Sendable {
     /// user confirms "Add to My Books?" on the book page.
     public func setBookPending(_ pending: Bool, for bookID: UUID) async throws {
         try await database.prepare()
+        if pending {
+            // Never demote a book the user already has listening state for
+            // (positions or bookmarks): previewing it again must only open it.
+            try await database.execute("""
+            UPDATE books SET is_pending = 1 WHERE id = ?
+            AND NOT EXISTS (SELECT 1 FROM playback_positions WHERE book_id = books.id)
+            AND NOT EXISTS (SELECT 1 FROM bookmarks WHERE book_id = books.id)
+            """, [ModelMapping.databaseValue(bookID)])
+            return
+        }
         try await database.execute(
             "UPDATE books SET is_pending = ? WHERE id = ?",
             [.bool(pending), ModelMapping.databaseValue(bookID)]
