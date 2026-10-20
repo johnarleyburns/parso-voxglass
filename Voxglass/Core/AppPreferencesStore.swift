@@ -2,8 +2,6 @@ import SwiftUI
 
 public struct AppPreferencesStore: DynamicProperty {
     public enum Keys {
-        public static let hasCompletedSplash = "voxglass.hasCompletedSplash"
-        public static let hasCompletedOnboarding = "voxglass.hasCompletedOnboarding"
         public static let selectedCollectionIDs = "voxglass.selectedCollectionIDs"
         public static let selectedLanguages = "voxglass.selectedLanguages"
         public static let cacheFullBooksOnCellular = "voxglass.cacheFullBooksOnCellular"
@@ -30,8 +28,6 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let liveActivity = "settings.liveActivity"
     }
 
-    @AppStorage(Keys.hasCompletedSplash) public var hasCompletedSplash = false
-    @AppStorage(Keys.hasCompletedOnboarding) public var hasCompletedOnboarding = false
     @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
     @AppStorage(Keys.selectedLanguages) private var selectedLanguagesRaw = "eng"
     public var selectedCollectionIDs: Set<String> {
