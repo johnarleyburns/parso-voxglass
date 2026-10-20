@@ -84,9 +84,11 @@ public struct LocalAudioImport: Equatable, Sendable {
 }
 
 public final class LibraryRepository: @unchecked Sendable {
-    private let database: AppDatabase
+    let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
     public var mutationLog: SyncMutationLog?
+    /// Seams for `repairLocalAudio`; tests inject fakes, the app uses the system.
+    public var localRepairEnvironment = LocalAudioRepairEnvironment.system
 
     public init(database: AppDatabase, librivoxClient: LibriVoxCatalogClient? = nil) {
         self.database = database
@@ -1075,7 +1077,7 @@ public final class LibraryRepository: @unchecked Sendable {
         return BookWithChapters(book: book, chapters: try chapterRows.map(Self.chapter(from:)).naturallySorted())
     }
 
-    private func bookWithChapters(forBookID bookID: UUID) async throws -> BookWithChapters? {
+    func bookWithChapters(forBookID bookID: UUID) async throws -> BookWithChapters? {
         let bookRows = try await database.query("""
         SELECT id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, is_pending
         FROM books
@@ -1281,7 +1283,7 @@ public final class LibraryRepository: @unchecked Sendable {
         return primaryURL
     }
 
-    private func insert(book: Book, chapters: [Chapter], bookContentKey: String? = nil) async throws {
+    func insert(book: Book, chapters: [Chapter], bookContentKey: String? = nil) async throws {
         try await database.execute("""
         INSERT INTO books (id, title, authors_json, narrators_json, summary, source_id, cover_url, created_at, updated_at, is_favorite, is_pending, content_key)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

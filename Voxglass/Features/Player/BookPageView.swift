@@ -33,6 +33,7 @@ struct BookPageView: View {
     )
     @State private var showCompactHeader = false
     @State private var showingReselect = false
+    @State private var showingReconnect = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
 
@@ -165,6 +166,7 @@ struct BookPageView: View {
                 showingNowPlaying: $showingNowPlaying,
                 showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
                 showRemoveConfirm: $showRemoveConfirm,
+                showReconnectAudio: $showingReconnect,
                 genre: genre
             )
             .environment(playback)
@@ -208,6 +210,12 @@ struct BookPageView: View {
                     playback.retryPlayback()
                 }
             }
+            if let failure = playbackFailure, failure.needsReconnect {
+                Button("Reconnect Audio") {
+                    playback.playbackError = nil
+                    showingReconnect = true
+                }
+            }
             if let failure = playbackFailure, failure.needsReselect {
                 Button("Reselect Folder or File") {
                     playback.playbackError = nil
@@ -219,6 +227,13 @@ struct BookPageView: View {
             }
         } message: {
             Text(playback.playbackError ?? "")
+        }
+        .sheet(isPresented: $showingReconnect) {
+            if let resolved {
+                ReconnectAudioSheet(book: resolved)
+                    .environment(playback)
+                    .environmentObject(libraryStore)
+            }
         }
         .fileImporter(isPresented: $showingReselect, allowedContentTypes: [.folder, .audio]) { result in
             guard case .success(let url) = result else { return }
@@ -1057,5 +1072,128 @@ private struct ProgressRing: View {
         }
         .frame(width: 44, height: 44)
                 .background(Circle().fill(Palette.surface).shadow(color: .black.opacity(0.5), radius: 6, y: 0))
+    }
+}
+
+/// Book-scoped "Reconnect Audio": pick the original file or folder, review the
+/// proposed chapter mapping, confirm. Nothing is written until Confirm.
+struct ReconnectAudioSheet: View {
+    @Environment(PlaybackCoordinator.self) private var playback
+    @EnvironmentObject private var libraryStore: LibraryStore
+    @Environment(\.dismiss) private var dismiss
+    let book: BookWithChapters
+
+    @State private var showingPicker = false
+    @State private var selection: URL?
+    @State private var preview: LocalAudioRepairPreview?
+    @State private var mapping: [UUID: URL] = [:]
+    @State private var statusMessage: String?
+    @State private var isWorking = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("This audiobook needs its audio file reconnected on this device.")
+                    Button("Choose File or Folder") { showingPicker = true }
+                        .disabled(isWorking)
+                        .accessibilityIdentifier("reconnect.choose")
+                }
+                if let preview {
+                    previewSection(preview)
+                }
+                if let statusMessage {
+                    Section { Text(statusMessage).foregroundStyle(.secondary) }
+                }
+            }
+            .navigationTitle("Reconnect Audio")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
+        }
+        .fileImporter(isPresented: $showingPicker, allowedContentTypes: [.folder, .audio]) { result in
+            guard case .success(let url) = result else {
+                statusMessage = String(localized: "No file was selected.")
+                return
+            }
+            Task { await loadPreview(url) }
+        }
+    }
+
+    @ViewBuilder
+    private func previewSection(_ preview: LocalAudioRepairPreview) -> some View {
+        Section(preview.layout == .sharedFile ? "One file for the whole book" : "Match chapters to files") {
+            if preview.layout == .sharedFile {
+                Text("Use the selected file for all \(book.chapters.count) chapters? Chapter offsets and progress are kept.")
+            } else {
+                ForEach(book.chapters) { chapter in
+                    Picker(chapter.title, selection: binding(for: chapter.id)) {
+                        Text("Choose…").tag(URL?.none)
+                        ForEach(preview.candidates, id: \.self) { url in
+                            Text(url.lastPathComponent).tag(URL?.some(url))
+                        }
+                    }
+                }
+            }
+            Button("Confirm and Reconnect") { Task { await commit() } }
+                .disabled(isWorking || !isMappingComplete)
+                .accessibilityIdentifier("reconnect.confirm")
+        }
+    }
+
+    private func binding(for id: UUID) -> Binding<URL?> {
+        Binding { mapping[id] } set: { mapping[id] = $0 }
+    }
+
+    private var isMappingComplete: Bool {
+        book.chapters.allSatisfy { mapping[$0.id] != nil }
+            && (preview?.layout != .multiFile || Set(mapping.values).count == mapping.count)
+    }
+
+    private func loadPreview(_ url: URL) async {
+        isWorking = true
+        defer { isWorking = false }
+        let outcome = await libraryStore.repairLocalAudio(bookID: book.book.id, selection: url, mapping: nil)
+        selection = url
+        switch outcome {
+        case .preview(let proposal):
+            preview = proposal
+            mapping = proposal.proposed
+            statusMessage = proposal.isComplete ? nil : String(localized: "Some chapters need a file chosen manually.")
+        default:
+            preview = nil
+            mapping = [:]
+            statusMessage = message(for: outcome)
+        }
+    }
+
+    private func commit() async {
+        guard let selection else { return }
+        isWorking = true
+        defer { isWorking = false }
+        let bookID = book.book.id
+        let outcome = await libraryStore.repairLocalAudio(bookID: bookID, selection: selection, mapping: mapping)
+        guard case .success = outcome else {
+            statusMessage = message(for: outcome)
+            return
+        }
+        // Re-seat only a matching, not-yet-loaded session; playback resumes
+        // only after the user presses Play/Retry.
+        if let fresh = libraryStore.book(withID: bookID) { playback.reloadSessionAfterRepair(fresh) }
+        dismiss()
+    }
+
+    private func message(for outcome: LocalAudioRepairOutcome) -> String {
+        switch outcome {
+        case .noMatch: String(localized: "No matching audio was found in that selection.")
+        case .ambiguous: String(localized: "More than one file matches. Choose a file for each chapter.")
+        case .incompleteMapping: String(localized: "Every chapter needs a file before reconnecting.")
+        case .invalidDuration: String(localized: "That file is too short for this audiobook's chapters.")
+        case .denied: String(localized: "Voxglass couldn't get access to that location.")
+        case .cancelled: String(localized: "Reconnect was cancelled. Nothing was changed.")
+        case .preview, .success: ""
+        case .error: String(localized: "Couldn't reconnect the audio. Nothing was changed.")
+        }
     }
 }

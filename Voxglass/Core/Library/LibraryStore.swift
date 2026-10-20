@@ -232,6 +232,14 @@ public final class LibraryStore: ObservableObject {
         }
     }
 
+    /// Book-scoped Reconnect Audio. `mapping == nil` returns a preview only;
+    /// the library is refreshed after a successful commit.
+    public func repairLocalAudio(bookID: UUID, selection: URL, mapping: [UUID: URL]?) async -> LocalAudioRepairOutcome {
+        let outcome = await repository.repairLocalAudio(bookID: bookID, selection: selection, mapping: mapping)
+        if case .success = outcome { await refresh() }
+        return outcome
+    }
+
     @discardableResult
     public func importLocalSingleFile(
         folderURL: URL,

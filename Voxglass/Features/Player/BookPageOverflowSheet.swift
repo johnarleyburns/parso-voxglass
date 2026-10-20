@@ -13,6 +13,7 @@ struct BookPageOverflowSheet: View {
     @State private var showingBookmarks = false
     @State private var showingEQ = false
     @Binding var showRemoveConfirm: Bool
+    @Binding var showReconnectAudio: Bool
     let genre: LibriVoxBrowseCategory?
 
     @Environment(\.dismiss) private var dismiss
@@ -175,6 +176,15 @@ struct BookPageOverflowSheet: View {
     @ViewBuilder
     private var manageSection: some View {
         Section("Manage") {
+            if libraryStore.source(for: book.book)?.kind == .localFiles {
+                Button {
+                    showReconnectAudio = true
+                    dismiss()
+                } label: {
+                    overflowRow(icon: "link", title: "Reconnect Audio")
+                }
+                .accessibilityIdentifier("nowplaying.reconnectAudio")
+            }
             if offlineState == .cached {
                 Button(role: .destructive) {
                     showRemoveOfflineConfirm = true
