@@ -17,7 +17,6 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let authoringV2LastSync = "voxglass.authoringV2Sync.lastSync"
         public static let cloudKitInitialLibraryEnqueued = "voxglass.cloudKit.initialLibraryEnqueued.v1"
         public static let cloudKitLibraryUploadConfirmed = "voxglass.cloudKit.libraryUploadConfirmed.v1"
-        public static let narrationOnboardingSeen = "voxglass.narration.onboardingSeen.v1"
         public static let narrationIntroSeen = "voxglass.narration.introSeen.v1"
         public static let narrationCollapsedChapters = "voxglass.narration.collapsedChapters.v1"
         /// Set once a "Contribute to Development" purchase succeeds. Never

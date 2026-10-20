@@ -3001,7 +3001,6 @@ struct NarrationExportBundle: Equatable {
 struct NarrationFlowRoot: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(AppPreferencesStore.Keys.narrationOnboardingSeen) private var narrationOnboardingSeen = false
     @State private var model: NarrationFlowModel
     @State private var showHelp = false
     @State private var confirmDelete = false
@@ -3122,10 +3121,6 @@ struct NarrationFlowRoot: View {
                     model.importError = String(localized: "This work doesn't have its text on this device yet. Try another short work.")
                 }
             }
-            if !narrationOnboardingSeen {
-                narrationOnboardingSeen = true
-                showHelp = true
-            }
         }
         .sheet(isPresented: $showHelp) {
             NarrationHelpSheet()
@@ -3138,8 +3133,8 @@ struct NarrationFlowRoot: View {
     }
 }
 
-/// First-run popup + persistent help: a brief walkthrough of the narration
-/// flow. Shown once automatically, and again any time from the help button.
+/// Persistent help: a brief walkthrough of the narration flow, shown only
+/// when the user taps the help button.
 struct NarrationHelpSheet: View {
     @Environment(\.dismiss) private var dismiss
 
