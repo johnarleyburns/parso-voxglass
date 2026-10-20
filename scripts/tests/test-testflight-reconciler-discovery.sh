@@ -16,4 +16,5 @@ marker=$(grep -hE '<!-- testflight-delivery:[^:]+:[^:]+:[^ ]+ -->' "$fixture" | 
 [[ "$marker" == '<!-- testflight-delivery:guru.parso.example:1.2.4:457 -->' ]]
 grep -Fq 'gh issue list --repo "$repo" --state open --limit 1000' "$script"
 grep -Fq 'Delivery comments are the source of truth.' "$script"
+grep -Fq -- '--remove-label ai-ready' "$script"
 echo "TestFlight reconciler discovery: passed"

@@ -73,26 +73,26 @@ reconcile_issue() {
   if [[ "$HTTP_CODE" != 200 ]]; then
     status='Upload accepted; App Store Connect lookup could not be verified yet.'
     detail="App Store Connect app lookup returned HTTP $HTTP_CODE. The scheduled reconciler will retry; this is not evidence that the build is unavailable."
-    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa --remove-label ai-ready >/dev/null
   else
     app_id=$(jq -r '.data[0].id // empty' "$body")
     if [[ -z "$app_id" ]]; then
       status='Upload accepted; the build is not indexed by App Store Connect yet.'
       detail='Apple has not exposed the app record to this lookup yet. The scheduled reconciler will retry.'
-      gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa --remove-label testflight-access-unverified >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa --remove-label testflight-access-unverified --remove-label ai-ready >/dev/null
     else
       api_get "$body" --get --data-urlencode "filter[app]=$app_id" --data-urlencode "filter[version]=$build" 'https://api.appstoreconnect.apple.com/v1/builds'
       if [[ "$HTTP_CODE" != 200 ]]; then
         status='Upload accepted; App Store Connect build lookup could not be verified yet.'
         detail="App Store Connect build lookup returned HTTP $HTTP_CODE. The scheduled reconciler will retry; this is not evidence that the build is unavailable."
-        gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa --remove-label ai-ready >/dev/null
       else
         build_id=$(jq -r '.data[0].id // empty' "$body")
         state=$(jq -r '.data[0].attributes.processingState // empty' "$body")
         if [[ "$state" != VALID || -z "$build_id" ]]; then
           status='Upload accepted; Apple is still processing this build.'
           detail="App Store Connect processing state: ${state:-not indexed}. The scheduled reconciler will retry."
-          gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa --remove-label testflight-access-unverified >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ready-for-qa --remove-label testflight-access-unverified --remove-label ai-ready >/dev/null
         else
           api_get "$body" "https://api.appstoreconnect.apple.com/v1/builds/$build_id/betaGroups"
           if [[ "$HTTP_CODE" == 200 ]]; then
@@ -100,16 +100,16 @@ reconcile_issue() {
             if [[ "$groups_count" -gt 0 ]]; then
               status='Apple processing completed; tester-group distribution is confirmed.'
               detail="App Store Connect reports $groups_count assigned tester group(s)."
-              gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-distribution-confirmed --add-label ready-for-qa --remove-label testflight-processing --remove-label testflight-access-unverified >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label testflight-distribution-confirmed --add-label ready-for-qa --remove-label testflight-processing --remove-label testflight-access-unverified --remove-label ai-ready >/dev/null
             else
               status='Apple processing completed; tester-group membership was not reported.'
               detail='The build is ready for human QA. Group reporting is separate observability and does not block QA readiness.'
-              gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label ready-for-qa --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label ready-for-qa --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ai-ready >/dev/null
             fi
           else
             status='Apple processing completed; tester-group access could not be verified.'
             detail="The build is ready for human QA. App Store Connect beta-group lookup returned HTTP $HTTP_CODE; the reconciler will retry."
-            gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label ready-for-qa --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed >/dev/null
+    gh issue edit "$issue" --repo "$repo" --add-label testflight-uploaded --add-label ready-for-qa --add-label testflight-access-unverified --remove-label testflight-processing --remove-label testflight-distribution-confirmed --remove-label ai-ready >/dev/null
           fi
         fi
       fi
