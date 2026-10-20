@@ -402,18 +402,27 @@ struct ProjectDashboardView: View {
     }
 
     private func attentionRow(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, systemImage: String, tint: Color, id: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage).voxFont(.subheadline).foregroundStyle(tint).frame(width: 22)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).voxFont(.subheadline, weight: .semibold).foregroundStyle(Palette.ink)
-                Text(detail).voxFont(.caption).foregroundStyle(Palette.ink3)
+        Button {
+            flowProjectID = FlowTarget(id: project.id)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage).voxFont(.subheadline).foregroundStyle(tint).frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).voxFont(.subheadline, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(detail).voxFont(.caption).foregroundStyle(Palette.ink3)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").voxFont(.caption).foregroundStyle(Palette.ink3)
             }
-            Spacer()
-            Image(systemName: "chevron.right").voxFont(.caption).foregroundStyle(Palette.ink3)
+            .padding(.vertical, 10)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 10)
-        .contentShape(Rectangle())
-        .onTapGesture { flowProjectID = FlowTarget(id: project.id) }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(title))
+        .accessibilityValue(Text(detail))
+        .accessibilityHint(Text("Opens the review queue for this narration."))
         .accessibilityIdentifier(id)
     }
 
