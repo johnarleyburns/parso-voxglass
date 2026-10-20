@@ -30,6 +30,42 @@ import Testing
         return engine
     }
 
+    @Test func repeatedSourceRefreshPreservesLocalBindingsAndChildren() async throws {
+        let db = AppDatabase.makeTemporaryDatabase()
+        try await db.prepare()
+        let (localBook, localChapter) = try await seed(db)[0]
+        let stableSource = CloudKitRecordMapper.stableUUID(from: "test_sync")
+        try await db.execute("INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+                             [.string(stableSource.uuidString), .string(SourceKind.librivox.rawValue), .string("Old"), .string("https://archive.org/details/test_sync"), .double(42)])
+        try await db.execute("UPDATE books SET source_id=? WHERE id=?", [.string(stableSource.uuidString), .string(localBook.uuidString)])
+        try await db.execute("UPDATE chapters SET local_url=?, local_bookmark=?, start_time_seconds=12 WHERE id=?",
+                             [.string("file:///tmp/a.mp3"), ModelMapping.databaseValue(Data([1, 2, 3])), .string(localChapter.uuidString)])
+        try await db.execute("INSERT INTO playback_positions (book_id, chapter_id, position_seconds, updated_at) VALUES (?, ?, 7, 0)",
+                             [.string(localBook.uuidString), .string(localChapter.uuidString)])
+
+        let sync = CloudKitSyncEngine(database: db)
+        let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/test_sync"))
+        let book = Book(title: "Book 0", authors: [], sourceID: source.id)
+        let chapter = Chapter(bookID: book.id, title: "Chapter", index: 0, duration: 100,
+                              remoteURL: URL(string: "https://archive.org/download/test_sync/chapter.mp3"))
+        let sourceRecord = CloudKitRecordMapper.sourceRecord(from: source, sourceKey: "test_sync")
+        let bookRecord = CloudKitRecordMapper.bookRecord(from: book, chapters: [chapter], contentKey: "ia:test_sync-0", sourceKey: "test_sync")
+        for _ in 0..<3 { try await sync.applyFetchedLibraryChanges(records: [sourceRecord, bookRecord]) }
+        try await sync.applyFetchedLibraryChanges(records: [sourceRecord])
+        try await CloudKitSyncEngine(database: db).applyFetchedLibraryChanges(records: [sourceRecord, bookRecord])
+
+        let chapters = try await db.query("SELECT id, local_url, local_bookmark FROM chapters")
+        #expect(chapters.count == 1)
+        #expect(chapters[0].string("id") == localChapter.uuidString)
+        #expect(chapters[0].string("local_url") == "file:///tmp/a.mp3")
+        #expect(ModelMapping.data(chapters[0], "local_bookmark") == Data([1, 2, 3]))
+        #expect(try await db.query("SELECT id FROM books").count == 1)
+        #expect(try await db.query("SELECT id FROM playback_positions WHERE book_id=?", [.string(localBook.uuidString)]).count == 1)
+        let sources = try await db.query("SELECT title, created_at FROM sources WHERE id=?", [.string(stableSource.uuidString)])
+        #expect(sources.first?.string("title") == "Source")
+        #expect(sources.first?.double("created_at") == 42)
+    }
+
     @Test func macLibraryPullImportsBooksSourcesChaptersAndPlaybackWithoutNarration() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         try await db.prepare()
