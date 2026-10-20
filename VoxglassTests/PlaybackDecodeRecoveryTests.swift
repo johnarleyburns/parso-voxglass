@@ -4,6 +4,38 @@ import Testing
 
 @MainActor
 @Suite struct PlaybackDecodeRecoveryTests {
+    /// A manually released recovery delay. This lets a test place the book
+    /// deletion precisely between recovery start and its deferred persistence
+    /// attempt, rather than depending on a loaded CI runner to schedule a
+    /// fixed-duration sleep in a particular order.
+    private actor RecoveryDelayGate {
+        private var isOpen = false
+        private var sleepers: [CheckedContinuation<Void, Never>] = []
+        private var arrivalWaiters: [CheckedContinuation<Void, Never>] = []
+
+        func wait() async {
+            guard !isOpen else { return }
+            await withCheckedContinuation { continuation in
+                sleepers.append(continuation)
+                let waiters = arrivalWaiters
+                arrivalWaiters.removeAll()
+                waiters.forEach { $0.resume() }
+            }
+        }
+
+        func waitUntilBlocked() async {
+            guard sleepers.isEmpty else { return }
+            await withCheckedContinuation { arrivalWaiters.append($0) }
+        }
+
+        func release() {
+            isOpen = true
+            let pending = sleepers
+            sleepers.removeAll()
+            pending.forEach { $0.resume() }
+        }
+    }
+
     private struct Harness {
         let engine: FakeAudioEngine
         let coordinator: PlaybackCoordinator
@@ -12,7 +44,10 @@ import Testing
         let positions: SQLitePositionStore
     }
 
-    private func makeHarness(offset: TimeInterval = 0) async -> Harness {
+    private func makeHarness(
+        offset: TimeInterval = 0,
+        decodeRecoveryDelay: (@Sendable () async throws -> Void)? = nil
+    ) async -> Harness {
         let id = UUID()
         let book = Book(id: id, title: "The Possessed", authors: ["Fyodor Dostoyevsky"], sourceID: UUID())
         let chapter = Chapter(bookID: id, title: "57 - The Fête", index: 56,
@@ -35,7 +70,17 @@ import Testing
         let positions = SQLitePositionStore(database: db)
         let defaults = UserDefaults(suiteName: "decode-\(id)")!
         let snapshot = LastPlaybackSnapshotStore(defaults: defaults)
-        let coordinator = PlaybackCoordinator(engine: engine, positionStore: positions, snapshotStore: snapshot)
+        let coordinator: PlaybackCoordinator
+        if let decodeRecoveryDelay {
+            coordinator = PlaybackCoordinator(
+                engine: engine,
+                positionStore: positions,
+                snapshotStore: snapshot,
+                decodeRecoveryDelay: decodeRecoveryDelay
+            )
+        } else {
+            coordinator = PlaybackCoordinator(engine: engine, positionStore: positions, snapshotStore: snapshot)
+        }
         let bwc = BookWithChapters(book: book, chapters: [chapter])
         await coordinator.play(bwc)
         engine.currentTime = offset + 172
@@ -214,11 +259,23 @@ import Testing
         #expect(rows == nil || rows! == nil)
     }
 
-    @Test func decodeRecoverySkipsDeletedRows() async {
-        let h = await makeHarness()
-        try? await h.positions.database_deleteBookForTests(h.book.book.id)
+    @Test func decodeRecoverySkipsDeletedRows() async throws {
+        let delay = RecoveryDelayGate()
+        let h = await makeHarness(decodeRecoveryDelay: { await delay.wait() })
+        try await h.positions.database_deleteBookForTests(h.book.book.id)
         h.engine.firePlaybackIssue(.decodeFailed("Cannot Decode"))
-        try? await Task.sleep(for: .milliseconds(300))
+
+        // Recovery saves the crash-safe checkpoint synchronously, then stops at
+        // the injected gate before its database write. This proves that the
+        // cleanup below is caused by stale-row handling, not test timing.
+        #expect(h.snapshot.position(forBookID: h.book.book.id)?.position == 173)
+        await delay.waitUntilBlocked()
+        await delay.release()
+        await waitUntil {
+            h.coordinator.currentSession == nil
+                && h.snapshot.position(forBookID: h.book.book.id) == nil
+                && h.coordinator.decodeRecoveryAttempt == nil
+        }
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.coordinator.playbackError == nil)
         #expect(h.snapshot.position(forBookID: h.book.book.id) == nil)

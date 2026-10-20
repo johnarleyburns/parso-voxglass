@@ -60,6 +60,9 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private let snapshotStore: LastPlaybackSnapshotStore
     @ObservationIgnored private let rateStore: PlaybackRateStore
     @ObservationIgnored private let sleepTimer: SleepTimer
+    /// The brief pause before retrying a decoder failure. Kept injectable so
+    /// recovery tests can control scheduling without relying on wall-clock time.
+    @ObservationIgnored private let decodeRecoveryDelay: @Sendable () async throws -> Void
     @ObservationIgnored private var sleepTask: Task<Void, Never>?
     /// Duration of the sleep-timer fade-out; small in tests.
     @ObservationIgnored public var fadeOutDuration: TimeInterval = 5
@@ -157,7 +160,10 @@ public final class PlaybackCoordinator {
         cacheStore: SparseCacheStore = AudioCache.shared,
         bridge: PlaybackPlatformBridge? = nil,
         navigationHistoryStore: NavigationHistoryStore = NavigationHistoryStore(),
-        sourceResolver: PlaybackSourceResolver = .system
+        sourceResolver: PlaybackSourceResolver = .system,
+        decodeRecoveryDelay: @escaping @Sendable () async throws -> Void = {
+            try await Task.sleep(for: .milliseconds(100))
+        }
     ) {
         self.engine = engine
         self.sourceResolver = sourceResolver
@@ -167,6 +173,7 @@ public final class PlaybackCoordinator {
         self.navigationHistory = navigationHistoryStore
         self.rateStore = rateStore
         self.sleepTimer = sleepTimer
+        self.decodeRecoveryDelay = decodeRecoveryDelay
         self.bridge = bridge ?? NoopPlaybackBridge()
         self.engine.onPlaybackEnded = { [weak self] in
             Task { @MainActor in
@@ -2015,7 +2022,7 @@ public final class PlaybackCoordinator {
         decodeRecoveryTask = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                try await Task.sleep(for: .milliseconds(100))
+                try await self.decodeRecoveryDelay()
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation,
                       self.currentSession?.chapter.id == session.chapter.id else { return }
                 do {
