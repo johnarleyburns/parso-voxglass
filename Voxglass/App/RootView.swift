@@ -10,28 +10,10 @@ struct RootView: View {
     @State private var miniPlayerRouter = MiniPlayerPresentationRouter()
     @State private var deepLinkedBook: DeepLinkedBook?
     @Namespace private var zoomNamespace
-    @State private var showSplash = !ProcessInfo.processInfo.arguments.contains("-VoxglassDisableAnimatedSplash")
-    @AppStorage(AppPreferencesStore.Keys.hasCompletedSplash) private var hasCompletedSplash = false
-    @AppStorage(AppPreferencesStore.Keys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
-    @AppStorage(AppPreferencesStore.Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
 
     var body: some View {
         ZStack {
-            if showSplash {
-                AnimatedSplashView(isPresented: $showSplash).zIndex(10)
-            } else if !hasCompletedSplash {
-                SplashView { hasCompletedSplash = true }
-            } else if !hasCompletedOnboarding {
-                OnboardingPreferencesView(initialSelection: AppPreferencesStore.decodeCollectionIDs(selectedCollectionIDsRaw)) { ids in
-                    selectedCollectionIDsRaw = AppPreferencesStore.encodeCollectionIDs(ids)
-                    hasCompletedOnboarding = true
-                } skipAction: {
-                    selectedCollectionIDsRaw = ""
-                    hasCompletedOnboarding = true
-                }
-            } else {
-                tabsWithPresentation
-            }
+            tabsWithPresentation
 
             if let toast = phoneAudioRelay.connectionToast {
                 VStack {

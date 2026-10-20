@@ -28,11 +28,8 @@ final class VoxglassUITests: XCTestCase {
         try? FileManager.default.createDirectory(atPath: exportDir, withIntermediateDirectories: true)
 
         app.launchArguments += [
-            "-voxglass.hasCompletedSplash", "YES",
-            "-voxglass.hasCompletedOnboarding", "YES",
             "-voxglass.narration.onboardingSeen.v1", "YES",
             "-VoxglassInitialTab", "home",
-            "-VoxglassDisableAnimatedSplash",
             // Required by the source guard and used by AppServices to seed a
             // deterministic preview project for the production smoke path.
             "-uiTestSeed", "onePreviewProject",
@@ -1142,11 +1139,8 @@ final class VoxglassUITests: XCTestCase {
     private func launchNarrationEntry() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-voxglass.hasCompletedSplash", "YES",
-            "-voxglass.hasCompletedOnboarding", "YES",
             "-voxglass.narration.onboardingSeen.v1", "YES",
             "-VoxglassInitialTab", "home",
-            "-VoxglassDisableAnimatedSplash",
             "-uiTestDisableCloudKit"
         ]
         app.launch()
