@@ -1,7 +1,7 @@
 import SwiftUI
 import VoxglassCore
 
-/// Book-language filter shared by Settings and Onboarding.
+/// Book-language filter used by Settings.
 ///
 /// Shows chips for the largest LibriVox languages (plus the device language and
 /// anything already selected), and an "All Languages" sheet that lists every

@@ -3,16 +3,13 @@ import Testing
 @testable import VoxglassCore
 
 @Suite struct ArtworkPresentationTests {
-    @Test func exploreCollectionArtworkUsesCompactWideCardsAndOnboardingRemainsSquare() throws {
+    @Test func exploreCollectionArtworkUsesCompactWideCards() throws {
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
-        let onboarding = try source("Voxglass/Features/Onboarding/OnboardingPreferencesView.swift")
 
         #expect(discover.contains("ExploreCollectionCard"))
         #expect(discover.contains(".frame(height: 196)"))
         #expect(discover.contains("CollectionFan("))
         #expect(!(discover.contains(".frame(width: 190, height: 190)")))
-        #expect(onboarding.contains(".frame(width: 170, height: 170)"))
-        #expect(!(onboarding.contains(".frame(width: 170, height: 118)")))
     }
 
     @Test func bookCoverUsesSharedPostFrameClippingWrapper() throws {
