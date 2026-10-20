@@ -48,7 +48,10 @@ reconcile_issue() {
   local issue=$1 marker bundle version build status_marker comments delivery body app_id build_id state groups_count availability detail existing
   comments="$tmp/comments-$issue"
   gh api --paginate "repos/$repo/issues/$issue/comments" --jq '.[].body' > "$comments" || return 0
-  delivery=$(rg '<!-- testflight-delivery:[^:]+:[^:]+:[^ ]+ -->' "$comments" | tail -1 || true)
+  # Read the durable delivery marker from the issue comment itself, not from
+  # its mutable labels.  `grep -h` is portable on the Linux reconciler and
+  # guarantees that the value begins with the marker (never a filename prefix).
+  delivery=$(grep -hE '<!-- testflight-delivery:[^:]+:[^:]+:[^ ]+ -->' "$comments" | tail -n 1 || true)
   if [[ -z "$delivery" ]]; then
     # Historical upload-stage labels have no exact build to verify.  Do not
     # preserve a claim of QA readiness that App Store Connect cannot support.
@@ -133,5 +136,7 @@ reconcile_issue() {
 if [[ -n "$only_issue" ]]; then
   reconcile_issue "$only_issue"
 else
+  # Enumerate every open issue, including ones whose old TestFlight labels were
+  # removed or never applied.  Delivery comments are the source of truth.
   while IFS= read -r issue; do reconcile_issue "$issue"; done < <(gh issue list --repo "$repo" --state open --limit 1000 --json number --jq '.[].number')
 fi
