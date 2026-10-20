@@ -103,6 +103,29 @@ private actor RepairPositions: PositionStore {
         engine.calls.filter { if case .load = $0 { true } else { false } }.count
     }
 
+    /// Selection deliberately publishes its result asynchronously.  Do not use
+    /// a fixed delay here: the full CI suite runs many independent tests and a
+    /// loaded runner can legitimately take longer than an arbitrary sleep.
+    /// Polling the observed state keeps this regression test deterministic while
+    /// retaining a finite timeout when the failure is not actually published.
+    private func waitForFailure(
+        _ coordinator: PlaybackCoordinator,
+        timeout: Duration = .seconds(2)
+    ) async -> PlaybackFailure? {
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline {
+            if case .failed(let failure) = coordinator.playbackPhase {
+                return failure
+            }
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        if case .failed(let failure) = coordinator.playbackPhase {
+            return failure
+        }
+        return nil
+    }
+
     // MARK: Playback classification
 
     @Test(arguments: [false, true]) func damagedLocalBookShowsReconnectAndNeverLoads(placeholder: Bool) async throws {
@@ -110,8 +133,7 @@ private actor RepairPositions: PositionStore {
         let book = try await seedDamaged(dir: dir, chapters: [("one", 0)], placeholder: placeholder)
         let (coordinator, engine) = harness()
         coordinator.selectAndPlay(book, chapter: book.chapters[0])
-        try? await Task.sleep(nanoseconds: 200_000_000)
-        guard case .failed(let failure) = coordinator.playbackPhase else { Issue.record("expected failure"); return }
+        guard let failure = await waitForFailure(coordinator) else { Issue.record("expected failure"); return }
         #expect(failure.needsReconnect)
         #expect(failure.message == LocalPlaybackUnavailable.reconnectMessage)
         #expect(loadCount(engine) == 0)
@@ -123,8 +145,7 @@ private actor RepairPositions: PositionStore {
         let book = try await remoteBook(remote: nil)
         let chapter = book.chapters[0]
         coordinator.selectAndPlay(book, chapter: chapter)
-        try? await Task.sleep(nanoseconds: 200_000_000)
-        guard case .failed(let failure) = coordinator.playbackPhase else { Issue.record("expected failure"); return }
+        guard let failure = await waitForFailure(coordinator) else { Issue.record("expected failure"); return }
         #expect(!failure.needsReconnect && !failure.needsReselect)
         #expect(failure.message == LocalPlaybackUnavailable.remoteSourceMessage)
         #expect(loadCount(engine) == 0)
