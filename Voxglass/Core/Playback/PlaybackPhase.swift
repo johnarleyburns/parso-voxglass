@@ -15,7 +15,12 @@ public struct PlaybackFailure: Equatable, Sendable {
     /// folder or file in the Files picker.
     public let needsReselect: Bool
 
-    public init(message: String, isRetryable: Bool, needsReselect: Bool = false) {
+    /// True when a local import has no reachable file binding at all and the
+    /// user must run Reconnect Audio for this book.
+    public let needsReconnect: Bool
+
+    public init(message: String, isRetryable: Bool, needsReselect: Bool = false, needsReconnect: Bool = false) {
+        self.needsReconnect = needsReconnect
         self.message = message
         self.isRetryable = isRetryable
         self.needsReselect = needsReselect

@@ -145,6 +145,9 @@ public final class PlaybackCoordinator {
     /// Fetches cover art as raw image bytes; injectable so tests can count fetches
     /// without network. The app injects a provider backed by `ArtworkService`.
     @ObservationIgnored public var artworkProvider: (@MainActor (URL) async -> Data?)?
+    /// Repository-provided source classification, keyed by book id. Injected by
+    /// the app; when nil, no chapter is ever treated as a damaged local import.
+    @ObservationIgnored public var localSourceContextProvider: (@MainActor (UUID) async -> LocalSourceContext?)?
     @ObservationIgnored public var artworkConsumer: (@MainActor (UUID, Data) -> Void)?
 
     /// The platform boundary (Now Playing, remote commands, artwork, background
@@ -346,7 +349,7 @@ public final class PlaybackCoordinator {
     private func loadEngineForPresentedSession() async -> Bool {
         guard let session = currentSession,
               let source = await playbackSource(for: session.chapter) else {
-            let failure = playbackFailure(forUnplayable: currentSession?.chapter)
+            let failure = await playbackFailure(forUnplayable: currentSession?.chapter)
             playbackError = failure.message
             playbackPhase = .failed(failure)
             return false
@@ -413,17 +416,54 @@ public final class PlaybackCoordinator {
 
     /// Local-only imports recover by reselecting the file; anything else keeps
     /// the generic message.
-    private func playbackFailure(forUnplayable chapter: Chapter?) -> PlaybackFailure {
+    private func playbackFailure(forUnplayable chapter: Chapter?) async -> PlaybackFailure {
         if let chapter, chapter.remoteURL == nil, chapter.localBookmark != nil || chapter.localURL != nil {
             return PlaybackFailure(message: LocalPlaybackUnavailable.message, isRetryable: false, needsReselect: true)
+        }
+        if let chapter {
+            if await isUnboundLocalImport(chapter) {
+                return PlaybackFailure(
+                    message: LocalPlaybackUnavailable.reconnectMessage, isRetryable: false, needsReconnect: true
+                )
+            }
+            return PlaybackFailure(message: LocalPlaybackUnavailable.remoteSourceMessage, isRetryable: false)
         }
         let message = AudioEngineError.missingPlayableURL.localizedDescription
         return PlaybackFailure(message: message, isRetryable: false)
     }
 
+    /// True for a chapter of a local import that has no local binding, even if
+    /// a legacy mislabeled remote placeholder is present. Remote books are
+    /// never classified here.
+    private func isUnboundLocalImport(_ chapter: Chapter) async -> Bool {
+        guard chapter.localURL == nil, chapter.localBookmark == nil,
+              let provider = localSourceContextProvider,
+              let context = await provider(chapter.bookID) else { return false }
+        return context.isLocalImport
+    }
+
+    /// Re-seats the active session on freshly repaired chapters. Only a
+    /// not-yet-loaded session for the same book is touched, at the same
+    /// chapter ID and chapter-relative position; playback stays paused until
+    /// the user presses Play/Retry. Returns false (no change) otherwise, so a
+    /// late repair completion never replaces an unrelated session.
+    @discardableResult
+    public func reloadSessionAfterRepair(_ fresh: BookWithChapters) -> Bool {
+        guard let session = currentSession, session.book.id == fresh.book.id, !isEngineLoaded,
+              let chapter = fresh.chapters.first(where: { $0.id == session.chapter.id }) else { return false }
+        currentSession = PlaybackSession(
+            book: fresh.book, chapters: fresh.chapters, chapter: chapter,
+            position: session.position, duration: chapter.duration ?? session.duration, isPlaying: false
+        )
+        playbackError = nil
+        playbackPhase = .paused
+        return true
+    }
+
     /// A playable URL for `chapter`, or nil for every local-only failure
     /// (stale, denied, missing, unreadable) so nothing reaches the engine.
     private func playbackSource(for chapter: Chapter) async -> PlaybackSource? {
+        if await isUnboundLocalImport(chapter) { return nil }
         switch sourceResolver.resolve(chapter) {
         case .playableLocal(let url, let lease):
             return PlaybackSource(url: url, lease: lease)
@@ -580,7 +620,7 @@ public final class PlaybackCoordinator {
         // 3. Load the engine.
         guard let source = await playbackSource(for: targetChapter) else {
             guard activeSelectionID == requestID else { return }
-            let failure = playbackFailure(forUnplayable: targetChapter)
+            let failure = await playbackFailure(forUnplayable: targetChapter)
             playbackError = failure.message
             playbackPhase = .failed(failure)
             return
@@ -752,7 +792,7 @@ public final class PlaybackCoordinator {
         playheadDuration = validTime(chapter.duration ?? target.savedDuration)
 
         guard let source = await playbackSource(for: chapter) else {
-            let failure = playbackFailure(forUnplayable: chapter)
+            let failure = await playbackFailure(forUnplayable: chapter)
             playbackError = failure.message
             playbackPhase = .failed(failure)
             return

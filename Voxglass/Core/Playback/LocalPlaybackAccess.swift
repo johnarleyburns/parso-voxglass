@@ -110,6 +110,18 @@ public enum LocalPlaybackUnavailable {
     }
 }
 
+extension LocalPlaybackUnavailable {
+    public static var reconnectMessage: String {
+        String(localized: "This audiobook needs its audio file reconnected on this device.", bundle: .module)
+    }
+
+    /// A remote book whose chapter has no URL: distinct from a local import
+    /// that lost its file, and never recoverable by picking a file.
+    public static var remoteSourceMessage: String {
+        String(localized: "This audiobook's online source is unavailable right now.", bundle: .module)
+    }
+}
+
 public struct PlaybackSourceResolver: Sendable {
     public typealias BookmarkResolver = @Sendable (Data) -> (url: URL, isStale: Bool)?
 

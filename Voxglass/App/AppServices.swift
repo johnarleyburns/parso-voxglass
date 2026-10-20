@@ -60,6 +60,9 @@ final class AppServices: ObservableObject {
         self.liveActivityController = liveActivityController
         playbackBridge.liveActivityController = liveActivityController
         playbackBridge.coordinator = self.playbackCoordinator
+        self.playbackCoordinator.localSourceContextProvider = { [libraryRepository] bookID in
+            await libraryRepository.localSourceContext(bookID: bookID)
+        }
         self.playbackCoordinator.artworkProvider = { url in
             await ArtworkService.shared.image(for: url)?.pngData()
         }
