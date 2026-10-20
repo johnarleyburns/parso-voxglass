@@ -10,6 +10,8 @@ import VoxglassCore
 struct ProjectDashboardView: View {
     @Environment(DiscoveryEnvironment.self) private var discovery
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dashboard: ProjectDashboard
     /// The id of the project to open in the flow. Presenting by id — not by
     /// value — is what stops the flow resuming a snapshot this screen froze
@@ -92,6 +94,18 @@ struct ProjectDashboardView: View {
         .onChange(of: model.project) { _, fresh in
             guard let fresh, !isEditingDetails else { return }
             adopt(fresh)
+        }
+        .onChange(of: dashboard) { old, new in
+            // Announce meaningful asynchronous changes (a take approved or
+            // flagged elsewhere, a store reload) that VoiceOver users cannot see.
+            guard old.progressAccessibilityValue != new.progressAccessibilityValue
+                    || old.attentionAccessibilityValue != new.attentionAccessibilityValue else { return }
+            AccessibilityNotification.Announcement(
+                "\(new.progressAccessibilityValue) \(new.attentionAccessibilityValue)"
+            ).post()
+        }
+        .onChange(of: model.artworkError) { _, error in
+            if let error { AccessibilityNotification.Announcement(error).post() }
         }
         .onChange(of: flowProjectID) { _, target in
             // The flow owns the project while it is open; when it closes, the
@@ -247,18 +261,22 @@ struct ProjectDashboardView: View {
 
     private var progressCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            adaptiveStack(spacing: 4) {
                 Text("Progress").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
-                Spacer()
+                Spacer(minLength: 0)
                 Text("\(Int(dashboard.percentRecorded * 100))%").voxFont(.subheadline, weight: .bold, design: .monospaced).foregroundStyle(Palette.ink) // mono-exempt: progress percentage
             }
             progressBar(value: dashboard.percentRecorded)
+                .accessibilityHidden(true)
             kv("Recorded", "\(dashboard.recordedCount) of \(dashboard.paragraphCount) paragraphs")
             kv("Approved", "\(dashboard.approvedCount) paragraphs")
             kv("Chapters complete", "\(dashboard.chaptersComplete) of \(dashboard.chapterCount)")
         }
         .padding(14)
         .raisedSurface()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Progress"))
+        .accessibilityValue(Text(dashboard.progressAccessibilityValue))
         .accessibilityIdentifier("dashboard.progress")
     }
 
@@ -373,18 +391,21 @@ struct ProjectDashboardView: View {
             }
         }
         .frame(height: 8)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: value)
     }
 
     // MARK: - Needs attention
 
     private var needsAttentionCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
+            adaptiveStack(spacing: 4) {
                 Text("Needs your attention").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
-                Spacer()
+                Spacer(minLength: 0)
                 attentionChip("\(dashboard.flaggedCount + dashboard.needsPickupCount + dashboard.driftCount)")
             }
             .padding(.bottom, 4)
+            .accessibilityElement(children: .combine)
+            .accessibilityValue(Text(dashboard.attentionAccessibilityValue))
 
             attentionRow("Flagged", "\(dashboard.flaggedCount) paragraphs", systemImage: "flag.fill", tint: NarrationPalette.brassSoft, id: "dashboard.flagged")
             VoxglassListDivider()
@@ -439,9 +460,9 @@ struct ProjectDashboardView: View {
 
     private var storageCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            adaptiveStack(spacing: 4) {
                 Text("Storage & iCloud").voxFont(.callout, weight: .bold).foregroundStyle(Palette.ink)
-                Spacer()
+                Spacer(minLength: 0)
                 chip("Backed up", tint: Palette.ok)
             }
             Text("\(onDeviceBytes) on iPhone · chapters verified in iCloud can be offloaded. Local-only takes are never removed.")
@@ -534,7 +555,7 @@ struct ProjectDashboardView: View {
     }
 
     private func chapterRow(_ chapter: ChapterProgress) -> some View {
-        HStack {
+        adaptiveStack(spacing: 6) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(chapter.ordinal + 1). \(chapter.title)")
                     .voxFont(.subheadline, weight: .semibold)
@@ -543,11 +564,13 @@ struct ProjectDashboardView: View {
                     .voxFont(.caption)
                     .foregroundStyle(Palette.ink3)
             }
-            Spacer()
+            Spacer(minLength: 0)
             chapterChip(chapter)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(chapter.accessibilityLabel))
         .accessibilityIdentifier("dashboard.chapter.\(chapter.ordinal)")
     }
 
@@ -576,6 +599,7 @@ struct ProjectDashboardView: View {
             Text(text)
         }
         .voxFont(.caption2, weight: .bold)
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, 8).padding(.vertical, 3)
         .foregroundStyle(tint)
         .background(tint.opacity(0.14), in: Capsule())
@@ -589,11 +613,20 @@ struct ProjectDashboardView: View {
     }
 
     private func kv(_ label: LocalizedStringKey, _ value: String) -> some View {
-        HStack {
-            Text(label).voxFont(.footnote).foregroundStyle(Palette.ink3)
-            Spacer()
+        adaptiveStack(spacing: 2) {
+            Text(label).voxFont(.footnote).foregroundStyle(Palette.ink2)
+            Spacer(minLength: 0)
             Text(value).voxFont(.footnote).foregroundStyle(Palette.ink)
         }
+    }
+
+    /// Side by side at standard sizes; stacked at accessibility Dynamic Type
+    /// sizes so text wraps instead of truncating.
+    private func adaptiveStack<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
+            : AnyLayout(HStackLayout(spacing: spacing))
+        return layout { content() }
     }
 }
 

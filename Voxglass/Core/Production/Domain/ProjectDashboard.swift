@@ -23,6 +23,18 @@ public struct ChapterProgress: Sendable, Equatable, Identifiable {
         paragraphCount == 0 ? 0 : Double(recordedCount) / Double(paragraphCount)
     }
 
+    /// Text status for the chapter, so state is never conveyed by color alone.
+    public var statusDescription: String {
+        if isComplete { return String(localized: "Complete") }
+        if isNotStarted { return String(localized: "Not started") }
+        return String(localized: "\(Int(percentRecorded * 100)) percent recorded")
+    }
+
+    /// One spoken phrase for the whole chapter row (VoiceOver label).
+    public var accessibilityLabel: String {
+        String(localized: "Chapter \(ordinal + 1), \(title), \(paragraphCount) paragraphs, \(statusDescription)")
+    }
+
     public init(
         id: UUID,
         ordinal: Int,
@@ -87,6 +99,16 @@ public struct ProjectDashboard: Sendable, Equatable {
         }
         let number = orderedParagraphs.firstIndex(where: { $0.id == id }).map { $0 + 1 } ?? 0
         return RecordNext(paragraphID: id, paragraphNumber: number, chapterOrdinal: chapter.ordinal)
+    }
+
+    /// Spoken progress summary; also the text announced when it changes.
+    public var progressAccessibilityValue: String {
+        String(localized: "\(Int(percentRecorded * 100)) percent. \(recordedCount) of \(paragraphCount) paragraphs recorded, \(approvedCount) approved, \(chaptersComplete) of \(chapterCount) chapters complete.")
+    }
+
+    /// Spoken attention summary; also announced when it changes.
+    public var attentionAccessibilityValue: String {
+        String(localized: "\(flaggedCount) flagged, \(needsPickupCount) need pickup, \(driftCount) changed after recording.")
     }
 
     private let orderedParagraphs: [Paragraph]
