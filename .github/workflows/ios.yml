@@ -560,7 +560,7 @@ jobs:
           </plist>
           PLIST
 
-          xcodebuild \
+          bash .github/scripts/testflight-upload.sh -- xcodebuild \
             -exportArchive \
             -archivePath "$RUNNER_TEMP/VoxglassMac.xcarchive" \
             -exportPath "$RUNNER_TEMP/mac-export" \
@@ -631,7 +631,7 @@ jobs:
           </plist>
           PLIST
 
-          xcodebuild \
+          bash .github/scripts/testflight-upload.sh -- xcodebuild \
             -exportArchive \
             -archivePath "$RUNNER_TEMP/Voxglass.xcarchive" \
             -exportPath "$RUNNER_TEMP/export" \
@@ -639,6 +639,15 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/appstore/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8" \
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Upload TestFlight transport diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-transport-${{ github.run_id }}
+          path: ${{ runner.temp }}/testflight-transport.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Record TestFlight delivery
         if: success() && steps.signing.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
