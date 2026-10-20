@@ -760,8 +760,12 @@ public final class CloudKitSyncEngine: ObservableObject {
         let identity = sourceKindIdentity(for: source)
         let sourceID = CloudKitRecordMapper.stableUUID(from: identity)
         try await database.execute("""
-        INSERT OR REPLACE INTO sources (id, kind, title, url, created_at)
+        INSERT INTO sources (id, kind, title, url, created_at)
         VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          kind=excluded.kind,
+          title=excluded.title,
+          url=excluded.url
         """, [
             .string(sourceID.uuidString),
             .string(source.kind.rawValue),
@@ -813,12 +817,15 @@ public final class CloudKitSyncEngine: ObservableObject {
 
     private func importNewBook(_ book: Book, chapters: [Chapter], contentKey: String) async throws {
         let sourceID = book.sourceID.uuidString
+        // Never guess a remote kind: chapters without a remote URL are local files.
+        let placeholderKind = chapters.contains { $0.remoteURL != nil }
+            ? SourceKind.librivox.rawValue : SourceKind.localFiles.rawValue
         try await database.execute("""
         INSERT OR IGNORE INTO sources (id, kind, title, url, created_at)
         VALUES (?, ?, ?, ?, ?)
         """, [
             .string(sourceID),
-            .string("librivox"),
+            .string(placeholderKind),
             .string("Synced Source"),
             .null,
             .double(book.createdAt.timeIntervalSince1970)
