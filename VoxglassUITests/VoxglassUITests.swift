@@ -306,6 +306,8 @@ final class VoxglassUITests: XCTestCase {
 
         assertCompletedDashboardRoutesToReview(app: app)
 
+        assertDashboardAttentionRowsAreButtons(app: app)
+
         assertDashboardArtworkPicker(app: app)
 
         assertNarrationDetailsAndReviewPersist(app: app)
@@ -709,6 +711,28 @@ final class VoxglassUITests: XCTestCase {
         XCTAssertTrue(app.buttons["review.chapter.header.0"].waitForExistence(timeout: 10))
         app.buttons["Close"].tap()
         XCTAssertTrue(recordNext.waitForExistence(timeout: 10))
+    }
+
+    private func assertDashboardAttentionRowsAreButtons(app: XCUIApplication) {
+        let rows = [
+            ("dashboard.flagged", "Flagged"),
+            ("dashboard.pickups", "Needs pickup"),
+            ("dashboard.drift", "Text changed after recording"),
+        ]
+        for (id, label) in rows {
+            let row = app.buttons[id]
+            if !row.exists { app.swipeUp() }
+            XCTAssertTrue(row.waitForExistence(timeout: 10), "\(id) is not a semantic button.\n\(app.debugDescription)")
+            XCTAssertEqual(row.label, label)
+            XCTAssertTrue(String(describing: row.value ?? "").contains("paragraphs"), "\(id) lacks a state value.")
+            XCTAssertTrue(row.isEnabled && row.isHittable, "\(id) is not activatable.")
+            XCTAssertGreaterThanOrEqual(row.frame.height, 44, "\(id) target is under 44pt.")
+        }
+        let flagged = app.buttons["dashboard.flagged"]
+        flagged.tap()
+        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 10), "Activating an attention row did not open the review flow.")
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["dashboard.flagged"].waitForExistence(timeout: 10))
     }
 
     private func assertDashboardArtworkPicker(app: XCUIApplication) {
