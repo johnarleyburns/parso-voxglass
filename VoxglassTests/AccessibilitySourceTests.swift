@@ -22,6 +22,22 @@ import Testing
         }
     }
 
+    @Test func narrationWalkthroughIsNeverShownAutomatically() throws {
+        let root = repositoryRoot()
+        let flow = try String(
+            contentsOf: root.appendingPathComponent("Voxglass/Features/Production/Discovery/NarrationFlow.swift"),
+            encoding: .utf8)
+        let prefs = try String(
+            contentsOf: root.appendingPathComponent("Voxglass/Core/AppPreferencesStore.swift"),
+            encoding: .utf8)
+        #expect(!flow.contains("narrationOnboardingSeen"))
+        #expect(!prefs.contains("narrationOnboardingSeen"))
+        // Help stays reachable, but only from the user-tapped button.
+        #expect(flow.contains("NarrationHelpSheet()"))
+        #expect(flow.contains("showHelp = true"))
+        #expect(flow.components(separatedBy: "showHelp = true").count == 2)
+    }
+
     @Test func iconOnlyButtonsHaveAccessibilityLabels() throws {
         let directories = [
             repositoryRoot().appendingPathComponent("Voxglass/Features"),
