@@ -801,31 +801,50 @@ public final class LibraryRepository: @unchecked Sendable {
 
     // MARK: - Local folder import (Folder Watch, §4)
 
-    /// Repairs missing access bookmarks while a watched folder's scope is open.
-    /// Existing chapter identities, metadata, and playback positions are preserved.
+    /// Repairs missing, stale, or unresolvable chapter bookmarks while the
+    /// caller holds access to `selectedURL` (a watched/picked folder, or a
+    /// single audio file). Chapter, book, source, and position identities are
+    /// untouched, so no duplicates are created. Paths are canonicalized so
+    /// `/var` vs `/private/var` and symlinks still match.
     @discardableResult
-    public func repairLocalFileBookmarks(forFolder folderURL: URL) async throws -> Int {
+    public func repairLocalFileBookmarks(forFolder selectedURL: URL) async throws -> Int {
         try await database.prepare()
         let rows = try await database.query(
             """
-            SELECT c.id, c.local_url, s.url AS folder_url
+            SELECT c.id, c.local_url, c.local_bookmark, s.url AS folder_url
             FROM chapters c
             JOIN books b ON b.id = c.book_id
             JOIN sources s ON s.id = b.source_id
-            WHERE s.kind = ? AND c.local_url IS NOT NULL AND c.local_bookmark IS NULL
+            WHERE s.kind = ? AND c.local_url IS NOT NULL
             """,
             [.string(SourceKind.localFiles.rawValue)]
         )
+        let selected = Self.canonicalLocalURL(selectedURL)
+        var bookmarkByFile: [URL: Data] = [:]
         var repaired = 0
         for row in rows {
             try Task.checkCancellation()
-            guard let rawFolder = row.string("folder_url"), let storedFolder = URL(string: rawFolder),
-                  Self.canonicalLocalURL(storedFolder) == Self.canonicalLocalURL(folderURL),
-                  let id = row.string("id"), let raw = row.string("local_url"),
-                  let url = URL(string: raw), FileManager.default.fileExists(atPath: url.path) else { continue }
-            let bookmark = try url.bookmarkData()
+            guard let id = row.string("id"), let raw = row.string("local_url"),
+                  let url = URL(string: raw) else { continue }
+            let file = Self.canonicalLocalURL(url)
+            let sourceMatches = row.string("folder_url").flatMap { URL(string: $0) }
+                .map { Self.canonicalLocalURL($0) == selected } ?? false
+            let selectedPath = selected.path.hasSuffix("/") ? selected.path : selected.path + "/"
+            guard sourceMatches || file == selected || file.path.hasPrefix(selectedPath) else { continue }
+            let existing = ModelMapping.data(row, "local_bookmark")
+            if let existing, let resolved = PlaybackSourceResolver.resolveBookmarkData(existing), !resolved.isStale {
+                continue
+            }
+            guard FileManager.default.fileExists(atPath: url.path) else { continue }
+            let bookmark: Data
+            if let cached = bookmarkByFile[file] {
+                bookmark = cached
+            } else {
+                bookmark = try url.bookmarkData()
+                bookmarkByFile[file] = bookmark
+            }
             try await database.execute(
-                "UPDATE chapters SET local_bookmark = ? WHERE id = ? AND local_bookmark IS NULL",
+                "UPDATE chapters SET local_bookmark = ? WHERE id = ?",
                 [ModelMapping.databaseValue(bookmark), .string(id)]
             )
             repaired += 1

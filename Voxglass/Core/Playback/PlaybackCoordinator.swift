@@ -339,11 +339,9 @@ public final class PlaybackCoordinator {
     private func loadEngineForPresentedSession() async -> Bool {
         guard let session = currentSession,
               let source = await playbackSource(for: session.chapter) else {
-            playbackError = AudioEngineError.missingPlayableURL.localizedDescription
-            playbackPhase = .failed(PlaybackFailure(
-                message: AudioEngineError.missingPlayableURL.localizedDescription,
-                isRetryable: false
-            ))
+            let failure = playbackFailure(forUnplayable: currentSession?.chapter)
+            playbackError = failure.message
+            playbackPhase = .failed(failure)
             return false
         }
         guard !Task.isCancelled else { return false }
@@ -404,6 +402,16 @@ public final class PlaybackCoordinator {
         let url: URL
         /// Non-nil for a security-scoped local file; ownership moves to the engine.
         let lease: PlaybackLease?
+    }
+
+    /// Local-only imports recover by reselecting the file; anything else keeps
+    /// the generic message.
+    private func playbackFailure(forUnplayable chapter: Chapter?) -> PlaybackFailure {
+        if let chapter, chapter.remoteURL == nil, chapter.localBookmark != nil || chapter.localURL != nil {
+            return PlaybackFailure(message: LocalPlaybackUnavailable.message, isRetryable: false, needsReselect: true)
+        }
+        let message = AudioEngineError.missingPlayableURL.localizedDescription
+        return PlaybackFailure(message: message, isRetryable: false)
     }
 
     /// A playable URL for `chapter`, or nil for every local-only failure
@@ -565,11 +573,9 @@ public final class PlaybackCoordinator {
         // 3. Load the engine.
         guard let source = await playbackSource(for: targetChapter) else {
             guard activeSelectionID == requestID else { return }
-            playbackError = AudioEngineError.missingPlayableURL.localizedDescription
-            playbackPhase = .failed(PlaybackFailure(
-                message: AudioEngineError.missingPlayableURL.localizedDescription,
-                isRetryable: false
-            ))
+            let failure = playbackFailure(forUnplayable: targetChapter)
+            playbackError = failure.message
+            playbackPhase = .failed(failure)
             return
         }
 
@@ -739,11 +745,9 @@ public final class PlaybackCoordinator {
         playheadDuration = validTime(chapter.duration ?? target.savedDuration)
 
         guard let source = await playbackSource(for: chapter) else {
-            playbackError = AudioEngineError.missingPlayableURL.localizedDescription
-            playbackPhase = .failed(PlaybackFailure(
-                message: AudioEngineError.missingPlayableURL.localizedDescription,
-                isRetryable: false
-            ))
+            let failure = playbackFailure(forUnplayable: chapter)
+            playbackError = failure.message
+            playbackPhase = .failed(failure)
             return
         }
 

@@ -103,6 +103,13 @@ public enum PlaybackSourceResolution: Sendable {
     }
 }
 
+public enum LocalPlaybackUnavailable {
+    /// Nontechnical message shown when an imported file cannot be reached.
+    public static var message: String {
+        String(localized: "This audiobook's file is unavailable. Reselect its folder or file to restore playback.", bundle: .module)
+    }
+}
+
 public struct PlaybackSourceResolver: Sendable {
     public typealias BookmarkResolver = @Sendable (Data) -> (url: URL, isStale: Bool)?
 
