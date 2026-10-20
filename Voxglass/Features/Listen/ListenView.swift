@@ -7,6 +7,7 @@ struct ListenView: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @Environment(PlaybackCoordinator.self) private var playback
     @Binding var showingNowPlaying: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @EnvironmentObject private var recommendations: HomeRecommendationStore
     @EnvironmentObject private var listeningStats: ListeningStatsStore
@@ -102,58 +103,182 @@ struct ListenView: View {
         }
     }
 
+    private var heroPresentation: ListenHeroPresentation {
+        ListenHeroPresentation(
+            session: playback.currentSession,
+            phase: playback.playbackPhase,
+            recentBookID: libraryStore.recentlyPlayed.first?.book.id
+        )
+    }
+
     @ViewBuilder
     private var continueListening: some View {
-        if let book = libraryStore.recentlyPlayed.first {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionTitle(title: "Continue Listening")
+        let hero = heroPresentation
+        if hero.showsNowPlaying, let session = playback.currentSession {
+            nowPlayingCard(session: session, kind: hero.kind)
+        } else if hero.kind == .paused, let session = playback.currentSession {
+            continueCard(book: BookWithChapters(book: session.book, chapters: session.chapters), resumeLabel: String(localized: "Resume"))
+        } else if let book = libraryStore.recentlyPlayed.first {
+            continueCard(book: book, resumeLabel: continueActionLabel(for: book))
+        }
+    }
+
+    private func nowPlayingCard(session: PlaybackSession, kind: ListenHeroPresentation.Kind) -> some View {
+        let title = session.book.title
+        let status: String
+        switch kind {
+        case .playing: status = String(localized: "Playing")
+        default: status = String(localized: "Preparing…")
+        }
+        let failureMessage: String? = {
+            if case .failed(let failure) = playback.playbackPhase { return failure.message }
+            return nil
+        }()
+        return VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(title: "Now Playing")
+            HStack(spacing: 10) {
                 Button {
-                    Task {
-                        await playback.play(book)
-                        showingNowPlaying = true
-                    }
+                    showingNowPlaying = true
                 } label: {
                     HStack(spacing: 14) {
                         CoverPlate(
-                            title: book.book.title,
-                            author: book.book.displayAuthorLine,
-                            coverURL: book.book.coverURL,
+                            title: title,
+                            author: session.book.displayAuthorLine,
+                            coverURL: session.book.coverURL,
                             size: 84,
                             shape: .portrait
                         )
-
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(book.book.title)
+                            Text(title)
                                 .voxType(.heroTitle)
                                 .foregroundStyle(Palette.ink)
-                                .lineLimit(2)
                                 .multilineTextAlignment(.leading)
-                            Text(book.book.displayAuthorLine ?? String(localized: "Imported"))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(session.book.displayAuthorLine ?? String(localized: "Imported"))
                                 .voxType(.meta)
                                 .foregroundStyle(Palette.ink2)
-                            Text(continueActionLabel(for: book))
-                                .voxType(.body)
-                                .foregroundStyle(Palette.onBrass)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Palette.brass, in: Capsule())
-                                .accessibilityIdentifier("listen.resume")
+                            Text(session.chapter.title)
+                                .voxType(.meta)
+                                .foregroundStyle(Palette.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 8) {
+                                if kind == .playing {
+                                    ActivityBars(animating: !reduceMotion)
+                                        .accessibilityHidden(true)
+                                }
+                                Text(status)
+                                    .voxType(.body)
+                            }
+                            .foregroundStyle(Palette.onBrass)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Palette.brass, in: Capsule())
+                            .accessibilityIdentifier("listen.nowPlaying.status")
+                            if let failureMessage {
+                                Text(failureMessage)
+                                    .voxType(.meta)
+                                    .foregroundStyle(Palette.ink2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
-
-                        Spacer(minLength: 4)
-                        Image(systemName: "play.circle.fill")
-                            .voxFont(.title, weight: .semibold)
-                            .foregroundStyle(Palette.brass)
+                        Spacer(minLength: 0)
                     }
-                    .padding(14)
-                    .raisedSurface(tint: Palette.brass.opacity(0.20))
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .tactileTap()
-                .accessibilityIdentifier("listen.continueListening")
-                .accessibilityLabel("\(continueActionLabel(for: book)) \(book.book.title)")
+                .accessibilityIdentifier("listen.nowPlaying.open")
+                .accessibilityLabel("\(String(localized: "Now Playing")), \(title), \(session.chapter.title), \(status)")
                 .accessibilityHint("Opens the player")
+
+                if kind == .playing {
+                    Button {
+                        playback.togglePlayPause()
+                    } label: {
+                        Image(systemName: "pause.fill")
+                            .voxFont(.title3, weight: .semibold)
+                            .foregroundStyle(Palette.brass)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("listen.nowPlaying.pause")
+                    .accessibilityLabel("\(String(localized: "Pause")) \(title)")
+                }
             }
+            .padding(14)
+            .raisedSurface(tint: Palette.brass.opacity(0.20))
+        }
+    }
+
+    /// Decorative three-bar activity mark; static under Reduce Motion.
+    private struct ActivityBars: View {
+        let animating: Bool
+        @State private var phase = false
+
+        var body: some View {
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(0..<3, id: \.self) { index in
+                    Capsule()
+                        .frame(width: 3, height: animating && phase ? CGFloat(6 + ((index + 1) % 3) * 4) : CGFloat(6 + index * 4))
+                }
+            }
+            .frame(width: 14, height: 14, alignment: .bottom)
+            .animation(animating ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : nil, value: phase)
+            .onAppear { if animating { phase = true } }
+        }
+    }
+
+
+    private func continueCard(book: BookWithChapters, resumeLabel: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionTitle(title: "Continue Listening")
+            Button {
+                Task {
+                    await playback.play(book)
+                    showingNowPlaying = true
+                }
+            } label: {
+                HStack(spacing: 14) {
+                    CoverPlate(
+                        title: book.book.title,
+                        author: book.book.displayAuthorLine,
+                        coverURL: book.book.coverURL,
+                        size: 84,
+                        shape: .portrait
+                    )
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(book.book.title)
+                            .voxType(.heroTitle)
+                            .foregroundStyle(Palette.ink)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        Text(book.book.displayAuthorLine ?? String(localized: "Imported"))
+                            .voxType(.meta)
+                            .foregroundStyle(Palette.ink2)
+                        Text(resumeLabel)
+                            .voxType(.body)
+                            .foregroundStyle(Palette.onBrass)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Palette.brass, in: Capsule())
+                            .accessibilityIdentifier("listen.resume")
+                    }
+
+                    Spacer(minLength: 4)
+                    Image(systemName: "play.circle.fill")
+                        .voxFont(.title, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                }
+                .padding(14)
+                .raisedSurface(tint: Palette.brass.opacity(0.20))
+            }
+            .buttonStyle(.plain)
+            .tactileTap()
+            .accessibilityIdentifier("listen.continueListening")
+            .accessibilityLabel("\(resumeLabel) \(book.book.title)")
+            .accessibilityHint("Opens the player")
         }
     }
 
