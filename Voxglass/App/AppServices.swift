@@ -66,6 +66,9 @@ final class AppServices: ObservableObject {
         self.playbackCoordinator.artworkProvider = { url in
             await ArtworkService.shared.image(for: url)?.pngData()
         }
+        self.playbackCoordinator.cachedArtworkProvider = { url in
+            ArtworkService.shared.cachedImage(for: url)?.pngData()
+        }
         self.playbackCoordinator.artworkConsumer = { bookID, data in
             CoverThumbnailStore.save(imageData: data, bookID: bookID)
         }
