@@ -76,3 +76,57 @@ import Testing
         #expect(LiveActivityUpdatePolicy.safeElapsed(-2) == 0)
     }
 }
+
+@Suite struct LiveActivityLifecyclePolicyTests {
+    private typealias Snap = LiveActivityLifecyclePolicy.Snapshot
+    private let a = UUID(), b = UUID(), c = UUID()
+
+    private func content(_ id: UUID, playing: Bool = true) -> LiveActivityContent {
+        LiveActivityContent(bookID: id, title: "T", author: "A", narrator: nil, chapterTitle: "C",
+                            chapterIndex: 1, chapterCount: 3, isPlaying: playing, rate: 1,
+                            chapterElapsed: 0, chapterDuration: 60, bookRemaining: 100, sleep: .off,
+                            capturedAt: Date(timeIntervalSince1970: 0))
+    }
+
+    @Test func switchingBooksEndsOldAndCreatesNew() {
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [Snap(id: "1", bookID: a)], content: content(b), enabled: true)
+        #expect(plan == .init(reuse: nil, end: ["1"], create: true))
+    }
+
+    @Test func sameBookReusesActivity() {
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [Snap(id: "2", bookID: b)], content: content(b), enabled: true)
+        #expect(plan == .init(reuse: "2", end: [], create: false))
+    }
+
+    @Test func rapidSwitchLeavesOnlyLatest() {
+        let plan = LiveActivityLifecyclePolicy.plan(
+            existing: [Snap(id: "1", bookID: a), Snap(id: "2", bookID: b)], content: content(c), enabled: true)
+        #expect(plan == .init(reuse: nil, end: ["1", "2"], create: true))
+    }
+
+    @Test func duplicatesOfSameBookAreEnded() {
+        let plan = LiveActivityLifecyclePolicy.plan(
+            existing: [Snap(id: "1", bookID: b), Snap(id: "2", bookID: b)], content: content(b), enabled: true)
+        #expect(plan == .init(reuse: "1", end: ["2"], create: false))
+    }
+
+    @Test func restoredActivityForOtherBookIsReplaced() {
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [Snap(id: "r", bookID: a)], content: content(b), enabled: true)
+        #expect(plan.end == ["r"] && plan.create)
+    }
+
+    @Test func pausedRestoredSessionDoesNotCreate() {
+        let none = LiveActivityLifecyclePolicy.plan(existing: [], content: content(b, playing: false), enabled: true)
+        #expect(none == .init(reuse: nil, end: [], create: false))
+        let other = LiveActivityLifecyclePolicy.plan(existing: [Snap(id: "1", bookID: a)], content: content(b, playing: false), enabled: true)
+        #expect(other == .init(reuse: nil, end: ["1"], create: false))
+    }
+
+    @Test func disablingOrClearingEndsEverything() {
+        let existing = [Snap(id: "1", bookID: a)]
+        #expect(LiveActivityLifecyclePolicy.plan(existing: existing, content: content(a), enabled: false)
+                == .init(reuse: nil, end: ["1"], create: false))
+        #expect(LiveActivityLifecyclePolicy.plan(existing: existing, content: nil, enabled: true)
+                == .init(reuse: nil, end: ["1"], create: false))
+    }
+}
