@@ -74,6 +74,13 @@ reconcile_issue() {
   local issue=$1 marker bundle version build status_marker comments delivery body app_id build_id state groups_count availability detail existing
   comments="$tmp/comments-$issue"
   gh api --paginate "repos/$repo/issues/$issue/comments" --jq '.[].body' > "$comments" || return 0
+  # Human QA failure takes precedence over the prior build's availability. A
+  # replacement build clears qa-failed in record-testflight-delivery.sh.
+  if gh issue view "$issue" --repo "$repo" --json labels --jq '.labels[].name' | grep -Fxq 'qa-failed'; then
+    gh issue edit "$issue" --repo "$repo" --remove-label ready-for-qa --remove-label ai-ready >/dev/null
+    echo "Reconciled #$issue: human QA failure is awaiting repair"
+    return 0
+  fi
   # Read the durable delivery marker from the issue comment itself, not from
   # its mutable labels.  `grep -h` is portable on the Linux reconciler and
   # guarantees that the value begins with the marker (never a filename prefix).
