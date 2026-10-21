@@ -15,6 +15,24 @@ import Testing
         }
     }
 
+    @Test func explicitBookSelectionsRouteThroughSelectAndPlay() throws {
+        let paths = [
+            "Voxglass/Features/Player/BookPageView.swift",
+            "Voxglass/Features/Listen/ListenView.swift",
+            "Voxglass/Features/Library/LibraryView.swift",
+            "Voxglass/Features/Library/PlaylistsView.swift",
+            "Voxglass/Features/Library/BookRelatedViews.swift"
+        ]
+        for path in paths {
+            let text = try source(path)
+            #expect(!text.contains("await playback.play("))  // \(path) must use selectAndPlay for book selections
+            #expect(text.contains("playback.selectAndPlay("))
+        }
+        let page = try source("Voxglass/Features/Player/BookPageView.swift")
+        #expect(page.contains("playback.selectAndPlay(resolved, chapter: chapter)"))
+        #expect(page.contains("await playback.seek(to: 0)"))
+    }
+
     @Test func bookPageKeepsAccessibilityIdentifiers() throws {
         let page = try source("Voxglass/Features/Player/BookPageView.swift")
         let actionRow = try source("Voxglass/Features/Player/BookPageActionRow.swift")

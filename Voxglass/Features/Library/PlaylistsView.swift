@@ -78,7 +78,7 @@ struct PlaylistDetailView: View {
                 List {
                     ForEach(books) { book in
                         Button {
-                            Task { await playback.play(book) }
+                            playback.selectAndPlay(book)
                         } label: {
                             VStack(alignment: .leading) {
                                 Text(book.book.title).foregroundStyle(Palette.ink)
