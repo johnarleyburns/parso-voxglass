@@ -162,6 +162,11 @@ public final class PlaybackCoordinator {
     /// Fetches cover art as raw image bytes; injectable so tests can count fetches
     /// without network. The app injects a provider backed by `ArtworkService`.
     @ObservationIgnored public var artworkProvider: (@MainActor (URL) async -> Data?)?
+    /// Synchronous, no-network lookup of an already-cached cover so a book switch
+    /// shows the new book's cover immediately instead of a placeholder.
+    @ObservationIgnored public var cachedArtworkProvider: (@MainActor (URL) -> Data?)?
+    /// Bumped on every artwork selection so late completions can be discarded.
+    @ObservationIgnored private var artworkGeneration = 0
     /// Repository-provided source classification, keyed by book id. Injected by
     /// the app; when nil, no chapter is ever treated as a damaged local import.
     @ObservationIgnored public var localSourceContextProvider: (@MainActor (UUID) async -> LocalSourceContext?)?
@@ -1316,16 +1321,30 @@ public final class PlaybackCoordinator {
     private func updateArtwork(for book: Book) {
         guard currentArtworkBookID != book.id else { return }
         currentArtworkBookID = book.id
-        // nil tells the bridge to show its bundled fallback immediately, so the
-        // lock screen is never blank while the real cover loads.
+        artworkGeneration += 1
+        let generation = artworkGeneration
+        // Drop the previous book's image right away; a cached cover (below) or the
+        // neutral fallback replaces it, never the old book's cover.
         bridge.setArtwork(nil)
 
-        guard let coverURL = book.coverURL, let provider = artworkProvider else { return }
+        guard let coverURL = book.coverURL else { return }
+        if let cached = cachedArtworkProvider?(coverURL) {
+            bridge.setArtwork(cached)
+            artworkConsumer?(book.id, cached)
+            return
+        }
+        guard let provider = artworkProvider else { return }
         Task { [weak self] in
             let data = await provider(coverURL)
-            guard let self, let data, self.currentArtworkBookID == book.id else { return }
+            guard let self, let data,
+                  self.currentArtworkBookID == book.id,
+                  self.artworkGeneration == generation else { return }
             self.artworkConsumer?(book.id, data)
             self.bridge.setArtwork(data)
+            // The Live Activity content is otherwise unchanged, so clear the
+            // dedupe baseline to push an update that makes the widget re-read
+            // the newly saved thumbnail.
+            self.lastLiveActivityContent = nil
             self.updateNowPlayingInfo()
         }
     }
