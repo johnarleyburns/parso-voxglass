@@ -130,7 +130,24 @@ public final class PlaybackCoordinator {
     /// Cancellation token for the active selection so stale requests cannot
     /// overwrite state.
     @ObservationIgnored private var selectionTask: Task<Void, Never>?
-    @ObservationIgnored private var activeSelectionID: UUID?
+    /// Authoritative playback-ownership token. Bumped whenever a new explicit
+    /// selection begins, playback pauses/stops, or the session is torn down.
+    /// Every asynchronous start/resume/load captures it and revalidates after
+    /// each suspension; `Task.isCancelled` alone can race with completion.
+    @ObservationIgnored private var playbackGeneration: UInt64 = 0
+
+    private func owns(_ generation: UInt64) -> Bool {
+        generation == playbackGeneration
+    }
+
+    /// Invalidates every in-flight start/resume/load and returns the new token.
+    @discardableResult
+    private func invalidatePlaybackOwnership() -> UInt64 {
+        playbackGeneration &+= 1
+        engineLoadTask?.cancel()
+        engineLoadTask = nil
+        return playbackGeneration
+    }
 
     /// Suppresses the history push for one navigation (used by undo).
     @ObservationIgnored private var suppressNextHistoryPush = false
@@ -334,27 +351,33 @@ public final class PlaybackCoordinator {
     /// failure the session is retained (the miniplayer must not vanish) and
     /// `playbackError` is set so the user can retry.
     @discardableResult
-    private func ensureEngineLoaded() async -> Bool {
+    private func ensureEngineLoaded(generation: UInt64) async -> Bool {
+        guard owns(generation) else { return false }
         if isEngineLoaded { return true }
-        if let engineLoadTask { return await engineLoadTask.value }
+        if let engineLoadTask {
+            let loaded = await engineLoadTask.value
+            return loaded && owns(generation)
+        }
         let task = Task { @MainActor [weak self] in
-            await self?.loadEngineForPresentedSession() ?? false
+            await self?.loadEngineForPresentedSession(generation: generation) ?? false
         }
         engineLoadTask = task
         let loaded = await task.value
-        engineLoadTask = nil
-        return loaded
+        if engineLoadTask == task { engineLoadTask = nil }
+        return loaded && owns(generation)
     }
 
-    private func loadEngineForPresentedSession() async -> Bool {
-        guard let session = currentSession,
-              let source = await playbackSource(for: session.chapter) else {
-            let failure = await playbackFailure(forUnplayable: currentSession?.chapter)
+    private func loadEngineForPresentedSession(generation: UInt64) async -> Bool {
+        guard owns(generation), let session = currentSession else { return false }
+        guard let source = await playbackSource(for: session.chapter) else {
+            guard owns(generation) else { return false }
+            let failure = await playbackFailure(forUnplayable: session.chapter)
+            guard owns(generation) else { return false }
             playbackError = failure.message
             playbackPhase = .failed(failure)
             return false
         }
-        guard !Task.isCancelled else { return false }
+        guard !Task.isCancelled, owns(generation) else { return false }
         do {
             // `session.position` is chapter-relative; for a single-file,
             // multi-chapter local book every chapter shares one URL, so the
@@ -373,15 +396,18 @@ public final class PlaybackCoordinator {
                 guard let remote = session.chapter.remoteURL else { throw AudioEngineError.unplayableAudio }
                 try await engine.load(url: remote, startTime: session.chapter.startTime + session.position)
             }
-            guard !Task.isCancelled else { return false }
+            guard !Task.isCancelled, owns(generation),
+                  currentSession?.book.id == session.book.id,
+                  currentSession?.chapter.id == session.chapter.id else { return false }
             applyStoredRate(forBookID: session.book.id)
             guard decodeRecoveryTask == nil else { return false }
             isEngineLoaded = true
             let bwc = BookWithChapters(book: session.book, chapters: session.chapters)
             prefetchNextChapter(from: bwc, currentChapter: session.chapter)
-            await preloadImmediateNextChapter(in: session)
-            return true
+            await preloadImmediateNextChapter(in: session, generation: generation)
+            return owns(generation)
         } catch {
+            guard owns(generation) else { return false }
             if case .decodeFailed = AudioEngineIssue.playbackFailure(error, fallback: error.localizedDescription) {
                 handleEngineIssue(.playbackFailure(error, fallback: error.localizedDescription))
                 return false
@@ -525,11 +551,10 @@ public final class PlaybackCoordinator {
         }
 
         selectionTask?.cancel()
-        let requestID = UUID()
-        activeSelectionID = requestID
+        let generation = invalidatePlaybackOwnership()
 
         selectionTask = Task { [weak self] in
-            await self?.performSelection(book, chapter: requestedChapter, requestID: requestID)
+            await self?.performSelection(book, chapter: requestedChapter, generation: generation)
         }
     }
 
@@ -551,7 +576,7 @@ public final class PlaybackCoordinator {
     private func performSelection(
         _ book: BookWithChapters,
         chapter requestedChapter: Chapter?,
-        requestID: UUID
+        generation: UInt64
     ) async {
         // 1. Resolve chapter + position synchronously where possible.
         let startTime: TimeInterval
@@ -563,7 +588,7 @@ public final class PlaybackCoordinator {
             let row = try? await positionStore.position(
                 for: book.book.id, chapterID: requestedChapter.id
             )
-            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            guard !Task.isCancelled, owns(generation) else { return }
             let snapshot = snapshotStore.position(forBookID: book.book.id)
                 .flatMap { $0.chapterID == requestedChapter.id ? $0 : nil }
             let saved = Self.preferredPosition(row: row ?? nil, snapshot: snapshot)
@@ -575,7 +600,7 @@ public final class PlaybackCoordinator {
         } else {
             targetChapter = book.chapters.first!
             let row = try? await positionStore.latestPosition(forBookID: book.book.id)
-            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            guard !Task.isCancelled, owns(generation) else { return }
             let saved = Self.preferredPosition(
                 row: row ?? nil,
                 snapshot: snapshotStore.position(forBookID: book.book.id)
@@ -589,7 +614,7 @@ public final class PlaybackCoordinator {
         }
 
         // Recheck after potentially async position lookup.
-        guard !Task.isCancelled, activeSelectionID == requestID else { return }
+        guard !Task.isCancelled, owns(generation) else { return }
 
         // 2. Publish preparing session *before* engine load.
         // The chapter's own known duration always wins over a saved value —
@@ -601,7 +626,7 @@ public final class PlaybackCoordinator {
         // navigation/save operations.
         let duration = validTime(targetChapter.duration ?? savedDuration)
         await prepareForPausedPresentation()
-        guard !Task.isCancelled, activeSelectionID == requestID else { return }
+        guard !Task.isCancelled, owns(generation) else { return }
         applyStoredRate(forBookID: book.book.id)
         updateArtwork(for: book.book)
         currentSession = PlaybackSession(
@@ -619,7 +644,7 @@ public final class PlaybackCoordinator {
 
         // 3. Load the engine.
         guard let source = await playbackSource(for: targetChapter) else {
-            guard activeSelectionID == requestID else { return }
+            guard owns(generation) else { return }
             let failure = await playbackFailure(forUnplayable: targetChapter)
             playbackError = failure.message
             playbackPhase = .failed(failure)
@@ -628,13 +653,13 @@ public final class PlaybackCoordinator {
 
         do {
             try await engine.load(url: source.url, startTime: targetChapter.startTime + startTime, lease: source.lease)
-            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            guard !Task.isCancelled, owns(generation) else { return }
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: book.book.id)
             engine.play()
 
-            guard !Task.isCancelled, activeSelectionID == requestID else { return }
+            guard !Task.isCancelled, owns(generation) else { return }
             mutateSession {
                 $0.isPlaying = true
                 if !usesSharedAudioAsset(in: book, for: targetChapter),
@@ -651,13 +676,14 @@ public final class PlaybackCoordinator {
             let nextIndex = chapterIndex(in: book, for: targetChapter) + 1
             if !usesSharedAudioAsset(in: book, for: targetChapter),
                book.chapters.indices.contains(nextIndex),
-               let nextURL = await playbackSource(for: book.chapters[nextIndex]) {
+               let nextURL = await playbackSource(for: book.chapters[nextIndex]),
+               owns(generation) {
                 engine.preloadNext(url: nextURL.url, lease: nextURL.lease)
             }
         } catch is CancellationError {
             return
         } catch {
-            guard activeSelectionID == requestID else { return }
+            guard owns(generation) else { return }
             if case .decodeFailed = AudioEngineIssue.playbackFailure(error, fallback: error.localizedDescription) {
                 handleEngineIssue(.playbackFailure(error, fallback: error.localizedDescription))
                 return
@@ -764,16 +790,18 @@ public final class PlaybackCoordinator {
 
     public func play(_ book: BookWithChapters, chapter requestedChapter: Chapter? = nil) async {
         cancelDecodeRecovery()
+        let generation = invalidatePlaybackOwnership()
         if !isAutomaticTransientRecovery {
             transientRecoveryAttempts = 0
         }
-        guard let target = await presentationTarget(for: book, chapter: requestedChapter) else { return }
+        guard let target = await presentationTarget(for: book, chapter: requestedChapter),
+              owns(generation) else { return }
         let chapter = target.chapter
         let startTime = target.startTime
 
         // Publish preparing session *before* engine load.
         await prepareForPausedPresentation()
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, owns(generation) else { return }
         applyStoredRate(forBookID: book.book.id)
         updateArtwork(for: book.book)
         playbackError = nil
@@ -792,7 +820,9 @@ public final class PlaybackCoordinator {
         playheadDuration = validTime(chapter.duration ?? target.savedDuration)
 
         guard let source = await playbackSource(for: chapter) else {
+            guard owns(generation) else { return }
             let failure = await playbackFailure(forUnplayable: chapter)
+            guard owns(generation) else { return }
             playbackError = failure.message
             playbackPhase = .failed(failure)
             return
@@ -806,7 +836,7 @@ public final class PlaybackCoordinator {
             // has, so tapping any chapter but the first in a single-file
             // local book always seeked to the start of the underlying file.
             try await engine.load(url: source.url, startTime: chapter.startTime + startTime, lease: source.lease)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, owns(generation) else { return }
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: book.book.id)
@@ -837,12 +867,14 @@ public final class PlaybackCoordinator {
             let nextIndex = chapterIndex(in: book, for: chapter) + 1
             if !usesSharedAudioAsset(in: book, for: chapter),
                book.chapters.indices.contains(nextIndex),
-               let nextURL = await playbackSource(for: book.chapters[nextIndex]) {
+               let nextURL = await playbackSource(for: book.chapters[nextIndex]),
+               owns(generation) {
                 engine.preloadNext(url: nextURL.url, lease: nextURL.lease)
             }
         } catch is CancellationError {
             return
         } catch {
+            guard owns(generation) else { return }
             isEngineLoaded = false
             if case .decodeFailed = AudioEngineIssue.playbackFailure(error, fallback: error.localizedDescription) {
                 handleEngineIssue(.playbackFailure(error, fallback: error.localizedDescription))
@@ -1005,9 +1037,10 @@ public final class PlaybackCoordinator {
             pause()
             return
         }
+        let generation = playbackGeneration
         Task { @MainActor in
             playbackPhase = .preparing
-            guard await ensureEngineLoaded() else { return }
+            guard await ensureEngineLoaded(generation: generation), owns(generation) else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
             suppressNextIsPlayingSync = true
@@ -1038,6 +1071,7 @@ public final class PlaybackCoordinator {
 
     public func pause() {
         cancelDecodeRecovery()
+        invalidatePlaybackOwnership()
         guard currentSession != nil else { return }
         if let bookID = currentSession?.book.id {
             flushListening(bookID: bookID)
@@ -1183,6 +1217,8 @@ public final class PlaybackCoordinator {
     /// Releases every security-scoped lease the engine holds. Call when the
     /// coordinator is being discarded; `deinit` cannot reach the main-actor engine.
     public func teardown() {
+        invalidatePlaybackOwnership()
+        selectionTask?.cancel()
         progressTask?.cancel()
         progressTask = nil
         sleepTask?.cancel()
@@ -1197,6 +1233,8 @@ public final class PlaybackCoordinator {
     public func stopPlayback(forDeletedBook bookID: UUID) {
         guard currentSession?.book.id == bookID else { return }
         cancelDecodeRecovery()
+        invalidatePlaybackOwnership()
+        selectionTask?.cancel()
         flushListening(bookID: bookID)
         lastListenTick = nil
         resetSilenceBoost()
@@ -1324,7 +1362,7 @@ public final class PlaybackCoordinator {
             stopSleepTask()
             if wasEndOfChapter, let session = currentSession {
                 Task { [weak self] in
-                    await self?.preloadImmediateNextChapter(in: session)
+                    await self?.preloadImmediateNextChapter(in: session, generation: self?.playbackGeneration ?? 0)
                 }
             }
         }
@@ -1385,10 +1423,11 @@ public final class PlaybackCoordinator {
         engine.volume = 1.0
     }
 
-    private func preloadImmediateNextChapter(in session: PlaybackSession) async {
+    private func preloadImmediateNextChapter(in session: PlaybackSession, generation: UInt64) async {
         let nextIndex = session.chapterIndex + 1
         guard session.chapters.indices.contains(nextIndex),
-              let source = await playbackSource(for: session.chapters[nextIndex]) else { return }
+              let source = await playbackSource(for: session.chapters[nextIndex]),
+              owns(generation) else { return }
         engine.preloadNext(url: source.url, lease: source.lease)
     }
 
@@ -1521,7 +1560,8 @@ public final class PlaybackCoordinator {
 
     private func loadChapter(_ chapter: Chapter, in session: PlaybackSession, startTime: TimeInterval, shouldPlay: Bool) async {
         cancelDecodeRecovery()
-        guard let source = await playbackSource(for: chapter) else { return }
+        let generation = invalidatePlaybackOwnership()
+        guard let source = await playbackSource(for: chapter), owns(generation) else { return }
         let newSession = PlaybackSession(
             book: session.book,
             chapters: session.chapters,
@@ -1537,7 +1577,7 @@ public final class PlaybackCoordinator {
         do {
             resetSilenceBoost()
             try await engine.load(url: source.url, startTime: chapter.startTime + startTime, lease: source.lease)
-            guard decodeRecoveryTask == nil else { return }
+            guard owns(generation), decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
             applyStoredRate(forBookID: session.book.id)
             if shouldPlay {
@@ -1557,10 +1597,12 @@ public final class PlaybackCoordinator {
             let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
             if !usesSharedAudioAsset(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter),
                session.chapters.indices.contains(nextIndex),
-               let nextURL = await playbackSource(for: session.chapters[nextIndex]) {
+               let nextURL = await playbackSource(for: session.chapters[nextIndex]),
+               owns(generation) {
                 engine.preloadNext(url: nextURL.url, lease: nextURL.lease)
             }
         } catch {
+            guard owns(generation) else { return }
             isEngineLoaded = false
             if case .decodeFailed = AudioEngineIssue.playbackFailure(error, fallback: error.localizedDescription) {
                 handleEngineIssue(.playbackFailure(error, fallback: error.localizedDescription))
@@ -2094,7 +2136,7 @@ public final class PlaybackCoordinator {
                 self.startProgressLoop()
                 self.updateNowPlayingInfo()
                 if let current = self.currentSession {
-                    await self.preloadImmediateNextChapter(in: current)
+                    await self.preloadImmediateNextChapter(in: current, generation: self.playbackGeneration)
                 }
             } catch {
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
@@ -2170,9 +2212,10 @@ public final class PlaybackCoordinator {
         guard decodeRecoveryTask == nil else { return }
         if case .failed = playbackPhase { cancelDecodeRecovery() }
         guard currentSession != nil else { return }
+        let generation = playbackGeneration
         Task { @MainActor in
             playbackPhase = .preparing
-            guard await ensureEngineLoaded() else { return }
+            guard await ensureEngineLoaded(generation: generation), owns(generation) else { return }
             engine.play()
             mutateSession { $0.isPlaying = true }
             suppressNextIsPlayingSync = true
@@ -2205,6 +2248,7 @@ public final class PlaybackCoordinator {
     /// An audio interruption began (call, Siri, another app). Pause and persist.
     public func handleAudioInterruptionBegan() {
         isHandlingInterruption = engine.isPlaying
+        invalidatePlaybackOwnership()
         saveCurrentSnapshot()
         engine.pause()
         mutateSession {
