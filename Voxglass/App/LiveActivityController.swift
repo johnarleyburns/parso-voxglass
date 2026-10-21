@@ -12,6 +12,7 @@ final class LiveActivityController {
     #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
     private var activity: Activity<BookActivityAttributes>?
     private var pausedEndTask: Task<Void, Never>?
+    private var generation: UInt64 = 0
     #endif
 
     /// True while a Voxglass Live Activity owns the lock screen, so the system
@@ -26,31 +27,40 @@ final class LiveActivityController {
 
     func update(_ content: LiveActivityContent?) {
         #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
-        guard UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.liveActivity) == nil
-                || UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.liveActivity) else {
-            pausedEndTask?.cancel()
-            if activity != nil {
-                Task { @MainActor [weak self] in await self?.activity?.end(nil, dismissalPolicy: .immediate) }
-                activity = nil
-            }
-            return
+        // Every call supersedes delayed work from earlier calls.
+        generation &+= 1
+        let currentGeneration = generation
+        let enabled = UserDefaults.standard.object(forKey: AppPreferencesStore.Keys.liveActivity) == nil
+            || UserDefaults.standard.bool(forKey: AppPreferencesStore.Keys.liveActivity)
+        // Reconcile against ActivityKit itself so activities restored after a relaunch are seen.
+        let existing = Activity<BookActivityAttributes>.activities
+        let plan = LiveActivityLifecyclePolicy.plan(
+            existing: existing.map { .init(id: $0.id, bookID: $0.attributes.bookID) },
+            content: content, enabled: enabled)
+        for stale in existing where plan.end.contains(stale.id) {
+            Task { @MainActor in await stale.end(nil, dismissalPolicy: .immediate) }
         }
-        guard let content else {
+        activity = plan.reuse.flatMap { id in existing.first(where: { $0.id == id }) }
+        guard enabled, let content else {
             pausedEndTask?.cancel()
-            Task { @MainActor [weak self] in await self?.activity?.end(nil, dismissalPolicy: .immediate) }
+            pausedEndTask = nil
             activity = nil
             return
         }
-        // A paused session may update an existing activity, but it must not
-        // create a new one when the app restores a paused book.
-        if activity == nil && !content.isPlaying {
+        if activity == nil && !plan.create {
+            pausedEndTask?.cancel()
+            pausedEndTask = nil
             return
+        }
+        if !plan.end.isEmpty || plan.create {
+            pausedEndTask?.cancel()
+            pausedEndTask = nil
         }
         if !content.isPlaying {
             if pausedEndTask == nil {
                 pausedEndTask = Task { @MainActor [weak self] in
                     try? await Task.sleep(for: .seconds(15 * 60))
-                    guard !Task.isCancelled else { return }
+                    guard !Task.isCancelled, self?.activity?.attributes.bookID == content.bookID else { return }
                     await self?.endCurrentActivity()
                 }
             }
@@ -76,15 +86,11 @@ final class LiveActivityController {
             skipForward: configuredSkipForward
         )
         let activityContent = ActivityContent(state: state, staleDate: LiveActivityUpdatePolicy.staleDate(for: content))
-        if activity == nil {
-            let existing = Activity<BookActivityAttributes>.activities
-            activity = existing.first(where: { $0.attributes.bookID == content.bookID })
-            for stale in existing where stale.id != activity?.id {
-                Task { await stale.end(nil, dismissalPolicy: .immediate) }
-            }
-        }
         if let activity {
-            Task { @MainActor in await activity.update(activityContent) }
+            Task { @MainActor [weak self] in
+                guard self?.generation == currentGeneration else { return }
+                await activity.update(activityContent)
+            }
         } else if ActivityAuthorizationInfo().areActivitiesEnabled {
             do {
                 activity = try Activity.request(attributes: BookActivityAttributes(bookID: content.bookID, title: content.title, author: content.author, narrator: content.narrator), content: activityContent, pushType: nil)

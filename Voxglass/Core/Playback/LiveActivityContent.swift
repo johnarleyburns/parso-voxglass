@@ -92,3 +92,36 @@ public enum LiveActivityUpdatePolicy {
         return content.capturedAt.addingTimeInterval(15 * 60)
     }
 }
+
+/// Pure identity/lifecycle decisions for the lock-screen activity. ActivityKit attributes are
+/// immutable, so an activity may only be reused for the book it was created for.
+public enum LiveActivityLifecyclePolicy {
+    public struct Snapshot: Equatable, Sendable {
+        public var id: String
+        public var bookID: UUID
+        public init(id: String, bookID: UUID) { self.id = id; self.bookID = bookID }
+    }
+
+    public struct Plan: Equatable, Sendable {
+        /// Existing activity to update in place.
+        public var reuse: String?
+        /// Existing activities to end (stale books and duplicates).
+        public var end: [String]
+        /// Whether a new activity with the content's attributes must be requested.
+        public var create: Bool
+    }
+
+    /// - Parameters:
+    ///   - existing: every activity ActivityKit currently reports, including ones restored after relaunch.
+    ///   - content: the desired content, or nil when nothing should be shown.
+    ///   - enabled: the user's Live Activities preference.
+    public static func plan(existing: [Snapshot], content: LiveActivityContent?, enabled: Bool) -> Plan {
+        guard enabled, let content else {
+            return Plan(reuse: nil, end: existing.map(\.id), create: false)
+        }
+        let reuse = existing.first(where: { $0.bookID == content.bookID })?.id
+        let end = existing.map(\.id).filter { $0 != reuse }
+        // A paused (e.g. restored) session may keep a matching activity but never creates one.
+        return Plan(reuse: reuse, end: end, create: reuse == nil && content.isPlaying)
+    }
+}
