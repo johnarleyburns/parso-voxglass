@@ -250,7 +250,9 @@ import Testing
         try? await h.positions.database_deleteBookForTests(staleBook)
 
         h.coordinator.pause()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil {
+            h.coordinator.currentSession == nil && h.snapshot.position(forBookID: staleBook) == nil
+        }
 
         #expect(h.coordinator.playbackError == nil)
         #expect(h.snapshot.position(forBookID: staleBook) == nil)
