@@ -234,10 +234,8 @@ struct ListenView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(title: "Continue Listening")
             Button {
-                Task {
-                    await playback.play(book)
-                    showingNowPlaying = true
-                }
+                playback.selectAndPlay(book)
+                showingNowPlaying = true
             } label: {
                 HStack(spacing: 14) {
                     CoverPlate(

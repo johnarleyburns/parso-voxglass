@@ -165,7 +165,7 @@ import Testing
         let listen = try source("Voxglass/Features/Listen/ListenView.swift")
         #expect(listen.contains("Continue Listening"))
         #expect(listen.contains("listen.continueListening"))
-        #expect(listen.contains("await playback.play(book)"))
+        #expect(listen.contains("playback.selectAndPlay(book)"))
 
         let library = try source("Voxglass/Features/Library/LibraryView.swift")
         #expect(library.contains("metadata: progressText(for: book)"))

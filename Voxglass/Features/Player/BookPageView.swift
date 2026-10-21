@@ -680,9 +680,7 @@ struct BookPageView: View {
                 .sensoryFeedback(.impact(weight: .light), trigger: userToggleCount)
             } else {
                 Button {
-                    Task {
-                        await playback.play(resolved)
-                    }
+                    playback.selectAndPlay(resolved)
                 } label: {
                     Image(systemName: "play.fill")
                         .voxFont(.title, weight: .bold)
@@ -837,16 +835,12 @@ struct BookPageView: View {
                 let isCurrent = playback.currentSession?.chapter.id == chapter.id
                     && playback.currentSession?.book.id == resolved.book.id
                 Button {
-                    Task {
-                        if let session = playback.currentSession, session.book.id == resolved.book.id {
-                            if chapter.id == session.chapter.id {
-                                await playback.seek(to: 0)
-                            } else {
-                                await playback.play(resolved, chapter: chapter)
-                            }
-                        } else {
-                            await playback.play(resolved, chapter: chapter)
-                        }
+                    if let session = playback.currentSession,
+                       session.book.id == resolved.book.id,
+                       chapter.id == session.chapter.id {
+                        Task { await playback.seek(to: 0) }
+                    } else {
+                        playback.selectAndPlay(resolved, chapter: chapter)
                     }
                 } label: {
                     VStack(spacing: 3) {

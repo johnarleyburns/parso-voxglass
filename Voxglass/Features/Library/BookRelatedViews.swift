@@ -26,10 +26,8 @@ struct ChaptersView: View {
                         ForEach(chapters.indices, id: \.self) { index in
                             let chapter = chapters[index]
                             ChapterRow(chapter: chapter, bookNarrators: currentBook.book.narrators, isCurrent: playback.currentSession?.chapter.id == chapter.id) {
-                                Task {
-                                    await playback.play(currentBook, chapter: chapter)
-                                    showingNowPlaying = true
-                                }
+                                playback.selectAndPlay(currentBook, chapter: chapter)
+                                showingNowPlaying = true
                             }
                             if index < chapters.count - 1 {
                                 VoxglassListDivider()

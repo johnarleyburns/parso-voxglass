@@ -226,10 +226,8 @@ struct LibraryView: View {
                         // inconsistently — every row gets exactly the insets
                         // and chevron this view draws itself, always.
                         Button {
-                            Task {
-                                await playback.play(book)
-                                showingNowPlaying = true
-                            }
+                            playback.selectAndPlay(book)
+                            showingNowPlaying = true
                         } label: { libraryRowLabel(book) }
                         .buttonStyle(.plain)
                         .accessibilityLabel(playActionLabel(for: book))
@@ -358,10 +356,8 @@ struct LibraryView: View {
         .accessibilityIdentifier("library.play.\(book.book.id.uuidString)")
         .accessibilityActions {
             Button("Resume") {
-                Task {
-                    await playback.play(book)
-                    showingNowPlaying = true
-                }
+                playback.selectAndPlay(book)
+                showingNowPlaying = true
             }
             Button("Download") {
                 Task {
