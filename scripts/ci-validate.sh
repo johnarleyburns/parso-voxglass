@@ -26,6 +26,7 @@ bash scripts/tests/test-issue-pr-policy.sh
 bash scripts/tests/test-issue-backlog-order.sh
 bash scripts/tests/test-release-repair-policy.sh
 bash scripts/tests/test-testflight-delivery-body.sh
+bash scripts/tests/test-testflight-reconciler-discovery.sh
 if [[ -f scripts/tests/test-pr-maintenance.sh && -f .github/scripts/pr-maintenance.sh ]]; then
   bash scripts/tests/test-pr-maintenance.sh
 fi
