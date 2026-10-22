@@ -113,7 +113,8 @@ import Testing
         let search = try source("Voxglass/Features/Search/SearchView.swift")
 
         #expect(search.contains("accessory: isLoading ? .loading : .navigation"))
-        #expect(search.contains("metadata: result.recordingDetailsLine"))
+        #expect(search.contains("result.recordingDetailsLine"))
+        #expect(search.contains("isInMyBooks ? String(localized: \"Already in My Books\")"))
         #expect(search.contains("result.recordingDetailsLine"))
         #expect(!(search.contains("IADateFormatting.humanReadable(result.date)")))
         #expect(!(search.contains("Recorded \\(date)")))

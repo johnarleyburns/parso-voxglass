@@ -23,6 +23,13 @@ struct CatalogBookDestinationView: View {
             }
         }
         .task(id: result.identifier) {
+            // Resolve owned content before fetching/importing metadata to keep
+            // the original Book.id (and its bookmarks/progress).
+            if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
+                importedBook = existing
+                return
+            }
+
             let existingBookIDs = Set(libraryStore.books.map(\.book.id))
             guard let imported = await catalogStore.importResult(result, into: libraryStore) else {
                 failed = true

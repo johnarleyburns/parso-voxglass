@@ -102,7 +102,8 @@ struct CatalogDiscoveryView: View {
                                     InternetArchiveResultRow(
                                         result: result,
                                         style: .grouped,
-                                        isLoading: importingIdentifier == result.identifier
+                                        isLoading: importingIdentifier == result.identifier,
+                                        isInMyBooks: libraryStore.cachedBook(forInternetArchiveIdentifier: result.identifier) != nil
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -143,6 +144,10 @@ struct CatalogDiscoveryView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
+        if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
+            selectedCatalogBookID = existing.book.id
+            return
+        }
         let existingBookIDs = Set(libraryStore.books.map(\.book.id))
 
         if let imported = await store.importResult(result, into: libraryStore) {

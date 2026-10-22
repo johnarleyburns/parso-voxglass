@@ -149,6 +149,60 @@ import Foundation
         #expect(library[0].book.summary == "LibriVox recording & public-domain audiobook.")
     }
 
+    @Test func internetArchiveIdentifierLookupReturnsExistingBookWithChapters() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "internet-archive-identity")
+        let repository = LibraryRepository(database: database)
+        let metadata = try metadataFixture()
+        let seeded = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
+
+        let found = try await repository.bookWithChapters(forInternetArchiveIdentifier: metadata.identifier)
+        #expect(found?.book.id == seeded.book.id)
+        #expect(found?.chapters.map(\.id) == seeded.chapters.map(\.id))
+        let missing = try await repository.bookWithChapters(forInternetArchiveIdentifier: "never_added_librivox")
+        #expect(missing == nil)
+    }
+
+    @Test func internetArchiveImportReusesBookResolvedByContentKeyWhenSourceURLDiffers() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "internet-archive-content-key")
+        let repository = LibraryRepository(database: database)
+        let metadata = try metadataFixture()
+        let seeded = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
+
+        // Simulate a legacy/variant source URL so the exact-URL lookup misses.
+        try await database.execute(
+            "UPDATE sources SET url = ? WHERE id = ?",
+            [.string("http://archive.org/details/\(metadata.identifier)/"), ModelMapping.databaseValue(seeded.book.sourceID)]
+        )
+        try await database.execute(
+            "UPDATE books SET content_key = ? WHERE id = ?",
+            [.string("ia:\(metadata.identifier)"), ModelMapping.databaseValue(seeded.book.id)]
+        )
+
+        let again = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
+        let library = try await repository.fetchLibrary()
+        #expect(again.book.id == seeded.book.id)
+        #expect(again.book.isPending == seeded.book.isPending)
+        #expect(library.count == 1)
+    }
+
+    @MainActor
+    @Test func cachedStatusIsOwnedOnlyForNonPendingBooksAndAsyncLookupReusesPreview() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "internet-archive-status")
+        let repository = LibraryRepository(database: database)
+        let store = LibraryStore(repository: repository)
+        let metadata = try metadataFixture()
+        let seeded = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
+        await store.refresh()
+
+        #expect(store.cachedBook(forInternetArchiveIdentifier: metadata.identifier)?.book.id == seeded.book.id)
+        #expect(store.cachedBook(forInternetArchiveIdentifier: "never_added_librivox") == nil)
+
+        await store.markBookPending(seeded.book.id)
+        #expect(store.cachedBook(forInternetArchiveIdentifier: metadata.identifier) == nil)
+        let preview = await store.book(forInternetArchiveIdentifier: metadata.identifier)
+        #expect(preview?.book.id == seeded.book.id)
+    }
+
     @Test func libriVoxQueryBuilderScopesToLibriVoxWithBoostsAndPhraseClause() {
         let query = InternetArchiveClient.libriVoxQuery(for: "sherlock holmes")
 
