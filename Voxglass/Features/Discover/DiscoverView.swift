@@ -412,7 +412,7 @@ struct BrowseView: View {
                                         result: result,
                                         style: .grouped,
                                         isLoading: false,
-                                        isInMyBooks: libraryStore.cachedBook(forInternetArchiveIdentifier: result.identifier) != nil
+                                        isInMyBooks: libraryStore.cachedOwnedBook(forInternetArchiveIdentifier: result.identifier) != nil
                                     )
                                 }
                                 .buttonStyle(.plain)

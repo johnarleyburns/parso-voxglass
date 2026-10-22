@@ -186,6 +186,47 @@ import Foundation
     }
 
     @MainActor
+    private func ownershipStore(sourceURL: String?, chapterURL: URL?, pending: Bool = false) async throws -> LibraryStore {
+        let database = AppDatabase.makeTemporaryDatabase(named: "ia-ownership-\(UUID().uuidString)")
+        let repository = LibraryRepository(database: database)
+        let sourceID = UUID()
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, ?, 'S', ?, 0)",
+            [.string(sourceID.uuidString), .string(SourceKind.librivox.rawValue), sourceURL.map { .string($0) } ?? .null]
+        )
+        let bookID = UUID()
+        let chapter = Chapter(bookID: bookID, title: "c", index: 0, remoteURL: chapterURL)
+        let book = Book(id: bookID, title: "Commentaries", authors: ["A"], sourceID: sourceID, isPending: pending)
+        try await repository.insert(book: book, chapters: [chapter], bookContentKey: "ia:commentaries_librivox")
+        let store = LibraryStore(repository: repository)
+        await store.refresh()
+        return store
+    }
+
+    @MainActor
+    @Test func cachedOwnedBookMatchesNoncanonicalSourceURLAndNullSourceURL() async throws {
+        let variant = try await ownershipStore(sourceURL: "http://www.archive.org/details/commentaries_librivox?tab=about", chapterURL: nil)
+        #expect(variant.cachedOwnedBook(forInternetArchiveIdentifier: "commentaries_librivox") != nil)
+
+        let legacy = try await ownershipStore(
+            sourceURL: nil,
+            chapterURL: URL(string: "https://archive.org/download/commentaries_librivox/ch1.mp3")
+        )
+        #expect(legacy.cachedOwnedBook(forInternetArchiveIdentifier: "commentaries_librivox") != nil)
+        #expect(legacy.cachedOwnedBook(forInternetArchiveIdentifier: "unknown_librivox") == nil)
+    }
+
+    @MainActor
+    @Test func cachedOwnedBookExcludesPendingPreview() async throws {
+        let store = try await ownershipStore(
+            sourceURL: "https://archive.org/details/commentaries_librivox",
+            chapterURL: nil,
+            pending: true
+        )
+        #expect(store.cachedOwnedBook(forInternetArchiveIdentifier: "commentaries_librivox") == nil)
+    }
+
+    @MainActor
     @Test func cachedStatusIsOwnedOnlyForNonPendingBooksAndAsyncLookupReusesPreview() async throws {
         let database = AppDatabase.makeTemporaryDatabase(named: "internet-archive-status")
         let repository = LibraryRepository(database: database)

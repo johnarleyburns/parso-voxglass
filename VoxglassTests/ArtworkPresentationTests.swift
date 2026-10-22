@@ -114,7 +114,10 @@ import Testing
 
         #expect(search.contains("accessory: isLoading ? .loading : .navigation"))
         #expect(search.contains("result.recordingDetailsLine"))
-        #expect(search.contains("isInMyBooks ? String(localized: \"Already in My Books\")"))
+        #expect(search.contains("isInMyBooks ? \"\\(Self.ownedLabel) · \\(result.recordingDetailsLine)\""))
+        let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
+        #expect(discover.contains("InternetArchiveResultRow("))
+        #expect(discover.contains("isInMyBooks: libraryStore.cachedOwnedBook(forInternetArchiveIdentifier: result.identifier) != nil"))
         #expect(search.contains("result.recordingDetailsLine"))
         #expect(!(search.contains("IADateFormatting.humanReadable(result.date)")))
         #expect(!(search.contains("Recorded \\(date)")))

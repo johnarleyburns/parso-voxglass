@@ -144,7 +144,7 @@ struct SearchView: View {
                                     result: result,
                                     style: .grouped,
                                     isLoading: importingIdentifier == result.identifier,
-                                    isInMyBooks: libraryStore.cachedBook(forInternetArchiveIdentifier: result.identifier) != nil
+                                    isInMyBooks: libraryStore.cachedOwnedBook(forInternetArchiveIdentifier: result.identifier) != nil
                                 )
                             }
                             .buttonStyle(.plain)
@@ -250,18 +250,28 @@ struct InternetArchiveResultRow: View {
     var isLoading: Bool = false
     var isInMyBooks = false
 
+    static let ownedLabel = String(localized: "Already in My Books")
+
+    var metadataLine: String {
+        isInMyBooks ? "\(Self.ownedLabel) · \(result.recordingDetailsLine)" : result.recordingDetailsLine
+    }
+
+    var voiceOverLabel: String {
+        ([result.title, result.displayAuthorLine.map { "by \($0)" }, result.recordingDetailsLine]
+            .compactMap { $0 } + (isInMyBooks ? [Self.ownedLabel] : []))
+            .joined(separator: ", ")
+    }
+
     var body: some View {
         BookListRow(
             title: result.title,
             subtitle: result.displayAuthorLine ?? "",
             tertiary: result.narratorLine,
-            metadata: isInMyBooks ? String(localized: "Already in My Books") : result.recordingDetailsLine,
+            metadata: metadataLine,
             coverURL: result.coverURL,
             accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: ([result.title, result.displayAuthorLine.map { "by \($0)" }, result.recordingDetailsLine]
-                .compactMap { $0 } + (isInMyBooks ? [String(localized: "Already in My Books")] : []))
-                .joined(separator: ", ")
+            accessibilityLabel: voiceOverLabel
         )
     }
 }
