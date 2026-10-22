@@ -35,6 +35,18 @@ public enum ContentKey {
         identifier.isEmpty ? nil : "ia:\(identifier)"
     }
 
+    /// Parses `<identifier>` from an Internet Archive download URL
+    /// (`https://archive.org/download/<identifier>/<file>`). Protocol and
+    /// percent-encoding are normalized; any non-archive.org URL yields `nil`.
+    public static func internetArchiveIdentifier(fromDownloadURL url: URL) -> String? {
+        guard let host = url.host?.lowercased(),
+              host == "archive.org" || host.hasSuffix(".archive.org") else { return nil }
+        let components = url.pathComponents.filter { $0 != "/" }
+        guard components.count >= 2, components[0] == "download" else { return nil }
+        let identifier = components[1]
+        return identifier.isEmpty ? nil : identifier
+    }
+
     /// Convenience for local-folder imports.
     public static func book(forLocalFolderName folderName: String) -> String? {
         let normalized = normalize(folderName)

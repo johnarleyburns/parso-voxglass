@@ -84,6 +84,10 @@ public struct LocalAudioImport: Equatable, Sendable {
 }
 
 public final class LibraryRepository: @unchecked Sendable {
+    /// Books skipped by the last `backfillContentKeysIfNeeded()` because another
+    /// book already owned the derived key. Diagnostic only; no data is changed.
+    public private(set) var contentKeyCollisionCount = 0
+
     let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
     public var mutationLog: SyncMutationLog?
@@ -409,6 +413,7 @@ public final class LibraryRepository: @unchecked Sendable {
     /// touched, so this is cheap on every launch after the first.
     @discardableResult
     public func backfillContentKeysIfNeeded() async -> Int {
+        contentKeyCollisionCount = 0
         do {
             try await database.prepare()
             var updated = 0
@@ -422,7 +427,25 @@ public final class LibraryRepository: @unchecked Sendable {
                 guard let bookID = row.string("book_id") else { continue }
                 let kind = SourceKind(rawValue: row.string("source_kind") ?? "") ?? .localFiles
                 let url = row.string("source_url").flatMap(URL.init(string:))
-                guard let key = ContentKey.book(forSourceURL: url, kind: kind) else { continue }
+                var derivedKey = ContentKey.book(forSourceURL: url, kind: kind)
+                if derivedKey == nil, kind != .localFiles {
+                    // Source URL can't supply an identity (null/non-details URL,
+                    // e.g. CloudKit-restored): use consistent chapter download URLs.
+                    let identifiers = try await chapterDownloadIdentifiers(forBookID: bookID)
+                    if identifiers.count == 1, let only = identifiers.first {
+                        derivedKey = ContentKey.book(forInternetArchiveIdentifier: only)
+                    }
+                }
+                guard let key = derivedKey else { continue }
+                let clash = try await database.query(
+                    "SELECT id FROM books WHERE content_key = ? AND id != ? LIMIT 1",
+                    [.string(key), .string(bookID)]
+                )
+                if !clash.isEmpty {
+                    // Never overwrite or merge: preserve both rows, report the collision.
+                    contentKeyCollisionCount += 1
+                    continue
+                }
                 try await database.execute(
                     "UPDATE books SET content_key = ? WHERE id = ?",
                     [.string(key), .string(bookID)]
@@ -688,10 +711,74 @@ public final class LibraryRepository: @unchecked Sendable {
             .string(contentKey),
             ModelMapping.databaseValue(InternetArchiveMetadata.detailsURL(for: identifier))
         ])
-        guard let rawID = rows.first?.string("id"), let bookID = UUID(uuidString: rawID) else {
+        if let rawID = rows.first?.string("id"), let bookID = UUID(uuidString: rawID) {
+            return try await bookWithChapters(forBookID: bookID)
+        }
+
+        switch try await resolveBookByChapterDownloadURLs(identifier: identifier) {
+        case .resolved(let bookID):
+            return try await bookWithChapters(forBookID: bookID)
+        case .ambiguous, .notFound:
             return nil
         }
-        return try await bookWithChapters(forBookID: bookID)
+    }
+
+    public enum ChapterIdentityResolution: Equatable, Sendable {
+        case resolved(UUID)
+        case notFound
+        /// More than one candidate book, or a candidate whose chapter URLs name
+        /// several identifiers. Never guessed; surfaced for diagnostics.
+        case ambiguous([UUID])
+    }
+
+    /// Third-tier strong identity: a single IA identifier parsed from stored
+    /// chapter `remote_url` / `opus_url` download paths.
+    public func resolveBookByChapterDownloadURLs(identifier: String) async throws -> ChapterIdentityResolution {
+        try await database.prepare()
+        guard !identifier.isEmpty else { return .notFound }
+        let escaped = identifier
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "%", with: "\\%")
+            .replacingOccurrences(of: "_", with: "\\_")
+        let pattern = "%/download/\(escaped)/%"
+        let rows = try await database.query("""
+        SELECT DISTINCT book_id FROM chapters
+        WHERE remote_url LIKE ? ESCAPE '\\' OR opus_url LIKE ? ESCAPE '\\'
+        """, [.string(pattern), .string(pattern)])
+
+        var matching: [UUID] = []
+        var conflicting: [UUID] = []
+        for row in rows {
+            guard let raw = row.string("book_id"), let bookID = UUID(uuidString: raw) else { continue }
+            let identifiers = try await chapterDownloadIdentifiers(forBookID: raw)
+            if identifiers == [identifier] {
+                matching.append(bookID)
+            } else if identifiers.contains(identifier) {
+                conflicting.append(bookID)
+            }
+        }
+        if matching.count == 1, conflicting.isEmpty, let only = matching.first {
+            return .resolved(only)
+        }
+        let all = matching + conflicting
+        return all.isEmpty ? .notFound : .ambiguous(all)
+    }
+
+    private func chapterDownloadIdentifiers(forBookID bookID: String) async throws -> Set<String> {
+        let rows = try await database.query(
+            "SELECT remote_url, opus_url FROM chapters WHERE book_id = ?",
+            [.string(bookID)]
+        )
+        var identifiers = Set<String>()
+        for row in rows {
+            for column in ["remote_url", "opus_url"] {
+                if let url = row.string(column).flatMap(URL.init(string:)),
+                   let id = ContentKey.internetArchiveIdentifier(fromDownloadURL: url) {
+                    identifiers.insert(id)
+                }
+            }
+        }
+        return identifiers
     }
 
     public func importInternetArchiveItem(

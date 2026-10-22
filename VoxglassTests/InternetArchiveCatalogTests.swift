@@ -382,6 +382,136 @@ import Foundation
         #expect(englishOnly.contains { $0.id == "popular-librivox" })
     }
 
+    private func seedLegacyOwnedBook(
+        in database: AppDatabase,
+        sourceKind: SourceKind,
+        sourceURL: String?,
+        chapterURLs: [String]
+    ) async throws -> (bookID: UUID, chapterIDs: [UUID]) {
+        let sourceID = UUID(), bookID = UUID()
+        let now = Date().timeIntervalSince1970
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+            [.string(sourceID.uuidString), .string(sourceKind.rawValue), .string("S"),
+             sourceURL.map { .string($0) } ?? .null, .double(now)]
+        )
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, summary, source_id, cover_url, created_at, updated_at, is_favorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [.string(bookID.uuidString), .string("Legacy"), .string("[]"), .null,
+              .string(sourceID.uuidString), .null, .double(now), .double(now), .bool(false)])
+        var chapterIDs: [UUID] = []
+        for (index, url) in chapterURLs.enumerated() {
+            let id = UUID()
+            chapterIDs.append(id)
+            try await database.execute("""
+            INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds, remote_url, local_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, [.string(id.uuidString), .string(bookID.uuidString), .string("C\(index)"), .string("C\(index)"),
+                  .int(Int64(index)), .double(60), .string(url), .null])
+        }
+        return (bookID, chapterIDs)
+    }
+
+    private func attachProgress(_ database: AppDatabase, bookID: UUID, chapterID: UUID) async throws {
+        let now = Date().timeIntervalSince1970
+        try await database.execute("""
+        INSERT INTO playback_positions (id, book_id, chapter_id, position_seconds, duration_seconds, updated_at, is_finished)
+        VALUES (?, ?, ?, ?, ?, ?, 0)
+        """, [.string(UUID().uuidString), .string(bookID.uuidString), .string(chapterID.uuidString),
+              .double(42), .double(60), .double(now)])
+        try await database.execute(
+            "INSERT INTO bookmarks (id, book_id, chapter_id, position_seconds, note, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            [.string(UUID().uuidString), .string(bookID.uuidString), .string(chapterID.uuidString),
+             .double(10), .null, .double(now)]
+        )
+    }
+
+    private func assertLegacyResolution(sourceKind: SourceKind, sourceURL: String?, name: String) async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: name)
+        let repository = LibraryRepository(database: database)
+        let metadata = try metadataFixture()
+        let id = metadata.identifier
+        let seeded = try await seedLegacyOwnedBook(
+            in: database, sourceKind: sourceKind, sourceURL: sourceURL,
+            chapterURLs: ["https://archive.org/download/\(id)/01.mp3", "http://www.archive.org/download/\(id)/02.mp3"]
+        )
+        try await attachProgress(database, bookID: seeded.bookID, chapterID: seeded.chapterIDs[1])
+
+        // Lookup works even before the repair runs.
+        let direct = try await repository.bookWithChapters(forInternetArchiveIdentifier: id)
+        #expect(direct?.book.id == seeded.bookID)
+
+        _ = await repository.backfillContentKeysIfNeeded()
+        let keyRows = try await database.query("SELECT content_key FROM books WHERE id = ?", [.string(seeded.bookID.uuidString)])
+        #expect(keyRows.first?.string("content_key") == "ia:\(id)")
+
+        let imported = try await repository.importInternetArchiveItem(metadata, sourceKind: .librivox)
+        #expect(imported.book.id == seeded.bookID)
+        #expect(imported.book.isPending == false)
+        #expect(imported.chapters.map(\.id) == seeded.chapterIDs)
+        for table in ["books", "sources", "chapters"] {
+            let count = try await database.query("SELECT COUNT(*) AS n FROM \(table)")
+            #expect(count.first?.int("n") == (table == "chapters" ? 2 : 1))
+        }
+        let position = try await database.query("SELECT chapter_id, position_seconds FROM playback_positions WHERE book_id = ?", [.string(seeded.bookID.uuidString)])
+        #expect(position.count == 1)
+        #expect(position.first?.string("chapter_id") == seeded.chapterIDs[1].uuidString)
+        let bookmarks = try await database.query("SELECT id FROM bookmarks WHERE book_id = ?", [.string(seeded.bookID.uuidString)])
+        #expect(bookmarks.count == 1)
+    }
+
+    @Test func legacyBookWithNonDetailsSourceURLResolvesByChapterDownloadIdentity() async throws {
+        try await assertLegacyResolution(
+            sourceKind: .librivox, sourceURL: "https://librivox.org/some-book", name: "ia-legacy-nondetails")
+    }
+
+    @Test func cloudKitRestoredBookWithNullSourceURLResolvesByChapterDownloadIdentity() async throws {
+        try await assertLegacyResolution(sourceKind: .librivox, sourceURL: nil, name: "ia-legacy-null-url")
+    }
+
+    @Test func conflictingChapterDownloadIdentitiesAreNeverGuessed() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "ia-legacy-conflict")
+        let repository = LibraryRepository(database: database)
+        let mixed = try await seedLegacyOwnedBook(
+            in: database, sourceKind: .librivox, sourceURL: nil,
+            chapterURLs: ["https://archive.org/download/book_a/01.mp3", "https://archive.org/download/book_b/02.mp3"])
+        let twinA = try await seedLegacyOwnedBook(
+            in: database, sourceKind: .librivox, sourceURL: nil,
+            chapterURLs: ["https://archive.org/download/book_c/01.mp3"])
+        let twinB = try await seedLegacyOwnedBook(
+            in: database, sourceKind: .librivox, sourceURL: nil,
+            chapterURLs: ["https://archive.org/download/book_c/01.mp3"])
+
+        #expect(try await repository.bookWithChapters(forInternetArchiveIdentifier: "book_a") == nil)
+        if case .ambiguous(let ids) = try await repository.resolveBookByChapterDownloadURLs(identifier: "book_a") {
+            #expect(ids == [mixed.bookID])
+        } else {
+            Issue.record("expected ambiguous resolution for mixed identifiers")
+        }
+        #expect(try await repository.bookWithChapters(forInternetArchiveIdentifier: "book_c") == nil)
+        if case .ambiguous(let ids) = try await repository.resolveBookByChapterDownloadURLs(identifier: "book_c") {
+            #expect(Set(ids) == [twinA.bookID, twinB.bookID])
+        } else {
+            Issue.record("expected ambiguous resolution for duplicate candidates")
+        }
+
+        _ = await repository.backfillContentKeysIfNeeded()
+        let rows = try await database.query("SELECT id, content_key FROM books WHERE content_key LIKE 'ia:%'")
+        // Mixed book gets no key; the two identical twins collide, so only one may claim it.
+        #expect(rows.count == 1)
+        #expect(rows.first?.string("id") != mixed.bookID.uuidString)
+        #expect(repository.contentKeyCollisionCount == 1)
+        let counts = try await database.query("SELECT COUNT(*) AS n FROM books")
+        #expect(counts.first?.int("n") == 3)
+    }
+
+    @Test func downloadURLParserNormalizesIdentifier() {
+        #expect(ContentKey.internetArchiveIdentifier(fromDownloadURL: URL(string: "http://www.archive.org/download/abc_librivox/01.mp3")!) == "abc_librivox")
+        #expect(ContentKey.internetArchiveIdentifier(fromDownloadURL: URL(string: "https://archive.org/details/abc")!) == nil)
+        #expect(ContentKey.internetArchiveIdentifier(fromDownloadURL: URL(string: "https://example.com/download/abc/x.mp3")!) == nil)
+    }
+
     private func metadataFixture() throws -> InternetArchiveMetadata {
         let data = try fixtureData("metadata_librivox_item")
         return try decoder.decode(InternetArchiveMetadata.self, from: data)
