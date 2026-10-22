@@ -188,6 +188,18 @@ public final class CatalogStore: ObservableObject {
         }
     }
 
+    public func resolveForNavigation(
+        _ result: InternetArchiveSearchResult,
+        into libraryStore: LibraryStore
+    ) async -> BookWithChapters? {
+        do {
+            return try await CatalogResultImporter.resolveForNavigation(result, into: libraryStore, using: client)
+        } catch {
+            catalogError = CatalogResultImporter.importErrorMessage(for: result, underlying: error)
+            return nil
+        }
+    }
+
     public func addArchiveURL(
         _ rawValue: String,
         into libraryStore: LibraryStore
@@ -386,6 +398,28 @@ public final class CatalogStore: ObservableObject {
 }
 
 public enum CatalogResultImporter {
+    /// Shared routing for every catalog entry path. An existing library record
+    /// (owned or pending) is returned untouched, before any metadata fetch or
+    /// `markBookPending`. Only a genuinely new import becomes a pending preview.
+    @MainActor
+    public static func resolveForNavigation(
+        _ result: InternetArchiveSearchResult,
+        into libraryStore: LibraryStore,
+        using client: InternetArchiveCatalogClient
+    ) async throws -> BookWithChapters? {
+        if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
+            return existing
+        }
+        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
+        guard let imported = try await importResult(result, into: libraryStore, using: client) else {
+            return nil
+        }
+        if !existingBookIDs.contains(imported.book.id) {
+            await libraryStore.markBookPending(imported.book.id)
+        }
+        return libraryStore.book(withID: imported.book.id) ?? imported
+    }
+
     @MainActor
     public static func importResult(
         _ result: InternetArchiveSearchResult,

@@ -98,8 +98,8 @@ import Testing
                 continue
             }
             #expect(text.contains("private func presentResult"))  // \(path)
-            #expect(text.contains("await libraryStore.markBookPending(imported.book.id)"))  // \(path)
-            #expect(text.contains("selectedCatalogBookID = imported.book.id"))  // \(path)
+            #expect(text.contains("resolveForNavigation(result, into: libraryStore)"))  // \(path)
+            #expect(text.contains("selectedCatalogBookID = resolved.book.id"))  // \(path)
             #expect(!(text.contains("await playback.present(imported)")))  // \(path)
             #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }

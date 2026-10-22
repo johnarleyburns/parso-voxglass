@@ -23,22 +23,13 @@ struct CatalogBookDestinationView: View {
             }
         }
         .task(id: result.identifier) {
-            // Resolve owned content before fetching/importing metadata to keep
-            // the original Book.id (and its bookmarks/progress).
-            if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
-                importedBook = existing
-                return
-            }
-
-            let existingBookIDs = Set(libraryStore.books.map(\.book.id))
-            guard let imported = await catalogStore.importResult(result, into: libraryStore) else {
+            // Shared resolver keeps an existing Book.id (and its bookmarks and
+            // progress) and only marks genuinely new imports pending.
+            guard let resolved = await catalogStore.resolveForNavigation(result, into: libraryStore) else {
                 failed = true
                 return
             }
-            if !existingBookIDs.contains(imported.book.id) {
-                await libraryStore.markBookPending(imported.book.id)
-            }
-            importedBook = libraryStore.book(withID: imported.book.id) ?? imported
+            importedBook = resolved
         }
         .navigationTitle("")
     }

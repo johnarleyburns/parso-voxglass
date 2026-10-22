@@ -73,17 +73,14 @@ import Testing
                 continue
             }
             #expect(text.contains("private func presentResult"))  // \(path)
-            #expect(text.contains("await libraryStore.markBookPending(imported.book.id)"))  // \(path)
-            #expect(text.contains("let existingBookIDs = Set(libraryStore.books.map(\\.book.id)"))  // \(path)
-            #expect(text.contains("if !existingBookIDs.contains(imported.book.id)"))  // \(path)
-            #expect(text.contains("selectedCatalogBookID = imported.book.id"))  // \(path)
+            #expect(text.contains("resolveForNavigation(result, into: libraryStore)"))  // \(path)
+            #expect(text.contains("selectedCatalogBookID = resolved.book.id"))  // \(path)
             #expect(!(text.contains("await playback.present(imported)")))  // \(path)
             #expect(!text.contains("await playback.play(imported)"))  // \(path)
         }
 
         let catalog = try source("Voxglass/Features/Player/CatalogDiscoveryView.swift")
-        #expect(catalog.contains("let existingBookIDs = Set(libraryStore.books.map(\\.book.id)"))
-        #expect(catalog.contains("if !existingBookIDs.contains(imported.book.id)"))
+        #expect(catalog.contains("resolveForNavigation(result, into: libraryStore)"))
 
         let settings = try source("Voxglass/Features/Settings/SettingsView.swift")
         #expect(settings.contains("await playback.present(imported)"))
