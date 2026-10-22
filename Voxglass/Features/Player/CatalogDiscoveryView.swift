@@ -144,17 +144,8 @@ struct CatalogDiscoveryView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
-        if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
-            selectedCatalogBookID = existing.book.id
-            return
-        }
-        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
-
-        if let imported = await store.importResult(result, into: libraryStore) {
-            if !existingBookIDs.contains(imported.book.id) {
-                await libraryStore.markBookPending(imported.book.id)
-            }
-            selectedCatalogBookID = imported.book.id
+        if let resolved = await store.resolveForNavigation(result, into: libraryStore) {
+            selectedCatalogBookID = resolved.book.id
         }
     }
 }
@@ -181,6 +172,18 @@ final class CatalogDiscoveryStore: ObservableObject {
             results = try await client.searchAdvanced(query: query, rows: 25)
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    func resolveForNavigation(
+        _ result: InternetArchiveSearchResult,
+        into libraryStore: LibraryStore
+    ) async -> BookWithChapters? {
+        do {
+            return try await CatalogResultImporter.resolveForNavigation(result, into: libraryStore, using: client)
+        } catch {
+            self.error = CatalogResultImporter.importErrorMessage(for: result, underlying: error)
+            return nil
         }
     }
 
