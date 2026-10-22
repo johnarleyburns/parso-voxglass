@@ -18,6 +18,7 @@ struct BrowseView: View {
     // narrow another catalog surface later.
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
+    @State private var searchLifecycle = FindSearchLifecycle()
     @State private var selectedCatalogResult: CatalogResultRoute?
     @State private var showingHistory = false
     @State private var showSearch = false
@@ -72,8 +73,11 @@ struct BrowseView: View {
             startCollectionLoad(collection, sort: collectionSort)
         }
         .onChange(of: searchScope) { _, _ in
-            guard !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            guard searchLifecycle.isCurrent(draft: catalogStore.query) else { return }
             Task { await runSearch() }
+        }
+        .onChange(of: catalogStore.query) { _, query in
+            if FindSearchLifecycle.normalized(query).isEmpty { searchLifecycle.reset() }
         }
         .onChange(of: discoverScope) { _, scope in
             handleDiscoverScopeChange(scope)
@@ -118,7 +122,7 @@ struct BrowseView: View {
     }
 
     private func handleDiscoverScopeChange(_ scope: DiscoverBrowseScope) {
-        let hasQuery = !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasQuery = searchLifecycle.isCurrent(draft: catalogStore.query)
         if scope == .all {
             if let selectedCollection {
                 rememberedCollection = selectedCollection
@@ -291,7 +295,7 @@ struct BrowseView: View {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         selectedCollection = nil
                         discoverScope = catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .collection : .all
-                        if catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if !searchLifecycle.isCurrent(draft: catalogStore.query) {
                             catalogStore.resetResultsForNavigation()
                         } else {
                             Task { await runSearch() }
@@ -384,13 +388,26 @@ struct BrowseView: View {
                         .padding(16)
                         .raisedSurface()
                     } else {
-                        EmptyStatePanel(
-                            title: catalogStore.query.isEmpty ? "No Books Yet" : "No Results Yet",
-                            message: catalogStore.query.isEmpty
-                                ? "Try another collection or search above."
-                                : "Try a different title, author, or narrator.",
-                            systemImage: "square.stack"
-                        )
+                        switch searchLifecycle.emptyState(draft: catalogStore.query) {
+                        case .instructional:
+                            EmptyStatePanel(
+                                title: "Find a book",
+                                message: "Search results will display here after you press Find.",
+                                systemImage: "magnifyingglass"
+                            )
+                        case .noBooks:
+                            EmptyStatePanel(
+                                title: "No Books Yet",
+                                message: "Try another collection or search above.",
+                                systemImage: "square.stack"
+                            )
+                        case .noResults:
+                            EmptyStatePanel(
+                                title: "No Results Yet",
+                                message: "Try a different title, author, or narrator.",
+                                systemImage: "square.stack"
+                            )
+                        }
                     }
                 } else {
                     let results = soloOnly
@@ -439,22 +456,24 @@ struct BrowseView: View {
     }
 
     private var hasActiveCatalogResultsSurface: Bool {
-        !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || selectedCollection != nil
-            || catalogStore.isSearching
-            || !catalogStore.results.isEmpty
+        searchLifecycle.showsResultsSurface(
+            draft: catalogStore.query,
+            hasSelectedCollection: selectedCollection != nil,
+            isSearching: catalogStore.isSearching,
+            hasResults: !catalogStore.results.isEmpty
+        )
     }
 
     private var isInitialFindState: Bool {
-        catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && selectedCollection == nil
-            && !catalogStore.isSearching
-            && catalogStore.results.isEmpty
+        !hasActiveCatalogResultsSurface
     }
 
     private var resultsTitle: String {
-        if !catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return String(localized: "Search Results")
+        let draft = FindSearchLifecycle.normalized(catalogStore.query)
+        if !draft.isEmpty {
+            return searchLifecycle.isCurrent(draft: draft)
+                ? String(localized: "Search Results")
+                : String(localized: "Previous Results")
         }
         if let selectedCollection { return selectedCollection.title }
         return String(localized: "Search Results")
@@ -624,11 +643,15 @@ struct BrowseView: View {
     }
 
     private func runSearch() async {
-        let term = catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let term = FindSearchLifecycle.normalized(catalogStore.query)
         guard !term.isEmpty || selectedCollection != nil else {
+            searchLifecycle.reset()
             catalogStore.resetResultsForNavigation()
             return
         }
+        // Mark the submission before dispatching so "No Results Yet" is only
+        // ever attributed to a query the user explicitly submitted.
+        searchLifecycle.submit(draft: term)
 
         if let selectedCollection {
             let collectionQuery = term.isEmpty
@@ -664,6 +687,7 @@ struct BrowseView: View {
     }
 
     private func clearSearchAndRestoreBrowseState() {
+        searchLifecycle.reset()
         catalogStore.query = ""
         searchScope = .all
         if selectedCollection == nil {
