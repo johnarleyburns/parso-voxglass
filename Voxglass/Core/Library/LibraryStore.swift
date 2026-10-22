@@ -3,8 +3,15 @@ import ParsoAudioStreaming
 
 @MainActor
 public final class LibraryStore: ObservableObject {
-    @Published public private(set) var books: [BookWithChapters] = []
-    @Published public private(set) var sources: [Source] = []
+    @Published public private(set) var books: [BookWithChapters] = [] {
+        didSet { rebuildOwnedIdentifierIndex() }
+    }
+    @Published public private(set) var sources: [Source] = [] {
+        didSet { rebuildOwnedIdentifierIndex() }
+    }
+    /// IA identifier -> owned (non-pending) book ID, rebuilt whenever the
+    /// published `books`/`sources` snapshot changes so rows never hit storage.
+    private var ownedBookIDByIdentifier: [String: UUID] = [:]
     @Published public private(set) var recentlyPlayed: [BookWithChapters] = []
     @Published public private(set) var isImporting = false
     @Published public var importError: String?
@@ -347,11 +354,45 @@ public final class LibraryStore: ObservableObject {
     }
 
     /// Synchronous display hint for result rows: a non-pending owned book in the
-    /// published snapshot. The async resolver below is authoritative.
+    /// published snapshot, matched through the cached identity index (source
+    /// details URL content key, then unambiguous chapter download URLs). The
+    /// async resolver below is authoritative.
+    public func cachedOwnedBook(forInternetArchiveIdentifier identifier: String) -> BookWithChapters? {
+        guard let bookID = ownedBookIDByIdentifier[identifier] else { return nil }
+        return books.first { $0.book.id == bookID && !$0.book.isPending }
+    }
+
     public func cachedBook(forInternetArchiveIdentifier identifier: String) -> BookWithChapters? {
-        let detailsURL = InternetArchiveMetadata.detailsURL(for: identifier)
-        guard let source = sources.first(where: { $0.url == detailsURL }) else { return nil }
-        return books.first { $0.book.sourceID == source.id && !$0.book.isPending }
+        cachedOwnedBook(forInternetArchiveIdentifier: identifier)
+    }
+
+    private func rebuildOwnedIdentifierIndex() {
+        let sourcesByID = Dictionary(sources.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var index: [String: UUID] = [:]
+        var chapterDerived: [String: UUID] = [:]
+        for entry in books where !entry.book.isPending {
+            if let source = sourcesByID[entry.book.sourceID],
+               let key = ContentKey.book(forSourceURL: source.url, kind: source.kind),
+               key.hasPrefix("ia:") {
+                let identifier = String(key.dropFirst(3))
+                if index[identifier] == nil { index[identifier] = entry.book.id }
+            }
+            var identifiers = Set<String>()
+            for chapter in entry.chapters {
+                for url in [chapter.remoteURL, chapter.opusURL].compactMap({ $0 }) {
+                    if let id = ContentKey.internetArchiveIdentifier(fromDownloadURL: url) {
+                        identifiers.insert(id)
+                    }
+                }
+            }
+            if identifiers.count == 1, let id = identifiers.first, chapterDerived[id] == nil {
+                chapterDerived[id] = entry.book.id
+            }
+        }
+        for (id, bookID) in chapterDerived where index[id] == nil {
+            index[id] = bookID
+        }
+        ownedBookIDByIdentifier = index
     }
 
     /// Resolves the durable record (owned or pending preview) for an IA item,
@@ -363,7 +404,12 @@ public final class LibraryStore: ObservableObject {
             return book
         }
         do {
-            return try await repository.bookWithChapters(forInternetArchiveIdentifier: identifier)
+            let resolved = try await repository.bookWithChapters(forInternetArchiveIdentifier: identifier)
+            if let resolved, !books.contains(where: { $0.book.id == resolved.book.id }) {
+                // Snapshot was stale; republish so result rows reflect ownership.
+                await refresh()
+            }
+            return resolved
         } catch {
             importError = error.localizedDescription
             return nil
