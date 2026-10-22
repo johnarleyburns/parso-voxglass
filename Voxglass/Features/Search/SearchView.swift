@@ -143,7 +143,8 @@ struct SearchView: View {
                                 InternetArchiveResultRow(
                                     result: result,
                                     style: .grouped,
-                                    isLoading: importingIdentifier == result.identifier
+                                    isLoading: importingIdentifier == result.identifier,
+                                    isInMyBooks: libraryStore.cachedBook(forInternetArchiveIdentifier: result.identifier) != nil
                                 )
                             }
                             .buttonStyle(.plain)
@@ -207,6 +208,10 @@ struct SearchView: View {
     private func presentResult(_ result: InternetArchiveSearchResult) async {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
+        if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
+            selectedCatalogBookID = existing.book.id
+            return
+        }
         let existingBookIDs = Set(libraryStore.books.map(\.book.id))
 
         if let imported = await catalogStore.importResult(result, into: libraryStore) {
@@ -243,18 +248,19 @@ struct InternetArchiveResultRow: View {
     var result: InternetArchiveSearchResult
     var style: BookListRowStyle = .card
     var isLoading: Bool = false
+    var isInMyBooks = false
 
     var body: some View {
         BookListRow(
             title: result.title,
             subtitle: result.displayAuthorLine ?? "",
             tertiary: result.narratorLine,
-            metadata: result.recordingDetailsLine,
+            metadata: isInMyBooks ? String(localized: "Already in My Books") : result.recordingDetailsLine,
             coverURL: result.coverURL,
             accessory: isLoading ? .loading : .navigation,
             style: style,
-            accessibilityLabel: [result.title, result.displayAuthorLine.map { "by \($0)" }, result.recordingDetailsLine]
-                .compactMap { $0 }
+            accessibilityLabel: ([result.title, result.displayAuthorLine.map { "by \($0)" }, result.recordingDetailsLine]
+                .compactMap { $0 } + (isInMyBooks ? [String(localized: "Already in My Books")] : []))
                 .joined(separator: ", ")
         )
     }

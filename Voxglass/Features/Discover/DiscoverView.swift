@@ -356,7 +356,13 @@ struct BrowseView: View {
 
     @ViewBuilder
     private var catalogResults: some View {
-        if hasActiveCatalogResultsSurface {
+        if isInitialFindState {
+            EmptyStatePanel(
+                title: "Find a book",
+                message: "Search results will display here after you press Find.",
+                systemImage: "magnifyingglass"
+            )
+        } else if hasActiveCatalogResultsSurface {
             VStack(alignment: .leading, spacing: 6) {
                 SectionTitle(title: LocalizedStringKey(resultsTitle))
                 if selectedCollection != nil {
@@ -405,7 +411,8 @@ struct BrowseView: View {
                                     InternetArchiveResultRow(
                                         result: result,
                                         style: .grouped,
-                                        isLoading: false
+                                        isLoading: false,
+                                        isInMyBooks: libraryStore.cachedBook(forInternetArchiveIdentifier: result.identifier) != nil
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -436,7 +443,13 @@ struct BrowseView: View {
             || selectedCollection != nil
             || catalogStore.isSearching
             || !catalogStore.results.isEmpty
-            || discoverScope == .all
+    }
+
+    private var isInitialFindState: Bool {
+        catalogStore.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && selectedCollection == nil
+            && !catalogStore.isSearching
+            && catalogStore.results.isEmpty
     }
 
     private var resultsTitle: String {

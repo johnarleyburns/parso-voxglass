@@ -346,6 +346,30 @@ public final class LibraryStore: ObservableObject {
         books.first { $0.book.id == bookID }
     }
 
+    /// Synchronous display hint for result rows: a non-pending owned book in the
+    /// published snapshot. The async resolver below is authoritative.
+    public func cachedBook(forInternetArchiveIdentifier identifier: String) -> BookWithChapters? {
+        let detailsURL = InternetArchiveMetadata.detailsURL(for: identifier)
+        guard let source = sources.first(where: { $0.url == detailsURL }) else { return nil }
+        return books.first { $0.book.sourceID == source.id && !$0.book.isPending }
+    }
+
+    /// Resolves the durable record (owned or pending preview) for an IA item,
+    /// preferring the published snapshot, then durable storage.
+    public func book(forInternetArchiveIdentifier identifier: String) async -> BookWithChapters? {
+        let detailsURL = InternetArchiveMetadata.detailsURL(for: identifier)
+        if let source = sources.first(where: { $0.url == detailsURL }),
+           let book = books.first(where: { $0.book.sourceID == source.id }) {
+            return book
+        }
+        do {
+            return try await repository.bookWithChapters(forInternetArchiveIdentifier: identifier)
+        } catch {
+            importError = error.localizedDescription
+            return nil
+        }
+    }
+
     /// The archive.org subjects stored for a book at import time (`book_taste`),
     /// used to map the book to a browse genre for the Now Playing screen.
     public func bookSubjects(for bookID: UUID) async -> [String] {

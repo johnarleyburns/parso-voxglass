@@ -667,6 +667,33 @@ public final class LibraryRepository: @unchecked Sendable {
         }
     }
 
+    /// Returns the durable local record for an Internet Archive item. `Book.id`
+    /// is the foreign key used by playback positions and bookmarks, so callers
+    /// must use this record rather than re-importing an owned item as a preview.
+    public func bookWithChapters(forInternetArchiveIdentifier identifier: String) async throws -> BookWithChapters? {
+        try await database.prepare()
+        guard let contentKey = ContentKey.book(forInternetArchiveIdentifier: identifier) else {
+            return nil
+        }
+
+        let rows = try await database.query("""
+        SELECT b.id
+        FROM books b
+        JOIN sources s ON s.id = b.source_id
+        WHERE b.content_key = ?
+           OR s.url = ?
+        ORDER BY b.is_pending ASC, b.updated_at DESC
+        LIMIT 1
+        """, [
+            .string(contentKey),
+            ModelMapping.databaseValue(InternetArchiveMetadata.detailsURL(for: identifier))
+        ])
+        guard let rawID = rows.first?.string("id"), let bookID = UUID(uuidString: rawID) else {
+            return nil
+        }
+        return try await bookWithChapters(forBookID: bookID)
+    }
+
     public func importInternetArchiveItem(
         _ metadata: InternetArchiveMetadata,
         sourceKind: SourceKind
@@ -674,6 +701,12 @@ public final class LibraryRepository: @unchecked Sendable {
         let identifier = metadata.identifier
         guard !identifier.isEmpty else {
             throw InternetArchiveError.missingIdentifier
+        }
+
+        // Check durable IA identity before creating a source or a new random
+        // Book.id so saved positions/bookmarks stay attached.
+        if let existing = try await bookWithChapters(forInternetArchiveIdentifier: identifier) {
+            return existing
         }
 
         let selectedFiles = metadata.selectedAudioFiles
