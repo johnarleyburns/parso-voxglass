@@ -466,6 +466,24 @@ public final class LibraryStore: ObservableObject {
         return resolved
     }
 
+    /// Links an alias-less legacy book to a LibriVox recording ID only on exact
+    /// URL proof. The refresh publishes the alias and original book together
+    /// before any caller assigns a navigation destination.
+    public func reconcileOwnedLegacyLibriVoxRecording(
+        _ rawID: String,
+        using client: LibriVoxRecordingIdentityClient
+    ) async throws -> BookWithChapters? {
+        switch try await repository.reconcileLegacyLibriVoxRecording(rawID, using: client) {
+        case .linked(let linked):
+            await refresh()
+            return book(withID: linked.book.id) ?? linked
+        case .noExactEvidence:
+            return nil
+        case .ambiguous(let ids):
+            throw LegacyResolutionError.ambiguousCandidateBooks(ids)
+        }
+    }
+
     /// The archive.org subjects stored for a book at import time (`book_taste`),
     /// used to map the book to a browse genre for the Now Playing screen.
     public func bookSubjects(for bookID: UUID) async -> [String] {
@@ -514,6 +532,17 @@ public final class LibraryStore: ObservableObject {
             books[index] = updatedBook
         } else {
             books.insert(updatedBook, at: 0)
+        }
+    }
+}
+
+public enum LegacyResolutionError: Error, LocalizedError, Equatable {
+    case ambiguousCandidateBooks([UUID])
+
+    public var errorDescription: String? {
+        switch self {
+        case .ambiguousCandidateBooks(let ids):
+            return "More than one library book (\(ids.count)) matches this recording exactly; not choosing between them."
         }
     }
 }
