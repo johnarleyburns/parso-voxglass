@@ -416,6 +416,27 @@ public final class LibraryStore: ObservableObject {
         }
     }
 
+    /// Resolves the durable record for an exact LibriVox recording ID alias.
+    /// Invalid IDs never match; no title/author matching is attempted.
+    public func book(forLibriVoxRecordingID rawID: String) async -> BookWithChapters? {
+        do {
+            return try await resolveLibriVoxRecording(rawID)
+        } catch {
+            importError = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// Throwing form of `book(forLibriVoxRecordingID:)` so navigation can stop
+    /// (rather than import a duplicate preview) when the alias is unresolvable.
+    public func resolveLibriVoxRecording(_ rawID: String) async throws -> BookWithChapters? {
+        guard let id = LibraryRepository.RecordingIdentity.normalizedLibriVoxID(rawID) else { return nil }
+        let resolved = try await repository.bookWithChapters(
+            identityScheme: LibraryRepository.RecordingIdentity.libriVox, value: id)
+        if let resolved, !books.contains(where: { $0.book.id == resolved.book.id }) { await refresh() }
+        return resolved
+    }
+
     /// The archive.org subjects stored for a book at import time (`book_taste`),
     /// used to map the book to a browse genre for the Now Playing screen.
     public func bookSubjects(for bookID: UUID) async -> [String] {
