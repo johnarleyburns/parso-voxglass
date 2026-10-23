@@ -92,6 +92,17 @@ public final class LibraryRepository: @unchecked Sendable {
     /// another book already owned them. Diagnostic only; no data is changed.
     public private(set) var recordingIdentityCollisionCount = 0
 
+    public enum RecordingIdentityError: Error, LocalizedError, Equatable {
+        case ambiguous(scheme: String, value: String)
+
+        public var errorDescription: String? {
+            switch self {
+            case .ambiguous(let scheme, let value):
+                return "More than one book claims \(scheme) recording \(value); not choosing between them."
+            }
+        }
+    }
+
     public enum RecordingIdentity {
         public static let internetArchive = "internet-archive"
         public static let libriVox = "librivox"
@@ -429,8 +440,11 @@ public final class LibraryRepository: @unchecked Sendable {
         try await database.prepare()
         let rows = try await database.query("""
             SELECT book_id FROM book_recording_identities
-            WHERE scheme = ? AND value = ? LIMIT 1
+            WHERE scheme = ? AND value = ? LIMIT 2
         """, [.string(scheme), .string(value)])
+        // The table is UNIQUE(scheme, value); more than one owner means the
+        // store is corrupt, and guessing could attach the wrong book.
+        if rows.count > 1 { throw RecordingIdentityError.ambiguous(scheme: scheme, value: value) }
         guard let id = rows.first?.string("book_id"), let bookID = UUID(uuidString: id) else { return nil }
         return try await bookWithChapters(forBookID: bookID)
     }

@@ -410,14 +410,21 @@ public enum CatalogResultImporter {
         if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
             return existing
         }
-        let existingBookIDs = Set(libraryStore.books.map(\.book.id))
-        guard let imported = try await importResult(result, into: libraryStore, using: client) else {
-            return nil
+        // One metadata request is required only after the cheap IA lookup missed.
+        // It supplies the authoritative LibriVox recording ID; never use title/author.
+        return try await withMetadata(for: result, using: client) { metadata, sourceKind in
+            if let existing = try await existingBook(matching: metadata, in: libraryStore) {
+                return existing
+            }
+            let existingBookIDs = Set(libraryStore.books.map(\.book.id))
+            guard let imported = await libraryStore.importInternetArchiveItem(metadata, sourceKind: sourceKind) else {
+                return nil
+            }
+            if !existingBookIDs.contains(imported.book.id) {
+                await libraryStore.markBookPending(imported.book.id)
+            }
+            return libraryStore.book(withID: imported.book.id) ?? imported
         }
-        if !existingBookIDs.contains(imported.book.id) {
-            await libraryStore.markBookPending(imported.book.id)
-        }
-        return libraryStore.book(withID: imported.book.id) ?? imported
     }
 
     @MainActor
@@ -426,19 +433,47 @@ public enum CatalogResultImporter {
         into libraryStore: LibraryStore,
         using client: InternetArchiveCatalogClient
     ) async throws -> BookWithChapters? {
+        try await withMetadata(for: result, using: client) { metadata, sourceKind in
+            await libraryStore.importInternetArchiveItem(metadata, sourceKind: sourceKind)
+        }
+    }
+
+    /// Fetches metadata once and hands it to `body`. If that fetch fails (e.g. a
+    /// stale seed identifier; archive.org returns an empty body), searches
+    /// LibriVox for the same work by title + creator and runs `body` on each live
+    /// candidate until one yields a book. Errors thrown by `body` propagate.
+    @MainActor
+    private static func withMetadata(
+        for result: InternetArchiveSearchResult,
+        using client: InternetArchiveCatalogClient,
+        _ body: (InternetArchiveMetadata, SourceKind) async throws -> BookWithChapters?
+    ) async throws -> BookWithChapters? {
+        let metadata: InternetArchiveMetadata
         do {
-            let metadata = try await client.metadata(for: result.identifier)
-            return await libraryStore.importInternetArchiveItem(metadata, sourceKind: result.sourceKind)
+            metadata = try await client.metadata(for: result.identifier)
         } catch {
-            // A seed identifier can go stale (archive.org returns an empty body).
-            // Rather than dead-end the tap, search LibriVox for the same work by
-            // title + creator and import the top live match. This keeps any future
-            // stale bundled/recommended seed playable across all catalog entry points.
-            if let recovered = await importBySearchFallback(for: result, into: libraryStore, using: client) {
+            if let recovered = try await recover(for: result, using: client, body) {
                 return recovered
             }
             throw error
         }
+        return try await body(metadata, result.sourceKind)
+    }
+
+    /// An already-owned/pending record matching the metadata by exact IA
+    /// identity, then exact LibriVox recording ID. Never mutates the record.
+    @MainActor
+    private static func existingBook(
+        matching metadata: InternetArchiveMetadata,
+        in libraryStore: LibraryStore
+    ) async throws -> BookWithChapters? {
+        if let existing = await libraryStore.book(forInternetArchiveIdentifier: metadata.identifier) {
+            return existing
+        }
+        if let rawID = metadata.metadata.callNumber {
+            return try await libraryStore.resolveLibriVoxRecording(rawID)
+        }
+        return nil
     }
 
     public static func importErrorMessage(
@@ -449,21 +484,20 @@ public enum CatalogResultImporter {
     }
 
     @MainActor
-    private static func importBySearchFallback(
+    private static func recover(
         for result: InternetArchiveSearchResult,
-        into libraryStore: LibraryStore,
-        using client: InternetArchiveCatalogClient
-    ) async -> BookWithChapters? {
-        let query = recoveryQuery(for: result)
-        guard let query else { return nil }
+        using client: InternetArchiveCatalogClient,
+        _ body: (InternetArchiveMetadata, SourceKind) async throws -> BookWithChapters?
+    ) async throws -> BookWithChapters? {
+        guard let query = recoveryQuery(for: result) else { return nil }
 
         let candidates = (try? await client.searchAdvanced(query: query, rows: 5)) ?? []
         for candidate in candidates where candidate.identifier != result.identifier {
             guard let metadata = try? await client.metadata(for: candidate.identifier) else {
                 continue
             }
-            if let imported = await libraryStore.importInternetArchiveItem(metadata, sourceKind: candidate.sourceKind) {
-                return imported
+            if let book = try await body(metadata, candidate.sourceKind) {
+                return book
             }
         }
         return nil
