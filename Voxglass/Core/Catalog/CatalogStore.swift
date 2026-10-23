@@ -40,6 +40,10 @@ public final class CatalogStore: ObservableObject {
     private var chainFetchCount = 0
     private var curatedManifest: [CuratedManifestEntry] = []
     private var searchGeneration = 0
+    /// Normalized LibriVox recording IDs already preflighted in the current root
+    /// search generation. Reset on a new root query or explicit clear; retained by
+    /// `loadMore()` so paginated rows never repeat an identity request.
+    private var ownershipPreflightAttemptedIDs: Set<String> = []
 
     public init(
         client: InternetArchiveCatalogClient = InternetArchiveClient(),
@@ -55,6 +59,7 @@ public final class CatalogStore: ObservableObject {
 
     public func searchLibriVox(_ query: String) async {
         searchGeneration += 1
+        ownershipPreflightAttemptedIDs.removeAll()
         let generation = searchGeneration
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         self.query = trimmed
@@ -72,6 +77,7 @@ public final class CatalogStore: ObservableObject {
     public func searchAdvanced(_ query: String, sort: CatalogSort = .popularity, collectionID: String? = nil) async {
         catalogError = nil
         searchGeneration += 1
+        ownershipPreflightAttemptedIDs.removeAll()
         let generation = searchGeneration
         activeCollectionID = collectionID
         curatedManifest = []
@@ -303,6 +309,7 @@ public final class CatalogStore: ObservableObject {
     public func resetResultsForNavigation() {
         results = []
         resetPaging()
+        ownershipPreflightAttemptedIDs.removeAll()
         activeCollectionID = nil
         catalogError = nil
     }
@@ -324,23 +331,29 @@ public final class CatalogStore: ObservableObject {
     public func reconcileLegacyOwnership(
         results: [InternetArchiveSearchResult], into libraryStore: LibraryStore
     ) async {
-        var attempted = Set<String>()
-        for result in results.prefix(25) {
+        var attemptsThisInvocation = 0
+        for result in results {
             if Task.isCancelled { return }
+            guard attemptsThisInvocation < 25 else { return }
             guard libraryStore.cachedOwnedBook(for: result) == nil,
                   let raw = result.libriVoxRecordingID,
                   let normalized = LibraryRepository.RecordingIdentity.normalizedLibriVoxID(raw),
-                  attempted.insert(normalized).inserted else { continue }
+                  ownershipPreflightAttemptedIDs.insert(normalized).inserted else { continue }
+            attemptsThisInvocation += 1
             do {
                 _ = try await libraryStore.reconcileOwnedLegacyLibriVoxRecording(
                     normalized, using: legacyIdentityClient)
                 if Task.isCancelled { return }
             } catch is CancellationError {
+                ownershipPreflightAttemptedIDs.remove(normalized)
                 return
             } catch is LegacyResolutionError {
                 // Retain unbadged; navigation will surface the error.
             } catch {
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    ownershipPreflightAttemptedIDs.remove(normalized)
+                    return
+                }
                 // A failed preflight must never fail the search.
             }
         }
