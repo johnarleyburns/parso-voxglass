@@ -80,6 +80,7 @@ final class MacAppServices: ObservableObject {
                 guard let self else { return }
                 await self.libraryStore.refresh()
                 await self.libraryRepository.backfillContentKeysIfNeeded()
+                await self.libraryRepository.backfillRecordingIdentitiesIfNeeded()
                 await self.enqueueInitialLibraryForCloudKitIfNeeded()
                 await self.offlineDownloads.refreshState(for: self.libraryStore.books)
                 await self.playback.restorePresentedSession(from: self.libraryStore.books)

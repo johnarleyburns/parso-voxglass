@@ -88,6 +88,23 @@ public final class LibraryRepository: @unchecked Sendable {
     /// book already owned the derived key. Diagnostic only; no data is changed.
     public private(set) var contentKeyCollisionCount = 0
 
+    /// Aliases skipped by the last `backfillRecordingIdentitiesIfNeeded()` because
+    /// another book already owned them. Diagnostic only; no data is changed.
+    public private(set) var recordingIdentityCollisionCount = 0
+
+    public enum RecordingIdentity {
+        public static let internetArchive = "internet-archive"
+        public static let libriVox = "librivox"
+
+        public static func normalizedLibriVoxID(_ raw: String?) -> String? {
+            guard let value = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !value.isEmpty,
+                  value.allSatisfy({ $0.isASCII && $0.isNumber }),
+                  let number = Int(value) else { return nil }
+            return String(number) // canonical: `01735` and `1735` are one ID
+        }
+    }
+
     let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
     public var mutationLog: SyncMutationLog?
@@ -405,6 +422,74 @@ public final class LibraryRepository: @unchecked Sendable {
             updated += 1
         }
         return updated
+    }
+
+    /// Returns the book that owns an exact recording identity alias.
+    public func bookWithChapters(identityScheme scheme: String, value: String) async throws -> BookWithChapters? {
+        try await database.prepare()
+        let rows = try await database.query("""
+            SELECT book_id FROM book_recording_identities
+            WHERE scheme = ? AND value = ? LIMIT 1
+        """, [.string(scheme), .string(value)])
+        guard let id = rows.first?.string("book_id"), let bookID = UUID(uuidString: id) else { return nil }
+        return try await bookWithChapters(forBookID: bookID)
+    }
+
+    private func insertIdentity(bookID: UUID, scheme: String, value: String) async throws {
+        try await database.execute("""
+            INSERT OR IGNORE INTO book_recording_identities (book_id, scheme, value, created_at)
+            VALUES (?, ?, ?, ?)
+        """, [.string(bookID.uuidString), .string(scheme), .string(value), .double(Date().timeIntervalSince1970)])
+    }
+
+    /// Backfills the Internet Archive alias from exact local signals only: a
+    /// valid `ia:<identifier>` content key, or a single unambiguous Archive
+    /// chapter-download identifier. No LibriVox alias is inferred (no persisted
+    /// legacy format carries an exact numeric recording ID). Never overwrites or
+    /// merges: on an alias owned by another book, both rows stay untouched and
+    /// `recordingIdentityCollisionCount` is incremented. Idempotent.
+    @discardableResult
+    public func backfillRecordingIdentitiesIfNeeded() async -> Int {
+        recordingIdentityCollisionCount = 0
+        do {
+            try await database.prepare()
+            var inserted = 0
+            let rows = try await database.query("""
+            SELECT b.id AS book_id, b.content_key AS content_key
+            FROM books b
+            WHERE NOT EXISTS (
+                SELECT 1 FROM book_recording_identities i
+                WHERE i.book_id = b.id AND i.scheme = ?
+            )
+            """, [.string(RecordingIdentity.internetArchive)])
+            for row in rows {
+                guard let bookIDString = row.string("book_id"),
+                      let bookID = UUID(uuidString: bookIDString) else { continue }
+                var identifier: String?
+                if let key = row.string("content_key"), key.hasPrefix("ia:") {
+                    let candidate = String(key.dropFirst(3))
+                    if !candidate.isEmpty { identifier = candidate }
+                }
+                if identifier == nil {
+                    let ids = try await chapterDownloadIdentifiers(forBookID: bookIDString)
+                    if ids.count == 1 { identifier = ids.first }
+                }
+                guard let identifier else { continue }
+                let owner = try await database.query("""
+                    SELECT book_id FROM book_recording_identities
+                    WHERE scheme = ? AND value = ? LIMIT 1
+                """, [.string(RecordingIdentity.internetArchive), .string(identifier)])
+                if let ownerID = owner.first?.string("book_id") {
+                    if ownerID != bookIDString { recordingIdentityCollisionCount += 1 }
+                    continue
+                }
+                try await insertIdentity(bookID: bookID, scheme: RecordingIdentity.internetArchive, value: identifier)
+                inserted += 1
+            }
+            return inserted
+        } catch {
+            return 0
+        }
     }
 
     /// Backfills `content_key` for books and chapters imported before migration 7,
@@ -872,6 +957,10 @@ public final class LibraryRepository: @unchecked Sendable {
             chapters: chapters,
             bookContentKey: ContentKey.book(forInternetArchiveIdentifier: identifier)
         )
+        try await insertIdentity(bookID: book.id, scheme: RecordingIdentity.internetArchive, value: identifier)
+        if let id = RecordingIdentity.normalizedLibriVoxID(metadata.metadata.callNumber) {
+            try await insertIdentity(bookID: book.id, scheme: RecordingIdentity.libriVox, value: id)
+        }
 
         try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
 
