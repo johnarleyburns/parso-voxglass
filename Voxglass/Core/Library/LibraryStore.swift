@@ -12,6 +12,9 @@ public final class LibraryStore: ObservableObject {
     /// IA identifier -> owned (non-pending) book ID, rebuilt whenever the
     /// published `books`/`sources` snapshot changes so rows never hit storage.
     private var ownedBookIDByIdentifier: [String: UUID] = [:]
+    /// Raw `book_recording_identities` LibriVox rows, reloaded with the snapshot.
+    private var libriVoxIdentityRows: [(value: String, bookID: UUID)] = []
+    private var ownedBookIDByLibriVoxRecordingID: [String: UUID] = [:]
     @Published public private(set) var recentlyPlayed: [BookWithChapters] = []
     @Published public private(set) var isImporting = false
     @Published public var importError: String?
@@ -118,6 +121,8 @@ public final class LibraryStore: ObservableObject {
             let fetchedBooks = try await repository.fetchLibrary()
             books = fetchedBooks
             sources = try await repository.fetchSources()
+            libriVoxIdentityRows = (try? await repository.fetchLibriVoxIdentities()) ?? []
+            rebuildOwnedIdentifierIndex()
             recentlyPlayed = try await repository.fetchRecentlyPlayed(from: fetchedBooks)
             progressByBook = try await repository.fetchBookProgress()
             listenedWorkExclusionKeys = try await repository.fetchListenedWorkExclusionKeys()
@@ -362,6 +367,16 @@ public final class LibraryStore: ObservableObject {
         return books.first { $0.book.id == bookID && !$0.book.isPending }
     }
 
+    /// Row badge lookup: IA identifier first, then the exact LibriVox recording
+    /// alias from `call_number`. Never matches on title/author/art/duration.
+    public func cachedOwnedBook(for result: InternetArchiveSearchResult) -> BookWithChapters? {
+        if let book = cachedOwnedBook(forInternetArchiveIdentifier: result.identifier) { return book }
+        guard let raw = result.libriVoxRecordingID,
+              let normalized = LibraryRepository.RecordingIdentity.normalizedLibriVoxID(raw),
+              let id = ownedBookIDByLibriVoxRecordingID[normalized] else { return nil }
+        return books.first { $0.book.id == id && !$0.book.isPending }
+    }
+
     public func cachedBook(forInternetArchiveIdentifier identifier: String) -> BookWithChapters? {
         cachedOwnedBook(forInternetArchiveIdentifier: identifier)
     }
@@ -393,6 +408,20 @@ public final class LibraryStore: ObservableObject {
             index[id] = bookID
         }
         ownedBookIDByIdentifier = index
+
+        // LibriVox aliases: non-pending books only; a value claimed by more than
+        // one book is omitted rather than resolved arbitrarily.
+        let ownedIDs = Set(books.filter { !$0.book.isPending }.map { $0.book.id })
+        var owners: [String: Set<UUID>] = [:]
+        for row in libriVoxIdentityRows {
+            guard let value = LibraryRepository.RecordingIdentity.normalizedLibriVoxID(row.value) else { continue }
+            owners[value, default: []].insert(row.bookID)
+        }
+        var aliasIndex: [String: UUID] = [:]
+        for (value, ids) in owners where ids.count == 1 {
+            if let id = ids.first, ownedIDs.contains(id) { aliasIndex[value] = id }
+        }
+        ownedBookIDByLibriVoxRecordingID = aliasIndex
     }
 
     /// Resolves the durable record (owned or pending preview) for an IA item,
