@@ -188,6 +188,7 @@ final class AppServices: ObservableObject {
         diagnostics.phase("legacy-metadata")
         await libraryStore.backfillNarratorsIfNeeded()
         await libraryRepository.backfillContentKeysIfNeeded()
+        await libraryRepository.backfillRecordingIdentitiesIfNeeded()
         await enqueueInitialLibraryForCloudKitIfNeeded()
         await libraryRepository.backfillBookTasteIfNeeded()
         _ = await libraryRepository.resplitBookTasteSubjectsIfNeeded()

@@ -337,6 +337,23 @@ private struct DatabaseMigration {
             statements: [
                 "CREATE TABLE deferred_library_imports (record_name TEXT PRIMARY KEY, record_data TEXT NOT NULL)"
             ]
+        ),
+        DatabaseMigration(
+            id: 15,
+            name: "book_recording_identities",
+            statements: [
+                """
+                CREATE TABLE book_recording_identities (
+                    book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                    scheme TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    PRIMARY KEY (book_id, scheme, value),
+                    UNIQUE (scheme, value)
+                )
+                """,
+                "CREATE INDEX book_recording_identities_lookup ON book_recording_identities(scheme, value)"
+            ]
         )
     ]
 }
