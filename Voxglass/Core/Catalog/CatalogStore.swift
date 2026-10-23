@@ -29,6 +29,7 @@ public final class CatalogStore: ObservableObject {
     }
 
     private let client: InternetArchiveCatalogClient
+    private let legacyIdentityClient: LibriVoxRecordingIdentityClient
     private let pageSize = 25
     private var activeQuery: String?
     private var activeCollectionID: String?
@@ -40,8 +41,12 @@ public final class CatalogStore: ObservableObject {
     private var curatedManifest: [CuratedManifestEntry] = []
     private var searchGeneration = 0
 
-    public init(client: InternetArchiveCatalogClient = InternetArchiveClient()) {
+    public init(
+        client: InternetArchiveCatalogClient = InternetArchiveClient(),
+        legacyIdentityClient: LibriVoxRecordingIdentityClient = LibriVoxClient()
+    ) {
         self.client = client
+        self.legacyIdentityClient = legacyIdentityClient
     }
 
     private var languageClause: String {
@@ -193,7 +198,8 @@ public final class CatalogStore: ObservableObject {
         into libraryStore: LibraryStore
     ) async -> BookWithChapters? {
         do {
-            return try await CatalogResultImporter.resolveForNavigation(result, into: libraryStore, using: client)
+            return try await CatalogResultImporter.resolveForNavigation(
+                result, into: libraryStore, using: client, legacyIdentityClient: legacyIdentityClient)
         } catch {
             catalogError = CatalogResultImporter.importErrorMessage(for: result, underlying: error)
             return nil
@@ -405,7 +411,8 @@ public enum CatalogResultImporter {
     public static func resolveForNavigation(
         _ result: InternetArchiveSearchResult,
         into libraryStore: LibraryStore,
-        using client: InternetArchiveCatalogClient
+        using client: InternetArchiveCatalogClient,
+        legacyIdentityClient: LibriVoxRecordingIdentityClient = LibriVoxClient()
     ) async throws -> BookWithChapters? {
         if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
             return existing
@@ -413,7 +420,8 @@ public enum CatalogResultImporter {
         // One metadata request is required only after the cheap IA lookup missed.
         // It supplies the authoritative LibriVox recording ID; never use title/author.
         return try await withMetadata(for: result, using: client) { metadata, sourceKind in
-            if let existing = try await existingBook(matching: metadata, in: libraryStore) {
+            if let existing = try await existingBook(
+                matching: metadata, in: libraryStore, legacyIdentityClient: legacyIdentityClient) {
                 return existing
             }
             let existingBookIDs = Set(libraryStore.books.map(\.book.id))
@@ -465,13 +473,16 @@ public enum CatalogResultImporter {
     @MainActor
     private static func existingBook(
         matching metadata: InternetArchiveMetadata,
-        in libraryStore: LibraryStore
+        in libraryStore: LibraryStore,
+        legacyIdentityClient: LibriVoxRecordingIdentityClient
     ) async throws -> BookWithChapters? {
         if let existing = await libraryStore.book(forInternetArchiveIdentifier: metadata.identifier) {
             return existing
         }
         if let rawID = metadata.metadata.callNumber {
-            return try await libraryStore.resolveLibriVoxRecording(rawID)
+            if let existing = try await libraryStore.resolveLibriVoxRecording(rawID) { return existing }
+            return try await libraryStore.reconcileOwnedLegacyLibriVoxRecording(
+                rawID, using: legacyIdentityClient)
         }
         return nil
     }

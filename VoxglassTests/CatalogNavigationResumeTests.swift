@@ -24,6 +24,24 @@ import Foundation
         }
     }
 
+    private final class FakeLibriVox: LibriVoxRecordingIdentityClient, @unchecked Sendable {
+        private let lock = NSLock()
+        private var count = 0
+        var calls: Int { lock.withLock { count } }
+        let recording: LibriVoxRecording
+        init(listenURLs: [String]) {
+            recording = LibriVoxRecording(bookURL: nil, sections: listenURLs.map {
+                LibriVoxSection(sectionNumber: nil, listenURL: $0, fileName: nil, readers: [], urlIArchive: nil)
+            })
+        }
+        func fetchRecording(bookID: Int) async throws -> LibriVoxRecording {
+            lock.withLock { count += 1 }
+            return recording
+        }
+    }
+
+    private let exactURLs = ["https://librivox.org/audio/0.mp3", "https://librivox.org/audio/1.mp3"]
+
     private func metadataFixture() throws -> InternetArchiveMetadata {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -230,7 +248,8 @@ import Foundation
         await library.refresh()
         let client = CountingClient(metadata: blackstoneMetadata(callNumber: "1735"))
         let routed = try #require(try await CatalogResultImporter.resolveForNavigation(
-            blackstoneResult(), into: library, using: client))
+            blackstoneResult(), into: library, using: client,
+            legacyIdentityClient: FakeLibriVox(listenURLs: ["https://example.org/other.mp3"])))
         #expect(routed.book.id != legacy.bookID)
         #expect(routed.book.isPending)
         #expect(client.metadataCalls == 1)
@@ -277,6 +296,80 @@ import Foundation
         }
         #expect(try await count(database, "books") == 2)
         #expect(try await count(database, "bookmarks") == 2)
+    }
+
+    @Test func aliaslessLegacyRecordReconcilesToOriginalBookThenUsesAlias() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        let legacy = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let client = CountingClient(metadata: blackstoneMetadata(callNumber: "1735"))
+        let librivox = FakeLibriVox(listenURLs: exactURLs)
+        let before = (try await count(database, "books"), try await count(database, "sources"),
+                      try await count(database, "chapters"))
+
+        let routed = try #require(try await CatalogResultImporter.resolveForNavigation(
+            blackstoneResult(), into: library, using: client, legacyIdentityClient: librivox))
+
+        #expect(routed.book.id == legacy.bookID)
+        #expect(routed.book.isPending == false)
+        #expect(client.metadataCalls == 1)
+        #expect(librivox.calls == 1)
+        #expect(try await count(database, "books") == before.0)
+        #expect(try await count(database, "sources") == before.1)
+        #expect(try await count(database, "chapters") == before.2)
+        let alias = try await database.query(
+            "SELECT book_id FROM book_recording_identities WHERE scheme = 'librivox' AND value = '1735'")
+        #expect(alias.first?.string("book_id") == legacy.bookID.uuidString)
+        #expect(try await SQLiteBookmarkStore(database: database).bookmarks(forBookID: legacy.bookID).count == 1)
+
+        let defaults = UserDefaults(suiteName: "catalog-nav-\(UUID().uuidString)")!
+        let engine = FakeAudioEngine()
+        let coordinator = PlaybackCoordinator(
+            engine: engine,
+            positionStore: SQLitePositionStore(database: database),
+            snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
+            rateStore: PlaybackRateStore(defaults: defaults))
+        await coordinator.play(routed)
+        #expect(coordinator.currentSession?.chapter.id == legacy.chapterTwo)
+        #expect(abs((engine.loadCalls.last?.startTime ?? -1) - 77) <= 0.001)
+
+        // Second route: IA lookup still misses, alias now resolves without LibriVox.
+        let again = try #require(try await CatalogResultImporter.resolveForNavigation(
+            blackstoneResult(), into: library, using: client, legacyIdentityClient: librivox))
+        #expect(again.book.id == legacy.bookID)
+        #expect(librivox.calls == 1)
+        #expect(client.metadataCalls == 2)
+    }
+
+    @Test func sameTitleWithoutExactProofCreatesOnePendingPreview() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        let legacy = try await seedLegacy(
+            database, alias: nil, title: "Commentaries on the Laws of England (1765)")
+        await library.refresh()
+        let client = CountingClient(metadata: blackstoneMetadata(callNumber: "1735"))
+        let routed = try #require(try await CatalogResultImporter.resolveForNavigation(
+            blackstoneResult(), into: library, using: client,
+            legacyIdentityClient: FakeLibriVox(listenURLs: ["https://example.org/x.mp3"])))
+        #expect(routed.book.id != legacy.bookID)
+        #expect(routed.book.isPending)
+        #expect(try await count(database, "books") == 2)
+    }
+
+    @Test func ambiguousLegacyProofShowsErrorAndImportsNoPreview() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        _ = try await seedLegacy(database, alias: nil)
+        _ = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let client = CountingClient(metadata: blackstoneMetadata(callNumber: "1735"))
+        let catalog = CatalogStore(client: client, legacyIdentityClient: FakeLibriVox(listenURLs: exactURLs))
+        let routed = await catalog.resolveForNavigation(blackstoneResult(), into: library)
+        #expect(routed == nil)
+        #expect(catalog.catalogError?.isEmpty == false)
+        #expect(try await count(database, "books") == 2)
+        #expect(try await count(database, "book_recording_identities") == 0)
     }
 
     @Test func navigationEntryPointsShareTheResolver() throws {
