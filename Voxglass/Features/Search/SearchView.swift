@@ -144,12 +144,12 @@ struct SearchView: View {
                                     result: result,
                                     style: .grouped,
                                     isLoading: importingIdentifier == result.identifier,
-                                    isInMyBooks: libraryStore.cachedOwnedBook(forInternetArchiveIdentifier: result.identifier) != nil
+                                    isInMyBooks: libraryStore.cachedOwnedBook(for: result) != nil
                                 )
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("search.result.\(result.identifier)")
-                            .accessibilityHint("Opens a paused preview with Play and Add to My Books actions")
+                            .accessibilityHint(libraryStore.cachedOwnedBook(for: result) != nil ? String(localized: "Opens the existing item in My Books") : String(localized: "Opens a paused preview with Play and Add to My Books actions"))
                             .disabled(importingIdentifier == result.identifier)
 
                             if index < results.count - 1 {

@@ -10,6 +10,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
     public var date: String?
     public var languages: [String]
     public var subjects: [String]
+    public var libriVoxRecordingID: String?
 
     public var id: String { identifier }
 
@@ -22,7 +23,8 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
         downloads: Int?,
         date: String?,
         languages: [String] = [],
-        subjects: [String] = []
+        subjects: [String] = [],
+        libriVoxRecordingID: String? = nil
     ) {
         self.identifier = identifier
         self.title = title
@@ -33,6 +35,7 @@ public struct InternetArchiveSearchResult: Identifiable, Equatable, Sendable, Co
         self.date = date
         self.languages = languages
         self.subjects = subjects
+        self.libriVoxRecordingID = libriVoxRecordingID
     }
 
     public var authorLine: String {
@@ -186,6 +189,7 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
     public var date: String?
     public var languages: [String]
     public var subjects: [String]
+    public var libriVoxRecordingID: String?
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -198,6 +202,7 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
         date = try container.decodeFlexibleStringIfPresent(forKey: .date)
         languages = try container.decodeStringListIfPresent(forKey: .language)
         subjects = try container.decodeStringListIfPresent(forKey: .subject)
+        libriVoxRecordingID = try container.decodeFlexibleStringIfPresent(forKey: .call_number)
     }
 
     public var searchResult: InternetArchiveSearchResult {
@@ -210,12 +215,14 @@ public struct InternetArchiveSearchDocument: Decodable, Equatable, Sendable {
             downloads: downloads,
             date: date,
             languages: languages,
-            subjects: subjects
+            subjects: subjects,
+            libriVoxRecordingID: libriVoxRecordingID
         )
     }
 
     private enum CodingKeys: String, CodingKey {
         case identifier
+        case call_number
         case title
         case creator
         case description

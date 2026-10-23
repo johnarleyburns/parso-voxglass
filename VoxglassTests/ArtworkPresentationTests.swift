@@ -117,7 +117,7 @@ import Testing
         #expect(search.contains("isInMyBooks ? \"\\(Self.ownedLabel) · \\(result.recordingDetailsLine)\""))
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         #expect(discover.contains("InternetArchiveResultRow("))
-        #expect(discover.contains("isInMyBooks: libraryStore.cachedOwnedBook(forInternetArchiveIdentifier: result.identifier) != nil"))
+        #expect(discover.contains("isInMyBooks: libraryStore.cachedOwnedBook(for: result) != nil"))
         #expect(search.contains("result.recordingDetailsLine"))
         #expect(!(search.contains("IADateFormatting.humanReadable(result.date)")))
         #expect(!(search.contains("Recorded \\(date)")))

@@ -449,6 +449,20 @@ public final class LibraryRepository: @unchecked Sendable {
         return try await bookWithChapters(forBookID: bookID)
     }
 
+    /// All LibriVox recording aliases as (value, bookID) pairs, for the
+    /// synchronous result-row ownership index. Duplicates are returned as-is.
+    public func fetchLibriVoxIdentities() async throws -> [(value: String, bookID: UUID)] {
+        try await database.prepare()
+        let rows = try await database.query("""
+            SELECT book_id, value FROM book_recording_identities WHERE scheme = ?
+        """, [.string(RecordingIdentity.libriVox)])
+        return rows.compactMap { row in
+            guard let v = row.string("value"), let id = row.string("book_id"),
+                  let uuid = UUID(uuidString: id) else { return nil }
+            return (v, uuid)
+        }
+    }
+
     private func insertIdentity(bookID: UUID, scheme: String, value: String) async throws {
         try await database.execute("""
             INSERT OR IGNORE INTO book_recording_identities (book_id, scheme, value, created_at)

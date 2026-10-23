@@ -241,6 +241,7 @@ public final class InternetArchiveClient: @unchecked Sendable, InternetArchiveCa
             URLQueryItem(name: "rows", value: String(rows)),
             URLQueryItem(name: "page", value: String(max(1, page))),
             URLQueryItem(name: "fl[]", value: "identifier"),
+            URLQueryItem(name: "fl[]", value: "call_number"),
             URLQueryItem(name: "fl[]", value: "title"),
             URLQueryItem(name: "fl[]", value: "creator"),
             URLQueryItem(name: "fl[]", value: "description"),
