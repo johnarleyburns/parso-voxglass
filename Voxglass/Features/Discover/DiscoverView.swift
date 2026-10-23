@@ -79,6 +79,8 @@ struct BrowseView: View {
             Task { await runSearch() }
         }
         .onChange(of: catalogStore.query) { _, query in
+            preflightTask?.cancel()
+            preflightTask = nil
             if FindSearchLifecycle.normalized(query).isEmpty { searchLifecycle.reset() }
         }
         .onChange(of: discoverScope) { _, scope in
@@ -703,6 +705,8 @@ struct BrowseView: View {
     }
 
     private func clearSearchAndRestoreBrowseState() {
+        preflightTask?.cancel()
+        preflightTask = nil
         searchLifecycle.reset()
         catalogStore.query = ""
         searchScope = .all

@@ -34,6 +34,10 @@ struct SearchView: View {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
         }
         .onDisappear { preflightTask?.cancel() }
+        .onChange(of: catalogStore.query) { _, _ in
+            preflightTask?.cancel()
+            preflightTask = nil
+        }
         .onChange(of: catalogStore.results) { _, results in
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
         }
@@ -61,6 +65,8 @@ struct SearchView: View {
 
             if !catalogStore.query.isEmpty {
                 Button {
+                    preflightTask?.cancel()
+                    preflightTask = nil
                     catalogStore.query = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")

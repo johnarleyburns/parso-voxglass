@@ -178,6 +178,73 @@ import os
             bookID: owner.bookID.uuidString, scheme: "librivox", value: "1735")
         #expect(again == owner.bookID.uuidString)
     }
+
+    /// Fake whose fetch suspends until the test releases it.
+    private final class GatedClient: LibriVoxRecordingIdentityClient, Sendable {
+        private struct State { var started = false; var continuation: CheckedContinuation<Void, Never>? }
+        private let state = OSAllocatedUnfairLock(initialState: State())
+        let recording: LibriVoxRecording
+        init(bookURL: String) {
+            recording = LibriVoxRecording(bookURL: URL(string: bookURL), sections: [])
+        }
+        func fetchRecording(bookID: Int) async throws -> LibriVoxRecording {
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                state.withLock { $0.started = true; $0.continuation = c }
+            }
+            return recording
+        }
+        func waitUntilStarted() async {
+            while !state.withLock({ $0.started && $0.continuation != nil }) { await Task.yield() }
+        }
+        func complete() {
+            state.withLock { $0.continuation.take() }?.resume()
+        }
+    }
+
+    @Test func cancelledPreflightCannotClaimAliasAfterRecordingFetchReturns() async throws {
+        let (database, repo) = try await make()
+        _ = try await seed(database, sourceURL: slug, chapters: chapterURLs)
+        let before = try await snapshot(database)
+        let fake = GatedClient(bookURL: slug)
+        let task = Task { try await repo.reconcileLegacyLibriVoxRecording("1735", using: fake) }
+        await fake.waitUntilStarted()
+        task.cancel()
+        fake.complete()
+        let result = try await task.value
+        #expect(result == .noExactEvidence)
+        #expect(try await aliases(database).isEmpty)
+        #expect(try await snapshot(database) == before)
+    }
+
+    @Test func nonCancelledGatedProofWritesExactlyOneAlias() async throws {
+        let (database, repo) = try await make()
+        let seeded = try await seed(database, sourceURL: slug, chapters: chapterURLs)
+        let fake = GatedClient(bookURL: slug)
+        let task = Task { try await repo.reconcileLegacyLibriVoxRecording("1735", using: fake) }
+        await fake.waitUntilStarted()
+        fake.complete()
+        _ = try await task.value
+        #expect(try await aliases(database) == ["\(seeded.bookID.uuidString)/librivox/1735"])
+    }
+
+    @Test func findViewsCancelPreflightOnDraftEditAndClear() throws {
+        let root = repositoryRoot()
+        let search = try String(contentsOf: root.appendingPathComponent("Voxglass/Features/Search/SearchView.swift"), encoding: .utf8)
+        let discover = try String(contentsOf: root.appendingPathComponent("Voxglass/Features/Discover/DiscoverView.swift"), encoding: .utf8)
+        let cancel = "preflightTask?.cancel()\n"
+        for (name, text) in [("search", search), ("discover", discover)] {
+            let onChange = text.range(of: ".onChange(of: catalogStore.query)")
+            #expect(onChange != nil, "\(name) onChange")
+            if let r = onChange { #expect(text[r.upperBound...].prefix(160).contains("preflightTask?.cancel()"), "\(name)") }
+            _ = cancel
+        }
+        #expect(search.range(of: "preflightTask?.cancel()\n                    preflightTask = nil\n                    catalogStore.query = \"\"") != nil)
+        #expect(discover.range(of: "preflightTask?.cancel()\n        preflightTask = nil\n        searchLifecycle.reset()\n        catalogStore.query = \"\"") != nil)
+    }
+
+    private func repositoryRoot() -> URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    }
 }
 
 private extension String {

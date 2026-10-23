@@ -334,9 +334,13 @@ public final class CatalogStore: ObservableObject {
             do {
                 _ = try await libraryStore.reconcileOwnedLegacyLibriVoxRecording(
                     normalized, using: legacyIdentityClient)
+                if Task.isCancelled { return }
+            } catch is CancellationError {
+                return
             } catch is LegacyResolutionError {
                 // Retain unbadged; navigation will surface the error.
             } catch {
+                if Task.isCancelled { return }
                 // A failed preflight must never fail the search.
             }
         }
