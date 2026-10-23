@@ -101,6 +101,34 @@ public actor AppDatabase {
         }
     }
 
+    /// Atomically claims `(scheme, value)` for `bookID` in one transaction.
+    /// Returns the owning book ID after the call: `bookID` when it inserted or
+    /// already owned the alias, otherwise the conflicting owner (nothing written).
+    public func claimRecordingIdentity(bookID: String, scheme: String, value: String) throws -> String {
+        try prepare()
+        try executeRaw("BEGIN IMMEDIATE TRANSACTION")
+        do {
+            let owners = try query(
+                "SELECT book_id FROM book_recording_identities WHERE scheme = ? AND value = ?",
+                [.string(scheme), .string(value)]
+            ).compactMap { $0.string("book_id") }
+            var owner = bookID
+            if let existing = owners.first(where: { $0 != bookID }) {
+                owner = existing
+            } else if owners.isEmpty {
+                try execute("""
+                    INSERT INTO book_recording_identities (book_id, scheme, value, created_at)
+                    VALUES (?, ?, ?, ?)
+                """, [.string(bookID), .string(scheme), .string(value), .double(Date().timeIntervalSince1970)])
+            }
+            try executeRaw("COMMIT")
+            return owner
+        } catch {
+            try? executeRaw("ROLLBACK")
+            throw error
+        }
+    }
+
     private func open() throws {
         var database: OpaquePointer?
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else {

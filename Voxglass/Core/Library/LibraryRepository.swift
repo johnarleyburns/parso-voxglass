@@ -118,13 +118,19 @@ public final class LibraryRepository: @unchecked Sendable {
 
     let database: AppDatabase
     private let librivoxClient: LibriVoxCatalogClient?
+    private let identityClient: LibriVoxRecordingIdentityClient
     public var mutationLog: SyncMutationLog?
     /// Seams for `repairLocalAudio`; tests inject fakes, the app uses the system.
     public var localRepairEnvironment = LocalAudioRepairEnvironment.system
 
-    public init(database: AppDatabase, librivoxClient: LibriVoxCatalogClient? = nil) {
+    public init(
+        database: AppDatabase,
+        librivoxClient: LibriVoxCatalogClient? = nil,
+        identityClient: LibriVoxRecordingIdentityClient = LibriVoxClient()
+    ) {
         self.database = database
         self.librivoxClient = librivoxClient
+        self.identityClient = identityClient
     }
 
     public func fetchLibrary() async throws -> [BookWithChapters] {
@@ -460,6 +466,89 @@ public final class LibraryRepository: @unchecked Sendable {
             guard let v = row.string("value"), let id = row.string("book_id"),
                   let uuid = UUID(uuidString: id) else { return nil }
             return (v, uuid)
+        }
+    }
+
+    public enum LegacyRecordingReconciliation: Equatable, Sendable {
+        case linked(BookWithChapters)
+        case noExactEvidence
+        case ambiguous([UUID])
+    }
+
+    /// Establishes the LibriVox alias for one already-owned legacy book, only
+    /// when its stored URLs exactly prove it is that recording. Never matches on
+    /// title, author, duration, narrator, artwork, chapter title or filename.
+    public func reconcileLegacyLibriVoxRecording(
+        _ rawRecordingID: String,
+        using client: LibriVoxRecordingIdentityClient? = nil
+    ) async throws -> LegacyRecordingReconciliation {
+        guard let recordingID = RecordingIdentity.normalizedLibriVoxID(rawRecordingID),
+              let numericID = Int(recordingID) else { return .noExactEvidence }
+        try await database.prepare()
+        if let owned = try await bookWithChapters(identityScheme: RecordingIdentity.libriVox, value: recordingID) {
+            return .linked(owned)
+        }
+        let remote = try await (client ?? identityClient).fetchRecording(bookID: numericID)
+        let candidates = try await fetchNonPendingBooksWithoutLibriVoxIdentity()
+        let matches = candidates.filter { Self.exactURLProof($0.book, sourceURL: $0.sourceURL, remote: remote) }
+        guard matches.count == 1, let match = matches.first else {
+            return matches.isEmpty ? .noExactEvidence : .ambiguous(matches.map(\.book.book.id))
+        }
+        try await claimIdentity(bookID: match.book.book.id, scheme: RecordingIdentity.libriVox, value: recordingID)
+        guard let linked = try await bookWithChapters(forBookID: match.book.book.id) else {
+            return .noExactEvidence
+        }
+        return .linked(linked)
+    }
+
+    private func fetchNonPendingBooksWithoutLibriVoxIdentity() async throws -> [(book: BookWithChapters, sourceURL: URL?)] {
+        let rows = try await database.query("""
+            SELECT b.id AS book_id, s.url AS source_url
+            FROM books b LEFT JOIN sources s ON s.id = b.source_id
+            WHERE b.is_pending = 0
+              AND NOT EXISTS (
+                SELECT 1 FROM book_recording_identities i
+                WHERE i.book_id = b.id AND i.scheme = ?
+              )
+        """, [.string(RecordingIdentity.libriVox)])
+        var result: [(book: BookWithChapters, sourceURL: URL?)] = []
+        for row in rows {
+            guard let idString = row.string("book_id"), let id = UUID(uuidString: idString),
+                  let book = try await bookWithChapters(forBookID: id) else { continue }
+            result.append((book, row.string("source_url").flatMap(URL.init(string:))))
+        }
+        return result
+    }
+
+    private static func exactURLProof(_ book: BookWithChapters, sourceURL: URL?, remote: LibriVoxRecording) -> Bool {
+        if let stored = sourceURL.flatMap(canonicalProofURL),
+           let api = remote.bookURL.flatMap(canonicalProofURL), stored == api {
+            return true
+        }
+        let apiURLs = remote.sections.map { $0.listenURL.flatMap(URL.init(string:)).flatMap(canonicalProofURL) }
+        let storedURLs = book.chapters.map { $0.remoteURL.flatMap(canonicalProofURL) }
+        guard !apiURLs.isEmpty, apiURLs.count == storedURLs.count else { return false }
+        return zip(apiURLs, storedURLs).allSatisfy { api, stored in
+            guard let api, let stored else { return false }
+            return api == stored
+        }
+    }
+
+    /// Lowercased host + percent-decoded path (one trailing slash removed) +
+    /// the query string, which is retained verbatim.
+    private static func canonicalProofURL(_ url: URL) -> String? {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let host = components.host?.lowercased(), !host.isEmpty else { return nil }
+        var path = components.path // URLComponents.path is percent-decoded
+        if path.hasSuffix("/") { path.removeLast() }
+        let query = components.percentEncodedQuery.map { "?\($0)" } ?? ""
+        return host + path + query
+    }
+
+    private func claimIdentity(bookID: UUID, scheme: String, value: String) async throws {
+        let owner = try await database.claimRecordingIdentity(bookID: bookID.uuidString, scheme: scheme, value: value)
+        if owner != bookID.uuidString {
+            throw RecordingIdentityError.ambiguous(scheme: scheme, value: value)
         }
     }
 

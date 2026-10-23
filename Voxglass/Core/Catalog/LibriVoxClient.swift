@@ -4,6 +4,20 @@ public protocol LibriVoxCatalogClient: Sendable {
     func fetchSections(bookID: Int) async throws -> [LibriVoxSection]
 }
 
+public struct LibriVoxRecording: Equatable, Sendable {
+    public let bookURL: URL?
+    public let sections: [LibriVoxSection]
+
+    public init(bookURL: URL?, sections: [LibriVoxSection]) {
+        self.bookURL = bookURL
+        self.sections = sections
+    }
+}
+
+public protocol LibriVoxRecordingIdentityClient: Sendable {
+    func fetchRecording(bookID: Int) async throws -> LibriVoxRecording
+}
+
 public struct LibriVoxSection: Decodable, Equatable, Sendable {
     public var sectionNumber: String?
     public var listenURL: String?
@@ -39,7 +53,13 @@ public struct LibriVoxReader: Decodable, Equatable, Sendable {
 
 private struct LibriVoxBookResponse: Decodable {
     public struct Book: Decodable {
+        var urlLibrivox: String?
         var sections: [LibriVoxSection]?
+
+        enum CodingKeys: String, CodingKey {
+            case urlLibrivox = "url_librivox"
+            case sections
+        }
     }
     public var books: [Book]?
 }
@@ -52,6 +72,12 @@ public final class LibriVoxClient: LibriVoxCatalogClient {
     }
 
     public func fetchSections(bookID: Int) async throws -> [LibriVoxSection] {
+        try await fetchRecording(bookID: bookID).sections
+    }
+}
+
+extension LibriVoxClient: LibriVoxRecordingIdentityClient {
+    public func fetchRecording(bookID: Int) async throws -> LibriVoxRecording {
         let url = URL(string: "https://librivox.org/api/feed/audiobooks/?id=\(bookID)&extended=1&format=json")!
 
         let (data, response) = try await session.data(from: url)
@@ -67,7 +93,10 @@ public final class LibriVoxClient: LibriVoxCatalogClient {
             throw LibriVoxError.bookNotFound
         }
 
-        return firstBook.sections ?? []
+        return LibriVoxRecording(
+            bookURL: firstBook.urlLibrivox.flatMap(URL.init(string:)),
+            sections: firstBook.sections ?? []
+        )
     }
 }
 
