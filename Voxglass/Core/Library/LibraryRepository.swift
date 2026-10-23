@@ -488,12 +488,18 @@ public final class LibraryRepository: @unchecked Sendable {
         if let owned = try await bookWithChapters(identityScheme: RecordingIdentity.libriVox, value: recordingID) {
             return .linked(owned)
         }
+        guard !Task.isCancelled else { return .noExactEvidence }
         let remote = try await (client ?? identityClient).fetchRecording(bookID: numericID)
+        // URLSession/fakes may complete after the caller cancelled. Never turn
+        // that stale completion into a durable alias write.
+        guard !Task.isCancelled else { return .noExactEvidence }
         let candidates = try await fetchNonPendingBooksWithoutLibriVoxIdentity()
+        guard !Task.isCancelled else { return .noExactEvidence }
         let matches = candidates.filter { Self.exactURLProof($0.book, sourceURL: $0.sourceURL, remote: remote) }
         guard matches.count == 1, let match = matches.first else {
             return matches.isEmpty ? .noExactEvidence : .ambiguous(matches.map(\.book.book.id))
         }
+        guard !Task.isCancelled else { return .noExactEvidence }
         try await claimIdentity(bookID: match.book.book.id, scheme: RecordingIdentity.libriVox, value: recordingID)
         guard let linked = try await bookWithChapters(forBookID: match.book.book.id) else {
             return .noExactEvidence
