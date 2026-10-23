@@ -68,6 +68,7 @@ struct BrowseView: View {
         }
         .onChange(of: catalogStore.results) { _, results in
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
+            startOwnershipPreflight(for: results)
         }
         .onChange(of: collectionSort) { _, _ in
             guard selectedCollection != nil else { return }
@@ -664,7 +665,6 @@ struct BrowseView: View {
                 ? selectedCollection.archiveQuery
                 : "(\(selectedCollection.archiveQuery)) AND (\(scopedQuery(term, includeCatalogScope: false)))"
             await catalogStore.searchAdvanced(collectionQuery, sort: collectionSort, collectionID: selectedCollection.id)
-            startOwnershipPreflight()
             return
         }
 
@@ -675,12 +675,12 @@ struct BrowseView: View {
         case .title, .author, .narrator:
             await catalogStore.searchAdvanced(scopedQuery(term), sort: .popularity)
         }
-        startOwnershipPreflight()
     }
 
-    private func startOwnershipPreflight() {
-        guard !Task.isCancelled, catalogStore.catalogError == nil else { return }
-        let results = catalogStore.results
+    private func startOwnershipPreflight(for displayed: [InternetArchiveSearchResult]) {
+        guard !displayed.isEmpty, catalogStore.catalogError == nil else { return }
+        preflightTask?.cancel()
+        let results = displayed
         let catalogStore = catalogStore
         let libraryStore = libraryStore
         preflightTask = Task {

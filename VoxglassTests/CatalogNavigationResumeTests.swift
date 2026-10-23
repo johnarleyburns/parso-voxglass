@@ -27,7 +27,9 @@ import Foundation
     private final class FakeLibriVox: LibriVoxRecordingIdentityClient, @unchecked Sendable {
         private let lock = NSLock()
         private var count = 0
+        private var ids: [Int] = []
         var calls: Int { lock.withLock { count } }
+        var recordingRequests: [String] { lock.withLock { ids.map(String.init) } }
         let recording: LibriVoxRecording
         init(listenURLs: [String]) {
             recording = LibriVoxRecording(bookURL: nil, sections: listenURLs.map {
@@ -35,9 +37,40 @@ import Foundation
             })
         }
         func fetchRecording(bookID: Int) async throws -> LibriVoxRecording {
-            lock.withLock { count += 1 }
+            lock.withLock { count += 1; ids.append(bookID) }
             return recording
         }
+    }
+
+    private final class PagedClient: InternetArchiveCatalogClient, @unchecked Sendable {
+        let pages: [[InternetArchiveSearchResult]]
+        init(pages: [[InternetArchiveSearchResult]]) { self.pages = pages }
+        func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] { [] }
+        func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult] { [] }
+        func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] { [] }
+        func searchAdvanced(query: String, rows: Int, sort: CatalogSort) async throws -> [InternetArchiveSearchResult] { [] }
+        func searchAdvancedPage(query: String, rows: Int, page: Int) async throws -> InternetArchivePage {
+            try await searchAdvancedPage(query: query, rows: rows, page: page, sort: .popularity)
+        }
+        func searchAdvancedPage(query: String, rows: Int, page: Int, sort: CatalogSort) async throws -> InternetArchivePage {
+            let index = page - 1
+            return InternetArchivePage(
+                results: pages.indices.contains(index) ? pages[index] : [],
+                numFound: pages.reduce(0) { $0 + $1.count }, page: page)
+        }
+        func metadata(for identifier: String) async throws -> InternetArchiveMetadata {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    private struct FailingPageClient: InternetArchiveCatalogClient {
+        func searchLibriVox(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] { throw URLError(.notConnectedToInternet) }
+        func searchCollection(identifier: String, rows: Int) async throws -> [InternetArchiveSearchResult] { throw URLError(.notConnectedToInternet) }
+        func searchAdvanced(query: String, rows: Int) async throws -> [InternetArchiveSearchResult] { throw URLError(.notConnectedToInternet) }
+        func searchAdvanced(query: String, rows: Int, sort: CatalogSort) async throws -> [InternetArchiveSearchResult] { throw URLError(.notConnectedToInternet) }
+        func searchAdvancedPage(query: String, rows: Int, page: Int) async throws -> InternetArchivePage { throw URLError(.notConnectedToInternet) }
+        func searchAdvancedPage(query: String, rows: Int, page: Int, sort: CatalogSort) async throws -> InternetArchivePage { throw URLError(.notConnectedToInternet) }
+        func metadata(for identifier: String) async throws -> InternetArchiveMetadata { throw URLError(.notConnectedToInternet) }
     }
 
     private let exactURLs = ["https://librivox.org/audio/0.mp3", "https://librivox.org/audio/1.mp3"]
@@ -445,6 +478,107 @@ import Foundation
         #expect(repaired > 0)
         await library.refresh()
         #expect(library.cachedOwnedBook(for: row)?.book.id == owned.book.id)
+    }
+
+    /// Mirrors the Find hosts' `.onChange(of: catalogStore.results)` observer.
+    private func preflightPublished(_ catalog: CatalogStore, _ library: LibraryStore) async {
+        guard !catalog.results.isEmpty, catalog.catalogError == nil else { return }
+        await catalog.reconcileLegacyOwnership(results: catalog.results, into: library)
+    }
+
+    private func pagedFixture(pages: [[InternetArchiveSearchResult]], listenURLs: [String]? = nil) async throws
+        -> (CatalogStore, LibraryStore, FakeLibriVox) {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        _ = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let fake = FakeLibriVox(listenURLs: listenURLs ?? exactURLs)
+        return (CatalogStore(client: PagedClient(pages: pages), legacyIdentityClient: fake), library, fake)
+    }
+
+    @Test func preflightAttemptsAnAliasOnlyOnceAcrossTwoPages() async throws {
+        let (catalog, library, fake) = try await pagedFixture(pages: [
+            [callResult("1735", id: "a")],
+            [callResult("1735", id: "b"), callResult("1736", id: "c")]
+        ])
+        await catalog.searchAdvanced("q")
+        await preflightPublished(catalog, library)
+        await catalog.loadMore()
+        #expect(catalog.results.count == 3)
+        await preflightPublished(catalog, library)
+        #expect(fake.recordingRequests == ["1735", "1736"])
+    }
+
+    @Test func collectionAndPaginatedRowsBadgeWithoutTap() async throws {
+        let (catalog, library, _) = try await pagedFixture(pages: [
+            [callResult("1735", id: "a")]
+        ])
+        let row = callResult("1735", id: "a")
+        #expect(library.cachedOwnedBook(for: row) == nil)
+        await catalog.searchAdvanced("collection:x", collectionID: "unknown-collection")
+        await preflightPublished(catalog, library)
+        #expect(library.cachedOwnedBook(for: row) != nil)
+
+        let (pagedCatalog, pagedLibrary, _) = try await pagedFixture(pages: [
+            [callResult(nil, id: "first")],
+            [callResult("1735", id: "a")]
+        ])
+        await pagedCatalog.searchAdvanced("q")
+        await pagedCatalog.loadMore()
+        await preflightPublished(pagedCatalog, pagedLibrary)
+        #expect(pagedCatalog.results.map(\.identifier) == ["first", "a"])
+        #expect(pagedLibrary.cachedOwnedBook(for: row) != nil)
+    }
+
+    @Test func newRootQueryResetsAttemptsButLoadMoreDoesNot() async throws {
+        let (catalog, library, fake) = try await pagedFixture(pages: [
+            [callResult("1736", id: "a")],
+            [callResult("1736", id: "b")]
+        ], listenURLs: ["https://example.org/nomatch.mp3"])
+        // Non-matching proof leaves the row unbadged, so only the attempt set prevents a retry.
+        await catalog.searchAdvanced("q")
+        await catalog.reconcileLegacyOwnership(results: catalog.results, into: library)
+        await catalog.loadMore()
+        await catalog.reconcileLegacyOwnership(results: catalog.results, into: library)
+        #expect(fake.recordingRequests == ["1736"])
+        await catalog.searchAdvanced("q2")
+        await catalog.reconcileLegacyOwnership(results: catalog.results, into: library)
+        #expect(fake.recordingRequests == ["1736", "1736"])
+        catalog.resetResultsForNavigation()
+        await catalog.reconcileLegacyOwnership(results: [callResult("1736", id: "z")], into: library)
+        #expect(fake.recordingRequests.count == 3)
+    }
+
+    @Test func emptyAndErrorResultsMakeNoIdentityRequests() async throws {
+        let (empty, library, fake) = try await pagedFixture(pages: [[]])
+        await empty.searchAdvanced("q")
+        await preflightPublished(empty, library)
+        #expect(fake.calls == 0)
+
+        let failing = CatalogStore(client: FailingPageClient(), legacyIdentityClient: fake)
+        await failing.searchAdvanced("q")
+        #expect(failing.catalogError != nil)
+        await preflightPublished(failing, library)
+        #expect(fake.calls == 0)
+    }
+
+    @Test func findHostsObserveResultsWithoutBespokePreflight() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        for path in ["Voxglass/Features/Discover/DiscoverView.swift", "Voxglass/Features/Search/SearchView.swift"] {
+            let text = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+            #expect(text.contains("startOwnershipPreflight(for: results)"))
+            #expect(text.contains(".onChange(of: catalogStore.results)"))
+            #expect(!text.contains("startOwnershipPreflight()"))
+        }
+        let store = try String(
+            contentsOf: root.appendingPathComponent("Voxglass/Core/Catalog/CatalogStore.swift"), encoding: .utf8)
+        let loadMore = try #require(store.range(of: "public func loadMore() async"))
+        #expect(!store.suffix(from: loadMore.lowerBound).prefix(900).contains("reconcileLegacyOwnership"))
+        let browse = try String(
+            contentsOf: root.appendingPathComponent("Voxglass/Features/Discover/DiscoverView.swift"), encoding: .utf8)
+        let collectionLoad = try #require(browse.range(of: "private func loadSelectedCollection"))
+        let body = browse[collectionLoad.lowerBound...].prefix(400)
+        #expect(!body.contains("Preflight"))
     }
 
     @Test func navigationEntryPointsShareTheResolver() throws {
