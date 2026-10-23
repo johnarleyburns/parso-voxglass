@@ -372,6 +372,81 @@ import Foundation
         #expect(try await count(database, "book_recording_identities") == 0)
     }
 
+    // MARK: Find ownership preflight
+
+    private func callResult(_ callNumber: String?, id: String = "other_item_librivox") -> InternetArchiveSearchResult {
+        InternetArchiveSearchResult(
+            identifier: id, title: "Commentaries", creators: [], description: nil,
+            collections: ["librivoxaudio"], downloads: nil, date: nil, libriVoxRecordingID: callNumber)
+    }
+
+    @Test func preflightBadgesExactLegacyBookOncePerNormalizedID() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        let legacy = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let fake = FakeLibriVox(listenURLs: exactURLs)
+        let catalog = CatalogStore(
+            client: CountingClient(metadata: blackstoneMetadata(callNumber: "1735")), legacyIdentityClient: fake)
+        let rows = [callResult("1735", id: "a"), callResult("01735", id: "b"), callResult("1735", id: "c")]
+        #expect(rows.allSatisfy { library.cachedOwnedBook(for: $0) == nil })
+        await catalog.reconcileLegacyOwnership(results: rows, into: library)
+        #expect(fake.calls == 1)
+        #expect(rows.allSatisfy { library.cachedOwnedBook(for: $0)?.book.id == legacy.bookID })
+        #expect(!catalog.isSearching)
+    }
+
+    @Test func preflightLeavesInvalidUnmatchedAndAmbiguousUnbadged() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        _ = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let unmatched = CatalogStore(legacyIdentityClient: FakeLibriVox(listenURLs: ["https://example.org/x.mp3"]))
+        let rows = [callResult(nil), callResult("abc"), callResult("1735")]
+        await unmatched.reconcileLegacyOwnership(results: rows, into: library)
+        #expect(rows.allSatisfy { library.cachedOwnedBook(for: $0) == nil })
+
+        _ = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let ambiguous = CatalogStore(legacyIdentityClient: FakeLibriVox(listenURLs: exactURLs))
+        await ambiguous.reconcileLegacyOwnership(results: [callResult("1735")], into: library)
+        #expect(library.cachedOwnedBook(for: callResult("1735")) == nil)
+        #expect(try await count(database, "book_recording_identities") == 0)
+        #expect(try await count(database, "books") == 2)
+    }
+
+    @Test func cancelledPreflightAddsNoAlias() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        _ = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let fake = FakeLibriVox(listenURLs: exactURLs)
+        let catalog = CatalogStore(legacyIdentityClient: fake)
+        let task = Task { @MainActor in
+            await catalog.reconcileLegacyOwnership(results: [callResult("1735")], into: library)
+        }
+        task.cancel()
+        await task.value
+        #expect(fake.calls == 0)
+        #expect(try await count(database, "book_recording_identities") == 0)
+        #expect(library.cachedOwnedBook(for: callResult("1735")) == nil)
+    }
+
+    @Test func bootstrapRepairThenRefreshPublishesBadgeIndex() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let repository = LibraryRepository(database: database)
+        let library = LibraryStore(repository: repository)
+        let owned = try await repository.importInternetArchiveItem(
+            blackstoneMetadata(callNumber: nil), sourceKind: .librivox)
+        try await database.execute("DELETE FROM book_recording_identities")
+        await library.refresh()
+        let row = callResult(nil, id: blackstone)
+        let repaired = await repository.backfillRecordingIdentitiesIfNeeded()
+        #expect(repaired > 0)
+        await library.refresh()
+        #expect(library.cachedOwnedBook(for: row)?.book.id == owned.book.id)
+    }
+
     @Test func navigationEntryPointsShareTheResolver() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         for path in [

@@ -10,6 +10,7 @@ struct SearchView: View {
     @State private var searchScope: SearchScope = .all
     @State private var soloOnly = false
     @State private var selectedCatalogBookID: UUID?
+    @State private var preflightTask: Task<Void, Never>?
 
     var body: some View {
         VoxglassScreen(title: "Search") {
@@ -32,6 +33,7 @@ struct SearchView: View {
         } message: {
             Text(catalogStore.catalogError ?? libraryStore.importError ?? "")
         }
+        .onDisappear { preflightTask?.cancel() }
         .onChange(of: catalogStore.results) { _, results in
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
         }
@@ -180,12 +182,25 @@ struct SearchView: View {
 
     private func runSearch() async {
         guard !normalizedQuery.isEmpty else { return }
+        preflightTask?.cancel()
+        preflightTask = nil
 
         switch searchScope {
         case .all:
             await catalogStore.searchLibriVox(normalizedQuery)
         case .title, .author, .narrator:
             await catalogStore.searchAdvanced(scopedQuery(normalizedQuery), sort: .popularity)
+        }
+        startOwnershipPreflight()
+    }
+
+    private func startOwnershipPreflight() {
+        guard !Task.isCancelled, catalogStore.catalogError == nil else { return }
+        let results = catalogStore.results
+        let catalogStore = catalogStore
+        let libraryStore = libraryStore
+        preflightTask = Task {
+            await catalogStore.reconcileLegacyOwnership(results: results, into: libraryStore)
         }
     }
 

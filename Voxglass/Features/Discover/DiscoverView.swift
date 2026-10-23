@@ -19,6 +19,7 @@ struct BrowseView: View {
     @State private var soloOnly = false
     @State private var searchScope: DiscoverSearchScope = .all
     @State private var searchLifecycle = FindSearchLifecycle()
+    @State private var preflightTask: Task<Void, Never>?
     @State private var selectedCatalogResult: CatalogResultRoute?
     @State private var showingHistory = false
     @State private var showSearch = false
@@ -48,6 +49,7 @@ struct BrowseView: View {
             )
         }
         .toolbar { discoverKeyboardToolbar }
+        .onDisappear { preflightTask?.cancel() }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
             let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
@@ -649,6 +651,8 @@ struct BrowseView: View {
             catalogStore.resetResultsForNavigation()
             return
         }
+        preflightTask?.cancel()
+        preflightTask = nil
         // Mark the submission before dispatching so "No Results Yet" is only
         // ever attributed to a query the user explicitly submitted.
         searchLifecycle.submit(draft: term)
@@ -658,6 +662,7 @@ struct BrowseView: View {
                 ? selectedCollection.archiveQuery
                 : "(\(selectedCollection.archiveQuery)) AND (\(scopedQuery(term, includeCatalogScope: false)))"
             await catalogStore.searchAdvanced(collectionQuery, sort: collectionSort, collectionID: selectedCollection.id)
+            startOwnershipPreflight()
             return
         }
 
@@ -667,6 +672,17 @@ struct BrowseView: View {
             await catalogStore.searchLibriVox(term)
         case .title, .author, .narrator:
             await catalogStore.searchAdvanced(scopedQuery(term), sort: .popularity)
+        }
+        startOwnershipPreflight()
+    }
+
+    private func startOwnershipPreflight() {
+        guard !Task.isCancelled, catalogStore.catalogError == nil else { return }
+        let results = catalogStore.results
+        let catalogStore = catalogStore
+        let libraryStore = libraryStore
+        preflightTask = Task {
+            await catalogStore.reconcileLegacyOwnership(results: results, into: libraryStore)
         }
     }
 
