@@ -318,6 +318,30 @@ public final class CatalogStore: ObservableObject {
         return result
     }
 
+    /// Bounded, cancellable preflight: links alias-less legacy books to displayed
+    /// results through exact-URL proof so rows badge before the user taps. A failed
+    /// preflight never fails the search; navigation surfaces ambiguity later.
+    public func reconcileLegacyOwnership(
+        results: [InternetArchiveSearchResult], into libraryStore: LibraryStore
+    ) async {
+        var attempted = Set<String>()
+        for result in results.prefix(25) {
+            if Task.isCancelled { return }
+            guard libraryStore.cachedOwnedBook(for: result) == nil,
+                  let raw = result.libriVoxRecordingID,
+                  let normalized = LibraryRepository.RecordingIdentity.normalizedLibriVoxID(raw),
+                  attempted.insert(normalized).inserted else { continue }
+            do {
+                _ = try await libraryStore.reconcileOwnedLegacyLibriVoxRecording(
+                    normalized, using: legacyIdentityClient)
+            } catch is LegacyResolutionError {
+                // Retain unbadged; navigation will surface the error.
+            } catch {
+                // A failed preflight must never fail the search.
+            }
+        }
+    }
+
     private func runSearch(query: String, sort: CatalogSort, generation: Int) async {
         isSearching = true
         defer { isSearching = false }
