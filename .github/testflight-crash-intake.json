@@ -1,0 +1,12 @@
+{
+  "name": "Voxglass",
+  "bundle_id": "guru.parso.voxglass",
+  "modules": [
+    "Voxglass",
+    "VoxglassWatch",
+    "VoxglassCore",
+    "VoxglassWidgets",
+    "VoxglassWatchWidgets"
+  ],
+  "backfill_start": "2026-10-18T20:53:31Z"
+}

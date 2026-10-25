@@ -154,3 +154,15 @@ Any background or automatic behavior (importing, downloading art/models, syncing
 - Every such state must be inspectable from Settings (or the relevant status screen): what's running, why, and since when — not just a spinner.
 - The user must be able to stop, pause, retry, or undo the action from the same surface that reports it — a "magic" action nothing can interrupt or reverse is not acceptable, even if it usually finishes fine.
 - When adding a new automatic/background feature, design its status surface and its stop/retry control in the same change that adds the feature — not as a follow-up.
+
+## Automatic TestFlight crash intake
+
+`TestFlight Crash Intake` polls Apple hourly and supports manual dry-run/backfill.
+Owner-authored issues are atomically held with `tracking` until usable app crash
+evidence is present. Existing controlled issue intake owns repair dispatch; crash
+collection never grants CI-maintenance permission or sets human QA labels. The
+bootstrap floor is 2026-10-18T20:53:31Z; overlapping scans continue picking up new
+and delayed reports automatically. Only sanitized app-owned stack excerpts are
+published. Use `TESTFLIGHT_CRASH_INTAKE_ENABLED` and
+`TESTFLIGHT_CRASH_AUTOFIX_ENABLED` to control collection and release of new
+issues. Already-running repairs need the existing pipeline stop procedure.
