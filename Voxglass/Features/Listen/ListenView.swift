@@ -150,17 +150,14 @@ struct ListenView: View {
                         )
                         VStack(alignment: .leading, spacing: 5) {
                             Text(title)
-                                .voxType(.heroTitle)
+                                .voxType(.bookTitle)
                                 .foregroundStyle(Palette.ink)
+                                .lineLimit(2)
                                 .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Text(session.book.displayAuthorLine ?? String(localized: "Imported"))
+                            Text(failureMessage ?? session.book.displayAuthorLine ?? String(localized: "Imported"))
                                 .voxType(.meta)
                                 .foregroundStyle(Palette.ink2)
-                            Text(session.chapter.title)
-                                .voxType(.meta)
-                                .foregroundStyle(Palette.ink2)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .lineLimit(1)
                             HStack(spacing: 8) {
                                 if kind == .playing {
                                     ActivityBars(animating: !reduceMotion)
@@ -168,18 +165,13 @@ struct ListenView: View {
                                 }
                                 Text(status)
                                     .voxType(.body)
+                                    .lineLimit(1)
                             }
                             .foregroundStyle(Palette.onBrass)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(Palette.brass, in: Capsule())
                             .accessibilityIdentifier("listen.nowPlaying.status")
-                            if let failureMessage {
-                                Text(failureMessage)
-                                    .voxType(.meta)
-                                    .foregroundStyle(Palette.ink2)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
                         }
                         Spacer(minLength: 0)
                     }
@@ -248,15 +240,17 @@ struct ListenView: View {
 
                     VStack(alignment: .leading, spacing: 5) {
                         Text(book.book.title)
-                            .voxType(.heroTitle)
+                            .voxType(.bookTitle)
                             .foregroundStyle(Palette.ink)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
                         Text(book.book.displayAuthorLine ?? String(localized: "Imported"))
                             .voxType(.meta)
                             .foregroundStyle(Palette.ink2)
+                            .lineLimit(1)
                         Text(resumeLabel)
                             .voxType(.body)
+                            .lineLimit(1)
                             .foregroundStyle(Palette.onBrass)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
@@ -264,10 +258,11 @@ struct ListenView: View {
                             .accessibilityIdentifier("listen.resume")
                     }
 
-                    Spacer(minLength: 4)
+                    Spacer(minLength: 0)
                     Image(systemName: "play.circle.fill")
                         .voxFont(.title, weight: .semibold)
                         .foregroundStyle(Palette.brass)
+                        .frame(width: 44, height: 44)
                 }
                 .padding(14)
                 .raisedSurface(tint: Palette.brass.opacity(0.20))
