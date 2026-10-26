@@ -56,6 +56,13 @@ import Testing
         #expect(!(chapterSlice.contains("showingNowPlaying = true")))  // chapterList must not set showingNowPlaying
     }
 
+    @Test func continueListeningResumesInMiniPlayerWithoutOpeningNowPlaying() throws {
+        let listen = try source("Voxglass/Features/Listen/ListenView.swift")
+        let card = sourceSlice(listen, from: "private func continueCard", to: "private var weekStrip")
+        #expect(card.contains("playback.selectAndPlay(book)"))
+        #expect(!card.contains("showingNowPlaying = true"))
+    }
+
     @Test func remoteCatalogImportsOpenPausedBookPreview() throws {
         let paths = [
             "Voxglass/Features/Discover/DiscoverView.swift",
