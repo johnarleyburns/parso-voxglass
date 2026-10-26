@@ -464,7 +464,15 @@ public enum CatalogResultImporter {
         if let existing = await libraryStore.book(forInternetArchiveIdentifier: result.identifier) {
             return existing
         }
-        // One metadata request is required only after the cheap IA lookup missed.
+        // Exact result-level LibriVox identity routes before any metadata request.
+        if let existing = try await existingBook(
+            matchingLibriVoxRecordingID: result.libriVoxRecordingID,
+            in: libraryStore,
+            legacyIdentityClient: legacyIdentityClient
+        ) {
+            return existing
+        }
+        // Metadata is fetched only after the exact result-level routes miss.
         // It supplies the authoritative LibriVox recording ID; never use title/author.
         return try await withMetadata(for: result, using: client) { metadata, sourceKind in
             if let existing = try await existingBook(
@@ -526,7 +534,20 @@ public enum CatalogResultImporter {
         if let existing = await libraryStore.book(forInternetArchiveIdentifier: metadata.identifier) {
             return existing
         }
-        if let rawID = metadata.metadata.callNumber {
+        return try await existingBook(
+            matchingLibriVoxRecordingID: metadata.metadata.callNumber,
+            in: libraryStore,
+            legacyIdentityClient: legacyIdentityClient
+        )
+    }
+
+    @MainActor
+    private static func existingBook(
+        matchingLibriVoxRecordingID rawID: String?,
+        in libraryStore: LibraryStore,
+        legacyIdentityClient: LibriVoxRecordingIdentityClient
+    ) async throws -> BookWithChapters? {
+        if let rawID {
             if let existing = try await libraryStore.resolveLibriVoxRecording(rawID) { return existing }
             return try await libraryStore.reconcileOwnedLegacyLibriVoxRecording(
                 rawID, using: legacyIdentityClient)
