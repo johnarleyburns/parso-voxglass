@@ -407,6 +407,77 @@ import Foundation
         #expect(try await count(database, "book_recording_identities") == 0)
     }
 
+    @Test func findResultCallNumberRoutesToOwnedBookWithoutMetadata() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        let legacy = try await seedLegacy(database)
+        await library.refresh()
+        let client = CountingClient(metadata: blackstoneMetadata(callNumber: "1735"))
+        let before = (try await count(database, "books"), try await count(database, "sources"),
+                      try await count(database, "chapters"))
+
+        let routed = try #require(try await CatalogResultImporter.resolveForNavigation(
+            callResult("1735"), into: library, using: client))
+
+        #expect(routed.book.id == legacy.bookID)
+        #expect(routed.book.isPending == false)
+        #expect(client.metadataCalls == 0)
+        #expect(try await count(database, "books") == before.0)
+        #expect(try await count(database, "sources") == before.1)
+        #expect(try await count(database, "chapters") == before.2)
+        #expect(try await SQLiteBookmarkStore(database: database).bookmarks(forBookID: legacy.bookID).count == 1)
+        let position = try await SQLitePositionStore(database: database)
+            .position(for: legacy.bookID, chapterID: legacy.chapterTwo)
+        #expect(abs((position?.position ?? -1) - 77) <= 0.001)
+    }
+
+    @Test func findResultCallNumberReconcilesAliaslessLegacyOnce() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        let legacy = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let client = CountingClient(metadata: blackstoneMetadata(callNumber: "1735"))
+        let routed = try #require(try await CatalogResultImporter.resolveForNavigation(
+            callResult("1735"), into: library, using: client,
+            legacyIdentityClient: FakeLibriVox(listenURLs: exactURLs)))
+        #expect(routed.book.id == legacy.bookID)
+        #expect(routed.book.isPending == false)
+        #expect(client.metadataCalls == 0)
+        #expect(try await count(database, "books") == 1)
+        #expect(try await count(database, "book_recording_identities") == 1)
+    }
+
+    @Test func findResultMalformedOrUnmatchedCallNumberImportsOnePendingPreview() async throws {
+        for callNumber in [nil, "", "abc", "9999"] {
+            let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+            let library = LibraryStore(repository: LibraryRepository(database: database))
+            let legacy = try await seedLegacy(database, title: "Commentaries on the Laws of England (1765)")
+            await library.refresh()
+            let client = CountingClient(metadata: blackstoneMetadata(callNumber: nil))
+            let routed = try #require(try await CatalogResultImporter.resolveForNavigation(
+                callResult(callNumber, id: blackstoneResult().identifier), into: library, using: client,
+                legacyIdentityClient: FakeLibriVox(listenURLs: ["https://example.org/x.mp3"])))
+            #expect(routed.book.id != legacy.bookID)
+            #expect(routed.book.isPending)
+            #expect(try await count(database, "books") == 2)
+        }
+    }
+
+    @Test func findResultAmbiguousLegacyProofImportsNoPreview() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "catalog-nav-\(UUID().uuidString)")
+        let library = LibraryStore(repository: LibraryRepository(database: database))
+        _ = try await seedLegacy(database, alias: nil)
+        _ = try await seedLegacy(database, alias: nil)
+        await library.refresh()
+        let client = CountingClient(metadata: blackstoneMetadata(callNumber: nil))
+        let catalog = CatalogStore(client: client, legacyIdentityClient: FakeLibriVox(listenURLs: exactURLs))
+        let routed = await catalog.resolveForNavigation(callResult("1735"), into: library)
+        #expect(routed == nil)
+        #expect(catalog.catalogError?.isEmpty == false)
+        #expect(client.metadataCalls == 0)
+        #expect(try await count(database, "books") == 2)
+    }
+
     // MARK: Find ownership preflight
 
     private func callResult(_ callNumber: String?, id: String = "other_item_librivox") -> InternetArchiveSearchResult {

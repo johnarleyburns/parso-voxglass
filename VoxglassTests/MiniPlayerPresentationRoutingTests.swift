@@ -61,6 +61,7 @@ import Testing
         let card = sourceSlice(listen, from: "private func continueCard", to: "private var weekStrip")
         #expect(card.contains("playback.selectAndPlay(book)"))
         #expect(!card.contains("showingNowPlaying = true"))
+        #expect(card.contains("Starts playback in the mini player"))
     }
 
     @Test func remoteCatalogImportsOpenPausedBookPreview() throws {

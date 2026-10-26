@@ -270,7 +270,7 @@ struct ListenView: View {
             .tactileTap()
             .accessibilityIdentifier("listen.continueListening")
             .accessibilityLabel("\(resumeLabel) \(book.book.title)")
-            .accessibilityHint("Plays in the mini player")
+            .accessibilityHint("Starts playback in the mini player")
         }
     }
 
