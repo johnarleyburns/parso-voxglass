@@ -8,6 +8,8 @@ struct CatalogBookDestinationView: View {
     @Binding var showingNowPlaying: Bool
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var catalogStore: CatalogStore
+    @Environment(PlaybackCoordinator.self) private var playback
+    @Environment(\.dismiss) private var dismiss
     @State private var importedBook: BookWithChapters?
     @State private var failed = false
 
@@ -27,6 +29,13 @@ struct CatalogBookDestinationView: View {
             // progress) and only marks genuinely new imports pending.
             guard let resolved = await catalogStore.resolveForNavigation(result, into: libraryStore) else {
                 failed = true
+                return
+            }
+            if CatalogResultImporter.opensNowPlayingDirectly(resolved) {
+                // Already in My Books: skip the preview page, go to Now Playing.
+                playback.selectAndPlay(resolved)
+                showingNowPlaying = true
+                dismiss()
                 return
             }
             importedBook = resolved

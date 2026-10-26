@@ -114,6 +114,7 @@ import Foundation
         #expect(routed?.book.isPending == false)
         #expect(client.metadataCalls == 0)
         #expect(library.book(withID: owned.book.id)?.book.isPending == false)
+        #expect(CatalogResultImporter.opensNowPlayingDirectly(try #require(routed)))
 
         let defaults = UserDefaults(suiteName: "catalog-nav-\(UUID().uuidString)")!
         let engine = FakeAudioEngine()
@@ -143,6 +144,7 @@ import Foundation
 
         #expect(client.metadataCalls == 1)
         #expect(routed.book.isPending)
+        #expect(!CatalogResultImporter.opensNowPlayingDirectly(routed))
         #expect(library.book(withID: routed.book.id)?.book.isPending == true)
         let saved = try await SQLitePositionStore(database: database).latestPosition(forBookID: routed.book.id)
         #expect(saved == nil)
