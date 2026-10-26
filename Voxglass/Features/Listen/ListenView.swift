@@ -559,7 +559,13 @@ struct ListenView: View {
         importingIdentifier = result.identifier
         defer { importingIdentifier = nil }
         if let resolved = await catalogStore.resolveForNavigation(result, into: libraryStore) {
-            selectedCatalogBookID = resolved.book.id
+            if CatalogResultImporter.opensNowPlayingDirectly(resolved) {
+                // Already in My Books: behave like tapping it in My Books.
+                playback.selectAndPlay(resolved)
+                showingNowPlaying = true
+            } else {
+                selectedCatalogBookID = resolved.book.id
+            }
         }
     }
 }

@@ -448,6 +448,12 @@ public enum CatalogResultImporter {
     /// Shared routing for every catalog entry path. An existing library record
     /// (owned or pending) is returned untouched, before any metadata fetch or
     /// `markBookPending`. Only a genuinely new import becomes a pending preview.
+    /// Owned (non-pending) books open Now Playing directly; only pending
+    /// previews show the book page with "Add to My Books".
+    public static func opensNowPlayingDirectly(_ book: BookWithChapters) -> Bool {
+        !book.book.isPending
+    }
+
     @MainActor
     public static func resolveForNavigation(
         _ result: InternetArchiveSearchResult,
