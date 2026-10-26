@@ -227,7 +227,6 @@ struct ListenView: View {
             SectionTitle(title: "Continue Listening")
             Button {
                 playback.selectAndPlay(book)
-                showingNowPlaying = true
             } label: {
                 HStack(spacing: 14) {
                     CoverPlate(
@@ -271,7 +270,7 @@ struct ListenView: View {
             .tactileTap()
             .accessibilityIdentifier("listen.continueListening")
             .accessibilityLabel("\(resumeLabel) \(book.book.title)")
-            .accessibilityHint("Opens the player")
+            .accessibilityHint("Plays in the mini player")
         }
     }
 
