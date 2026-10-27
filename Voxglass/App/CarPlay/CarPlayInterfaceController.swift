@@ -8,7 +8,7 @@ import VoxglassCore
 /// Owns the `CPInterfaceController` for the CarPlay scene: builds the pure
 /// `CarPlayState` from the live stores, hands it to `CarPlayMenuBuilder`,
 /// renders via `CarPlayTemplateRenderer`, and keeps the tabs current with
-/// debounced store subscriptions (docs/CARPLAY_DESIGN.md §6.4).
+/// debounced store subscriptions.
 @MainActor
 final class CarPlayInterfaceController {
     /// Audio apps may push at most five templates, root included (CarPlay

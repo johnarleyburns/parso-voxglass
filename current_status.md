@@ -30,10 +30,9 @@ Simulator-verifiable WP rows are pass; audible route, system Now Playing, and wr
 rows remain `pending hardware`.
 
 **Next implementation phase:** Physical paired-device validation of Watch-local playback — execute
-the pending-hardware device scripts recorded in
-`docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md` §10, then commit any fixes without pushing.
+the pending-hardware device scripts for Watch-local playback, then commit any fixes without pushing.
 
-**Active plan:** `docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md`
+**Active plan:** Watch-local playback (the historical plan documents were removed from the repository)
 
 ## Active corrective-phase status — 2026-09-01
 
@@ -64,12 +63,9 @@ code.
 
 1. `current_status.md`.
 2. `CLAUDE.md` for repository commands, safe Xcode destinations, and hooks.
-3. `docs/plans/watch-rearchitecture/IMPLEMENTATION_PLAN.md` in full.
-4. `docs/plans/watch-rearchitecture/ACCEPTANCE_MATRIX.md` in full.
-5. `docs/plans/watch-rearchitecture/mockups/index.html` and every state.
-6. The active phase's relevant source and tests.
+3. The active phase's relevant source and tests.
 
-`../parso-tonearm/docs/plans/watch-rearchitecture/` is implementation precedent, not a second
+The `parso-tonearm` watch re-architecture plan is implementation precedent, not a second
 specification. The Voxglass plan wins where the products differ.
 
 ## Non-negotiable contract
@@ -164,7 +160,7 @@ Verification passed:
 - Watch smoke (`VoxglassWatchUITests`, 2 tests) on `Voxglass-Agent-Watch` (46 mm) and on the
   40 mm Apple Watch SE 3 simulator `Watch-SE-40` created for the geometry gate; the 40 mm run
   asserted each transport control ≥ 44×44 and fully inside the 162×197-pt app frame and saved the
-  screenshot artifact in `docs/plans/watch-local-playback/evidence/`.
+  screenshot artifact.
 - iPhone smoke: `Voxglass` scheme test on `iPhone 16` (library, CarPlay scene, ZIP extractor).
 - `git diff --check` clean; the pre-commit hook re-ran wiring, logic, iPhone smoke, and the normal
   `Watch-Small` smoke before the commit.
@@ -173,7 +169,7 @@ Mandatory post-implementation acceptance review: performed before the commit. Al
 `pass` or honestly `pending hardware`; no row is `fail`. The review table, manual scenario traces,
 pending-hardware device scripts, and the eight findings fixed during the review (including the
 40 mm transport clipping and the connected-only streaming gap) are recorded in the plan's
-Implementation Audit (`docs/plans/watch-local-playback/IMPLEMENTATION_PLAN.md` §10).
+Implementation Audit (historical plan, since removed).
 
 Discoveries and follow-ups:
 

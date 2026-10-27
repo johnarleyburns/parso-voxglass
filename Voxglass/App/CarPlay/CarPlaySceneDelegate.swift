@@ -6,7 +6,7 @@ import VoxglassCore
 /// The CarPlay scene. On a cold launch straight into CarPlay (phone locked, app
 /// never foregrounded) this is the first code that runs, so it bootstraps the
 /// shared services itself behind a loading placeholder before building the
-/// browse tree (docs/CARPLAY_DESIGN.md §6.3).
+/// browse tree.
 ///
 /// When productions are projected to the phone (S5), the root becomes the
 /// production tab bar (Continue / Productions / Review) driven by

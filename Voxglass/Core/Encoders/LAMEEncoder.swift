@@ -4,7 +4,7 @@ import ParsoAudioCore
 import VoxglassCore
 
 /// This app's `MP3Encoding` conformance (parso-audio-engine's
-/// `docs/BYO-CODEC.md` seam), backed by a real vendored LAME 3.100
+/// PAE BYO-CODEC seam), backed by a real vendored LAME 3.100
 /// (`Sources/CLAMEBridge`, LGPL-2.1 — see that target's own
 /// `vendor/lame-3.100/COPYING`). parso-audio-engine's `ParsoAudioCore` never
 /// imports or links LAME; this type is the only place in the dependency

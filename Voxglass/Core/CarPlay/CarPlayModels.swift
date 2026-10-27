@@ -3,7 +3,7 @@ import Foundation
 /// The whole CarPlay browse surface as a pure value tree. The app layer maps
 /// these nodes mechanically onto `CP*` templates; every decision (ordering,
 /// caps, empty states, gating) is made in `CarPlayMenuBuilder` so it is
-/// host-testable with zero UIKit (see docs/CARPLAY_DESIGN.md §3).
+/// host-testable with zero UIKit.
 public struct CarPlayInterface: Equatable, Sendable {
     public var tabs: [CarPlayTab]
 

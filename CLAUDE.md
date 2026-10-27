@@ -6,7 +6,15 @@
 
 Voxglass is fully on Swift 6 language mode with complete strict-concurrency checking and is kept as warning-free as the selected toolchain permits. Do not introduce or permit any deviation, mixed Swift modes, warning suppression, or unexplained concurrency escape hatch. A commit runs `swift test` only; release verification includes the simulator smoke suite and CI checks.
 
-Read [`docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md`](docs/iphone-watch-only-revised-mvp/AGENT_BRIEF.md) for the full operating brief.
+## Repository conventions
+
+- **XcodeGen** from `project.yml`: never hand-edit `Voxglass.xcodeproj`; run `xcodegen generate` after changing `project.yml`.
+- **No GRDB.** Persistence is a hand-rolled `actor` over SQLite3 (`AppDatabase` style) with integer-numbered append-only migrations.
+- **`@Observable` only**; `ObservableObject` is banned in new code and fails a CI gate.
+- **`Date()` / `UUID()` only through the `Clock` / `IDGenerator` seams** in `Voxglass/Core/Production/Domain/`.
+- Core code lives in `Voxglass/Core/Production/<Area>/`, iPhone UI in `Voxglass/Features/Production/`, watch in `VoxglassWatch/Production/`. Core stays free of CloudKit and StoreKit; the watch never links CloudKit.
+- Never lose a take (bytes durable before metadata mutation); never evict a recording before its iCloud copy is SHA-256-verified (use `ProductionAssetRecord.isEvictable`); `LicenseGate` appears only in the export destination picker, export runner, and Settings; validation is never gated; do not regress the consumer player, downloads, CarPlay, or position sync.
+- Verification: `swift test` (what CI runs), `scripts/test_logic.sh`, `scripts/guard_production.sh`, `scripts/test_guards.sh` (every new gate needs an entry), `scripts/test.sh --all` (local UI smoke only; CI runs no simulator).
 
 ## Physical iPhone first
 

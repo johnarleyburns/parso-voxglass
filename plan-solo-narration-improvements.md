@@ -1,7 +1,5 @@
 # Per-Chapter Narrator & Solo Narration UX Improvements
 
-> HTML mockup: `docs/mockups/solo-narration-per-chapter.html`
-
 ## Summary
 
 Four changes that make per-chapter narration visible and the Solo Narration preference sticky.

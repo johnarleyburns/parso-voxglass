@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Watch redesign §3 (`docs/plans/watch-redesign/DESIGN.md`) — the Watch Listening Kit tokens,
+/// Watch redesign — the Watch Listening Kit tokens,
 /// shared in shape with Platterhead's watch app; Voxglass uses its gold accent. Text uses semantic
 /// styles only; the fixed numbers are minimum hit targets.
 enum WatchPalette {
-    /// Voxglass gold (`#D8AD67`, `--gold` in `docs/mockups/_shared.css`).
+    /// Voxglass gold (`#D8AD67`).
     static let accent = Color(red: 0xD8 / 255, green: 0xAD / 255, blue: 0x67 / 255)
     static let accentInk = Color(red: 0x1A / 255, green: 0x11 / 255, blue: 0x08 / 255)
     static let accentSoft = Color(red: 0x35 / 255, green: 0x2A / 255, blue: 0x19 / 255)

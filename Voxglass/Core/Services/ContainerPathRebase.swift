@@ -1,7 +1,7 @@
 import Foundation
 
 /// Rebases stale absolute `file://` URLs onto the current sandbox container
-/// (Phase D of docs/MINIPLAYER_RESTORE_PLAN.md). iOS moves the app's data
+/// (Phase D of the miniplayer restore work). iOS moves the app's data
 /// container on every app update, so any absolute path persisted before the
 /// update goes stale. For a file URL whose file no longer exists, the path is
 /// split on the *last* well-known sandbox root component and the suffix is

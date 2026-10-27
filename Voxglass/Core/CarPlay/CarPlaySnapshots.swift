@@ -214,7 +214,7 @@ public struct CarPlayState: Equatable, Sendable {
     }
 
     /// A representative fixture: one in-progress book, mid-chapter. Used by the
-    /// single renderer smoke test (docs/CARPLAY_DESIGN.md §8).
+    /// single renderer smoke test.
     public static func fixtureWithOneInProgressBook() -> CarPlayState {
         let bookID = UUID()
         let book = CarPlayBookSnapshot(

@@ -13,7 +13,7 @@ Reference values come from the independent RG 1.0 transcription below
 percentile, gain = -25.4885 - L95), NOT from metaflac: modern metaflac/flac
 (>= 1.4) compute RG 2.0 against a -18 LUFS reference, which differs from RG 1.0
 by ~2-3 dB on these signals. The transcription was validated against the
-metaflac-measured anchors in docs/voxglass-mvp/S5-REMEDIATION-PLAN.md
+metaflac-measured anchors
 (1 kHz -20 dBFS -> +2.83 dB, 100 Hz -20 dBFS -> +9.88 dB).
 
 All signals are deterministic (fixed-seed LCG), so the fixtures are reproducible.

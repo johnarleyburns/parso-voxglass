@@ -1,7 +1,7 @@
 import Foundation
 import VoxglassWatchProtocol
 
-// Watch redesign (docs/plans/watch-redesign/DESIGN.md §5–§6): the spoken-audio rules the player
+// Watch redesign: the spoken-audio rules the player
 // face is built on — skip intervals, playback speed, the sleep timer, resume rewind, time left at
 // the current speed, and the failure kinds the Problem Cards present. Pure and host-tested.
 
