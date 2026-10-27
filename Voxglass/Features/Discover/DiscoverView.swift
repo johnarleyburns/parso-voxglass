@@ -22,8 +22,7 @@ struct BrowseView: View {
     @State private var preflightTask: Task<Void, Never>?
     @State private var selectedCatalogResult: CatalogResultRoute?
     @State private var showingHistory = false
-    @State private var showSearch = false
-    @State private var discoverScope: DiscoverBrowseScope = .collection
+    @State private var discoverScope: DiscoverBrowseScope = .all
     @State private var showingCollectionInfo: IACollection?
     @State private var loadingCollectionID: String?
     @State private var lastCollectionLoadKey: String?
@@ -91,12 +90,10 @@ struct BrowseView: View {
 
     private var discoverContent: some View {
             VStack(alignment: .leading, spacing: 18) {
+                searchPanel
                 scopeBar
                 if let selectedCollection {
                     selectedCollectionPill(selectedCollection)
-                }
-                if showSearch {
-                    searchPanel
                 }
                 if shouldShowFeaturedCollections {
                     collectionShelves
@@ -165,36 +162,7 @@ struct BrowseView: View {
 
     private var discoverHeaderActions: some View {
         HStack(spacing: 2) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showSearch.toggle()
-                    if showSearch {
-                        if selectedCollection == nil {
-                            discoverScope = .all
-                            catalogStore.resetResultsForNavigation()
-                        }
-                        searchFocused = true
-                    } else {
-                        searchFocused = false
-                        clearSearchAndRestoreBrowseState()
-                    }
-                }
-            } label: {
-                Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                    .voxFont(.body, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-                    .frame(width: 36, height: 36)
-            }
-            .accessibilityLabel(showSearch ? "Close search" : "Search Find") // l10n-exempt: state-dependent accessibility or status copy
-            .accessibilityIdentifier("discover.searchButton")
-
             Menu {
-                Picker("Search in", selection: $searchScope) {
-                    ForEach(DiscoverSearchScope.allCases) { scope in
-                        Text(scope.title).tag(scope)
-                    }
-                }
-                Divider()
                 Toggle("Single narrator", isOn: $soloOnly)
                 if selectedCollection != nil {
                     Picker("Sort", selection: $collectionSort) {
@@ -255,11 +223,8 @@ struct BrowseView: View {
 
                 if !catalogStore.query.isEmpty {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showSearch = false
-                            searchFocused = false
-                            clearSearchAndRestoreBrowseState()
-                        }
+                        searchFocused = false
+                        clearSearchAndRestoreBrowseState()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(Palette.ink3)
@@ -277,13 +242,9 @@ struct BrowseView: View {
             .frame(height: 46)
             .raisedSurface()
 
-            Picker("Search in", selection: $searchScope) {
-                ForEach(DiscoverSearchScope.allCases) { scope in
-                    Text(scope.title).tag(scope)
-                }
-            }
-            .pickerStyle(.segmented)
-            .tint(Palette.brass)
+            BookScopeBar(title: "Search in", selection: $searchScope, options: [
+                (.all, "All"), (.title, "Title"), (.author, "Author"), (.narrator, "Narrator")
+            ])
             .accessibilityIdentifier("discover.searchScope")
         }
     }
@@ -612,7 +573,6 @@ struct BrowseView: View {
         withAnimation(.easeInOut(duration: 0.25)) {
             selectedCollection = collection
             rememberedCollection = collection
-            showSearch = false
             searchFocused = false
             catalogStore.query = ""
             collectionSort = defaultSort
@@ -711,7 +671,7 @@ struct BrowseView: View {
         catalogStore.query = ""
         searchScope = .all
         if selectedCollection == nil {
-            discoverScope = .collection
+            discoverScope = .all
             catalogStore.resetResultsForNavigation()
         } else {
             discoverScope = .collection
@@ -751,22 +711,11 @@ struct BrowseView: View {
     }
 }
 
-private enum DiscoverSearchScope: CaseIterable, Identifiable, Hashable {
+private enum DiscoverSearchScope: Hashable {
     case all
     case title
     case author
     case narrator
-
-    var id: Self { self }
-
-    var title: String {
-        switch self {
-        case .all: return String(localized: "All")
-        case .title: return String(localized: "Title")
-        case .author: return String(localized: "Author")
-        case .narrator: return String(localized: "Narrator")
-        }
-    }
 }
 
 private enum DiscoverBrowseScope: String, CaseIterable, Identifiable {
