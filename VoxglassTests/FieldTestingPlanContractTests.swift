@@ -185,14 +185,6 @@ import Testing
         #expect(discovery.contains("needs.filter { $0.isOpenLibriVoxReaderRequest(at: clock.now) }"))
     }
 
-    @Test func planDocumentsTheFieldTestingRequirements() throws {
-        let plan = try source("docs/plans/navigation-redesign/FIELD_TEST_FIX_PLAN.md")
-        #expect(plan.contains("recordedCount > 0"))
-        #expect(plan.contains("Good listening"))
-        #expect(plan.contains("Browse narration needs"))
-        #expect(plan.contains("Project Gutenberg"))
-    }
-
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

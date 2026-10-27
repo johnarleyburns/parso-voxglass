@@ -3,7 +3,7 @@ import Foundation
 /// Pure value for the four custom CarPlay Now Playing buttons: their visiblity,
 /// label, and active state. Built by `CarPlayNowPlayingModel.config(...)` from
 /// coordinator state so the configurator can re-apply buttons on every
-/// `objectWillChange` with zero logic (docs/CARPLAY_DESIGN.md §5).
+/// `objectWillChange` with zero logic.
 public struct CarPlayNowPlayingConfig: Equatable, Sendable {
     public var showsRateButton: Bool
     public var rateTitle: String
@@ -35,7 +35,7 @@ public struct CarPlayNowPlayingConfig: Equatable, Sendable {
 public enum CarPlayNowPlayingModel {
     /// The sleep-timer options presented in the CarPlay action sheet, in
     /// canonical order: end-of-chapter leads, followed by the two durations
-    /// that survive a driving context, then "Off" (docs/CARPLAY_DESIGN.md §5.2).
+    /// that survive a driving context, then "Off".
     public static let sleepOptions: [SleepTimer.Mode] = [
         .endOfChapter,
         .duration(1800),

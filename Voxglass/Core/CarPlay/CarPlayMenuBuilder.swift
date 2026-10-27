@@ -3,7 +3,7 @@ import Foundation
 /// Pure static builders: injected `CarPlayState` snapshots in, a value-typed
 /// `CarPlayInterface` out. No I/O, no store references — every browse decision
 /// (tab order, Continue-first, caps, empty states, dedup, the download gate)
-/// is asserted host-side (docs/CARPLAY_DESIGN.md §4).
+/// is asserted host-side.
 public enum CarPlayMenuBuilder {
     /// CarPlay truncates long lists while the car is moving. We cap ourselves so
     /// the tail is never silently dropped by the system mid-book.

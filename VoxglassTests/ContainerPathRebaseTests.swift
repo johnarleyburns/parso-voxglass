@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
-/// Phase D of docs/MINIPLAYER_RESTORE_PLAN.md — upgrade-proof local file URLs.
+/// Phase D of the miniplayer restore work — upgrade-proof local file URLs.
 /// iOS moves the app data container on update, so absolute `file://` paths
 /// persisted before the update go stale. The pure rebase helper re-anchors the
 /// suffix after the last well-known sandbox root onto the current container;

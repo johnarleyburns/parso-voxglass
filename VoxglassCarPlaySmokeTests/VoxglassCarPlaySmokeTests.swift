@@ -4,8 +4,7 @@ import XCTest
 @testable import Voxglass
 @testable import VoxglassCore
 
-/// Part of the iPhone smoke test (docs/voxglass-mvp/VOXGLASS_STUDIO_SPEC.md
-/// §19.5). CarPlay cannot be driven by XCUITest, so these hosted scene tests run
+/// Part of the iPhone smoke test. CarPlay cannot be driven by XCUITest, so these hosted scene tests run
 /// in the same iOS-simulator test action as `VoxglassUITests`
 /// (`xcodebuild test -scheme Voxglass`). They never run on GitHub Actions.
 final class VoxglassCarPlaySmokeTests: XCTestCase {

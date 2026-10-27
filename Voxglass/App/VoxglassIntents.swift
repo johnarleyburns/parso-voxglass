@@ -3,8 +3,7 @@ import Combine
 import Foundation
 import VoxglassCore
 
-// Siri / Shortcuts / CarPlay voice for Voxglass — the P0 slice of
-// docs/INTENTS_LIVE_ACTIVITY_SIRI_PLAN.md that matters in the car:
+// Siri / Shortcuts / CarPlay voice for Voxglass — the P0 slice that matters in the car:
 //
 //   "Hey Siri, resume Voxglass"
 //   "Hey Siri, play The Odyssey in Voxglass"

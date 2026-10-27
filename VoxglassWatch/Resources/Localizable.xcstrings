@@ -6,7 +6,7 @@
       "shouldTranslate" : false
     },
     "%@ left" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -101,7 +101,7 @@
       }
     },
     "%@ left in chapter" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -196,7 +196,7 @@
       }
     },
     "%@ · streaming" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -291,7 +291,7 @@
       }
     },
     "%lld minutes" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -386,7 +386,7 @@
       }
     },
     "%lld of %lld chapters" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -582,7 +582,7 @@
       }
     },
     "%lld%% · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -683,7 +683,7 @@
       }
     },
     "%lldh %lldm" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -784,7 +784,7 @@
       }
     },
     "%lldm" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -879,7 +879,7 @@
       }
     },
     "%llds" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1069,7 +1069,7 @@
       }
     },
     "Audio Didn't Start" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1164,7 +1164,7 @@
       }
     },
     "Back 15 seconds" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1259,7 +1259,7 @@
       }
     },
     "Back to Chapter %lld" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1354,7 +1354,7 @@
       }
     },
     "Books on watch: %lld · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1449,7 +1449,7 @@
       }
     },
     "Books play through Bluetooth headphones or speakers connected to this watch." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1544,7 +1544,7 @@
       }
     },
     "Buffering…" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1639,7 +1639,7 @@
       }
     },
     "Cancel" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1734,7 +1734,7 @@
       }
     },
     "Ch %lld · %@ left" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1930,7 +1930,7 @@
       }
     },
     "Chapter %lld isn't on this watch, and your iPhone isn't nearby to stream it." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2126,7 +2126,7 @@
       }
     },
     "Chapter Not on This Watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2316,7 +2316,7 @@
       }
     },
     "Choose Output" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2506,7 +2506,7 @@
       }
     },
     "Connect Headphones" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2601,7 +2601,7 @@
       }
     },
     "Connecting to headphones…" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2696,7 +2696,7 @@
       }
     },
     "Continue %@, chapter %lld" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2892,7 +2892,7 @@
       }
     },
     "Cover" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2987,7 +2987,7 @@
       }
     },
     "Current chapter" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3082,7 +3082,7 @@
       }
     },
     "Diagnostic code %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3272,7 +3272,7 @@
       }
     },
     "Download" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3557,7 +3557,7 @@
       }
     },
     "Download · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3842,7 +3842,7 @@
       }
     },
     "Downloading %lld of %lld" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3943,7 +3943,7 @@
       }
     },
     "Downloading %lld%%" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4038,7 +4038,7 @@
       }
     },
     "Downloading · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4133,7 +4133,7 @@
       }
     },
     "Downloads" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4228,7 +4228,7 @@
       }
     },
     "End of Chapter" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4323,7 +4323,7 @@
       }
     },
     "Finished" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4418,7 +4418,7 @@
       }
     },
     "Forward 30 seconds" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4608,7 +4608,7 @@
       }
     },
     "Library" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4893,7 +4893,7 @@
       }
     },
     "Next" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5178,7 +5178,7 @@
       }
     },
     "No books on this watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5273,7 +5273,7 @@
       }
     },
     "No output" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5558,7 +5558,7 @@
       }
     },
     "Not on This Watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5653,7 +5653,7 @@
       }
     },
     "Not on this watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5748,7 +5748,7 @@
       }
     },
     "Not on this watch. Bring your iPhone nearby to stream or download it." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5843,7 +5843,7 @@
       }
     },
     "Not started · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5938,7 +5938,7 @@
       }
     },
     "Nothing playing" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6033,7 +6033,7 @@
       }
     },
     "Now: %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6128,7 +6128,7 @@
       }
     },
     "Off" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6318,7 +6318,7 @@
       }
     },
     "On Watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6413,7 +6413,7 @@
       }
     },
     "On iPhone, open a book and tap Download to Apple Watch. It keeps your place." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6508,7 +6508,7 @@
       }
     },
     "On this watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6603,7 +6603,7 @@
       }
     },
     "Output" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6793,7 +6793,7 @@
       }
     },
     "Pause this from Voxglass on your iPhone." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6888,7 +6888,7 @@
       }
     },
     "Paused · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7173,7 +7173,7 @@
       }
     },
     "Playing · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7268,7 +7268,7 @@
       }
     },
     "Preparing…" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7363,7 +7363,7 @@
       }
     },
     "Previous" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7553,7 +7553,7 @@
       }
     },
     "Progress" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7743,7 +7743,7 @@
       }
     },
     "Ready" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7838,7 +7838,7 @@
       }
     },
     "Ready on your iPhone — open the App Switcher and tap Voxglass." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7933,7 +7933,7 @@
       }
     },
     "Remove" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8028,7 +8028,7 @@
       }
     },
     "Remove from Apple Watch?" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8123,7 +8123,7 @@
       }
     },
     "Resume" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8313,7 +8313,7 @@
       }
     },
     "Resume · Ch %lld · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8509,7 +8509,7 @@
       }
     },
     "Sending from iPhone · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8604,7 +8604,7 @@
       }
     },
     "Show Me on iPhone" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8699,7 +8699,7 @@
       }
     },
     "Sleep Timer" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8794,7 +8794,7 @@
       }
     },
     "Sleep timer, %@ left" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8889,7 +8889,7 @@
       }
     },
     "Speed" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8984,7 +8984,7 @@
       }
     },
     "Speed %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9079,7 +9079,7 @@
       }
     },
     "Start" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9174,7 +9174,7 @@
       }
     },
     "Starting" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9269,7 +9269,7 @@
       }
     },
     "Stop" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9364,7 +9364,7 @@
       }
     },
     "Stop and Remove" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9459,7 +9459,7 @@
       }
     },
     "Stop “%@”?" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9554,7 +9554,7 @@
       }
     },
     "Storage" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9649,7 +9649,7 @@
       }
     },
     "Stream Chapter 1" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9744,7 +9744,7 @@
       }
     },
     "Stream · %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9934,7 +9934,7 @@
       }
     },
     "The audio loaded but never started playing." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10124,7 +10124,7 @@
       }
     },
     "This book's audio is removed from the watch. Your place is kept." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10599,7 +10599,7 @@
       }
     },
     "Try Again" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10694,7 +10694,7 @@
       }
     },
     "Turn the Crown · 0.5× – 3×" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10983,7 +10983,7 @@
       }
     },
     "Waiting for your iPhone to send it" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11078,7 +11078,7 @@
       }
     },
     "Your place is kept. You can download it again from your iPhone." : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11173,7 +11173,7 @@
       }
     },
     "by %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11268,7 +11268,7 @@
       }
     },
     "downloaded" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11363,7 +11363,7 @@
       }
     },
     "iPhone" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11553,7 +11553,7 @@
       }
     },
     "in %@" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11648,7 +11648,7 @@
       }
     },
     "on iPhone" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11743,7 +11743,7 @@
       }
     },
     "on watch" : {
-      "comment" : "UI text shown in the Voxglass watch redesign (docs/plans/watch-redesign/DESIGN.md).",
+      "comment" : "UI text shown in the Voxglass watch redesign.",
       "localizations" : {
         "de" : {
           "stringUnit" : {

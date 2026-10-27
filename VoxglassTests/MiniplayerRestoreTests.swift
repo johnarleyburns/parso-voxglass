@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import VoxglassCore
 
-/// Miniplayer launch-restore (docs/MINIPLAYER_RESTORE_PLAN.md). Restore is a
+/// Miniplayer launch-restore. Restore is a
 /// presentation concern: `restorePresentedSession` rebuilds the paused session
 /// from persisted metadata without touching the engine; the engine loads lazily
 /// on the first play press. Asserted against the `FakeAudioEngine` call log +

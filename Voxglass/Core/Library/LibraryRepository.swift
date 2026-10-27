@@ -804,7 +804,7 @@ public final class LibraryRepository: @unchecked Sendable {
     /// Rewrites stale absolute `file://` local URLs (chapters and download
     /// records) whose file is missing but rebases onto the current sandbox
     /// container — iOS moves the app data container on every update, which
-    /// breaks stored absolute paths (docs/MINIPLAYER_RESTORE_PLAN.md, Phase D).
+    /// breaks stored absolute paths.
     /// Idempotent, and runs once per container move: the marker records the
     /// container identity the last pass ran against. `roots` and the marker
     /// are injectable for tests.

@@ -5,7 +5,7 @@ import VoxglassCore
 
 /// The thin glue between `CarPlayAction` values and the real services. Every
 /// case is a 1–3 line call into the existing coordinator/stores — CarPlay adds
-/// zero new playback paths (docs/CARPLAY_DESIGN.md §6.4).
+/// zero new playback paths.
 @MainActor
 final class CarPlayActionDispatcher {
     private static let logger = Logger(subsystem: "guru.parso.voxglass", category: "CarPlay")
@@ -110,8 +110,7 @@ final class CarPlayActionDispatcher {
         coordinator.setPlaybackRate(next)
     }
 
-    /// The "stop at a clean break" sheet: End of chapter · 30 min · 60 min · Off
-    /// (docs/CARPLAY_DESIGN.md §5.2).
+    /// The "stop at a clean break" sheet: End of chapter · 30 min · 60 min · Off.
     func presentSleepSheet() {
         let actions = CarPlayNowPlayingModel.sleepOptions.map { mode in
             CPAlertAction(title: Self.sleepOptionTitle(mode), style: .default) { [weak self] _ in

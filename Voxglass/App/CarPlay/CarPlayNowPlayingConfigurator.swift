@@ -4,8 +4,7 @@ import UIKit
 import VoxglassCore
 
 /// Keeps `CPNowPlayingTemplate.shared` current: rate / sleep / bookmark custom
-/// buttons plus the built-in Up Next button wired to "Chapters"
-/// (docs/CARPLAY_DESIGN.md §5.2). Re-reads the pure
+/// buttons plus the built-in Up Next button wired to "Chapters". Re-reads the pure
 /// `CarPlayNowPlayingModel.config(...)` on every tracked coordinator change and
 /// re-applies the buttons. Uses Observation instead of Combine to avoid
 /// object-wide invalidation.

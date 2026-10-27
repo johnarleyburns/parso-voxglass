@@ -3,7 +3,7 @@ import UIKit
 import VoxglassCore
 
 /// Mechanical `CarPlay*` value node → real `CP*` template translation with no
-/// decisions (docs/CARPLAY_DESIGN.md §6.5). Every interesting choice was
+/// decisions. Every interesting choice was
 /// already made by `CarPlayMenuBuilder`; this maps fields one-to-one. The one
 /// smoke test (§8) instantiates real `CP*` objects through this renderer.
 @MainActor

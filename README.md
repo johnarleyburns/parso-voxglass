@@ -96,8 +96,7 @@ LLC, 4.8★ / 32K ratings), free with ads or a **subscription** — $1.99/mo, $9
 that buys ad removal only. Recent reviews are dominated by complaints about an unnavigable redesign,
 broken speed control, missing narrator names, and ads with volume spikes. A newer entrant, **Lex Reader**
 (MWM, $9.99/mo premium), offers free synchronized text+audio over LibriVox but lacks CarPlay and player
-depth — synchronized read-along is Voxglass's named v1.1 differentiator
-(see `docs/RELEASE_READINESS.md`).
+depth — synchronized read-along is Voxglass's named v1.1 differentiator.
 
 **Voxglass already beats BookDesign's paid tier** — speed, sleep timer, bookmarks,
 lock-screen artwork, per-chapter narrators, volume normalization, skip silence, playlists, favorites,
@@ -115,11 +114,11 @@ The opening is: *the same catalog in a player that respects you*.
 - [x] Volume normalization, Dynamic Type support (P2 differentiation).
 - [x] Offline downloads, 10-band EQ, Folder Watch, listening stats, library backup & restore,
       bookmarks & favorites sync.
-- [x] **Resume reliability** (`docs/RELEASE_PLAN.md`): resume at the right chapter and offset from every
+- [x] **Resume reliability**: resume at the right chapter and offset from every
       entry point, crash/force-quit durability, content-keyed identity, free position sync — the app
       never loses your place.
 - [x] **CarPlay** — free and standalone: search, browse, resume, and play entirely from the car, no
-      phone needed. Design in [`docs/CARPLAY_DESIGN.md`](docs/CARPLAY_DESIGN.md).
+      phone needed.
 
 ### Future (not yet planned)
 
@@ -132,10 +131,8 @@ The opening is: *the same catalog in a player that respects you*.
 
 ## Current focus
 
-The pre-release plan is tracked in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md). The competitive gap
-plan in [`docs/COMPETITIVE_GAP_PLAN.md`](docs/COMPETITIVE_GAP_PLAN.md) is substantially complete. The
-current App Store Connect copy and submission checklist are in
-[`docs/native-mac/APP_STORE_METADATA.md`](docs/native-mac/APP_STORE_METADATA.md).
+Release and QA expectations are defined by the CI workflows and the TestFlight label contract in
+`CLAUDE.md`.
 
 ## Build and verification
 
@@ -281,8 +278,6 @@ coverage, not part of every commit.
 
 ## Manual regression testing before release
 
-The navigation simplification research and implementation plan is documented in [`docs/plans/navigation-redesign/SIMPLIFICATION_PLAN.md`](docs/plans/navigation-redesign/SIMPLIFICATION_PLAN.md).
-
 Most logic is covered headlessly by `swift test`. The commit hook runs `swift test` only; it does
 not boot simulators. Before every release, run `scripts/test.sh --all` to execute the local iPhone
 and Apple Watch simulator smoke suite, then perform the physical-device checks below. A single
@@ -338,7 +333,7 @@ MP3 export (`VoxTranscoder`, `Voxglass/Core/Encoders/LAMEEncoder.swift`) uses
 LAME 3.100 (`libmp3lame`, LGPL-2.1-or-later), vendored as real source in this
 app's own package (`Sources/CLAMEBridge`) — `parso-audio-engine` (PAE, MIT,
 shared with other apps) never links or depends on LAME itself. Voxglass
-implements PAE's own `MP3Encoding` protocol (PAE's `docs/BYO-CODEC.md`) with
+implements PAE's own `MP3Encoding` protocol (PAE's BYO-CODEC seam) with
 `LAMEEncoder`, and PAE's `AudioFileWriter` is told to use it rather than
 having its audio handling overridden.
 
