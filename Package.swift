@@ -4,7 +4,9 @@ import PackageDescription
 let package = Package(
     name: "VoxglassCore",
     defaultLocalization: "en",
-    platforms: [.iOS("27.0"), .watchOS(.v10)],
+    // SwiftPM tests execute on the macOS CI host. This does not ship or build
+    // a native macOS Voxglass application; that target has been removed.
+    platforms: [.iOS("27.0"), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
         .library(name: "VoxglassWatchProtocol", targets: ["VoxglassWatchProtocol"]),
