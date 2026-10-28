@@ -20,17 +20,17 @@ permissions:
 jobs:
   compile:
     name: Compile (iOS)
-    runs-on: macos-26
+    # macOS 15 supplies the iOS 26 SDK without the macOS 26/Xcode 26.6 host-SDK mismatch.
+    runs-on: macos-15
     timeout-minutes: 20
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Select latest Xcode
+      - name: Select Xcode 26.3 (iOS 26 SDK)
         run: |
-          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
-          sudo xcode-select -s /Applications/$XCODE
+          sudo xcode-select -s /Applications/Xcode_26.3.app
           xcodebuild -version
 
       - name: Enforce Swift 6 contract
@@ -59,7 +59,7 @@ jobs:
 
   logic-tests:
     name: Logic Tests (swift test)
-    runs-on: macos-26
+    runs-on: macos-15
     # Hosted macOS runners occasionally spend several minutes compiling the
     # package before the serial suites begin; keep the test budget above that
     # runner variance while retaining a finite hang guard.
@@ -72,10 +72,9 @@ jobs:
       - name: Enforce Swift 6 contract
         run: bash scripts/check-swift6.sh
 
-      - name: Select latest Xcode
+      - name: Select Xcode 26.3 (iOS 26 SDK)
         run: |
-          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
-          sudo xcode-select -s /Applications/$XCODE
+          sudo xcode-select -s /Applications/Xcode_26.3.app
           xcodebuild -version
 
       # The driver streams swift-testing output through a pty (it otherwise
@@ -131,7 +130,7 @@ jobs:
       issues: write
       pull-requests: read
       actions: read
-    runs-on: macos-26
+    runs-on: macos-15
     needs: [compile, logic-tests, guarded-tests]
     timeout-minutes: 45
     # Manual builds may be sent to TestFlight when only the broad logic-test
@@ -208,10 +207,9 @@ jobs:
           echo "version=1.1.$build_number" >> "$GITHUB_OUTPUT"
           echo "Using build number $build_number (marketing version 1.1.$build_number)"
 
-      - name: Select latest Xcode
+      - name: Select Xcode 26.3 (iOS 26 SDK)
         run: |
-          XCODE=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
-          sudo xcode-select -s /Applications/$XCODE
+          sudo xcode-select -s /Applications/Xcode_26.3.app
           xcodebuild -version
 
       - name: Write App Store Connect API key

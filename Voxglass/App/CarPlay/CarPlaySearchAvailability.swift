@@ -10,9 +10,11 @@ import CarPlay
 /// exception is `CPAssertAllowedClasses` inside `pushTemplate` — an
 /// Objective-C exception Swift cannot catch, which is the in-car crash this
 /// type exists to prevent. Every search entry point must pass through here;
-/// `CarPlaySearchGateContractTests` pins that. The app now has an iOS 27
-/// deployment floor, so this remains a named policy seam without a dead
-/// runtime availability branch.
+/// `CarPlaySearchGateContractTests` pins that. The iOS 26 deployment floor
+/// still requires a runtime availability gate for this iOS 27 API.
 enum CarPlaySearchAvailability {
-    static let templateSupported = true
+    static var templateSupported: Bool {
+        if #available(iOS 27.0, *) { return true }
+        return false
+    }
 }
