@@ -28,9 +28,10 @@ import Testing
         #expect(gate.lowerBound < construction.lowerBound)
     }
 
-    @Test func availabilityPolicyGuardsIOS27CarPlaySearch() throws {
+    @Test func availabilityPolicyIsIOS27Floor() throws {
         let availability = try source(Self.availabilityPath)
-        #expect(availability.contains("#available(iOS 27.0, *)"))
+        #expect(availability.contains("static let templateSupported = true"))
+        #expect(!availability.contains("#available(iOS 27.0, *)"))
     }
 
     /// `CPAssistantCellConfiguration(.playMedia)` is only valid for an app with a legacy SiriKit
