@@ -65,13 +65,6 @@ manifest_specs = {
             "NSPrivacyAccessedAPICategoryFileTimestamp": {"C617.1"},
         },
     ),
-    "macOS": (
-        root / "VoxglassMac/Resources/PrivacyInfo.xcprivacy",
-        {
-            "NSPrivacyAccessedAPICategoryUserDefaults": {"CA92.1"},
-            "NSPrivacyAccessedAPICategoryFileTimestamp": {"C617.1", "3B52.1"},
-        },
-    ),
 }
 
 for platform, (path, expected) in manifest_specs.items():
@@ -90,7 +83,6 @@ project = (root / "project.yml").read_text()
 for path in (
     "Voxglass/Resources/PrivacyInfo.xcprivacy",
     "VoxglassWatch/Resources/PrivacyInfo.xcprivacy",
-    "VoxglassMac/Resources/PrivacyInfo.xcprivacy",
     "Voxglass/Resources/Assets.xcassets",
 ):
     require(path in project, f"project.yml: missing target resource wiring for {path}")
@@ -100,13 +92,12 @@ require("exactVersion: 1.2.2" in project, "project.yml: PAE must remain pinned t
 
 for info_path, required_keys in (
     (root / "Voxglass/Resources/Info.plist", {"CFBundleIconName", "NSMicrophoneUsageDescription", "ITSAppUsesNonExemptEncryption"}),
-    (root / "VoxglassMac/Resources/Info.plist", {"CFBundleIconName", "NSMicrophoneUsageDescription", "ITSAppUsesNonExemptEncryption", "LSApplicationCategoryType"}),
 ):
     info = read_plist(info_path)
     for key in required_keys:
         require(key in info and info[key] not in (None, ""), f"{info_path}: missing {key}")
 
-for info_path in (root / "Voxglass/Resources/Info.plist", root / "VoxglassWatch/Resources/Info.plist", root / "VoxglassMac/Resources/Info.plist"):
+for info_path in (root / "Voxglass/Resources/Info.plist", root / "VoxglassWatch/Resources/Info.plist"):
     info = read_plist(info_path)
     version = str(info.get("CFBundleShortVersionString", ""))
     build = str(info.get("CFBundleVersion", ""))
@@ -116,13 +107,11 @@ for info_path in (root / "Voxglass/Resources/Info.plist", root / "VoxglassWatch/
 for entitlements in (
     root / "Voxglass/Resources/Voxglass-release.entitlements",
     root / "VoxglassWatch/Resources/VoxglassWatch-release.entitlements",
-    root / "VoxglassMac/Resources/VoxglassMac-release.entitlements",
 ):
     require(entitlements.is_file(), f"missing release entitlements: {entitlements}")
 
-require((root / "Voxglass/Resources/AppIcon.icon/icon.json").is_file(), "iOS/macOS app icon (.icon) is missing")
+require((root / "Voxglass/Resources/AppIcon.icon/icon.json").is_file(), "iOS app icon (.icon) is missing")
 require(not (root / "VoxglassWatch/Resources/Assets.xcassets/AppIcon.appiconset").exists(), "watchOS icon must come from AppIcon.icon, not a Watch appiconset")
-require("guru.parso.voxglass.studio" not in project, "retired native Mac bundle identifier must not return")
 
 # Machine-drafted translations carry state `needs_review` until a native speaker
 # flips them to `translated` in Xcode's catalog editor. They must be able to

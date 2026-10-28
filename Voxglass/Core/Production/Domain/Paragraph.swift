@@ -92,7 +92,7 @@ public enum DeviceKind: String, Codable, Sendable {
     case carPlay
 
     /// The `mac` value was already present in older local stores and sync
-    /// records. Keep it as a first-class value now that the native Mac target
+    /// records. Keep it as a first-class value as narration support evolves.
     /// is active, while continuing to decode all existing device values.
     public init?(rawValue: String) {
         switch rawValue {

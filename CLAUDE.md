@@ -34,22 +34,6 @@ Voxglass is fully on Swift 6 language mode with complete strict-concurrency chec
 - **TestFlight labels are a state machine, not human QA:** `testflight-uploaded` means Apple accepted the binary; `testflight-processing` means Apple has not finished; `ready-for-qa` means App Store Connect reports the exact build `VALID`; `testflight-distribution-confirmed` is extra group evidence; and `testflight-access-unverified` means only that the group lookup was unavailable or empty. Never add `ready-for-qa` merely because an upload command succeeded.
 - **Human QA belongs on the issue:** after installing the exact version/build, record device, OS, issue-specific scenario, and pass/fail in the issue checklist. A failure starts a repair cycle and must not be hidden by TestFlight labels.
 
-## Mac signing and UI-test verification
-
-- Do not infer signing capability from a single Xcode error. Verify the local
-  certificate identities, Xcode account state, bundle identifier, entitlements,
-  and installed provisioning profiles separately before reporting a signing
-  limitation.
-- A macOS Debug/UI-test build that uses App Sandbox and CloudKit requires a
-  Mac development signing identity and a matching Mac App Development profile
-  for the app's bundle identifier and iCloud container. A Mac App Store profile
-  is for release distribution and is not a substitute for the development
-  profile.
-- `CODE_SIGNING_ALLOWED=NO` is appropriate for compile-only Mac checks, but it
-  produces an ad-hoc host and is not valid verification of CloudKit, sandbox,
-  or other entitlement-backed behavior. Prefer signed Mac UI tests whenever
-  the matching development assets are available.
-
 ## Fast codebase search (`rg`)
 
 - Use `rg` (ripgrep) instead of `grep` for codebase search and exploration for higher speed.

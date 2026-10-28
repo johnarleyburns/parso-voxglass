@@ -16,7 +16,7 @@ import Testing
     private static let availabilityPath = "Voxglass/App/CarPlay/CarPlaySearchAvailability.swift"
 
     @Test func searchTemplateIsConstructedInExactlyOneFile() throws {
-        let offenders = try swiftFiles(under: ["Voxglass", "VoxglassMac"])
+        let offenders = try swiftFiles(under: ["Voxglass"])
             .filter { try source($0).contains("CPSearchTemplate(") }
         #expect(offenders == [Self.dispatcherPath])
     }
@@ -40,7 +40,7 @@ import Testing
     /// on connect — the app aborted at launch in the car (build 406). The same mistake broke
     /// Platterhead's CarPlay (tonearm 3e34979). In-car search stays on `CPSearchTemplate`.
     @Test func assistantCellOnlyWithAPlayMediaIntentsExtension() throws {
-        let cellFiles = try swiftFiles(under: ["Voxglass", "VoxglassMac", "VoxglassShared"])
+        let cellFiles = try swiftFiles(under: ["Voxglass", "VoxglassShared"])
             .filter { try source($0).contains("CPAssistantCellConfiguration(") }
         guard !cellFiles.isEmpty else { return }
         let topLevel = try FileManager.default.contentsOfDirectory(atPath: repoRoot.path)

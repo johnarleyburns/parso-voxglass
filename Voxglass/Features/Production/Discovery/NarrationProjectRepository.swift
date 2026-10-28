@@ -112,7 +112,7 @@ public final class NarrationProjectRepository {
         try? FileManager.default.removeItem(at: layout(for: id).root)
     }
 
-    /// Imports an existing `.voxproject` directory selected by the native Mac
+    /// Imports an existing `.voxproject` directory selected by the user.
     /// file panel. The package remains opaque: it is copied into the same
     /// Application Support package root used by projects created on this Mac,
     /// so subsequent edits and sync use the normal repository path.
