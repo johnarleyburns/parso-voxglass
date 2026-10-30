@@ -15,17 +15,8 @@ final class LiveActivityController {
     private var generation: UInt64 = 0
     #endif
 
-    /// True while a Voxglass Live Activity owns the lock screen, so the system
-    /// Now Playing card would only duplicate it.
-    var isShowingActivity: Bool {
-        #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
-        return activity != nil
-        #else
-        return false
-        #endif
-    }
-
-    func update(_ content: LiveActivityContent?) {
+    @discardableResult
+    func update(_ content: LiveActivityContent?) -> LiveActivityReconciliation {
         #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
         // Every call supersedes delayed work from earlier calls.
         generation &+= 1
@@ -45,12 +36,15 @@ final class LiveActivityController {
             pausedEndTask?.cancel()
             pausedEndTask = nil
             activity = nil
-            return
+            return .inactive
+        }
+        if let current = activity, current.activityState == .ended || current.activityState == .dismissed {
+            activity = nil
         }
         if activity == nil && !plan.create {
             pausedEndTask?.cancel()
             pausedEndTask = nil
-            return
+            return .inactive
         }
         if !plan.end.isEmpty || plan.create {
             pausedEndTask?.cancel()
@@ -91,13 +85,19 @@ final class LiveActivityController {
                 guard self?.generation == currentGeneration else { return }
                 await activity.update(activityContent)
             }
+            return .active(activityID: activity.id)
         } else if ActivityAuthorizationInfo().areActivitiesEnabled {
             do {
-                activity = try Activity.request(attributes: BookActivityAttributes(bookID: content.bookID, title: content.title, author: content.author, narrator: content.narrator), content: activityContent, pushType: nil)
+                let requested = try Activity.request(attributes: BookActivityAttributes(bookID: content.bookID, title: content.title, author: content.author, narrator: content.narrator), content: activityContent, pushType: nil)
+                activity = requested
+                return .active(activityID: requested.id)
             } catch {
                 activity = nil
             }
         }
+        return .inactive
+        #else
+        return .inactive
         #endif
     }
 

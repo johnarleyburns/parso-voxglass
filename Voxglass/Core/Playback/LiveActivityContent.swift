@@ -125,3 +125,28 @@ public enum LiveActivityLifecyclePolicy {
         return Plan(reuse: reuse, end: end, create: reuse == nil && content.isPlaying)
     }
 }
+
+/// Explicit outcome of reconciling the lock-screen Live Activity with the desired content.
+public enum LiveActivityReconciliation: Equatable, Sendable {
+    /// An activity for the current book was reused or successfully requested.
+    case active(activityID: String)
+    /// Disabled, unavailable, no content, ended, denied, or the request failed.
+    case inactive
+
+    /// What the system Now Playing card must do given this result.
+    public enum NowPlayingAction: Equatable, Sendable {
+        case clear
+        case publishLatest
+    }
+
+    /// An active Live Activity owns the lock screen, so Now Playing is cleared to avoid a duplicate.
+    public var nowPlayingAction: NowPlayingAction {
+        if case .active = self { return .clear }
+        return .publishLatest
+    }
+
+    /// The activity that may be adopted without a new request: only one for the content's own book.
+    public static func adopted(plan: LiveActivityLifecyclePolicy.Plan) -> LiveActivityReconciliation {
+        plan.reuse.map { .active(activityID: $0) } ?? .inactive
+    }
+}
