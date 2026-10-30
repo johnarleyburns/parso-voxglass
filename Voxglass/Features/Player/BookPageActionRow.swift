@@ -319,6 +319,37 @@ struct BookPageActionRow: View {
 
     @ViewBuilder
     private var watchButton: some View {
+        switch phoneAudioRelay.watchPreparationByBook[book.book.id] {
+        case .downloadingOnPhone(let progress):
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
+                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "applewatch")
+                    .voxFont(.caption2, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+            }
+            .frame(width: 22, height: 22)
+            .frame(width: 44, height: 44)
+            .accessibilityElement()
+            .accessibilityLabel("Preparing for Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
+            .accessibilityValue("Preparing for Apple Watch, \(Int((min(max(progress, 0), 1) * 100).rounded())) percent") // l10n-exempt: state-dependent accessibility or status copy
+            .accessibilityIdentifier("nowplaying.watchDownload")
+        case .preparingAudio:
+            ProgressView()
+                .frame(width: 44, height: 44)
+                .accessibilityLabel("Preparing audio for Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
+                .accessibilityIdentifier("nowplaying.watchDownload")
+        case nil:
+            watchTransferButton
+        }
+    }
+
+    @ViewBuilder
+    private var watchTransferButton: some View {
         switch watchState {
         case .notAvailable, .failed:
             Button {

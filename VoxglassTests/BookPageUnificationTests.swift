@@ -137,3 +137,43 @@ import Testing
         #expect(page.components(separatedBy: "requestWatchDownload: { requestWatchDownload() }").count == 3)
     }
 }
+
+@Suite struct WatchPreparationProgressContractTests {
+    private func read(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path))
+    }
+
+    @Test func relayPublishesPerBookPreparationBeforeAwaitingDownload() throws {
+        let relay = try read("Voxglass/App/PhoneAudioRelay.swift")
+        #expect(relay.contains("case downloadingOnPhone(progress: Double)"))
+        #expect(relay.contains("case preparingAudio"))
+        #expect(relay.contains("watchPreparationByBook: [UUID: PhoneWatchPreparationState]"))
+        let start = try #require(relay.range(of: "watchPreparationByBook[book.book.id] = .downloadingOnPhone(progress: 0)"))
+        let await_ = try #require(relay.range(of: "await offlineManager.makeAvailableOffline("))
+        #expect(start.lowerBound < await_.lowerBound)
+        #expect(relay.contains("watchPreparationByBook[book.book.id] = .downloadingOnPhone(progress: min(max(progress, 0), 1))"))
+        #expect(relay.contains("watchPreparationByBook[book.book.id] = .preparingAudio"))
+        // Cleared on every exit (success, failure, cancellation) and only for the selected book.
+        #expect(relay.contains("watchPreparationByBook[preparingBookID] = nil"))
+        #expect(!relay.contains("watchPreparationByBook = [:]"))
+    }
+
+    @Test func localBookSkipsPhoneDownloadState() throws {
+        let relay = try read("Voxglass/App/PhoneAudioRelay.swift")
+        let guardRange = try #require(relay.range(of: "if needsPhoneDownload, offlineManager.state(for: book.book.id) != .cached {"))
+        let download = try #require(relay.range(of: ".downloadingOnPhone(progress: 0)"))
+        #expect(guardRange.lowerBound < download.lowerBound)
+    }
+
+    @Test func actionRowRendersBothPreparationStatesForSelectedBookOnly() throws {
+        let row = try read("Voxglass/Features/Player/BookPageActionRow.swift")
+        #expect(row.contains("phoneAudioRelay.watchPreparationByBook[book.book.id]"))
+        #expect(row.contains("case .downloadingOnPhone(let progress):"))
+        #expect(row.contains("\"Preparing for Apple Watch, "))
+        #expect(row.contains("percent"))
+        #expect(row.contains("case .preparingAudio:"))
+        #expect(row.contains("\"Preparing audio for Apple Watch\""))
+        #expect(row.contains("watchTransferButton"))
+    }
+}

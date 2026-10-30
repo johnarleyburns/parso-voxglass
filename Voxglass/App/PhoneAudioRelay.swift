@@ -7,6 +7,11 @@ import VoxglassCore
 import VoxglassWatchProtocol
 import VoxglassWatchCore
 
+enum PhoneWatchPreparationState: Equatable {
+    case downloadingOnPhone(progress: Double)
+    case preparingAudio
+}
+
 @MainActor
 final class PhoneAudioRelay: NSObject, ObservableObject {
     static let shared = PhoneAudioRelay()
@@ -18,6 +23,8 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     @Published private(set) var watchStorageSnapshot: WatchStorageSnapshot?
     @Published private(set) var isTransferringToWatch = false
     @Published private(set) var isPreparingWatchAudio = false
+    /// Per-book phone-side preparation stage, so only the selected book animates.
+    @Published private(set) var watchPreparationByBook: [UUID: PhoneWatchPreparationState] = [:]
     private var watchPreparationTask: Task<Void, Error>?
     @Published private(set) var lastWatchSyncDate: Date?
     @Published private(set) var watchSyncStatus: String?
@@ -429,7 +436,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             return .failed("The iPhone app is still starting.")
         }
         isTransferringToWatch = true
-        defer { isTransferringToWatch = false }
+        let preparingBookID = book.book.id
+        defer {
+            isTransferringToWatch = false
+            watchPreparationByBook[preparingBookID] = nil
+        }
 
         // A book whose chapters are all already-local files (never queued
         // through the download pipeline, and with no remote source to
@@ -438,6 +449,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         let needsPhoneDownload = book.chapters.contains { localOnDiskURL(for: $0) == nil }
 
         if needsPhoneDownload, offlineManager.state(for: book.book.id) != .cached {
+            watchPreparationByBook[book.book.id] = .downloadingOnPhone(progress: 0)
             let decision = await offlineManager.makeAvailableOffline(
                 book: book,
                 isCellular: NetworkMonitor.shared.isCellular,
@@ -518,6 +530,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             let startedAt = Date()
             var state = offlineManager.state(for: book.book.id)
             while case .downloading(let progress) = state {
+                watchPreparationByBook[book.book.id] = .downloadingOnPhone(progress: min(max(progress, 0), 1))
                 if progress > lastProgress {
                     lastProgress = progress
                     lastProgressAt = Date()
@@ -534,6 +547,8 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 return await fail("The book couldn't be downloaded on the iPhone.")
             }
         }
+
+        watchPreparationByBook[book.book.id] = .preparingAudio
 
         // Resolve every chapter's local file BEFORE sending anything. The
         // watch is told the book's full chapter count up front and can only
