@@ -225,6 +225,32 @@ import Testing
         #expect(detail.contains("Previewing"))
     }
 
+    @Test func libraryWatchDownloadRequiresConfirmationAndSurfacesOutcomes() throws {
+        let library = try source("Voxglass/Features/Library/LibraryView.swift")
+        #expect(library.contains("@State private var initialWatchTransferBook: BookWithChapters?"))
+        #expect(library.contains("@State private var cellularWatchTransferBook: BookWithChapters?"))
+        #expect(!library.contains("pendingWatchTransfer"))
+        #expect(!library.contains("transferToWatch("))
+        // Only the confirmed dialog actions reach the relay.
+        #expect(library.components(separatedBy: "submitLibraryWatchTransfer(").count - 1 == 3)
+        #expect(library.components(separatedBy: "transferBookToWatch(").count - 1 == 1)
+        #expect(library.contains("\"Download to Apple Watch?\""))
+        #expect(library.contains("initialWatchTransferBook = original"))
+        let menu = sourceSlice(library, from: ".contextMenu {", to: "Remove from My Books")
+        #expect(menu.contains("initialWatchTransferBook = book"))
+        #expect(!menu.contains("submitLibraryWatchTransfer"))
+        let router = sourceSlice(library, from: "private func submitLibraryWatchTransfer", to: "private var initialWatchBinding")
+        #expect(router.contains("case .needsCellularConfirmation:"))
+        #expect(router.contains("cellularWatchTransferBook = book"))
+        #expect(router.contains("case .failed(let message):"))
+        #expect(router.contains("phoneAudioRelay.watchTransferError = message"))
+        let cancel = sourceSlice(library, from: "Button(\"Cancel\", role: .cancel) { initialWatchTransferBook", to: "message:")
+        #expect(cancel.contains("initialWatchTransferBook = nil"))
+        #expect(library.contains("Couldn't Send to Apple Watch"))
+        #expect(library.contains("Remove from Apple Watch?"))
+        #expect(library.contains("pendingWatchRemoval"))
+    }
+
     private var repoRoot: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

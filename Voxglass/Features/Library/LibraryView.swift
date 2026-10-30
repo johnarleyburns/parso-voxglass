@@ -12,7 +12,8 @@ struct LibraryView: View {
     @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     @Binding var showingNowPlaying: Bool
     @State private var pendingDeletion: BookWithChapters?
-    @State private var pendingWatchTransfer: BookWithChapters?
+    @State private var initialWatchTransferBook: BookWithChapters?
+    @State private var cellularWatchTransferBook: BookWithChapters?
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var searchScope: LibrarySearchScope = .all
@@ -107,17 +108,29 @@ struct LibraryView: View {
             }
         }
         .confirmationDialog(
+            "Download to Apple Watch?",
+            isPresented: initialWatchBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Download") {
+                guard let book = initialWatchTransferBook else { return }
+                Task { await submitLibraryWatchTransfer(book, allowCellular: false) }
+            }
+            Button("Cancel", role: .cancel) { initialWatchTransferBook = nil }
+        } message: {
+            Text("This will use approximately \(ByteFormatting.string(estimatedWatchBytes(initialWatchTransferBook))) of storage on your Apple Watch.")
+        }
+        .confirmationDialog(
             "Send to Apple Watch on cellular data?",
             isPresented: watchCellularBinding,
             titleVisibility: .visible
         ) {
             Button("Send now on cellular") {
-                if let book = pendingWatchTransfer {
-                    Task { await transferToWatch(book, allowCellular: true) }
-                }
+                guard let book = cellularWatchTransferBook else { return }
+                Task { await submitLibraryWatchTransfer(book, allowCellular: true) }
             }
             Button("Wait for Wi-Fi", role: .cancel) {
-                pendingWatchTransfer = nil
+                cellularWatchTransferBook = nil
             }
         } message: {
             Text("Sending a book to the watch can use significant cellular data.")
@@ -170,7 +183,7 @@ struct LibraryView: View {
                         Text(reason).font(.caption)
                         Button("Try Again") {
                             if let original = libraryStore.books.first(where: { $0.book.id == id }) {
-                                Task { await transferToWatch(original, allowCellular: false) }
+                                initialWatchTransferBook = original
                             } else { phoneAudioRelay.watchTransferError = "Add this book to My Books before sending it again." }
                         }.buttonStyle(.borderless).disabled(phoneAudioRelay.isTransferringToWatch)
                     } else if case .transferring(let fraction)? = storage?.state {
@@ -239,12 +252,10 @@ struct LibraryView: View {
                                 selectedBookID = book.book.id
                             }
                             Button {
-                                Task {
-                                    if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
-                                        pendingWatchRemoval = phoneAudioRelay.watchCatalogBooks.first { $0.id.rawValue == book.book.id.uuidString }
-                                    } else {
-                                        await transferToWatch(book, allowCellular: false)
-                                    }
+                                if phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state == .available {
+                                    pendingWatchRemoval = phoneAudioRelay.watchCatalogBooks.first { $0.id.rawValue == book.book.id.uuidString }
+                                } else {
+                                    initialWatchTransferBook = book
                                 }
                             } label: {
                                 Label(watchContextTitle(for: book), systemImage: "applewatch")
@@ -586,27 +597,46 @@ struct LibraryView: View {
         }
     }
 
-    private func transferToWatch(_ book: BookWithChapters, allowCellular: Bool) async {
+    private func estimatedWatchBytes(_ book: BookWithChapters?) -> Int64 {
+        let duration = book?.chapters.reduce(0) { $0 + ($1.duration ?? 0) } ?? 0
+        return ByteFormatting.estimatedAudiobookBytes(duration: duration)
+    }
+
+    private func submitLibraryWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async {
         let start = await phoneAudioRelay.transferBookToWatch(
             book,
             allowCellularOverride: allowCellular
         )
         switch start {
-        case .needsCellularConfirmation:
-            pendingWatchTransfer = book
-        case .failed(let message):
-            phoneAudioRelay.watchTransferError = message
         case .started:
-            pendingWatchTransfer = nil
+            initialWatchTransferBook = nil
+            cellularWatchTransferBook = nil
+        case .needsCellularConfirmation:
+            initialWatchTransferBook = nil
+            cellularWatchTransferBook = book
+        case .failed(let message):
+            initialWatchTransferBook = nil
+            cellularWatchTransferBook = nil
+            phoneAudioRelay.watchTransferError = message
+        }
+    }
+
+    private var initialWatchBinding: Binding<Bool> {
+        Binding {
+            initialWatchTransferBook != nil
+        } set: { isPresented in
+            if !isPresented {
+                initialWatchTransferBook = nil
+            }
         }
     }
 
     private var watchCellularBinding: Binding<Bool> {
         Binding {
-            pendingWatchTransfer != nil
+            cellularWatchTransferBook != nil
         } set: { isPresented in
             if !isPresented {
-                pendingWatchTransfer = nil
+                cellularWatchTransferBook = nil
             }
         }
     }
