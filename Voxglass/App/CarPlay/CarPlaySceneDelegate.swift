@@ -65,6 +65,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                     dataProvider: productionProvider,
                     eventSink: PhoneProductionEventSink(),
                     player: ProductionCarPlayPlayer(),
+                    playbackBridge: AppServices.shared.playbackBridge,
                     interfaceController: interfaceController,
                     continueProvider: { [weak carController] in
                         carController?.continueSections() ?? []

@@ -26,6 +26,7 @@ public final class CarPlayReviewController {
     private let eventSink: any CarPlayEventDelivering
     private let player: any CarPlayProductionPlaying
     private let cuePlayer: any CarPlayCuePlaying
+    private let playbackBridge: any PlaybackPlatformBridge
     private weak var interfaceController: CPInterfaceController?
     private var playbackTask: Task<Void, Never>?
     private let continueProvider: () -> [CarPlaySection]
@@ -36,6 +37,7 @@ public final class CarPlayReviewController {
         eventSink: any CarPlayEventDelivering,
         player: any CarPlayProductionPlaying,
         cuePlayer: (any CarPlayCuePlaying)? = nil,
+        playbackBridge: any PlaybackPlatformBridge,
         interfaceController: CPInterfaceController? = nil,
         continueProvider: @escaping () -> [CarPlaySection] = { [] }
     ) {
@@ -43,6 +45,7 @@ public final class CarPlayReviewController {
         self.eventSink = eventSink
         self.player = player
         self.cuePlayer = cuePlayer ?? BundledCarPlayCuePlayer()
+        self.playbackBridge = playbackBridge
         self.interfaceController = interfaceController
         self.continueProvider = continueProvider
         self.summaries = dataProvider.productionSummaries()
@@ -133,6 +136,7 @@ public final class CarPlayReviewController {
 
     public func stop() {
         session = nil
+        playbackBridge.clearAuxiliaryNowPlaying()
         remoteCommandMapping = .consumer
         uninstallParagraphCommands()
         playbackTask?.cancel()
@@ -246,10 +250,10 @@ public final class CarPlayReviewController {
 
     private func updateNowPlayingInfo(paragraphLabel: String) {
         guard let session else { return }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = [
-            MPMediaItemPropertyTitle: paragraphLabel,
-            MPMediaItemPropertyArtist: session.payload.projectTitle
-        ]
+        playbackBridge.updateAuxiliaryNowPlaying(
+            title: paragraphLabel,
+            artist: session.payload.projectTitle
+        )
     }
 
     // MARK: - Remote commands (paragraph boundaries while queue active)
