@@ -13,9 +13,8 @@ struct BookPageActionRow: View {
     @Binding var showingOverflow: Bool
     @Binding var showCellularPrompt: Bool
     @Binding var showRemoveOfflineConfirm: Bool
+    let requestWatchDownload: () -> Void
     @State private var showCacheSizeWarning = false
-    @State private var showWatchSizeWarning = false
-    @State private var showWatchCellularPrompt = false
     @State private var showRemoveWatchConfirm = false
     @State private var bookmarkCount = 0
     @State private var showingBookmarkPrompt = false
@@ -66,30 +65,6 @@ struct BookPageActionRow: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will use approximately \(ByteFormatting.string(estimatedBytes)) of storage on your iPhone.")
-        }
-        .confirmationDialog(
-            "Send to Apple Watch?",
-            isPresented: $showWatchSizeWarning,
-            titleVisibility: .visible
-        ) {
-            Button("Send to Watch") {
-                Task { await startWatchTransfer(allowCellular: false) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This will use approximately \(ByteFormatting.string(estimatedBytes)) of storage on your Apple Watch.")
-        }
-        .confirmationDialog(
-            "Send to Apple Watch on cellular data?",
-            isPresented: $showWatchCellularPrompt,
-            titleVisibility: .visible
-        ) {
-            Button("Send now on cellular") {
-                Task { await startWatchTransfer(allowCellular: true) }
-            }
-            Button("Wait for Wi-Fi", role: .cancel) {}
-        } message: {
-            Text("Sending a book to the watch can use significant cellular data.")
         }
         .confirmationDialog(
             "Remove from Apple Watch?",
@@ -348,7 +323,7 @@ struct BookPageActionRow: View {
         case .notAvailable, .failed:
             Button {
                 TactileFeedback.tap()
-                showWatchSizeWarning = true
+                requestWatchDownload()
             } label: {
                 Image(systemName: "applewatch")
                     .voxFont(.callout)
@@ -393,18 +368,6 @@ struct BookPageActionRow: View {
             }
             .accessibilityLabel("Downloaded to Apple Watch — tap to remove")
             .accessibilityIdentifier("nowplaying.watchDownload")
-        }
-    }
-
-    private func startWatchTransfer(allowCellular: Bool) async {
-        let start = await phoneAudioRelay.transferBookToWatch(book, allowCellularOverride: allowCellular)
-        switch start {
-        case .needsCellularConfirmation:
-            showWatchCellularPrompt = true
-        case .failed(let message):
-            phoneAudioRelay.watchTransferError = message
-        case .started:
-            break
         }
     }
 

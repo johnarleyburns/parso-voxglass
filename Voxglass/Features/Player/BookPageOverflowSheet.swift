@@ -5,7 +5,6 @@ struct BookPageOverflowSheet: View {
     @Environment(PlaybackCoordinator.self) private var playback
     @EnvironmentObject private var libraryStore: LibraryStore
     @EnvironmentObject private var offlineManager: OfflineDownloadManager
-    @EnvironmentObject private var phoneAudioRelay: PhoneAudioRelay
     let book: BookWithChapters
     @Binding var showingNowPlaying: Bool
     @Binding var showRemoveOfflineConfirm: Bool
@@ -15,6 +14,7 @@ struct BookPageOverflowSheet: View {
     @Binding var showRemoveConfirm: Bool
     @Binding var showReconnectAudio: Bool
     let genre: LibriVoxBrowseCategory?
+    let requestWatchDownload: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -208,12 +208,8 @@ struct BookPageOverflowSheet: View {
             }
 
             Button {
-                Task {
-                    _ = await phoneAudioRelay.transferBookToWatch(
-                        book,
-                        allowCellularOverride: false
-                    )
-                }
+                dismiss()
+                requestWatchDownload()
             } label: {
                 overflowRow(icon: "applewatch", title: "Send to Apple Watch")
             }

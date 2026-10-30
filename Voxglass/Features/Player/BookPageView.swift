@@ -15,6 +15,8 @@ struct BookPageView: View {
     @State private var showingEQ = false
     @State private var showingBookmarks = false
     @State private var showingOverflow = false
+    @State private var watchTransferConfirmationBook: BookWithChapters?
+    @State private var watchCellularConfirmationBook: BookWithChapters?
     @State private var showCellularPrompt = false
     @State private var showRemoveConfirm = false
     @State private var showRemoveOfflineConfirm = false
@@ -167,7 +169,8 @@ struct BookPageView: View {
                 showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
                 showRemoveConfirm: $showRemoveConfirm,
                 showReconnectAudio: $showingReconnect,
-                genre: genre
+                genre: genre,
+                requestWatchDownload: { requestWatchDownload() }
             )
             .environment(playback)
             .environmentObject(libraryStore)
@@ -192,6 +195,28 @@ struct BookPageView: View {
             Button("Wait for Wi-Fi", role: .cancel) {}
         } message: {
             Text("Caching a whole book can use significant cellular data.")
+        }
+        .confirmationDialog("Download to Apple Watch?", isPresented: initialWatchDialogBinding) {
+            Button("Download") {
+                guard let book = watchTransferConfirmationBook else { return }
+                Task { await submitWatchTransfer(book, allowCellular: false) }
+            }
+            Button("Cancel", role: .cancel) { watchTransferConfirmationBook = nil }
+        } message: {
+            Text("This will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
+        }
+        .confirmationDialog(
+            "Send to Apple Watch on cellular data?",
+            isPresented: cellularWatchDialogBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Send now on cellular") {
+                guard let book = watchCellularConfirmationBook else { return }
+                Task { await submitWatchTransfer(book, allowCellular: true) }
+            }
+            Button("Wait for Wi-Fi", role: .cancel) { watchCellularConfirmationBook = nil }
+        } message: {
+            Text("Sending a book to the watch can use significant cellular data.")
         }
         .alert(
             "Couldn't Send to Apple Watch",
@@ -761,7 +786,8 @@ struct BookPageView: View {
             showingBookmarks: $showingBookmarks,
             showingOverflow: $showingOverflow,
             showCellularPrompt: $showCellularPrompt,
-            showRemoveOfflineConfirm: $showRemoveOfflineConfirm
+            showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
+            requestWatchDownload: { requestWatchDownload() }
         )
         .environment(playback)
         .environmentObject(libraryStore)
@@ -1011,6 +1037,43 @@ struct BookPageView: View {
             showCellularPrompt = true
         case .start:
             break
+        }
+    }
+
+    private var watchEstimatedBytes: Int64 {
+        let chapters = watchTransferConfirmationBook?.chapters ?? []
+        return ByteFormatting.estimatedAudiobookBytes(duration: chapters.reduce(0) { $0 + ($1.duration ?? 0) })
+    }
+
+    private var initialWatchDialogBinding: Binding<Bool> {
+        Binding {
+            watchTransferConfirmationBook != nil
+        } set: { isPresented in
+            if !isPresented { watchTransferConfirmationBook = nil }
+        }
+    }
+
+    private var cellularWatchDialogBinding: Binding<Bool> {
+        Binding {
+            watchCellularConfirmationBook != nil
+        } set: { isPresented in
+            if !isPresented { watchCellularConfirmationBook = nil }
+        }
+    }
+
+    private func requestWatchDownload() {
+        guard let resolved else { return }
+        watchTransferConfirmationBook = resolved
+    }
+
+    private func submitWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async {
+        switch await phoneAudioRelay.transferBookToWatch(book, allowCellularOverride: allowCellular) {
+        case .started:
+            break
+        case .needsCellularConfirmation:
+            watchCellularConfirmationBook = book
+        case .failed(let message):
+            phoneAudioRelay.watchTransferError = message
         }
     }
 

@@ -107,3 +107,33 @@ import Testing
         url.path.replacingOccurrences(of: repoRoot.path + "/", with: "")
     }
 }
+
+@Suite struct BookPageWatchDownloadContractTests {
+    private func read(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path))
+    }
+
+    @Test func overflowAndActionRowNeverCallTransport() throws {
+        let overflow = try read("Voxglass/Features/Player/BookPageOverflowSheet.swift")
+        let row = try read("Voxglass/Features/Player/BookPageActionRow.swift")
+        #expect(overflow.contains("requestWatchDownload()"))
+        #expect(!overflow.contains("transferBookToWatch("))
+        #expect(!row.contains("transferBookToWatch("))
+        #expect(row.contains("requestWatchDownload()"))
+        #expect(row.contains("nowplaying.watchDownload"))
+    }
+
+    @Test func bookPageViewOwnsConfirmationsAndSingleHelper() throws {
+        let page = try read("Voxglass/Features/Player/BookPageView.swift")
+        #expect(page.components(separatedBy: "transferBookToWatch(").count == 2)
+        #expect(page.contains("private func submitWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async"))
+        #expect(page.contains("case .started:"))
+        #expect(page.contains("case .needsCellularConfirmation:"))
+        #expect(page.contains("case .failed(let message):"))
+        #expect(page.contains("\"Download to Apple Watch?\""))
+        #expect(page.contains("submitWatchTransfer(book, allowCellular: true)"))
+        #expect(page.contains("Couldn't Send to Apple Watch"))
+        #expect(page.components(separatedBy: "requestWatchDownload: { requestWatchDownload() }").count == 3)
+    }
+}
