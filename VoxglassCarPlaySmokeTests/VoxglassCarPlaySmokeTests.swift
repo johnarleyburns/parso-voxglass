@@ -40,7 +40,8 @@ final class VoxglassCarPlaySmokeTests: XCTestCase {
             dataProvider: env.store,
             eventSink: env.sync,
             player: env.player,
-            cuePlayer: env.cuePlayer
+            cuePlayer: env.cuePlayer,
+            playbackBridge: NoopPlaybackBridge()
         )
 
         let root = try XCTUnwrap(controller.makeRootTemplate() as? CPTabBarTemplate)

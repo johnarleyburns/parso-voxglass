@@ -20,6 +20,8 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     var liveActivityController: LiveActivityController?
 
     private var latestInfo: NowPlayingInfo?
+    private var auxiliaryGate = AuxiliaryNowPlayingGate()
+    private var liveActivityResult: LiveActivityReconciliation = .inactive
     private var currentArtwork: MPMediaItemArtwork?
     /// Observer tokens in a `@unchecked Sendable` registry so the nonisolated
     /// `deinit` can tear them down without a Sendable crossing (Swift 6).
@@ -45,7 +47,14 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     /// Publishes the latest system Now Playing card.
     private func publishNowPlaying() {
         guard let info = latestInfo else {
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            if let aux = auxiliaryGate.latest, liveActivityResult.nowPlayingAction == .publishLatest {
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = [
+                    MPMediaItemPropertyTitle: aux.title,
+                    MPMediaItemPropertyArtist: aux.artist
+                ]
+            } else {
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            }
             return
         }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = mpInfo(from: info)
@@ -64,7 +73,23 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
 
     func updateLiveActivity(_ content: LiveActivityContent?) {
         let result = liveActivityController?.update(content) ?? .inactive
+        liveActivityResult = result
         applyLiveActivityResult(result)
+    }
+
+    func updateAuxiliaryNowPlaying(title: String, artist: String) {
+        applyAuxiliary(AuxiliaryNowPlaying(title: title, artist: artist))
+    }
+
+    func clearAuxiliaryNowPlaying() {
+        applyAuxiliary(nil)
+    }
+
+    private func applyAuxiliary(_ metadata: AuxiliaryNowPlaying?) {
+        switch auxiliaryGate.update(metadata, reconciliation: liveActivityResult) {
+        case .clear: MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        case .publish: publishNowPlaying()
+        }
     }
 
     /// Clears Now Playing while a Live Activity owns the lock screen so only one player shows.

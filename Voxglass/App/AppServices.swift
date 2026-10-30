@@ -10,6 +10,8 @@ final class AppServices: ObservableObject {
     let libraryStore: LibraryStore
     let catalogStore: CatalogStore
     let playbackCoordinator: PlaybackCoordinator
+    /// The shared platform bridge; CarPlay review metadata routes through it.
+    let playbackBridge: any PlaybackPlatformBridge
     let liveActivityController: LiveActivityController
     let tasteProfileStore: TasteProfileStore
     let libraryRepository: LibraryRepository
@@ -52,6 +54,7 @@ final class AppServices: ObservableObject {
         self.libraryRepository = libraryRepository
         self.libraryStore = LibraryStore(repository: libraryRepository)
         self.catalogStore = CatalogStore()
+        self.playbackBridge = playbackBridge
         self.playbackCoordinator = PlaybackCoordinator(
             engine: audioEngine,
             positionStore: positionStore,
