@@ -130,3 +130,40 @@ import Testing
                 == .init(reuse: nil, end: ["1"], create: false))
     }
 }
+
+@Suite struct LiveActivityReconciliationTests {
+    private func content(book: UUID, playing: Bool = true) -> LiveActivityContent {
+        LiveActivityContent(bookID: book, title: "Book", author: "Author", narrator: nil,
+                            chapterTitle: "Chapter", chapterIndex: 1, chapterCount: 3,
+                            isPlaying: playing, rate: 1, chapterElapsed: 10,
+                            chapterDuration: 600, bookRemaining: 1_200, sleep: .off,
+                            capturedAt: Date(timeIntervalSince1970: 100))
+    }
+
+    @Test func createdOrAdoptedActivityClearsNowPlaying() {
+        #expect(LiveActivityReconciliation.active(activityID: "a").nowPlayingAction == .clear)
+        let book = UUID()
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [.init(id: "a", bookID: book)],
+                                                    content: content(book: book), enabled: true)
+        #expect(LiveActivityReconciliation.adopted(plan: plan) == .active(activityID: "a"))
+    }
+
+    @Test func failedOrDisabledPublishesLatestNowPlaying() {
+        #expect(LiveActivityReconciliation.inactive.nowPlayingAction == .publishLatest)
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [], content: content(book: UUID()), enabled: false)
+        #expect(LiveActivityReconciliation.adopted(plan: plan) == .inactive)
+    }
+
+    @Test func nilContentIsInactiveAndEndsEverything() {
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [.init(id: "a", bookID: UUID())], content: nil, enabled: true)
+        #expect(plan.end == ["a"])
+        #expect(LiveActivityReconciliation.adopted(plan: plan) == .inactive)
+    }
+
+    @Test func staleDifferentBookActivityIsNotActive() {
+        let plan = LiveActivityLifecyclePolicy.plan(existing: [.init(id: "old", bookID: UUID())],
+                                                    content: content(book: UUID()), enabled: true)
+        #expect(plan.end == ["old"])
+        #expect(LiveActivityReconciliation.adopted(plan: plan) == .inactive)
+    }
+}

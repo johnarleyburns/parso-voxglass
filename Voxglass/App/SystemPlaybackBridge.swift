@@ -42,10 +42,9 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         publishNowPlaying()
     }
 
-    /// Publishes the system Now Playing card unless the Voxglass Live Activity
-    /// is already on the lock screen, so only one player shows.
+    /// Publishes the latest system Now Playing card.
     private func publishNowPlaying() {
-        guard let info = latestInfo, liveActivityController?.isShowingActivity != true else {
+        guard let info = latestInfo else {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
         }
@@ -64,8 +63,16 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     }
 
     func updateLiveActivity(_ content: LiveActivityContent?) {
-        liveActivityController?.update(content)
-        publishNowPlaying()
+        let result = liveActivityController?.update(content) ?? .inactive
+        applyLiveActivityResult(result)
+    }
+
+    /// Clears Now Playing while a Live Activity owns the lock screen so only one player shows.
+    private func applyLiveActivityResult(_ result: LiveActivityReconciliation) {
+        switch result.nowPlayingAction {
+        case .clear: MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        case .publishLatest: publishNowPlaying()
+        }
     }
 
     func setSkipIntervals(backward: Int, forward: Int) {
