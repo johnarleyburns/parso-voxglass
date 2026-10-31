@@ -198,6 +198,6 @@ import Foundation
         #expect(info?.albumTitle == "B")
         #expect(info?.title == b.chapters[0].title)
         #expect(info?.artist == b.book.authorLine)
-        #expect(bridge.lastLiveActivity?.bookID == b.book.id)
+        #expect(bridge.lastLiveActivity == nil)
     }
 }
