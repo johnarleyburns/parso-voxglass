@@ -1341,10 +1341,6 @@ public final class PlaybackCoordinator {
                   self.artworkGeneration == generation else { return }
             self.artworkConsumer?(book.id, data)
             self.bridge.setArtwork(data)
-            // The Live Activity content is otherwise unchanged, so clear the
-            // dedupe baseline to push an update that makes the widget re-read
-            // the newly saved thumbnail.
-            self.lastLiveActivityContent = nil
             self.updateNowPlayingInfo()
         }
     }
@@ -2313,7 +2309,6 @@ public final class PlaybackCoordinator {
 
     private func updateNowPlayingInfo() {
         guard let session = currentSession else {
-            lastLiveActivityContent = nil
             bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)
             return
         }
@@ -2328,8 +2323,7 @@ public final class PlaybackCoordinator {
             rate: engine.rate,
             isPlaying: isPlaying
         )
-        let activity = nextLiveActivityContent(session: session, currentTime: currentTime, isPlaying: isPlaying)
-        bridge.updateLockScreen(nowPlaying: info, liveActivity: activity ?? lastLiveActivityContent)
+        bridge.updateLockScreen(nowPlaying: info, liveActivity: nil)
     }
 
     /// Tick-side variant: avoids rebuilding when identity, rate, and rate-based
@@ -2339,11 +2333,9 @@ public final class PlaybackCoordinator {
     @ObservationIgnored private var lastNowPlayingChapterID: UUID?
     @ObservationIgnored private var lastNowPlayingIsPlaying: Bool?
     @ObservationIgnored private var lastNowPlayingRate: Float?
-    @ObservationIgnored private var lastLiveActivityContent: LiveActivityContent?
 
     private func updateNowPlayingInfoIfNeeded(force: Bool = false) {
         guard let session = currentSession else {
-            lastLiveActivityContent = nil
             bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)
             lastNowPlayingBookID = nil
             lastNowPlayingChapterID = nil
@@ -2379,38 +2371,7 @@ public final class PlaybackCoordinator {
             rate: engine.rate,
             isPlaying: isPlaying
         )
-        let activity = nextLiveActivityContent(session: session, currentTime: currentTime, isPlaying: isPlaying)
-        bridge.updateLockScreen(nowPlaying: info, liveActivity: activity ?? lastLiveActivityContent)
-    }
-
-    /// Pure builder/deduper: returns new content, or nil when the policy says
-    /// nothing meaningful changed (the caller then resubmits the retained content).
-    private func nextLiveActivityContent(session: PlaybackSession, currentTime: TimeInterval, isPlaying: Bool) -> LiveActivityContent? {
-        let sleep: SleepState
-        switch sleepTimer.mode {
-        case .off: sleep = .off
-        case .endOfChapter: sleep = .endOfChapter
-        case .duration: sleep = .until(Date().addingTimeInterval(sleepTimer.remaining ?? 0))
-        }
-        let content = LiveActivityContent(
-            bookID: session.book.id,
-            title: session.book.title,
-            author: session.book.authorLine,
-            narrator: session.book.narratorLine,
-            chapterTitle: session.chapter.title,
-            chapterIndex: session.chapterIndex + 1,
-            chapterCount: session.chapters.count,
-            isPlaying: isPlaying,
-            rate: engine.rate,
-            chapterElapsed: currentTime,
-            chapterDuration: session.duration,
-            bookRemaining: session.bookRemaining,
-            sleep: sleep,
-            capturedAt: Date()
-        )
-        guard LiveActivityUpdatePolicy.shouldPush(previous: lastLiveActivityContent, next: content) else { return nil }
-        lastLiveActivityContent = content
-        return content
+        bridge.updateLockScreen(nowPlaying: info, liveActivity: nil)
     }
 
     /// Pure builder for the Now Playing payload (Step 0b). Keeping it a plain

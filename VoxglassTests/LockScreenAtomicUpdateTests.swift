@@ -50,64 +50,49 @@ import Foundation
 
     private func drain() async { try? await Task.sleep(nanoseconds: 200_000_000) }
 
-    @Test func playEmitsPairedLockScreenCalls() async {
+    @Test func playSubmitsNativeNowPlayingOnly() async {
         let h = makeHarness()
-        let book = makeBook()
-        await h.coordinator.play(book)
+        await h.coordinator.play(makeBook())
         await drain()
         #expect(!h.bridge.lockScreenCalls.isEmpty)
-        for call in h.bridge.lockScreenCalls where call.nowPlaying != nil {
-            #expect(call.liveActivity != nil)  // Info and activity always travel together
-        }
+        for call in h.bridge.lockScreenCalls { #expect(call.liveActivity == nil) }
         #expect(h.bridge.lastNowPlaying != nil)
-        #expect(h.bridge.lastLiveActivity?.isPlaying == true)
     }
 
-    @Test func pauseSubmitsOnePairedUpdate() async {
+    @Test func pauseSubmitsOneNativeUpdate() async {
         let h = makeHarness()
         await h.coordinator.play(makeBook())
         await drain()
         let before = h.bridge.lockScreenCalls.count
         h.coordinator.pause()
         #expect(h.bridge.lockScreenCalls.count == before + 1)
-        #expect(h.bridge.lastLiveActivity?.isPlaying == false)
+        #expect(h.bridge.lastLiveActivity == nil)
         #expect(h.bridge.lastNowPlaying?.reportedRate == 0)
     }
 
-    @Test func bookSwitchSubmitsNewBookPair() async {
+    @Test func fullLifecycleNeverSubmitsLiveActivity() async {
         let h = makeHarness()
-        await h.coordinator.play(makeBook(title: "One"))
+        let first = makeBook(title: "One")
+        await h.coordinator.play(first)
         await drain()
+        #expect(h.bridge.lastNowPlaying != nil)
+        h.coordinator.pause()
+        #expect(h.bridge.lastNowPlaying != nil)
+        await h.coordinator.seek(to: 10)
+        await drain()
+        #expect(h.bridge.lastNowPlaying != nil)
+        h.coordinator.setPlaybackRate(1.5)
+        await drain()
+        #expect(h.bridge.lastNowPlaying != nil)
         let second = makeBook(title: "Two")
         await h.coordinator.play(second)
         await drain()
-        #expect(h.bridge.lastLiveActivity?.bookID == second.book.id)
-        #expect(h.bridge.lastNowPlaying?.albumTitle == "Two" || h.bridge.lastNowPlaying?.title.isEmpty == false)
-    }
-
-    @Test func stopDeletedBookClearsBoth() async {
-        let h = makeHarness()
-        let book = makeBook()
-        await h.coordinator.play(book)
-        await drain()
-        let before = h.bridge.lockScreenCalls.count
-        h.coordinator.stopPlayback(forDeletedBook: book.book.id)
-        #expect(h.bridge.lockScreenCalls.count == before + 1)
+        #expect(h.bridge.lastNowPlaying != nil)
+        await h.coordinator.tickProgress()
+        h.coordinator.stopPlayback(forDeletedBook: second.book.id)
         #expect(h.bridge.lastNowPlaying == nil)
-        #expect(h.bridge.lastLiveActivity == nil)
-    }
-
-    @Test func unchangedTickDoesNotEndRetainedLiveActivity() async {
-        let h = makeHarness()
-        await h.coordinator.play(makeBook())
-        await drain()
-        #expect(h.bridge.lastLiveActivity != nil)
-        await h.coordinator.tickProgress()
-        await h.coordinator.tickProgress()
-        for call in h.bridge.lockScreenCalls where call.nowPlaying != nil {
-            #expect(call.liveActivity != nil)  // Dedupe must resubmit retained content, never nil
-        }
-        #expect(h.bridge.lastLiveActivity != nil)
+        #expect(!h.bridge.lockScreenCalls.isEmpty)
+        for call in h.bridge.lockScreenCalls { #expect(call.liveActivity == nil) }
     }
 
     @Test func coordinatorSourceHasNoSplitBridgePair() throws {
@@ -115,6 +100,8 @@ import Foundation
         let source = try String(contentsOf: root.appendingPathComponent("Voxglass/Core/Playback/PlaybackCoordinator.swift"), encoding: .utf8)
         #expect(!source.contains("bridge.updateNowPlaying("))
         #expect(!source.contains("bridge.updateLiveActivity("))
+        #expect(!source.contains("nextLiveActivityContent("))
+        #expect(!source.contains("lastLiveActivityContent"))
         #expect(source.contains("bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)"))
     }
 }
