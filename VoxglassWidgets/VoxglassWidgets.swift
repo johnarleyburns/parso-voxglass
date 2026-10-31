@@ -259,7 +259,6 @@ enum WidgetSnapshotStore {
 struct VoxglassWidgetBundle: WidgetBundle {
     var body: some Widget {
         VoxglassContinueWidget()
-        BookLiveActivity()
         ResumeVoxglassControl()
         SleepTimerControl()
         SkipBackControl()

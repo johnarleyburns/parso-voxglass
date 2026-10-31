@@ -34,6 +34,17 @@ struct LockScreenPublisherContractTests {
         #expect(try source(Self.liveActivity).contains("Activity.request"))
     }
 
+    @Test func widgetBundleNoLongerRegistersCustomAudiobookLiveActivity() throws {
+        let text = try source("VoxglassWidgets/VoxglassWidgets.swift")
+        #expect(!text.contains("BookLiveActivity()"))
+        #expect(text.contains("VoxglassContinueWidget()"))
+        #expect(text.contains("ResumeVoxglassControl()"))
+        #expect(text.contains("SleepTimerControl()"))
+        #expect(text.contains("SkipBackControl()"))
+        #expect(!FileManager.default.fileExists(
+            atPath: repoRoot.appendingPathComponent("VoxglassWidgets/BookLiveActivity.swift").path))
+    }
+
     // MARK: - Helpers
 
     private var repoRoot: URL {

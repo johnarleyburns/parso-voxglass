@@ -91,15 +91,6 @@ import Testing
         #expect(rows.contains(".lineLimit(2)"))
     }
 
-    @Test func liveActivityFitsLongChaptersAndUsesItsOwnMargins() throws {
-        let activity = try source("VoxglassWidgets/BookLiveActivity.swift")
-        #expect(activity.contains(".contentMarginsDisabled()"))
-        #expect(activity.contains("Text(detailLine(context: context))"))
-        #expect(activity.contains(".truncationMode(.tail)"))
-        #expect(activity.contains(".minimumScaleFactor(0.8)"))
-        #expect(activity.contains(".minimumScaleFactor(0.75)"))
-    }
-
     @Test func collectionCardMakesItsWholeSurfaceTappable() throws {
         let discover = try source("Voxglass/Features/Discover/DiscoverView.swift")
         let card = sourceSlice(discover, from: "private struct ExploreCollectionCard", to: "private struct CollectionInfoSheet")
