@@ -2313,23 +2313,23 @@ public final class PlaybackCoordinator {
 
     private func updateNowPlayingInfo() {
         guard let session = currentSession else {
-            bridge.updateNowPlaying(nil)
-            bridge.updateLiveActivity(nil)
             lastLiveActivityContent = nil
+            bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)
             return
         }
         let currentTime = isEngineLoaded ? relativeEngineTime(for: session) : session.position
         let isPlaying = isEngineLoaded && engine.isPlaying
         // While unloaded, the engine reports 0/paused; the session is the truth,
         // so the lock screen matches the miniplayer.
-        bridge.updateNowPlaying(Self.nowPlayingInfo(
+        let info = Self.nowPlayingInfo(
             session: session,
             currentTime: currentTime,
             duration: session.duration,
             rate: engine.rate,
             isPlaying: isPlaying
-        ))
-        updateLiveActivityIfNeeded(session: session, currentTime: currentTime, isPlaying: isPlaying)
+        )
+        let activity = nextLiveActivityContent(session: session, currentTime: currentTime, isPlaying: isPlaying)
+        bridge.updateLockScreen(nowPlaying: info, liveActivity: activity ?? lastLiveActivityContent)
     }
 
     /// Tick-side variant: avoids rebuilding when identity, rate, and rate-based
@@ -2343,9 +2343,8 @@ public final class PlaybackCoordinator {
 
     private func updateNowPlayingInfoIfNeeded(force: Bool = false) {
         guard let session = currentSession else {
-            bridge.updateNowPlaying(nil)
-            bridge.updateLiveActivity(nil)
             lastLiveActivityContent = nil
+            bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)
             lastNowPlayingBookID = nil
             lastNowPlayingChapterID = nil
             lastNowPlayingIsPlaying = nil
@@ -2372,17 +2371,21 @@ public final class PlaybackCoordinator {
         lastNowPlayingIsPlaying = isPlaying
         lastNowPlayingRate = rate
 
-        bridge.updateNowPlaying(Self.nowPlayingInfo(
+        let currentTime = isEngineLoaded ? relativeEngineTime(for: session) : session.position
+        let info = Self.nowPlayingInfo(
             session: session,
-            currentTime: isEngineLoaded ? relativeEngineTime(for: session) : session.position,
+            currentTime: currentTime,
             duration: session.duration,
             rate: engine.rate,
             isPlaying: isPlaying
-        ))
-        updateLiveActivityIfNeeded(session: session, currentTime: isEngineLoaded ? relativeEngineTime(for: session) : session.position, isPlaying: isPlaying)
+        )
+        let activity = nextLiveActivityContent(session: session, currentTime: currentTime, isPlaying: isPlaying)
+        bridge.updateLockScreen(nowPlaying: info, liveActivity: activity ?? lastLiveActivityContent)
     }
 
-    private func updateLiveActivityIfNeeded(session: PlaybackSession, currentTime: TimeInterval, isPlaying: Bool) {
+    /// Pure builder/deduper: returns new content, or nil when the policy says
+    /// nothing meaningful changed (the caller then resubmits the retained content).
+    private func nextLiveActivityContent(session: PlaybackSession, currentTime: TimeInterval, isPlaying: Bool) -> LiveActivityContent? {
         let sleep: SleepState
         switch sleepTimer.mode {
         case .off: sleep = .off
@@ -2405,9 +2408,9 @@ public final class PlaybackCoordinator {
             sleep: sleep,
             capturedAt: Date()
         )
-        guard LiveActivityUpdatePolicy.shouldPush(previous: lastLiveActivityContent, next: content) else { return }
+        guard LiveActivityUpdatePolicy.shouldPush(previous: lastLiveActivityContent, next: content) else { return nil }
         lastLiveActivityContent = content
-        bridge.updateLiveActivity(content)
+        return content
     }
 
     /// Pure builder for the Now Playing payload (Step 0b). Keeping it a plain

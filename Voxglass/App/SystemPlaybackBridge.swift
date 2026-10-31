@@ -44,6 +44,13 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         publishNowPlaying()
     }
 
+    func updateLockScreen(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?) {
+        latestInfo = nowPlaying
+        let result = liveActivityController?.update(liveActivity) ?? .inactive
+        liveActivityResult = result
+        applyLiveActivityResult(result)
+    }
+
     /// Publishes the latest system Now Playing card.
     private func publishNowPlaying() {
         guard let info = latestInfo else {
