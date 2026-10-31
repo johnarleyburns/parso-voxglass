@@ -61,6 +61,10 @@ public protocol PlaybackPlatformBridge: AnyObject {
     /// Publishes (or clears, when nil) the current now-playing state.
     func updateNowPlaying(_ info: NowPlayingInfo?)
 
+    /// Atomically submits the lock-screen state: the Live Activity decides first,
+    /// then Now Playing is cleared or published accordingly.
+    func updateLockScreen(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?)
+
     /// Publishes review metadata (e.g. CarPlay paragraph review) through the same
     /// Live Activity gate as `updateNowPlaying`. Retained as latest state, and
     /// never written to the system card while a Live Activity owns the lock screen.
@@ -135,6 +139,8 @@ public final class NoopPlaybackBridge: PlaybackPlatformBridge {
     /// `.none` = never set; `.some(nil)` = fallback requested; `.some(data)` = real art.
     public private(set) var lastArtworkData: Data??
     public private(set) var lastLiveActivity: LiveActivityContent?
+    /// Every atomic lock-screen submission, in order.
+    public private(set) var lockScreenCalls: [(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?)] = []
     public private(set) var auxiliaryGate = AuxiliaryNowPlayingGate()
     public private(set) var lastAuxiliaryEffect: AuxiliaryNowPlayingGate.Effect?
     /// Simulates the Live Activity reconciliation result for tests.
@@ -143,6 +149,11 @@ public final class NoopPlaybackBridge: PlaybackPlatformBridge {
     public private(set) var skipForward: Int?
     public init() {}
     public func updateNowPlaying(_ info: NowPlayingInfo?) { lastNowPlaying = info }
+    public func updateLockScreen(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?) {
+        lockScreenCalls.append((nowPlaying, liveActivity))
+        lastNowPlaying = nowPlaying
+        lastLiveActivity = liveActivity
+    }
     public func updateAuxiliaryNowPlaying(title: String, artist: String) {
         lastAuxiliaryEffect = auxiliaryGate.update(
             AuxiliaryNowPlaying(title: title, artist: artist), reconciliation: liveActivityReconciliation)
