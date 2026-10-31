@@ -61,13 +61,10 @@ public protocol PlaybackPlatformBridge: AnyObject {
     /// Publishes (or clears, when nil) the current now-playing state.
     func updateNowPlaying(_ info: NowPlayingInfo?)
 
-    /// Atomically submits the lock-screen state: the Live Activity decides first,
-    /// then Now Playing is cleared or published accordingly.
-    func updateLockScreen(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?)
+    /// Submits the lock-screen state; native Now Playing is the sole publisher.
+    func updateLockScreen(nowPlaying: NowPlayingInfo?)
 
-    /// Publishes review metadata (e.g. CarPlay paragraph review) through the same
-    /// Live Activity gate as `updateNowPlaying`. Retained as latest state, and
-    /// never written to the system card while a Live Activity owns the lock screen.
+    /// Publishes review metadata (e.g. CarPlay paragraph review) to native Now Playing.
     func updateAuxiliaryNowPlaying(title: String, artist: String)
 
     /// Clears any auxiliary metadata so it cannot leak into later playback.
@@ -76,9 +73,6 @@ public protocol PlaybackPlatformBridge: AnyObject {
     /// Sets the lock-screen artwork from raw image bytes. `nil` selects the
     /// app's bundled fallback artwork.
     func setArtwork(_ imageData: Data?)
-
-    /// Publishes the platform-free Live Activity payload, or clears it.
-    func updateLiveActivity(_ content: LiveActivityContent?)
 
     /// Updates the preferred skip intervals surfaced on the remote command center.
     func setSkipIntervals(backward: Int, forward: Int)
@@ -99,32 +93,7 @@ public struct AuxiliaryNowPlaying: Equatable, Sendable {
     }
 }
 
-/// Retains the latest auxiliary metadata and decides, using the same Live
-/// Activity reconciliation as normal Now Playing, whether it may be published.
-public struct AuxiliaryNowPlayingGate: Equatable, Sendable {
-    public enum Effect: Equatable, Sendable {
-        /// A Live Activity owns the lock screen: clear the card, publish nothing.
-        case clear
-        /// Nothing suppresses the metadata; it may be published.
-        case publish(AuxiliaryNowPlaying?)
-    }
-
-    public private(set) var latest: AuxiliaryNowPlaying?
-
-    public init() {}
-
-    public mutating func update(_ metadata: AuxiliaryNowPlaying?, reconciliation: LiveActivityReconciliation) -> Effect {
-        latest = metadata
-        switch reconciliation.nowPlayingAction {
-        case .clear: return .clear
-        case .publishLatest: return .publish(latest)
-        }
-    }
-}
-
 public extension PlaybackPlatformBridge {
-    func updateLiveActivity(_ content: LiveActivityContent?) {}
-
     func runWithBackgroundTask(_ work: @escaping @MainActor () async -> Void) {
         Task { @MainActor in await work() }
     }
@@ -138,31 +107,22 @@ public final class NoopPlaybackBridge: PlaybackPlatformBridge {
     public private(set) var lastNowPlaying: NowPlayingInfo?
     /// `.none` = never set; `.some(nil)` = fallback requested; `.some(data)` = real art.
     public private(set) var lastArtworkData: Data??
-    public private(set) var lastLiveActivity: LiveActivityContent?
     /// Every atomic lock-screen submission, in order.
-    public private(set) var lockScreenCalls: [(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?)] = []
-    public private(set) var auxiliaryGate = AuxiliaryNowPlayingGate()
-    public private(set) var lastAuxiliaryEffect: AuxiliaryNowPlayingGate.Effect?
-    /// Simulates the Live Activity reconciliation result for tests.
-    public var liveActivityReconciliation: LiveActivityReconciliation = .inactive
+    public private(set) var lockScreenCalls: [NowPlayingInfo?] = []
+    public private(set) var auxiliaryNowPlaying: AuxiliaryNowPlaying?
     public private(set) var skipBackward: Int?
     public private(set) var skipForward: Int?
     public init() {}
     public func updateNowPlaying(_ info: NowPlayingInfo?) { lastNowPlaying = info }
-    public func updateLockScreen(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?) {
-        lockScreenCalls.append((nowPlaying, liveActivity))
+    public func updateLockScreen(nowPlaying: NowPlayingInfo?) {
+        lockScreenCalls.append(nowPlaying)
         lastNowPlaying = nowPlaying
-        lastLiveActivity = liveActivity
     }
     public func updateAuxiliaryNowPlaying(title: String, artist: String) {
-        lastAuxiliaryEffect = auxiliaryGate.update(
-            AuxiliaryNowPlaying(title: title, artist: artist), reconciliation: liveActivityReconciliation)
+        auxiliaryNowPlaying = AuxiliaryNowPlaying(title: title, artist: artist)
     }
-    public func clearAuxiliaryNowPlaying() {
-        lastAuxiliaryEffect = auxiliaryGate.update(nil, reconciliation: liveActivityReconciliation)
-    }
+    public func clearAuxiliaryNowPlaying() { auxiliaryNowPlaying = nil }
     public func setArtwork(_ imageData: Data?) { lastArtworkData = .some(imageData) }
-    public func updateLiveActivity(_ content: LiveActivityContent?) { lastLiveActivity = content }
     public func setSkipIntervals(backward: Int, forward: Int) {
         skipBackward = backward; skipForward = forward
     }

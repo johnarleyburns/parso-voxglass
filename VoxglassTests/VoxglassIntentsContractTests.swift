@@ -59,7 +59,6 @@ import Testing
         let paths = [
             "VoxglassShared/PlaybackControlIntents.swift",
             "VoxglassShared/PlaybackCommand.swift",
-            "VoxglassShared/BookActivityAttributes.swift",
             "VoxglassWidgets/VoxglassWidgets.swift",
             "VoxglassWidgets/PlaybackCommandRouter.swift"
         ]
@@ -73,15 +72,10 @@ import Testing
 
     @Test func skipCommandsUseStoredIntervals() throws {
         let router = try source("Voxglass/App/PlaybackCommandRouter.swift")
-        let liveActivity = try source("Voxglass/App/LiveActivityController.swift")
         #expect(router.contains("Keys.skipBackInterval"))
         #expect(router.contains("Keys.skipForwardInterval"))
         #expect(!router.contains("skip(by: -15"))
         #expect(!router.contains("skip(by: 30"))
-        #expect(liveActivity.contains("configuredSkipBack"))
-        #expect(liveActivity.contains("configuredSkipForward"))
-        #expect(!liveActivity.contains("skipBack: 15"))
-        #expect(!liveActivity.contains("skipForward: 30"))
     }
 
     private var repoRoot: URL {

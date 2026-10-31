@@ -55,7 +55,6 @@ import Foundation
         await h.coordinator.play(makeBook())
         await drain()
         #expect(!h.bridge.lockScreenCalls.isEmpty)
-        for call in h.bridge.lockScreenCalls { #expect(call.liveActivity == nil) }
         #expect(h.bridge.lastNowPlaying != nil)
     }
 
@@ -66,11 +65,10 @@ import Foundation
         let before = h.bridge.lockScreenCalls.count
         h.coordinator.pause()
         #expect(h.bridge.lockScreenCalls.count == before + 1)
-        #expect(h.bridge.lastLiveActivity == nil)
         #expect(h.bridge.lastNowPlaying?.reportedRate == 0)
     }
 
-    @Test func fullLifecycleNeverSubmitsLiveActivity() async {
+    @Test func fullLifecycleRecordsNativeNowPlayingStates() async {
         let h = makeHarness()
         let first = makeBook(title: "One")
         await h.coordinator.play(first)
@@ -92,16 +90,37 @@ import Foundation
         h.coordinator.stopPlayback(forDeletedBook: second.book.id)
         #expect(h.bridge.lastNowPlaying == nil)
         #expect(!h.bridge.lockScreenCalls.isEmpty)
-        for call in h.bridge.lockScreenCalls { #expect(call.liveActivity == nil) }
+    }
+
+    @Test func eachTransitionRecordsOneNativeNowPlayingState() async {
+        let h = makeHarness()
+        await h.coordinator.play(makeBook(title: "One"))
+        await drain()
+        #expect(h.bridge.lastNowPlaying?.reportedRate != 0)
+        var count = h.bridge.lockScreenCalls.count
+        h.coordinator.pause()
+        #expect(h.bridge.lockScreenCalls.count == count + 1)
+        #expect(h.bridge.lastNowPlaying?.reportedRate == 0)
+        count = h.bridge.lockScreenCalls.count
+        await h.coordinator.seek(to: 10)
+        await drain()
+        #expect(h.bridge.lockScreenCalls.count > count)
+        #expect(h.bridge.lastNowPlaying != nil)
+        h.coordinator.setPlaybackRate(1.5)
+        await drain()
+        #expect(h.bridge.lastNowPlaying != nil)
+        let second = makeBook(title: "Two")
+        await h.coordinator.play(second)
+        await drain()
+        #expect(h.bridge.lastNowPlaying?.albumTitle == "Two")
+        h.coordinator.stopPlayback(forDeletedBook: second.book.id)
+        #expect(h.bridge.lockScreenCalls.last! == nil)
     }
 
     @Test func coordinatorSourceHasNoSplitBridgePair() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let source = try String(contentsOf: root.appendingPathComponent("Voxglass/Core/Playback/PlaybackCoordinator.swift"), encoding: .utf8)
         #expect(!source.contains("bridge.updateNowPlaying("))
-        #expect(!source.contains("bridge.updateLiveActivity("))
-        #expect(!source.contains("nextLiveActivityContent("))
-        #expect(!source.contains("lastLiveActivityContent"))
-        #expect(source.contains("bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)"))
+        #expect(source.contains("bridge.updateLockScreen(nowPlaying: nil)"))
     }
 }

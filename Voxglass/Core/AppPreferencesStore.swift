@@ -24,7 +24,6 @@ public struct AppPreferencesStore: DynamicProperty {
         /// one-way supporter badge, not a re-checked entitlement.
         public static let isSupporter = "voxglass.isSupporter"
         public static let widgetSnapshot = "settings.widgetSnapshot"
-        public static let liveActivity = "settings.liveActivity"
     }
 
     @AppStorage(Keys.selectedCollectionIDs) private var selectedCollectionIDsRaw = ""
