@@ -13,6 +13,8 @@ import Testing
         let appText = try source(Self.appPath)
         let sharedText = try source(Self.sharedPath)
         #expect(sharedText.contains("struct ResumeListeningIntent: AudioPlaybackIntent"))
+        #expect(sharedText.contains("struct TogglePlaybackIntent: AudioPlaybackIntent"))
+        #expect(!sharedText.contains("struct TogglePlaybackIntent: LiveActivityIntent"))
         #expect(!withoutLineComments(appText).contains("struct ResumeListeningIntent"))
         #expect(appText.contains("struct PlayBookIntent: AudioPlaybackIntent"))
     }

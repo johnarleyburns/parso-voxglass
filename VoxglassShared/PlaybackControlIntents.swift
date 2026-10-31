@@ -11,7 +11,7 @@ struct ResumeListeningIntent: AudioPlaybackIntent {
     }
 }
 
-struct TogglePlaybackIntent: LiveActivityIntent {
+struct TogglePlaybackIntent: AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Play or Pause Voxglass"
     static let description = IntentDescription("Play or pause the current audiobook in Voxglass.")
     static let openAppWhenRun = false
