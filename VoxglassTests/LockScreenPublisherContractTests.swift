@@ -9,7 +9,6 @@ struct LockScreenPublisherContractTests {
     private static let bridge = "Voxglass/App/SystemPlaybackBridge.swift"
     private static let carPlayReview = "Voxglass/App/CarPlay/CarPlayReviewController.swift"
     private static let coordinator = "Voxglass/Core/Playback/PlaybackCoordinator.swift"
-    private static let liveActivity = "Voxglass/App/LiveActivityController.swift"
 
     @Test func carPlayReviewControllerDoesNotTouchNowPlayingInfoCenter() throws {
         let text = try source(Self.carPlayReview)
@@ -21,17 +20,27 @@ struct LockScreenPublisherContractTests {
         #expect(!text.contains("bridge.updateNowPlaying("))
     }
 
-    @Test func coordinatorDoesNotSubmitLiveActivityDirectly() throws {
-        let text = try source(Self.coordinator)
-        #expect(!text.contains("bridge.updateLiveActivity("))
+    @Test func bridgePublishesNativeNowPlayingOnly() throws {
+        let text = try source(Self.bridge)
+        #expect(text.contains("func updateLockScreen(nowPlaying: NowPlayingInfo?)"))
+        #expect(text.contains("MPNowPlayingInfoCenter.default().nowPlayingInfo = mpInfo(from: info)"))
     }
 
-    @Test func bridgeReconcilesThroughUpdateLockScreenAndClearsMediaPlayerWhenActive() throws {
-        let text = try source(Self.bridge)
-        #expect(text.contains("func updateLockScreen("))
-        #expect(text.contains("nowPlayingAction"))
-        #expect(text.contains("case .clear: MPNowPlayingInfoCenter.default().nowPlayingInfo = nil"))
-        #expect(try source(Self.liveActivity).contains("Activity.request"))
+    @Test func noCustomAudiobookActivityKitInIPhoneOrWidgetSources() throws {
+        let forbidden = ["Activity.request", "ActivityConfiguration(for: BookActivityAttributes",
+                         "LiveActivityController", "BookActivityAttributes"]
+        for dir in ["Voxglass/App", "Voxglass/Core/Playback", "VoxglassShared", "VoxglassWidgets"] {
+            let root = repoRoot.appendingPathComponent(dir)
+            let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?
+                .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" } ?? []
+            #expect(!files.isEmpty, "No sources under \(dir)")
+            for file in files {
+                let text = try String(contentsOf: file, encoding: .utf8)
+                for token in forbidden {
+                    #expect(!text.contains(token), "\(token) found in \(file.lastPathComponent)")
+                }
+            }
+        }
     }
 
     @Test func widgetBundleNoLongerRegistersCustomAudiobookLiveActivity() throws {

@@ -2309,7 +2309,7 @@ public final class PlaybackCoordinator {
 
     private func updateNowPlayingInfo() {
         guard let session = currentSession else {
-            bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)
+            bridge.updateLockScreen(nowPlaying: nil)
             return
         }
         let currentTime = isEngineLoaded ? relativeEngineTime(for: session) : session.position
@@ -2323,7 +2323,7 @@ public final class PlaybackCoordinator {
             rate: engine.rate,
             isPlaying: isPlaying
         )
-        bridge.updateLockScreen(nowPlaying: info, liveActivity: nil)
+        bridge.updateLockScreen(nowPlaying: info)
     }
 
     /// Tick-side variant: avoids rebuilding when identity, rate, and rate-based
@@ -2336,7 +2336,7 @@ public final class PlaybackCoordinator {
 
     private func updateNowPlayingInfoIfNeeded(force: Bool = false) {
         guard let session = currentSession else {
-            bridge.updateLockScreen(nowPlaying: nil, liveActivity: nil)
+            bridge.updateLockScreen(nowPlaying: nil)
             lastNowPlayingBookID = nil
             lastNowPlayingChapterID = nil
             lastNowPlayingIsPlaying = nil
@@ -2371,7 +2371,7 @@ public final class PlaybackCoordinator {
             rate: engine.rate,
             isPlaying: isPlaying
         )
-        bridge.updateLockScreen(nowPlaying: info, liveActivity: nil)
+        bridge.updateLockScreen(nowPlaying: info)
     }
 
     /// Pure builder for the Now Playing payload (Step 0b). Keeping it a plain

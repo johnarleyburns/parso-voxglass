@@ -4,27 +4,17 @@ import Testing
 
 @MainActor
 @Suite struct AuxiliaryNowPlayingTests {
-    @Test func inactiveLiveActivityMakesMetadataPublishable() {
+    @Test func auxiliaryMetadataIsRecordedForNativeNowPlaying() {
         let bridge = NoopPlaybackBridge()
-        bridge.liveActivityReconciliation = .inactive
         bridge.updateAuxiliaryNowPlaying(title: "P1", artist: "Project")
-        #expect(bridge.lastAuxiliaryEffect == .publish(AuxiliaryNowPlaying(title: "P1", artist: "Project")))
-    }
-
-    @Test func activeLiveActivityClearsAndRetainsOnlyAsPending() {
-        let bridge = NoopPlaybackBridge()
-        bridge.liveActivityReconciliation = .active(activityID: "a")
-        bridge.updateAuxiliaryNowPlaying(title: "P1", artist: "Project")
-        #expect(bridge.lastAuxiliaryEffect == .clear)
-        #expect(bridge.auxiliaryGate.latest == AuxiliaryNowPlaying(title: "P1", artist: "Project"))
+        #expect(bridge.auxiliaryNowPlaying == AuxiliaryNowPlaying(title: "P1", artist: "Project"))
     }
 
     @Test func clearDropsAuxiliaryMetadata() {
         let bridge = NoopPlaybackBridge()
         bridge.updateAuxiliaryNowPlaying(title: "P1", artist: "Project")
         bridge.clearAuxiliaryNowPlaying()
-        #expect(bridge.auxiliaryGate.latest == nil)
-        #expect(bridge.lastAuxiliaryEffect == .publish(nil))
+        #expect(bridge.auxiliaryNowPlaying == nil)
     }
 
     @Test func carPlayReviewControllerHasNoDirectMediaPlayerWrite() throws {

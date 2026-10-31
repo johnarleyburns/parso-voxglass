@@ -12,7 +12,6 @@ final class AppServices: ObservableObject {
     let playbackCoordinator: PlaybackCoordinator
     /// The shared platform bridge; CarPlay review metadata routes through it.
     let playbackBridge: any PlaybackPlatformBridge
-    let liveActivityController: LiveActivityController
     let tasteProfileStore: TasteProfileStore
     let libraryRepository: LibraryRepository
     let cloudSync: VoxglassCloudSync
@@ -39,7 +38,6 @@ final class AppServices: ObservableObject {
         var bookmarkStore = SQLiteBookmarkStore(database: database)
         let audioEngine = AVPlayerAudioEngine()
         let playbackBridge = SystemPlaybackBridge()
-        let liveActivityController = LiveActivityController()
         let tasteProfileStore = TasteProfileStore(database: database)
         let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: bookmarkStore)
         let cloudKitSyncEngine = CloudKitSyncEngine(database: database)
@@ -60,8 +58,6 @@ final class AppServices: ObservableObject {
             positionStore: positionStore,
             bridge: playbackBridge
         )
-        self.liveActivityController = liveActivityController
-        playbackBridge.liveActivityController = liveActivityController
         playbackBridge.coordinator = self.playbackCoordinator
         self.playbackCoordinator.localSourceContextProvider = { [libraryRepository] bookID in
             await libraryRepository.localSourceContext(bookID: bookID)

@@ -75,7 +75,6 @@ struct SettingsView: View {
                     VolumeNormalizationRow()
                     SleepTimerDefaultRow()
                     WidgetSnapshotSettingsRow()
-                    LiveActivitySettingsRow()
                 }
 
                 settingsGroup("Insights") {
@@ -1092,26 +1091,6 @@ private struct WidgetSnapshotSettingsRow: View {
         .padding(14)
         .raisedSurface()
         .accessibilityIdentifier("settings.widgetSnapshot")
-    }
-}
-
-private struct LiveActivitySettingsRow: View {
-    @AppStorage(AppPreferencesStore.Keys.liveActivity) private var enabled = true
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Toggle(isOn: $enabled) {
-                Label("Live Activity", systemImage: "waveform.circle")
-                    .voxType(.body)
-                    .foregroundStyle(Palette.ink)
-            }
-            Text("Show the current book, chapter progress, and playback controls on the Lock Screen and Dynamic Island.")
-                .voxType(.meta)
-                .foregroundStyle(Palette.ink3)
-        }
-        .padding(14)
-        .raisedSurface()
-        .accessibilityIdentifier("settings.liveActivity")
     }
 }
 

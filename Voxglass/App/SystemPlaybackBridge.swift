@@ -17,11 +17,9 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     /// Weakly held so the bridge can forward app-lifecycle and audio-interruption
     /// notifications back into playback. Set by `AppServices` after construction.
     weak var coordinator: PlaybackCoordinator?
-    var liveActivityController: LiveActivityController?
 
     private var latestInfo: NowPlayingInfo?
-    private var auxiliaryGate = AuxiliaryNowPlayingGate()
-    private var liveActivityResult: LiveActivityReconciliation = .inactive
+    private var auxiliaryMetadata: AuxiliaryNowPlaying?
     private var currentArtwork: MPMediaItemArtwork?
     /// Observer tokens in a `@unchecked Sendable` registry so the nonisolated
     /// `deinit` can tear them down without a Sendable crossing (Swift 6).
@@ -44,17 +42,15 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         publishNowPlaying()
     }
 
-    func updateLockScreen(nowPlaying: NowPlayingInfo?, liveActivity: LiveActivityContent?) {
+    func updateLockScreen(nowPlaying: NowPlayingInfo?) {
         latestInfo = nowPlaying
-        let result = liveActivityController?.update(liveActivity) ?? .inactive
-        liveActivityResult = result
-        applyLiveActivityResult(result)
+        publishNowPlaying()
     }
 
     /// Publishes the latest system Now Playing card.
     private func publishNowPlaying() {
         guard let info = latestInfo else {
-            if let aux = auxiliaryGate.latest, liveActivityResult.nowPlayingAction == .publishLatest {
+            if let aux = auxiliaryMetadata {
                 MPNowPlayingInfoCenter.default().nowPlayingInfo = [
                     MPMediaItemPropertyTitle: aux.title,
                     MPMediaItemPropertyArtist: aux.artist
@@ -78,12 +74,6 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
         publishNowPlaying()
     }
 
-    func updateLiveActivity(_ content: LiveActivityContent?) {
-        let result = liveActivityController?.update(content) ?? .inactive
-        liveActivityResult = result
-        applyLiveActivityResult(result)
-    }
-
     func updateAuxiliaryNowPlaying(title: String, artist: String) {
         applyAuxiliary(AuxiliaryNowPlaying(title: title, artist: artist))
     }
@@ -93,18 +83,8 @@ final class SystemPlaybackBridge: NSObject, PlaybackPlatformBridge {
     }
 
     private func applyAuxiliary(_ metadata: AuxiliaryNowPlaying?) {
-        switch auxiliaryGate.update(metadata, reconciliation: liveActivityResult) {
-        case .clear: MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-        case .publish: publishNowPlaying()
-        }
-    }
-
-    /// Clears Now Playing while a Live Activity owns the lock screen so only one player shows.
-    private func applyLiveActivityResult(_ result: LiveActivityReconciliation) {
-        switch result.nowPlayingAction {
-        case .clear: MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-        case .publishLatest: publishNowPlaying()
-        }
+        auxiliaryMetadata = metadata
+        publishNowPlaying()
     }
 
     func setSkipIntervals(backward: Int, forward: Int) {
