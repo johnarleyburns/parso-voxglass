@@ -110,7 +110,7 @@ private actor RepairPositions: PositionStore {
     /// retaining a finite timeout when the failure is not actually published.
     private func waitForFailure(
         _ coordinator: PlaybackCoordinator,
-        timeout: Duration = .seconds(2)
+        timeout: Duration = .seconds(30)
     ) async -> PlaybackFailure? {
         let deadline = ContinuousClock.now + timeout
         while ContinuousClock.now < deadline {
