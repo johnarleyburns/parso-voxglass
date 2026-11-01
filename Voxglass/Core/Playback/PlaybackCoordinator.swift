@@ -136,6 +136,11 @@ public final class PlaybackCoordinator {
     /// each suspension; `Task.isCancelled` alone can race with completion.
     @ObservationIgnored private var playbackGeneration: UInt64 = 0
 
+    /// Generation under which the engine's current item finished loading.
+    /// Engine-reported issues are only actionable while it matches the live
+    /// generation; otherwise they describe a superseded item.
+    @ObservationIgnored private var engineSettledGeneration: UInt64 = 0
+
     private func owns(_ generation: UInt64) -> Bool {
         generation == playbackGeneration
     }
@@ -144,6 +149,9 @@ public final class PlaybackCoordinator {
     @discardableResult
     private func invalidatePlaybackOwnership() -> UInt64 {
         playbackGeneration &+= 1
+        // The progress loop is bound to the selection that created it.
+        progressTask?.cancel()
+        progressTask = nil
         engineLoadTask?.cancel()
         engineLoadTask = nil
         return playbackGeneration
@@ -206,7 +214,8 @@ public final class PlaybackCoordinator {
             }
         }
         self.engine.onPlaybackIssue = { [weak self] issue in
-            self?.handleEngineIssue(issue)
+            guard let self else { return }
+            self.handleEngineIssue(issue, engineGeneration: self.engineSettledGeneration)
         }
         self.engine.onItemChanged = { [weak self] in
             Task { @MainActor in
@@ -407,6 +416,7 @@ public final class PlaybackCoordinator {
             applyStoredRate(forBookID: session.book.id)
             guard decodeRecoveryTask == nil else { return false }
             isEngineLoaded = true
+            engineSettledGeneration = playbackGeneration
             let bwc = BookWithChapters(book: session.book, chapters: session.chapters)
             prefetchNextChapter(from: bwc, currentChapter: session.chapter)
             await preloadImmediateNextChapter(in: session, generation: generation)
@@ -661,6 +671,7 @@ public final class PlaybackCoordinator {
             guard !Task.isCancelled, owns(generation) else { return }
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
+            engineSettledGeneration = playbackGeneration
             applyStoredRate(forBookID: book.book.id)
             engine.play()
 
@@ -844,6 +855,7 @@ public final class PlaybackCoordinator {
             guard !Task.isCancelled, owns(generation) else { return }
             guard decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
+            engineSettledGeneration = playbackGeneration
             applyStoredRate(forBookID: book.book.id)
             engine.play()
 
@@ -1594,6 +1606,7 @@ public final class PlaybackCoordinator {
             try await engine.load(url: source.url, startTime: chapter.startTime + startTime, lease: source.lease)
             guard owns(generation), decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
+            engineSettledGeneration = playbackGeneration
             applyStoredRate(forBookID: session.book.id)
             if shouldPlay {
                 engine.play()
@@ -1807,6 +1820,7 @@ public final class PlaybackCoordinator {
 
     private func startProgressLoop() {
         progressTask?.cancel()
+        let generation = playbackGeneration
         progressTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
@@ -1814,13 +1828,17 @@ public final class PlaybackCoordinator {
                 // dying task would fire one phantom tick, clobbering the fresh
                 // chapter-start row at every gapless advance (RC4).
                 guard !Task.isCancelled else { return }
-                await self?.tickProgress()
+                await self?.tickProgress(generation: generation)
             }
         }
     }
 
-    func tickProgress() async {
+    /// `generation` is the ownership token the calling loop was created under;
+    /// a superseded tick must not mutate the newer session.
+    func tickProgress(generation: UInt64? = nil) async {
         guard let session = currentSession else { return }
+        let generation = generation ?? playbackGeneration
+        guard owns(generation) else { return }
 
         accumulateListening()
         if let target = decodeRecoveryTarget, engine.isPlaying,
@@ -1858,6 +1876,7 @@ public final class PlaybackCoordinator {
         if engine.isPlaying,
            let chapterDuration = session.duration,
            livePosition >= chapterDuration - 0.25 {
+            guard owns(generation) else { return }
             await advanceAfterChapterEnd()
             return
         }
@@ -1885,6 +1904,7 @@ public final class PlaybackCoordinator {
            Date().timeIntervalSince(lastPeriodicSave) >= 5 {
             await persistCurrentPosition(reason: .periodic)
         }
+        guard owns(generation) else { return }
 
         updateNowPlayingInfoIfNeeded()
     }
@@ -1999,8 +2019,9 @@ public final class PlaybackCoordinator {
         ))
     }
 
-    private func handleEngineIssue(_ issue: AudioEngineIssue) {
+    private func handleEngineIssue(_ issue: AudioEngineIssue, engineGeneration: UInt64? = nil) {
         guard let session = currentSession else { return }
+        if let engineGeneration, !owns(engineGeneration) { return }
         if case .decodeFailed = issue {
             if decodeRecoveryTask != nil {
                 pendingDecodeFailure = issue
@@ -2144,6 +2165,7 @@ public final class PlaybackCoordinator {
                     return
                 }
                 self.isEngineLoaded = true
+                engineSettledGeneration = self.playbackGeneration
                 self.applyStoredRate(forBookID: session.book.id)
                 self.engine.play()
                 self.mutateSession { $0.isPlaying = true }

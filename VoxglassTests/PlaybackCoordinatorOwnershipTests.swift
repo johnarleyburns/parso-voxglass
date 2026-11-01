@@ -188,4 +188,58 @@ import Foundation
         #expect(playCount(h.engine) == 1)
         #expect(h.engine.loadCalls.first?.startTime == 30)
     }
+
+    @Test func staleProgressTickCannotStompNewerSelection() async {
+        let h = makeHarness()
+        let a = makeBook(title: "A"), b = makeBook(title: "B")
+        h.coordinator.selectAndPlay(a)
+        await drain()
+        #expect(h.coordinator.playbackPhase == .playing)
+        h.engine.suspendLoads = true
+        h.coordinator.selectAndPlay(b)
+        await drain()
+        // Engine reads not-playing mid-load; a stale loop tick must be inert.
+        h.engine.isPlaying = false
+        await h.coordinator.tickProgress(generation: 0)
+        #expect(h.coordinator.playbackPhase == .preparing)
+        h.engine.resumeSuspendedLoad()
+        await drain()
+        #expect(h.coordinator.currentSession?.book.id == b.book.id)
+        #expect(h.coordinator.playbackPhase == .playing)
+    }
+
+    @Test func reportedSequenceSettlesPlayingForRevisitedBook() async {
+        let h = makeHarness()
+        let a = makeBook(title: "A"), b = makeBook(title: "B")
+        h.coordinator.selectAndPlay(a)
+        await drain()
+        h.engine.suspendLoads = true
+        h.coordinator.selectAndPlay(b)
+        await drain()
+        h.engine.isPlaying = false
+        await h.coordinator.tickProgress(generation: 0)
+        h.coordinator.selectAndPlay(a)
+        await drain()
+        h.engine.resumeSuspendedLoad() // B (superseded)
+        h.engine.resumeSuspendedLoad() // A
+        await drain()
+        #expect(h.coordinator.currentSession?.book.id == a.book.id)
+        #expect(h.coordinator.playbackPhase == .playing)
+    }
+
+    @Test func staleEngineIssueCannotMutateNewerSession() async {
+        let h = makeHarness()
+        let a = makeBook(title: "A"), b = makeBook(title: "B")
+        h.coordinator.selectAndPlay(a)
+        await drain()
+        h.engine.suspendLoads = true
+        h.coordinator.selectAndPlay(b)
+        await drain()
+        h.engine.onPlaybackIssue?(.failed("stale item failure"))
+        #expect(h.coordinator.playbackPhase == .preparing)
+        #expect(h.coordinator.currentSession?.book.id == b.book.id)
+        h.engine.resumeSuspendedLoad()
+        await drain()
+        #expect(h.coordinator.playbackPhase == .playing)
+    }
 }
