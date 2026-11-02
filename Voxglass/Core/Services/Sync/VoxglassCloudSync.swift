@@ -375,7 +375,11 @@ public final class VoxglassCloudSync: ObservableObject {
     /// Resolves a cloud position payload to local ids (content key first, raw
     /// UUID as fallback) and upserts it, LWW on `updated_at`. Every
     /// `UUID(uuidString:)` is guarded. Returns whether the row was applied.
-    private func applyCloudPosition(_ dict: [String: Any]) async -> Bool {
+    /// `internal`, not `private`: exercised directly by
+    /// `applyCloudPositionRefusesEarlierChapterThatWouldRegressBookProgress`
+    /// since seeding the real `NSUbiquitousKeyValueStore.default` singleton
+    /// from a test would be flaky shared global state.
+    func applyCloudPosition(_ dict: [String: Any]) async -> Bool {
         let cloudUpdated = dict["updated_at"] as? Double ?? 0
         let positionSeconds = dict["position_seconds"] as? Double ?? 0
         let duration = dict["duration_seconds"] as? Double
@@ -418,6 +422,28 @@ public final class VoxglassCloudSync: ObservableObject {
             localChapterID = rows?.first?.string("id")
         }
         guard let chapterID = localChapterID else { return false }
+
+        // Never let a synced position for a chapter this device has already
+        // moved past look like "the current position" for the book, even if
+        // its own updated_at is freshly stamped (a backlog/retry payload, or
+        // another device's stale resume point for that one chapter).
+        let incomingIndexRows = (try? await database.query(
+            "SELECT chapter_index FROM chapters WHERE id = ? LIMIT 1",
+            [.string(chapterID)]
+        )) ?? []
+        let furthestRows = (try? await database.query("""
+        SELECT c.chapter_index AS chapter_index
+        FROM playback_positions pp
+        JOIN chapters c ON c.id = pp.chapter_id
+        WHERE pp.book_id = ?
+        ORDER BY c.chapter_index DESC
+        LIMIT 1
+        """, [.string(bookID)])) ?? []
+        if let incomingIndex = incomingIndexRows.first?.int("chapter_index"),
+           let furthestIndex = furthestRows.first?.int("chapter_index"),
+           incomingIndex < furthestIndex {
+            return false
+        }
 
         let localRows = (try? await database.query(
             "SELECT id, updated_at FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",

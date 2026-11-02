@@ -100,4 +100,93 @@ import Foundation
         // Verify lastSyncDate is set (push succeeded).
         #expect(cloudSync.lastSyncDate != nil)  // pushPlaybackPositions should set lastSyncDate when enabled
     }
+
+    private func seedTwoChapterBook(
+        _ database: AppDatabase
+    ) async throws -> (bookID: UUID, chapter1: UUID, chapter2: UUID) {
+        let sourceID = UUID(), bookID = UUID(), chapter1 = UUID(), chapter2 = UUID()
+        let now = Date().timeIntervalSince1970
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, created_at) VALUES (?, ?, ?, ?)",
+            [.string(sourceID.uuidString), .string(SourceKind.librivox.rawValue), .string("Source"), .double(now)]
+        )
+        try await database.execute("""
+        INSERT INTO books (id, title, authors_json, source_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, [.string(bookID.uuidString), .string("Book"), .string("[]"), .string(sourceID.uuidString), .double(now), .double(now)])
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, [.string(chapter1.uuidString), .string(bookID.uuidString), .string("Ch1"), .string("1"), .int(0), .double(300)])
+        try await database.execute("""
+        INSERT INTO chapters (id, book_id, title, sort_key, chapter_index, duration_seconds)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, [.string(chapter2.uuidString), .string(bookID.uuidString), .string("Ch2"), .string("2"), .int(1), .double(300)])
+        return (bookID, chapter1, chapter2)
+    }
+
+    @Test func applyCloudPositionRefusesEarlierChapterThatWouldRegressBookProgress() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "sync-regress-\(UUID().uuidString)")
+        try await database.prepare()
+        let cloudSync = VoxglassCloudSync(database: database)
+        cloudSync.testForceAvailable = true
+        let (bookID, chapter1, chapter2) = try await seedTwoChapterBook(database)
+
+        // The user has already progressed to chapter 2, saved durably at t=200.
+        try await database.execute(
+            "INSERT INTO playback_positions (id, book_id, chapter_id, position_seconds, updated_at) VALUES (?, ?, ?, ?, ?)",
+            [.string(UUID().uuidString), .string(bookID.uuidString), .string(chapter2.uuidString), .double(500), .double(200)]
+        )
+
+        // A stale cloud payload for chapter 1 arrives stamped after the real progress.
+        let staleChapter1Payload: [String: Any] = [
+            "book_id": bookID.uuidString,
+            "chapter_id": chapter1.uuidString,
+            "position_seconds": 30.0,
+            "updated_at": 300.0,
+            "is_finished": false
+        ]
+        let applied = await cloudSync.applyCloudPosition(staleChapter1Payload)
+        #expect(!applied)  // Must refuse: chapter 1 is behind the book's furthest known chapter 2
+
+        let chapter1Rows = try await database.query(
+            "SELECT id FROM playback_positions WHERE book_id = ? AND chapter_id = ?",
+            [.string(bookID.uuidString), .string(chapter1.uuidString)]
+        )
+        #expect(chapter1Rows.isEmpty)  // No row must be created for the regressed chapter
+
+        let chapter2Row = try await database.query(
+            "SELECT position_seconds FROM playback_positions WHERE book_id = ? AND chapter_id = ?",
+            [.string(bookID.uuidString), .string(chapter2.uuidString)]
+        )
+        #expect(abs((chapter2Row.first?.double("position_seconds") ?? -1) - 500) <= 0.001)
+    }
+
+    @Test func applyCloudPositionStillAcceptsGenuineForwardProgress() async throws {
+        let database = AppDatabase.makeTemporaryDatabase(named: "sync-advance-\(UUID().uuidString)")
+        try await database.prepare()
+        let cloudSync = VoxglassCloudSync(database: database)
+        cloudSync.testForceAvailable = true
+        let (bookID, chapter1, chapter2) = try await seedTwoChapterBook(database)
+        try await database.execute(
+            "INSERT INTO playback_positions (id, book_id, chapter_id, position_seconds, updated_at) VALUES (?, ?, ?, ?, ?)",
+            [.string(UUID().uuidString), .string(bookID.uuidString), .string(chapter1.uuidString), .double(290), .double(100)]
+        )
+
+        let advancePayload: [String: Any] = [
+            "book_id": bookID.uuidString,
+            "chapter_id": chapter2.uuidString,
+            "position_seconds": 15.0,
+            "updated_at": 200.0,
+            "is_finished": false
+        ]
+        let applied = await cloudSync.applyCloudPosition(advancePayload)
+        #expect(applied)  // A later chapter must still be accepted as forward progress
+
+        let chapter2Row = try await database.query(
+            "SELECT position_seconds FROM playback_positions WHERE book_id = ? AND chapter_id = ?",
+            [.string(bookID.uuidString), .string(chapter2.uuidString)]
+        )
+        #expect(abs((chapter2Row.first?.double("position_seconds") ?? -1) - 15) <= 0.001)
+    }
 }
