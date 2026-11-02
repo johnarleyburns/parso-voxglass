@@ -316,4 +316,97 @@ import Testing
         #expect(try await store.hasSyncRepair(scope: "account", repair: "scope-v1"))
         #expect(try await store.hasSyncRepair(scope: "other-account", repair: "scope-v1") == false)
     }
+
+    @Test func upsertPositionRefusesEarlierChapterThatWouldRegressBookProgress() async throws {
+        let db = AppDatabase.makeTemporaryDatabase()
+        try await db.prepare()
+        let sync = CloudKitSyncEngine(database: db)
+        let sourceKey = "regress-test"
+        let contentKey = "ia:regress-test"
+        let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/regress-test"))
+        let book = Book(title: "Book", authors: ["Author"], sourceID: source.id)
+        let chapter0 = Chapter(bookID: book.id, title: "Ch 1", index: 0, duration: 300,
+                               remoteURL: URL(string: "https://archive.org/download/regress-test/ch1.mp3"))
+        let chapter1 = Chapter(bookID: book.id, title: "Ch 2", index: 1, duration: 300,
+                               remoteURL: URL(string: "https://archive.org/download/regress-test/ch2.mp3"))
+
+        let libraryRecords = [
+            CloudKitRecordMapper.bookRecord(from: book, chapters: [chapter0, chapter1], contentKey: contentKey, sourceKey: sourceKey),
+            CloudKitRecordMapper.sourceRecord(from: source, sourceKey: sourceKey)
+        ]
+        // The user has already progressed to chapter 2, synced at t=200.
+        let advancedPosition = PlaybackPosition(
+            bookID: book.id, chapterID: chapter1.id, position: 500,
+            updatedAt: Date(timeIntervalSince1970: 200)
+        )
+        try await sync.applyFetchedLibraryChanges(
+            records: libraryRecords + [CloudKitRecordMapper.positionRecord(from: advancedPosition, bookContentKey: contentKey)],
+            tokenData: Data([1])
+        )
+
+        // A stale record for chapter 1 arrives stamped *after* (t=300) the
+        // real chapter-2 progress, simulating a sync "touch" of an old row.
+        let stalePosition = PlaybackPosition(
+            bookID: book.id, chapterID: chapter0.id, position: 30,
+            updatedAt: Date(timeIntervalSince1970: 300)
+        )
+        try await sync.applyFetchedLibraryChanges(
+            records: [CloudKitRecordMapper.positionRecord(from: stalePosition, bookContentKey: contentKey)],
+            tokenData: Data([2])
+        )
+
+        let library = try await LibraryRepository(database: db).fetchBooks(filteredBy: .all)
+        let imported = try #require(library.first)
+        let store = SQLitePositionStore(database: db)
+        let localChapter2 = try #require(imported.chapters.first { $0.index == 1 })
+        let localChapter1 = try #require(imported.chapters.first { $0.index == 0 })
+
+        let savedChapter2 = try await store.position(for: imported.book.id, chapterID: localChapter2.id)
+        #expect(abs((savedChapter2?.position ?? -1) - 500) <= 0.001)
+
+        let savedChapter1 = try await store.position(for: imported.book.id, chapterID: localChapter1.id)
+        #expect(savedChapter1 == nil)
+    }
+
+    @Test func upsertPositionStillAcceptsGenuineForwardProgress() async throws {
+        let db = AppDatabase.makeTemporaryDatabase()
+        try await db.prepare()
+        let sync = CloudKitSyncEngine(database: db)
+        let sourceKey = "advance-test"
+        let contentKey = "ia:advance-test"
+        let source = Source(kind: .librivox, title: "Source", url: URL(string: "https://archive.org/details/advance-test"))
+        let book = Book(title: "Book", authors: ["Author"], sourceID: source.id)
+        let chapter0 = Chapter(bookID: book.id, title: "Ch 1", index: 0, duration: 300,
+                               remoteURL: URL(string: "https://archive.org/download/advance-test/ch1.mp3"))
+        let chapter1 = Chapter(bookID: book.id, title: "Ch 2", index: 1, duration: 300,
+                               remoteURL: URL(string: "https://archive.org/download/advance-test/ch2.mp3"))
+
+        let libraryRecords = [
+            CloudKitRecordMapper.bookRecord(from: book, chapters: [chapter0, chapter1], contentKey: contentKey, sourceKey: sourceKey),
+            CloudKitRecordMapper.sourceRecord(from: source, sourceKey: sourceKey)
+        ]
+        let startPosition = PlaybackPosition(
+            bookID: book.id, chapterID: chapter0.id, position: 290,
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+        try await sync.applyFetchedLibraryChanges(
+            records: libraryRecords + [CloudKitRecordMapper.positionRecord(from: startPosition, bookContentKey: contentKey)],
+            tokenData: Data([1])
+        )
+
+        let advancePosition = PlaybackPosition(
+            bookID: book.id, chapterID: chapter1.id, position: 15,
+            updatedAt: Date(timeIntervalSince1970: 200)
+        )
+        try await sync.applyFetchedLibraryChanges(
+            records: [CloudKitRecordMapper.positionRecord(from: advancePosition, bookContentKey: contentKey)],
+            tokenData: Data([2])
+        )
+
+        let library = try await LibraryRepository(database: db).fetchBooks(filteredBy: .all)
+        let imported = try #require(library.first)
+        let localChapter2 = try #require(imported.chapters.first { $0.index == 1 })
+        let saved = try await SQLitePositionStore(database: db).position(for: imported.book.id, chapterID: localChapter2.id)
+        #expect(abs((saved?.position ?? -1) - 15) <= 0.001)
+    }
 }
