@@ -116,6 +116,65 @@ import Foundation
         #expect(abs((reconciled?.position ?? -1) - (137)) <= 0.001)  // Reconcile must replay the durable snapshot over the stale DB row
     }
 
+    @Test func hasProgressAtLeastRejectsAnEarlierChapterRegardlessOfTimestamp() {
+        let bookID = UUID()
+        let chapters = (0..<3).map { index in
+            Chapter(bookID: bookID, title: "Ch \(index)", index: index, duration: 300)
+        }
+        let local = PlaybackPosition(
+            bookID: bookID, chapterID: chapters[2].id, position: 50,
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+        let staleButFreshlyTimestamped = PlaybackPosition(
+            bookID: bookID, chapterID: chapters[0].id, position: 10,
+            updatedAt: Date(timeIntervalSince1970: 999)
+        )
+        #expect(!PlaybackCoordinator.hasProgressAtLeast(staleButFreshlyTimestamped, asFarAs: local, chapters: chapters))
+
+        let genuinelyAhead = PlaybackPosition(
+            bookID: bookID, chapterID: chapters[2].id, position: 80,
+            updatedAt: Date(timeIntervalSince1970: 50)
+        )
+        #expect(PlaybackCoordinator.hasProgressAtLeast(genuinelyAhead, asFarAs: local, chapters: chapters))
+    }
+
+    @Test func adoptCloudNowPlayingRefusesEarlierChapterOfSameBookEvenWhenNewer() async throws {
+        let db = AppDatabase.makeTemporaryDatabase(named: "adopt-regress-\(UUID().uuidString)")
+        let defaults = UserDefaults(suiteName: "adopt-regress-\(UUID().uuidString)")!
+        let store = SQLitePositionStore(database: db)
+        let coordinator = PlaybackCoordinator(
+            engine: FakeAudioEngine(),
+            positionStore: store,
+            snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
+            rateStore: PlaybackRateStore(defaults: defaults)
+        )
+        let bookID = UUID()
+        let chapters = (0..<3).map { index in
+            Chapter(bookID: bookID, title: "Ch \(index)", index: index, duration: 300)
+        }
+        try await seedBook(in: db, bookID: bookID, chapterID: chapters[2].id)
+        try await store.save(PlaybackPosition(
+            bookID: bookID, chapterID: chapters[2].id, position: 50,
+            updatedAt: Date(timeIntervalSince1970: 100)
+        ))
+
+        let book = BookWithChapters(
+            book: Book(id: bookID, title: "Book", authors: ["A"], sourceID: UUID()),
+            chapters: chapters
+        )
+        await coordinator.present(book, chapter: chapters[2])
+        #expect(coordinator.currentSession?.chapter.id == chapters[2].id)
+
+        let staleEarlierChapter = PlaybackPosition(
+            bookID: bookID, chapterID: chapters[0].id, position: 10,
+            updatedAt: Date(timeIntervalSince1970: 99999)
+        )
+        await coordinator.adoptCloudNowPlayingIfNewer(staleEarlierChapter, from: [book])
+
+        #expect(coordinator.currentSession?.chapter.id == chapters[2].id)  // Must not regress to an earlier chapter of the same book
+        #expect(abs((coordinator.currentSession?.position ?? -1) - 50) <= 0.001)
+    }
+
     private func seedBook(in db: AppDatabase, bookID: UUID, chapterID: UUID) async throws {
         let sourceID = UUID()
         let now = Date().timeIntervalSince1970
