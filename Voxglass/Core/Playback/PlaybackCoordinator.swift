@@ -1104,7 +1104,9 @@ public final class PlaybackCoordinator {
             $0.isPlaying = false
         }
         playbackPhase = .paused
-        Task { await persistCurrentPosition(reason: .pause) }
+        bridge.runWithBackgroundTask { [weak self] in
+            await self?.persistCurrentPosition(reason: .pause)
+        }
         updateNowPlayingInfo()
     }
 
@@ -1227,7 +1229,9 @@ public final class PlaybackCoordinator {
                 flushListening(bookID: bookID)
             }
             lastListenTick = nil
-            Task { await persistCurrentPosition(reason: .background) }
+            bridge.runWithBackgroundTask { [weak self] in
+                await self?.persistCurrentPosition(reason: .background)
+            }
         }
     }
 
@@ -2294,7 +2298,7 @@ public final class PlaybackCoordinator {
             }
             $0.isPlaying = false
         }
-        Task { [weak self] in
+        bridge.runWithBackgroundTask { [weak self] in
             await self?.persistCurrentPosition(reason: .interruption)
             self?.updateNowPlayingInfo()
         }
@@ -2323,7 +2327,7 @@ public final class PlaybackCoordinator {
             engine.play()
             suppressNextIsPlayingSync = true
         }
-        Task { [weak self] in
+        bridge.runWithBackgroundTask { [weak self] in
             await self?.persistCurrentPosition(reason: .routeChange)
         }
         if shouldResume { updateNowPlayingInfo() }
