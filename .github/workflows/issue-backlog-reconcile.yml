@@ -37,4 +37,10 @@ jobs:
           persist-credentials: false
       - run: |
           test -n "$GH_TOKEN" || { echo '::error::CLAUDE_WORKFLOW_TOKEN is not configured'; exit 1; }
+          # A human QA failure supersedes a completed implementation. Reopen
+          # before admission so the normal repair path can create a follow-up
+          # implementation PR instead of silently skipping the closed issue.
+          if [[ "${{ github.event_name }}" == issues && "${{ github.event.action }}" == labeled && "${{ github.event.label.name }}" == qa-failed && "${{ github.event.issue.state }}" == closed ]]; then
+            gh issue reopen "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY"
+          fi
           bash .github/scripts/admit-one-stranded-issue.sh
