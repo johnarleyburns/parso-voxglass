@@ -58,6 +58,18 @@ public enum ProjectFixtures {
             let paraCount = 80 + Int(SimplePRNG.next() % 20)
             let isRecorded = SimplePRNG.nextDouble() < 0.42
             let isFlagged = SimplePRNG.nextDouble() < 0.06
+            // `typical` models in-progress work. Its randomized middle
+            // chapters are useful coverage, but the fixture must never
+            // occasionally become an entirely unrecorded project when tests
+            // run in parallel and consume the shared deterministic stream.
+            let recordedFraction: Double
+            if i == 0 {
+                recordedFraction = 1
+            } else if i == 11 {
+                recordedFraction = 0
+            } else {
+                recordedFraction = isRecorded ? 0.42 : 0
+            }
 
             let ch = makeChapter(
                 ordinal: i,
@@ -66,7 +78,7 @@ public enum ProjectFixtures {
                 role: .body,
                 ids: ids,
                 clock: clock,
-                recordedFraction: isRecorded ? 0.42 : 0,
+                recordedFraction: recordedFraction,
                 flaggedFraction: isFlagged ? 0.06 : 0
             )
             chapters.append(ch)
