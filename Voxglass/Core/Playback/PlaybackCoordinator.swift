@@ -312,6 +312,7 @@ public final class PlaybackCoordinator {
                 updatedAt: Date(),
                 isFinished: false
             )
+            guard Self.hasProgressAtLeast(remote, asFarAs: localPoint, chapters: session.chapters) else { return }
             snapshotStore.save(localPoint)
             do {
                 if session.book.id == remote.bookID,
@@ -752,6 +753,28 @@ public final class PlaybackCoordinator {
             playbackError = nil
         }
         return true
+    }
+
+    /// Whether `remote` represents the same or greater progress through
+    /// `chapters` as `local`, for the same book — chapter order first,
+    /// position within the chapter as the tie-break (mirrors `snapshotWins`'s
+    /// epsilon). A sync "touch" that bumps an old chapter's row's timestamp
+    /// must never be mistaken for forward progress. When the two positions
+    /// are for different books, or either chapter can't be resolved in
+    /// `chapters`, this returns `true` and defers entirely to the caller's
+    /// own (e.g. timestamp-based) policy.
+    public static func hasProgressAtLeast(
+        _ remote: PlaybackPosition,
+        asFarAs local: PlaybackPosition,
+        chapters: [Chapter]
+    ) -> Bool {
+        guard remote.bookID == local.bookID else { return true }
+        guard let remoteIndex = chapters.firstIndex(where: { $0.id == remote.chapterID }),
+              let localIndex = chapters.firstIndex(where: { $0.id == local.chapterID }) else {
+            return true
+        }
+        if remoteIndex != localIndex { return remoteIndex > localIndex }
+        return remote.position >= local.position - 2
     }
 
     /// Pure tie-break between a SQLite row and a UserDefaults snapshot for the
