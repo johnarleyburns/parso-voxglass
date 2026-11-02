@@ -915,6 +915,29 @@ public final class CloudKitSyncEngine: ObservableObject {
         guard let localBookID = await localBookID(forBookRecordName: bookRef.recordID.recordName) else { throw LibraryCloudImportError.invalidRecord("book reference") }
         let chapterID = try await localChapterID(position.chapterID, bookID: localBookID)
         let localUpdate = position.updatedAt.timeIntervalSince1970
+
+        // Never let a CloudKit position for a chapter this device has
+        // already moved past look like "the current position" for the book,
+        // even if the record's own updated_at is freshly stamped (a stale
+        // resume point re-delivered from another device or a retry batch).
+        let incomingIndexRows = try await database.query(
+            "SELECT chapter_index FROM chapters WHERE id = ? LIMIT 1",
+            [.string(chapterID.uuidString)]
+        )
+        let furthestRows = try await database.query("""
+        SELECT c.chapter_index AS chapter_index
+        FROM playback_positions pp
+        JOIN chapters c ON c.id = pp.chapter_id
+        WHERE pp.book_id = ?
+        ORDER BY c.chapter_index DESC
+        LIMIT 1
+        """, [.string(localBookID)])
+        if let incomingIndex = incomingIndexRows.first?.int("chapter_index"),
+           let furthestIndex = furthestRows.first?.int("chapter_index"),
+           incomingIndex < furthestIndex {
+            return
+        }
+
         let existingRows = try await database.query(
             "SELECT id, updated_at FROM playback_positions WHERE book_id = ? AND chapter_id = ? LIMIT 1",
             [.string(localBookID), .string(chapterID.uuidString)]
