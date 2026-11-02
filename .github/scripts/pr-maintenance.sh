@@ -152,6 +152,32 @@ repair_active() {
       'any(.[]; (.status == "queued" or .status == "in_progress" or .status == "waiting" or .status == "pending" or .status == "requested") and (.displayTitle | startswith($title)))' >/dev/null
 }
 
+# GitHub's closing-keyword behavior handles new PRs. This sweep makes the
+# policy durable for PRs created before that body convention, and is deliberately
+# limited to the repository's own Claude issue marker and a confirmed merge.
+reconcile_merged_issue_closures() {
+  local prs pr issue state url
+  prs=$(gh pr list --repo "$repo" --state merged --base main --limit 1000 --json number,body,url) || {
+    echo 'cannot list merged PRs for issue closure reconciliation' >&2; INFRA=1; return;
+  }
+  while IFS= read -r pr; do
+    issue=$(jq -r '.body // ""' <<<"$pr" | grep -o '<!-- claude-issue:[0-9]\+ -->' | head -1 | grep -o '[0-9]\+')
+    [[ -n "$issue" ]] || continue
+    state=$(gh issue view "$issue" --repo "$repo" --json state --jq .state) || {
+      echo "cannot read issue #$issue for merged PR reconciliation" >&2; INFRA=1; continue;
+    }
+    [[ "$state" == OPEN ]] || continue
+    url=$(jq -r .url <<<"$pr")
+    if dry; then
+      echo "[dry] close issue #$issue: implementation PR $url merged"
+    else
+      gh issue close "$issue" --repo "$repo" --reason completed \
+        --comment "Closing automatically: implementation PR $url merged successfully." \
+        || { echo "could not close issue #$issue" >&2; INFRA=1; }
+    fi
+  done < <(jq -c '.[]' <<<"$prs")
+}
+
 is_transient_merge_error() {
   # GitHub may reject --auto while required checks are queued. Treat these
   # as retryable, not as a permanent needs-human-review stop.
@@ -346,6 +372,10 @@ macos_work_pending() {
 
 main() {
   local prs n status runs
+  # Issue closure is a completed-PR reconciliation only; it neither starts
+  # macOS work nor changes an open PR, so it must not be delayed by capacity
+  # protection for builds and validation.
+  reconcile_merged_issue_closures
   for status in in_progress queued pending waiting requested; do
     runs=$(api "repos/${repo}/actions/runs?status=${status}&per_page=100") || {
       echo 'Cannot verify macOS capacity; deferring all changes' >&2; exit 1;

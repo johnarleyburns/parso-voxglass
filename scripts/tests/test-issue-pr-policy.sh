@@ -29,8 +29,7 @@ gh() {
 number=$(make_pr example-branch)
 [[ "$number" == 123 ]]
 [[ $(wc -l < "$trace") -eq 3 ]]
-! grep -Eqi '(^|[^[:alpha:]])(close[sd]?|fix(e[sd])?|resolve[sd]?):? #[0-9]+' "$trace"
-grep -q 'human verification is required' "$trace"
+grep -q 'Closes #1.' "$trace"
 ! grep -q -- '--draft' "$trace"
 grep -q 'enablePullRequestAutoMerge' "$trace"
 # A failed auto-merge request must retain the created PR for reconciliation.
@@ -53,6 +52,7 @@ grep -Fq 'qa_failed=$(gh issue view "$ISSUE" --json labels' "$script"
 grep -Fq 'Issue $ISSUE failed human QA: starting a repair cycle' "$script"
 grep -Fq 'if [[ "$qa_failed" != true ]]; then' "$script"
 grep -Fq 'github.event.label.name == '\''qa-failed'\''' "$root/.github/workflows/issue-backlog-reconcile.yml"
+grep -Fq 'gh issue reopen "${{ github.event.issue.number }}"' "$root/.github/workflows/issue-backlog-reconcile.yml"
 grep -Fq 'or any(.labels[]?.name; . == "qa-failed")' "$root/.github/scripts/admit-one-stranded-issue.sh"
 grep -Fq -- '--remove-label qa-failed' "$root/.github/scripts/record-testflight-delivery.sh"
 grep -Fq 'human QA failure is awaiting repair' "$root/.github/scripts/reconcile-testflight-status.sh"
