@@ -1069,6 +1069,14 @@ public final class PlaybackCoordinator {
         }
     }
 
+    /// Starts the already-presented session without resolving a new saved position.
+    /// Safe for CarPlay, lock-screen, and intent "play" commands: if playback is
+    /// already active, this is a no-op rather than a pause toggle.
+    public func resumeCurrentSession() {
+        guard currentSession != nil, !engine.isPlaying else { return }
+        resume()
+    }
+
     public func togglePlayPause() {
         if decodeRecoveryTask != nil { pause(); return }
         if case .failed = playbackPhase { cancelDecodeRecovery() }
