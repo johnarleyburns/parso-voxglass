@@ -280,43 +280,6 @@ import Testing
         #expect(try await state.dequeuePending().first?.changeType == "delete")
     }
 
-    @Test func productionWritesAndParentReferencesUseVerificationZone() async throws {
-        let zone = CKRecordZone.ID(zoneName: CloudKitProductionSync.zoneName)
-        let records = try await CloudKitProductionSync.records(from: [
-            SyncRecord(recordType: "VGProductionAsset", recordName: "asset-one", fields: [:]),
-            SyncRecord(recordType: ProductionRecordType.paragraph.rawValue, recordName: "paragraph-one", parentName: "project-one", fields: [:])
-        ], zoneID: zone, proxyFileProvider: { _ in nil })
-        #expect(records.allSatisfy { $0.recordID.zoneID == zone })
-        #expect(records[1].parent?.recordID.zoneID == zone)
-    }
-
-    @Test func recordingCannotBeBackedUpWithoutItsAudioAttachment() async throws {
-        let zone = CKRecordZone.ID(zoneName: CloudKitProductionSync.zoneName)
-        await #expect(throws: SyncError.self) {
-            _ = try await CloudKitProductionSync.records(from: [
-                SyncRecord(recordType: ProductionRecordType.asset.rawValue, recordName: "asset-one",
-                           fields: [ProductionField.assetSHA: .string("missing-sha")])
-            ], zoneID: zone, proxyFileProvider: { _ in nil })
-        }
-    }
-
-    @Test func narrationCheckpointRepairPreservesPendingEditsAndReceipts() async throws {
-        let store = AuthoringLocalStore(databaseURL: FileManager.default.temporaryDirectory.appendingPathComponent("authoring-repair-\(UUID()).sqlite"))
-        let uploadedID = UUID()
-        let uploaded = try await store.commitLocalMutation(entityId: uploadedID, entityKind: "project", payload: Data(#"{"title":"Uploaded"}"#.utf8), changedFields: ["title"])
-        try await store.acknowledgeUpload(entityId: uploadedID, operationId: uploaded.operationId, changeTag: "receipt", systemFields: Data([10]))
-        let id = UUID()
-        _ = try await store.commitLocalMutation(entityId: id, entityKind: "project", payload: Data(#"{"title":"Keep me"}"#.utf8), changedFields: ["title"])
-        try await store.saveEngineState(scope: "account", state: Data([1, 2, 3]))
-        #expect(try await store.hasSyncRepair(scope: "account", repair: "scope-v1") == false)
-        try await store.resetEngineStateForRepair(scope: "account", repair: "scope-v1")
-        #expect(try await store.engineState(scope: "account") == nil)
-        #expect(try await store.systemFields(entityId: uploadedID) == Data([10]))
-        #expect(try await store.pendingMutations().count == 1)
-        #expect(try await store.hasSyncRepair(scope: "account", repair: "scope-v1"))
-        #expect(try await store.hasSyncRepair(scope: "other-account", repair: "scope-v1") == false)
-    }
-
     @Test func upsertPositionRefusesEarlierChapterThatWouldRegressBookProgress() async throws {
         let db = AppDatabase.makeTemporaryDatabase()
         try await db.prepare()

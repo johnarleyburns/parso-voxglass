@@ -6,7 +6,7 @@ import VoxglassCore
 /// `.voxtext` chapters are local, app-owned UTF-8 files; all other URLs remain
 /// the responsibility of AVPlayerAudioEngine.
 @MainActor
-final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, AVSpeechSynthesizerDelegate {
+final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency AVSpeechSynthesizerDelegate {
     private let synthesizer = AVSpeechSynthesizer()
     private var text = ""
     private var utteranceStart = 0

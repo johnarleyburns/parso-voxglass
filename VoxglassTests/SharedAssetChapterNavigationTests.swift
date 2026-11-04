@@ -50,7 +50,7 @@ import ParsoAudioStreaming
         let engine = FakeAudioEngine()
         let store = MemoryPositionStore()
         let cacheStore = SparseCacheStore(
-            directory: FileManager.default.temporaryDirectory
+            evictableRoot: FileManager.default.temporaryDirectory
                 .appendingPathComponent("shared-asset-cache-\(UUID().uuidString)", isDirectory: true)
         )
         let defaults = UserDefaults(suiteName: "shared-asset-\(UUID().uuidString)")!

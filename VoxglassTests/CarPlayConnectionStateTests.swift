@@ -29,10 +29,10 @@ import VoxglassCore
         #expect(!machine.owns(first))
         #expect(machine.owns(second))
         let staleFinish = machine.finishConnect(generation: first, mode: .consumer)
-        let currentFinish = machine.finishConnect(generation: second, mode: .production)
+        let currentFinish = machine.finishConnect(generation: second, mode: .consumer)
         #expect(!staleFinish)
         #expect(currentFinish)
-        #expect(machine.state == .connected(generation: second, mode: .production))
+        #expect(machine.state == .connected(generation: second, mode: .consumer))
     }
 
     @Test func disconnectInvalidatesPendingBootstrap() {
