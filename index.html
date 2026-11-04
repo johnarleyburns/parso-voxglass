@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxglass Privacy Policy</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --ink: #1c1c1e;
+    --ink-secondary: #4b4b4f;
+    --accent: #8a6a2f;
+    --hairline: #e3e3e6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121214;
+      --ink: #f2f2f3;
+      --ink-secondary: #b7b7bb;
+      --accent: #d4ab5f;
+      --hairline: #2c2c2f;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--ink-secondary);
+    margin: 0 0 36px;
+    font-size: 15px;
+  }
+  h2 {
+    font-size: 19px;
+    margin: 40px 0 10px;
+    color: var(--accent);
+  }
+  p, li {
+    color: var(--ink-secondary);
+  }
+  ul {
+    padding-left: 22px;
+  }
+  li {
+    margin-bottom: 8px;
+  }
+  .lede {
+    font-size: 19px;
+    color: var(--ink);
+    font-weight: 600;
+    margin: 0 0 24px;
+  }
+  a {
+    color: var(--accent);
+  }
+  hr {
+    border: none;
+    border-top: 1px solid var(--hairline);
+    margin: 40px 0;
+  }
+  footer {
+    color: var(--ink-secondary);
+    font-size: 13px;
+  }
+  code {
+    font-size: 0.92em;
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Voxglass Privacy Policy</h1>
+  <p class="subtitle">Voxglass (bundle id <code>guru.parso.voxglass</code>) &middot; Parso Consulting &middot; Last updated November 4, 2026</p>
+
+  <p class="lede">Voxglass has no accounts, no tracking, and no analytics. Nothing you listen to or read leaves your device.</p>
+
+  <h2>What Voxglass does</h2>
+  <p>Voxglass is a free, open-source audiobook player for the public-domain LibriVox catalog,
+  with companion apps for Apple Watch and CarPlay. Its "Read with AI" feature can also import a
+  public-domain ebook and read it aloud using on-device text-to-speech, for books that have no
+  human narration.</p>
+
+  <h2>What stays on your device</h2>
+  <ul>
+    <li>Your library, playback positions, bookmarks, favorites, and listening history are stored
+    in a local database on your device.</li>
+    <li>Audio you stream is kept in a cache so recently played books keep working offline. The
+    cache is managed automatically — the oldest, least-used audio is evicted first when space is
+    needed.</li>
+  </ul>
+
+  <h2>Optional iCloud sync</h2>
+  <p>If you turn it on, your library and listening progress sync through <strong>your own</strong>
+  iCloud account via Apple's CloudKit — never a Voxglass server, because none exists.</p>
+
+  <h2>Who Voxglass talks to — only when a feature you use needs it</h2>
+  <ul>
+    <li><strong>The Internet Archive</strong> (archive.org, LibriVox's host) — to search, browse,
+    and stream the audiobooks and cover art you ask for.</li>
+    <li><strong>Project Gutenberg</strong>, via its public <code>gutendex.com</code> catalog API —
+    only when you use Read with AI to import a book. The book's text is downloaded to your device
+    and read aloud entirely on-device; it is never sent anywhere else.</li>
+  </ul>
+
+  <h2>No ads, no analytics, no tracking</h2>
+  <p>Voxglass contains no advertising SDKs, no analytics SDKs, and no tracking of any kind. It
+  uses only Apple-provided frameworks.</p>
+
+  <h2>Beta testing (TestFlight)</h2>
+  <p>If you test Voxglass through Apple's TestFlight and choose to share crash reports with
+  developers (an iOS setting you control), Apple may pass us a sanitized crash log so we can fix
+  the bug. This is Apple's own standard TestFlight feature — Voxglass includes no separate
+  analytics or crash-reporting code of its own, and this only applies during beta testing, never
+  to the released App Store app.</p>
+
+  <h2>Children's privacy</h2>
+  <p>Voxglass does not knowingly collect personal information from anyone, including children
+  under 13, because it does not collect personal information from anyone.</p>
+
+  <h2>Open source</h2>
+  <p>Voxglass's complete source code is public, under the GNU General Public License v3.0 or
+  later with its own App Store distribution exception (see the LICENSE file), at
+  <a href="https://github.com/johnarleyburns/parso-voxglass">github.com/johnarleyburns/parso-voxglass</a>.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, the "Last updated" date above will change and the new version will
+  be posted both here and in the app.</p>
+
+  <hr>
+  <footer>
+    Questions about this policy: <a href="mailto:info@parso.guru">info@parso.guru</a> &middot; Parso Consulting
+  </footer>
+</main>
+</body>
+</html>
