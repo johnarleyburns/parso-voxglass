@@ -59,4 +59,14 @@ struct GutenbergCatalogTests {
         let books = try await client().search("   ")
         #expect(books.isEmpty)
     }
+
+    @Test func fallbackHTMLParserBuildsAPlayableGutenbergBook() {
+        let books = GutenbergCatalogClient.parseGutenbergSearchHTML("""
+        <li class="booklink"><a href="/ebooks/42"><span class="title">American Law &amp; Practice</span><span class="subtitle">by Doe, Jane</span></a></li>
+        """)
+        #expect(books.map(\.id) == [42])
+        #expect(books.first?.title == "American Law & Practice")
+        #expect(books.first?.authors.first?.name == "Doe, Jane")
+        #expect(books.first?.epubURL?.absoluteString == "https://www.gutenberg.org/ebooks/42.epub.images")
+    }
 }
