@@ -27,15 +27,23 @@ public struct GutenbergSearchResponse: Codable, Sendable {
 }
 
 public struct GutenbergCatalogClient: Sendable {
-    public init() {}
+    private let session: URLSession
+    private let baseURL: URL
+
+    public init(session: URLSession = .shared, baseURL: URL = URL(string: "https://gutendex.com/books/")!) {
+        self.session = session
+        self.baseURL = baseURL
+    }
     public func search(_ query: String) async throws -> [GutenbergBook] {
-        var components = URLComponents(string: "https://gutendex.com/books")!
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.queryItems = [
-            URLQueryItem(name: "search", value: query),
+            URLQueryItem(name: "search", value: trimmed),
             URLQueryItem(name: "copyright", value: "false"),
             URLQueryItem(name: "languages", value: "en")
         ]
-        let (data, response) = try await URLSession.shared.data(from: components.url!)
+        let (data, response) = try await session.data(from: components.url!)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
