@@ -1166,9 +1166,13 @@ public final class LibraryRepository: @unchecked Sendable {
             Chapter(bookID: book.id, title: item.title, sortKey: String(format: "%05d", index), index: index, localURL: item.textURL)
         }
         try await insert(book: book, chapters: chapters, bookContentKey: contentKey)
-        // The text assets are app-owned files. Syncing this row would publish
-        // container-local URLs that cannot be read on another device; the user
-        // can add the same Gutenberg/local EPUB there instead.
+        // Gutenberg's source URL is portable. Local EPUB imports deliberately
+        // leave this unsynced because their Files URL is device-local.
+        if let url = request.sourceURL,
+           let scheme = url.scheme?.lowercased(),
+           scheme == "https" || scheme == "http" {
+            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
+        }
         return BookWithChapters(book: book, chapters: chapters)
     }
 

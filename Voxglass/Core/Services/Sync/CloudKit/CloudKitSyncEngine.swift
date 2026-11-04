@@ -787,9 +787,14 @@ public final class CloudKitSyncEngine: ObservableObject {
         case .localFiles:
             return CloudKitRecordMapper.sha256First12(source.url?.absoluteString ?? source.title)
         case .readWithAI:
-            // This is only used when reconciling an already-cloud-backed
-            // source. New Read-with-AI books are deliberately not uploaded.
-            return "read-with-ai:\(source.title)"
+            // Only portable web sources (currently Gutenberg) are synced.
+            // Local EPUB imports have no source URL and never reach here.
+            guard let url = source.url,
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "https" || scheme == "http" else {
+                return "read-with-ai-local"
+            }
+            return "read-with-ai-\(CloudKitRecordMapper.sha256First12(url.absoluteString))"
         }
     }
 
