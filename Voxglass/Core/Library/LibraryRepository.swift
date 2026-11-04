@@ -1166,7 +1166,9 @@ public final class LibraryRepository: @unchecked Sendable {
             Chapter(bookID: book.id, title: item.title, sortKey: String(format: "%05d", index), index: index, localURL: item.textURL)
         }
         try await insert(book: book, chapters: chapters, bookContentKey: contentKey)
-        try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
+        // The text assets are app-owned files. Syncing this row would publish
+        // container-local URLs that cannot be read on another device; the user
+        // can add the same Gutenberg/local EPUB there instead.
         return BookWithChapters(book: book, chapters: chapters)
     }
 

@@ -317,6 +317,18 @@ public final class LibraryStore: ObservableObject {
     /// or last session — the active playback and its restore snapshot.
     public func delete(book: BookWithChapters) async {
         let bookID = book.book.id
+        let readWithAITextDirectories = book.chapters.compactMap { chapter -> URL? in
+            guard chapter.localURL?.pathExtension == "voxtext",
+                  let url = chapter.localURL else { return nil }
+            let directory = url.deletingLastPathComponent()
+            let support = (try? FileManager.default.url(
+                for: .applicationSupportDirectory, in: .userDomainMask,
+                appropriateFor: nil, create: false
+            ))?.standardizedFileURL
+            guard let support,
+                  directory.standardizedFileURL.path.hasPrefix(support.appendingPathComponent("ReadWithAI").path) else { return nil }
+            return directory
+        }
 
         // 1. Cancel any in-flight offline downloads, unpin + drop their records.
         await offlineManager?.removeOffline(book: book)
@@ -345,6 +357,10 @@ public final class LibraryStore: ObservableObject {
         } catch {
             importError = error.localizedDescription
             return
+        }
+
+        for directory in Set(readWithAITextDirectories) {
+            try? FileManager.default.removeItem(at: directory)
         }
 
         // 4. Update in-memory collections.

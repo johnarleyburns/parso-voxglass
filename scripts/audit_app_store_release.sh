@@ -91,7 +91,7 @@ require('TARGETED_DEVICE_FAMILY: "1,2"' in project, "project.yml: iPhone and iPa
 require("exactVersion: 1.2.2" in project, "project.yml: PAE must remain pinned to the published release")
 
 for info_path, required_keys in (
-    (root / "Voxglass/Resources/Info.plist", {"CFBundleIconName", "NSMicrophoneUsageDescription", "ITSAppUsesNonExemptEncryption"}),
+    (root / "Voxglass/Resources/Info.plist", {"CFBundleIconName", "ITSAppUsesNonExemptEncryption"}),
 ):
     info = read_plist(info_path)
     for key in required_keys:

@@ -15,5 +15,3 @@ public struct ImportWarning: Codable, Sendable, Identifiable, Equatable {
 public enum ImportWarningKind: String, Codable, Sendable {
     case emptySection, imageOnlyContent, skippedNonProse
 }
-
-enum ImportError: Error { case malformedXML(String) }

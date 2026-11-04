@@ -63,7 +63,14 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, AVSpeechSynthesi
         lastEndWasVerified = false
     }
 
-    func play() { speak(from: utteranceStart) }
+    func play() {
+        if synthesizer.isPaused {
+            speaking = true
+            synthesizer.continueSpeaking()
+        } else {
+            speak(from: utteranceStart)
+        }
+    }
     func pause() {
         guard synthesizer.isSpeaking else { return }
         synthesizer.pauseSpeaking(at: .word)
