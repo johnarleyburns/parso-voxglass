@@ -2,14 +2,14 @@ import Foundation
 import Testing
 
 @Suite struct FindTabContractTests {
-    @Test func findIsTrailingTabAfterNarrate() throws {
+    @Test func findIsTrailingTab() throws {
         let root = try source("Voxglass/App/RootView.swift")
         let shell = try #require(root.range(of: "private var tabShell"))
         let body = String(root[shell.lowerBound...])
-        let order = ["\"Listen\"", "\"My Books\"", "\"Narrate\"", "\"Find\""].compactMap { body.range(of: "Tab(\($0)")?.lowerBound }
-        #expect(order.count == 4)
+        let order = ["\"Listen\"", "\"My Books\"", "\"Find\""].compactMap { body.range(of: "Tab(\($0)")?.lowerBound }
+        #expect(order.count == 3)
         #expect(order == order.sorted())
-        #expect(root.contains("[.listen, .library, .narration, .find]"))
+        #expect(root.contains("[.listen, .library, .find]"))
     }
 
     @Test func legacyAndCurrentAliasesResolveToFind() throws {

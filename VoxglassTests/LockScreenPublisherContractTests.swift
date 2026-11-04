@@ -7,13 +7,7 @@ import Testing
 /// production iPhone sources. Watch code is intentionally not inspected.
 struct LockScreenPublisherContractTests {
     private static let bridge = "Voxglass/App/SystemPlaybackBridge.swift"
-    private static let carPlayReview = "Voxglass/App/CarPlay/CarPlayReviewController.swift"
     private static let coordinator = "Voxglass/Core/Playback/PlaybackCoordinator.swift"
-
-    @Test func carPlayReviewControllerDoesNotTouchNowPlayingInfoCenter() throws {
-        let text = try source(Self.carPlayReview)
-        #expect(!text.contains("MPNowPlayingInfoCenter"))
-    }
 
     @Test func coordinatorDoesNotSubmitNowPlayingDirectly() throws {
         let text = try source(Self.coordinator)

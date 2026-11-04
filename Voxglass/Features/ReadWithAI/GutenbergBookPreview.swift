@@ -14,7 +14,7 @@ struct GutenbergBookPreview: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
                 Image(systemName: "text.book.closed.fill")
-                    .font(.system(size: 48)).foregroundStyle(Palette.brass)
+                    .font(.system(.largeTitle)).foregroundStyle(Palette.brass)
                 Text(book.title).voxFont(.title, weight: .bold).foregroundStyle(Palette.ink)
                 Text(book.authorLine).voxFont(.body).foregroundStyle(Palette.ink2)
                 Label("Read with AI", systemImage: "waveform")
