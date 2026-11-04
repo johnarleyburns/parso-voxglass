@@ -680,6 +680,7 @@ private struct AddArchiveURLSheet: View {
     @Binding var showingNowPlaying: Bool
     @State private var archiveURL = ""
     @State private var showingLocalFolderImporter = false
+    @State private var showingEPUBImporter = false
     @State private var isImportingLocalFolder = false
     @State private var showingChapterFileExample = false
 
@@ -719,6 +720,19 @@ private struct AddArchiveURLSheet: View {
                         .buttonStyle(.borderedProminent)
                         .tint(Palette.brass)
                         .disabled(archiveURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || catalogStore.isResolvingURL)
+                    }
+                    .padding(14)
+                    .raisedSurface()
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Read an EPUB with AI", systemImage: "text.book.closed")
+                            .voxFont(.subheadline, weight: .semibold)
+                            .foregroundStyle(Palette.ink)
+                        Text("Choose an EPUB from Files. Voxglass keeps a local text copy and reads it with the iPhone’s built-in voice.")
+                            .voxFont(.footnote)
+                            .foregroundStyle(Palette.ink2)
+                        Button("Choose EPUB") { showingEPUBImporter = true }
+                            .buttonStyle(.bordered)
                     }
                     .padding(14)
                     .raisedSurface()
@@ -793,6 +807,11 @@ private struct AddArchiveURLSheet: View {
                 allowedContentTypes: [.folder],
                 onCompletion: handleFolderSelection
             )
+            .fileImporter(
+                isPresented: $showingEPUBImporter,
+                allowedContentTypes: [.epub],
+                onCompletion: handleEPUBSelection
+            )
             .alert("Couldn't Add Audiobook", isPresented: errorBinding) {
                 Button("OK", role: .cancel) {
                     catalogStore.catalogError = nil
@@ -832,6 +851,21 @@ private struct AddArchiveURLSheet: View {
     private func handleFolderSelection(_ result: Result<URL, Error>) {
         guard case .success(let selectedURL) = result else { return }
         Task { await importLocalFolder(selectedURL) }
+    }
+
+    private func handleEPUBSelection(_ result: Result<URL, Error>) {
+        guard case .success(let url) = result else { return }
+        Task {
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let request = try await ReadWithAIImporter.prepare(epubURL: url, sourceTitle: "Files")
+                guard let imported = await libraryStore.importReadWithAI(request) else { return }
+                dismiss()
+                await playback.present(imported)
+                showingNowPlaying = true
+            } catch { libraryStore.importError = error.localizedDescription }
+        }
     }
 
     /// The heavy per-file work — enumerating the folder, parsing the chapter

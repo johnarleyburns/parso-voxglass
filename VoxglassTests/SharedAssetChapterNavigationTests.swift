@@ -1,7 +1,6 @@
 import Testing
 import Foundation
 import ParsoAudioStreaming
-import VoxglassCoreTestSupport
 @testable import VoxglassCore
 
 /// A single-file, multi-chapter local import (Phase 9's local-folder import,
@@ -51,7 +50,7 @@ import VoxglassCoreTestSupport
         let engine = FakeAudioEngine()
         let store = MemoryPositionStore()
         let cacheStore = SparseCacheStore(
-            directory: FileManager.default.temporaryDirectory
+            evictableRoot: FileManager.default.temporaryDirectory
                 .appendingPathComponent("shared-asset-cache-\(UUID().uuidString)", isDirectory: true)
         )
         let defaults = UserDefaults(suiteName: "shared-asset-\(UUID().uuidString)")!

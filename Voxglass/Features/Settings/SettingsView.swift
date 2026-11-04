@@ -14,7 +14,6 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct SettingsView: View {
     @Binding var showingNowPlaying: Bool
-    @State private var showAudioSetup = false
 
     var body: some View {
         VoxglassScreen(title: "More") {
@@ -32,36 +31,6 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     SectionTitle(title: "Sync")
                     SyncSettingsCard()
-                }
-
-                settingsGroup("Narration") {
-                    Button {
-                        showAudioSetup = true
-                    } label: {
-                        DisclosureListRow(
-                            icon: "waveform.badge.mic",
-                            title: "Audio setup",
-                            detail: "Classify your mic and run a room test",
-                            count: nil
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("settings.audioSetup")
-
-                    VoxglassListDivider()
-
-                    NavigationLink {
-                        StorageSettingsView()
-                    } label: {
-                        DisclosureListRow(
-                            icon: "internaldrive.fill",
-                            title: "Storage & iCloud",
-                            detail: "Working cache, backups, offload",
-                            count: nil
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("settings.storage")
                 }
 
                 settingsGroup("Audio") {
@@ -137,9 +106,6 @@ struct SettingsView: View {
                 }
             }
             .padding(.top, 12)
-        }
-        .sheet(isPresented: $showAudioSetup) {
-            AudioSetupView(capture: AudioSessionCapture())
         }
     }
 
@@ -800,10 +766,7 @@ private struct SyncSettingsCard: View {
     @EnvironmentObject private var cloudKitSync: CloudKitSyncEngine
     @EnvironmentObject private var libraryStore: LibraryStore
     @Environment(PlaybackCoordinator.self) private var playback
-    @Environment(DiscoveryEnvironment.self) private var discovery
     @AppStorage(AppPreferencesStore.Keys.iCloudSyncEnabled) private var syncEnabled = true
-    @AppStorage(AppPreferencesStore.Keys.authoringV2SyncEnabled) private var authoringSyncEnabled = true
-    @State private var showAuthoringSyncConsent = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -831,56 +794,6 @@ private struct SyncSettingsCard: View {
             .accessibilityIdentifier("sync.enabled")
             .onChange(of: syncEnabled) { _, newValue in
                 if newValue { Task { await cloudSync.sync() } }
-            }
-
-            VStack(alignment: .leading, spacing: 7) {
-                Toggle("Sync narration projects", isOn: Binding(
-                    get: { authoringSyncEnabled },
-                    set: { requested in
-                        if requested { showAuthoringSyncConsent = true }
-                        else { authoringSyncEnabled = false }
-                    }
-                ))
-                .voxFont(.caption, weight: .semibold)
-                .foregroundStyle(Palette.ink)
-                .tint(Palette.brass)
-                .accessibilityIdentifier("authoringSync.enabled")
-
-                Text("Sync project details and script text through your private iCloud account. Recording audio and other package files stay on each device.") // l10n-exempt: consent copy distinguishes locally stored media from synced authoring data
-                    .voxFont(.caption2)
-                    .foregroundStyle(Palette.ink3)
-
-                if authoringSyncEnabled {
-                    if let status = discovery.authoringV2SyncStatus {
-                        Text(status)
-                            .voxFont(.caption2)
-                            .foregroundStyle(status.localizedCaseInsensitiveContains("failed") ? Palette.danger : Palette.ink3)
-                            .accessibilityIdentifier("authoringSync.status")
-                    }
-                    if let lastSync = discovery.authoringV2LastSyncDate {
-                        Text("Narration last synced: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                            .voxFont(.caption2)
-                            .foregroundStyle(Palette.ink3)
-                    }
-                    Button {
-                        Task { await discovery.syncAuthoringV2Now() }
-                    } label: {
-                        Text(discovery.isAuthoringV2Syncing ? "Syncing narration projects…" : "Sync Narration Projects Now") // l10n-exempt: state-dependent control copy
-                            .voxFont(.caption, weight: .semibold)
-                            .foregroundStyle(Palette.brass)
-                    }
-                    .disabled(discovery.isAuthoringV2Syncing)
-                    .accessibilityIdentifier("authoringSync.now")
-                }
-            }
-            .alert("Sync narration projects with iCloud?", isPresented: $showAuthoringSyncConsent) {
-                Button("Enable and Sync") {
-                    authoringSyncEnabled = true
-                    Task { await discovery.syncAuthoringV2Now() }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Voxglass will upload project details and script text to your private iCloud database. Audio recordings, imported source files, and artwork remain on this device.")
             }
 
             if !cloudSync.isEnabled {

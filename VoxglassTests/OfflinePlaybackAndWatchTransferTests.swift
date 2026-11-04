@@ -1,7 +1,6 @@
 import Foundation
 import Testing
 import ParsoAudioStreaming
-import VoxglassCoreTestSupport
 @testable import VoxglassCore
 
 // MARK: - INV-B: one canonical audio identity per chapter (Fix 3)
@@ -65,7 +64,7 @@ import VoxglassCoreTestSupport
     init() {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-offline-tests-\(UUID().uuidString)", isDirectory: true)
-        store = SparseCacheStore(directory: directory)
+        store = SparseCacheStore(evictableRoot: directory)
     }
 
     @Test func ingestedChapterIsDurableAndExcludedFromTheStreamingBudget() async throws {
@@ -83,7 +82,7 @@ import VoxglassCoreTestSupport
         try Data(repeating: 5, count: 40).write(to: source)
         await store.ingestCompleteFile(at: source, key: "durable_key", totalBytes: 40)
 
-        let reopened = SparseCacheStore(directory: directory)
+        let reopened = SparseCacheStore(evictableRoot: directory)
         #expect(await reopened.isComplete("durable_key"))
         #expect(await reopened.isDurable("durable_key"))
         #expect(FileManager.default.fileExists(atPath: await reopened.fileURL(for: "durable_key").path))
@@ -111,7 +110,7 @@ import VoxglassCoreTestSupport
     init() {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("voxglass-transfer-tests-\(UUID().uuidString)", isDirectory: true)
-        store = SparseCacheStore(directory: directory)
+        store = SparseCacheStore(evictableRoot: directory)
     }
 
     @Test func absentBlobReturnsNilWithoutNetwork() async {

@@ -296,12 +296,39 @@ public final class LibraryStore: ObservableObject {
         }
     }
 
+    @discardableResult
+    public func importReadWithAI(_ request: ReadWithAIImport) async -> BookWithChapters? {
+        isImporting = true
+        defer { isImporting = false }
+        do {
+            let imported = try await repository.importReadWithAI(request)
+            await refresh()
+            await onBookImported?(imported.book.id)
+            return imported
+        } catch {
+            importError = error.localizedDescription
+            return nil
+        }
+    }
+
     /// Removes a book from the library and purges everything associated with it:
     /// in-flight offline downloads, pinned/passive cached audio + cover art,
     /// database rows (cascade), recently-viewed entry, and — if it is the current
     /// or last session — the active playback and its restore snapshot.
     public func delete(book: BookWithChapters) async {
         let bookID = book.book.id
+        let readWithAITextDirectories = book.chapters.compactMap { chapter -> URL? in
+            guard chapter.localURL?.pathExtension == "voxtext",
+                  let url = chapter.localURL else { return nil }
+            let directory = url.deletingLastPathComponent()
+            let support = (try? FileManager.default.url(
+                for: .applicationSupportDirectory, in: .userDomainMask,
+                appropriateFor: nil, create: false
+            ))?.standardizedFileURL
+            guard let support,
+                  directory.standardizedFileURL.path.hasPrefix(support.appendingPathComponent("ReadWithAI").path) else { return nil }
+            return directory
+        }
 
         // 1. Cancel any in-flight offline downloads, unpin + drop their records.
         await offlineManager?.removeOffline(book: book)
@@ -330,6 +357,10 @@ public final class LibraryStore: ObservableObject {
         } catch {
             importError = error.localizedDescription
             return
+        }
+
+        for directory in Set(readWithAITextDirectories) {
+            try? FileManager.default.removeItem(at: directory)
         }
 
         // 4. Update in-memory collections.

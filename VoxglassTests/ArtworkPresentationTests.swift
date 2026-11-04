@@ -45,13 +45,6 @@ import Testing
         #expect(library.contains("* BookListRow.libraryRowMinimumHeight"))
         #expect(!library.contains(") * 104"))
 
-        let narrations = try source("Voxglass/Features/Production/Discovery/DiscoveryViews.swift")
-        // The narration project row's metadata line is single-line — an
-        // unbounded wrap there is what made those rows uneven.
-        #expect(narrations.range(
-            of: #"formattedShort\)"\)[\s\S]{0,200}?\.lineLimit\(1\)"#,
-            options: .regularExpression
-        ) != nil)
     }
 
     @Test func artworkServiceKeepsLocalFileCoversOutOfTheEvictableBlobStore() throws {

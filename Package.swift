@@ -10,9 +10,7 @@ let package = Package(
     products: [
         .library(name: "VoxglassCore", targets: ["VoxglassCore"]),
         .library(name: "VoxglassWatchProtocol", targets: ["VoxglassWatchProtocol"]),
-        .library(name: "VoxglassWatchCore", targets: ["VoxglassWatchCore"]),
-        .library(name: "VoxglassCoreTestSupport", targets: ["VoxglassCoreTestSupport"]),
-        .library(name: "VoxglassEncoders", targets: ["VoxglassEncoders"])
+        .library(name: "VoxglassWatchCore", targets: ["VoxglassWatchCore"])
     ],
     dependencies: [
         // Audio-engine unification (parso-audio-engine/docs/UNIFICATION_PLAN.md).
@@ -50,62 +48,12 @@ let package = Package(
             exclude: ["Encoders"],
             resources: [
                 .process("Resources/CuratedLists"),
-                .process("Resources/Localizable.xcstrings"),
-                .copy("Production/Discovery/Resources/needs-seed.json")
+                .process("Resources/Localizable.xcstrings")
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ],
             linkerSettings: [.linkedLibrary("sqlite3")]
-        ),
-        .target(
-            name: "CLAMEBridge",
-            path: "Sources/CLAMEBridge",
-            exclude: [
-                "vendor/lame-3.100/COPYING",
-                "vendor/lame-3.100/LICENSE",
-                "vendor/lame-3.100/README"
-            ],
-            sources: ["src", "vendor/lame-3.100/libmp3lame"],
-            publicHeadersPath: "include",
-            cSettings: [
-                .headerSearchPath("vendor/lame-3.100/include"),
-                .headerSearchPath("vendor/lame-3.100/libmp3lame"),
-                .define("HAVE_CONFIG_H"),
-                .headerSearchPath("vendor/lame-3.100"),
-                // SwiftPM's debug configuration defines DEBUG for C targets;
-                // libmp3lame gates a lot of stderr/stdout tracing on it
-                // (bitstream.c "count1: real: ..." etc.) that has nothing to
-                // do with this app's own debug builds — always off.
-                .unsafeFlags(["-UDEBUG"]),
-                // Xcode's explicit-modules build (used for the real device
-                // Archive, unlike `swift build`'s own clang invocation)
-                // can treat libmp3lame's classic textual header includes as
-                // module-invisible for stdint.h's types — force plain
-                // textual inclusion for this vendored C code.
-                .unsafeFlags(["-fno-modules", "-fno-implicit-modules"])
-            ]
-        ),
-        .target(
-            name: "VoxglassEncoders",
-            dependencies: [
-                "VoxglassCore",
-                "CLAMEBridge",
-                .product(name: "ParsoAudioCore", package: "parso-audio-engine")
-            ],
-            path: "Voxglass/Core/Encoders",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .target(
-            name: "VoxglassCoreTestSupport",
-            dependencies: [
-                "VoxglassCore",
-                .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
-                .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
-            ],
-            path: "VoxglassCoreTestSupport",
-            resources: [.copy("Fixtures/Schemas")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .executableTarget(
             name: "collection-counts",
@@ -139,7 +87,7 @@ let package = Package(
         .testTarget(
             name: "VoxglassCoreTests",
             dependencies: [
-                "VoxglassCore", "VoxglassCoreTestSupport", "VoxglassEncoders",
+                "VoxglassCore",
                 "VoxglassWatchProtocol", "VoxglassWatchCore",
                 .product(name: "ParsoAudioStreaming", package: "parso-audio-engine"),
                 .product(name: "ParsoAudioPlayback", package: "parso-audio-engine")
@@ -152,12 +100,6 @@ let package = Package(
                 .copy("Fixtures/LibriVox"),
                 .copy("Fixtures/AuthoringV2")
             ],
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        ),
-        .testTarget(
-            name: "VoxglassPerformanceTests",
-            dependencies: ["VoxglassCore", "VoxglassCoreTestSupport"],
-            path: "VoxglassTests/Performance",
             swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]

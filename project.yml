@@ -53,7 +53,6 @@ targets:
         excludes:
           - Resources/Info.plist
           - Resources/Voxglass.entitlements
-          - Resources/VoxglassNarration.storekit
           - Core
       - path: Voxglass/Resources/Artwork
         type: folder
@@ -69,11 +68,6 @@ targets:
     dependencies:
       - package: VoxglassCore
         product: VoxglassCore
-      # Production preview on the phone shares the encoder pipeline. MP3 (Glint)
-      # and FLAC (libFLAC) decode/encode now come from parso-audio-engine's
-      # vendored source via VoxglassEncoders — no binary xcframeworks (§16.3, C-3).
-      - package: VoxglassCore
-        product: VoxglassEncoders
       - package: ParsoAudioEngine
         product: ParsoAudioStreaming
       - package: ParsoAudioEngine
@@ -107,7 +101,6 @@ targets:
         # Watch redesign H3: the watch's "Show Me on iPhone" hands off to My Books.
         NSUserActivityTypes:
           - guru.parso.voxglass.watch.library
-        NSMicrophoneUsageDescription: "Voxglass records your narration for the audiobook you are producing. Your recordings stay on this device unless you choose to share or preview them."
         UTImportedTypeDeclarations:
           - UTTypeConformsTo:
               - public.json
@@ -308,21 +301,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.uitests
         TEST_TARGET_NAME: Voxglass
         CODE_SIGNING_ALLOWED: NO
-  VoxglassCarPlaySmokeTests:
-    type: bundle.unit-test
-    platform: iOS
-    sources:
-      - VoxglassCarPlaySmokeTests
-    dependencies:
-      - target: Voxglass
-      - package: ZIPFoundation
-        product: ZIPFoundation
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.carplaysmoke
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass"
-        BUNDLE_LOADER: "$(TEST_HOST)"
-        CODE_SIGNING_ALLOWED: NO
   VoxglassWatchUITests:
     type: bundle.ui-testing
     platform: watchOS
@@ -335,23 +313,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.watchkitapp.uitests
         TEST_TARGET_NAME: VoxglassWatch
         CODE_SIGNING_ALLOWED: NO
-  VoxglassNarrationE2E:
-    type: bundle.unit-test
-    platform: iOS
-    sources:
-      - VoxglassNarrationE2E
-    dependencies:
-      - target: Voxglass
-      - package: VoxglassCore
-        product: VoxglassCore
-      - package: VoxglassCore
-        product: VoxglassEncoders
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.narratione2e
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voxglass.app/Voxglass"
-        BUNDLE_LOADER: "$(TEST_HOST)"
-        CODE_SIGNING_ALLOWED: NO
 schemes:
   Voxglass:
     build:
@@ -363,7 +324,6 @@ schemes:
         -uiTestDisableCloudKit: true
       targets:
         - VoxglassUITests
-        - VoxglassCarPlaySmokeTests
   VoxglassWatch:
     build:
       targets:
@@ -374,11 +334,3 @@ schemes:
         VOXGLASS_WATCH_SMOKE_ALICE: "1"
       targets:
         - VoxglassWatchUITests
-  VoxglassNarrationE2E:
-    build:
-      targets:
-        Voxglass: all
-    test:
-      gatherCoverageData: false
-      targets:
-        - VoxglassNarrationE2E

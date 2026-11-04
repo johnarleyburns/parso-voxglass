@@ -1,7 +1,6 @@
 import Testing
 import Foundation
 import ParsoAudioStreaming
-import VoxglassCoreTestSupport
 @testable import VoxglassCore
 
 @MainActor
@@ -47,7 +46,7 @@ import VoxglassCoreTestSupport
         let engine = FakeAudioEngine()
         let store = MemoryPositionStore()
         let cacheStore = SparseCacheStore(
-            directory: FileManager.default.temporaryDirectory
+            evictableRoot: FileManager.default.temporaryDirectory
                 .appendingPathComponent("playback-cache-\(UUID().uuidString)", isDirectory: true)
         )
         let defaults = UserDefaults(suiteName: "presentation-\(UUID().uuidString)")!

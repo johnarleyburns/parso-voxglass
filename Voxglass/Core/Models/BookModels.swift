@@ -163,6 +163,8 @@ public enum SourceKind: String, Codable, CaseIterable, Sendable {
     case internetArchive
     case internetArchiveURL
     case localFiles
+    /// A local EPUB-derived text book spoken by the system voice at playback.
+    case readWithAI
 }
 
 public struct BookWithChapters: Identifiable, Codable, Equatable, Sendable {

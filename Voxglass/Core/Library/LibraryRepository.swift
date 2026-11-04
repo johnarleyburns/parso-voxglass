@@ -1133,6 +1133,49 @@ public final class LibraryRepository: @unchecked Sendable {
         return BookWithChapters(book: book, chapters: chapters)
     }
 
+    /// Adds an EPUB-derived book whose chapters are local `.voxtext` assets.
+    /// These are intentionally ordinary library rows: pending previews, cloud
+    /// metadata, bookmarks and My Books all continue to use the same model.
+    public func importReadWithAI(_ request: ReadWithAIImport) async throws -> BookWithChapters {
+        try await database.prepare()
+        guard !request.chapters.isEmpty else { throw AudioEngineError.missingPlayableURL }
+        let contentKey = request.stableIdentifier.map { "read-with-ai:\($0)" }
+        if let contentKey,
+           let row = try await database.query("SELECT id FROM books WHERE content_key = ? LIMIT 1", [.string(contentKey)]).first,
+           let id = row.string("id").flatMap(UUID.init(uuidString:)),
+           let existing = try await bookWithChapters(forBookID: id) {
+            return existing
+        }
+
+        let source = Source(kind: .readWithAI, title: request.sourceTitle, url: request.sourceURL)
+        try await database.execute(
+            "INSERT INTO sources (id, kind, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+            [ModelMapping.databaseValue(source.id), .string(source.kind.rawValue), .string(source.title), ModelMapping.databaseValue(source.url), ModelMapping.databaseValue(source.createdAt)]
+        )
+        let now = Date()
+        let book = Book(
+            title: request.title,
+            authors: request.authors.isEmpty ? ["Unknown author"] : request.authors,
+            summary: request.summary,
+            sourceID: source.id,
+            createdAt: now,
+            updatedAt: now,
+            isPending: true
+        )
+        let chapters = request.chapters.enumerated().map { index, item in
+            Chapter(bookID: book.id, title: item.title, sortKey: String(format: "%05d", index), index: index, localURL: item.textURL)
+        }
+        try await insert(book: book, chapters: chapters, bookContentKey: contentKey)
+        // Gutenberg's source URL is portable. Local EPUB imports deliberately
+        // leave this unsynced because their Files URL is device-local.
+        if let url = request.sourceURL,
+           let scheme = url.scheme?.lowercased(),
+           scheme == "https" || scheme == "http" {
+            try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
+        }
+        return BookWithChapters(book: book, chapters: chapters)
+    }
+
     // MARK: - Local folder import (Folder Watch, §4)
 
     /// Repairs missing, stale, or unresolvable chapter bookmarks while the

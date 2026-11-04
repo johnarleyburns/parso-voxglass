@@ -43,10 +43,7 @@ step "Swift 6 contract"
 bash scripts/check-swift6.sh
 endstep
 
-step "Wiring and production guards"
-bash scripts/guard_wiring.sh
-bash scripts/test_guards.sh
-bash scripts/guard_production.sh
+step "Release-input guard"
 bash scripts/audit_app_store_release.sh
 endstep
 

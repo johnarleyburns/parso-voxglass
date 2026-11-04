@@ -49,6 +49,14 @@ public enum CloudKitRecordMapper {
         case .localFiles:
             guard let url = sourceURL else { return nil }
             identity = sha256First12(url.absoluteString)
+        case .readWithAI:
+            // A Gutenberg source URL is portable and can be fetched again on
+            // another device. Imported local EPUBs have no source URL here,
+            // so their app-container paths are never synced.
+            guard let url = sourceURL,
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "https" || scheme == "http" else { return nil }
+            identity = "read-with-ai-\(sha256First12(url.absoluteString))"
         }
         return "source-\(identity)"
     }

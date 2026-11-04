@@ -25,10 +25,6 @@ final class AppServices: ObservableObject {
     /// Activates the phone side of the WatchConnectivity audio relay so the watch
     /// can pull chapters the phone already has cached. Held for the app lifetime.
     let phoneAudioRelay = PhoneAudioRelay.shared
-    /// The production preview + watch relay. Created lazily because constructing the
-    /// sync coordinator must not run during `AppServices.init` in unentitled test
-    /// processes; `PhoneProductionSync` builds its CloudKit stack on first sync.
-    lazy var productionEnvironment: PhoneProductionEnvironment = PhoneProductionEnvironment()
 
     init() {
         let database = AppDatabase.makeApplicationDatabase()
@@ -36,7 +32,7 @@ final class AppServices: ObservableObject {
         let playlistRepository = PlaylistRepository(database: database)
         var positionStore = SQLitePositionStore(database: database)
         var bookmarkStore = SQLiteBookmarkStore(database: database)
-        let audioEngine = AVPlayerAudioEngine()
+        let audioEngine = SwitchingAudioEngine(audio: AVPlayerAudioEngine(), speech: ReadWithAISpeechAudioEngine())
         let playbackBridge = SystemPlaybackBridge()
         let tasteProfileStore = TasteProfileStore(database: database)
         let cloudSync = VoxglassCloudSync(database: database, bookmarkStore: bookmarkStore)
@@ -144,12 +140,6 @@ final class AppServices: ObservableObject {
         // operations are useful, but none is required to show the already
         // persisted library and restore the paused player.
         homeRecommendationStore.markEngineReady()
-        #if DEBUG
-        // This is a local deterministic UI-test fixture, not launch
-        // maintenance; keep it before the smoke test starts querying the
-        // Narration surface.
-        await seedProductionPreviewIfRequested()
-        #endif
         diagnostics.markInteractive()
 
         // Deferred past scene creation and detached from the rest of deferred
@@ -214,14 +204,12 @@ final class AppServices: ObservableObject {
         await cloudSync.pullPlaybackPositions()
         await playbackCoordinator.refreshPresentedSessionAfterCloudPull(from: libraryStore.books)
 
-        let production = productionEnvironment
-        phoneAudioRelay.registerProductionTransport(production.watchTransport)
         #if DEBUG
         let cloudBootstrapDisabled = ProcessInfo.processInfo.arguments.contains("-uiTestDisableCloudKit")
         #else
         let cloudBootstrapDisabled = false
         #endif
-        diagnostics.phase("cloudkit-and-production")
+        diagnostics.phase("cloudkit")
         // Unsigned simulator UI-test bundles do not carry the CloudKit
         // entitlement. The smoke path is entirely local and explicitly opts
         // out before any CKContainer-backed service is touched.
@@ -239,32 +227,11 @@ final class AppServices: ObservableObject {
             if cloudKitSyncEngine.lastUploadedCount > 0 {
                 UserDefaults.standard.set(true, forKey: AppPreferencesStore.Keys.cloudKitLibraryUploadConfirmed)
             }
-            // Pull production previews and relay them to the watch (spec §13.6).
-            await production.checkForUpdates()
         }
 
         diagnostics.finishDeferredWork()
     }
 
-    /// `-uiTestSeed onePreviewProject` seeds one previewable production so the
-    /// iPhone smoke test can assert the My Productions surface is reachable
-    /// (§18.2, WP-G). Debug-only; release builds ignore the argument.
-    ///
-    /// The reset flag first wipes the preview store's on-disk cache so the
-    /// seeded card is the only project and cannot be pushed below the fold by
-    /// stale previews left by earlier test runs (WP-G).
-    #if DEBUG
-    private func seedProductionPreviewIfRequested() async {
-        let arguments = ProcessInfo.processInfo.arguments
-        if arguments.contains("-uiTestResetNarrations") {
-            await productionEnvironment.previewStore.resetAll()
-        }
-        guard let index = arguments.firstIndex(of: "-uiTestSeed"),
-              arguments.indices.contains(index + 1),
-              arguments[index + 1] == "onePreviewProject" else { return }
-        await productionEnvironment.previewStore.apply(ProductionSmokeSeed.projection())
-    }
-    #endif
 
     private func enqueueInitialLibraryForCloudKitIfNeeded() async {
         let defaults = UserDefaults.standard

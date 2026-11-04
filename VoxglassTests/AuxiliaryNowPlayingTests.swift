@@ -17,11 +17,4 @@ import Testing
         #expect(bridge.auxiliaryNowPlaying == nil)
     }
 
-    @Test func carPlayReviewControllerHasNoDirectMediaPlayerWrite() throws {
-        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        let source = try String(contentsOf: root.appendingPathComponent("Voxglass/App/CarPlay/CarPlayReviewController.swift"), encoding: .utf8)
-        #expect(!source.contains("MPNowPlayingInfoCenter"))
-        #expect(source.contains("playbackBridge.updateAuxiliaryNowPlaying("))
-        #expect(source.contains("playbackBridge.clearAuxiliaryNowPlaying()"))
-    }
 }

@@ -6,7 +6,6 @@ import Foundation
 public struct CarPlayConnectionStateMachine: Sendable, Equatable {
     public enum Mode: String, Sendable, Equatable {
         case consumer
-        case production
     }
 
     public enum State: Sendable, Equatable {
