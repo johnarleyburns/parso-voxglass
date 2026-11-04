@@ -198,6 +198,60 @@ import Foundation
         #expect(h.engine.loadCalls.count == 1)  // Pause and later resumes must not reload the engine
     }
 
+    // MARK: - Resume current session (CarPlay "Resume Current")
+
+    /// Presents chapter 2 at 73s while SQLite and the snapshot deliberately hold
+    /// an older chapter 0 @ 20s checkpoint, so `play(book)` would pick the stale one.
+    private func makeLiveSessionOverStaleCheckpoint() async throws -> (Harness, [Chapter]) {
+        let h = makeHarness()
+        let chapters = makeChapters(3)
+        try await seedBook(in: h.db, chapters: chapters)
+        let bookID = chapters[0].bookID
+        try await h.store.save(PlaybackPosition(bookID: bookID, chapterID: chapters[2].id, position: 73, duration: 100))
+        await h.coordinator.restorePresentedSession(from: [makeBook(chapters: chapters)])
+        #expect(h.engine.loadCalls.isEmpty)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[2].id)
+        let stale = PlaybackPosition(
+            bookID: bookID, chapterID: chapters[0].id, position: 20, duration: 100,
+            updatedAt: Date().addingTimeInterval(3600)
+        )
+        try await h.store.save(stale)
+        LastPlaybackSnapshotStore(defaults: h.defaults).save(stale)
+        let latest = try await h.store.latestPosition(forBookID: bookID)
+        #expect(latest?.chapterID == chapters[0].id)
+        return (h, chapters)
+    }
+
+    @Test func resumeCurrentSessionKeepsLivePositionOverStalePersistedCheckpoint() async throws {
+        let (h, chapters) = try await makeLiveSessionOverStaleCheckpoint()
+
+        h.coordinator.resumeCurrentSession()
+        _ = await waitUntil { h.engine.isPlaying && h.coordinator.currentSession?.isPlaying == true }
+
+        #expect(h.engine.loadCalls.count == 1)
+        #expect(h.engine.loadCalls.last?.url == chapters[2].localURL)
+        #expect(abs((h.engine.loadCalls.last?.startTime ?? -1) - 73) <= 0.001)
+        #expect(h.coordinator.currentSession?.chapter.id == chapters[2].id)
+        #expect(abs((h.coordinator.currentSession?.position ?? -1) - 73) <= 0.001)
+        #expect(h.engine.isPlaying)
+    }
+
+    @Test func resumeCurrentSessionIsIdempotentWhilePlaying() async throws {
+        let (h, _) = try await makeLiveSessionOverStaleCheckpoint()
+
+        h.coordinator.resumeCurrentSession()
+        _ = await waitUntil { h.engine.isPlaying }
+        let loadsAfterFirstResume = h.engine.loadCalls.count
+        let callsAfterFirstResume = h.engine.calls.count
+
+        h.coordinator.resumeCurrentSession()
+        try? await Task.sleep(for: .milliseconds(50))
+
+        #expect(h.engine.loadCalls.count == loadsAfterFirstResume)
+        #expect(h.engine.calls.count == callsAfterFirstResume)
+        #expect(h.engine.isPlaying)
+    }
+
     // MARK: - §5.5 Load failure keeps the session (miniplayer must not vanish)
 
     @Test func engineLoadFailureOnFirstPlayKeepsSessionAndAllowsRetry() async throws {

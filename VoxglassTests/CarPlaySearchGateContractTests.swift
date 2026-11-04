@@ -50,6 +50,16 @@ import Testing
                 "CPAssistantCellConfiguration in \(cellFiles) needs an Intents extension implementing INPlayMediaIntentHandling, or CarPlay aborts on connect")
     }
 
+    @Test func resumeCurrentResumesLiveSessionWithoutReselectingBook() throws {
+        let dispatcher = try source(Self.dispatcherPath)
+        let start = try #require(dispatcher.range(of: "case .resumeCurrent:"))
+        let end = try #require(dispatcher.range(of: "case .playBook", range: start.upperBound..<dispatcher.endIndex))
+        let branch = String(dispatcher[start.upperBound..<end.lowerBound])
+        #expect(branch.contains("coordinator.resumeCurrentSession()"))
+        #expect(!branch.contains("coordinator.play(book)"))
+        #expect(!branch.contains("library.book("))
+    }
+
     @Test func tabBarNeverReceivesASearchTemplate() throws {
         for path in try swiftFiles(under: ["Voxglass"]) {
             for line in try source(path).split(separator: "\n") where line.contains("CPTabBarTemplate(") {

@@ -24,10 +24,7 @@ final class CarPlayActionDispatcher {
 
         switch action {
         case .resumeCurrent:
-            if let bookID = coordinator.currentSession?.book.id,
-               let book = library.book(withID: bookID) {
-                Task { await coordinator.play(book) }
-            }
+            coordinator.resumeCurrentSession()
             controller?.pushNowPlaying()
 
         case .playBook(let bookID):
