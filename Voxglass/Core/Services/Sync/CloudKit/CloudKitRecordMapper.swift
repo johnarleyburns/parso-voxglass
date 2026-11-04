@@ -49,6 +49,10 @@ public enum CloudKitRecordMapper {
         case .localFiles:
             guard let url = sourceURL else { return nil }
             identity = sha256First12(url.absoluteString)
+        case .readWithAI:
+            // Read-with-AI chapter URLs are app-container local and must not
+            // be represented in the shared library zone.
+            return nil
         }
         return "source-\(identity)"
     }

@@ -786,6 +786,10 @@ public final class CloudKitSyncEngine: ObservableObject {
             return source.title
         case .localFiles:
             return CloudKitRecordMapper.sha256First12(source.url?.absoluteString ?? source.title)
+        case .readWithAI:
+            // This is only used when reconciling an already-cloud-backed
+            // source. New Read-with-AI books are deliberately not uploaded.
+            return "read-with-ai:\(source.title)"
         }
     }
 
