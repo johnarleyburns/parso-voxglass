@@ -1,7 +1,6 @@
 import Testing
 import Foundation
 import ParsoAudioStreaming
-import VoxglassCoreTestSupport
 @testable import VoxglassCore
 
 /// A single-file, multi-chapter local import (Phase 9's local-folder import,
