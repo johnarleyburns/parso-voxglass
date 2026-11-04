@@ -46,15 +46,6 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     private var queuedRemovalRevisions: [WatchBookID: Int64] = [:]
     private var watchLibraryID: WatchPairedLibraryID = .init(UserDefaults.standard.string(forKey: "voxglass.watch.libraryID") ?? UUID().uuidString)
 
-    /// The production relay transport. `WCSession` permits a single delegate, which
-    /// this relay owns; incoming production messages (review events, refresh
-    /// requests) are forwarded here so the watch's offline actions reach the phone.
-    weak var productionTransport: WatchConnectivityTransport?
-
-    func registerProductionTransport(_ transport: WatchConnectivityTransport) {
-        productionTransport = transport
-        transport.updateReachability(reachable: isReachable, activated: session.activationState == .activated)
-    }
 
     override init() {
         guard WCSession.isSupported() else {
@@ -330,13 +321,6 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         )
     }
 
-    /// Routes a production-relay message (review event, refresh request) to the
-    /// registered transport. Consumer messages are untouched.
-    @MainActor
-    private func forwardProduction(_ message: [String: Any]) {
-        guard let transport = productionTransport else { return }
-        transport.handleIncoming(message)
-    }
 
     private func handleReceivedMessageWithoutReply(_ message: [String: Any]) async {
         guard let action = message["action"] as? String else { return }
@@ -840,7 +824,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
             isWatchAppInstalled = installed
             isPaired = paired
             isActivated = activated
-            productionTransport?.updateReachability(reachable: reachable, activated: activated)
             if becameConnected {
                 connectionToast = String(localized: "Apple Watch connected")
             }
@@ -860,7 +843,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
             isWatchAppInstalled = installed
             isPaired = paired
             isActivated = activated
-            productionTransport?.updateReachability(reachable: reachable, activated: activated)
             if installed {
                 await publishTypedWatchProjection()
             }
@@ -882,7 +864,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
             isWatchAppInstalled = installed
             isPaired = paired
             isActivated = activated
-            productionTransport?.updateReachability(reachable: reachable, activated: activated)
             if becameConnected {
                 connectionToast = String(localized: "Apple Watch connected")
             }
@@ -898,7 +879,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
     ) {
         let box = UncheckedBox(message)
         Task { @MainActor in
-            forwardProduction(box.value)
             await handleTypedWatchMessage(box.value)
             await handleReceivedMessageWithoutReply(box.value)
         }
@@ -937,7 +917,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
     ) {
         let box = UncheckedBox(userInfo)
         Task { @MainActor in
-            forwardProduction(box.value)
             await handleTypedWatchMessage(box.value)
         }
     }
@@ -1002,7 +981,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
     ) {
         let box = UncheckedBox(applicationContext)
         Task { @MainActor in
-            forwardProduction(box.value)
             await handleTypedWatchMessage(box.value)
             if WatchPhoneMessageCodec.action(from: box.value) == WatchPhoneAction.reportWatchStorage,
                let snapshot = try? WatchPhoneMessageCodec.payload(WatchStorageSnapshot.self, from: box.value) {
@@ -1040,14 +1018,6 @@ extension PhoneAudioRelay: WCSessionDelegate {
                 try? self.session.updateApplicationContext(replyMessage)
                 lastWatchSyncDate = Date()
                 watchSyncStatus = String(localized: "My Books sent to Apple Watch.")
-                return
-            }
-            if WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.requestRefresh
-                || WatchPhoneMessageCodec.action(from: messageBox.value) == ProductionTransportAction.recordingRemoteCommand {
-                // The watch asked the phone to re-push, or sent a recording-remote
-                // command; forward to the production relay and acknowledge.
-                forwardProduction(messageBox.value)
-                replyBox.value(["received": true])
                 return
             }
             replyBox.value(await reply(for: messageBox.value))

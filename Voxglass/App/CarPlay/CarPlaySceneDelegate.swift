@@ -7,15 +7,10 @@ import VoxglassCore
 /// never foregrounded) this is the first code that runs, so it bootstraps the
 /// shared services itself behind a loading placeholder before building the
 /// browse tree.
-///
-/// When productions are projected to the phone (S5), the root becomes the
-/// production tab bar (Continue / Productions / Review) driven by
-/// `CarPlayReviewController`; otherwise the consumer browse tree is shown.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 
     private let logger = Logger(subsystem: "guru.parso.voxglass", category: "CarPlay")
     private var carController: CarPlayInterfaceController?
-    private var productionController: CarPlayReviewController?
     private var connectionTask: Task<Void, Never>?
     private var connectionGeneration = 0
     private var connectionState = CarPlayConnectionStateMachine()
@@ -53,40 +48,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             guard !Task.isCancelled, self.connectionState.owns(generation) else { return }
             self.logger.info("servicesBootstrapWaitFinished generation=\(generation, privacy: .public)")
 
-            let productionProvider = LocalCarPlayProductionProvider.shared
-            if !productionProvider.productionSummaries().isEmpty {
-                let carController = CarPlayInterfaceController(
-                    interfaceController: interfaceController,
-                    services: .shared
-                )
-                self.carController = carController
-
-                let controller = CarPlayReviewController(
-                    dataProvider: productionProvider,
-                    eventSink: PhoneProductionEventSink(),
-                    player: ProductionCarPlayPlayer(),
-                    playbackBridge: AppServices.shared.playbackBridge,
-                    interfaceController: interfaceController,
-                    continueProvider: { [weak carController] in
-                        carController?.continueSections() ?? []
-                    }
-                )
-                self.productionController = controller
-                let root = controller.makeRootTemplate()
-                guard !Task.isCancelled,
-                      self.connectionState.finishConnect(generation: generation, mode: .production),
-                      self.connectionState.owns(generation) else { return }
-                self.logger.info("productionRootBuilt generation=\(generation, privacy: .public)")
-                interfaceController.setRootTemplate(root, animated: false, completion: nil)
-            } else {
-                self.carController = CarPlayInterfaceController(
-                    interfaceController: interfaceController,
-                    services: .shared
-                )
-                guard self.connectionState.finishConnect(generation: generation, mode: .consumer) else { return }
-                self.carController?.start()
-                self.logger.info("consumerRootBuilt generation=\(generation, privacy: .public)")
-            }
+            self.carController = CarPlayInterfaceController(interfaceController: interfaceController, services: .shared)
+            guard self.connectionState.finishConnect(generation: generation, mode: .consumer) else { return }
+            self.carController?.start()
+            self.logger.info("consumerRootBuilt generation=\(generation, privacy: .public)")
         }
     }
 
@@ -99,8 +64,6 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         connectionTask?.cancel()
         connectionTask = nil
         self.logger.info("sceneDidDisconnect generation=\(self.connectionGeneration, privacy: .public)")
-        self.productionController?.stop()
-        self.productionController = nil
         self.carController?.stop()
         self.carController = nil
     }

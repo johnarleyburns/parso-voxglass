@@ -15,7 +15,6 @@ import os
 struct VoxglassApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var services = AppServices.shared
-    @State private var discovery = DiscoveryEnvironment()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -24,7 +23,6 @@ struct VoxglassApp: App {
                 .environmentObject(services.libraryStore)
                 .environmentObject(services.catalogStore)
                 .environment(services.playbackCoordinator)
-                .environment(discovery)
                 .environmentObject(services.homeRecommendationStore)
                 .environmentObject(services.offlineDownloadManager)
                 .environmentObject(services.cloudSync)
@@ -34,14 +32,7 @@ struct VoxglassApp: App {
                 .environmentObject(services.playlistStore)
                 .environmentObject(services.libraryBackupService)
                 .environmentObject(services.phoneAudioRelay)
-                .task {
-                    discovery.phoneProduction = services.productionEnvironment
-                    discovery.library = NarrationLibraryImporter(services: services)
-                    await services.bootstrapOnce()
-                    if discovery.isAuthoringV2SyncEnabled {
-                        await discovery.syncAuthoringV2Now()
-                    }
-                }
+                .task { await services.bootstrapOnce() }
                 .onChange(of: scenePhase) { _, newPhase in
                     services.playbackCoordinator.handleScenePhase(newPhase)
                 }

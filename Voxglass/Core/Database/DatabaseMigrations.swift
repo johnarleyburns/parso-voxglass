@@ -339,6 +339,13 @@ private struct DatabaseMigration {
             ]
         ),
         DatabaseMigration(
+            id: 16,
+            name: "read_with_ai_text_books",
+            statements: [
+                "CREATE INDEX IF NOT EXISTS sources_kind_url ON sources(kind, url)"
+            ]
+        ),
+        DatabaseMigration(
             id: 15,
             name: "book_recording_identities",
             statements: [

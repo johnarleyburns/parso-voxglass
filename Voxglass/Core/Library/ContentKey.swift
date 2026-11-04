@@ -26,6 +26,9 @@ public enum ContentKey {
             let normalized = normalize(url.lastPathComponent)
             guard !normalized.isEmpty else { return nil }
             return "local:\(normalized)"
+        case .readWithAI:
+            guard let url else { return nil }
+            return "read-with-ai:\(normalize(url.lastPathComponent))"
         }
     }
 

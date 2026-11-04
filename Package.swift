@@ -50,8 +50,7 @@ let package = Package(
             exclude: ["Encoders"],
             resources: [
                 .process("Resources/CuratedLists"),
-                .process("Resources/Localizable.xcstrings"),
-                .copy("Production/Discovery/Resources/needs-seed.json")
+                .process("Resources/Localizable.xcstrings")
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6)

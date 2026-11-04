@@ -296,6 +296,21 @@ public final class LibraryStore: ObservableObject {
         }
     }
 
+    @discardableResult
+    public func importReadWithAI(_ request: ReadWithAIImport) async -> BookWithChapters? {
+        isImporting = true
+        defer { isImporting = false }
+        do {
+            let imported = try await repository.importReadWithAI(request)
+            await refresh()
+            await onBookImported?(imported.book.id)
+            return imported
+        } catch {
+            importError = error.localizedDescription
+            return nil
+        }
+    }
+
     /// Removes a book from the library and purges everything associated with it:
     /// in-flight offline downloads, pinned/passive cached audio + cover art,
     /// database rows (cascade), recently-viewed entry, and — if it is the current

@@ -93,15 +93,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Run wiring guards
-        run: bash scripts/guard_wiring.sh
-
-      - name: Prove the gates can fail (G-19 self-test)
-        run: bash scripts/test_guards.sh
-
-      - name: Run production feature guards (G-1..G-18)
-        run: bash scripts/guard_production.sh
-
       - name: Audit App Store release inputs
         run: bash scripts/audit_app_store_release.sh
 

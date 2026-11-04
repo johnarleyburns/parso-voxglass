@@ -34,8 +34,6 @@ enum VoxglassKeyboardShortcut {
     static let listen = KeyEquivalent("1")
     static let myBooks = KeyEquivalent("2")
     static let discover = KeyEquivalent("3")
-    static let narration = KeyEquivalent("4")
-    static let record = KeyEquivalent("r")
 }
 
 struct AdaptiveNavigationShortcuts: View {
@@ -50,8 +48,6 @@ struct AdaptiveNavigationShortcuts: View {
                 .keyboardShortcut(VoxglassKeyboardShortcut.myBooks, modifiers: [.command])
             Button("Find") { selection = .find }
                 .keyboardShortcut(VoxglassKeyboardShortcut.discover, modifiers: [.command])
-            Button("Narration") { selection = .narration }
-                .keyboardShortcut(VoxglassKeyboardShortcut.narration, modifiers: [.command])
         }
         .frame(width: 1, height: 1)
         .accessibilityHidden(true)

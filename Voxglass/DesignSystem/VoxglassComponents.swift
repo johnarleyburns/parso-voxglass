@@ -611,6 +611,8 @@ struct ProvenanceChip: View {
             return ("cloud", "ARCHIVE.ORG")
         case .localFiles, .none:
             return ("iphone", "ON DEVICE")
+        case .readWithAI:
+            return ("text.book.closed", "READ WITH AI")
         }
     }
 }
@@ -640,6 +642,8 @@ extension SourceKind {
             return String(localized: "Archive URL")
         case .localFiles:
             return String(localized: "Imported")
+        case .readWithAI:
+            return String(localized: "Read with AI")
         }
     }
 }
