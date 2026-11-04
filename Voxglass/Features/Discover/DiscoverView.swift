@@ -87,8 +87,15 @@ struct BrowseView: View {
             Task { await runSearch() }
         }
         .onChange(of: sourceFilter) { _, _ in
-            guard searchLifecycle.isCurrent(draft: catalogStore.query) else { return }
-            Task { await runSearch() }
+            if sourceFilter == .collections {
+                discoverScope = .collection
+                catalogStore.query = ""
+                handleDiscoverScopeChange(.collection)
+            } else {
+                if discoverScope == .collection { discoverScope = .all }
+                guard searchLifecycle.isCurrent(draft: catalogStore.query) else { return }
+                Task { await runSearch() }
+            }
         }
         .onChange(of: catalogStore.query) { _, query in
             preflightTask?.cancel()
@@ -103,7 +110,6 @@ struct BrowseView: View {
     private var discoverContent: some View {
             VStack(alignment: .leading, spacing: 18) {
                 searchPanel
-                scopeBar
                 if let selectedCollection {
                     selectedCollectionPill(selectedCollection)
                 }
@@ -210,13 +216,6 @@ struct BrowseView: View {
         }
     }
 
-    private var scopeBar: some View {
-        BookScopeBar(title: "Find scope", selection: $discoverScope, options: [
-            (.all, "All"), (.collection, "Collection")
-        ])
-        .accessibilityIdentifier("discover.scopePicker")
-    }
-
     private var searchPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
@@ -259,8 +258,8 @@ struct BrowseView: View {
             ])
             .accessibilityIdentifier("discover.searchScope")
 
-            BookScopeBar(title: "Book source", selection: $sourceFilter, options: [
-                (.all, "All"), (.librivox, "LibriVox"), (.gutenberg, "Gutenberg")
+            BookScopeBar(title: "Find source", selection: $sourceFilter, options: [
+                (.all, "All"), (.librivox, "LibriVox"), (.collections, "LibriVox Collections"), (.gutenberg, "Gutenberg")
             ])
             .accessibilityIdentifier("discover.sourceFilter")
         }
@@ -662,7 +661,12 @@ struct BrowseView: View {
 
     private func searchGutenberg(_ term: String) async {
         guard sourceFilter != .librivox, !term.isEmpty else { gutenbergResults = []; return }
-        gutenbergResults = (try? await GutenbergCatalogClient().search(term)) ?? []
+        do {
+            gutenbergResults = try await GutenbergCatalogClient().search(term)
+        } catch {
+            gutenbergResults = []
+            catalogStore.catalogError = "Project Gutenberg search failed: \(error.localizedDescription)"
+        }
     }
 
     private var gutenbergResultSection: some View {
@@ -771,7 +775,7 @@ private enum DiscoverSearchScope: Hashable {
 }
 
 private enum FindSourceFilter: Hashable {
-    case all, librivox, gutenberg
+    case all, librivox, collections, gutenberg
 }
 
 private enum DiscoverBrowseScope: String, CaseIterable, Identifiable {
