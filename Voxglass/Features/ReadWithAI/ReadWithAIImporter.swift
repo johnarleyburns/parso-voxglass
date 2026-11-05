@@ -7,7 +7,7 @@ enum ReadWithAIImporter {
 
         var errorDescription: String? {
             switch self {
-            case .noReadableText: "This EPUB did not contain readable book text."
+            case .noReadableText: "This document did not contain readable text."
             }
         }
     }
@@ -17,14 +17,19 @@ enum ReadWithAIImporter {
     /// playback unit for AVSpeechSynthesizer and keeps the library schema
     /// identical to every other book source.
     static func prepare(
-        epubURL: URL,
+        documentURL: URL,
         sourceTitle: String,
         sourceURL: URL? = nil,
         stableIdentifier: String? = nil,
         titleOverride: String? = nil,
         authorsOverride: [String]? = nil
     ) async throws -> ReadWithAIImport {
-        let document = try await EPUBImporter().extract(from: epubURL)
+        let document: ExtractedDocument
+        switch documentURL.pathExtension.lowercased() {
+        case "epub": document = try await EPUBImporter().extract(from: documentURL)
+        case "pdf": document = try await PDFImporter().extract(from: documentURL)
+        default: throw ImportError.noReadableText
+        }
         let root = try makeBookDirectory()
         var chapters: [ReadWithAIChapterImport] = []
 
@@ -54,7 +59,7 @@ enum ReadWithAIImporter {
         }
 
         return ReadWithAIImport(
-            title: titleOverride?.nonEmpty ?? document.title?.nonEmpty ?? epubURL.deletingPathExtension().lastPathComponent,
+            title: titleOverride?.nonEmpty ?? document.title?.nonEmpty ?? documentURL.deletingPathExtension().lastPathComponent,
             authors: authorsOverride?.filter { $0.nonEmpty != nil } ?? document.author.map { [$0] } ?? [],
             sourceTitle: sourceTitle,
             sourceURL: sourceURL,
@@ -77,7 +82,7 @@ enum ReadWithAIImporter {
         }
         let file = try makeBookDirectory().appendingPathComponent("source.epub")
         try data.write(to: file, options: .atomic)
-        return try await prepare(epubURL: file, sourceTitle: sourceTitle, sourceURL: sourceURL,
+        return try await prepare(documentURL: file, sourceTitle: sourceTitle, sourceURL: sourceURL,
                                  stableIdentifier: stableIdentifier, titleOverride: title, authorsOverride: authors)
     }
 

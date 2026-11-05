@@ -1,6 +1,9 @@
 import Foundation
 
-public enum SourceFormat: String, Codable, Sendable { case epub }
+public enum SourceFormat: String, Codable, Sendable {
+    case epub
+    case pdf
+}
 
 public struct ImportWarning: Codable, Sendable, Identifiable, Equatable {
     public let id: UUID

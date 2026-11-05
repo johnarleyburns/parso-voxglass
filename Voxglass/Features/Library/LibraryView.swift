@@ -725,13 +725,13 @@ private struct AddArchiveURLSheet: View {
                     .raisedSurface()
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Label("Read an EPUB with AI", systemImage: "text.book.closed")
+                        Label("Read a document with AI", systemImage: "text.book.closed")
                             .voxFont(.subheadline, weight: .semibold)
                             .foregroundStyle(Palette.ink)
-                        Text("Choose an EPUB from Files. Voxglass keeps a local text copy and reads it with the iPhone’s built-in voice.")
+                        Text("Choose an EPUB or text-based PDF from Files. Voxglass keeps a local text copy and reads it with the iPhone’s built-in voice.")
                             .voxFont(.footnote)
                             .foregroundStyle(Palette.ink2)
-                        Button("Choose EPUB") { showingEPUBImporter = true }
+                        Button("Choose EPUB or PDF") { showingEPUBImporter = true }
                             .buttonStyle(.bordered)
                     }
                     .padding(14)
@@ -809,7 +809,7 @@ private struct AddArchiveURLSheet: View {
             )
             .fileImporter(
                 isPresented: $showingEPUBImporter,
-                allowedContentTypes: [.epub],
+                allowedContentTypes: [.epub, .pdf],
                 onCompletion: handleEPUBSelection
             )
             .alert("Couldn't Add Audiobook", isPresented: errorBinding) {
@@ -859,7 +859,7 @@ private struct AddArchiveURLSheet: View {
             let accessed = url.startAccessingSecurityScopedResource()
             defer { if accessed { url.stopAccessingSecurityScopedResource() } }
             do {
-                let request = try await ReadWithAIImporter.prepare(epubURL: url, sourceTitle: "Files")
+                let request = try await ReadWithAIImporter.prepare(documentURL: url, sourceTitle: "Files")
                 guard let imported = await libraryStore.importReadWithAI(request) else { return }
                 dismiss()
                 await playback.present(imported)
