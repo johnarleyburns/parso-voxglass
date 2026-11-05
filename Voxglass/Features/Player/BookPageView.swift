@@ -808,6 +808,7 @@ struct BookPageView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("nowplaying.readWithAIVoice")
+                .padding(.bottom, 10)
             }
         }
         .padding(.top, 16)
