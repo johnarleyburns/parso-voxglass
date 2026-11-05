@@ -47,7 +47,8 @@ public final class RecommendationEngine {
         selectedLanguages: Set<String>
     ) async -> RecommendationShelf {
         let languageClause = LibriVoxLanguage.clause(for: selectedLanguages)
-        let excludeKeys = await buildExcludeKeys()
+        let exclusions = await buildExclusions()
+        let excludeKeys = exclusions.all
 
         let profile = await profileStore.fetchProfile()
         guard !profile.isEmpty else {
@@ -122,13 +123,14 @@ public final class RecommendationEngine {
         }
 
         guard !filtered.isEmpty else {
-            let surfacedIds = await profileStore.fetchSurfacedIdentifiers()
-            var excludeMinusSurfaced = excludeKeys
-            excludeMinusSurfaced.subtract(surfacedIds)
+            // The surfaced ring is deliberately relaxed here so a small
+            // personalized pool does not go empty. Ownership is different:
+            // anything in My Books is an absolute restriction and must remain
+            // excluded even when every available candidate was surfaced.
             let fallbackRanked = RecommendationPipeline.rank(
                 candidates: effectiveCandidates,
                 profile: profile,
-                excludeKeys: excludeMinusSurfaced
+                excludeKeys: exclusions.permanentKeys
             )
             guard !fallbackRanked.isEmpty else {
                 return popularFallback()
@@ -154,14 +156,21 @@ public final class RecommendationEngine {
         return formatter.string(from: Date())
     }
 
-    private func buildExcludeKeys() async -> Set<String> {
+    private struct RecommendationExclusions {
+        let permanentKeys: Set<String>
+        let surfacedKeys: Set<String>
+
+        var all: Set<String> { permanentKeys.union(surfacedKeys) }
+    }
+
+    private func buildExclusions() async -> RecommendationExclusions {
         let surfacedIds = await profileStore.fetchSurfacedIdentifiers()
         let listenedKeys = await libraryStore.refreshListenedWorkExclusionKeys()
-        let libraryWorkKeys = Set(libraryStore.books.map { book in
-            WorkKey.normalized(author: book.book.authorLine, title: book.book.title)
-        })
-        let libraryRawIDs = Set(libraryStore.books.map(\.book.id.uuidString))
-        return surfacedIds.union(listenedKeys).union(libraryWorkKeys).union(libraryRawIDs)
+        // Ownership must survive the fallback path below. Keep listened keys
+        // permanent as well: they represent books still associated with this
+        // library, while only the recency/surfaced ring is safe to relax.
+        let permanent = libraryStore.ownedRecommendationExclusionKeys.union(listenedKeys)
+        return RecommendationExclusions(permanentKeys: permanent, surfacedKeys: surfacedIds)
     }
 
     private func buildFallbackQueries(profile: ProfileBucket,

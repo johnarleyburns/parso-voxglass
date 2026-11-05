@@ -608,6 +608,15 @@ import Foundation
             subjects: ["Drama"]
         )
 
+        // Force the personalized re-rank path, which intentionally relaxes
+        // only the recency ring. An owned work must remain excluded there.
+        for key in [libraryOwned, fresh].flatMap({ RecommendationPipeline.identityKeys(for: $0) }) {
+            try await database.execute(
+                "INSERT OR REPLACE INTO reco_surfaced (identifier, ts) VALUES (?, ?)",
+                [.string(key), .double(Date().timeIntervalSince1970)]
+            )
+        }
+
         let client = FakeArchiveClient(responses: [
             [libraryOwned, fresh],
             []
