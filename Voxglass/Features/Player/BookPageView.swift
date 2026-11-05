@@ -799,7 +799,7 @@ struct BookPageView: View {
                 NavigationLink {
                     ReadWithAIVoicePicker()
                 } label: {
-                    Label("Read with AI Voice", systemImage: "waveform.and.mic")
+                    Label("Select AI Voice", systemImage: "waveform.and.mic")
                         .voxFont(.callout, weight: .semibold)
                         .foregroundStyle(Palette.brass)
                         .frame(maxWidth: .infinity)
