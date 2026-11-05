@@ -161,7 +161,7 @@ private struct ReadWithAIVoiceRow: View {
     }
 }
 
-private struct ReadWithAIVoicePicker: View {
+struct ReadWithAIVoicePicker: View {
     @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedIdentifier = ""
 
     private var voices: [AVSpeechSynthesisVoice] {
