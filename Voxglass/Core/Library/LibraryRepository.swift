@@ -1160,7 +1160,7 @@ public final class LibraryRepository: @unchecked Sendable {
             sourceID: source.id,
             createdAt: now,
             updatedAt: now,
-            isPending: true
+            isPending: request.isPending
         )
         let chapters = request.chapters.enumerated().map { index, item in
             Chapter(bookID: book.id, title: item.title, sortKey: String(format: "%05d", index), index: index, localURL: item.textURL)

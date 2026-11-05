@@ -361,6 +361,26 @@ private struct DatabaseMigration {
                 """,
                 "CREATE INDEX book_recording_identities_lookup ON book_recording_identities(scheme, value)"
             ]
+        ),
+        DatabaseMigration(
+            id: 17,
+            name: "restore_local_read_with_ai_books_to_my_books",
+            statements: [
+                // Local EPUB/PDF imports are an explicit Files action, not a
+                // catalog preview. Earlier builds accidentally marked them
+                // pending, which hid existing on-device text after refresh or
+                // update. Their source URL is deliberately NULL, so this does
+                // not promote Gutenberg preview records.
+                """
+                UPDATE books
+                SET is_pending = 0
+                WHERE is_pending = 1
+                  AND source_id IN (
+                    SELECT id FROM sources
+                    WHERE kind = 'readWithAI' AND url IS NULL
+                  )
+                """
+            ]
         )
     ]
 }

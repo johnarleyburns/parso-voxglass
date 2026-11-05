@@ -20,6 +20,9 @@ public struct ReadWithAIImport: Sendable {
     public var sourceTitle: String
     public var sourceURL: URL?
     public var stableIdentifier: String?
+    /// Files imports are explicit user additions and belong in My Books.
+    /// Gutenberg's preview flow opts in to pending status until confirmation.
+    public var isPending: Bool
     public var chapters: [ReadWithAIChapterImport]
 
     public init(
@@ -29,6 +32,7 @@ public struct ReadWithAIImport: Sendable {
         sourceTitle: String,
         sourceURL: URL? = nil,
         stableIdentifier: String? = nil,
+        isPending: Bool = false,
         chapters: [ReadWithAIChapterImport]
     ) {
         self.title = title
@@ -37,6 +41,7 @@ public struct ReadWithAIImport: Sendable {
         self.sourceTitle = sourceTitle
         self.sourceURL = sourceURL
         self.stableIdentifier = stableIdentifier
+        self.isPending = isPending
         self.chapters = chapters
     }
 }

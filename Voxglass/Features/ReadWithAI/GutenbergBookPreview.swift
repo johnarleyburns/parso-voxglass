@@ -44,7 +44,8 @@ struct GutenbergBookPreview: View {
         do {
             let request = try await ReadWithAIImporter.downloadAndPrepare(
                 epubURL: epubURL, sourceTitle: "Project Gutenberg", sourceURL: book.detailsURL,
-                stableIdentifier: "gutenberg-\(book.id)", title: book.title, authors: book.authors.map(\.name)
+                stableIdentifier: "gutenberg-\(book.id)", title: book.title, authors: book.authors.map(\.name),
+                isPending: true
             )
             guard let imported = await libraryStore.importReadWithAI(request) else { throw URLError(.cannotCreateFile) }
             await playback.present(imported)

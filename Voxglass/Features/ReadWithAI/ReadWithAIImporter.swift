@@ -22,7 +22,8 @@ enum ReadWithAIImporter {
         sourceURL: URL? = nil,
         stableIdentifier: String? = nil,
         titleOverride: String? = nil,
-        authorsOverride: [String]? = nil
+        authorsOverride: [String]? = nil,
+        isPending: Bool = false
     ) async throws -> ReadWithAIImport {
         let document: ExtractedDocument
         switch documentURL.pathExtension.lowercased() {
@@ -64,6 +65,7 @@ enum ReadWithAIImporter {
             sourceTitle: sourceTitle,
             sourceURL: sourceURL,
             stableIdentifier: stableIdentifier,
+            isPending: isPending,
             chapters: chapters
         )
     }
@@ -74,7 +76,8 @@ enum ReadWithAIImporter {
         sourceURL: URL?,
         stableIdentifier: String,
         title: String,
-        authors: [String]
+        authors: [String],
+        isPending: Bool = true
     ) async throws -> ReadWithAIImport {
         let (data, response) = try await URLSession.shared.data(from: epubURL)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
@@ -83,7 +86,8 @@ enum ReadWithAIImporter {
         let file = try makeBookDirectory().appendingPathComponent("source.epub")
         try data.write(to: file, options: .atomic)
         return try await prepare(documentURL: file, sourceTitle: sourceTitle, sourceURL: sourceURL,
-                                 stableIdentifier: stableIdentifier, titleOverride: title, authorsOverride: authors)
+                                 stableIdentifier: stableIdentifier, titleOverride: title, authorsOverride: authors,
+                                 isPending: isPending)
     }
 
     private static func makeBookDirectory() throws -> URL {
