@@ -136,12 +136,25 @@ private struct ReadWithAIVoiceRow: View {
         NavigationLink {
             ReadWithAIVoicePicker()
         } label: {
-            DisclosureListRow(
-                icon: "waveform.and.mic",
-                title: "Read with AI Voice",
-                detail: selectedVoiceName,
-                count: nil
-            )
+            HStack(spacing: 12) {
+                Image(systemName: "waveform.and.mic")
+                    .foregroundStyle(Palette.brass)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Read with AI Voice")
+                        .voxFont(.body, weight: .semibold)
+                        .foregroundStyle(Palette.ink)
+                    Text(selectedVoiceName)
+                        .voxFont(.caption)
+                        .foregroundStyle(Palette.ink2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .voxFont(.caption, weight: .semibold)
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("settings.readWithAIVoice")
