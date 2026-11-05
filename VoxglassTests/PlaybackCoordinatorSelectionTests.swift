@@ -63,6 +63,16 @@ import Foundation
         try? await Task.sleep(nanoseconds: 200_000_000)
     }
 
+    /// Polls (yielding to the main actor) so contended parallel runs cannot
+    /// outlast a fixed sleep.
+    private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 10_000_000_000) async {
+        var waited: UInt64 = 0
+        while waited < timeoutNanoseconds, !condition() {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+            waited += 20_000_000
+        }
+    }
+
     // MARK: - S1 tests
 
     @Test func sessionAppearsBeforeEngineLoadCompletes() async {
@@ -89,13 +99,13 @@ import Foundation
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(book)
-        await drainMainQueue()
+        await waitUntil { h.engine.loadCalls.count == 1 }
 
         #expect(h.coordinator.playbackPhase == .preparing)
         #expect(!(h.engine.isPlaying))  // Engine must not be playing while load is suspended
 
         h.engine.resumeSuspendedLoad()
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
 
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(h.engine.isPlaying)
