@@ -1,12 +1,14 @@
 import AVFoundation
 import Foundation
 import VoxglassCore
+import os
 
 /// AVSpeechSynthesizer-backed implementation of the existing playback seam.
 /// `.voxtext` chapters are local, app-owned UTF-8 files; all other URLs remain
 /// the responsibility of AVPlayerAudioEngine.
 @MainActor
 final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency AVSpeechSynthesizerDelegate {
+    private static let log = Logger(subsystem: "guru.parso.voxglass", category: "speech-audio")
     private let synthesizer = AVSpeechSynthesizer()
     private var text = ""
     private var utteranceStart = 0
@@ -45,7 +47,13 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
             try session.setCategory(.playback, mode: .spokenAudio, options: [.allowAirPlay, .allowBluetoothA2DP])
             try session.setActive(true)
         } catch {
-            onPlaybackIssue?(.failed(error.localizedDescription))
+            // A route can briefly reject a category transition (notably while
+            // Bluetooth or AirPlay is settling) even though the synthesizer is
+            // able to keep speaking through the already-active session. This
+            // is not a playback failure; reporting it used to show the
+            // "Playback Interrupted" alert over successfully playing text.
+            // AVPlayerAudioEngine follows the same recoverable-error policy.
+            Self.log.error("Speech audio session configuration failed: \(error, privacy: .public)")
         }
     }
 
@@ -102,6 +110,7 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let utterance = AVSpeechUtterance(string: String(text[range]))
         utterance.rate = Self.appleRate(for: activeRate)
         utterance.volume = activeVolume
+        utterance.voice = Self.preferredOnDeviceVoice()
         utteranceStart = offset
         speaking = true
         synthesizer.speak(utterance)
@@ -131,6 +140,37 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
 
     private static func appleRate(for rate: Float) -> Float {
         AVSpeechUtteranceDefaultSpeechRate * min(max(rate, 0.5), 2.0)
+    }
+
+    /// Prefer an installed Premium or Enhanced system voice before falling
+    /// back to the device default. These voices remain entirely on-device;
+    /// iOS only exposes qualities that are already installed by the user.
+    private static func preferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
+        let locale = Locale.autoupdatingCurrent
+        let languageCode = locale.language.languageCode?.identifier
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+        let sameLanguage = voices.filter {
+            Locale(identifier: $0.language).language.languageCode?.identifier == languageCode
+        }
+        let candidates = sameLanguage.isEmpty ? voices : sameLanguage
+
+        return candidates.max { lhs, rhs in
+            let lhsScore = voiceScore(lhs, preferredLocale: locale)
+            let rhsScore = voiceScore(rhs, preferredLocale: locale)
+            if lhsScore != rhsScore { return lhsScore < rhsScore }
+            return lhs.identifier > rhs.identifier
+        } ?? AVSpeechSynthesisVoice(language: locale.identifier)
+    }
+
+    private static func voiceScore(_ voice: AVSpeechSynthesisVoice, preferredLocale: Locale) -> Int {
+        let quality: Int
+        switch voice.quality {
+        case .premium: quality = 3
+        case .enhanced: quality = 2
+        default: quality = 1
+        }
+        let localeBonus = voice.language == preferredLocale.identifier ? 1 : 0
+        return quality * 10 + localeBonus
     }
     private static func charactersPerSecond(rate: Float) -> Double { 14 * Double(min(max(rate, 0.5), 2.0)) }
     private static func duration(for text: String, rate: Float) -> TimeInterval { Double(text.count) / charactersPerSecond(rate: rate) }
