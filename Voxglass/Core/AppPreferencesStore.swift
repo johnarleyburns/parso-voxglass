@@ -12,6 +12,8 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let skipBackInterval = "voxglass.skipBackInterval"
         public static let skipSilenceEnabled = "voxglass.skipSilence.enabled"
         public static let volumeNormalizationEnabled = "voxglass.volumeNormalization.enabled"
+        /// Empty means automatically choose the best installed system voice.
+        public static let readWithAIVoiceIdentifier = "voxglass.readWithAI.voiceIdentifier"
         public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
         public static let authoringV2SyncEnabled = "voxglass.authoringV2Sync.enabled"
         public static let authoringV2LastSync = "voxglass.authoringV2Sync.lastSync"

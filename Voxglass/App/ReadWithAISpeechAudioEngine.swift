@@ -110,7 +110,7 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let utterance = AVSpeechUtterance(string: String(text[range]))
         utterance.rate = Self.appleRate(for: activeRate)
         utterance.volume = activeVolume
-        utterance.voice = Self.preferredOnDeviceVoice()
+        utterance.voice = Self.selectedOrPreferredOnDeviceVoice()
         utteranceStart = offset
         speaking = true
         synthesizer.speak(utterance)
@@ -145,6 +145,14 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     /// Prefer an installed Premium or Enhanced system voice before falling
     /// back to the device default. These voices remain entirely on-device;
     /// iOS only exposes qualities that are already installed by the user.
+    private static func selectedOrPreferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
+        if let identifier = UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.readWithAIVoiceIdentifier),
+           let selected = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.identifier == identifier }) {
+            return selected
+        }
+        return preferredOnDeviceVoice()
+    }
+
     private static func preferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
         let locale = Locale.autoupdatingCurrent
         let languageCode = locale.language.languageCode?.identifier
