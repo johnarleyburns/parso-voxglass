@@ -90,17 +90,38 @@ public enum AudioEngineIssue: Equatable, Sendable {
 
     /// Preserves decode identity across localized descriptions and wrapped errors.
     public static func playbackFailure(_ error: Error?, fallback: String) -> AudioEngineIssue {
-        guard let error else { return .failed(fallback) }
+        guard let error else {
+            return isDecodeDescription(fallback) ? .decodeFailed(fallback) : .failed(fallback)
+        }
         var current = error as NSError
         for _ in 0..<8 {
             // AVError.Code.decodeFailed. Keep AVFoundation out of the core seam.
             if current.domain == "AVFoundationErrorDomain", current.code == -11821 {
                 return .decodeFailed(error.localizedDescription)
             }
+            // Some media servers and AVFoundation routes surface this as an
+            // NSOSStatusErrorDomain (or another wrapped domain) while keeping
+            // only the human-readable "Cannot Decode" reason. It represents
+            // the same damaged-packet condition and must use the bounded
+            // automatic recovery path rather than interrupting the listener.
+            if isDecodeDescription(current.localizedDescription)
+                || isDecodeDescription(current.userInfo[NSLocalizedFailureReasonErrorKey] as? String)
+                || isDecodeDescription(current.userInfo[NSLocalizedDescriptionKey] as? String) {
+                return .decodeFailed(error.localizedDescription)
+            }
             guard let underlying = current.userInfo[NSUnderlyingErrorKey] as? NSError else { break }
             current = underlying
         }
-        return .failed(error.localizedDescription)
+        return isDecodeDescription(error.localizedDescription)
+            ? .decodeFailed(error.localizedDescription)
+            : .failed(error.localizedDescription)
+    }
+
+    private static func isDecodeDescription(_ message: String?) -> Bool {
+        let normalized = message?.localizedLowercase ?? ""
+        return normalized.contains("cannot decode")
+            || normalized.contains("decode failed")
+            || normalized.contains("decoder failure")
     }
 
     public var userMessage: String {

@@ -244,6 +244,16 @@ import Testing
         #expect(AudioEngineIssue.playbackFailure(URLError(.timedOut), fallback: "fallback") == .failed(URLError(.timedOut).localizedDescription))
     }
 
+    @Test func decodeClassifierRecognizesCannotDecodeFromOtherErrorDomains() {
+        let statusError = NSError(
+            domain: "NSOSStatusErrorDomain",
+            code: -12913,
+            userInfo: [NSLocalizedDescriptionKey: "Cannot Decode"]
+        )
+        #expect(AudioEngineIssue.playbackFailure(statusError, fallback: "fallback") == .decodeFailed("Cannot Decode"))
+        #expect(AudioEngineIssue.playbackFailure(nil, fallback: "Cannot Decode") == .decodeFailed("Cannot Decode"))
+    }
+
     @Test func staleSessionAfterDeleteClearsOnlyMatchingStateWithoutUIError() async {
         let h = await makeHarness()
         let staleBook = h.book.book.id
