@@ -20,6 +20,10 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     /// The concrete installed voice used to create the paused utterance.
     /// `AVSpeechSynthesizer.continueSpeaking()` cannot change this voice.
     private var activeVoiceIdentifier: String?
+    /// Delegate callbacks can arrive after `stopSpeaking(at: .immediate)`.
+    /// Keep the exact utterance identity so a canceled voice never completes
+    /// the newly-created voice's chapter.
+    private var activeUtterance: AVSpeechUtterance?
     private var speechGeneration = 0
 
     var onPlaybackEnded: (@MainActor () -> Void)?
@@ -128,6 +132,7 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let resolvedVoice = voice ?? Self.selectedOrPreferredOnDeviceVoice()
         utterance.voice = resolvedVoice
         activeVoiceIdentifier = resolvedVoice?.identifier
+        activeUtterance = utterance
         utteranceStart = offset
         speaking = true
         synthesizer.speak(utterance)
@@ -135,18 +140,28 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
 
     private func stopImmediately() {
         speechGeneration &+= 1
+        activeUtterance = nil
         synthesizer.stopSpeaking(at: .immediate)
         speaking = false
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        guard utterance === activeUtterance else { return }
         let offset = utteranceStart + characterRange.location
         position = Self.time(forCharacterOffset: offset, rate: activeRate)
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) { speaking = false }
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) { speaking = true }
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+        guard utterance === activeUtterance else { return }
+        speaking = false
+    }
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+        guard utterance === activeUtterance else { return }
+        speaking = true
+    }
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        guard utterance === activeUtterance else { return }
+        activeUtterance = nil
         speaking = false
         position = estimatedDuration ?? position
         lastEndPosition = position
