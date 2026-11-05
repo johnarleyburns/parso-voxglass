@@ -170,6 +170,12 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         return preferredOnDeviceVoice()
     }
 
+    /// Displayed in Now Playing beside the selector. Keep this on the engine
+    /// so the label describes the exact voice that new utterances receive.
+    static var selectedVoiceDisplayName: String {
+        selectedOrPreferredOnDeviceVoice()?.name ?? "System Default"
+    }
+
     private static func preferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
         let locale = Locale.autoupdatingCurrent
         let languageCode = locale.language.languageCode?.identifier
