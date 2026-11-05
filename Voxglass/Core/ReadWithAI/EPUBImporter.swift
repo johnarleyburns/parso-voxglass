@@ -40,7 +40,7 @@ public struct EPUBImporter: SourceImporting {
 
         for item in opf.spine {
             let href = resolveHREF(item.1, relativeTo: opfDir)
-            guard let xhtmlEntry = zip.entry(named: href),
+            guard let xhtmlEntry = entry(named: href, in: zip),
                   let xhtmlData = try? zip.read(xhtmlEntry),
                   let xhtmlString = String(data: xhtmlData, encoding: .utf8) else {
                 continue
@@ -125,7 +125,7 @@ public struct EPUBImporter: SourceImporting {
                             return
                         }
                         let href = resolveHREF(item.1, relativeTo: opfDir)
-                        guard let xhtmlEntry = zip.entry(named: href),
+                        guard let xhtmlEntry = self.entry(named: href, in: zip),
                               let xhtmlData = try? zip.read(xhtmlEntry),
                               let xhtmlString = String(data: xhtmlData, encoding: .utf8) else { continue }
                         let parsed = parseXHTML(xhtmlString)
@@ -173,14 +173,12 @@ public struct EPUBImporter: SourceImporting {
     // MARK: - XML helpers
 
     private func parseOPFPath(from containerXML: Data) throws -> String {
-        let xml = String(data: containerXML, encoding: .utf8) ?? ""
-        guard let match = xml.range(of: #"full-path="([^"]+)""#, options: .regularExpression) else {
+        let xml = decodedText(containerXML)
+        let matches = matchesWithTwo(of: #"full-path\s*=\s*(["'])(.*?)\1"#, in: xml)
+        guard let path = matches.first?.1, !path.isEmpty else {
             throw ImportError.malformedXML("container.xml missing rootfile full-path")
         }
-        let matched = String(xml[match])
-        // Strip `full-path="` (11 chars: the `=` and the opening quote) and
-        // the trailing quote that the regex includes.
-        return String(matched.dropFirst(11).dropLast())
+        return path
     }
 
     private struct OPFInfo {
@@ -189,7 +187,7 @@ public struct EPUBImporter: SourceImporting {
     }
 
     private func parseOPF(_ xmlData: Data) throws -> OPFInfo {
-        let xml = String(data: xmlData, encoding: .utf8) ?? ""
+        let xml = decodedText(xmlData)
         var info = OPFInfo(spine: [])
 
         if let r = xml.range(of: #"<dc:title[^>]*>([^<]+)</dc:title>"#, options: .regularExpression) {
@@ -202,15 +200,17 @@ public struct EPUBImporter: SourceImporting {
             info.language = String(xml[r]).replacingOccurrences(of: "</?dc:language[^>]*>", with: "", options: .regularExpression)
         }
 
-        let manifestItems = matchesWithThree(of: #"<item[^>]*id="([^"]+)"[^>]*href="([^"]+)"[^>]*media-type="([^"]+)"[^>]*/?>"#, in: xml)
         var manifestHrefs: [String: String] = [:]
-        for item in manifestItems {
-            if item.2.contains("xhtml") || item.2.contains("xml") {
-                manifestHrefs[item.1] = item.0  // id → href
+        for tag in tags(named: "item", in: xml) {
+            let attributes = attributes(in: tag)
+            if let id = attributes["id"], let href = attributes["href"],
+               let mediaType = attributes["media-type"],
+               mediaType.contains("xhtml") || mediaType.contains("xml") {
+                manifestHrefs[id] = href
             }
         }
 
-        let spineRefs = matchesSingleCapture(of: #"<itemref[^>]*idref="([^"]+)"#, in: xml)
+        let spineRefs = tags(named: "itemref", in: xml).compactMap { attributes(in: $0)["idref"] }
         for ref in spineRefs {
             if let href = manifestHrefs[ref] {
                 info.spine.append((ref, href))
@@ -258,6 +258,38 @@ public struct EPUBImporter: SourceImporting {
             results.append(String(text[r1]))
         }
         return results
+    }
+
+    private func tags(named name: String, in text: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: #"<(?:[A-Za-z0-9_-]+:)?\#(name)\b[^>]*>"#, options: [.caseInsensitive]) else { return [] }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.matches(in: text, range: range).compactMap { Range($0.range, in: text).map { String(text[$0]) } }
+    }
+
+    private func attributes(in tag: String) -> [String: String] {
+        let pattern = #"([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*(["'])(.*?)\2"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else { return [:] }
+        let range = NSRange(tag.startIndex..<tag.endIndex, in: tag)
+        return regex.matches(in: tag, range: range).reduce(into: [:]) { result, match in
+            guard let keyRange = Range(match.range(at: 1), in: tag), let valueRange = Range(match.range(at: 3), in: tag) else { return }
+            result[String(tag[keyRange]).lowercased()] = String(tag[valueRange])
+        }
+    }
+
+    private func decodedText(_ data: Data) -> String {
+        String(data: data, encoding: .utf8)
+            ?? String(data: data, encoding: .utf16)
+            ?? String(data: data, encoding: .isoLatin1)
+            ?? ""
+    }
+
+    private func entry(named path: String, in zip: ZipReader) -> ZipEntry? {
+        let decoded = path.removingPercentEncoding ?? path
+        return zip.entry(named: path)
+            ?? zip.entry(named: decoded)
+            ?? zip.fileNames.lazy.compactMap { name in
+                (name.removingPercentEncoding ?? name) == decoded ? zip.entry(named: name) : nil
+            }.first
     }
 
     private func resolveHREF(_ href: String, relativeTo dir: String) -> String {
