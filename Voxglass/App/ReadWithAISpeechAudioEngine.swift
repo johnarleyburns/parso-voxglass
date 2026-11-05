@@ -17,6 +17,9 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     private var speaking = false
     private var activeRate: Float = 1
     private var activeVolume: Float = 1
+    /// The concrete installed voice used to create the paused utterance.
+    /// `AVSpeechSynthesizer.continueSpeaking()` cannot change this voice.
+    private var activeVoiceIdentifier: String?
     private var speechGeneration = 0
 
     var onPlaybackEnded: (@MainActor () -> Void)?
@@ -63,7 +66,8 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         stopImmediately()
         text = try String(contentsOf: url, encoding: .utf8)
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AudioEngineError.unplayableAudio }
-        estimatedDuration = Self.duration(for: text, rate: activeRate)
+        activeVoiceIdentifier = nil
+        estimatedDuration = ReadWithAIDurationEstimate.duration(for: text, rate: activeRate)
         position = min(max(0, startTime), estimatedDuration ?? startTime)
         utteranceStart = Self.characterOffset(in: text, at: position, rate: activeRate)
         lastEndPosition = 0
@@ -72,11 +76,22 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     }
 
     func play() {
+        let selectedVoice = Self.selectedOrPreferredOnDeviceVoice()
         if synthesizer.isPaused {
+            guard activeVoiceIdentifier == selectedVoice?.identifier else {
+                // Resuming preserves AVSpeechSynthesizer's original utterance
+                // (and thus its original voice). Recreate the remainder at the
+                // current word boundary so a newly chosen voice takes effect
+                // on the very next Play press.
+                let offset = Self.characterOffset(in: text, at: position, rate: activeRate)
+                stopImmediately()
+                speak(from: offset, voice: selectedVoice)
+                return
+            }
             speaking = true
             synthesizer.continueSpeaking()
         } else {
-            speak(from: utteranceStart)
+            speak(from: utteranceStart, voice: selectedVoice)
         }
     }
     func pause() {
@@ -102,7 +117,7 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     func setEQGain(_ gain: Float, at band: Int) {}
     func setEQGains(_ gains: [Float]) {}
 
-    private func speak(from offset: Int) {
+    private func speak(from offset: Int, voice: AVSpeechSynthesisVoice? = nil) {
         guard !text.isEmpty else { return }
         configureAudioSession()
         speechGeneration &+= 1
@@ -110,7 +125,9 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let utterance = AVSpeechUtterance(string: String(text[range]))
         utterance.rate = Self.appleRate(for: activeRate)
         utterance.volume = activeVolume
-        utterance.voice = Self.selectedOrPreferredOnDeviceVoice()
+        let resolvedVoice = voice ?? Self.selectedOrPreferredOnDeviceVoice()
+        utterance.voice = resolvedVoice
+        activeVoiceIdentifier = resolvedVoice?.identifier
         utteranceStart = offset
         speaking = true
         synthesizer.speak(utterance)
@@ -153,6 +170,12 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         return preferredOnDeviceVoice()
     }
 
+    /// Displayed in Now Playing beside the selector. Keep this on the engine
+    /// so the label describes the exact voice that new utterances receive.
+    static var selectedVoiceDisplayName: String {
+        selectedOrPreferredOnDeviceVoice()?.name ?? "System Default"
+    }
+
     private static func preferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
         let locale = Locale.autoupdatingCurrent
         let languageCode = locale.language.languageCode?.identifier
@@ -180,13 +203,11 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let localeBonus = voice.language == preferredLocale.identifier ? 1 : 0
         return quality * 10 + localeBonus
     }
-    private static func charactersPerSecond(rate: Float) -> Double { 14 * Double(min(max(rate, 0.5), 2.0)) }
-    private static func duration(for text: String, rate: Float) -> TimeInterval { Double(text.count) / charactersPerSecond(rate: rate) }
     private static func characterOffset(in text: String, at time: TimeInterval, rate: Float) -> Int {
-        min(text.count, max(0, Int((time * charactersPerSecond(rate: rate)).rounded())))
+        min(text.count, max(0, Int((time * ReadWithAIDurationEstimate.charactersPerSecond(rate: rate)).rounded())))
     }
     private static func time(forCharacterOffset offset: Int, rate: Float) -> TimeInterval {
-        Double(offset) / charactersPerSecond(rate: rate)
+        Double(offset) / ReadWithAIDurationEstimate.charactersPerSecond(rate: rate)
     }
 }
 

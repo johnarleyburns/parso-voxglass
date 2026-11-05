@@ -44,7 +44,8 @@ enum ReadWithAIImporter {
             chapters.append(ReadWithAIChapterImport(
                 title: section.heading?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
                     ?? "Chapter \(chapters.count + 1)",
-                textURL: url
+                textURL: url,
+                estimatedDuration: ReadWithAIDurationEstimate.duration(for: text)
             ))
         }
 
@@ -56,7 +57,10 @@ enum ReadWithAIImporter {
             guard !text.isEmpty else { throw ImportError.noReadableText }
             let url = root.appendingPathComponent("chapter-00000.voxtext")
             try text.write(to: url, atomically: true, encoding: .utf8)
-            chapters = [ReadWithAIChapterImport(title: "Book", textURL: url)]
+            chapters = [ReadWithAIChapterImport(
+                title: "Book", textURL: url,
+                estimatedDuration: ReadWithAIDurationEstimate.duration(for: text)
+            )]
         }
 
         return ReadWithAIImport(

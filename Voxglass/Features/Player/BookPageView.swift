@@ -38,6 +38,7 @@ struct BookPageView: View {
     @State private var showingReconnect = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(RecentlyViewedBooksStore.key) private var recentlyViewedRaw = ""
+    @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedReadWithAIVoiceIdentifier = ""
 
     private var resolved: BookWithChapters? {
         if let book { return libraryStore.book(withID: book.book.id) ?? book }
@@ -796,10 +797,15 @@ struct BookPageView: View {
             .foregroundStyle(Color.white.opacity(0.6))
 
             if libraryStore.source(for: resolved.book)?.kind == .readWithAI {
+                Text("Reading with AI Voice ‘\(readWithAIVoiceName)’")
+                    .voxFont(.caption, weight: .semibold)
+                    .foregroundStyle(Color.white.opacity(0.62))
+                    .frame(maxWidth: .infinity)
+
                 NavigationLink {
                     ReadWithAIVoicePicker()
                 } label: {
-                    Label("Read with AI Voice", systemImage: "waveform.and.mic")
+                    Label("Select AI Voice", systemImage: "waveform.and.mic")
                         .voxFont(.callout, weight: .semibold)
                         .foregroundStyle(Palette.brass)
                         .frame(maxWidth: .infinity)
@@ -808,9 +814,18 @@ struct BookPageView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("nowplaying.readWithAIVoice")
+                .padding(.bottom, 10)
             }
         }
         .padding(.top, 16)
+    }
+
+    private var readWithAIVoiceName: String {
+        // Observe the preference so this copy updates immediately after a
+        // selection, while the engine remains the single source of truth for
+        // automatic Premium/Enhanced voice resolution.
+        _ = selectedReadWithAIVoiceIdentifier
+        return ReadWithAISpeechAudioEngine.selectedVoiceDisplayName
     }
 
     @ViewBuilder
