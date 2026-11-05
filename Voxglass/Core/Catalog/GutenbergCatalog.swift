@@ -19,6 +19,14 @@ public struct GutenbergBook: Codable, Equatable, Sendable, Identifiable {
     public var epubURL: URL? {
         ["application/epub+zip", "application/epub"].compactMap { formats[$0].flatMap(URL.init(string:)) }.first
     }
+    /// Gutendex supplies this for most books. The canonical cache URL covers
+    /// the fallback HTML search, which does not include a formats map.
+    public var coverURL: URL? {
+        let formatCover = ["image/jpeg", "image/png", "image/webp"]
+            .compactMap { formats[$0] }
+            .first
+        return URL(string: formatCover ?? "https://www.gutenberg.org/cache/epub/\(id)/pg\(id).cover.medium.jpg")
+    }
     public var detailsURL: URL { URL(string: "https://www.gutenberg.org/ebooks/\(id)")! }
 }
 

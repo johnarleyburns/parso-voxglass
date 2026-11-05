@@ -1,5 +1,6 @@
 import ParsoAudioStreaming
 import SwiftUI
+import AVFoundation
 import VoxglassCore
 
 struct ShareSheet: UIViewControllerRepresentable {
@@ -34,6 +35,7 @@ struct SettingsView: View {
                 }
 
                 settingsGroup("Audio") {
+                    ReadWithAIVoiceRow()
                     EQSettingsRow()
                 }
 
@@ -116,6 +118,113 @@ struct SettingsView: View {
         VoxglassGroupedSection(title: title) {
             content()
         }
+    }
+}
+
+private struct ReadWithAIVoiceRow: View {
+    @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedIdentifier = ""
+
+    private var selectedVoiceName: String {
+        guard !selectedIdentifier.isEmpty,
+              let voice = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.identifier == selectedIdentifier }) else {
+            return "Best available"
+        }
+        return voice.name
+    }
+
+    var body: some View {
+        NavigationLink {
+            ReadWithAIVoicePicker()
+        } label: {
+            DisclosureListRow(
+                icon: "waveform.and.mic",
+                title: "Read with AI Voice",
+                detail: selectedVoiceName,
+                count: nil
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("settings.readWithAIVoice")
+    }
+}
+
+private struct ReadWithAIVoicePicker: View {
+    @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedIdentifier = ""
+
+    private var voices: [AVSpeechSynthesisVoice] {
+        let languageCode = Locale.autoupdatingCurrent.language.languageCode?.identifier
+        return AVSpeechSynthesisVoice.speechVoices()
+            .filter { Locale(identifier: $0.language).language.languageCode?.identifier == languageCode }
+            .sorted { lhs, rhs in
+                if qualityScore(lhs) != qualityScore(rhs) { return qualityScore(lhs) > qualityScore(rhs) }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+    }
+
+    var body: some View {
+        VoxglassScreen(title: "Read with AI Voice") {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Choose an installed voice for Read with AI. Best available automatically uses the highest-quality Premium or Enhanced voice for your language.")
+                    .voxFont(.footnote)
+                    .foregroundStyle(Palette.ink2)
+
+                VoxglassGroupedSection(title: "Voice") {
+                    voiceButton(identifier: "", name: "Best available", detail: "Automatically chooses Premium or Enhanced")
+                    ForEach(voices, id: \.identifier) { voice in
+                        VoxglassListDivider()
+                        voiceButton(
+                            identifier: voice.identifier,
+                            name: voice.name,
+                            detail: "\(languageName(voice.language)) · \(qualityName(voice.quality))"
+                        )
+                    }
+                }
+
+                Text("Download more voices in iPhone Settings > Accessibility > Read & Speak > System Voice, then return here.")
+                    .voxFont(.caption)
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(.top, 12)
+        }
+    }
+
+    private func voiceButton(identifier: String, name: String, detail: String) -> some View {
+        Button { selectedIdentifier = identifier } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(name).voxFont(.body, weight: .semibold).foregroundStyle(Palette.ink)
+                    Text(detail).voxFont(.caption).foregroundStyle(Palette.ink2)
+                }
+                Spacer()
+                if selectedIdentifier == identifier {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.brass)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier.isEmpty ? "settings.readWithAIVoice.automatic" : "settings.readWithAIVoice.\(identifier)")
+    }
+
+    private func qualityScore(_ voice: AVSpeechSynthesisVoice) -> Int {
+        switch voice.quality {
+        case .premium: 3
+        case .enhanced: 2
+        default: 1
+        }
+    }
+
+    private func qualityName(_ quality: AVSpeechSynthesisVoiceQuality) -> String {
+        switch quality {
+        case .premium: "Premium"
+        case .enhanced: "Enhanced"
+        default: "Default"
+        }
+    }
+
+    private func languageName(_ identifier: String) -> String {
+        Locale.autoupdatingCurrent.localizedString(forIdentifier: identifier) ?? identifier
     }
 }
 

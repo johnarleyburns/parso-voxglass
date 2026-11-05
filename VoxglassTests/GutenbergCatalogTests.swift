@@ -24,7 +24,7 @@ struct GutenbergCatalogTests {
             Self.state.lock.lock(); Self.state.requestURL = request.url; Self.state.lock.unlock()
             let payload = Data("""
             {"results":[
-              {"id":123,"title":"The Law","authors":[{"name":"Doe, Jane"}],"subjects":[],"languages":["en"],"formats":{"application/epub+zip":"https://mock.gutenberg/123.epub"}},
+              {"id":123,"title":"The Law","authors":[{"name":"Doe, Jane"}],"subjects":[],"languages":["en"],"formats":{"application/epub+zip":"https://mock.gutenberg/123.epub","image/jpeg":"https://mock.gutenberg/123.jpg"}},
               {"id":456,"title":"No EPUB","authors":[],"subjects":[],"languages":["en"],"formats":{"text/plain":"https://mock.gutenberg/456.txt"}}
             ]}
             """.utf8)
@@ -49,6 +49,7 @@ struct GutenbergCatalogTests {
         #expect(books.map(\.id) == [123])
         #expect(books.first?.authorLine == "Doe, Jane")
         #expect(books.first?.epubURL?.absoluteString == "https://mock.gutenberg/123.epub")
+        #expect(books.first?.coverURL?.absoluteString == "https://mock.gutenberg/123.jpg")
         let requestURL = try #require(MockGutenbergServer.lastRequestURL)
         let components = try #require(URLComponents(url: requestURL, resolvingAgainstBaseURL: false))
         #expect(components.path == "/books/")
@@ -68,5 +69,6 @@ struct GutenbergCatalogTests {
         #expect(books.first?.title == "American Law & Practice")
         #expect(books.first?.authors.first?.name == "Doe, Jane")
         #expect(books.first?.epubURL?.absoluteString == "https://www.gutenberg.org/ebooks/42.epub.images")
+        #expect(books.first?.coverURL?.absoluteString == "https://www.gutenberg.org/cache/epub/42/pg42.cover.medium.jpg")
     }
 }
