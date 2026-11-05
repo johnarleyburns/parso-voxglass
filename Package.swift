@@ -99,6 +99,7 @@ let package = Package(
                 .copy("Fixtures/InternetArchive"),
                 .copy("Fixtures/LibriVox"),
                 .copy("Fixtures/EPUB"),
+                .copy("Fixtures/PDF"),
                 .copy("Fixtures/AuthoringV2")
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
