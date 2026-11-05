@@ -13,12 +13,14 @@ struct ReadWithAIImportOwnershipTests {
         let textURL = directory.appendingPathComponent("chapter.voxtext")
         try "A readable local PDF chapter.".write(to: textURL, atomically: true, encoding: .utf8)
 
+        let text = "A readable local PDF chapter."
         let book = try await repository.importReadWithAI(ReadWithAIImport(
             title: "Local opinion", authors: [], sourceTitle: "Files",
             chapters: [ReadWithAIChapterImport(title: "Page 1", textURL: textURL)]
         ))
 
         #expect(!book.book.isPending)
+        #expect(book.chapters.first?.duration == ReadWithAIDurationEstimate.duration(for: text))
         let library = try await repository.fetchLibrary()
         #expect(library.first(where: { $0.book.id == book.book.id })?.book.isPending == false)
     }

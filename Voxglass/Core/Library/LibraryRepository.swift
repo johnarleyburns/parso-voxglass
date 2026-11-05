@@ -1163,7 +1163,12 @@ public final class LibraryRepository: @unchecked Sendable {
             isPending: request.isPending
         )
         let chapters = request.chapters.enumerated().map { index, item in
-            Chapter(bookID: book.id, title: item.title, sortKey: String(format: "%05d", index), index: index, localURL: item.textURL)
+            let estimated = item.estimatedDuration ?? (try? String(contentsOf: item.textURL, encoding: .utf8))
+                .map { ReadWithAIDurationEstimate.duration(for: $0) }
+            return Chapter(
+                bookID: book.id, title: item.title, sortKey: String(format: "%05d", index), index: index,
+                duration: estimated, localURL: item.textURL
+            )
         }
         try await insert(book: book, chapters: chapters, bookContentKey: contentKey)
         // Gutenberg's source URL is portable. Local EPUB imports deliberately
@@ -1174,6 +1179,37 @@ public final class LibraryRepository: @unchecked Sendable {
             try? await mutationLog?.enqueue(localID: book.id.uuidString, recordType: "Book", changeType: "update")
         }
         return BookWithChapters(book: book, chapters: chapters)
+    }
+
+    /// Fills estimates for Read with AI books imported before duration metadata
+    /// was persisted. The text is app-owned, local UTF-8, so this requires no
+    /// network access and leaves user playback positions untouched.
+    @discardableResult
+    public func backfillReadWithAIDurations() async throws -> Int {
+        try await database.prepare()
+        let rows = try await database.query("""
+        SELECT c.id AS chapter_id, c.local_url AS local_url
+        FROM chapters c
+        JOIN books b ON b.id = c.book_id
+        JOIN sources s ON s.id = b.source_id
+        WHERE s.kind = ? AND c.duration_seconds IS NULL AND c.local_url IS NOT NULL
+        """, [.string(SourceKind.readWithAI.rawValue)])
+
+        var updated = 0
+        for row in rows {
+            guard let id = row.string("chapter_id"),
+                  let rawURL = row.string("local_url"),
+                  let url = URL(string: rawURL),
+                  let text = try? String(contentsOf: url, encoding: .utf8),
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { continue }
+            try await database.execute(
+                "UPDATE chapters SET duration_seconds = ? WHERE id = ? AND duration_seconds IS NULL",
+                [.double(ReadWithAIDurationEstimate.duration(for: text)), .string(id)]
+            )
+            updated += 1
+        }
+        return updated
     }
 
     // MARK: - Local folder import (Folder Watch, §4)

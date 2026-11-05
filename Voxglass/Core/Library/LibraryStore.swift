@@ -140,6 +140,7 @@ public final class LibraryStore: ObservableObject {
 
     public func refresh() async {
         do {
+            _ = try await repository.backfillReadWithAIDurations()
             let fetchedBooks = try await repository.fetchLibrary()
             books = fetchedBooks
             sources = try await repository.fetchSources()

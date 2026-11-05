@@ -6,10 +6,13 @@ import Foundation
 public struct ReadWithAIChapterImport: Sendable {
     public var title: String
     public var textURL: URL
+    /// Estimated at normal speech rate from the durable extracted text.
+    public var estimatedDuration: TimeInterval?
 
-    public init(title: String, textURL: URL) {
+    public init(title: String, textURL: URL, estimatedDuration: TimeInterval? = nil) {
         self.title = title
         self.textURL = textURL
+        self.estimatedDuration = estimatedDuration
     }
 }
 

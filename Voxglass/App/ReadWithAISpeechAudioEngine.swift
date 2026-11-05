@@ -63,7 +63,7 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         stopImmediately()
         text = try String(contentsOf: url, encoding: .utf8)
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AudioEngineError.unplayableAudio }
-        estimatedDuration = Self.duration(for: text, rate: activeRate)
+        estimatedDuration = ReadWithAIDurationEstimate.duration(for: text, rate: activeRate)
         position = min(max(0, startTime), estimatedDuration ?? startTime)
         utteranceStart = Self.characterOffset(in: text, at: position, rate: activeRate)
         lastEndPosition = 0
@@ -180,13 +180,11 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let localeBonus = voice.language == preferredLocale.identifier ? 1 : 0
         return quality * 10 + localeBonus
     }
-    private static func charactersPerSecond(rate: Float) -> Double { 14 * Double(min(max(rate, 0.5), 2.0)) }
-    private static func duration(for text: String, rate: Float) -> TimeInterval { Double(text.count) / charactersPerSecond(rate: rate) }
     private static func characterOffset(in text: String, at time: TimeInterval, rate: Float) -> Int {
-        min(text.count, max(0, Int((time * charactersPerSecond(rate: rate)).rounded())))
+        min(text.count, max(0, Int((time * ReadWithAIDurationEstimate.charactersPerSecond(rate: rate)).rounded())))
     }
     private static func time(forCharacterOffset offset: Int, rate: Float) -> TimeInterval {
-        Double(offset) / charactersPerSecond(rate: rate)
+        Double(offset) / ReadWithAIDurationEstimate.charactersPerSecond(rate: rate)
     }
 }
 
