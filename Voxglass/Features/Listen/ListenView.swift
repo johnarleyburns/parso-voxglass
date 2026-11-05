@@ -474,10 +474,11 @@ struct ListenView: View {
 
     @ViewBuilder
     private var recommended: some View {
+        let results = visibleRecommendations
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Recommended for You")
 
-            if recommendations.recommendations.isEmpty {
+            if results.isEmpty {
                 EmptyStatePanel(
                     title: "Finding LibriVox Picks",
                     message: "Popular public-domain audiobooks will appear here.",
@@ -486,7 +487,7 @@ struct ListenView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
-                        ForEach(recommendations.recommendations) { result in
+                        ForEach(results) { result in
                             Button {
                                 Task { await presentResult(result) }
                             } label: {
@@ -520,6 +521,43 @@ struct ListenView: View {
                 }
             }
         }
+    }
+
+    /// The active/paused Listen hero is a continuation, never a discovery
+    /// recommendation. This also covers a catalog preview that has not yet
+    /// been added to My Books, for which the library-level ownership filter
+    /// intentionally has no entry.
+    private var visibleRecommendations: [InternetArchiveSearchResult] {
+        guard let continuing = continueListeningBook else {
+            return recommendations.recommendations
+        }
+        return RecommendationPipeline.filterExcluded(
+            recommendations.recommendations,
+            excludeKeys: recommendationExclusionKeys(for: continuing.book)
+        )
+    }
+
+    private var continueListeningBook: BookWithChapters? {
+        let hero = heroPresentation
+        if (hero.showsNowPlaying || hero.kind == .paused), let session = playback.currentSession {
+            return BookWithChapters(book: session.book, chapters: session.chapters)
+        }
+        return libraryStore.recentlyPlayed.first
+    }
+
+    private func recommendationExclusionKeys(for book: Book) -> Set<String> {
+        var keys: Set<String> = [
+            book.id.uuidString,
+            WorkKey.normalized(author: book.authorLine, title: book.title)
+        ]
+        if let source = libraryStore.source(for: book),
+           let contentKey = ContentKey.book(forSourceURL: source.url, kind: source.kind) {
+            keys.insert(contentKey)
+            if contentKey.hasPrefix("ia:") {
+                keys.insert(String(contentKey.dropFirst(3)))
+            }
+        }
+        return keys
     }
 
     private var selectedCollectionIDs: Set<String> {

@@ -28,6 +28,38 @@ import Testing
         #expect(!(recs.isEmpty))
     }
 
+    @Test func continuationWorkCanBeRemovedFromRecommendationShelf() {
+        let continuing = InternetArchiveSearchResult(
+            identifier: "continuing_work",
+            title: "A Continuing Work",
+            creators: ["Current Reader"],
+            description: nil,
+            collections: ["librivoxaudio"],
+            downloads: nil,
+            date: nil
+        )
+        let fresh = InternetArchiveSearchResult(
+            identifier: "fresh_work",
+            title: "A New Work",
+            creators: ["Another Reader"],
+            description: nil,
+            collections: ["librivoxaudio"],
+            downloads: nil,
+            date: nil
+        )
+        let continuingWorkKey = WorkKey.normalized(
+            author: "Current Reader",
+            title: "A Continuing Work"
+        )
+
+        let visible = RecommendationPipeline.filterExcluded(
+            [continuing, fresh],
+            excludeKeys: [continuingWorkKey]
+        )
+
+        #expect(visible.map(\.identifier) == ["fresh_work"])
+    }
+
     // MARK: - Early listener, one meaningful listen
 
     @Test func oneMeaningfulListenTopsProfile() {

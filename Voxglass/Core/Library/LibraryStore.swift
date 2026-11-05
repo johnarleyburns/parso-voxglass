@@ -60,6 +60,28 @@ public final class LibraryStore: ObservableObject {
     @Published public private(set) var progressByBook: [UUID: BookProgress] = [:]
     @Published public private(set) var listenedWorkExclusionKeys: Set<String> = []
 
+    /// Stable identities for books the user has actually added to My Books.
+    /// Recommendation shelves treat these as a permanent exclusion — unlike
+    /// the short-lived "already surfaced" ring, they must never be relaxed to
+    /// fill an otherwise empty shelf.
+    public var ownedRecommendationExclusionKeys: Set<String> {
+        let ownedBooks = books.filter { !$0.book.isPending }
+        var keys = Set(ownedBooks.map { $0.book.id.uuidString })
+
+        for item in ownedBooks {
+            keys.insert(WorkKey.normalized(author: item.book.authorLine, title: item.book.title))
+        }
+
+        // Includes source- and chapter-derived Internet Archive identifiers
+        // from the existing owned-item index. Keep both representations since
+        // recommendation candidates use the raw identifier and `ia:` form.
+        for identifier in ownedBookIDByIdentifier.keys {
+            keys.insert(identifier)
+            keys.insert("ia:\(identifier)")
+        }
+        return keys
+    }
+
     /// The library with the active filter/sort applied. Pure, in-memory.
     public var visibleBooks: [BookWithChapters] {
         // A book only previewed from a catalog result (not yet explicitly
