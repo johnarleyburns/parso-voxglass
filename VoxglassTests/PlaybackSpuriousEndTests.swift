@@ -89,6 +89,42 @@ import Foundation
         #expect(coordinator.currentSession?.chapter.id == book.chapters[1].id)
     }
 
+    @Test func manualChapterAdvancePublishesFreshTimingAndContinuesProgress() async {
+        let bookID = UUID()
+        let first = Chapter(
+            bookID: bookID, title: "First", index: 0, duration: 120,
+            localURL: URL(fileURLWithPath: "/tmp/\(bookID.uuidString)-first.voxtext")
+        )
+        let second = Chapter(
+            bookID: bookID, title: "Second", index: 1, duration: 45,
+            localURL: URL(fileURLWithPath: "/tmp/\(bookID.uuidString)-second.voxtext")
+        )
+        let book = BookWithChapters(
+            book: Book(id: bookID, title: "Imported PDF", authors: [], sourceID: UUID()),
+            chapters: [first, second]
+        )
+        let (coordinator, engine) = await makeCoordinator(seeding: book)
+        engine.duration = 120
+        await coordinator.play(book)
+
+        engine.currentTime = 120
+        engine.lastEndPosition = 120
+        engine.lastEndDuration = 120
+        engine.lastEndWasVerified = true
+        engine.firePlaybackEnded()
+        await waitUntil { coordinator.currentSession?.chapter.id == second.id }
+
+        #expect(coordinator.playhead == 0)
+        #expect(coordinator.playheadDuration == 45)
+
+        engine.currentTime = 12
+        engine.isPlaying = true
+        // `loadChapter` invalidates the prior generation. Its replacement
+        // progress task must own the new generation and update the scrubber.
+        await waitUntil { coordinator.playhead == 12 }
+        #expect(coordinator.playhead == 12)
+    }
+
     @Test func unverifiedEndDoesNotAdvance() async {
         let book = makeBook()
         let (coordinator, engine) = await makeCoordinator(seeding: book)

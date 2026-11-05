@@ -685,7 +685,11 @@ public final class PlaybackCoordinator {
                 }
             }
             playhead = max(0, (validTime(engine.currentTime) ?? targetChapter.startTime + startTime) - targetChapter.startTime)
-            playheadDuration = duration
+            // `duration` is the value available before the engine opened the
+            // item.  Text chapters discover their duration during `load`, so
+            // retaining a saved duration here can make a newly opened chapter
+            // appear complete until the first progress tick.
+            playheadDuration = currentSession.flatMap(\.duration) ?? validTime(engine.duration)
             playbackPhase = .playing
             startProgressLoop()
             updateNowPlayingInfo()
@@ -1649,12 +1653,27 @@ public final class PlaybackCoordinator {
             mutateSession {
                 $0.duration = chapter.duration ?? engine.duration
             }
+            // Loading the next chapter creates a new playback generation.
+            // The previous 1 Hz task deliberately ignores that generation, so
+            // it cannot update this chapter.  Publish its fresh timing state
+            // and start a task owned by the new generation; otherwise speech
+            // continues while the scrubber remains at 0:00.
+            if let currentSession {
+                playhead = relativeEngineTime(for: currentSession)
+                playheadDuration = validTime(currentSession.duration) ?? validTime(engine.duration)
+            } else {
+                playhead = startTime
+                playheadDuration = validTime(engine.duration)
+            }
             playbackPhase = shouldPlay ? .playing : .paused
             // A durable row for the just-started chapter. `persistCurrentPosition`
             // would drop this write behind the anti-zero guard (the engine just
             // loaded and reports ~0), leaving the previous chapter as the newest
             // row — a force quit here would restore the wrong chapter (RC4).
             await persistChapterStart(newSession)
+            if shouldPlay {
+                startProgressLoop()
+            }
             updateNowPlayingInfo()
 
             let nextIndex = chapterIndex(in: BookWithChapters(book: session.book, chapters: session.chapters), for: chapter) + 1
