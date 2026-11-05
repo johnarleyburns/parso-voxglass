@@ -20,6 +20,8 @@ struct BrowseView: View {
     @State private var searchScope: DiscoverSearchScope = .all
     @State private var sourceFilter: FindSourceFilter = .all
     @State private var gutenbergResults: [GutenbergBook] = []
+    @State private var isSearchingGutenberg = false
+    @State private var gutenbergSearchID = UUID()
     @State private var selectedGutenbergBook: GutenbergBook?
     @State private var searchLifecycle = FindSearchLifecycle()
     @State private var preflightTask: Task<Void, Never>?
@@ -77,6 +79,9 @@ struct BrowseView: View {
             ArtworkService.shared.prefetch(urls: results.map(\.coverURL), limit: 18)
             startOwnershipPreflight(for: results)
         }
+        .onChange(of: gutenbergResults) { _, results in
+            ArtworkService.shared.prefetch(urls: results.compactMap(\.coverURL), limit: 18)
+        }
         .onChange(of: collectionSort) { _, _ in
             guard selectedCollection != nil else { return }
             guard let collection = selectedCollection else { return }
@@ -88,11 +93,13 @@ struct BrowseView: View {
         }
         .onChange(of: sourceFilter) { _, _ in
             if sourceFilter == .collections {
+                invalidateGutenbergSearch()
                 discoverScope = .collection
                 catalogStore.query = ""
                 handleDiscoverScopeChange(.collection)
             } else {
                 if discoverScope == .collection { discoverScope = .all }
+                if sourceFilter == .librivox { invalidateGutenbergSearch() }
                 guard searchLifecycle.isCurrent(draft: catalogStore.query) else { return }
                 Task { await runSearch() }
             }
@@ -359,10 +366,10 @@ struct BrowseView: View {
                 }
 
                 if catalogStore.results.isEmpty && gutenbergResults.isEmpty {
-                    if catalogStore.isSearching {
+                    if catalogStore.isSearching || isSearchingGutenberg {
                         HStack(spacing: 12) {
                             ProgressView()
-                            Text("Searching LibriVox")
+                            Text(searchProgressLabel)
                                 .voxFont(.subheadline)
                                 .foregroundStyle(Palette.ink2)
                         }
@@ -435,6 +442,8 @@ struct BrowseView: View {
                 }
                 if sourceFilter != .librivox && !gutenbergResults.isEmpty {
                     gutenbergResultSection
+                } else if sourceFilter != .librivox && isSearchingGutenberg {
+                    gutenbergLoadingSection
                 }
             }
         }
@@ -444,7 +453,7 @@ struct BrowseView: View {
         searchLifecycle.showsResultsSurface(
             draft: catalogStore.query,
             hasSelectedCollection: selectedCollection != nil,
-            isSearching: catalogStore.isSearching,
+            isSearching: catalogStore.isSearching || isSearchingGutenberg,
             hasResults: !catalogStore.results.isEmpty || !gutenbergResults.isEmpty
         )
     }
@@ -628,8 +637,14 @@ struct BrowseView: View {
 
     private func runSearch() async {
         let term = FindSearchLifecycle.normalized(catalogStore.query)
+        // Invalidate an in-flight Gutenberg request immediately, before the
+        // LibriVox request finishes, so a stale result can never replace the
+        // current Find submission.
+        let gutenbergSearchID = UUID()
+        self.gutenbergSearchID = gutenbergSearchID
         guard !term.isEmpty || selectedCollection != nil else {
             searchLifecycle.reset()
+            invalidateGutenbergSearch()
             catalogStore.resetResultsForNavigation()
             return
         }
@@ -640,6 +655,7 @@ struct BrowseView: View {
         searchLifecycle.submit(draft: term)
 
         if let selectedCollection {
+            invalidateGutenbergSearch()
             let collectionQuery = term.isEmpty
                 ? selectedCollection.archiveQuery
                 : "(\(selectedCollection.archiveQuery)) AND (\(scopedQuery(term, includeCatalogScope: false)))"
@@ -656,16 +672,43 @@ struct BrowseView: View {
             case .title, .author, .narrator: await catalogStore.searchAdvanced(scopedQuery(term), sort: .popularity)
             }
         }
-        await searchGutenberg(term)
+        await searchGutenberg(term, searchID: gutenbergSearchID)
     }
 
-    private func searchGutenberg(_ term: String) async {
-        guard sourceFilter != .librivox, !term.isEmpty else { gutenbergResults = []; return }
+    private func searchGutenberg(_ term: String, searchID: UUID) async {
+        guard sourceFilter != .librivox, !term.isEmpty else {
+            invalidateGutenbergSearch()
+            return
+        }
+        gutenbergSearchID = searchID
+        isSearchingGutenberg = true
+        gutenbergResults = []
+        defer {
+            if gutenbergSearchID == searchID { isSearchingGutenberg = false }
+        }
         do {
-            gutenbergResults = try await GutenbergCatalogClient().search(term)
+            let results = try await GutenbergCatalogClient().search(term)
+            guard gutenbergSearchID == searchID else { return }
+            gutenbergResults = results
         } catch {
+            guard gutenbergSearchID == searchID else { return }
             gutenbergResults = []
             catalogStore.catalogError = "Project Gutenberg search failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func invalidateGutenbergSearch() {
+        gutenbergSearchID = UUID()
+        isSearchingGutenberg = false
+        gutenbergResults = []
+    }
+
+    private var searchProgressLabel: String {
+        switch sourceFilter {
+        case .gutenberg: "Searching Project Gutenberg"
+        case .librivox: "Searching LibriVox"
+        case .all: catalogStore.isSearching ? "Searching LibriVox" : "Searching Project Gutenberg"
+        case .collections: "Loading collection"
         }
     }
 
@@ -676,7 +719,13 @@ struct BrowseView: View {
                 ForEach(gutenbergResults) { book in
                     Button { selectedGutenbergBook = book } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: "text.book.closed.fill").foregroundStyle(Palette.brass).frame(width: 28)
+                            CoverPlate(
+                                title: book.title,
+                                author: book.authorLine,
+                                coverURL: book.coverURL,
+                                size: 48,
+                                shape: .portrait
+                            )
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(book.title).voxFont(.body, weight: .semibold).foregroundStyle(Palette.ink)
                                 Text(book.authorLine).voxFont(.caption).foregroundStyle(Palette.ink2)
@@ -690,6 +739,22 @@ struct BrowseView: View {
                     .accessibilityIdentifier("discover.gutenberg.\(book.id)")
                 }
             }.raisedSurface()
+        }
+    }
+
+    private var gutenbergLoadingSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionTitle(title: "Project Gutenberg")
+            HStack(spacing: 12) {
+                ProgressView()
+                Text("Searching Project Gutenberg")
+                    .voxFont(.subheadline)
+                    .foregroundStyle(Palette.ink2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .raisedSurface()
+            .accessibilityIdentifier("discover.gutenberg.loading")
         }
     }
 
