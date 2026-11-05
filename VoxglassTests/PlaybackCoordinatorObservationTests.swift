@@ -100,6 +100,32 @@ import Foundation
         #expect(h.coordinator.playbackPhase == .paused)
     }
 
+    @Test func presentingNewBookResetsPublishedScrubberTiming() async {
+        let h = makeHarness()
+        let previous = makeBook(title: "Previous", chapters: 1)
+        let pdfID = UUID()
+        let pdfChapter = Chapter(
+            bookID: pdfID, title: "Page 1", index: 0, duration: 43,
+            localURL: URL(fileURLWithPath: "/tmp/\(pdfID.uuidString).voxtext")
+        )
+        let pdf = BookWithChapters(
+            book: Book(id: pdfID, title: "Imported PDF", authors: [], sourceID: UUID()),
+            chapters: [pdfChapter]
+        )
+
+        await h.coordinator.play(previous)
+        h.engine.currentTime = 50
+        h.engine.isPlaying = true
+        await h.coordinator.tickProgress()
+        #expect(h.coordinator.playhead == 50)
+
+        await h.coordinator.present(pdf)
+
+        #expect(h.coordinator.currentSession?.book.id == pdfID)
+        #expect(h.coordinator.playhead == 0)
+        #expect(h.coordinator.playheadDuration == 43)
+    }
+
     @Test func tickDoesNotRepublishSessionForDurationJitter() async {
         let h = makeHarness()
         let book = makeBook()

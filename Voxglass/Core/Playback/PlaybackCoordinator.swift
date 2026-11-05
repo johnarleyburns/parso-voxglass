@@ -827,6 +827,13 @@ public final class PlaybackCoordinator {
         )
         currentSessionUpdatedAt = Date()
         if let currentSession { resetConfirmedPosition(for: currentSession) }
+        // A presented session is intentionally unloaded until the user taps
+        // Play. Its scrubber must still show this chapter's saved offset, not
+        // the globally published position/duration from the book that was
+        // playing immediately beforehand. This was especially visible for
+        // Read with AI PDFs as a false 100% progress bar before first play.
+        playhead = target.startTime
+        playheadDuration = validTime(target.chapter.duration ?? target.savedDuration)
         isEngineLoaded = false
         updateNowPlayingInfo()
     }

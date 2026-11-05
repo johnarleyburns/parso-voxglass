@@ -780,19 +780,36 @@ struct BookPageView: View {
     }
 
     private func actionRow(_ resolved: BookWithChapters) -> some View {
-        BookPageActionRow(
-            book: resolved,
-            showingEQ: $showingEQ,
-            showingBookmarks: $showingBookmarks,
-            showingOverflow: $showingOverflow,
-            showCellularPrompt: $showCellularPrompt,
-            showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
-            requestWatchDownload: { requestWatchDownload() }
-        )
-        .environment(playback)
-        .environmentObject(libraryStore)
-        .environmentObject(offlineManager)
-        .foregroundStyle(Color.white.opacity(0.6))
+        VStack(spacing: 12) {
+            BookPageActionRow(
+                book: resolved,
+                showingEQ: $showingEQ,
+                showingBookmarks: $showingBookmarks,
+                showingOverflow: $showingOverflow,
+                showCellularPrompt: $showCellularPrompt,
+                showRemoveOfflineConfirm: $showRemoveOfflineConfirm,
+                requestWatchDownload: { requestWatchDownload() }
+            )
+            .environment(playback)
+            .environmentObject(libraryStore)
+            .environmentObject(offlineManager)
+            .foregroundStyle(Color.white.opacity(0.6))
+
+            if libraryStore.source(for: resolved.book)?.kind == .readWithAI {
+                NavigationLink {
+                    ReadWithAIVoicePicker()
+                } label: {
+                    Label("Read with AI Voice", systemImage: "waveform.and.mic")
+                        .voxFont(.callout, weight: .semibold)
+                        .foregroundStyle(Palette.brass)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Color.white.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("nowplaying.readWithAIVoice")
+            }
+        }
         .padding(.top, 16)
     }
 
