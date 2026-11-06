@@ -506,10 +506,9 @@ struct SecondaryActionButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .voxFont(.subheadline, weight: .semibold)
-                .lineLimit(1) // lineLimit-exempt: compact full-width action control
-                .minimumScaleFactor(0.76)
+                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
-                .frame(height: 46)
+                .frame(minHeight: 46)
                 .foregroundStyle(isEnabled ? Palette.ink : Palette.ink3)
                 .raisedSurface()
         }

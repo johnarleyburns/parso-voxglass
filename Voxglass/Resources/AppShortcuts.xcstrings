@@ -6,7 +6,7 @@
       "localizations" : {
         "de" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "${book} in ${applicationName} abspielen",
               "${book} mit ${applicationName} abspielen",
@@ -28,7 +28,7 @@
         },
         "es" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Reproducir ${book} en ${applicationName}",
               "Reproducir ${book} con ${applicationName}",
@@ -39,7 +39,7 @@
         },
         "fr" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Lire ${book} dans ${applicationName}",
               "Lire ${book} avec ${applicationName}",
@@ -50,7 +50,7 @@
         },
         "he" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "להפעיל את ${book} ב-${applicationName}",
               "לנגן את ${book} עם ${applicationName}",
@@ -61,7 +61,7 @@
         },
         "it" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Riproduci ${book} in ${applicationName}",
               "Riproduci ${book} con ${applicationName}",
@@ -72,7 +72,7 @@
         },
         "ja" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "${applicationName}で${book}を再生",
               "${applicationName}で${book}をかけて",
@@ -83,7 +83,7 @@
         },
         "nl" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Speel ${book} af in ${applicationName}",
               "Speel ${book} af met ${applicationName}",
@@ -94,7 +94,7 @@
         },
         "pl" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Odtwórz ${book} w ${applicationName}",
               "Włącz ${book} w ${applicationName}",
@@ -105,7 +105,7 @@
         },
         "pt-BR" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Tocar ${book} no ${applicationName}",
               "Tocar ${book} com o ${applicationName}",
@@ -116,7 +116,7 @@
         },
         "ru" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Включить ${book} в ${applicationName}",
               "Воспроизвести ${book} через ${applicationName}",
@@ -127,7 +127,7 @@
         },
         "zh-Hans" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "在${applicationName}中播放${book}",
               "用${applicationName}播放${book}",
@@ -138,7 +138,7 @@
         },
         "fi" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Toista ${book} sovelluksessa ${applicationName}",
               "Soita ${book} sovelluksella ${applicationName}",
@@ -149,7 +149,7 @@
         },
         "el" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Αναπαραγωγή ${book} στο ${applicationName}",
               "Παίξε ${book} στο ${applicationName}",
@@ -160,7 +160,7 @@
         },
         "zh-Hant" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "在${applicationName}中播放${book}",
               "用${applicationName}播放${book}",
@@ -171,7 +171,7 @@
         },
         "en-GB" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Play ${book} in ${applicationName}",
               "Play ${book} on ${applicationName}",
@@ -187,7 +187,7 @@
       "localizations" : {
         "de" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "${applicationName} fortsetzen",
               "Mein Hörbuch in ${applicationName} fortsetzen",
@@ -207,7 +207,7 @@
         },
         "es" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Reanudar ${applicationName}",
               "Reanudar mi audiolibro en ${applicationName}",
@@ -217,7 +217,7 @@
         },
         "fr" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Reprendre ${applicationName}",
               "Reprendre mon livre audio dans ${applicationName}",
@@ -227,7 +227,7 @@
         },
         "he" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "להמשיך את ${applicationName}",
               "להמשיך את ספר השמע שלי ב-${applicationName}",
@@ -237,7 +237,7 @@
         },
         "it" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Riprendi ${applicationName}",
               "Riprendi il mio audiolibro in ${applicationName}",
@@ -247,7 +247,7 @@
         },
         "ja" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "${applicationName}を再開",
               "${applicationName}でオーディオブックを再開",
@@ -257,7 +257,7 @@
         },
         "nl" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Hervat ${applicationName}",
               "Hervat mijn luisterboek in ${applicationName}",
@@ -267,7 +267,7 @@
         },
         "pl" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Wznów ${applicationName}",
               "Wznów mój audiobook w ${applicationName}",
@@ -277,7 +277,7 @@
         },
         "pt-BR" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Retomar o ${applicationName}",
               "Retomar meu audiolivro no ${applicationName}",
@@ -287,7 +287,7 @@
         },
         "ru" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Продолжить ${applicationName}",
               "Продолжить мою аудиокнигу в ${applicationName}",
@@ -297,7 +297,7 @@
         },
         "zh-Hans" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "继续播放${applicationName}",
               "在${applicationName}中继续我的有声书",
@@ -307,7 +307,7 @@
         },
         "fi" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Jatka ${applicationName}",
               "Jatka äänikirjaani sovelluksessa ${applicationName}",
@@ -317,7 +317,7 @@
         },
         "el" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Συνέχεια ${applicationName}",
               "Συνέχισε το ηχοβιβλίο μου στο ${applicationName}",
@@ -327,7 +327,7 @@
         },
         "zh-Hant" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "繼續播放${applicationName}",
               "在${applicationName}中繼續我的有聲書",
@@ -337,7 +337,7 @@
         },
         "en-GB" : {
           "stringSet" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "values" : [
               "Resume ${applicationName}",
               "Resume my audiobook in ${applicationName}",
