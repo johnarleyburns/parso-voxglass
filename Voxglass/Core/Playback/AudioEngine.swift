@@ -76,7 +76,7 @@ public protocol AudioEngine: AnyObject {
     func setEQGains(_ gains: [Float])
 }
 
-extension AudioEngine {
+public extension AudioEngine {
     func load(url: URL, startTime: TimeInterval) async throws {
         try await load(url: url, startTime: startTime, lease: nil)
     }
