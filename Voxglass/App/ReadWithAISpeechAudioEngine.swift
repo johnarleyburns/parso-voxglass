@@ -20,6 +20,9 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     /// The concrete installed voice used to create the paused utterance.
     /// `AVSpeechSynthesizer.continueSpeaking()` cannot change this voice.
     private var activeVoiceIdentifier: String?
+    /// Supplied by PlaybackCoordinator for the current book.  Keeping this on
+    /// the engine means every newly-loaded chapter keeps that book's voice.
+    private var preferredVoice = ReadWithAIVoicePreference.automatic
     /// Delegate callbacks can arrive after `stopSpeaking(at: .immediate)`.
     /// Keep the exact utterance identity so a canceled voice never completes
     /// the newly-created voice's chapter.
@@ -79,8 +82,26 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         lastEndWasVerified = false
     }
 
+    func setReadWithAIVoicePreference(_ preference: ReadWithAIVoicePreference) {
+        preferredVoice = preference
+    }
+
+    /// A voice belongs to an utterance and cannot be altered in place. Pause
+    /// first, discard that utterance, then create its remainder with the newly
+    /// selected voice.  `position` is maintained from word callbacks, so the
+    /// replacement starts at the same spoken location.
+    @discardableResult
+    func restartReadWithAIVoice() -> Bool {
+        guard !text.isEmpty, synthesizer.isSpeaking else { return false }
+        let offset = Self.characterOffset(in: text, at: position, rate: activeRate)
+        _ = synthesizer.pauseSpeaking(at: .immediate)
+        stopImmediately()
+        speak(from: offset)
+        return true
+    }
+
     func play() {
-        let selectedVoice = Self.selectedOrPreferredOnDeviceVoice()
+        let selectedVoice = Self.resolvedVoice(for: preferredVoice)
         if synthesizer.isPaused {
             guard activeVoiceIdentifier == selectedVoice?.identifier else {
                 // Resuming preserves AVSpeechSynthesizer's original utterance
@@ -129,7 +150,7 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         let utterance = AVSpeechUtterance(string: String(text[range]))
         utterance.rate = Self.appleRate(for: activeRate)
         utterance.volume = activeVolume
-        let resolvedVoice = voice ?? Self.selectedOrPreferredOnDeviceVoice()
+        let resolvedVoice = voice ?? Self.resolvedVoice(for: preferredVoice)
         utterance.voice = resolvedVoice
         activeVoiceIdentifier = resolvedVoice?.identifier
         activeUtterance = utterance
@@ -177,9 +198,21 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     /// Prefer an installed Premium or Enhanced system voice before falling
     /// back to the device default. These voices remain entirely on-device;
     /// iOS only exposes qualities that are already installed by the user.
-    private static func selectedOrPreferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
-        if let identifier = UserDefaults.standard.string(forKey: AppPreferencesStore.Keys.readWithAIVoiceIdentifier),
-           let selected = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.identifier == identifier }) {
+    static func resolvedVoice(for preference: ReadWithAIVoicePreference) -> AVSpeechSynthesisVoice? {
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+        if !preference.identifier.isEmpty,
+           let selected = voices.first(where: { $0.identifier == preference.identifier }) {
+            return selected
+        }
+        // Voice identifiers normally persist, but iOS can replace a
+        // downloaded voice package during an update.  A matching localized
+        // name and BCP-47 language is a much safer restoration than silently
+        // taking whichever default voice happens to sort first.
+        if let name = preference.name,
+           let selected = voices.first(where: {
+               $0.name.caseInsensitiveCompare(name) == .orderedSame
+                   && (preference.language == nil || $0.language == preference.language)
+           }) {
             return selected
         }
         return preferredOnDeviceVoice()
@@ -188,7 +221,11 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
     /// Displayed in Now Playing beside the selector. Keep this on the engine
     /// so the label describes the exact voice that new utterances receive.
     static var selectedVoiceDisplayName: String {
-        selectedOrPreferredOnDeviceVoice()?.name ?? "System Default"
+        voiceDisplayName(for: ReadWithAIVoicePreferences.defaultPreference())
+    }
+
+    static func voiceDisplayName(for preference: ReadWithAIVoicePreference) -> String {
+        resolvedVoice(for: preference)?.name ?? "System Default"
     }
 
     private static func preferredOnDeviceVoice() -> AVSpeechSynthesisVoice? {
@@ -200,11 +237,28 @@ final class ReadWithAISpeechAudioEngine: NSObject, AudioEngine, @preconcurrency 
         }
         let candidates = sameLanguage.isEmpty ? voices : sameLanguage
 
-        return candidates.max { lhs, rhs in
+        // Ava is the established natural-sounding English default in
+        // Voxglass.  Keep this preference stable across OS/package ordering
+        // changes.  A reader can always explicitly select any other voice.
+        if let ava = candidates.first(where: { $0.name.caseInsensitiveCompare("Ava") == .orderedSame }) {
+            return ava
+        }
+        // Arthur must never become the automatic fallback merely because its
+        // opaque system identifier sorts first.  It remains selectable if a
+        // reader explicitly wants it.
+        let automaticCandidates = candidates.filter {
+            $0.name.caseInsensitiveCompare("Arthur") != .orderedSame
+        }
+        let rankedCandidates = automaticCandidates.isEmpty ? candidates : automaticCandidates
+
+        return rankedCandidates.max { lhs, rhs in
             let lhsScore = voiceScore(lhs, preferredLocale: locale)
             let rhsScore = voiceScore(rhs, preferredLocale: locale)
             if lhsScore != rhsScore { return lhsScore < rhsScore }
-            return lhs.identifier > rhs.identifier
+            // Never use an opaque identifier as a preference signal.  The
+            // human-facing name is deterministic across launches and avoids
+            // a package ordering change selecting a different basic voice.
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedDescending
         } ?? AVSpeechSynthesisVoice(language: locale.identifier)
     }
 

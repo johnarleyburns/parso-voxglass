@@ -797,13 +797,15 @@ struct BookPageView: View {
             .foregroundStyle(Color.white.opacity(0.6))
 
             if libraryStore.source(for: resolved.book)?.kind == .readWithAI {
-                Text("Reading with AI Voice ‘\(readWithAIVoiceName)’")
+                Text("Reading with AI Voice ‘\(readWithAIVoiceName(for: resolved.book.id))’")
                     .voxFont(.caption, weight: .semibold)
                     .foregroundStyle(Color.white.opacity(0.62))
                     .frame(maxWidth: .infinity)
 
                 NavigationLink {
-                    ReadWithAIVoicePicker()
+                    ReadWithAIVoicePicker(bookID: resolved.book.id) { preference in
+                        playback.selectReadWithAIVoice(preference, for: resolved.book.id)
+                    }
                 } label: {
                     Label("Select AI Voice", systemImage: "waveform.and.mic")
                         .voxFont(.callout, weight: .semibold)
@@ -820,12 +822,14 @@ struct BookPageView: View {
         .padding(.top, 16)
     }
 
-    private var readWithAIVoiceName: String {
+    private func readWithAIVoiceName(for bookID: UUID) -> String {
         // Observe the preference so this copy updates immediately after a
         // selection, while the engine remains the single source of truth for
         // automatic Premium/Enhanced voice resolution.
         _ = selectedReadWithAIVoiceIdentifier
-        return ReadWithAISpeechAudioEngine.selectedVoiceDisplayName
+        return ReadWithAISpeechAudioEngine.voiceDisplayName(
+            for: ReadWithAIVoicePreferences.preference(for: bookID)
+        )
     }
 
     @ViewBuilder

@@ -56,6 +56,12 @@ public protocol AudioEngine: AnyObject {
     func pause()
     func seek(to position: TimeInterval) async
     func setRate(_ rate: Float)                // P0-1
+    /// Selects the preference to use when this engine next speaks app-owned
+    /// text. Media engines intentionally ignore it.
+    func setReadWithAIVoicePreference(_ preference: ReadWithAIVoicePreference)
+    /// Replaces an active Read with AI utterance at its current position after
+    /// a voice change. Returns false for non-speech engines.
+    @discardableResult func restartReadWithAIVoice() -> Bool
     /// The engine owns `lease` whether or not the preload is accepted; it is
     /// released on `cancelPreload()`, when the item is replaced, or once the
     /// preloaded item is no longer queued.
@@ -75,6 +81,8 @@ extension AudioEngine {
         try await load(url: url, startTime: startTime, lease: nil)
     }
     func preloadNext(url: URL) { preloadNext(url: url, lease: nil) }
+    func setReadWithAIVoicePreference(_ preference: ReadWithAIVoicePreference) {}
+    @discardableResult func restartReadWithAIVoice() -> Bool { false }
 }
 
 /// A playback-engine problem that must not be interpreted as chapter
