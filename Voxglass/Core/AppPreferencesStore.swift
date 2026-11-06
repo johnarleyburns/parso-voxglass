@@ -14,6 +14,12 @@ public struct AppPreferencesStore: DynamicProperty {
         public static let volumeNormalizationEnabled = "voxglass.volumeNormalization.enabled"
         /// Empty means automatically choose the best installed system voice.
         public static let readWithAIVoiceIdentifier = "voxglass.readWithAI.voiceIdentifier"
+        /// A structured default survives a system voice package changing its
+        /// identifier by retaining the voice's human name and language too.
+        public static let readWithAIVoiceDefault = "voxglass.readWithAI.voice.default.v2"
+        /// Book-specific Read with AI voice choices.  This is deliberately a
+        /// local preference: it describes voices installed on this device.
+        public static let readWithAIVoiceByBook = "voxglass.readWithAI.voice.byBook.v1"
         public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
         public static let authoringV2SyncEnabled = "voxglass.authoringV2Sync.enabled"
         public static let authoringV2LastSync = "voxglass.authoringV2Sync.lastSync"
@@ -87,6 +93,61 @@ public struct AppPreferencesStore: DynamicProperty {
                 .filter { !$0.isEmpty }
         )
         return decoded.isEmpty ? LibriVoxLanguage.defaultSelection : decoded
+    }
+}
+
+/// A voice choice is stored separately from the audio book so it remains a
+/// reader preference, while the book and its position can continue to sync.
+/// `identifier` is Apple's primary key; `name` and `language` allow a safe
+/// match when iOS replaces a downloaded voice package during an update.
+public struct ReadWithAIVoicePreference: Codable, Equatable, Sendable {
+    public var identifier: String
+    public var name: String?
+    public var language: String?
+
+    public init(identifier: String, name: String? = nil, language: String? = nil) {
+        self.identifier = identifier
+        self.name = name
+        self.language = language
+    }
+
+    public static let automatic = Self(identifier: "")
+}
+
+public enum ReadWithAIVoicePreferences {
+    public static func defaultPreference(in defaults: UserDefaults = .standard) -> ReadWithAIVoicePreference {
+        if let data = defaults.data(forKey: AppPreferencesStore.Keys.readWithAIVoiceDefault),
+           let preference = try? JSONDecoder().decode(ReadWithAIVoicePreference.self, from: data) {
+            return preference
+        }
+        // Preserve the original single-value setting for readers upgrading
+        // from builds that shipped before per-book voice choices.
+        return ReadWithAIVoicePreference(
+            identifier: defaults.string(forKey: AppPreferencesStore.Keys.readWithAIVoiceIdentifier) ?? ""
+        )
+    }
+
+    public static func preference(for bookID: UUID, in defaults: UserDefaults = .standard) -> ReadWithAIVoicePreference {
+        preferencesByBook(in: defaults)[bookID.uuidString] ?? defaultPreference(in: defaults)
+    }
+
+    public static func setDefault(_ preference: ReadWithAIVoicePreference, in defaults: UserDefaults = .standard) {
+        defaults.set(preference.identifier, forKey: AppPreferencesStore.Keys.readWithAIVoiceIdentifier)
+        defaults.set(try? JSONEncoder().encode(preference), forKey: AppPreferencesStore.Keys.readWithAIVoiceDefault)
+    }
+
+    public static func set(_ preference: ReadWithAIVoicePreference, for bookID: UUID, alsoMakeDefault: Bool = true, in defaults: UserDefaults = .standard) {
+        var preferences = preferencesByBook(in: defaults)
+        preferences[bookID.uuidString] = preference
+        defaults.set(try? JSONEncoder().encode(preferences), forKey: AppPreferencesStore.Keys.readWithAIVoiceByBook)
+        if alsoMakeDefault { setDefault(preference, in: defaults) }
+    }
+
+    private static func preferencesByBook(in defaults: UserDefaults) -> [String: ReadWithAIVoicePreference] {
+        guard let data = defaults.data(forKey: AppPreferencesStore.Keys.readWithAIVoiceByBook),
+              let preferences = try? JSONDecoder().decode([String: ReadWithAIVoicePreference].self, from: data)
+        else { return [:] }
+        return preferences
     }
 }
 

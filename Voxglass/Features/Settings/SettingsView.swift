@@ -122,14 +122,13 @@ struct SettingsView: View {
 }
 
 private struct ReadWithAIVoiceRow: View {
+    // Observe the legacy mirror so this row refreshes immediately after the
+    // picker updates the structured preference.
     @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedIdentifier = ""
 
     private var selectedVoiceName: String {
-        guard !selectedIdentifier.isEmpty,
-              let voice = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.identifier == selectedIdentifier }) else {
-            return "Best available"
-        }
-        return voice.name
+        _ = selectedIdentifier
+        ReadWithAISpeechAudioEngine.voiceDisplayName(for: ReadWithAIVoicePreferences.defaultPreference())
     }
 
     var body: some View {
@@ -162,7 +161,19 @@ private struct ReadWithAIVoiceRow: View {
 }
 
 struct ReadWithAIVoicePicker: View {
-    @AppStorage(AppPreferencesStore.Keys.readWithAIVoiceIdentifier) private var selectedIdentifier = ""
+    let bookID: UUID?
+    let onSelection: ((ReadWithAIVoicePreference) -> Void)?
+    @Environment(\.dismiss) private var dismiss
+
+    init(bookID: UUID? = nil, onSelection: ((ReadWithAIVoicePreference) -> Void)? = nil) {
+        self.bookID = bookID
+        self.onSelection = onSelection
+    }
+
+    private var selectedPreference: ReadWithAIVoicePreference {
+        if let bookID { return ReadWithAIVoicePreferences.preference(for: bookID) }
+        return ReadWithAIVoicePreferences.defaultPreference()
+    }
 
     private var voices: [AVSpeechSynthesisVoice] {
         let languageCode = Locale.autoupdatingCurrent.language.languageCode?.identifier
@@ -177,16 +188,18 @@ struct ReadWithAIVoicePicker: View {
     var body: some View {
         VoxglassScreen(title: "Read with AI Voice") {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Choose an installed voice for Read with AI. Best available automatically uses the highest-quality Premium or Enhanced voice for your language.")
+                Text(bookID == nil
+                    ? "Choose the default installed voice for new Read with AI books. Best available automatically uses the highest-quality Premium or Enhanced voice for your language."
+                    : "Choose this book's voice. The book pauses, saves your choice, then resumes at the same spot with the new voice.")
                     .voxFont(.footnote)
                     .foregroundStyle(Palette.ink2)
 
                 VoxglassGroupedSection(title: "Voice") {
-                    voiceButton(identifier: "", name: "Best available", detail: "Automatically chooses Premium or Enhanced")
+                    voiceButton(preference: .automatic, name: "Best available", detail: "Automatically chooses Premium or Enhanced")
                     ForEach(voices, id: \.identifier) { voice in
                         VoxglassListDivider()
                         voiceButton(
-                            identifier: voice.identifier,
+                            preference: ReadWithAIVoicePreference(identifier: voice.identifier, name: voice.name, language: voice.language),
                             name: voice.name,
                             detail: "\(languageName(voice.language)) · \(qualityName(voice.quality))"
                         )
@@ -201,15 +214,22 @@ struct ReadWithAIVoicePicker: View {
         }
     }
 
-    private func voiceButton(identifier: String, name: String, detail: String) -> some View {
-        Button { selectedIdentifier = identifier } label: {
+    private func voiceButton(preference: ReadWithAIVoicePreference, name: String, detail: String) -> some View {
+        Button {
+            if let bookID {
+                onSelection?(preference)
+            } else {
+                ReadWithAIVoicePreferences.setDefault(preference)
+            }
+            dismiss()
+        } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(name).voxFont(.body, weight: .semibold).foregroundStyle(Palette.ink)
                     Text(detail).voxFont(.caption).foregroundStyle(Palette.ink2)
                 }
                 Spacer()
-                if selectedIdentifier == identifier {
+                if selectedPreference.identifier == preference.identifier {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.brass)
                 }
             }
@@ -217,7 +237,7 @@ struct ReadWithAIVoicePicker: View {
             .padding(.vertical, 11)
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier(identifier.isEmpty ? "settings.readWithAIVoice.automatic" : "settings.readWithAIVoice.\(identifier)")
+        .accessibilityIdentifier(preference.identifier.isEmpty ? "settings.readWithAIVoice.automatic" : "settings.readWithAIVoice.\(preference.identifier)")
     }
 
     private func qualityScore(_ voice: AVSpeechSynthesisVoice) -> Int {

@@ -32,6 +32,12 @@ final class SwitchingAudioEngine: AudioEngine {
     }
     func play() { active.play() }; func pause() { active.pause() }; func seek(to position: TimeInterval) async { await active.seek(to: position) }
     func setRate(_ rate: Float) { audio.setRate(rate); speech.setRate(rate) }
+    func setReadWithAIVoicePreference(_ preference: ReadWithAIVoicePreference) {
+        speech.setReadWithAIVoicePreference(preference)
+    }
+    @discardableResult func restartReadWithAIVoice() -> Bool {
+        active.restartReadWithAIVoice()
+    }
     func preloadNext(url: URL, lease: PlaybackLease?) { active.preloadNext(url: url, lease: lease) }
     func cancelPreload() { active.cancelPreload() }; func releasePlaybackLeases() { active.releasePlaybackLeases() }
     func prefetchIntoCache(urls: [URL]) { active.prefetchIntoCache(urls: urls) }

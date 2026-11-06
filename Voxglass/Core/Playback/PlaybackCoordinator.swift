@@ -394,6 +394,7 @@ public final class PlaybackCoordinator {
         }
         guard !Task.isCancelled, owns(generation) else { return false }
         do {
+            engine.setReadWithAIVoicePreference(ReadWithAIVoicePreferences.preference(for: session.book.id))
             // `session.position` is chapter-relative; for a single-file,
             // multi-chapter local book every chapter shares one URL, so the
             // real seek target within that file is the chapter's own
@@ -668,6 +669,7 @@ public final class PlaybackCoordinator {
         }
 
         do {
+            engine.setReadWithAIVoicePreference(ReadWithAIVoicePreferences.preference(for: book.book.id))
             try await engine.load(url: source.url, startTime: targetChapter.startTime + startTime, lease: source.lease)
             guard !Task.isCancelled, owns(generation) else { return }
             guard decodeRecoveryTask == nil else { return }
@@ -879,6 +881,7 @@ public final class PlaybackCoordinator {
         }
 
         do {
+            engine.setReadWithAIVoicePreference(ReadWithAIVoicePreferences.preference(for: book.book.id))
             // `startTime` here is chapter-relative (see the identical
             // comment in `loadEngineForPresentedSession`) — this call site
             // (direct chapter-tap, `ChaptersView`) was missing the
@@ -1149,6 +1152,29 @@ public final class PlaybackCoordinator {
         bridge.runWithBackgroundTask { [weak self] in
             await self?.persistCurrentPosition(reason: .pause)
         }
+        updateNowPlayingInfo()
+    }
+
+    /// Applies a voice choice to this Read with AI book without losing the
+    /// listener's place.  Speech voices are fixed when an utterance is made,
+    /// so the speech engine pauses, replaces the remainder, and resumes only
+    /// after the new preference is durable.
+    public func selectReadWithAIVoice(_ preference: ReadWithAIVoicePreference, for bookID: UUID) {
+        ReadWithAIVoicePreferences.set(preference, for: bookID)
+        guard currentSession?.book.id == bookID else { return }
+
+        let wasPlaying = engine.isPlaying
+        if wasPlaying { pause() }
+        engine.setReadWithAIVoicePreference(preference)
+        guard wasPlaying, engine.restartReadWithAIVoice() else { return }
+
+        mutateSession {
+            $0.position = relativeEngineTime(for: $0)
+            $0.isPlaying = true
+        }
+        suppressNextIsPlayingSync = true
+        playbackPhase = .playing
+        startProgressLoop()
         updateNowPlayingInfo()
     }
 
@@ -1649,6 +1675,7 @@ public final class PlaybackCoordinator {
         isEngineLoaded = false
         do {
             resetSilenceBoost()
+            engine.setReadWithAIVoicePreference(ReadWithAIVoicePreferences.preference(for: session.book.id))
             try await engine.load(url: source.url, startTime: chapter.startTime + startTime, lease: source.lease)
             guard owns(generation), decodeRecoveryTask == nil else { return }
             isEngineLoaded = true
@@ -2216,6 +2243,7 @@ public final class PlaybackCoordinator {
                     throw AudioEngineError.missingPlayableURL
                 }
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
+                self.engine.setReadWithAIVoicePreference(ReadWithAIVoicePreferences.preference(for: session.book.id))
                 try await self.engine.load(url: source.url, startTime: session.chapter.startTime + position, lease: source.lease)
                 guard !Task.isCancelled, self.decodeRecoveryGeneration == generation else { return }
                 self.decodeRecoveryTask = nil
