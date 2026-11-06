@@ -701,7 +701,7 @@ struct SourcesView: View {
 }
 
 struct AboutView: View {
-    private let privacyURL = URL(string: "https://parso.guru/voxglass-privacy.html")!
+    private let privacyURL = URL(string: "https://johnarleyburns.github.io/parso-voxglass/")!
     private let sourceURL = URL(string: "https://github.com/johnarleyburns/parso-voxglass")!
 
     var body: some View {
@@ -828,7 +828,7 @@ struct AboutView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Privacy")
             Text("""
-            Voxglass has no accounts, no tracking, and no analytics. Nothing you listen to leaves your device. The only network requests are to the Internet Archive to fetch audio and cover art you ask for. Your library, playback history, and cache live only on your device.
+            Voxglass has no accounts, no tracking, and no analytics. Nothing you listen to leaves your device. Network requests go only to the Internet Archive to fetch audio and cover art you ask for, and to Project Gutenberg (via gutendex.com) when you import a book for Read with AI. Your library, playback history, and cache live only on your device.
             """)
                 .voxFont(.footnote)
                 .foregroundStyle(Palette.ink2)
