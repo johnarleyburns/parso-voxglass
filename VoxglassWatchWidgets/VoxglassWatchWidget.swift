@@ -45,19 +45,18 @@ struct ContinueListeningWidgetView: View {
                           systemImage: "book.fill")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(accent)
-                    Text(state.bookTitle).font(.headline).lineLimit(1)
+                    Text(state.bookTitle).font(.headline)
                     Text("Ch \(state.chapterIndex + 1) · \(Self.duration(state.remainingInBook)) left")
-                        .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                        .font(.caption2).foregroundStyle(.secondary)
                     ProgressView(value: state.progress).tint(accent)
                 }
                 Button(intent: ResumeListeningIntent()) {
                     Image(systemName: state.isPlaying ? "pause.fill" : "play.fill")
                 }
                 .buttonStyle(.plain)
-                .frame(width: 30, height: 30)
+                .frame(width: 44, height: 44)
                 .accessibilityLabel(state.isPlaying ? Text("Pause") : Text("Resume"))
             }
-            .accessibilityElement(children: .combine)
         } else {
             VStack(alignment: .leading, spacing: 2) {
                 Label { Text(verbatim: "Voxglass") } icon: { Image(systemName: "book.fill") }.font(.caption2.weight(.semibold)).foregroundStyle(accent)

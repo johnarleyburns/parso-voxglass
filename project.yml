@@ -157,6 +157,8 @@ targets:
     sources:
       - VoxglassWidgets
       - path: VoxglassShared
+    resources:
+      - path: VoxglassWidgets/PrivacyInfo.xcprivacy
     dependencies:
       - package: VoxglassCore
         product: VoxglassCore
@@ -258,6 +260,8 @@ targets:
           - Info.plist
           - VoxglassWatchWidgets.entitlements
       - path: VoxglassWatch/AppIntents/WatchResumeListeningIntent.swift
+    resources:
+      - path: VoxglassWatchWidgets/PrivacyInfo.xcprivacy
     dependencies:
       - package: VoxglassCore
         product: VoxglassWatchCore

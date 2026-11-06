@@ -65,6 +65,19 @@ manifest_specs = {
             "NSPrivacyAccessedAPICategoryFileTimestamp": {"C617.1"},
         },
     ),
+    "iOS widget": (
+        root / "VoxglassWidgets/PrivacyInfo.xcprivacy",
+        {
+            "NSPrivacyAccessedAPICategoryUserDefaults": {"CA92.1"},
+            "NSPrivacyAccessedAPICategoryFileTimestamp": {"C617.1"},
+        },
+    ),
+    "watchOS widget": (
+        root / "VoxglassWatchWidgets/PrivacyInfo.xcprivacy",
+        {
+            "NSPrivacyAccessedAPICategoryUserDefaults": {"CA92.1"},
+        },
+    ),
 }
 
 for platform, (path, expected) in manifest_specs.items():
@@ -83,6 +96,8 @@ project = (root / "project.yml").read_text()
 for path in (
     "Voxglass/Resources/PrivacyInfo.xcprivacy",
     "VoxglassWatch/Resources/PrivacyInfo.xcprivacy",
+    "VoxglassWidgets/PrivacyInfo.xcprivacy",
+    "VoxglassWatchWidgets/PrivacyInfo.xcprivacy",
     "Voxglass/Resources/Assets.xcassets",
 ):
     require(path in project, f"project.yml: missing target resource wiring for {path}")
@@ -152,6 +167,8 @@ if bundle:
     if bundle.is_dir():
         manifest_candidates = [bundle / "PrivacyInfo.xcprivacy", bundle / "Contents/Resources/PrivacyInfo.xcprivacy"]
         require(any(path.is_file() for path in manifest_candidates), f"built app is missing PrivacyInfo.xcprivacy: {bundle}")
+        extension_manifests = list(bundle.glob("PlugIns/*.appex/PrivacyInfo.xcprivacy"))
+        require(len(extension_manifests) >= 1, f"built app is missing extension PrivacyInfo.xcprivacy files: {bundle}")
         info_path = bundle / "Info.plist" if (bundle / "Info.plist").is_file() else bundle / "Contents/Info.plist"
         info = read_plist(info_path)
         require(bool(info.get("CFBundleIdentifier")), f"built app is missing CFBundleIdentifier: {info_path}")

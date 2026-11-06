@@ -701,7 +701,7 @@ struct SourcesView: View {
 }
 
 struct AboutView: View {
-    private let privacyURL = URL(string: "https://parso.guru/voxglass-privacy.html")!
+    private let privacyURL = URL(string: "https://johnarleyburns.github.io/parso-voxglass/privacy.html")!
     private let sourceURL = URL(string: "https://github.com/johnarleyburns/parso-voxglass")!
 
     var body: some View {
@@ -828,7 +828,9 @@ struct AboutView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionTitle(title: "Privacy")
             Text("""
-            Voxglass has no accounts, no tracking, and no analytics. Nothing you listen to leaves your device. The only network requests are to the Internet Archive to fetch audio and cover art you ask for. Your library, playback history, and cache live only on your device.
+            Voxglass has no app accounts, tracking, or analytics. It contacts LibriVox, Project Gutenberg, and Internet Archive only when you search their catalogs or choose audio, text, or artwork to download or play. Internet Archive serves the LibriVox audio and associated artwork.
+
+            Your library, listening history, bookmarks, and cache stay on your device. If you enable iCloud Sync, your library metadata, favorites, bookmarks, and playback position are stored only in your private iCloud account to keep your devices in sync. You can turn iCloud Sync off at any time in Settings.
             """)
                 .voxFont(.footnote)
                 .foregroundStyle(Palette.ink2)
