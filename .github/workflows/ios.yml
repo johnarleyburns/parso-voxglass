@@ -462,6 +462,10 @@ jobs:
 
       - name: Record TestFlight delivery
         if: success() && steps.signing.outputs.ready == 'true' && steps.app_record.outputs.ready == 'true'
+        # The binary is already accepted before this traceability step runs.
+        # A transient GitHub API quota error must not turn a delivered build
+        # into a failed release pipeline.
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_WORKFLOW_TOKEN || github.token }}
           APP_NAME: Voxglass
