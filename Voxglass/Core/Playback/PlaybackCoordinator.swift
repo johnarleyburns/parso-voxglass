@@ -2092,6 +2092,42 @@ public final class PlaybackCoordinator {
         }
     }
 
+    /// Takes a point-in-time copy of the live playhead.  This deliberately
+    /// does not read the engine again after an async hop: route changes can
+    /// cause AVFoundation to transiently expose an earlier seek time.
+    private func currentHandoffCheckpoint() -> PlaybackPosition? {
+        guard let session = currentSession else { return nil }
+        let position = isEngineLoaded ? relativeEngineTime(for: session) : session.position
+        guard position.isFinite, position > 0 else { return nil }
+
+        let checkpoint = PlaybackPosition(
+            bookID: session.book.id,
+            chapterID: session.chapter.id,
+            position: position,
+            duration: session.duration,
+            updatedAt: Date(),
+            isFinished: false
+        )
+        // This synchronous write survives a process termination while the
+        // background-task-protected SQLite write below is still in flight.
+        snapshotStore.save(checkpoint)
+        return checkpoint
+    }
+
+    private func persistHandoffCheckpoint(_ checkpoint: PlaybackPosition) async {
+        do {
+            try await positionStore.save(checkpoint)
+            if currentSession?.book.id == checkpoint.bookID,
+               currentSession?.chapter.id == checkpoint.chapterID {
+                currentSessionUpdatedAt = checkpoint.updatedAt
+            }
+        } catch {
+            if !handleStalePositionWrite(error, checkpoint) {
+                playbackError = error.localizedDescription
+            }
+        }
+    }
+
     private func saveCurrentSnapshot() {
         guard let session = currentSession else { return }
         // Same anti-zero guard: the 1 Hz snapshot must not clobber a good slot with
@@ -2363,9 +2399,18 @@ public final class PlaybackCoordinator {
     /// synchronous, and the SQLite flush is wrapped in a background-task assertion
     /// (via the bridge) so the enqueued write still runs if the OS kills the app.
     public func handleWillBackgroundOrTerminate() {
-        saveCurrentSnapshot()
+        checkpointCurrentPositionForHandoff()
+    }
+
+    /// Creates a durable, exact resume point before an external playback
+    /// surface (CarPlay, a route change, or app backgrounding) can alter the
+    /// audio engine.  In particular, do this *before* reactivating an audio
+    /// route: AVFoundation can briefly report the item's old seek time while a
+    /// route is being rebuilt.
+    public func checkpointCurrentPositionForHandoff() {
+        guard let checkpoint = currentHandoffCheckpoint() else { return }
         bridge.runWithBackgroundTask { [weak self] in
-            await self?.persistCurrentPosition(reason: .background)
+            await self?.persistHandoffCheckpoint(checkpoint)
         }
     }
 
@@ -2403,6 +2448,10 @@ public final class PlaybackCoordinator {
 
     /// An audio route change (e.g. headphones unplugged) — persist position.
     public func handleAudioRouteChanged() {
+        // A CarPlay attach/detach is a route change. Capture the live playhead
+        // first; calling play/configureAudioSession can otherwise race the
+        // player into exposing the pre-CarPlay seek position.
+        checkpointCurrentPositionForHandoff()
         let shouldResume = currentSession?.isPlaying == true && isEngineLoaded
         // A CarPlay attach/detach can leave AVPlayer paused while the app's
         // session still says playing. Reactivate the audio session and replay
@@ -2411,9 +2460,6 @@ public final class PlaybackCoordinator {
             engine.configureAudioSession()
             engine.play()
             suppressNextIsPlayingSync = true
-        }
-        bridge.runWithBackgroundTask { [weak self] in
-            await self?.persistCurrentPosition(reason: .routeChange)
         }
         if shouldResume { updateNowPlayingInfo() }
     }
