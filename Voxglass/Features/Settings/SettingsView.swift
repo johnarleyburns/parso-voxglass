@@ -128,7 +128,7 @@ private struct ReadWithAIVoiceRow: View {
 
     private var selectedVoiceName: String {
         _ = selectedIdentifier
-        ReadWithAISpeechAudioEngine.voiceDisplayName(for: ReadWithAIVoicePreferences.defaultPreference())
+        return ReadWithAISpeechAudioEngine.voiceDisplayName(for: ReadWithAIVoicePreferences.defaultPreference())
     }
 
     var body: some View {
@@ -216,7 +216,7 @@ struct ReadWithAIVoicePicker: View {
 
     private func voiceButton(preference: ReadWithAIVoicePreference, name: String, detail: String) -> some View {
         Button {
-            if let bookID {
+            if bookID != nil {
                 onSelection?(preference)
             } else {
                 ReadWithAIVoicePreferences.setDefault(preference)
