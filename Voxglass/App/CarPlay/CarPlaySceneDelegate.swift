@@ -59,6 +59,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         _ scene: CPTemplateApplicationScene,
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
+        // CarPlay can disappear before UIKit sends the phone scene its route
+        // notification. Capture the car's live playhead here, while the shared
+        // player still owns the CarPlay route.
+        Task { @MainActor in
+            AppServices.shared.playbackCoordinator.checkpointCurrentPositionForHandoff()
+        }
         connectionState.disconnect()
         connectionGeneration += 1
         connectionTask?.cancel()

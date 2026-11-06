@@ -118,5 +118,39 @@ private final class RecordingBridge: PlaybackPlatformBridge {
         try? await Task.sleep(nanoseconds: 50_000_000)
 
         #expect(bridge.backgroundTaskInvocations >= 1)  // A CarPlay connect/disconnect route change must flush through runWithBackgroundTask too
+        let saved = try await store.position(for: bookID, chapterID: chapters[0].id)
+        #expect(abs((saved?.position ?? -1) - 17) <= 0.001,
+                "A route change must save the pre-change playhead, not the old seek point")
+    }
+
+    @Test func carPlayDisconnectCheckpointPersistsTheLiveCarPlayPosition() async throws {
+        let db = AppDatabase.makeTemporaryDatabase(named: "carplay-handoff-\(UUID().uuidString)")
+        let engine = FakeAudioEngine()
+        let store = SQLitePositionStore(database: db)
+        let defaults = UserDefaults(suiteName: "carplay-handoff-\(UUID().uuidString)")!
+        let bridge = RecordingBridge()
+        let coordinator = PlaybackCoordinator(
+            engine: engine,
+            positionStore: store,
+            snapshotStore: LastPlaybackSnapshotStore(defaults: defaults),
+            rateStore: PlaybackRateStore(defaults: defaults),
+            bridge: bridge
+        )
+        let bookID = UUID()
+        let chapters = makeChapters(1, bookID: bookID)
+        try await seedBook(in: db, chapters: chapters)
+        let book = BookWithChapters(
+            book: Book(id: bookID, title: "Book", authors: ["A"], sourceID: UUID()),
+            chapters: chapters
+        )
+
+        await coordinator.play(book)
+        engine.currentTime = 143
+        coordinator.checkpointCurrentPositionForHandoff()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        let saved = try await store.position(for: bookID, chapterID: chapters[0].id)
+        #expect(abs((saved?.position ?? -1) - 143) <= 0.001)
+        #expect(bridge.backgroundTaskInvocations >= 1)
     }
 }
