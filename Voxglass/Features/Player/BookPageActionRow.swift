@@ -16,6 +16,7 @@ struct BookPageActionRow: View {
     let requestWatchDownload: () -> Void
     @State private var showCacheSizeWarning = false
     @State private var showRemoveWatchConfirm = false
+    @State private var showWatchTransferActions = false
     @State private var bookmarkCount = 0
     @State private var showingBookmarkPrompt = false
     @State private var userPlaybackRateChangeCount = 0
@@ -39,7 +40,28 @@ struct BookPageActionRow: View {
     }
 
     private var watchState: WatchTransferState {
-        phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state ?? .notAvailable
+        if phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)] == .paused {
+            return .paused
+        }
+        if let state = phoneAudioRelay.watchStorageInfo(for: book.book.id)?.state { return state }
+        switch phoneAudioRelay.watchDesiredStates[WatchBookID(book.book.id.uuidString)] {
+        case .paused:
+            return .paused
+        case .queued, .preparing, .transferring, .installing:
+            return .queued
+        case .downloaded:
+            return .available
+        case .failed:
+            return .failed
+        case .notRequested, .removing, .none:
+            return .notAvailable
+        }
+    }
+
+    private var watchProgress: Double {
+        if case .transferring(let progress) = watchState { return min(max(progress, 0), 1) }
+        guard let info = phoneAudioRelay.watchStorageInfo(for: book.book.id), info.totalChapterCount > 0 else { return 0 }
+        return min(max(Double(info.completeChapterCount) / Double(info.totalChapterCount), 0), 1)
     }
 
     /// No real byte count exists before a download finishes, so the
@@ -78,6 +100,29 @@ struct BookPageActionRow: View {
         } message: {
             Text("The book stays in My Books; only the copy on your Apple Watch is removed.")
         }
+        .confirmationDialog(
+            "Apple Watch Download",
+            isPresented: $showWatchTransferActions,
+            titleVisibility: .visible
+        ) {
+            if watchState == .paused {
+                Button("Continue Download") {
+                    Task { await phoneAudioRelay.resumeBookTransferToWatch(book) }
+                }
+            } else {
+                Button("Pause Download") {
+                    Task { await phoneAudioRelay.pauseBookTransferToWatch(bookID: book.book.id) }
+                }
+            }
+            Button("Remove from Watch", role: .destructive) {
+                Task { await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(watchState == .paused
+                ? "This book is paused on its way to your Apple Watch."
+                : "You can pause this download and continue it later, or remove its partial copy from your Apple Watch.")
+        }
     }
 
     private var fullRow: some View {
@@ -88,6 +133,8 @@ struct BookPageActionRow: View {
             Spacer(minLength: 0)
             bookmarkButton
             Spacer(minLength: 0)
+            watchButton
+            Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
             overflowButton
@@ -97,6 +144,8 @@ struct BookPageActionRow: View {
     private var compactRow: some View {
         HStack(spacing: 0) {
             speedButton
+            Spacer(minLength: 0)
+            watchButton
             Spacer(minLength: 0)
             airplayButton
             Spacer(minLength: 0)
@@ -321,28 +370,9 @@ struct BookPageActionRow: View {
     private var watchButton: some View {
         switch phoneAudioRelay.watchPreparationByBook[book.book.id] {
         case .downloadingOnPhone(let progress):
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
-                Circle()
-                    .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
-                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Image(systemName: "applewatch")
-                    .voxFont(.caption2, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-            }
-            .frame(width: 22, height: 22)
-            .frame(width: 44, height: 44)
-            .accessibilityElement()
-            .accessibilityLabel("Preparing for Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
-            .accessibilityValue("Preparing for Apple Watch, \(Int((min(max(progress, 0), 1) * 100).rounded())) percent") // l10n-exempt: state-dependent accessibility or status copy
-            .accessibilityIdentifier("nowplaying.watchDownload")
+            watchProgressButton(progress: progress, label: "Preparing for Apple Watch")
         case .preparingAudio:
-            ProgressView()
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("Preparing audio for Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
-                .accessibilityIdentifier("nowplaying.watchDownload")
+            watchProgressButton(progress: 0, label: "Preparing audio for Apple Watch")
         case nil:
             watchTransferButton
         }
@@ -364,28 +394,11 @@ struct BookPageActionRow: View {
             .accessibilityLabel(watchState == .failed ? "Retry send to Apple Watch" : "Send to Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("nowplaying.watchDownload")
         case .queued, .waitingForPhone:
-            ProgressView()
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("Waiting to send to Apple Watch")
-                .accessibilityIdentifier("nowplaying.watchDownload")
+            watchProgressButton(progress: watchProgress, label: "Waiting to send to Apple Watch")
         case .transferring(let progress):
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
-                Circle()
-                    .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
-                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Image(systemName: "applewatch")
-                    .voxFont(.caption2, weight: .semibold)
-                    .foregroundStyle(Palette.brass)
-            }
-            .frame(width: 22, height: 22)
-            .frame(width: 44, height: 44)
-            .accessibilityElement()
-            .accessibilityLabel("Sending to Apple Watch")
-            .accessibilityValue("\(Int((progress * 100).rounded())) percent")
-            .accessibilityIdentifier("nowplaying.watchDownload")
+            watchProgressButton(progress: progress, label: "Sending to Apple Watch")
+        case .paused:
+            watchProgressButton(progress: watchProgress, label: "Apple Watch download paused", paused: true)
         case .available:
             Button {
                 TactileFeedback.tap()
@@ -400,6 +413,31 @@ struct BookPageActionRow: View {
             .accessibilityLabel("Downloaded to Apple Watch — tap to remove")
             .accessibilityIdentifier("nowplaying.watchDownload")
         }
+    }
+
+    private func watchProgressButton(progress: Double, label: String, paused: Bool = false) -> some View {
+        let boundedProgress = min(max(progress, 0), 1)
+        return Button {
+            TactileFeedback.tap()
+            showWatchTransferActions = true
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(boundedProgress))
+                    .stroke(Palette.brass, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: paused ? "applewatch.slash" : "applewatch")
+                    .voxFont(.caption2, weight: .semibold)
+                    .foregroundStyle(Palette.brass)
+            }
+            .frame(width: 22, height: 22)
+            .frame(width: 44, height: 44)
+        }
+        .accessibilityLabel(label)
+        .accessibilityValue("\(Int((boundedProgress * 100).rounded())) percent")
+        .accessibilityIdentifier("nowplaying.watchDownload")
     }
 
     private func startOffline(allowCellular: Bool) async {

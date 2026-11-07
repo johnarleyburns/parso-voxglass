@@ -41,6 +41,9 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
     private weak var playbackCoordinator: PlaybackCoordinator?
     private weak var offlineManager: OfflineDownloadManager?
     private var watchProjectionStore: PhoneWatchProjectionStore?
+    /// Cancellation is also used for ordinary failures, so retain the user's
+    /// explicit pause intent long enough for the preparation task to unwind.
+    private var pausedPreparationBookIDs = Set<UUID>()
     private var lastCatalogContent: WatchLibrarySnapshot?
     private var catalogPublishGeneration = 0
     private var queuedRemovalRevisions: [WatchBookID: Int64] = [:]
@@ -347,6 +350,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         if acknowledgement.complete { state = .available }
         else if acknowledgement.failureMessage != nil { state = .failed }
         else if case .failed? = watchDesiredStates[acknowledgement.bookID] { state = .failed }
+        else if watchDesiredStates[acknowledgement.bookID] == .paused { state = .paused }
         else if case .transferring(let progress)? = watchStorageSnapshot?.books[id]?.state {
             state = .transferring(progress: progress)
         } else { state = .queued }
@@ -424,6 +428,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         defer {
             isTransferringToWatch = false
             watchPreparationByBook[preparingBookID] = nil
+            pausedPreparationBookIDs.remove(preparingBookID)
         }
 
         // A book whose chapters are all already-local files (never queued
@@ -514,6 +519,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             let startedAt = Date()
             var state = offlineManager.state(for: book.book.id)
             while case .downloading(let progress) = state {
+                // OfflineDownloadManager may finish caching on the phone after
+                // this is paused, but the watch hand-off itself stops here.
+                guard !pausedPreparationBookIDs.contains(book.book.id) else {
+                    return .failed("Download paused.")
+                }
                 watchPreparationByBook[book.book.id] = .downloadingOnPhone(progress: min(max(progress, 0), 1))
                 if progress > lastProgress {
                     lastProgress = progress
@@ -630,6 +640,11 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 preparation.cancel()
             }
         } catch {
+            if error is CancellationError, pausedPreparationBookIDs.remove(book.book.id) != nil {
+                // pauseBookTransferToWatch has already retained the partial
+                // transfer and published its paused state.
+                return .failed("Download paused.")
+            }
             let reason: String
             if error is CancellationError {
                 reason = "Watch audio preparation stopped. Keep Voxglass open and send the book again when ready. Prepared chapters are saved; no audio file was submitted."
@@ -804,6 +819,48 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         }
         await publishTypedWatchProjection(force: true)
     }
+
+    /// Stop handing this book to WatchConnectivity while retaining any chapters
+    /// the watch has already received. A later explicit resume prepares and
+    /// submits the same selected book again; duplicate files are safely
+    /// replaced by the watch's manifest installer.
+    func pauseBookTransferToWatch(bookID: UUID) async {
+        let id = WatchBookID(bookID.uuidString)
+        if watchPreparationByBook[bookID] != nil {
+            pausedPreparationBookIDs.insert(bookID)
+            watchPreparationTask?.cancel()
+        }
+        for transfer in session.outstandingFileTransfers where transfer.file.metadata?["bookID"] as? String == bookID.uuidString {
+            transfer.cancel()
+        }
+        let previous = watchStorageSnapshot?.books[bookID]
+        var storage = watchStorageSnapshot?.books ?? [:]
+        storage[bookID] = WatchBookStorageInfo(
+            state: .paused,
+            byteCount: previous?.byteCount ?? 0,
+            chapterCount: previous?.chapterCount ?? 0,
+            completeChapterCount: previous?.completeChapterCount ?? 0,
+            totalChapterCount: previous?.totalChapterCount ?? 0
+        )
+        applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
+        try? await watchProjectionStore?.setDesired(.paused, for: id)
+        await publishTypedWatchProjection(force: true)
+        watchSyncStatus = "Apple Watch download paused."
+    }
+
+    /// Resume is deliberately user initiated. WatchConnectivity never retries
+    /// paused audio transfers in the background.
+    func resumeBookTransferToWatch(_ book: BookWithChapters) async {
+        let result = await transferBookToWatch(book)
+        switch result {
+        case .failed(let message):
+            watchTransferError = message
+        case .needsCellularConfirmation:
+            watchTransferError = "Connect to Wi-Fi or start the download again and choose cellular."
+        case .started:
+            break
+        }
+    }
 }
 
 extension PhoneAudioRelay: WCSessionDelegate {
@@ -953,8 +1010,14 @@ extension PhoneAudioRelay: WCSessionDelegate {
             watchDesiredStates = state.desired
             // Rebuild from actual watch inventory, not historical file hand-off progress.
             let progress = (watchStorageSnapshot?.books ?? [:]).filter { id, value in
-                if case .transferring = value.state { return state.desired[WatchBookID(id.uuidString)] == .transferring }
-                return false
+                switch value.state {
+                case .transferring:
+                    return state.desired[WatchBookID(id.uuidString)] == .transferring
+                case .paused:
+                    return state.desired[WatchBookID(id.uuidString)] == .paused
+                default:
+                    return false
+                }
             }
             watchStorageSnapshot = WatchStorageSnapshot(books: progress)
             for report in state.acknowledgements.values { applyWatchAcknowledgement(report) }

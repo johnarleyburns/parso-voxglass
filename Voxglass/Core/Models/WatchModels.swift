@@ -6,6 +6,7 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
     case queued
     case waitingForPhone
     case transferring(progress: Double)
+    case paused
     case available
     case failed
 
@@ -19,6 +20,7 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
         case queued
         case waitingForPhone
         case transferring
+        case paused
         case available
         case failed
     }
@@ -34,6 +36,8 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
             self = .waitingForPhone
         case .transferring:
             self = .transferring(progress: try container.decodeIfPresent(Double.self, forKey: .progress) ?? 0)
+        case .paused:
+            self = .paused
         case .available:
             self = .available
         case .failed:
@@ -53,6 +57,8 @@ public enum WatchTransferState: Equatable, Sendable, Codable {
         case .transferring(let progress):
             try container.encode(Kind.transferring, forKey: .kind)
             try container.encode(progress, forKey: .progress)
+        case .paused:
+            try container.encode(Kind.paused, forKey: .kind)
         case .available:
             try container.encode(Kind.available, forKey: .kind)
         case .failed:
@@ -137,6 +143,8 @@ public struct WatchBookStorageInfo: Equatable, Sendable, Codable {
             return String(localized: "\(completeChapterCount)/\(max(total, 1)) chapters on Watch", bundle: .module)
         case .waitingForPhone:
             return String(localized: "Watch download waiting", bundle: .module)
+        case .paused:
+            return String(localized: "Watch download paused", bundle: .module)
         case .failed:
             return String(localized: "Watch download failed", bundle: .module)
         case .notAvailable:
