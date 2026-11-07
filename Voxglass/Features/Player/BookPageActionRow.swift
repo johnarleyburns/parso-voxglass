@@ -1,5 +1,6 @@
 import SwiftUI
 import VoxglassCore
+import VoxglassWatchProtocol
 
 struct BookPageActionRow: View {
     @Environment(PlaybackCoordinator.self) private var playback
@@ -370,7 +371,11 @@ struct BookPageActionRow: View {
     private var watchButton: some View {
         switch phoneAudioRelay.watchPreparationByBook[book.book.id] {
         case .downloadingOnPhone(let progress):
-            watchProgressButton(progress: progress, label: "Preparing for Apple Watch")
+            watchProgressButton(
+                progress: progress,
+                label: "Preparing for Apple Watch",
+                accessibilityValue: "Preparing for Apple Watch, \(Int((min(max(progress, 0), 1) * 100).rounded())) percent"
+            )
         case .preparingAudio:
             watchProgressButton(progress: 0, label: "Preparing audio for Apple Watch")
         case nil:
@@ -415,7 +420,12 @@ struct BookPageActionRow: View {
         }
     }
 
-    private func watchProgressButton(progress: Double, label: String, paused: Bool = false) -> some View {
+    private func watchProgressButton(
+        progress: Double,
+        label: String,
+        paused: Bool = false,
+        accessibilityValue: String? = nil
+    ) -> some View {
         let boundedProgress = min(max(progress, 0), 1)
         return Button {
             TactileFeedback.tap()
@@ -436,7 +446,7 @@ struct BookPageActionRow: View {
             .frame(width: 44, height: 44)
         }
         .accessibilityLabel(label)
-        .accessibilityValue("\(Int((boundedProgress * 100).rounded())) percent")
+        .accessibilityValue(accessibilityValue ?? "\(Int((boundedProgress * 100).rounded())) percent")
         .accessibilityIdentifier("nowplaying.watchDownload")
     }
 
