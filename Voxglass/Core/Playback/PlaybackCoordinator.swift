@@ -2092,6 +2092,42 @@ public final class PlaybackCoordinator {
         }
     }
 
+    /// Stores a checkpoint received from a paired companion without starting
+    /// phone playback. This is deliberately on the coordinator so companion
+    /// handoffs use the same SQLite, snapshot, and cloud-sync path as iPhone
+    /// and CarPlay playback.
+    @discardableResult
+    public func persistExternalPlaybackCheckpoint(_ checkpoint: PlaybackPosition) async -> Bool {
+        guard checkpoint.position.isFinite, checkpoint.position >= 0,
+              checkpoint.duration.map({ $0.isFinite && $0 >= 0 }) ?? true else { return false }
+        // Never let a delayed Watch transfer move an actively playing iPhone
+        // session backwards. The currently audible device owns the position.
+        if currentSession?.isPlaying == true { return false }
+        do {
+            if let existing = try await positionStore.position(for: checkpoint.bookID, chapterID: checkpoint.chapterID),
+               existing.updatedAt > checkpoint.updatedAt {
+                return false
+            }
+            snapshotStore.save(checkpoint)
+            try await positionStore.save(checkpoint)
+            if let session = currentSession,
+               session.book.id == checkpoint.bookID,
+               session.chapter.id == checkpoint.chapterID,
+               !session.isPlaying {
+                mutateSession { value in
+                    value.position = checkpoint.position
+                    value.duration = checkpoint.duration ?? value.duration
+                }
+                playhead = checkpoint.position
+                playheadDuration = checkpoint.duration ?? playheadDuration
+            }
+            return true
+        } catch {
+            if !handleStalePositionWrite(error, checkpoint) { playbackError = error.localizedDescription }
+            return false
+        }
+    }
+
     /// Takes a point-in-time copy of the live playhead.  This deliberately
     /// does not read the engine again after an async hop: route changes can
     /// cause AVFoundation to transiently expose an earlier seek time.

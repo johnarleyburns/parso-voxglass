@@ -15,6 +15,16 @@ import Testing
         #expect(try envelope.decodePayload(WatchLibrarySnapshot.self).books == [book])
     }
 
+    @Test func playbackCheckpointUsesDurableUserInfoTransport() throws {
+        let checkpoint = WatchPlaybackCheckpoint(bookID: "book", chapterID: "chapter", position: 42,
+                                                 duration: 100, recordedAt: .distantPast)
+        let data = try WatchProtocolEnvelope.encode(kind: .playbackSnapshot, payload: checkpoint,
+                                                    libraryID: "library", revision: 3)
+        let envelope = try WatchProtocolEnvelope.decode(data)
+        #expect(WatchMessageKind.playbackSnapshot.channel == .userInfo)
+        #expect(try envelope.decodePayload(WatchPlaybackCheckpoint.self) == checkpoint)
+    }
+
     @Test func projectionRejectsOtherPairedLibraryAndPreservesDownloads() {
         var current = WatchStoreSnapshot(); current.pairedLibraryID = "library-a"; current.projectionRevision = 3
         let incoming = WatchLibrarySnapshot(pairedLibraryID: "library-b", revision: 4, books: [])

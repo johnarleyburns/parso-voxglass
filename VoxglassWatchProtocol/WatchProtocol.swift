@@ -21,7 +21,7 @@ public struct WatchPairedLibraryID: WatchStableID {
     public var isKnown: Bool { !rawValue.isEmpty }
 }
 
-public enum WatchProtocolVersion { public static let current = 2 }
+public enum WatchProtocolVersion { public static let current = 3 }
 public enum WatchTransportChannel: String, Codable, Sendable { case immediate, applicationContext, userInfo, file }
 public enum WatchCapability: String, Codable, Sendable, CaseIterable { case libraryProjection, playback, downloadManagement, reconciliation }
 public enum WatchDownloadState: Codable, Equatable, Sendable {
@@ -85,6 +85,28 @@ public struct WatchDeviceCatalog: Codable, Equatable, Sendable {
     public init(reports: [WatchManifestAcknowledgement]) { self.reports = reports }
 }
 
+/// A durable playback savepoint produced by the Watch. It intentionally carries
+/// no media URL or library metadata: the iPhone validates both IDs against its
+/// own library before accepting it.
+public struct WatchPlaybackCheckpoint: Codable, Equatable, Sendable {
+    public var bookID: WatchBookID
+    public var chapterID: WatchChapterID
+    public var position: TimeInterval
+    public var duration: TimeInterval?
+    public var recordedAt: Date
+    public var isFinished: Bool
+
+    public init(bookID: WatchBookID, chapterID: WatchChapterID, position: TimeInterval,
+                duration: TimeInterval?, recordedAt: Date = Date(), isFinished: Bool = false) {
+        self.bookID = bookID
+        self.chapterID = chapterID
+        self.position = position
+        self.duration = duration
+        self.recordedAt = recordedAt
+        self.isFinished = isFinished
+    }
+}
+
 public enum WatchMessageKind: String, Codable, Sendable, CaseIterable {
     case hello, helloReply, librarySnapshot, bookDetailRequest, bookDetailResponse, playRequest, jitChapterRequest
     case playbackSnapshot, setBookDownload, removeBookDownload, downloadStatusSnapshot, bookManifest, assetFile
@@ -92,8 +114,11 @@ public enum WatchMessageKind: String, Codable, Sendable, CaseIterable {
     public var channel: WatchTransportChannel {
         switch self {
         case .hello, .helloReply, .bookDetailRequest, .bookDetailResponse, .playRequest, .jitChapterRequest, .error: .immediate
-        case .librarySnapshot, .playbackSnapshot, .downloadStatusSnapshot, .watchCatalog: .applicationContext
-        case .setBookDownload, .removeBookDownload, .bookManifest, .watchManifest, .reconcileRequest: .userInfo
+        case .librarySnapshot, .downloadStatusSnapshot, .watchCatalog: .applicationContext
+        // A saved position must survive an unreachable phone. Application
+        // context coalescing is appropriate for catalog projections but could
+        // lose a final pause/background checkpoint, so use queued user info.
+        case .playbackSnapshot, .setBookDownload, .removeBookDownload, .bookManifest, .watchManifest, .reconcileRequest: .userInfo
         case .assetFile: .file
         }
     }

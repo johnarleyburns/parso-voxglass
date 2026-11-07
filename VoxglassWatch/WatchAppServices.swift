@@ -35,6 +35,7 @@ final class WatchAppServices: ObservableObject {
     private let playbackEngine: WatchPlaybackEngine
     private var cancellables = Set<AnyCancellable>()
     private var lastListenedSave = Date.distantPast
+    private var lastPhoneCheckpoint = Date.distantPast
     private var lastWidgetState: WatchContinueListeningState?
     private var lastWidgetSave = Date.distantPast
     private static let listenedKey = "watch.listened"
@@ -151,6 +152,7 @@ final class WatchAppServices: ObservableObject {
         defer { publishWidget() }
         guard let bookID = snapshot.bookID, snapshot.chapterIndex >= 0 else { return }
         let phaseChanged = previousPhase != snapshot.phase
+        publishPhoneCheckpoint(snapshot, force: phaseChanged)
         guard phaseChanged || Date().timeIntervalSince(lastListenedSave) > 10 else { return }
         lastListenedSave = Date()
         listened[bookID.rawValue] = WatchListenedRecord(chapterIndex: snapshot.chapterIndex,
@@ -158,6 +160,20 @@ final class WatchAppServices: ObservableObject {
         if let data = try? JSONEncoder().encode(listened) {
             UserDefaults.standard.set(data, forKey: Self.listenedKey)
         }
+    }
+
+    private func publishPhoneCheckpoint(_ snapshot: WatchPlaybackSnapshot, force: Bool) {
+        guard let bookID = snapshot.bookID, let chapterID = snapshot.chapterID,
+              snapshot.position.isFinite, snapshot.position >= 0 else { return }
+        // A queued transfer every 30 seconds bounds offline backlog while still
+        // keeping the phone's durable position close to live Watch playback.
+        guard force || Date().timeIntervalSince(lastPhoneCheckpoint) >= 30 else { return }
+        lastPhoneCheckpoint = Date()
+        session.publishPlaybackCheckpoint(WatchPlaybackCheckpoint(
+            bookID: bookID, chapterID: chapterID, position: snapshot.position,
+            duration: snapshot.duration > 0 ? snapshot.duration : nil,
+            isFinished: snapshot.phase == .ended
+        ))
     }
 
     // MARK: - Smart Stack (A2)
@@ -204,7 +220,10 @@ final class WatchAppServices: ObservableObject {
         volume = playbackEngine.volume
     }
     func setSleepTimer(_ mode: WatchSleepTimer.Mode?) { playbackEngine.setSleepTimer(mode) }
-    func persistPlaybackPosition() { playbackEngine.persistPlaybackPosition() }
+    func persistPlaybackPosition() {
+        playbackEngine.persistPlaybackPosition()
+        publishPhoneCheckpoint(playback, force: true)
+    }
 
     // Audio is selected and transferred on the phone only. This watch keeps local playback
     // positions, speed, sleep timers and narration features; it never fetches chapter URLs.

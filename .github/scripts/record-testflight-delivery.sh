@@ -17,7 +17,15 @@ test -f "$plist"
 bundle=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")
 version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")
 build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")
-marker="<!-- testflight-delivery:${bundle}:${version}:${build} -->"
+# Keep the legacy iOS marker byte-for-byte stable. A universal-purchase
+# Catalyst upload has the same bundle/version/build but is a distinct binary,
+# so it needs its own durable delivery record rather than replacing iOS's.
+delivery_platform="${TESTFLIGHT_PLATFORM:-}"
+if [[ -n "$delivery_platform" ]]; then
+  marker="<!-- testflight-delivery:${delivery_platform}:${bundle}:${version}:${build} -->"
+else
+  marker="<!-- testflight-delivery:${bundle}:${version}:${build} -->"
+fi
 uploaded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # A completed recorder step, rather than a merely-green workflow, is the
@@ -131,6 +139,7 @@ while IFS=$'\t' read -r issue _title; do
 ## TestFlight upload accepted
 
 - App: **$APP_NAME** (\`$bundle\`)
+- Platform: **${delivery_platform:-iOS}**
 - Version/build: **$version ($build)**
 - Included by PR(s): $prs_text
 - Commit: \`$sha\`
