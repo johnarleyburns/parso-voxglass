@@ -230,6 +230,26 @@ final class WatchSessionAdapter: NSObject, ObservableObject {
         reportMessage = "Report queued for iPhone. \(value.installedChapterIDs?.count ?? 0) chapters installed."
     }
 
+    /// Playback positions are a separate, durable stream from the coalesced
+    /// watch-inventory context. In particular, a pause while the phone is out
+    /// of reach must be delivered when it reconnects.
+    func publishPlaybackCheckpoint(_ checkpoint: WatchPlaybackCheckpoint) {
+        let revision = Int64(UserDefaults.standard.integer(forKey: "watch.playbackRevision")) + 1
+        guard !smoke, WCSession.isSupported(), WCSession.default.activationState == .activated,
+              let data = try? WatchProtocolEnvelope.encode(
+                kind: .playbackSnapshot,
+                payload: checkpoint,
+                libraryID: snapshot?.pairedLibraryID ?? .unknown,
+                revision: revision
+              ) else { return }
+        UserDefaults.standard.set(revision, forKey: "watch.playbackRevision")
+        let message = WatchProtocolEnvelope.dictionary(for: data)
+        WCSession.default.transferUserInfo(message)
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil, errorHandler: nil)
+        }
+    }
+
     private func seedSmoke() {
         let id = WatchBookID("alice")
         snapshot = WatchLibrarySnapshot(pairedLibraryID: "smoke", revision: 1, books: [

@@ -167,7 +167,10 @@ if bundle:
     if bundle.is_dir():
         manifest_candidates = [bundle / "PrivacyInfo.xcprivacy", bundle / "Contents/Resources/PrivacyInfo.xcprivacy"]
         require(any(path.is_file() for path in manifest_candidates), f"built app is missing PrivacyInfo.xcprivacy: {bundle}")
-        extension_manifests = list(bundle.glob("PlugIns/*.appex/PrivacyInfo.xcprivacy"))
+        extension_manifests = (
+            list(bundle.glob("PlugIns/*.appex/PrivacyInfo.xcprivacy")) +
+            list(bundle.glob("Contents/PlugIns/*.appex/PrivacyInfo.xcprivacy"))
+        )
         require(len(extension_manifests) >= 1, f"built app is missing extension PrivacyInfo.xcprivacy files: {bundle}")
         info_path = bundle / "Info.plist" if (bundle / "Info.plist").is_file() else bundle / "Contents/Info.plist"
         info = read_plist(info_path)

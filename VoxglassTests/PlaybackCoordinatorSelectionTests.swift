@@ -63,6 +63,31 @@ import Foundation
         try? await Task.sleep(nanoseconds: 200_000_000)
     }
 
+    @Test func pairedCheckpointPersistsAndUpdatesAPausedMatchingSession() async {
+        let h = makeHarness()
+        let book = makeBook(chapters: 1)
+        await h.coordinator.present(book)
+        let chapter = book.chapters[0]
+        let checkpoint = PlaybackPosition(bookID: book.book.id, chapterID: chapter.id,
+                                          position: 42, duration: 100, updatedAt: Date())
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(checkpoint))
+        #expect(await h.store.position(for: book.book.id, chapterID: chapter.id)?.position == 42)
+        #expect(h.coordinator.currentSession?.position == 42)
+        #expect(h.coordinator.playhead == 42)
+    }
+
+    @Test func pairedCheckpointCannotOverrideActivePhonePlayback() async {
+        let h = makeHarness()
+        let book = makeBook(chapters: 1)
+        h.coordinator.selectAndPlay(book)
+        await waitUntil { h.coordinator.currentSession?.isPlaying == true }
+        let chapter = book.chapters[0]
+        let checkpoint = PlaybackPosition(bookID: book.book.id, chapterID: chapter.id,
+                                          position: 42, duration: 100, updatedAt: Date())
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(checkpoint)))
+        #expect(await h.store.position(for: book.book.id, chapterID: chapter.id) == nil)
+    }
+
     /// Polls (yielding to the main actor) so contended parallel runs cannot
     /// outlast a fixed sleep.
     private func waitUntil(_ condition: () -> Bool, timeoutNanoseconds: UInt64 = 10_000_000_000) async {

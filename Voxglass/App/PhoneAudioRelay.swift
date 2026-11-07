@@ -925,6 +925,20 @@ extension PhoneAudioRelay: WCSessionDelegate {
         guard let data = WatchProtocolEnvelope.payloadData(in: message),
               let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
         switch envelope.kind {
+        case .playbackSnapshot:
+            guard envelope.pairedLibraryID == watchLibraryID,
+                  let checkpoint = try? envelope.decodePayload(WatchPlaybackCheckpoint.self),
+                  checkpoint.position.isFinite, checkpoint.position >= 0,
+                  let bookID = UUID(uuidString: checkpoint.bookID.rawValue),
+                  let chapterID = UUID(uuidString: checkpoint.chapterID.rawValue),
+                  let book = libraryStore?.book(withID: bookID),
+                  let chapter = book.chapters.first(where: { $0.id == chapterID }) else { return }
+            let accepted = await playbackCoordinator?.persistExternalPlaybackCheckpoint(PlaybackPosition(
+                bookID: bookID, chapterID: chapterID, position: checkpoint.position,
+                duration: checkpoint.duration ?? chapter.duration,
+                updatedAt: checkpoint.recordedAt, isFinished: checkpoint.isFinished
+            )) ?? false
+            if accepted { await publishTypedWatchProjection(force: true) }
         case .watchCatalog:
             guard envelope.pairedLibraryID == watchLibraryID,
                   let catalog = try? envelope.decodePayload(WatchDeviceCatalog.self),
