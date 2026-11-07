@@ -109,7 +109,7 @@ struct WatchPlaybackTests {
         #expect(WatchPlaybackReducer.reduce(initial, event: .buffering, token: 1).phase == .buffering)
         #expect(WatchPlaybackReducer.reduce(initial, event: .interruption, token: 1).phase == .paused)
         let lost = WatchPlaybackReducer.reduce(initial, event: .routeLost, token: 1)
-        #expect(lost.phase == .failed("Connect Bluetooth headphones, then try again."))
+        #expect(lost.phase == .failed("Choose an audio output, then try again."))
     }
 
     @Test("Time, progress, and chapter boundaries are safe")
