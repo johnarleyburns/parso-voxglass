@@ -608,11 +608,11 @@ struct LibraryView: View {
 
     private func watchTransferEstimateMessage(_ book: BookWithChapters?) -> String {
         guard let book, WatchNarrationEstimate.needsGeneratedAudio(for: book.chapters) else {
-            return "This will use approximately \(ByteFormatting.string(estimatedWatchBytes(book))) of storage on your Apple Watch."
+            return String(localized: "This will use approximately \(ByteFormatting.string(estimatedWatchBytes(book))) of storage on your Apple Watch.")
         }
         let duration = book.chapters.reduce(0) { $0 + ($1.duration ?? 0) }
         let creation = WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: duration)
-        return "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(estimatedWatchBytes(book))) of storage on your Apple Watch."
+        return String(localized: "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(estimatedWatchBytes(book))) of storage on your Apple Watch.")
     }
 
     private func submitLibraryWatchTransfer(_ book: BookWithChapters, allowCellular: Bool) async {

@@ -522,7 +522,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 // OfflineDownloadManager may finish caching on the phone after
                 // this is paused, but the watch hand-off itself stops here.
                 guard !pausedPreparationBookIDs.contains(book.book.id) else {
-                    return .failed("Download paused.")
+                    return .failed(String(localized: "Download paused."))
                 }
                 watchPreparationByBook[book.book.id] = .downloadingOnPhone(progress: min(max(progress, 0), 1))
                 if progress > lastProgress {
@@ -667,7 +667,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
             if error is CancellationError, pausedPreparationBookIDs.remove(book.book.id) != nil {
                 // pauseBookTransferToWatch has already retained the partial
                 // transfer and published its paused state.
-                return .failed("Download paused.")
+                return .failed(String(localized: "Download paused."))
             }
             let reason: String
             if error is CancellationError {
@@ -869,7 +869,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         applyWatchStorageSnapshot(WatchStorageSnapshot(books: storage))
         try? await watchProjectionStore?.setDesired(.paused, for: id)
         await publishTypedWatchProjection(force: true)
-        watchSyncStatus = "Apple Watch download paused."
+        watchSyncStatus = String(localized: "Apple Watch download paused.")
     }
 
     /// Resume is deliberately user initiated. WatchConnectivity never retries
@@ -880,7 +880,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         case .failed(let message):
             watchTransferError = message
         case .needsCellularConfirmation:
-            watchTransferError = "Connect to Wi-Fi or start the download again and choose cellular."
+            watchTransferError = String(localized: "Connect to Wi-Fi or start the download again and choose cellular.")
         case .started:
             break
         }

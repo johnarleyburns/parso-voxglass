@@ -196,7 +196,7 @@ public enum WatchPlaybackReducer {
         case .paused, .interruption:
             next.phase = .paused
         case .routeLost:
-            next.phase = .failed("Choose an audio output, then try again.")
+            next.phase = .failed(String(localized: "Choose an audio output, then try again.", bundle: .module))
             next.failureKind = .noOutput
             next.failureCode = "routeLost"
         case .failed(let message):

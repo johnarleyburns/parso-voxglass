@@ -1087,11 +1087,11 @@ struct BookPageView: View {
     private var watchTransferEstimateMessage: String {
         let chapters = watchTransferConfirmationBook?.chapters ?? []
         guard WatchNarrationEstimate.needsGeneratedAudio(for: chapters) else {
-            return "This will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch."
+            return String(localized: "This will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
         }
         let narrationDuration = chapters.reduce(0) { $0 + ($1.duration ?? 0) }
         let creation = WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: narrationDuration)
-        return "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch."
+        return String(localized: "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
     }
 
     private var initialWatchDialogBinding: Binding<Bool> {

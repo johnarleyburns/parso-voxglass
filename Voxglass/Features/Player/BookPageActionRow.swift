@@ -102,27 +102,27 @@ struct BookPageActionRow: View {
             Text("The book stays in My Books; only the copy on your Apple Watch is removed.")
         }
         .confirmationDialog(
-            "Apple Watch Download",
+            String(localized: "Apple Watch Download"),
             isPresented: $showWatchTransferActions,
             titleVisibility: .visible
         ) {
             if watchState == .paused {
-                Button("Continue Download") {
+                Button(String(localized: "Continue Download")) {
                     Task { await phoneAudioRelay.resumeBookTransferToWatch(book) }
                 }
             } else {
-                Button("Pause Download") {
+                Button(String(localized: "Pause Download")) {
                     Task { await phoneAudioRelay.pauseBookTransferToWatch(bookID: book.book.id) }
                 }
             }
-            Button("Remove from Watch", role: .destructive) {
+            Button(String(localized: "Remove from Watch"), role: .destructive) {
                 Task { await phoneAudioRelay.removeBookFromWatch(bookID: book.book.id) }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(watchState == .paused
-                ? "This book is paused on its way to your Apple Watch."
-                : "You can pause this download and continue it later, or remove its partial copy from your Apple Watch.")
+                ? String(localized: "This book is paused on its way to your Apple Watch.")
+                : String(localized: "You can pause this download and continue it later, or remove its partial copy from your Apple Watch."))
         }
     }
 
@@ -373,11 +373,11 @@ struct BookPageActionRow: View {
         case .downloadingOnPhone(let progress):
             watchProgressButton(
                 progress: progress,
-                label: "Preparing for Apple Watch",
-                accessibilityValue: "Preparing for Apple Watch, \(Int((min(max(progress, 0), 1) * 100).rounded())) percent"
+                label: String(localized: "Preparing for Apple Watch"),
+                accessibilityValue: String(localized: "Preparing for Apple Watch, \(Int((min(max(progress, 0), 1) * 100).rounded())) percent")
             )
         case .preparingAudio:
-            watchProgressButton(progress: 0, label: "Preparing audio for Apple Watch")
+            watchProgressButton(progress: 0, label: String(localized: "Preparing audio for Apple Watch"))
         case nil:
             watchTransferButton
         }
@@ -399,11 +399,11 @@ struct BookPageActionRow: View {
             .accessibilityLabel(watchState == .failed ? "Retry send to Apple Watch" : "Send to Apple Watch") // l10n-exempt: state-dependent accessibility or status copy
             .accessibilityIdentifier("nowplaying.watchDownload")
         case .queued, .waitingForPhone:
-            watchProgressButton(progress: watchProgress, label: "Waiting to send to Apple Watch")
+            watchProgressButton(progress: watchProgress, label: String(localized: "Waiting to send to Apple Watch"))
         case .transferring(let progress):
-            watchProgressButton(progress: progress, label: "Sending to Apple Watch")
+            watchProgressButton(progress: progress, label: String(localized: "Sending to Apple Watch"))
         case .paused:
-            watchProgressButton(progress: watchProgress, label: "Apple Watch download paused", paused: true)
+            watchProgressButton(progress: watchProgress, label: String(localized: "Apple Watch download paused"), paused: true)
         case .available:
             Button {
                 TactileFeedback.tap()
