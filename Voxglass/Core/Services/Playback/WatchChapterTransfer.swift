@@ -20,17 +20,19 @@ public enum WatchChapterTransfer {
     /// Shared-file M4B chapters are extracted once per chapter; the caller may memoize source hashes.
     public static func prepareAAC(source: URL, directory: URL, startTime: Double = 0,
                                   duration: Double? = nil, sourceHash: String? = nil,
-                                  mimeType: String? = nil) async throws -> URL {
+                                  mimeType: String? = nil, bitRate: Int = watchBitRate,
+                                  formatID: AudioFormatID = kAudioFormatMPEG4AAC) async throws -> URL {
         try Task.checkCancellation()
         let accessed = source.startAccessingSecurityScopedResource()
         defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-        guard source.isFileURL, startTime.isFinite, startTime >= 0,
+        guard source.isFileURL, startTime.isFinite, startTime >= 0, bitRate > 0,
               duration == nil || (duration?.isFinite == true && (duration ?? 0) > 0) else {
             throw CocoaError(.fileReadCorruptFile)
         }
         let digest = try sourceHash ?? WatchChecksum.sha256(of: source)
         guard digest.count == 64, digest.allSatisfy({ $0.isHexDigit }) else { throw CocoaError(.fileReadCorruptFile) }
-        let name = "\(digest)-watch-aac96-\(Int64(startTime * 1000))-\(Int64((duration ?? 0) * 1000)).m4a"
+        let profile = formatID == kAudioFormatMPEG4AAC_HE ? "heaac" : "aac"
+        let name = "\(digest)-watch-\(profile)\(bitRate / 1_000)-\(Int64(startTime * 1000))-\(Int64((duration ?? 0) * 1000)).m4a"
         let destination = directory.appendingPathComponent(name)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         if FileManager.default.fileExists(atPath: destination.path) {
@@ -58,8 +60,8 @@ public enum WatchChapterTransfer {
         reader.add(output)
         let writer = try AVAssetWriter(outputURL: temporary, fileType: .m4a)
         let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
-            AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100,
-            AVNumberOfChannelsKey: 2, AVEncoderBitRateKey: watchBitRate,
+            AVFormatIDKey: formatID, AVSampleRateKey: 44_100,
+            AVNumberOfChannelsKey: 2, AVEncoderBitRateKey: bitRate,
             AVEncoderBitRateStrategyKey: AVAudioBitRateStrategy_Constant])
         input.expectsMediaDataInRealTime = false
         guard writer.canAdd(input) else { throw CocoaError(.fileWriteUnknown) }

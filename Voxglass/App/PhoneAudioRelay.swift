@@ -552,12 +552,21 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         // never complete, no matter how patient anything downstream is.
         var resolvedChapterFiles: [(chapter: Chapter, key: String, url: URL)] = []
         for chapter in book.chapters {
-            guard let key = ChapterAudioIdentity.cacheKey(for: chapter) else {
-                return await fail("A chapter's audio file couldn't be identified.")
-            }
             if let localURL = localOnDiskURL(for: chapter) {
+                // Read With AI chapters are durable UTF-8 assets rather than
+                // audio. Their stable chapter ID is sufficient until the
+                // renderer below creates the actual AAC source file.
+                let key = localURL.pathExtension.lowercased() == "voxtext"
+                    ? "read-with-ai-\(chapter.id.uuidString)"
+                    : ChapterAudioIdentity.cacheKey(for: chapter)
+                guard let key else {
+                    return await fail("A chapter's audio file couldn't be identified.")
+                }
                 resolvedChapterFiles.append((chapter, key, localURL))
                 continue
+            }
+            guard let key = ChapterAudioIdentity.cacheKey(for: chapter) else {
+                return await fail("A chapter's audio file couldn't be identified.")
             }
             guard let fileURL = await WatchChapterTransfer.resolvedFileURL(
                 cacheStore: AudioCache.shared,
@@ -586,6 +595,21 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                     try Task.checkCancellation()
                     let (chapter, key, source) = item
                     watchSyncStatus = "Preparing chapter \(index + 1) of \(resolvedChapterFiles.count): \(chapter.title). Keep Voxglass open until preparation finishes."
+                    if source.pathExtension.lowercased() == "voxtext" {
+                        let url = try await ReadWithAIWatchNarrationRenderer().render(
+                            textURL: source,
+                            directory: directory,
+                            preference: ReadWithAIVoicePreferences.preference(for: book.book.id)
+                        )
+                        let size = Int64(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
+                        let checksum = try await Task.detached { try WatchChecksum.sha256(of: url) }.value
+                        let duration = try await AVURLAsset(url: url).load(.duration).seconds
+                        selected.chapters.append(WatchChapterDTO(id: WatchChapterID(chapter.id.uuidString),
+                            index: chapter.index, title: chapter.title, duration: duration, startTime: 0,
+                            expectedBytes: size, expectedSHA256: checksum, durableFilename: "\(chapter.id.uuidString).m4a"))
+                        preparedFiles.append((chapter, key, url, size, checksum))
+                        continue
+                    }
                     let hash: String
                     if let cached = sourceHashes[source] { hash = cached }
                     else {
