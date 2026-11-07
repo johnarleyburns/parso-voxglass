@@ -63,7 +63,7 @@ final class ReadWithAIWatchNarrationRenderer {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.voice = ReadWithAISpeechAudioEngine.resolvedVoice(for: preference)
 
-        try await withTaskCancellationHandler {
+        return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
                 self.continuation = continuation
                 synthesizer.write(utterance) { [weak self] buffer in
@@ -71,7 +71,9 @@ final class ReadWithAIWatchNarrationRenderer {
                 }
             }
         } onCancel: {
-            synthesizer.stopSpeaking(at: .immediate)
+            Task { @MainActor [weak self] in
+                self?.synthesizer.stopSpeaking(at: .immediate)
+            }
         }
     }
 
