@@ -204,7 +204,7 @@ struct BookPageView: View {
             }
             Button("Cancel", role: .cancel) { watchTransferConfirmationBook = nil }
         } message: {
-            Text("This will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
+            Text(watchTransferEstimateMessage)
         }
         .confirmationDialog(
             "Send to Apple Watch on cellular data?",
@@ -1078,7 +1078,20 @@ struct BookPageView: View {
 
     private var watchEstimatedBytes: Int64 {
         let chapters = watchTransferConfirmationBook?.chapters ?? []
+        if WatchNarrationEstimate.needsGeneratedAudio(for: chapters) {
+            return WatchNarrationEstimate.estimatedAudioBytes(duration: chapters.reduce(0) { $0 + ($1.duration ?? 0) })
+        }
         return ByteFormatting.estimatedAudiobookBytes(duration: chapters.reduce(0) { $0 + ($1.duration ?? 0) })
+    }
+
+    private var watchTransferEstimateMessage: String {
+        let chapters = watchTransferConfirmationBook?.chapters ?? []
+        guard WatchNarrationEstimate.needsGeneratedAudio(for: chapters) else {
+            return String(localized: "This will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
+        }
+        let narrationDuration = chapters.reduce(0) { $0 + ($1.duration ?? 0) }
+        let creation = WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: narrationDuration)
+        return String(localized: "Voxglass will create an audio copy using your selected iPhone voice before transfer. Estimated creation time: about \(Int((creation / 60).rounded(.up))) minutes. It will use approximately \(ByteFormatting.string(watchEstimatedBytes)) of storage on your Apple Watch.")
     }
 
     private var initialWatchDialogBinding: Binding<Bool> {

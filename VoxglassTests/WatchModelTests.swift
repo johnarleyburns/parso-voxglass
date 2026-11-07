@@ -496,6 +496,7 @@ import ParsoAudioStreaming
         #expect(WatchTransferState.notAvailable == .notAvailable)
         #expect(WatchTransferState.queued == .queued)
         #expect(WatchTransferState.waitingForPhone == .waitingForPhone)
+        #expect(WatchTransferState.paused == .paused)
         #expect(WatchTransferState.available == .available)
         #expect(WatchTransferState.failed == .failed)
     }
@@ -511,10 +512,11 @@ import ParsoAudioStreaming
             .queued,
             .waitingForPhone,
             .transferring(progress: 0.5),
+            .paused,
             .available,
             .failed
         ]
-        #expect(states.count == 6)
+        #expect(states.count == 7)
     }
 
     @Test func resolver_downloadedAlwaysAvailable() {
@@ -569,5 +571,15 @@ import ParsoAudioStreaming
             needsPhoneTransfer: false
         )
         #expect(state == .notAvailable)
+    }
+}
+
+@Suite struct WatchNarrationEstimateTests {
+    @Test func textChaptersUseGeneratedNarrationEstimate() {
+        let chapter = Chapter(bookID: UUID(), title: "PDF", index: 0, duration: 7_200,
+                              localURL: URL(fileURLWithPath: "/tmp/chapter.voxtext"))
+        #expect(WatchNarrationEstimate.needsGeneratedAudio(for: [chapter]))
+        #expect(WatchNarrationEstimate.estimatedAudioBytes(duration: 7_200) == 28_800_000)
+        #expect(WatchNarrationEstimate.estimatedCreationDuration(narrationDuration: 7_200) == 600)
     }
 }

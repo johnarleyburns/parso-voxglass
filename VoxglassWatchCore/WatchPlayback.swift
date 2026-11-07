@@ -196,7 +196,10 @@ public enum WatchPlaybackReducer {
         case .paused, .interruption:
             next.phase = .paused
         case .routeLost:
-            next.phase = .failed("Connect Bluetooth headphones, then try again.")
+            // WatchPlaybackCore also builds in the host-only logic-test target,
+            // which intentionally has no module resource bundle. The Watch UI
+            // presents its localized output guidance separately.
+            next.phase = .failed("Choose an audio output, then try again.")
             next.failureKind = .noOutput
             next.failureCode = "routeLost"
         case .failed(let message):

@@ -136,6 +136,9 @@ public actor PhoneWatchProjectionStore {
         state.acknowledgements[acknowledgement.bookID] = acknowledgement
         if acknowledgement.complete { state.desired[acknowledgement.bookID] = .downloaded }
         else if let message = acknowledgement.failureMessage { state.desired[acknowledgement.bookID] = .failed(message) }
+        // A late inventory report is evidence of already-installed files, not
+        // permission to restart a transfer the listener explicitly paused.
+        else if state.desired[acknowledgement.bookID] == .paused { }
         else if state.desired[acknowledgement.bookID] == .downloaded {
             state.desired[acknowledgement.bookID] = .failed("Audio is no longer fully installed. Send again from iPhone if needed.")
         }

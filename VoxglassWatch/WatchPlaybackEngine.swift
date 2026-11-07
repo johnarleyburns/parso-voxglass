@@ -547,7 +547,7 @@ final class WatchPlaybackEngine {
         let nsError = error as NSError
         let code = "activation-\(nsError.domain)-\(nsError.code)"
         if nsError.domain == AVFoundationErrorDomain || nsError.domain == NSOSStatusErrorDomain {
-            publish(.problem(.noOutput, message: String(localized: "Connect Bluetooth headphones, then try again."),
+            publish(.problem(.noOutput, message: String(localized: "Choose an audio output, then try again."),
                              code: code), token: currentToken)
         } else {
             publish(.problem(.other, message: String(localized: "Playback failed: \(error.localizedDescription)"),
