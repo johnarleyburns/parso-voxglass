@@ -71,7 +71,8 @@ import Foundation
         let checkpoint = PlaybackPosition(bookID: book.book.id, chapterID: chapter.id,
                                           position: 42, duration: 100, updatedAt: Date())
         #expect(await h.coordinator.persistExternalPlaybackCheckpoint(checkpoint))
-        #expect(await h.store.position(for: book.book.id, chapterID: chapter.id)?.position == 42)
+        let saved = try? await h.store.position(for: book.book.id, chapterID: chapter.id)
+        #expect(saved?.position == 42)
         #expect(h.coordinator.currentSession?.position == 42)
         #expect(h.coordinator.playhead == 42)
     }
@@ -85,7 +86,8 @@ import Foundation
         let checkpoint = PlaybackPosition(bookID: book.book.id, chapterID: chapter.id,
                                           position: 42, duration: 100, updatedAt: Date())
         #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(checkpoint)))
-        #expect(await h.store.position(for: book.book.id, chapterID: chapter.id) == nil)
+        let saved = try? await h.store.position(for: book.book.id, chapterID: chapter.id)
+        #expect(saved == nil)
     }
 
     /// Polls (yielding to the main actor) so contended parallel runs cannot
