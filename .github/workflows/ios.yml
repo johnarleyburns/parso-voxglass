@@ -611,7 +611,10 @@ jobs:
             security cms -D -i "$path" > "$plist"
             local platform app_id profile_name app_group uuid expiration
             platform="$(/usr/libexec/PlistBuddy -c 'Print :Platform:0' "$plist" 2>/dev/null || true)"
-            app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$plist")"
+            # Mac App Store profiles may use the macOS-qualified entitlement
+            # key, while iOS-style profiles use `application-identifier`.
+            # Either form identifies the explicit App ID we validate below.
+            app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.application-identifier' "$plist")"
             profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$plist")"
             app_group="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups:0' "$plist" 2>/dev/null || true)"
             uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$plist")"

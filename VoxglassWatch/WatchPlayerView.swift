@@ -238,8 +238,8 @@ struct WatchPlayerView: View {
         switch playback.failureKind ?? .other {
         case .noOutput:
             WatchProblemCard(
-                systemImage: "headphones", title: "Connect Headphones",
-                message: String(localized: "Books play through Bluetooth headphones or speakers connected to this watch."),
+                systemImage: "airplayaudio", title: "Choose Audio Output",
+                message: String(localized: "Choose Bluetooth headphones, or the Apple Watch speaker on supported Apple Watch models running watchOS 11 or later. The speaker is unavailable while charging."),
                 actions: [.init(title: "Choose Output", systemImage: "airplayaudio", identifier: "watch.book.retry") {
                     services.retryPlayback()
                 }],

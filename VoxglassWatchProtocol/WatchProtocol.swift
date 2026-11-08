@@ -25,7 +25,7 @@ public enum WatchProtocolVersion { public static let current = 3 }
 public enum WatchTransportChannel: String, Codable, Sendable { case immediate, applicationContext, userInfo, file }
 public enum WatchCapability: String, Codable, Sendable, CaseIterable { case libraryProjection, playback, downloadManagement, reconciliation }
 public enum WatchDownloadState: Codable, Equatable, Sendable {
-    case notRequested, queued, preparing, transferring, installing, downloaded, removing, failed(String)
+    case notRequested, queued, preparing, transferring, paused, installing, downloaded, removing, failed(String)
 }
 
 public struct WatchChapterDTO: Codable, Equatable, Sendable {

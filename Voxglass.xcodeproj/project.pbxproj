@@ -239,6 +239,7 @@
 		F599D1C5F53B2038A34866A0 /* huck_finn_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B954A59F4997A15A1DF6DB40 /* huck_finn_librivox.jpg */; };
 		F6D05FC8D3665660DD1D83B2 /* AppServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0BA6B47E170D692135105 /* AppServices.swift */; };
 		F6E788CEDD2FD9E4E1129B51 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D0A50704B228AFE1B6B197E6 /* PrivacyInfo.xcprivacy */; };
+		F75B3CD12B9A06F1346B9FE1 /* ReadWithAIWatchNarrationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0246C1D0EFE745A9F058847 /* ReadWithAIWatchNarrationRenderer.swift */; };
 		F942F85C0ACFE9FBDCA8D200 /* CoverThumbnailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4708ACDFDE463561E20956 /* CoverThumbnailStore.swift */; };
 		FA6F94091304F4B3AD4A0B5C /* PlaybackCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1BEC3E79A73FFDD81EEE66 /* PlaybackCommand.swift */; };
 		FAEED9612801C3FEF3D2B012 /* alice_in_wonderland_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4D4C14EF3CC1FDD728821195 /* alice_in_wonderland_librivox.jpg */; };
@@ -517,6 +518,7 @@
 		CE9B0381803F242B696298F4 /* anne_greengables_librivox.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = anne_greengables_librivox.jpg; sourceTree = "<group>"; };
 		CEC318EB68E5165403477C6D /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		CF19A4F59CA3110F4B87D5B4 /* VoxglassUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxglassUITests.swift; sourceTree = "<group>"; };
+		D0246C1D0EFE745A9F058847 /* ReadWithAIWatchNarrationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadWithAIWatchNarrationRenderer.swift; sourceTree = "<group>"; };
 		D0A50704B228AFE1B6B197E6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		D2FC61EB45833BC324E48339 /* WatchPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPlaybackEngine.swift; sourceTree = "<group>"; };
 		D5A94C359467591A27819A47 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
@@ -964,6 +966,7 @@
 				545AD98342DD254058C3BA00 /* PhoneAudioRelay.swift */,
 				80DC3840022582C008B0A87E /* PlaybackCommandRouter.swift */,
 				BBE076AF4408A8F97F6CD4C4 /* ReadWithAISpeechAudioEngine.swift */,
+				D0246C1D0EFE745A9F058847 /* ReadWithAIWatchNarrationRenderer.swift */,
 				54A19CE35BAFC21D027EED34 /* RootView.swift */,
 				93ECD54380A215C3A3831A60 /* SkipSymbol.swift */,
 				0A871D87A980C8EFEBA978BB /* SwitchingAudioEngine.swift */,
@@ -1557,6 +1560,7 @@
 				FB50AC6A211F68B8FFA3DDC4 /* RaisedSurface.swift in Sources */,
 				F32D5ADA7623D29EBF52D355 /* ReadWithAIImporter.swift in Sources */,
 				F3E222F7C0A7C5375891861F /* ReadWithAISpeechAudioEngine.swift in Sources */,
+				F75B3CD12B9A06F1346B9FE1 /* ReadWithAIWatchNarrationRenderer.swift in Sources */,
 				10A6A4A2FD59778AC73503B0 /* RootView.swift in Sources */,
 				2A4888B85BC0DAF92BCA1393 /* RoutePickerButton.swift in Sources */,
 				EB56E7CCC961186FDBB57669 /* ScaledFontModifier.swift in Sources */,
