@@ -81,7 +81,6 @@ targets:
       - target: VoxglassWatch
         platformFilter: iOS
       - target: VoxglassWidgets
-        platformFilter: iOS
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
       - sdk: CarPlay.framework
