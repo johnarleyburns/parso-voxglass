@@ -146,13 +146,13 @@ import Foundation
 
         // Start loading BookA
         h.coordinator.selectAndPlay(bookA)
-        await drainMainQueue()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         #expect(h.coordinator.currentSession?.book.id == bookA.book.id)
         #expect(h.engine.loadCalls.count == 1)
 
         // Select BookB before BookA finishes — cancels BookA load
         h.coordinator.selectAndPlay(bookB)
-        await drainMainQueue()
+        await waitUntil { h.engine.loadCalls.count == 2 }
         #expect(h.coordinator.currentSession?.book.id == bookB.book.id)  // Latest selection must win immediately
         #expect(h.coordinator.playbackPhase == .preparing)
         #expect(h.engine.loadCalls.count == 2)  // Must have issued load for BookB too
@@ -169,7 +169,7 @@ import Foundation
 
         // Finish BookB load
         h.engine.resumeSuspendedLoad() // BookB completes
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.currentSession?.book.id == bookB.book.id)
         #expect(h.coordinator.playbackPhase == .playing)
     }
@@ -181,12 +181,12 @@ import Foundation
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(bookA)
-        await drainMainQueue()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         #expect(h.coordinator.playbackError == nil)
 
         // Cancel BookA by selecting BookB
         h.coordinator.selectAndPlay(bookB)
-        await drainMainQueue()
+        await waitUntil { h.engine.loadCalls.count == 2 }
 
         // BookA was cancelled — fail its load
         h.engine.failSuspendedLoad(with: URLError(.cancelled))
@@ -201,7 +201,7 @@ import Foundation
 
         // Finish BookB successfully
         h.engine.resumeSuspendedLoad()
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.playbackPhase == .playing)
         #expect(h.coordinator.playbackError == nil)
     }
@@ -212,7 +212,7 @@ import Foundation
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(book)
-        await drainMainQueue()
+        await waitUntil { h.engine.loadCalls.count == 1 }
         #expect(h.engine.loadCalls.count == 1)
 
         // Tap same book again while preparing — must be idempotent
@@ -221,7 +221,7 @@ import Foundation
         #expect(h.engine.loadCalls.count == 1)  // Duplicate tap on same preparing book must not start a second load
 
         h.engine.resumeSuspendedLoad()
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
         #expect(h.coordinator.playbackPhase == .playing)
     }
 
@@ -231,7 +231,7 @@ import Foundation
         h.engine.loadError = URLError(.notConnectedToInternet)
 
         h.coordinator.selectAndPlay(book)
-        await drainMainQueue()
+        await waitUntil { { if case .failed = h.coordinator.playbackPhase { return true } else { return false } }() }
 
         #expect(h.coordinator.currentSession != nil)  // Session must remain visible after load failure
         #expect(h.coordinator.currentSession?.book.id == book.book.id)
@@ -249,7 +249,7 @@ import Foundation
         h.engine.loadError = URLError(.notConnectedToInternet)
 
         h.coordinator.selectAndPlay(book)
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackError != nil }
 
         #expect(h.engine.loadCalls.count == 1)
         #expect(h.coordinator.playbackError != nil)
@@ -257,7 +257,7 @@ import Foundation
         // Retry: clear error, select again
         h.engine.loadError = nil
         h.coordinator.selectAndPlay(book)
-        await drainMainQueue()
+        await waitUntil { h.coordinator.playbackPhase == .playing }
 
         #expect(h.engine.loadCalls.count == 2)  // Retry must issue a new load
         #expect(h.coordinator.playbackPhase == .playing)
@@ -293,7 +293,7 @@ import Foundation
         h.engine.suspendLoads = true
 
         h.coordinator.selectAndPlay(bookA)
-        await drainMainQueue()
+        await waitUntil { h.coordinator.currentSession?.book.id == bookA.book.id }
         #expect(h.coordinator.currentSession?.book.id == bookA.book.id)
 
         // Supersede with BookB — BookB must appear immediately, even before engine loads

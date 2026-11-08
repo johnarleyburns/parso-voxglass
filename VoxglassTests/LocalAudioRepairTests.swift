@@ -292,7 +292,9 @@ private actor RepairPositions: PositionStore {
         let other = Chapter(bookID: otherID, title: "o", index: 0, remoteURL: URL(string: "https://example.invalid/o.mp3"))
         let otherBook = BookWithChapters(book: Book(id: otherID, title: "O", authors: ["A"], sourceID: UUID()), chapters: [other])
         coordinator.selectAndPlay(otherBook, chapter: other)
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        for _ in 0..<100 where coordinator.currentSession?.book.id != otherID {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
         #expect(!coordinator.reloadSessionAfterRepair(book))
         #expect(coordinator.currentSession?.book.id == otherID)
     }
