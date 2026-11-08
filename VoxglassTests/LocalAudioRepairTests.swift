@@ -126,6 +126,26 @@ private actor RepairPositions: PositionStore {
         return nil
     }
 
+    /// Wait for the latest selection to publish before asserting a late repair
+    /// cannot replace it. Fixed delays race the full parallel suite on loaded
+    /// CI runners, even though the coordinator's ownership behavior is sound.
+    private func waitForSession(
+        _ coordinator: PlaybackCoordinator,
+        bookID: UUID,
+        timeout: Duration = .seconds(30)
+    ) async -> PlaybackSession? {
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline {
+            if let session = coordinator.currentSession, session.book.id == bookID {
+                return session
+            }
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        guard let session = coordinator.currentSession, session.book.id == bookID else { return nil }
+        return session
+    }
+
     // MARK: Playback classification
 
     @Test(arguments: [false, true]) func damagedLocalBookShowsReconnectAndNeverLoads(placeholder: Bool) async throws {
@@ -287,12 +307,12 @@ private actor RepairPositions: PositionStore {
         let book = try await seedDamaged(dir: dir, chapters: [("one", 0)])
         let (coordinator, _) = harness()
         coordinator.selectAndPlay(book, chapter: book.chapters[0])
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        _ = try #require(await waitForFailure(coordinator))
         let otherID = UUID()
         let other = Chapter(bookID: otherID, title: "o", index: 0, remoteURL: URL(string: "https://example.invalid/o.mp3"))
         let otherBook = BookWithChapters(book: Book(id: otherID, title: "O", authors: ["A"], sourceID: UUID()), chapters: [other])
         coordinator.selectAndPlay(otherBook, chapter: other)
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        _ = try #require(await waitForSession(coordinator, bookID: otherID))
         #expect(!coordinator.reloadSessionAfterRepair(book))
         #expect(coordinator.currentSession?.book.id == otherID)
     }
