@@ -49,7 +49,7 @@
 		3033A4EB6B56EC2D70ABCDFB /* BookPageOverflowSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480E6A66D93B8FB1365BBEAB /* BookPageOverflowSheet.swift */; };
 		307531D63A9AD0EB05D94E43 /* PlaylistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78FC81862BCB58FA50870112 /* PlaylistsView.swift */; };
 		31357B4C33A2A541338F6C5F /* WatchChips.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEEFD209CD73931ACFAD2B7 /* WatchChips.swift */; };
-		3221E98B0D74E9911DA2B9A4 /* VoxglassWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F9E737556101729177BD5670 /* VoxglassWidgets.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3221E98B0D74E9911DA2B9A4 /* VoxglassWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F9E737556101729177BD5670 /* VoxglassWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		323FC310455784916E1AF8A3 /* girl_boat_1109_librivox.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 051C701DDE62968711413274 /* girl_boat_1109_librivox.jpg */; };
 		3389E609883E0AC0E2B60444 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4A9B5950B4594C4173B11291 /* Localizable.xcstrings */; };
 		33A6B19C8EBABB66672DC421 /* frankenstein_shelley.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 04FCC00384E0A94423E5BF7C /* frankenstein_shelley.jpg */; };
@@ -1619,7 +1619,6 @@
 		};
 		DA855C6EB7D0CA6EA2335841 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			platformFilter = ios;
 			target = 802D0647F5389B292FA56781 /* VoxglassWidgets */;
 			targetProxy = 89F10F668A33000505594DCA /* PBXContainerItemProxy */;
 		};
