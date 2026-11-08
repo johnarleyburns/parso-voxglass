@@ -177,6 +177,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: guru.parso.voxglass.widgets
         PRODUCT_NAME: VoxglassWidgets
+        # The extension is embedded in the universal-purchase Catalyst app as
+        # well as the iOS app. Without this, Xcode treats its archive build as
+        # iOS-only and selects the iOS provisioning profile.
+        SUPPORTS_MACCATALYST: YES
         CODE_SIGN_ENTITLEMENTS: VoxglassWidgets/VoxglassWidgets.entitlements
         SWIFT_EMIT_LOC_STRINGS: YES
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
