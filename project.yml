@@ -154,6 +154,7 @@ targets:
           "PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]": "Parso Voxglass App Store"
           "PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]": "Parso Voxglass Mac App Store"
           CODE_SIGN_ENTITLEMENTS: Voxglass/Resources/Voxglass-release.entitlements
+          "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": Voxglass/Resources/Voxglass-maccatalyst-release.entitlements
   VoxglassWidgets:
     type: app-extension
     platform: iOS
