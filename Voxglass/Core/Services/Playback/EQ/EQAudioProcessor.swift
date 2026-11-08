@@ -54,15 +54,12 @@ public final class EQAudioProcessor: @unchecked Sendable {
             processBuffers(bufferList, frameCount: frameCount)
         }
 
-        #if !targetEnvironment(macCatalyst)
         /// Compatibility overload for the host/iOS SDK overlay used by the
-        /// existing DSP tests. Catalyst's iOSSupport SDK does not expose this
-        /// convenience collection, so the production protocol uses the
-        /// portable `AudioBufferListPointer` above.
+        /// existing DSP tests; the production protocol uses the portable
+        /// `AudioBufferListPointer` above.
         public func processRealtime(_ bufferList: UnsafeMutableAudioBufferListPointer, frameCount: Int) {
             processBuffers(bufferList, frameCount: frameCount)
         }
-        #endif
 
         private func processBuffers<S: Sequence>(_ bufferList: S, frameCount: Int) where S.Element == AudioBuffer {
             var rmsSum: Float = 0

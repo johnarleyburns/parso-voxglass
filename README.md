@@ -5,8 +5,11 @@ A privacy-first iOS audiobook player for the public-domain **LibriVox** catalog,
 leaves your device (content is fetched from archive.org, and cross-device sync, when enabled, uses your
 own iCloud).
 
-The shipped app targets iPhone and iPad, with Apple Watch and CarPlay companion surfaces. The main
-application also builds as Mac Catalyst from the shared iOS target.
+The shipped app targets iPhone and iPad, with Apple Watch and CarPlay companion surfaces.
+
+Mac Catalyst support was tried and removed: the separate signing identity, provisioning profiles,
+and App Store Connect record it required caused repeated, hard-to-diagnose release failures with
+little payoff. The app does not build or ship as Mac Catalyst.
 
 ## TestFlight and human QA
 
@@ -174,21 +177,11 @@ xcodebuild -project Voxglass.xcodeproj -showdestinations -scheme VoxglassWatch
 ```
 
 The iOS target keeps `TARGETED_DEVICE_FAMILY: "1,2"`, so iPad remains a supported destination and
-uses the regular-width sidebar/detail interface when space permits. Mac Catalyst is built from the
-same scheme with a Mac Catalyst destination:
+uses the regular-width sidebar/detail interface when space permits.
 
-```sh
-xcodebuild \
-  -project Voxglass.xcodeproj \
-  -scheme Voxglass \
-  -destination 'platform=macOS,variant=Mac Catalyst' \
-  -derivedDataPath /tmp/voxglass-catalyst-derived \
-  build CODE_SIGNING_ALLOWED=NO
-```
-
-On iPad and Catalyst, `⌘1`–`⌘4` switch between Listen, My Books, Discover, and Narration. During
-narration, `⌘R` records/stops, `⌘Space` plays the current take, `⌘←`/`⌘→` move between paragraphs,
-and `⌘Return` accepts and advances.
+On iPad, `⌘1`–`⌘4` switch between Listen, My Books, Discover, and Narration. During narration,
+`⌘R` records/stops, `⌘Space` plays the current take, `⌘←`/`⌘→` move between paragraphs, and
+`⌘Return` accepts and advances.
 
 Audit the source-side App Store requirements before an archive:
 
