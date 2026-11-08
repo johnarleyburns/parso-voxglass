@@ -647,16 +647,16 @@ jobs:
           set -euo pipefail
           app="$RUNNER_TEMP/Voxglass-Mac-Catalyst.xcarchive/Products/Applications/Voxglass.app"
           codesign --verify --deep --strict --verbose=2 "$app"
-          # `codesign -d` emits its diagnostic banner to stderr; keep that
-          # out of the plist file so `plutil` validates the actual payload.
-          codesign -d --entitlements "$RUNNER_TEMP/mac-catalyst-app-entitlements.plist" "$app" 2>/dev/null
+          # In display mode, `:-` writes just the entitlement plist to stdout;
+          # `codesign` diagnostics stay on stderr and must not enter the file.
+          codesign -d --entitlements :- "$app" > "$RUNNER_TEMP/mac-catalyst-app-entitlements.plist" 2>/dev/null
           plutil -lint "$RUNNER_TEMP/mac-catalyst-app-entitlements.plist"
           shopt -s nullglob
           extensions=("$app"/Contents/PlugIns/*.appex)
           [ "${#extensions[@]}" -gt 0 ] || { echo '::error title=WidgetKit extension missing::Catalyst archive has no embedded extension.'; exit 1; }
           for extension in "${extensions[@]}"; do
             codesign --verify --strict --verbose=2 "$extension"
-            codesign -d --entitlements "$RUNNER_TEMP/$(basename "$extension").entitlements.plist" "$extension" 2>/dev/null
+            codesign -d --entitlements :- "$extension" > "$RUNNER_TEMP/$(basename "$extension").entitlements.plist" 2>/dev/null
             plutil -lint "$RUNNER_TEMP/$(basename "$extension").entitlements.plist"
           done
           bash scripts/audit_app_store_release.sh --bundle "$app"
