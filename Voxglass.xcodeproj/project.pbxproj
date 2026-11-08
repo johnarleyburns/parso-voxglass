@@ -1839,6 +1839,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = guru.parso.voxglass.widgets;
 				PRODUCT_NAME = VoxglassWidgets;
 				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1862,6 +1863,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Parso Voxglass Widgets App Store";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Parso Voxglass Widgets Mac App Store";
 				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
