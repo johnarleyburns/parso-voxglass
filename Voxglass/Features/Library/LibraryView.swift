@@ -42,6 +42,7 @@ struct LibraryView: View {
                 .buttonStyle(.bordered).tint(Palette.brass)
                 if onMyWatchOnly { watchMirror } else { bookList }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showMyWatchBooks)) { _ in onMyWatchOnly = true }
             .padding(.top, 12)
             // The tab bar and expanded mini-player are outside the screen's
             // scroll content safe area. Leave enough trailing room for the

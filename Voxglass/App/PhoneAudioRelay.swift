@@ -75,6 +75,17 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         watchStorageSnapshot?.books.values.reduce(0) { $0 + $1.byteCount } ?? 0
     }
 
+    /// Persistent root status: authoritative downloaded/failed books only (see #217 resolver).
+    var watchTransferStatusBanner: WatchTransferStatusBanner? {
+        var storage: [WatchBookID: WatchTransferState] = [:]
+        for id in watchDesiredStates.keys {
+            if let uuid = UUID(uuidString: id.rawValue), let state = watchStorageSnapshot?.books[uuid]?.state {
+                storage[id] = state
+            }
+        }
+        return WatchTransferStatusBannerResolver.resolve(desiredStates: watchDesiredStates, storageStates: storage)
+    }
+
     var watchStoredBookCount: Int {
         watchStorageSnapshot?.books.values.filter { $0.state == .available }.count ?? 0
     }

@@ -413,3 +413,46 @@ public enum WatchDisplayStateResolver {
         }
     }
 }
+
+/// Persistent global-chrome status: how many books are authoritatively downloaded on the watch
+/// and how many have failed.
+public struct WatchTransferStatusBanner: Equatable, Sendable {
+    public let downloadedCount: Int
+    public let failedCount: Int
+    public var hasFailure: Bool { failedCount > 0 }
+
+    public init(downloadedCount: Int, failedCount: Int) {
+        self.downloadedCount = downloadedCount
+        self.failedCount = failedCount
+    }
+}
+
+/// Visible only for terminal authoritative outcomes (downloaded / failed). Entries absent from
+/// `desiredStates` (orphaned cache) are never counted, and every state is derived through
+/// `WatchDisplayStateResolver` so a stale cached `.available` can never look healthy.
+public enum WatchTransferStatusBannerResolver {
+    public static func resolve(
+        desiredStates: [WatchBookID: WatchDownloadState],
+        storageStates: [WatchBookID: WatchTransferState]
+    ) -> WatchTransferStatusBanner? {
+        var downloaded = 0
+        var failed = 0
+        for (bookID, desired) in desiredStates {
+            switch WatchDisplayStateResolver.resolve(desiredState: desired, storageState: storageStates[bookID]) {
+            case .available: downloaded += 1
+            case .failed: failed += 1
+            default: break
+            }
+        }
+        guard downloaded > 0 || failed > 0 else { return nil }
+        return WatchTransferStatusBanner(downloadedCount: downloaded, failedCount: failed)
+    }
+
+    public static func label(for banner: WatchTransferStatusBanner) -> String {
+        switch (banner.downloadedCount, banner.failedCount) {
+        case (let d, 0): return "\(d) downloaded on Apple Watch"
+        case (0, let f): return f == 1 ? "1 download failed" : "\(f) downloads failed"
+        case (let d, let f): return "\(d) on Apple Watch, \(f) failed"
+        }
+    }
+}

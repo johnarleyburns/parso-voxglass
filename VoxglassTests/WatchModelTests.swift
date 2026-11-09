@@ -741,3 +741,37 @@ import VoxglassWatchProtocol
     @Test func displayState_inFlightDesiredWithoutCachedProgressFallsBackToQueued() { #expect(r(.preparing, nil) == .queued) }
     @Test func displayState_noDesiredStateTrustsCache() { #expect(r(nil, .available) == .available) }
 }
+
+@Suite struct WatchTransferStatusBannerTests {
+    private func id(_ n: Int) -> WatchBookID { WatchBookID("book-\(n)") }
+    private func r(_ d: [WatchBookID: WatchDownloadState], _ s: [WatchBookID: WatchTransferState] = [:]) -> WatchTransferStatusBanner? {
+        WatchTransferStatusBannerResolver.resolve(desiredStates: d, storageStates: s)
+    }
+    @Test func banner_downloadedStateShowsDownloadedCount() {
+        #expect(r([id(1): .downloaded, id(2): .downloaded]) == .init(downloadedCount: 2, failedCount: 0))
+    }
+    @Test func banner_failedStateShowsFailureCount() {
+        let b = r([id(1): .failed("x")])
+        #expect(b == .init(downloadedCount: 0, failedCount: 1))
+        #expect(b?.hasFailure == true)
+    }
+    @Test func banner_downloadedAndFailedStatesShowsBothCounts() {
+        #expect(r([id(1): .downloaded, id(2): .failed("x")]) == .init(downloadedCount: 1, failedCount: 1))
+    }
+    @Test func banner_inFlightOnlyStatesAreHidden() {
+        #expect(r([id(1): .queued, id(2): .preparing, id(3): .transferring, id(4): .installing]) == nil)
+    }
+    @Test func banner_pausedRemovingAndNotRequestedAreHidden() {
+        #expect(r([id(1): .paused, id(2): .removing, id(3): .notRequested],
+                  [id(1): .available, id(2): .available, id(3): .available]) == nil)
+    }
+    @Test func banner_noDesiredStateDoesNotTrustOrphanedCachedAvailable() {
+        #expect(r([:], [id(1): .available]) == nil)
+    }
+    @Test func banner_authoritativeFailureBeatsCachedAvailable() {
+        #expect(r([id(1): .failed("x")], [id(1): .available]) == .init(downloadedCount: 0, failedCount: 1))
+    }
+    @Test func banner_authoritativeNotRequestedBeatsCachedAvailable() {
+        #expect(r([id(1): .notRequested], [id(1): .available]) == nil)
+    }
+}
