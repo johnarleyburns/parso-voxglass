@@ -31,8 +31,6 @@ struct WatchPlayerView: View {
                 } else {
                     Text("Nothing playing").font(.headline).foregroundStyle(.secondary).padding(.top, 20)
                 }
-                WatchLocalVolumeControl(enabled: !isLuminanceReduced && services.playbackBook != nil)
-                    .frame(height: 24)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 4)
@@ -47,7 +45,6 @@ struct WatchPlayerView: View {
             refreshOutput()
         }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbar }
         .sheet(isPresented: $showingOutput) { WatchOutputSheet(outputName: outputName) }
         .accessibilityElement(children: .contain)
         .accessibilityAdjustableAction { direction in
@@ -173,11 +170,9 @@ struct WatchPlayerView: View {
 
     private var transport: some View {
         HStack {
-            WatchTransportButton(systemImage: "gobackward.15", label: Text("Back 15 seconds"),
-                                 isEnabled: canTransport, diameterOverride: 40) {
-                services.skip(by: -WatchSkip.backward)
-            }
-            .accessibilityIdentifier("watch.book.skipBack")
+            WatchLocalVolumeControl(enabled: !isLuminanceReduced && services.playbackBook != nil)
+                .frame(width: 40, height: 40)
+                .accessibilityIdentifier("watch.book.volume")
             Spacer(minLength: 4)
             WatchTransportButton(systemImage: playPauseSymbol,
                                  label: playback.isActuallyPlaying ? Text("Pause") : Text("Play"),
@@ -188,11 +183,11 @@ struct WatchPlayerView: View {
             .accessibilityValue(Text(statusLine))
             .watchPrimaryActionShortcut()
             Spacer(minLength: 4)
-            WatchTransportButton(systemImage: "goforward.30", label: Text("Forward 30 seconds"),
-                                 isEnabled: canTransport, diameterOverride: 40) {
-                services.skip(by: WatchSkip.forward)
+            WatchTransportButton(systemImage: "line.3.horizontal", label: Text("More"),
+                                 isEnabled: book != nil, diameterOverride: 40) {
+                path.append(.playerMenu)
             }
-            .accessibilityIdentifier("watch.book.skipForward")
+            .accessibilityIdentifier("watch.book.menu")
         }
         .padding(.horizontal, 2)
         .padding(.top, 2)
@@ -278,44 +273,6 @@ struct WatchPlayerView: View {
         if case .failed = playback.phase { return true }
         return false
     }
-
-    // MARK: Toolbar
-
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        // A Problem Card owns the screen's actions (S3); the tool row would cover them.
-        if !isLuminanceReduced && !isFailed {
-            ToolbarItemGroup(placement: .bottomBar) {
-                tool(systemImage: "list.bullet", label: "Chapters", identifier: "watch.book.chapters") {
-                    if let id = book?.id { path.append(.chapters(id)) }
-                }
-                Spacer()
-                Button { path.append(.speed) } label: {
-                    Text(verbatim: WatchSpeed.label(playback.rate))
-                        .font(.caption2.weight(.bold))
-                        .frame(width: WatchMetrics.toolButton, height: WatchMetrics.toolButton)
-                        .background(Circle().fill(WatchPalette.control))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Speed \(WatchSpeed.label(playback.rate))"))
-                .accessibilityIdentifier("watch.book.speed")
-                Spacer()
-                WatchToolButton(systemImage: "moon", label: Text("Sleep Timer"),
-                                isOn: services.sleepTimer != nil) { path.append(.sleep) }
-                    .accessibilityIdentifier("watch.book.sleep")
-                Spacer()
-                tool(systemImage: "airplayaudio", label: "Output", identifier: "watch.book.outputButton") {
-                    showingOutput = true
-                }
-            }
-        }
-    }
-
-    private func tool(systemImage: String, label: LocalizedStringKey, identifier: String,
-                      action: @escaping () -> Void) -> some View {
-        WatchToolButton(systemImage: systemImage, label: Text(label), action: action)
-            .accessibilityIdentifier(identifier)
-    }
 }
 
 /// Native output volume and crown orientation, not a second player-gain control.
@@ -344,5 +301,81 @@ struct WatchOutputSheet: View {
             .navigationTitle(Text("Output"))
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+}
+
+/// Hamburger menu: skips, speed, sleep, output, About Book and Chapters, each doing its action.
+struct WatchPlayerMenuView: View {
+    @EnvironmentObject private var services: WatchAppServices
+    @Binding var path: [WatchRoute]
+    @State private var showingOutput = false
+
+    private var canSkip: Bool {
+        switch services.playback.phase {
+        case .playing, .paused, .buffering: true
+        default: false
+        }
+    }
+
+    var body: some View {
+        List {
+            row("gobackward.15", "Back 15 seconds", "watch.menu.skipBack") { services.skip(by: -WatchSkip.backward) }
+                .disabled(!canSkip)
+            row("goforward.30", "Forward 30 seconds", "watch.menu.skipForward") { services.skip(by: WatchSkip.forward) }
+                .disabled(!canSkip)
+            row("speedometer", "Speed \(WatchSpeed.label(services.playback.rate))", "watch.menu.speed") { path.append(.speed) }
+            row("moon", "Sleep Timer", "watch.menu.sleep") { path.append(.sleep) }
+            row("airplayaudio", "Output", "watch.menu.output") { showingOutput = true }
+            row("info.circle", "About Book", "watch.menu.about") {
+                if let id = services.playbackBook?.id { path.append(.bookInfo(id)) }
+            }
+            .disabled(services.playbackBook == nil)
+            row("list.bullet", "Chapters", "watch.menu.chapters") {
+                if let id = services.playbackBook?.id { path.append(.chapters(id)) }
+            }
+            .disabled(services.playbackBook == nil)
+        }
+        .navigationTitle(Text("More"))
+        .sheet(isPresented: $showingOutput) {
+            WatchOutputSheet(outputName: AVAudioSession.sharedInstance().currentRoute.outputs.first?.portName)
+        }
+    }
+
+    private func row(_ image: String, _ title: LocalizedStringKey, _ id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Label(title, systemImage: image) }
+            .accessibilityIdentifier(id)
+    }
+}
+
+/// About Book: the same details the phone shows — title, author, reader, length, date added, summary.
+struct WatchBookInfoView: View {
+    let book: WatchBookDTO
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(book.title).font(.headline)
+                if let author = book.author, !author.isEmpty {
+                    Text(author).font(.caption2).foregroundStyle(.secondary)
+                }
+                if let narrator = book.narrator, !narrator.isEmpty {
+                    Text("Read by \(narrator)").font(.caption2).foregroundStyle(.secondary)
+                }
+                if book.duration > 0 {
+                    Text(WatchTimeFormat.short(book.duration)).font(.caption2).foregroundStyle(.secondary)
+                }
+                if let added = book.addedAt {
+                    Text("Added \(added.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+                if let summary = book.summary, !summary.isEmpty {
+                    Text(summary).font(.footnote).padding(.top, 4)
+                        .accessibilityIdentifier("watch.bookInfo.summary")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .navigationTitle(Text("About Book"))
+        .accessibilityIdentifier("watch.bookInfo")
     }
 }

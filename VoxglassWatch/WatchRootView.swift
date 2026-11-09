@@ -28,6 +28,12 @@ struct WatchRootView: View {
                         WatchSleepView()
                     case .downloads:
                         WatchDownloadsView()
+                    case .bookInfo(let id):
+                        if let book = services.books.first(where: { $0.id == id }) ?? services.playbackBook {
+                            WatchBookInfoView(book: book)
+                        }
+                    case .playerMenu:
+                        WatchPlayerMenuView(path: $path)
                     case .about:
                         WatchAboutView()
                     case .syncStatus:
@@ -53,6 +59,8 @@ enum WatchRoute: Hashable {
     case sleep
     case downloads
     case about
+    case bookInfo(WatchBookID)
+    case playerMenu
     case syncStatus
 }
 

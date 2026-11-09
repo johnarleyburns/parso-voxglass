@@ -38,7 +38,8 @@ public enum PhoneWatchProjection {
             id: .init(source.book.id.uuidString), title: source.book.title,
             author: source.book.authors.first, narrator: source.book.narrators.first,
             duration: source.totalDuration ?? 0, artworkKey: source.book.coverURL?.absoluteString,
-            metadataRevision: revision, chapters: chapters
+            metadataRevision: revision, chapters: chapters,
+            summary: source.book.summary, addedAt: source.book.createdAt
         )
     }
 

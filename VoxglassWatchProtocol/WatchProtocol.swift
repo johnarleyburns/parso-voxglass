@@ -53,8 +53,12 @@ public struct WatchChapterDTO: Codable, Equatable, Sendable {
 public struct WatchBookDTO: Codable, Equatable, Sendable {
     public var id: WatchBookID; public var title: String; public var author: String?; public var narrator: String?
     public var duration: Double; public var artworkKey: String?; public var metadataRevision: Int64; public var chapters: [WatchChapterDTO]
+    /// About Book details (optional so older counterparts still decode).
+    public var summary: String?; public var addedAt: Date?
     public init(id: WatchBookID, title: String, author: String? = nil, narrator: String? = nil, duration: Double = 0,
-                artworkKey: String? = nil, metadataRevision: Int64 = 0, chapters: [WatchChapterDTO] = []) {
+                artworkKey: String? = nil, metadataRevision: Int64 = 0, chapters: [WatchChapterDTO] = [],
+                summary: String? = nil, addedAt: Date? = nil) {
+        self.summary=summary; self.addedAt=addedAt
         self.id=id; self.title=title; self.author=author; self.narrator=narrator; self.duration=duration; self.artworkKey=artworkKey; self.metadataRevision=metadataRevision; self.chapters=chapters
     }
 }
