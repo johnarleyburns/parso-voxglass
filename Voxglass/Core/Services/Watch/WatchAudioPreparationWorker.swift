@@ -39,6 +39,7 @@ public struct PreparedWatchChapter: Sendable, Equatable {
     public let url: URL
     public let bytes: Int64
     public let sha256: String
+    public var duration: Double = 0
 }
 
 public struct PreparedWatchArtwork: Sendable, Equatable {
@@ -84,14 +85,25 @@ public actor WatchAudioPreparationWorker {
         public var prepareAAC: @Sendable (OrdinaryWatchChapterInput, URL, String) async throws -> URL
         public var fileInfo: @Sendable (URL) async throws -> (bytes: Int64, sha256: String, duration: Double)
         public var artwork: @Sendable (URL) async -> PreparedWatchArtwork?
+        /// Converts a rendered narration PCM file: (pcm, directory, pcmHash, bitRate, formatID).
+        public var convertPCM: @Sendable (URL, URL, String, Int, AudioFormatID) async throws -> URL
 
         public init(
             hash: @escaping @Sendable (URL) async throws -> String,
             prepareAAC: @escaping @Sendable (OrdinaryWatchChapterInput, URL, String) async throws -> URL,
             fileInfo: @escaping @Sendable (URL) async throws -> (bytes: Int64, sha256: String, duration: Double),
-            artwork: @escaping @Sendable (URL) async -> PreparedWatchArtwork?
+            artwork: @escaping @Sendable (URL) async -> PreparedWatchArtwork?,
+            convertPCM: @escaping @Sendable (URL, URL, String, Int, AudioFormatID) async throws -> URL = Dependencies.liveConvertPCM
         ) {
             self.hash = hash; self.prepareAAC = prepareAAC; self.fileInfo = fileInfo; self.artwork = artwork
+            self.convertPCM = convertPCM
+        }
+
+        public static let liveConvertPCM: @Sendable (URL, URL, String, Int, AudioFormatID) async throws -> URL = {
+            pcm, directory, hash, bitRate, formatID in
+            try await WatchChapterTransfer.prepareAAC(
+                source: pcm, directory: directory, sourceHash: hash,
+                bitRate: bitRate, formatID: formatID)
         }
 
         public static func live(artwork: @escaping @Sendable (URL) async -> PreparedWatchArtwork?) -> Dependencies {
@@ -152,7 +164,7 @@ public actor WatchAudioPreparationWorker {
                     expectedBytes: info.bytes, expectedSHA256: info.sha256,
                     durableFilename: "\(chapter.chapterID.uuidString).m4a"))
                 files.append(PreparedWatchChapter(chapterID: chapter.chapterID, chapterKey: chapter.chapterKey,
-                                                  url: url, bytes: info.bytes, sha256: info.sha256))
+                                                  url: url, bytes: info.bytes, sha256: info.sha256, duration: info.duration))
             }
             try Task.checkCancellation()
             // Artwork is nonfatal: nil simply means no cover is sent.
@@ -163,6 +175,44 @@ public actor WatchAudioPreparationWorker {
             Self.removeDisposablePreparingFiles(in: input.directory)
             throw error
         }
+    }
+
+    /// Converts an already-rendered narration PCM file (HE-AAC first, then AAC-LC)
+    /// and assembles its chapter record. Runs on this actor, never on MainActor.
+    /// Cancellation or failure removes only unfinished `.preparing` derivatives.
+    func prepareNarrationPCM(
+        _ pcm: URL, chapterID: UUID, chapterKey: String, directory: URL
+    ) async throws -> PreparedWatchChapter {
+        do {
+            try Task.checkCancellation()
+            let hash = try await dependencies.hash(pcm)
+            let url: URL
+            do {
+                url = try await dependencies.convertPCM(
+                    pcm, directory, hash, WatchNarrationEstimate.preferredBitRate, kAudioFormatMPEG4AAC_HE)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                try Task.checkCancellation()
+                url = try await dependencies.convertPCM(pcm, directory, hash, 48_000, kAudioFormatMPEG4AAC)
+            }
+            try Task.checkCancellation()
+            let info = try await dependencies.fileInfo(url)
+            try Task.checkCancellation()
+            return PreparedWatchChapter(chapterID: chapterID, chapterKey: chapterKey,
+                                        url: url, bytes: info.bytes, sha256: info.sha256, duration: info.duration)
+        } catch {
+            Self.removeDisposablePreparingFiles(in: directory)
+            throw error
+        }
+    }
+
+    /// Inspects an already-finished cached narration file without re-rendering speech.
+    func prepareCachedNarration(_ url: URL, chapterID: UUID, chapterKey: String) async throws -> PreparedWatchChapter {
+        try Task.checkCancellation()
+        let info = try await dependencies.fileInfo(url)
+        return PreparedWatchChapter(chapterID: chapterID, chapterKey: chapterKey,
+                                    url: url, bytes: info.bytes, sha256: info.sha256, duration: info.duration)
     }
 
     /// Removes only unfinished `.preparing` derivatives; originals and finished AAC stay.

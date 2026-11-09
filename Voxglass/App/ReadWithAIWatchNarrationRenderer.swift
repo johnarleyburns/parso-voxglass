@@ -1,58 +1,36 @@
 import AVFoundation
 import Foundation
 import VoxglassCore
-import VoxglassWatchCore
 
-/// Renders a Read With AI text chapter once on the iPhone, then hands the
-/// compact, ordinary AAC file to the existing Watch transfer path. The Watch
-/// never needs to install the lower-quality system voice used for live speech.
+/// Narrow MainActor adapter: only `AVSpeechSynthesizer` rendering lives here.
+/// PCM hashing, AAC conversion, duration/size inspection and chapter assembly
+/// run in `ReadWithAIWatchPreparationAdapter` / `WatchAudioPreparationWorker`.
 @MainActor
-final class ReadWithAIWatchNarrationRenderer {
-    private static let cacheKeyPrefix = "readWithAI.watchNarration."
+final class ReadWithAIWatchNarrationRenderer: ReadWithAIWatchSpeechRendering {
     private let synthesizer = AVSpeechSynthesizer()
     private var pcmFile: AVAudioFile?
     private var pcmURL: URL?
     private var continuation: CheckedContinuation<URL, Error>?
+    private let directory: URL
 
-    func render(textURL: URL, directory: URL, preference: ReadWithAIVoicePreference) async throws -> URL {
+    init(directory: URL) { self.directory = directory }
+
+    func renderPCM(textURL: URL, preference: ReadWithAIVoicePreference) async throws -> URL {
         let text = try String(contentsOf: textURL, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let textHash = try WatchChecksum.sha256(of: textURL)
         let voiceKey = preference.identifier.isEmpty ? "automatic" : preference.identifier
         let voiceHash = SHA256Hex.hex(Data(voiceKey.utf8)).prefix(12)
-        let cacheKey = Self.cacheKeyPrefix + textHash + "-" + voiceHash
-        if let path = UserDefaults.standard.string(forKey: cacheKey),
-           let audio = try? AVAudioFile(forReading: URL(fileURLWithPath: path)), audio.length > 0 {
-            return URL(fileURLWithPath: path)
-        }
-        let pcm = directory.appendingPathComponent("\(textHash)-\(voiceHash)-speech.caf")
-        defer { try? FileManager.default.removeItem(at: pcm) }
-
-        // Prefer HE-AAC for speech at 32 kbps. Core Audio availability varies
-        // by device/voice, so retry with universally supported AAC-LC at 48
-        // kbps rather than making a chosen book impossible to transfer.
-        if !FileManager.default.fileExists(atPath: pcm.path) {
-            try await writePCM(text: text, voice: preference, to: pcm)
-        }
-        let pcmHash = try WatchChecksum.sha256(of: pcm)
-        let output: URL
+        let pcm = directory.appendingPathComponent(
+            "\(textURL.deletingPathExtension().lastPathComponent)-\(voiceHash)-speech.caf")
         do {
-            output = try await WatchChapterTransfer.prepareAAC(
-                source: pcm, directory: directory, sourceHash: pcmHash,
-                bitRate: WatchNarrationEstimate.preferredBitRate,
-                formatID: kAudioFormatMPEG4AAC_HE
-            )
+            try await writePCM(text: text, voice: preference, to: pcm)
         } catch {
-            output = try await WatchChapterTransfer.prepareAAC(
-                source: pcm, directory: directory, sourceHash: pcmHash,
-                bitRate: 48_000,
-                formatID: kAudioFormatMPEG4AAC
-            )
+            try? FileManager.default.removeItem(at: pcm)
+            throw error
         }
-        UserDefaults.standard.set(output.path, forKey: cacheKey)
-        return output
+        return pcm
     }
 
     private func writePCM(text: String, voice preference: ReadWithAIVoicePreference, to url: URL) async throws {
@@ -73,6 +51,7 @@ final class ReadWithAIWatchNarrationRenderer {
         } onCancel: {
             Task { @MainActor [weak self] in
                 self?.synthesizer.stopSpeaking(at: .immediate)
+                self?.finish(.failure(CancellationError()))
             }
         }
     }
@@ -111,5 +90,18 @@ final class ReadWithAIWatchNarrationRenderer {
         case .success(let url): continuation?.resume(returning: url)
         case .failure(let error): continuation?.resume(throwing: error)
         }
+    }
+}
+
+/// UserDefaults-backed cache of finished narration output (survives relaunch).
+struct ReadWithAIWatchNarrationUserDefaultsCache: ReadWithAIWatchNarrationCaching {
+    private static let prefix = "readWithAI.watchNarration."
+    func cachedOutput(for key: String) -> URL? {
+        guard let path = UserDefaults.standard.string(forKey: Self.prefix + key),
+              let audio = try? AVAudioFile(forReading: URL(fileURLWithPath: path)), audio.length > 0 else { return nil }
+        return URL(fileURLWithPath: path)
+    }
+    func store(_ output: URL, for key: String) {
+        UserDefaults.standard.set(output.path, forKey: Self.prefix + key)
     }
 }
