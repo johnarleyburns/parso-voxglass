@@ -22,6 +22,8 @@ struct BrowseView: View {
     @State private var gutenbergResults: [GutenbergBook] = []
     @State private var isSearchingGutenberg = false
     @State private var gutenbergSearchID = UUID()
+    @State private var gutenbergTask: Task<Void, Never>?
+    @State private var librivoxTask: Task<Void, Never>?
     @State private var selectedGutenbergBook: GutenbergBook?
     @State private var searchLifecycle = FindSearchLifecycle()
     @State private var preflightTask: Task<Void, Never>?
@@ -58,7 +60,10 @@ struct BrowseView: View {
             )
         }
         .toolbar { discoverKeyboardToolbar }
-        .onDisappear { preflightTask?.cancel() }
+        .onDisappear {
+            preflightTask?.cancel()
+            cancelSearchRequests()
+        }
         .task {
             catalogStore.selectedLanguages = selectedLanguages
             let collections = IACollectionStore.collections(for: selectedCollectionIDs, languages: selectedLanguages)
@@ -93,13 +98,14 @@ struct BrowseView: View {
         }
         .onChange(of: sourceFilter) { _, _ in
             if sourceFilter == .collections {
-                invalidateGutenbergSearch()
+                cancelSearchRequests()
                 discoverScope = .collection
                 catalogStore.query = ""
                 handleDiscoverScopeChange(.collection)
             } else {
                 if discoverScope == .collection { discoverScope = .all }
                 if sourceFilter == .librivox { invalidateGutenbergSearch() }
+                if sourceFilter == .gutenberg { librivoxTask?.cancel(); librivoxTask = nil }
                 guard searchLifecycle.isCurrent(draft: catalogStore.query) else { return }
                 Task { await runSearch() }
             }
@@ -644,7 +650,7 @@ struct BrowseView: View {
         self.gutenbergSearchID = gutenbergSearchID
         guard !term.isEmpty || selectedCollection != nil else {
             searchLifecycle.reset()
-            invalidateGutenbergSearch()
+            cancelSearchRequests()
             catalogStore.resetResultsForNavigation()
             return
         }
@@ -655,7 +661,7 @@ struct BrowseView: View {
         searchLifecycle.submit(draft: term)
 
         if let selectedCollection {
-            invalidateGutenbergSearch()
+            cancelSearchRequests()
             let collectionQuery = term.isEmpty
                 ? selectedCollection.archiveQuery
                 : "(\(selectedCollection.archiveQuery)) AND (\(scopedQuery(term, includeCatalogScope: false)))"
@@ -664,15 +670,47 @@ struct BrowseView: View {
         }
 
         discoverScope = .all
+        // Cancel in-flight network work from the previous submission, then start
+        // both sources immediately; each publishes as soon as it completes.
+        librivoxTask?.cancel()
+        librivoxTask = nil
+        gutenbergTask?.cancel()
+        gutenbergTask = nil
+        let scope = searchScope
+        let scoped = scopedQuery(term)
         if sourceFilter == .gutenberg {
             catalogStore.resetResultsForNavigation()
         } else {
-            switch searchScope {
-            case .all: await catalogStore.searchLibriVox(term)
-            case .title, .author, .narrator: await catalogStore.searchAdvanced(scopedQuery(term), sort: .popularity)
+            let store = catalogStore
+            librivoxTask = Task {
+                switch scope {
+                case .all: await store.searchLibriVox(term)
+                case .title, .author, .narrator: await store.searchAdvanced(scoped, sort: .popularity)
+                }
             }
         }
-        await searchGutenberg(term, searchID: gutenbergSearchID)
+        if sourceFilter != .librivox, !term.isEmpty {
+            gutenbergTask = Task { await searchGutenberg(term, searchID: gutenbergSearchID) }
+        } else {
+            invalidateGutenbergSearch()
+        }
+        let librivox = librivoxTask
+        let gutenberg = gutenbergTask
+        await withTaskCancellationHandler {
+            await librivox?.value
+            await gutenberg?.value
+        } onCancel: {
+            librivox?.cancel()
+            gutenberg?.cancel()
+        }
+    }
+
+    private func cancelSearchRequests() {
+        librivoxTask?.cancel()
+        librivoxTask = nil
+        gutenbergTask?.cancel()
+        gutenbergTask = nil
+        invalidateGutenbergSearch()
     }
 
     private func searchGutenberg(_ term: String, searchID: UUID) async {
@@ -687,17 +725,21 @@ struct BrowseView: View {
             if gutenbergSearchID == searchID { isSearchingGutenberg = false }
         }
         do {
+            // The client is nonisolated, so network and HTML/JSON parsing run
+            // off the main actor; only the assignment below touches view state.
             let results = try await GutenbergCatalogClient().search(term)
-            guard gutenbergSearchID == searchID else { return }
+            guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
             gutenbergResults = results
         } catch {
-            guard gutenbergSearchID == searchID else { return }
+            guard gutenbergSearchID == searchID, !Task.isCancelled else { return }
             gutenbergResults = []
             catalogStore.catalogError = "Project Gutenberg search failed: \(error.localizedDescription)"
         }
     }
 
     private func invalidateGutenbergSearch() {
+        gutenbergTask?.cancel()
+        gutenbergTask = nil
         gutenbergSearchID = UUID()
         isSearchingGutenberg = false
         gutenbergResults = []
