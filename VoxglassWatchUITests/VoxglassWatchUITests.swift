@@ -76,9 +76,9 @@ final class VoxglassWatchUITests: XCTestCase {
 
         let artwork = app.descendants(matching: .any)["watch.book.artwork"]
         XCTAssertTrue(artwork.waitForExistence(timeout: 20), "Player artwork did not render")
-        XCTAssertTrue(app.buttons["watch.book.skipBack"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["watch.book.volume"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["watch.book.play"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["watch.book.skipForward"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["watch.book.menu"].waitForExistence(timeout: 10))
         let output = app.descendants(matching: .any)["watch.book.output"]
         XCTAssertTrue(output.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertNoThrow(try app.performAccessibilityAudit(for: [.contrast, .elementDetection, .hitRegion,
@@ -101,7 +101,8 @@ final class VoxglassWatchUITests: XCTestCase {
         waitForExpectations(timeout: 4)
 
         // Watch redesign C1: previous/next chapter live on the Chapters list (the face skips time).
-        app.buttons["watch.book.chapters"].tap()
+        app.buttons["watch.book.menu"].tap()
+        app.buttons["watch.menu.chapters"].tap()
         let previous = app.buttons["watch.book.previousChapter"]
         let next = app.buttons["watch.book.nextChapter"]
         XCTAssertTrue(next.waitForExistence(timeout: 10))
@@ -110,7 +111,8 @@ final class VoxglassWatchUITests: XCTestCase {
         next.tap()
         ensureVisible(app.staticTexts["watch.book.currentChapter"], app: app)
         XCTAssertEqual(app.staticTexts["watch.book.currentChapter"].label, "Chapter 2")
-        app.buttons["watch.book.chapters"].tap()
+        app.buttons["watch.book.menu"].tap()
+        app.buttons["watch.menu.chapters"].tap()
         XCTAssertTrue(app.buttons["watch.book.previousChapter"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["watch.book.previousChapter"].isEnabled)
     }
