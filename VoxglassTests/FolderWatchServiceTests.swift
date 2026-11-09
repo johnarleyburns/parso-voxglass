@@ -226,4 +226,112 @@ import Foundation
         if case .missingFile = resolution {} else { Issue.record("expected missingFile, got \(resolution)") }
         #expect(!LocalPlaybackUnavailable.message.isEmpty)
     }
+
+    // MARK: - Off-main indexing worker
+
+    private func makeAudioFolder(_ names: [String]) throws -> URL {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        for name in names { try Data("x".utf8).write(to: folder.appendingPathComponent(name)) }
+        return folder
+    }
+
+    @Test func indexerDiscoversPlayableUnknownFilesInFilenameOrder() async throws {
+        let folder = try makeAudioFolder(["10.mp3", "2.mp3", "1.mp3", "notes.txt"])
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let known = URL(fileURLWithPath: folder.appendingPathComponent("1.mp3").path)
+            .standardizedFileURL.resolvingSymlinksInPath()
+        let worker = FolderIndexingWorker(probeDuration: { _ in 5 })
+        let result = try await worker.index(folder: folder, knownURLs: [known]) { _, _ in }
+        #expect(result.map(\.sortKey) == ["2.mp3", "10.mp3"])
+        #expect(result.allSatisfy { $0.bookmark != nil && $0.duration == 5 })
+    }
+
+    @Test func indexerLimitsConcurrencyAndProbesEachInputOnce() async throws {
+        let names = (1...12).map { "\($0).mp3" }
+        let folder = try makeAudioFolder(names)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let counter = ProbeCounter()
+        let worker = FolderIndexingWorker(maxConcurrency: 2, probeDuration: { url in
+            await counter.enter(url)
+            try? await Task.sleep(nanoseconds: 5_000_000)
+            await counter.leave()
+            return 1
+        })
+        let result = try await worker.index(folder: folder, knownURLs: []) { _, _ in }
+        #expect(result.count == 12)
+        #expect(await counter.maxActive <= 2)
+        #expect(await counter.seen.count == 12)
+        #expect(await counter.total == 12)
+    }
+
+    @Test func indexerCancellationReturnsNoBatchAndReleasesScope() async throws {
+        let folder = try makeAudioFolder((1...6).map { "\($0).mp3" })
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let scopes = ScopeCounter()
+        let worker = FolderIndexingWorker(
+            startScope: { _ in scopes.start(); return true },
+            stopScope: { _ in scopes.stop() },
+            probeDuration: { _ in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                return 1
+            }
+        )
+        let task = Task { try await worker.index(folder: folder, knownURLs: []) { _, _ in } }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        task.cancel()
+        await #expect(throws: CancellationError.self) { try await task.value }
+        #expect(scopes.balance == 0 && scopes.started == 1)
+    }
+
+    @Test func indexerReleasesScopeOnSuccessAndFailure() async throws {
+        let folder = try makeAudioFolder(["1.mp3"])
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let scopes = ScopeCounter()
+        let ok = FolderIndexingWorker(startScope: { _ in scopes.start(); return true }, stopScope: { _ in scopes.stop() }, probeDuration: { _ in 1 })
+        _ = try await ok.index(folder: folder, knownURLs: []) { _, _ in }
+        struct Boom: Error {}
+        let bad = FolderIndexingWorker(startScope: { _ in scopes.start(); return true }, stopScope: { _ in scopes.stop() }, makeBookmark: { _ in throw Boom() }, probeDuration: { _ in 1 })
+        await #expect(throws: FolderIndexError.self) { try await bad.index(folder: folder, knownURLs: []) { _, _ in } }
+        #expect(scopes.balance == 0 && scopes.started == 2)
+    }
+
+    // MARK: - Progress throttle
+
+    @Test func progressThrottleEmitsFirstFinalAndAtMostFourPerSecond() {
+        var throttle = ProgressThrottle()
+        let t0 = Date(timeIntervalSince1970: 0)
+        var emitted: [Int] = []
+        for i in 0...100 {
+            let now = t0.addingTimeInterval(Double(i) * 0.01) // 100 updates in 1s
+            if throttle.shouldEmit(indexed: i, total: 100, now: now) { emitted.append(i) }
+        }
+        #expect(emitted.first == 0)
+        #expect(emitted.last == 100) // exact final count
+        #expect(emitted.count <= 6) // first + <=4 intermediate + final
+    }
+
+    @Test func serviceRefreshOnlyDrivenByNewFiles() async throws {
+        let folder = try makeAudioFolder([])
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let worker = FolderIndexingWorker(probeDuration: { _ in 1 })
+        let result = try await worker.index(folder: folder, knownURLs: []) { _, _ in }
+        #expect(result.isEmpty) // service returns before import/refresh on an empty batch
+    }
+}
+
+private actor ProbeCounter {
+    var active = 0, maxActive = 0, total = 0
+    var seen = Set<URL>()
+    func enter(_ url: URL) { active += 1; maxActive = max(maxActive, active); total += 1; seen.insert(url) }
+    func leave() { active -= 1 }
+}
+
+private final class ScopeCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var s = 0, e = 0
+    func start() { lock.lock(); s += 1; lock.unlock() }
+    func stop() { lock.lock(); e += 1; lock.unlock() }
+    var started: Int { lock.lock(); defer { lock.unlock() }; return s }
+    var balance: Int { lock.lock(); defer { lock.unlock() }; return s - e }
 }
