@@ -291,3 +291,35 @@ public enum WatchTransferStateResolver {
         return .notAvailable
     }
 }
+
+/// Outcome of asking whether the phone may start sending a book to the watch.
+public enum WatchSendReadiness: Equatable, Sendable {
+    case ready
+    case transferAlreadyInProgress
+    case sessionNotActivated
+    case watchAppNotInstalled
+}
+
+/// Whether `PhoneAudioRelay.transferBookToWatch` may proceed. Pure, host-testable.
+public enum WatchSendReadinessResolver {
+
+    /// Resolves readiness from a single, coherently-timed reading of connection
+    /// state. All three flags must come from the same reading — mixing a cached
+    /// flag with a later, independently-timed live read of another flag can
+    /// race `WCSession` activation and falsely report `.watchAppNotInstalled`
+    /// even when the watch app is genuinely installed.
+    /// - Parameters:
+    ///   - isAlreadyTransferring: a transfer to the watch is already in flight
+    ///   - isActivated: `WCSession.activationState == .activated`
+    ///   - isWatchAppInstalled: `WCSession.isWatchAppInstalled`
+    public static func resolve(
+        isAlreadyTransferring: Bool,
+        isActivated: Bool,
+        isWatchAppInstalled: Bool
+    ) -> WatchSendReadiness {
+        if isAlreadyTransferring { return .transferAlreadyInProgress }
+        if !isActivated { return .sessionNotActivated }
+        if !isWatchAppInstalled { return .watchAppNotInstalled }
+        return .ready
+    }
+}
