@@ -19,7 +19,11 @@ SWIFT_FILES="Voxglass/App Voxglass/Core Voxglass/Features Voxglass/DesignSystem"
 # ──────────────────────────────────────────────────────────────
 # Rule 1 — Preference-key writer check
 # Every AppPreferencesStore.Keys entry has a writer (@AppStorage or
-# .set(_:forKey:)), excluding the Keys enum definition itself.
+# .set(_:forKey:)), excluding the Keys enum definition itself. A writer may
+# live in Voxglass/Core itself — AppPreferencesStore sometimes exposes a
+# higher-level static helper (e.g. ReadWithAIVoicePreferences.setDefault)
+# that wraps the raw .set(_:forKey:) call next to the key's own definition,
+# rather than requiring every call site to write the key directly.
 # ──────────────────────────────────────────────────────────────
 check_pref_key_writers() {
   local keys_file="Voxglass/Core/AppPreferencesStore.swift"
@@ -33,7 +37,7 @@ check_pref_key_writers() {
     local writer_found=0
 
     # Approach A: the raw VALUE string is used with @AppStorage or .set(
-    for dir in Voxglass/Features Voxglass/App; do
+    for dir in Voxglass/Core Voxglass/Features Voxglass/App; do
       local matches
       matches=$(grep -rn "$key_value" "$dir" --include='*.swift' 2>/dev/null | grep -E '@AppStorage|\.set\(' || true)
       if [ -n "$matches" ]; then
@@ -44,7 +48,7 @@ check_pref_key_writers() {
 
     # Approach B: the key NAME (constant) is used with @AppStorage or .set on the same line
     if [ "$writer_found" -eq 0 ]; then
-      for dir in Voxglass/Features Voxglass/App; do
+      for dir in Voxglass/Core Voxglass/Features Voxglass/App; do
         local matches
         matches=$(grep -rnE "(@AppStorage\(.*$key_name|\.set\(.*forKey:.*$key_name)" "$dir" --include='*.swift' 2>/dev/null || true)
         if [ -n "$matches" ]; then
@@ -55,7 +59,7 @@ check_pref_key_writers() {
     fi
 
     if [ "$writer_found" -eq 0 ]; then
-      echo "::error title=Preference-key writer guard::Key '$key_name' ('$key_value') has no writer under Voxglass/Features/ or Voxglass/App/"
+      echo "::error title=Preference-key writer guard::Key '$key_name' ('$key_value') has no writer under Voxglass/Core/, Voxglass/Features/ or Voxglass/App/"
       had_failure=1
     fi
   done < <(sed -n 's/.*static let \([a-zA-Z_][a-zA-Z0-9_]*\) = "\([^"]*\)".*/\1|\2/p' "$keys_file")

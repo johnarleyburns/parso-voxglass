@@ -21,12 +21,8 @@ public struct AppPreferencesStore: DynamicProperty {
         /// local preference: it describes voices installed on this device.
         public static let readWithAIVoiceByBook = "voxglass.readWithAI.voice.byBook.v1"
         public static let iCloudSyncEnabled = "voxglass.iCloudSync.enabled"
-        public static let authoringV2SyncEnabled = "voxglass.authoringV2Sync.enabled"
-        public static let authoringV2LastSync = "voxglass.authoringV2Sync.lastSync"
         public static let cloudKitInitialLibraryEnqueued = "voxglass.cloudKit.initialLibraryEnqueued.v1"
         public static let cloudKitLibraryUploadConfirmed = "voxglass.cloudKit.libraryUploadConfirmed.v1"
-        public static let narrationIntroSeen = "voxglass.narration.introSeen.v1"
-        public static let narrationCollapsedChapters = "voxglass.narration.collapsedChapters.v1"
         /// Set once a "Contribute to Development" purchase succeeds. Never
         /// reset by a later purchase failing or being skipped — this is a
         /// one-way supporter badge, not a re-checked entitlement.
@@ -73,12 +69,6 @@ public struct AppPreferencesStore: DynamicProperty {
     /// Stored for an empty selection, which means "every language". An empty
     /// string is the never-set default and decodes to the device default instead.
     public static var allLanguagesValue: String { "all" }
-
-    /// Narration project sync is on for new installs. A stored `false` remains
-    /// an explicit user choice and is not overwritten by this default.
-    public static func authoringV2SyncEnabled(in userDefaults: UserDefaults = .standard) -> Bool {
-        userDefaults.object(forKey: Keys.authoringV2SyncEnabled) as? Bool ?? true
-    }
 
     public static func encodeLanguages(_ codes: Set<String>) -> String {
         codes.isEmpty ? allLanguagesValue : codes.sorted().joined(separator: ",")

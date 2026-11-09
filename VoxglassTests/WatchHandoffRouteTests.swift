@@ -1,5 +1,5 @@
 import Testing
-@testable import VoxglassCore
+@testable import VoxglassWatchCore
 
 struct WatchHandoffRouteTests {
     @Test func watchLibraryActivityRoutesToLibrary() {
