@@ -1041,10 +1041,26 @@ extension PhoneAudioRelay: WCSessionDelegate {
             guard envelope.pairedLibraryID == watchLibraryID,
                   let catalog = try? envelope.decodePayload(WatchDeviceCatalog.self),
                   let store = watchProjectionStore else { return }
-            // Reject older whole-device snapshots; receipt time alone is not ordering.
-            let reportKey = "voxglass.watch.reportRevision"
-            guard envelope.projectionRevision >= Int64(UserDefaults.standard.integer(forKey: reportKey)) else { return }
-            UserDefaults.standard.set(envelope.projectionRevision, forKey: reportKey)
+            // A reinstalled watch's local report counter restarts from zero, so its first honest
+            // "nothing installed" report can be numerically lower than whatever this phone
+            // remembered from before — comparing revisions alone dropped that report forever,
+            // leaving every previously-downloaded book stuck showing as still installed.
+            // `installEpoch` (reset by the same reinstall) lets the resolver tell that apart from a
+            // genuinely stale/out-of-order delivery.
+            let reportRevisionKey = "voxglass.watch.reportRevision"
+            let reportEpochKey = "voxglass.watch.reportEpoch"
+            let lastAcceptedRevision = Int64(UserDefaults.standard.integer(forKey: reportRevisionKey))
+            let lastAcceptedEpoch = UserDefaults.standard.string(forKey: reportEpochKey)
+            guard WatchCatalogAcceptanceResolver.resolve(
+                incomingEpoch: catalog.installEpoch,
+                incomingRevision: envelope.projectionRevision,
+                lastAcceptedEpoch: lastAcceptedEpoch,
+                lastAcceptedRevision: lastAcceptedRevision
+            ) == .reconcile else { return }
+            UserDefaults.standard.set(envelope.projectionRevision, forKey: reportRevisionKey)
+            if let incomingEpoch = catalog.installEpoch {
+                UserDefaults.standard.set(incomingEpoch, forKey: reportEpochKey)
+            }
             try? await store.reconcile(catalog)
             let state = await store.current()
             watchSelectedBookIDs = Set(state.selectedBooks.keys.compactMap { UUID(uuidString: $0.rawValue) })
