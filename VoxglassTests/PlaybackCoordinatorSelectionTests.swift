@@ -77,6 +77,23 @@ import Foundation
         #expect(h.coordinator.playhead == 42)
     }
 
+    @Test func pairedCheckpointNewerThanPhoneWinsAndOlderLoses() async {
+        let h = makeHarness()
+        let book = makeBook(chapters: 1)
+        await h.coordinator.present(book)
+        let chapter = book.chapters[0]
+        let now = Date()
+        func cp(_ pos: TimeInterval, _ age: TimeInterval) -> PlaybackPosition {
+            PlaybackPosition(bookID: book.book.id, chapterID: chapter.id, position: pos,
+                             duration: 100, updatedAt: now.addingTimeInterval(age))
+        }
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(cp(10, 0)))
+        #expect(await h.coordinator.persistExternalPlaybackCheckpoint(cp(60, 10)))
+        #expect(!(await h.coordinator.persistExternalPlaybackCheckpoint(cp(20, 5))))
+        let saved = try? await h.store.position(for: book.book.id, chapterID: chapter.id)
+        #expect(saved?.position == 60)
+    }
+
     @Test func pairedCheckpointCannotOverrideActivePhonePlayback() async {
         let h = makeHarness()
         let book = makeBook(chapters: 1)

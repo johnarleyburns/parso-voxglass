@@ -1007,8 +1007,10 @@ extension PhoneAudioRelay: WCSessionDelegate {
               let envelope = try? WatchProtocolEnvelope.decode(data) else { return }
         switch envelope.kind {
         case .playbackSnapshot:
-            guard envelope.pairedLibraryID == watchLibraryID,
-                  let checkpoint = try? envelope.decodePayload(WatchPlaybackCheckpoint.self),
+            // Checkpoints are validated by book/chapter IDs against this library. Requiring a
+            // matching paired-library ID silently dropped every watch position whenever the
+            // watch had not yet received (or had an outdated) catalog.
+            guard let checkpoint = try? envelope.decodePayload(WatchPlaybackCheckpoint.self),
                   checkpoint.position.isFinite, checkpoint.position >= 0,
                   let bookID = UUID(uuidString: checkpoint.bookID.rawValue),
                   let chapterID = UUID(uuidString: checkpoint.chapterID.rawValue),
