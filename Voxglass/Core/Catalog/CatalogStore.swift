@@ -376,7 +376,7 @@ public final class CatalogStore: ObservableObject {
                 .filter { seenIdentifiers.insert($0.identifier).inserted }
             updateHasMore()
         } catch {
-            guard generation == searchGeneration else { return }
+            guard generation == searchGeneration, !Task.isCancelled else { return }
             catalogError = error.localizedDescription
         }
     }
