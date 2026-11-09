@@ -1056,6 +1056,12 @@ private struct WatchSyncCard: View {
             if let date = phoneAudioRelay.lastWatchReportDate {
                 Text("Last watch report: \(date.formatted())").voxFont(.caption2)
             } else { Text("No watch report received this session.").voxFont(.caption2) }
+            if !phoneAudioRelay.watchStalledBookIDs.isEmpty {
+                Text("\(phoneAudioRelay.watchStalledBookIDs.count) Watch sends stalled: \(phoneAudioRelay.watchStalledBookTitles.joined(separator: ", ")). Open the book and tap the Watch button to retry.")
+                    .voxFont(.caption2, weight: .semibold)
+                    .foregroundStyle(Palette.danger)
+                    .accessibilityIdentifier("watchsync.stalled")
+            }
             if let status = phoneAudioRelay.watchSyncStatus {
                 Text(status)
                     .voxFont(.caption2)

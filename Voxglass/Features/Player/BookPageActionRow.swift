@@ -48,7 +48,7 @@ struct BookPageActionRow: View {
     }
 
     private var watchProgress: Double {
-        if case .transferring(let progress) = watchState { return min(max(progress, 0), 1) }
+        if let progress = watchState.progressFraction { return min(max(progress, 0), 1) }
         guard let info = phoneAudioRelay.watchStorageInfo(for: book.book.id), info.totalChapterCount > 0 else { return 0 }
         return min(max(Double(info.completeChapterCount) / Double(info.totalChapterCount), 0), 1)
     }
@@ -390,6 +390,19 @@ struct BookPageActionRow: View {
             watchProgressButton(progress: watchProgress, label: String(localized: "Waiting to send to Apple Watch"))
         case .transferring(let progress):
             watchProgressButton(progress: progress, label: String(localized: "Sending to Apple Watch"))
+        case .stalled(let progress):
+            Button {
+                TactileFeedback.tap()
+                Task { await phoneAudioRelay.retryStalledBookTransferToWatch(book) }
+            } label: {
+                Image(systemName: "exclamationmark.arrow.circlepath")
+                    .voxFont(.callout)
+                    .foregroundStyle(Palette.danger)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel(String(localized: "Apple Watch send stalled — tap to retry"))
+            .accessibilityValue("\(Int(min(max(progress, 0), 1) * 100))%")
+            .accessibilityIdentifier("nowplaying.watchRetryStalled")
         case .paused:
             watchProgressButton(progress: watchProgress, label: String(localized: "Apple Watch download paused"), paused: true)
         case .available:

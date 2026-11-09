@@ -92,6 +92,14 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         return WatchTransferStatusBannerResolver.resolve(desiredStates: watchDesiredStates, storageStates: storage)
     }
 
+    var watchStalledBookIDs: [UUID] {
+        watchStorageSnapshot?.books.filter { if case .stalled = $0.value.state { return true } else { return false } }.map(\.key) ?? []
+    }
+
+    var watchStalledBookTitles: [String] {
+        watchStalledBookIDs.map { libraryStore?.book(withID: $0)?.book.title ?? String(localized: "Unknown book") }.sorted()
+    }
+
     var watchStoredBookCount: Int {
         watchStorageSnapshot?.books.values.filter { $0.state == .available }.count ?? 0
     }
@@ -855,8 +863,8 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         // Bluetooth is slow — a real, large book can legitimately take a
         // long time without progress. Apple owns delivery; only after 24 hours
         // do we offer an explicit user retry, never submit another file ourselves.
-        stallTimeout: TimeInterval = 24 * 60 * 60,
-        absoluteTimeout: TimeInterval = 24 * 60 * 60
+        stallTimeout: TimeInterval = WatchTransferStallPolicy.stallThreshold,
+        absoluteTimeout: TimeInterval = WatchTransferStallPolicy.absoluteTimeout
     ) {
         guard !fileTransfers.isEmpty else { return }
         let aggregate = Progress(totalUnitCount: Int64(fileTransfers.count))
@@ -875,7 +883,7 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 // terminal state, stop — never clobber that outcome with a
                 // stale "still transferring".
                 switch self.watchStorageSnapshot?.books[bookID]?.state {
-                case .queued, .transferring: break
+                case .queued, .transferring, .stalled: break
                 default: return
                 }
 
@@ -891,13 +899,15 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
                 // if the watch never acks (a crash mid-install, an outdated
                 // build with no receiver), that's exactly the silent-forever
                 // case this supervisor exists to catch.
+                let now = Date()
+                let stalled = WatchTransferStallPolicy.isStalled(lastProgressAt: lastProgressAt, now: now, threshold: stallTimeout)
+                let tooLong = now.timeIntervalSince(startedAt) > absoluteTimeout
                 if fraction < 1 {
-                    self.applyWatchTransferProgress(bookID: bookID, fraction: fraction)
+                    self.applyWatchTransferProgress(bookID: bookID, fraction: fraction, stalled: stalled)
                 }
-
-                let stalled = Date().timeIntervalSince(lastProgressAt) > stallTimeout
-                let tooLong = Date().timeIntervalSince(startedAt) > absoluteTimeout
-                guard stalled || tooLong else { continue }
+                guard tooLong else { continue }
+                // Cancel the zombie transfer(s) so a later retry never contends with them.
+                self.cancelOutstandingWatchTransfers(for: bookID)
 
                 var storage = self.watchStorageSnapshot?.books ?? [:]
                 let previous = storage[bookID]
@@ -916,11 +926,23 @@ final class PhoneAudioRelay: NSObject, ObservableObject {
         }
     }
 
-    private func applyWatchTransferProgress(bookID: UUID, fraction: Double) {
+    private func cancelOutstandingWatchTransfers(for bookID: UUID) {
+        for transfer in session.outstandingFileTransfers where transfer.file.metadata?["bookID"] as? String == bookID.uuidString {
+            transfer.cancel()
+        }
+    }
+
+    /// One-tap recovery for a stalled send: cancels the stuck transfers and resubmits.
+    func retryStalledBookTransferToWatch(_ book: BookWithChapters) async {
+        cancelOutstandingWatchTransfers(for: book.book.id)
+        await resumeBookTransferToWatch(book)
+    }
+
+    private func applyWatchTransferProgress(bookID: UUID, fraction: Double, stalled: Bool = false) {
         var storage = watchStorageSnapshot?.books ?? [:]
         let previous = storage[bookID]
         storage[bookID] = WatchBookStorageInfo(
-            state: .transferring(progress: fraction),
+            state: stalled ? .stalled(progress: fraction) : .transferring(progress: fraction),
             byteCount: previous?.byteCount ?? 0,
             chapterCount: previous?.chapterCount ?? 0,
             completeChapterCount: previous?.completeChapterCount ?? 0,

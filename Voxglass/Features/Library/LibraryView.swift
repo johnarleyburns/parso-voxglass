@@ -596,6 +596,8 @@ struct LibraryView: View {
             return String(localized: "Downloaded on Apple Watch")
         case .transferring, .queued, .waitingForPhone, .paused:
             return String(localized: "Downloading to Apple Watch…")
+        case .stalled:
+            return String(localized: "Retry Stalled Download to Apple Watch")
         case .failed:
             return String(localized: "Retry Download to Apple Watch")
         case .notAvailable:

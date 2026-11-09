@@ -67,6 +67,19 @@ import Testing
         #expect(text.contains(".accessibilityValue("))
     }
 
+    @Test func actionRowRendersStalledWithDirectRetry() throws {
+        let text = try source(Self.actionRow)
+        #expect(text.contains("case .stalled"))
+        #expect(text.contains("retryStalledBookTransferToWatch"))
+        #expect(text.contains("nowplaying.watchRetryStalled"))
+        #expect(text.contains("Palette.danger"))
+    }
+
+    @Test func settingsSurfacesStalledBooks() throws {
+        let text = try source("Voxglass/Features/Settings/SettingsView.swift")
+        #expect(text.contains("watchStalledBookTitles"))
+    }
+
     private func source(_ relativePath: String) throws -> String {
         try String(contentsOf: repositoryRoot().appendingPathComponent(relativePath), encoding: .utf8)
     }
