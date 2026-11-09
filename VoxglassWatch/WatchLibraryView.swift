@@ -196,23 +196,28 @@ struct WatchBookRow: View {
     }
 }
 
-/// H3 "Show Me on iPhone": Handoff to the iPhone app's My Books (`onContinueUserActivity` there).
+/// H3 "Continue on iPhone": Handoff to the iPhone app's My Books (`onContinueUserActivity` there).
 /// The watch can't open an iPhone app directly, so the button advertises the activity and says
-/// where to pick it up.
+/// where the person must accept it. The watch can't know whether they have.
 struct WatchHandoffButton: View {
     @State private var offered = false
 
     var body: some View {
         VStack(spacing: 4) {
-            Button { offered = true } label: { Text("Show Me on iPhone") }
+            Button { offered = true } label: { Text("Continue on iPhone") }
                 .buttonStyle(.watchPrimarySmall)
                 .accessibilityIdentifier("watch.empty.handoff")
             if offered {
-                Text("Ready on your iPhone — open the App Switcher and tap Voxglass.")
+                Text("Check your iPhone")
+                    .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("watch.empty.handoff.pending")
+                Text("On your iPhone, open the App Switcher and tap the Voxglass banner.")
                     .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("watch.empty.handoff.message")
             }
         }
-        .userActivity("guru.parso.voxglass.watch.library", isActive: offered) { activity in
+        .userActivity(WatchHandoffRoute.activityType, isActive: offered) { activity in
             activity.title = String(localized: "My Books")
             activity.isEligibleForHandoff = true
         }

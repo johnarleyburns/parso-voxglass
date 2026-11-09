@@ -174,6 +174,30 @@ final class VoxglassWatchUITests: XCTestCase {
                       app.debugDescription)
     }
 
+    func testContinueOnPhoneHandoffGivesExplicitInstructions() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeed", "watch-library"]
+        app.launch()
+
+        let action = app.buttons["watch.empty.handoff"]
+        XCTAssertTrue(action.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertEqual(action.label, "Continue on iPhone")
+        XCTAssertTrue(action.isHittable)
+        action.tap()
+
+        let message = app.staticTexts["watch.empty.handoff.message"]
+        XCTAssertTrue(message.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(message.label.contains("App Switcher"))
+        XCTAssertTrue(message.label.contains("Voxglass"))
+        XCTAssertFalse(message.label.contains("Ready on your iPhone"))
+        XCTAssertFalse(message.label.localizedCaseInsensitiveContains("opened"))
+        try app.performAccessibilityAudit(for: [.elementDetection, .hitRegion, .textClipped, .sufficientElementDescription])
+
+        action.tap()
+        XCTAssertEqual(app.staticTexts.matching(identifier: "watch.empty.handoff.message").count, 1)
+        XCTAssertTrue(action.isHittable)
+    }
+
     /// Scrolls with the Digital Crown until the element is wholly on screen, then taps it. A row
     /// under the bottom edge reports hittable but its centre is off the display.
     private func tapFullyVisible(_ element: XCUIElement, app: XCUIApplication) {
